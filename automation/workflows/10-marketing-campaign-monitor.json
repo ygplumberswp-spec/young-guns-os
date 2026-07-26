@@ -1,0 +1,147 @@
+{
+  "name": "YGOS - Marketing Campaign Performance Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 18 * * 1-5" }]
+        }
+      },
+      "id": "weekday-6pm",
+      "name": "Weekday 6pm",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/marketing/campaigns?status=ACTIVE",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-active-campaigns",
+      "name": "Get Active Campaigns",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-campaigns",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-active",
+      "name": "Any Active Campaigns?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-campaigns",
+      "name": "Split Campaigns",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/marketing/campaigns/{{ $json.id }}/metrics",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-metrics",
+      "name": "Get Campaign Metrics",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const metrics = $input.item.json.data;\n\nlet alerts = [];\n\n// Check cost per lead threshold\nif (metrics.costPerLead > 150) {\n  alerts.push(`High CPL: $${metrics.costPerLead.toFixed(2)} (threshold: $150)`);\n}\n\n// Check conversion rate\nif (metrics.conversionRate < 0.02) {\n  alerts.push(`Low conversion: ${(metrics.conversionRate * 100).toFixed(1)}% (threshold: 2%)`);\n}\n\n// Check if budget nearly exhausted\nif (metrics.spent / metrics.budget > 0.9) {\n  alerts.push(`Budget ${Math.round((metrics.spent / metrics.budget) * 100)}% spent`);\n}\n\n// Check if no leads in 48h\nif (metrics.hoursSinceLastLead > 48) {\n  alerts.push(`No leads in ${metrics.hoursSinceLastLead}h`);\n}\n\nreturn {\n  json: {\n    ...metrics,\n    hasAlerts: alerts.length > 0,\n    alerts,\n    alertSummary: alerts.join('; ')\n  }\n};"
+      },
+      "id": "check-thresholds",
+      "name": "Check Performance Thresholds",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-alerts",
+              "leftValue": "={{ $json.hasAlerts }}",
+              "rightValue": "true",
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "alerts-check",
+      "name": "Has Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1560, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "CAMPAIGN_ALERT" },
+            { "name": "title", "value": "Campaign Alert: {{ $json.campaignName }}" },
+            { "name": "body", "value": "{{ $json.alertSummary }}" },
+            { "name": "channel", "value": "PUSH" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-marketing",
+      "name": "Alert Marketing Team",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1780, 100],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Weekday 6pm": { "main": [[{ "node": "Get Active Campaigns", "type": "main", "index": 0 }]] },
+    "Get Active Campaigns": { "main": [[{ "node": "Any Active Campaigns?", "type": "main", "index": 0 }]] },
+    "Any Active Campaigns?": { "main": [[{ "node": "Split Campaigns", "type": "main", "index": 0 }], []] },
+    "Split Campaigns": { "main": [[{ "node": "Get Campaign Metrics", "type": "main", "index": 0 }]] },
+    "Get Campaign Metrics": { "main": [[{ "node": "Check Performance Thresholds", "type": "main", "index": 0 }]] },
+    "Check Performance Thresholds": { "main": [[{ "node": "Has Alerts?", "type": "main", "index": 0 }]] },
+    "Has Alerts?": { "main": [[{ "node": "Alert Marketing Team", "type": "main", "index": 0 }], []] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Marketing" }, { "name": "Monitoring" }]
+}

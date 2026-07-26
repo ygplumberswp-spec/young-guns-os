@@ -1,0 +1,95 @@
+{
+  "name": "YGOS - Daily Operations Summary Report",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 17 * * 1-5" }]
+        }
+      },
+      "id": "weekday-5pm",
+      "name": "Weekday 5pm",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/reporting/dashboard",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-dashboard",
+      "name": "Get Dashboard Stats",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/jobs?status=COMPLETED&date={{ $now.toISODate() }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-todays-jobs",
+      "name": "Get Today's Completed Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 400],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const dashboard = $('Get Dashboard Stats').item.json.data;\nconst todaysJobs = $('Get Today\\'s Completed Jobs').item.json.data;\n\nconst summary = {\n  date: new Date().toISOString().split('T')[0],\n  jobsCompleted: todaysJobs.length,\n  revenue: todaysJobs.reduce((sum, j) => sum + (j.invoiceTotal || 0), 0),\n  openJobs: dashboard.openJobs || 0,\n  overdueInvoices: dashboard.overdueInvoices || 0,\n  overdueAmount: dashboard.overdueAmount || 0,\n  newCustomers: dashboard.newCustomersToday || 0,\n  pendingQuotes: dashboard.pendingQuotes || 0,\n  averageRating: dashboard.averageRating || 0\n};\n\nconst report = `Daily Operations Summary - ${summary.date}\\n\\n` +\n  `Jobs Completed: ${summary.jobsCompleted}\\n` +\n  `Revenue Today: $${summary.revenue.toFixed(2)}\\n` +\n  `Open Jobs: ${summary.openJobs}\\n` +\n  `Pending Quotes: ${summary.pendingQuotes}\\n` +\n  `Overdue Invoices: ${summary.overdueInvoices} ($${summary.overdueAmount.toFixed(2)})\\n` +\n  `New Customers: ${summary.newCustomers}\\n` +\n  `Avg Rating: ${summary.averageRating}/5`;\n\nreturn { json: { ...summary, report } };"
+      },
+      "id": "build-summary",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "DAILY_SUMMARY" },
+            { "name": "title", "value": "Daily Ops Summary - {{ $json.jobsCompleted }} jobs, ${{ Math.round($json.revenue) }} revenue" },
+            { "name": "body", "value": "={{ $json.report }}" },
+            { "name": "channel", "value": "EMAIL" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-summary",
+      "name": "Send Summary Notification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [960, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Weekday 5pm": { "main": [[{ "node": "Get Dashboard Stats", "type": "main", "index": 0 }, { "node": "Get Today's Completed Jobs", "type": "main", "index": 0 }]] },
+    "Get Dashboard Stats": { "main": [[{ "node": "Build Summary", "type": "main", "index": 0 }]] },
+    "Get Today's Completed Jobs": { "main": [[{ "node": "Build Summary", "type": "main", "index": 0 }]] },
+    "Build Summary": { "main": [[{ "node": "Send Summary Notification", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Reporting" }, { "name": "Operations" }]
+}
