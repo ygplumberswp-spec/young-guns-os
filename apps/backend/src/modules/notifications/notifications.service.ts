@@ -19,7 +19,7 @@ export class NotificationsService {
         title: data.title,
         body: data.body,
         channel: data.channel,
-        data: data.data || {},
+        data: (data.data || {}) as any,
         sentAt: new Date(),
       },
     });

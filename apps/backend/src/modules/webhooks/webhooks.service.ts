@@ -22,7 +22,7 @@ export class WebhooksService {
 
     for (const endpoint of endpoints) {
       await this.prisma.webhookDelivery.create({
-        data: { endpointId: endpoint.id, event, payload },
+        data: { endpointId: endpoint.id, event, payload: payload as any },
       });
     }
 
