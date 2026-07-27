@@ -39,8 +39,8 @@ Business Rules:
       where: {
         branchId,
         scheduledStart: {
-          gte: new Date(date.setHours(0, 0, 0, 0)),
-          lte: new Date(date.setHours(23, 59, 59, 999)),
+          gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
+          lte: new Date(new Date(date).setHours(23, 59, 59, 999)),
         },
         status: { in: ['PENDING', 'SCHEDULED'] },
       },

@@ -35,7 +35,7 @@ export class MarketingController {
   @Get('campaigns/:id/metrics')
   @ApiOperation({ summary: 'Get campaign metrics' })
   getCampaignMetrics(@Param('id') id: string) {
-    return this.marketingService.getCampaignMetrics();
+    return this.marketingService.getCampaignMetrics(id);
   }
 
   @Post('leads')

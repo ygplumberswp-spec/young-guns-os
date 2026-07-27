@@ -80,9 +80,11 @@ export class MarketingService {
     });
   }
 
-  async getCampaignMetrics() {
+  async getCampaignMetrics(campaignId?: string) {
+    const where: Record<string, unknown> = campaignId ? { id: campaignId } : { status: 'ACTIVE' };
+
     const campaigns = await this.prisma.marketingCampaign.findMany({
-      where: { status: 'ACTIVE' },
+      where,
       include: { _count: { select: { leads: true } } },
     });
 

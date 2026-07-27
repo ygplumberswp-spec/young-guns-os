@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { RedisService } from '../../common/redis/redis.service';
@@ -25,7 +25,11 @@ export class XeroService {
     const redirectUri = this.configService.get<string>('XERO_REDIRECT_URI');
     const scopes = this.configService.get<string>('XERO_SCOPES');
 
-    return `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri!)}&scope=${encodeURIComponent(scopes!)}&state=ygos`;
+    if (!clientId || !redirectUri) {
+      throw new Error('Xero client ID and redirect URI must be configured');
+    }
+
+    return `https://login.xero.com/identity/connect/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes || 'openid profile email accounting.transactions accounting.contacts')}&state=ygos`;
   }
 
   async handleCallback(code: string): Promise<XeroTokens> {
@@ -33,17 +37,128 @@ export class XeroService {
     const clientSecret = this.configService.get<string>('XERO_CLIENT_SECRET');
     const redirectUri = this.configService.get<string>('XERO_REDIRECT_URI');
 
-    // In production: exchange code for tokens via Xero OAuth2
+    if (!clientId || !clientSecret || !redirectUri) {
+      throw new Error('Xero OAuth credentials not configured');
+    }
+
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const tokenResponse = await fetch('https://identity.xero.com/connect/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${credentials}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        redirect_uri: redirectUri,
+      }).toString(),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorBody = await tokenResponse.text();
+      this.logger.error(`Xero token exchange failed: ${errorBody}`);
+      throw new UnauthorizedException('Failed to exchange Xero authorization code');
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    const connectionsResponse = await fetch('https://api.xero.com/connections', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+    });
+
+    let tenantId = '';
+    if (connectionsResponse.ok) {
+      const connections = await connectionsResponse.json();
+      if (connections.length > 0) {
+        tenantId = connections[0].tenantId;
+      }
+    }
+
     const tokens: XeroTokens = {
-      accessToken: 'placeholder',
-      refreshToken: 'placeholder',
-      expiresAt: Date.now() + 1800000,
-      tenantId: 'placeholder',
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt: Date.now() + tokenData.expires_in * 1000,
+      tenantId,
     };
 
-    await this.redisService.setJson('xero:tokens', tokens, 1800);
-    this.logger.log('Xero OAuth callback processed');
+    await this.redisService.setJson('xero:tokens', tokens, tokenData.expires_in);
+    this.logger.log('Xero OAuth callback processed successfully');
     return tokens;
+  }
+
+  private async getValidTokens(): Promise<XeroTokens> {
+    const tokens = await this.redisService.getJson<XeroTokens>('xero:tokens');
+    if (!tokens) {
+      throw new UnauthorizedException('Xero is not connected. Please authorize first.');
+    }
+
+    if (tokens.expiresAt <= Date.now() + 60000) {
+      return this.refreshAccessToken(tokens);
+    }
+
+    return tokens;
+  }
+
+  private async refreshAccessToken(tokens: XeroTokens): Promise<XeroTokens> {
+    const clientId = this.configService.get<string>('XERO_CLIENT_ID');
+    const clientSecret = this.configService.get<string>('XERO_CLIENT_SECRET');
+    const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const response = await fetch('https://identity.xero.com/connect/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${credentials}`,
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: tokens.refreshToken,
+      }).toString(),
+    });
+
+    if (!response.ok) {
+      await this.redisService.del('xero:tokens');
+      throw new UnauthorizedException('Xero token refresh failed. Please re-authorize.');
+    }
+
+    const tokenData = await response.json();
+
+    const newTokens: XeroTokens = {
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt: Date.now() + tokenData.expires_in * 1000,
+      tenantId: tokens.tenantId,
+    };
+
+    await this.redisService.setJson('xero:tokens', newTokens, tokenData.expires_in);
+    return newTokens;
+  }
+
+  private async xeroApiRequest(method: string, path: string, body?: unknown): Promise<any> {
+    const tokens = await this.getValidTokens();
+
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${tokens.accessToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'Xero-Tenant-Id': tokens.tenantId,
+    };
+
+    const response = await fetch(`https://api.xero.com/api.xro/2.0${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      this.logger.error(`Xero API error [${method} ${path}]: ${response.status} ${errorBody}`);
+      throw new Error(`Xero API request failed: ${response.status}`);
+    }
+
+    return response.json();
   }
 
   async syncInvoiceToXero(invoiceId: string) {
@@ -54,12 +169,12 @@ export class XeroService {
 
     if (!invoice) return null;
 
-    // Map to Xero invoice format
     const xeroInvoice = {
       Type: 'ACCREC',
       Contact: {
-        ContactID: invoice.customer.xeroContactId,
-        Name: `${invoice.customer.firstName} ${invoice.customer.lastName}`,
+        ...(invoice.customer.xeroContactId
+          ? { ContactID: invoice.customer.xeroContactId }
+          : { Name: `${invoice.customer.firstName} ${invoice.customer.lastName}` }),
       },
       LineItems: invoice.items.map((item) => ({
         Description: item.description,
@@ -74,10 +189,19 @@ export class XeroService {
       Status: 'AUTHORISED',
     };
 
-    // In production: POST to Xero API
-    this.logger.log(`Syncing invoice ${invoiceId} to Xero`);
+    const result = await this.xeroApiRequest('POST', '/Invoices', {
+      Invoices: [xeroInvoice],
+    });
 
-    return xeroInvoice;
+    if (result.Invoices?.[0]?.InvoiceID) {
+      await this.prisma.invoice.update({
+        where: { id: invoiceId },
+        data: { xeroInvoiceId: result.Invoices[0].InvoiceID },
+      });
+    }
+
+    this.logger.log(`Synced invoice ${invoiceId} to Xero`);
+    return result.Invoices?.[0];
   }
 
   async syncContactToXero(customerId: string) {
@@ -92,10 +216,19 @@ export class XeroService {
       Phones: [{ PhoneType: 'DEFAULT', PhoneNumber: customer.phone }],
     };
 
-    // In production: POST/PUT to Xero API
-    this.logger.log(`Syncing customer ${customerId} to Xero`);
+    const result = await this.xeroApiRequest('POST', '/Contacts', {
+      Contacts: [xeroContact],
+    });
 
-    return xeroContact;
+    if (result.Contacts?.[0]?.ContactID) {
+      await this.prisma.customer.update({
+        where: { id: customerId },
+        data: { xeroContactId: result.Contacts[0].ContactID },
+      });
+    }
+
+    this.logger.log(`Synced customer ${customerId} to Xero`);
+    return result.Contacts?.[0];
   }
 
   async getXeroStatus(): Promise<{ connected: boolean; tenantId?: string; lastSync?: Date }> {
@@ -104,5 +237,10 @@ export class XeroService {
       connected: !!tokens && tokens.expiresAt > Date.now(),
       tenantId: tokens?.tenantId,
     };
+  }
+
+  async disconnect(): Promise<void> {
+    await this.redisService.del('xero:tokens');
+    this.logger.log('Xero disconnected');
   }
 }

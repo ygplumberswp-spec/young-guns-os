@@ -20,6 +20,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    if (typeof window === 'undefined') {
+      return Promise.reject(error);
+    }
+
     const originalRequest = error.config;
 
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -32,7 +36,8 @@ api.interceptors.response.use(
             refreshToken,
           });
 
-          const { accessToken, refreshToken: newRefreshToken } = response.data;
+          const tokenData = response.data?.data || response.data;
+          const { accessToken, refreshToken: newRefreshToken } = tokenData;
           localStorage.setItem('access_token', accessToken);
           localStorage.setItem('refresh_token', newRefreshToken);
 
@@ -42,9 +47,12 @@ api.interceptors.response.use(
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           window.location.href = '/login';
+          return Promise.reject(error);
         }
       } else {
+        localStorage.removeItem('access_token');
         window.location.href = '/login';
+        return Promise.reject(error);
       }
     }
 

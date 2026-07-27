@@ -88,7 +88,7 @@ export class InventoryService {
   ) {
     const stockLevel = await this.prisma.stockLevel.upsert({
       where: { inventoryId_warehouseId: { inventoryId, warehouseId } },
-      update: { quantity: { increment: type === 'ISSUED' || type === 'DAMAGED' ? -quantity : quantity } },
+      update: { quantity: { increment: type === 'ISSUED' || type === 'DAMAGED' || type === 'EXPIRED' ? -quantity : quantity } },
       create: { inventoryId, warehouseId, quantity },
     });
 

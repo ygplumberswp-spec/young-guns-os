@@ -4,6 +4,7 @@ import { AiReceptionistService } from './ai-receptionist.service';
 import { AiSalesService } from './ai-sales.service';
 import { AiDispatcherService } from './ai-dispatcher.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../guards/permissions.guard';
 import { RequirePermissions } from '../../decorators/permissions.decorator';
 
 @ApiTags('ai')
@@ -30,7 +31,7 @@ export class AiController {
   }
 
   @Post('sales/follow-up-quote/:quoteId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:execute')
   @ApiOperation({ summary: 'AI Sales follow-up on a quote' })
@@ -39,7 +40,7 @@ export class AiController {
   }
 
   @Post('sales/follow-up-lead/:leadId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:execute')
   @ApiOperation({ summary: 'AI Sales follow-up on a lead' })
@@ -48,7 +49,7 @@ export class AiController {
   }
 
   @Get('sales/pipeline')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:read')
   @ApiOperation({ summary: 'Get AI Sales pipeline stats' })
@@ -57,7 +58,7 @@ export class AiController {
   }
 
   @Post('dispatcher/optimize')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:execute')
   @ApiOperation({ summary: 'AI Dispatcher schedule optimization' })
@@ -67,7 +68,7 @@ export class AiController {
   }
 
   @Post('dispatcher/delay')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:execute')
   @ApiOperation({ summary: 'Report technician delay to AI dispatcher' })
@@ -76,7 +77,7 @@ export class AiController {
   }
 
   @Post('dispatcher/auto-assign')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('ai:execute')
   @ApiOperation({ summary: 'Auto-assign a job via AI dispatcher' })

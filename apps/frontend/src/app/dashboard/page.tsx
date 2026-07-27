@@ -7,7 +7,7 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 export default function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: () => api.get('/reporting/dashboard'),
+    queryFn: () => api.get('/reporting/dashboard').then((res) => res.data.data),
   });
 
   return (
@@ -26,16 +26,16 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard title="Today's Jobs" value={stats?.data?.todayJobs || 0} color="blue" />
-            <StatCard title="Pending Bookings" value={stats?.data?.pendingBookings || 0} color="amber" />
-            <StatCard title="Open Quotes" value={stats?.data?.openQuotes || 0} color="green" />
-            <StatCard title="Overdue Invoices" value={stats?.data?.overdueInvoices || 0} color="red" />
+            <StatCard title="Today's Jobs" value={stats?.todayJobs || 0} color="blue" />
+            <StatCard title="Pending Bookings" value={stats?.pendingBookings || 0} color="amber" />
+            <StatCard title="Open Quotes" value={stats?.openQuotes || 0} color="green" />
+            <StatCard title="Overdue Invoices" value={stats?.overdueInvoices || 0} color="red" />
             <StatCard
               title="Monthly Revenue"
-              value={`$${Number(stats?.data?.monthRevenue || 0).toLocaleString()}`}
+              value={`$${Number(stats?.monthRevenue || 0).toLocaleString()}`}
               color="emerald"
             />
-            <StatCard title="Month Jobs" value={stats?.data?.monthJobs || 0} color="purple" />
+            <StatCard title="Month Jobs" value={stats?.monthJobs || 0} color="purple" />
           </div>
         )}
       </div>

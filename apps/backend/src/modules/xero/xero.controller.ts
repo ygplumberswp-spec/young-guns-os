@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Query, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { XeroService } from './xero.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../guards/permissions.guard';
 import { RequirePermissions } from '../../decorators/permissions.decorator';
 
 @ApiTags('xero')
@@ -10,7 +11,7 @@ export class XeroController {
   constructor(private readonly xeroService: XeroService) {}
 
   @Get('auth-url')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('invoices:update')
   @ApiOperation({ summary: 'Get Xero OAuth authorization URL' })
@@ -33,7 +34,7 @@ export class XeroController {
   }
 
   @Post('sync/invoice/:invoiceId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('invoices:update')
   @ApiOperation({ summary: 'Sync invoice to Xero' })
@@ -42,7 +43,7 @@ export class XeroController {
   }
 
   @Post('sync-invoice/:invoiceId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('invoices:update')
   @ApiOperation({ summary: 'Sync invoice to Xero (n8n compatible)' })
@@ -51,11 +52,20 @@ export class XeroController {
   }
 
   @Post('sync/contact/:customerId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
   @ApiBearerAuth()
   @RequirePermissions('customers:update')
   @ApiOperation({ summary: 'Sync customer to Xero as contact' })
   syncContact(@Param('customerId') customerId: string) {
     return this.xeroService.syncContactToXero(customerId);
+  }
+
+  @Delete('disconnect')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('invoices:update')
+  @ApiOperation({ summary: 'Disconnect Xero integration' })
+  disconnect() {
+    return this.xeroService.disconnect();
   }
 }

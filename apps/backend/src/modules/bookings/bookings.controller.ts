@@ -74,7 +74,6 @@ export class BookingsController {
   @RequirePermissions('bookings:update')
   @ApiOperation({ summary: 'Convert a booking into a job' })
   async convertToJob(@Param('id') id: string) {
-    const booking = await this.bookingsService.findById(id);
-    return this.bookingsService.convertToJob(id, booking.jobId || id);
+    return this.bookingsService.convertBookingToJob(id);
   }
 }

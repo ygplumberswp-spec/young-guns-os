@@ -78,6 +78,48 @@ export class BookingsService {
     });
   }
 
+  async convertBookingToJob(bookingId: string) {
+    const booking = await this.findById(bookingId);
+
+    if (booking.jobId) {
+      return booking;
+    }
+
+    const customer = await this.prisma.customer.findFirst({
+      where: { phone: booking.customerPhone },
+      include: { properties: true },
+    });
+
+    const jobCount = await this.prisma.job.count({ where: { branchId: booking.branchId } });
+    const branch = await this.prisma.branch.findUnique({
+      where: { id: booking.branchId },
+      select: { code: true },
+    });
+    const jobNumber = `JOB-${branch?.code || 'YG'}-${String(jobCount + 1).padStart(5, '0')}`;
+
+    const job = await this.prisma.job.create({
+      data: {
+        branchId: booking.branchId,
+        customerId: customer?.id || '',
+        propertyId: customer?.properties?.[0]?.id || '',
+        createdById: '',
+        jobNumber,
+        type: 'REPAIR',
+        title: `Job from booking - ${booking.customerName}`,
+        description: booking.notes || undefined,
+        scheduledStart: booking.preferredDate,
+        status: 'SCHEDULED',
+      },
+    });
+
+    await this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { jobId: job.id, status: 'SCHEDULED' },
+    });
+
+    return { booking: { ...booking, jobId: job.id, status: 'SCHEDULED' }, job };
+  }
+
   async getAvailableSlots(branchId: string, date: Date) {
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);

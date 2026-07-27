@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { DatabaseModule } from './database/database.module';
 import { RedisModule } from './common/redis/redis.module';
@@ -32,6 +33,7 @@ import { ReportingModule } from './modules/reporting/reporting.module';
 import { CommunicationsModule } from './modules/communications/communications.module';
 import { XeroModule } from './modules/xero/xero.module';
 import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
+import { TechnicianModule } from './modules/technician/technician.module';
 
 @Module({
   imports: [
@@ -76,6 +78,10 @@ import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
     CommunicationsModule,
     XeroModule,
     MultiBranchModule,
+    TechnicianModule,
+  ],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
 export class AppModule {}
