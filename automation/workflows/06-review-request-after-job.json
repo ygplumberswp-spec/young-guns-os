@@ -1,0 +1,125 @@
+{
+  "name": "YGOS - Request Review After Job Completion",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 10 * * *" }]
+        }
+      },
+      "id": "daily-10am",
+      "name": "Daily 10am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/jobs?status=COMPLETED&completedAfter={{ $now.minus(2, 'days').toISO() }}&completedBefore={{ $now.minus(1, 'days').toISO() }}&hasReview=false",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-completed-jobs",
+      "name": "Get Recently Completed Jobs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-jobs",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-jobs-check",
+      "name": "Any Jobs to Review?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-jobs",
+      "name": "Split Jobs",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Hi {{ $json.customer.firstName }}, thanks for choosing Young Guns Plumbing! We'd love to hear how we did. Please leave us a review: {{ $env.YGOS_REVIEW_URL }}?job={{ $json.id }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-review-sms",
+      "name": "Send Review Request SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/audit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "REVIEW_REQUEST_SENT" },
+            { "name": "resource", "value": "jobs" },
+            { "name": "resourceId", "value": "={{ $json.id }}" },
+            { "name": "metadata", "value": "={{ JSON.stringify({ workflow: '06-review-request', sentAt: new Date().toISOString() }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audit-log",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Daily 10am": { "main": [[{ "node": "Get Recently Completed Jobs", "type": "main", "index": 0 }]] },
+    "Get Recently Completed Jobs": { "main": [[{ "node": "Any Jobs to Review?", "type": "main", "index": 0 }]] },
+    "Any Jobs to Review?": { "main": [[{ "node": "Split Jobs", "type": "main", "index": 0 }], []] },
+    "Split Jobs": { "main": [[{ "node": "Send Review Request SMS", "type": "main", "index": 0 }]] },
+    "Send Review Request SMS": { "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Reviews" }, { "name": "Customer Comms" }]
+}

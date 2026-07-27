@@ -1,0 +1,198 @@
+{
+  "name": "YGOS - AI Receptionist Inbound Call Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ygos/inbound-call",
+        "options": {}
+      },
+      "id": "webhook-inbound",
+      "name": "Webhook: Inbound Call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "inbound-call"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/customers?phone={{ $json.body.callerNumber }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "lookup-customer",
+      "name": "Lookup Customer by Phone",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "is-existing",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "existing-customer",
+      "name": "Existing Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/ai/receptionist/handle-call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "callerNumber", "value": "={{ $node['Webhook: Inbound Call'].json.body.callerNumber }}" },
+            { "name": "customerId", "value": "={{ $json.data[0].id }}" },
+            { "name": "customerName", "value": "={{ $json.data[0].firstName }} {{ $json.data[0].lastName }}" },
+            { "name": "isReturning", "value": "true" },
+            { "name": "callType", "value": "={{ $node['Webhook: Inbound Call'].json.body.callType || 'GENERAL' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-handle-existing",
+      "name": "AI Handle - Returning Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/ai/receptionist/handle-call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "callerNumber", "value": "={{ $node['Webhook: Inbound Call'].json.body.callerNumber }}" },
+            { "name": "isReturning", "value": "false" },
+            { "name": "callType", "value": "={{ $node['Webhook: Inbound Call'].json.body.callType || 'NEW_ENQUIRY' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-handle-new",
+      "name": "AI Handle - New Caller",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 400],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = $input.item.json.data;\n\n// Check if AI flagged for escalation\nif (result.escalate) {\n  return { json: { ...result, shouldEscalate: true } };\n}\n\nreturn { json: { ...result, shouldEscalate: false } };"
+      },
+      "id": "check-escalation",
+      "name": "Check Escalation",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "needs-escalation",
+              "leftValue": "={{ $json.shouldEscalate }}",
+              "rightValue": "true",
+              "operator": { "type": "boolean", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "escalation-check",
+      "name": "Needs Escalation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "CALL_ESCALATION" },
+            { "name": "title", "value": "Call Escalated - Human Required" },
+            { "name": "body", "value": "AI receptionist escalated call from {{ $json.callerNumber }}. Reason: {{ $json.escalationReason }}. Transferring to office." },
+            { "name": "channel", "value": "PUSH" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "escalate-to-human",
+      "name": "Escalate to Human",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/audit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "AI_CALL_HANDLED" },
+            { "name": "resource", "value": "ai-conversations" },
+            { "name": "resourceId", "value": "={{ $json.conversationId }}" },
+            { "name": "metadata", "value": "={{ JSON.stringify({ callerNumber: $json.callerNumber, outcome: $json.outcome, duration: $json.duration }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audit-call",
+      "name": "Log Call Outcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 400],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Inbound Call": { "main": [[{ "node": "Lookup Customer by Phone", "type": "main", "index": 0 }]] },
+    "Lookup Customer by Phone": { "main": [[{ "node": "Existing Customer?", "type": "main", "index": 0 }]] },
+    "Existing Customer?": { "main": [[{ "node": "AI Handle - Returning Customer", "type": "main", "index": 0 }], [{ "node": "AI Handle - New Caller", "type": "main", "index": 0 }]] },
+    "AI Handle - Returning Customer": { "main": [[{ "node": "Check Escalation", "type": "main", "index": 0 }]] },
+    "AI Handle - New Caller": { "main": [[{ "node": "Check Escalation", "type": "main", "index": 0 }]] },
+    "Check Escalation": { "main": [[{ "node": "Needs Escalation?", "type": "main", "index": 0 }]] },
+    "Needs Escalation?": { "main": [[{ "node": "Escalate to Human", "type": "main", "index": 0 }], [{ "node": "Log Call Outcome", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "AI" }, { "name": "Receptionist" }]
+}

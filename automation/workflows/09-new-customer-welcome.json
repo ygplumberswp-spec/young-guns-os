@@ -1,0 +1,120 @@
+{
+  "name": "YGOS - New Customer Welcome Sequence",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ygos/new-customer",
+        "options": {}
+      },
+      "id": "webhook-new-customer",
+      "name": "Webhook: New Customer",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "new-customer"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/customers/{{ $json.body.customerId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-customer",
+      "name": "Get Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.data.id }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Welcome to Young Guns Plumbing, {{ $json.data.firstName }}! We're your local plumbing experts. Save our number for emergencies: 1300 000 000. Refer a friend and earn $50 off your next service!" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-welcome-sms",
+      "name": "Send Welcome SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.data.id }}" },
+            { "name": "channel", "value": "EMAIL" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "subject", "value": "Welcome to Young Guns Plumbing!" },
+            { "name": "content", "value": "Hi {{ $json.data.firstName }},\n\nWelcome to the Young Guns Plumbing family! We're thrilled to have you as a customer.\n\nHere's what you can expect from us:\n- 24/7 emergency plumbing service\n- Licensed and insured technicians\n- Upfront pricing with no hidden fees\n- 12-month workmanship warranty\n\nBook your next service online or call us on 1300 000 000.\n\nRefer a friend and you'll both receive $50 off!\n\nCheers,\nThe Young Guns Team" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-welcome-email",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 400],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/referrals",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "referrerId", "value": "={{ $json.data.id }}" },
+            { "name": "code", "value": "={{ $json.data.firstName.toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase() }}" },
+            { "name": "rewardAmount", "value": "50" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "create-referral-code",
+      "name": "Generate Referral Code",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: New Customer": { "main": [[{ "node": "Get Customer", "type": "main", "index": 0 }]] },
+    "Get Customer": { "main": [[{ "node": "Send Welcome SMS", "type": "main", "index": 0 }, { "node": "Send Welcome Email", "type": "main", "index": 0 }]] },
+    "Send Welcome SMS": { "main": [[{ "node": "Generate Referral Code", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Onboarding" }, { "name": "Customer Comms" }]
+}
