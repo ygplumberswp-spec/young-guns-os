@@ -1,4 +1,4 @@
-import { Controller, Get, Patch, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
@@ -10,6 +10,19 @@ import { CurrentUser } from '../../decorators/current-user.decorator';
 @ApiBearerAuth()
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create and send a notification' })
+  create(@Body() dto: {
+    userId: string;
+    type: string;
+    title: string;
+    body: string;
+    channel: 'IN_APP' | 'PUSH' | 'EMAIL' | 'SMS';
+    data?: Record<string, unknown>;
+  }) {
+    return this.notificationsService.send(dto.userId, dto);
+  }
 
   @Get()
   @ApiOperation({ summary: 'Get user notifications' })

@@ -29,6 +29,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { WarrantyModule } from './modules/warranty/warranty.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
+import { CommunicationsModule } from './modules/communications/communications.module';
 import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
 
 @Module({
@@ -71,6 +72,7 @@ import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
     WarrantyModule,
     MaintenanceModule,
     ReportingModule,
+    CommunicationsModule,
     MultiBranchModule,
   ],
 })
