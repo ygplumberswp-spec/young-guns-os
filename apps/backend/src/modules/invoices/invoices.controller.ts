@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { InvoicesService } from './invoices.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -19,7 +19,10 @@ export class InvoicesController {
   @ApiOperation({ summary: 'Create an invoice' })
   create(@CurrentUser('id') userId: string, @CurrentUser('branches') branches: string[], @Body() dto: any) {
     const items = dto.items || dto.lineItems || [];
-    const branchId = dto.branchId || branches[0];
+    const branchId = dto.branchId || branches?.[0];
+    if (!branchId) {
+      throw new BadRequestException('branchId is required');
+    }
     return this.invoicesService.create(branchId, userId, { ...dto, items });
   }
 

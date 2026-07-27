@@ -2,15 +2,18 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { MarketingService } from './marketing.service';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../guards/permissions.guard';
+import { RequirePermissions } from '../../decorators/permissions.decorator';
 
 @ApiTags('marketing')
 @Controller('marketing')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class MarketingController {
   constructor(private readonly marketingService: MarketingService) {}
 
   @Post('campaigns')
+  @RequirePermissions('marketing:create')
   @ApiOperation({ summary: 'Create a marketing campaign' })
   createCampaign(@Body() dto: {
     name: string;
@@ -27,18 +30,21 @@ export class MarketingController {
   }
 
   @Get('campaigns')
+  @RequirePermissions('marketing:read')
   @ApiOperation({ summary: 'List marketing campaigns' })
   getCampaigns(@Query('status') status?: string) {
     return this.marketingService.getCampaigns(status);
   }
 
   @Get('campaigns/:id/metrics')
+  @RequirePermissions('marketing:read')
   @ApiOperation({ summary: 'Get campaign metrics' })
   getCampaignMetrics(@Param('id') id: string) {
     return this.marketingService.getCampaignMetrics(id);
   }
 
   @Post('leads')
+  @RequirePermissions('marketing:create')
   @ApiOperation({ summary: 'Create a marketing lead' })
   createLead(@Body() dto: {
     campaignId?: string;
@@ -55,6 +61,7 @@ export class MarketingController {
   }
 
   @Get('leads')
+  @RequirePermissions('marketing:read')
   @ApiOperation({ summary: 'List marketing leads' })
   getLeads(@Query('status') status?: string) {
     return this.marketingService.getLeads(status);

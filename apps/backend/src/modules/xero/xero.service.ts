@@ -8,6 +8,7 @@ interface XeroTokens {
   refreshToken: string;
   expiresAt: number;
   tenantId: string;
+  tenantName?: string;
 }
 
 @Injectable()
@@ -69,10 +70,12 @@ export class XeroService {
     });
 
     let tenantId = '';
+    let tenantName: string | undefined;
     if (connectionsResponse.ok) {
       const connections = await connectionsResponse.json();
       if (connections.length > 0) {
         tenantId = connections[0].tenantId;
+        tenantName = connections[0].tenantName;
       }
     }
 
@@ -81,9 +84,10 @@ export class XeroService {
       refreshToken: tokenData.refresh_token,
       expiresAt: Date.now() + tokenData.expires_in * 1000,
       tenantId,
+      tenantName,
     };
 
-    await this.redisService.setJson('xero:tokens', tokens, tokenData.expires_in);
+    await this.redisService.setJson('xero:tokens', tokens, 30 * 24 * 60 * 60);
     this.logger.log('Xero OAuth callback processed successfully');
     return tokens;
   }
@@ -132,7 +136,7 @@ export class XeroService {
       tenantId: tokens.tenantId,
     };
 
-    await this.redisService.setJson('xero:tokens', newTokens, tokenData.expires_in);
+    await this.redisService.setJson('xero:tokens', newTokens, 30 * 24 * 60 * 60);
     return newTokens;
   }
 
@@ -231,11 +235,12 @@ export class XeroService {
     return result.Contacts?.[0];
   }
 
-  async getXeroStatus(): Promise<{ connected: boolean; tenantId?: string; lastSync?: Date }> {
+  async getXeroStatus(): Promise<{ connected: boolean; tenantId?: string; tenantName?: string }> {
     const tokens = await this.redisService.getJson<XeroTokens>('xero:tokens');
     return {
-      connected: !!tokens && tokens.expiresAt > Date.now(),
+      connected: !!tokens,
       tenantId: tokens?.tenantId,
+      tenantName: tokens?.tenantName,
     };
   }
 

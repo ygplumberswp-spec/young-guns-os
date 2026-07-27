@@ -1,10 +1,24 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { DashboardLayout } from '@/components/layout/dashboard-layout';
 
 export default function SettingsPage() {
+  const searchParams = useSearchParams();
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    const xeroParam = searchParams.get('xero');
+    if (xeroParam === 'connected') {
+      setNotification({ type: 'success', message: 'Xero connected successfully!' });
+    } else if (xeroParam === 'error') {
+      setNotification({ type: 'error', message: 'Failed to connect Xero. Please try again.' });
+    }
+  }, [searchParams]);
+
   const {
     data: xeroStatus,
     isLoading: xeroLoading,
@@ -22,7 +36,7 @@ export default function SettingsPage() {
         window.location.href = url;
       }
     } catch {
-      // Silently handle - user can retry
+      setNotification({ type: 'error', message: 'Failed to get Xero authorization URL.' });
     }
   }
 
@@ -30,8 +44,9 @@ export default function SettingsPage() {
     try {
       await api.delete('/xero/disconnect');
       refetchXero();
+      setNotification({ type: 'success', message: 'Xero disconnected.' });
     } catch {
-      // Silently handle - user can retry
+      setNotification({ type: 'error', message: 'Failed to disconnect Xero.' });
     }
   }
 
@@ -41,6 +56,24 @@ export default function SettingsPage() {
     <DashboardLayout>
       <div className="space-y-8">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+
+        {notification && (
+          <div
+            className={`p-4 rounded-lg flex items-center justify-between ${
+              notification.type === 'success'
+                ? 'bg-green-50 text-green-800 border border-green-200'
+                : 'bg-red-50 text-red-800 border border-red-200'
+            }`}
+          >
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="text-sm font-medium hover:opacity-70"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Integration Status */}
         <section className="space-y-4">

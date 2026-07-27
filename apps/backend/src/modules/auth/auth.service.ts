@@ -59,7 +59,17 @@ export class AuthService {
       },
     });
 
-    return this.generateTokenPair(user.id, user.email, user.organizationId);
+    const tokens = await this.generateTokenPair(user.id, user.email, user.organizationId);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        token: tokens.refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    return tokens;
   }
 
   async login(dto: LoginDto, userAgent?: string, ipAddress?: string): Promise<TokenPair> {

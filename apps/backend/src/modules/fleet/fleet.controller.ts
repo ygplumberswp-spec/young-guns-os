@@ -41,6 +41,7 @@ export class FleetController {
   }
 
   @Post('vehicles/:id/location')
+  @RequirePermissions('fleet:update')
   @ApiOperation({ summary: 'Update vehicle GPS location' })
   updateLocation(
     @Param('id') id: string,
