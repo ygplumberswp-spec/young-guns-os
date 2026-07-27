@@ -1,0 +1,116 @@
+{
+  "name": "YGOS - Customer Maintenance Reminder",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 8 * * 1-5" }]
+        }
+      },
+      "id": "weekday-8am",
+      "name": "Weekday 8am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/maintenance/due?daysAhead=14",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-due-maintenance",
+      "name": "Get Due Maintenance",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-items",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-due",
+      "name": "Any Due?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-reminders",
+      "name": "Split Reminders",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Hi {{ $json.customer.firstName }}, your {{ $json.serviceType }} maintenance is due{{ $json.nextDueDate ? ' on ' + $json.nextDueDate : ' soon' }}. Book online or call us on 1300 000 000 to schedule. - Young Guns Plumbing" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-reminder-sms",
+      "name": "Send Reminder SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/maintenance/{{ $json.id }}/reminded",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "mark-reminded",
+      "name": "Mark as Reminded",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Weekday 8am": { "main": [[{ "node": "Get Due Maintenance", "type": "main", "index": 0 }]] },
+    "Get Due Maintenance": { "main": [[{ "node": "Any Due?", "type": "main", "index": 0 }]] },
+    "Any Due?": { "main": [[{ "node": "Split Reminders", "type": "main", "index": 0 }], []] },
+    "Split Reminders": { "main": [[{ "node": "Send Reminder SMS", "type": "main", "index": 0 }]] },
+    "Send Reminder SMS": { "main": [[{ "node": "Mark as Reminded", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Maintenance" }, { "name": "Customer Comms" }]
+}

@@ -1,0 +1,136 @@
+{
+  "name": "YGOS - New Booking → Confirmed Job Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ygos/booking-confirmed",
+        "options": {}
+      },
+      "id": "webhook-booking",
+      "name": "Webhook: Booking Confirmed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "booking-confirmed"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/bookings/{{ $json.body.bookingId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-booking",
+      "name": "Get Booking Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/bookings/{{ $json.data.id }}/convert-to-job",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "convert-to-job",
+      "name": "Convert to Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/ai/dispatcher/auto-assign",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "jobId", "value": "={{ $json.data.id }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ai-dispatch",
+      "name": "AI Auto-Dispatch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $node['Get Booking Details'].json.data.customerId }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Hi {{ $node['Get Booking Details'].json.data.customer.firstName }}, your booking is confirmed! Your technician {{ $json.data.technician ? $json.data.technician.firstName : 'will be assigned shortly' }} is scheduled for {{ $node['Get Booking Details'].json.data.scheduledDate }}. We'll send you a reminder the day before. - Young Guns Plumbing" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "confirm-sms",
+      "name": "Send Confirmation SMS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/audit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "BOOKING_CONVERTED_TO_JOB" },
+            { "name": "resource", "value": "bookings" },
+            { "name": "resourceId", "value": "={{ $node['Get Booking Details'].json.data.id }}" },
+            { "name": "metadata", "value": "={{ JSON.stringify({ jobId: $node['Convert to Job'].json.data.id, workflow: '11-new-booking-to-job' }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audit-log",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Booking Confirmed": { "main": [[{ "node": "Get Booking Details", "type": "main", "index": 0 }]] },
+    "Get Booking Details": { "main": [[{ "node": "Convert to Job", "type": "main", "index": 0 }]] },
+    "Convert to Job": { "main": [[{ "node": "AI Auto-Dispatch", "type": "main", "index": 0 }]] },
+    "AI Auto-Dispatch": { "main": [[{ "node": "Send Confirmation SMS", "type": "main", "index": 0 }]] },
+    "Send Confirmation SMS": { "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Bookings" }, { "name": "Automation" }]
+}

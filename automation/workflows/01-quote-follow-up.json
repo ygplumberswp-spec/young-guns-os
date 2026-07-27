@@ -1,0 +1,148 @@
+{
+  "name": "YGOS - Quote Follow-Up (48h Rule)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "hours", "hoursInterval": 1 }]
+        }
+      },
+      "id": "trigger-schedule",
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/quotes/follow-up",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-stale-quotes",
+      "name": "Get Quotes > 48h No Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "conditions": [
+            {
+              "id": "has-quotes",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-quotes-check",
+      "name": "Has Stale Quotes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-quotes",
+      "name": "Split Into Individual Quotes",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/ai/sales/follow-up-quote/{{ $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "trigger-ai-follow-up",
+      "name": "Trigger AI Sales Follow-Up",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "QUOTE_FOLLOW_UP" },
+            { "name": "title", "value": "Quote Follow-Up Required" },
+            { "name": "body", "value": "Quote {{ $json.quoteNumber }} for {{ $json.customer.firstName }} {{ $json.customer.lastName }} has been pending for 48+ hours" },
+            { "name": "channel", "value": "IN_APP" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-sales-team",
+      "name": "Notify Sales Team",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/audit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "action", "value": "QUOTE_FOLLOW_UP_TRIGGERED" },
+            { "name": "resource", "value": "quotes" },
+            { "name": "resourceId", "value": "={{ $json.id }}" },
+            { "name": "metadata", "value": "={{ JSON.stringify({ workflow: '01-quote-follow-up', triggeredAt: new Date().toISOString() }) }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audit-log",
+      "name": "Audit Log",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Every Hour": { "main": [[{ "node": "Get Quotes > 48h No Response", "type": "main", "index": 0 }]] },
+    "Get Quotes > 48h No Response": { "main": [[{ "node": "Has Stale Quotes?", "type": "main", "index": 0 }]] },
+    "Has Stale Quotes?": { "main": [[{ "node": "Split Into Individual Quotes", "type": "main", "index": 0 }], []] },
+    "Split Into Individual Quotes": { "main": [[{ "node": "Trigger AI Sales Follow-Up", "type": "main", "index": 0 }]] },
+    "Trigger AI Sales Follow-Up": { "main": [[{ "node": "Notify Sales Team", "type": "main", "index": 0 }]] },
+    "Notify Sales Team": { "main": [[{ "node": "Audit Log", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [{ "name": "YGOS" }, { "name": "Sales" }, { "name": "Automation" }]
+}

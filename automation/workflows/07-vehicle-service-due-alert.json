@@ -1,0 +1,109 @@
+{
+  "name": "YGOS - Vehicle Service Due Alert",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 7 * * 1" }]
+        }
+      },
+      "id": "weekly-monday-7am",
+      "name": "Monday 7am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/fleet/service-due",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-service-due",
+      "name": "Get Vehicles Service Due",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-vehicles",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-vehicles",
+      "name": "Any Vehicles Due?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-vehicles",
+      "name": "Split Vehicles",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "const vehicle = $input.item.json;\nconst nextService = new Date(vehicle.nextServiceDate);\nconst now = new Date();\nconst daysUntil = Math.floor((nextService - now) / (1000 * 60 * 60 * 24));\n\nlet urgency = 'normal';\nif (daysUntil <= 0) urgency = 'overdue';\nelse if (daysUntil <= 7) urgency = 'urgent';\nelse if (daysUntil <= 14) urgency = 'upcoming';\n\nreturn {\n  json: {\n    ...vehicle,\n    daysUntilService: daysUntil,\n    urgency\n  }\n};"
+      },
+      "id": "calc-urgency",
+      "name": "Calculate Urgency",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "VEHICLE_SERVICE_DUE" },
+            { "name": "title", "value": "Vehicle Service {{ $json.urgency === 'overdue' ? 'OVERDUE' : 'Due Soon' }}" },
+            { "name": "body", "value": "{{ $json.registration }} ({{ $json.make }} {{ $json.model }}) - Service {{ $json.urgency === 'overdue' ? 'overdue by ' + Math.abs($json.daysUntilService) + ' days' : 'due in ' + $json.daysUntilService + ' days' }}. Current KM: {{ $json.currentKm }}" },
+            { "name": "channel", "value": "{{ $json.urgency === 'overdue' ? 'PUSH' : 'IN_APP' }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-fleet-manager",
+      "name": "Notify Fleet Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Monday 7am": { "main": [[{ "node": "Get Vehicles Service Due", "type": "main", "index": 0 }]] },
+    "Get Vehicles Service Due": { "main": [[{ "node": "Any Vehicles Due?", "type": "main", "index": 0 }]] },
+    "Any Vehicles Due?": { "main": [[{ "node": "Split Vehicles", "type": "main", "index": 0 }], []] },
+    "Split Vehicles": { "main": [[{ "node": "Calculate Urgency", "type": "main", "index": 0 }]] },
+    "Calculate Urgency": { "main": [[{ "node": "Notify Fleet Manager", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Fleet" }, { "name": "Maintenance" }]
+}

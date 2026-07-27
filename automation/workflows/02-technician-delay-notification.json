@@ -1,0 +1,159 @@
+{
+  "name": "YGOS - Technician Delay Auto-Notify Customer",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ygos/technician-delay",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook: Technician Delay",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "technician-delay"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "delay-threshold",
+              "leftValue": "={{ $json.body.delayMinutes }}",
+              "rightValue": "15",
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ]
+        }
+      },
+      "id": "delay-over-15min",
+      "name": "Delay > 15 Minutes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/jobs/{{ $json.body.jobId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-job-details",
+      "name": "Get Job Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [680, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.data.customer.id }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Hi {{ $json.data.customer.firstName }}, your Young Guns Plumbing technician is running approximately {{ $node['Webhook: Technician Delay'].json.body.delayMinutes }} minutes behind schedule. We apologise for the inconvenience and will be with you shortly. Call us on 1300 000 000 if you need to reschedule." }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-sms",
+      "name": "Send SMS to Customer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [900, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/ai/dispatcher/delay",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "jobId", "value": "={{ $node['Webhook: Technician Delay'].json.body.jobId }}" },
+            { "name": "delayMinutes", "value": "={{ $node['Webhook: Technician Delay'].json.body.delayMinutes }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-ai-dispatcher",
+      "name": "Notify AI Dispatcher",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "critical-delay",
+              "leftValue": "={{ $node['Webhook: Technician Delay'].json.body.delayMinutes }}",
+              "rightValue": "45",
+              "operator": { "type": "number", "operation": "gte" }
+            }
+          ]
+        }
+      },
+      "id": "critical-delay-check",
+      "name": "Critical Delay > 45min?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [1340, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "CRITICAL_DELAY" },
+            { "name": "title", "value": "CRITICAL: Technician Delay > 45min" },
+            { "name": "body", "value": "Job {{ $json.data.jobNumber }} - Technician delayed {{ $node['Webhook: Technician Delay'].json.body.delayMinutes }}min. Consider reassignment." },
+            { "name": "channel", "value": "PUSH" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "alert-operations",
+      "name": "Alert Operations Manager",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 100],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Technician Delay": { "main": [[{ "node": "Delay > 15 Minutes?", "type": "main", "index": 0 }]] },
+    "Delay > 15 Minutes?": { "main": [[{ "node": "Get Job Details", "type": "main", "index": 0 }], []] },
+    "Get Job Details": { "main": [[{ "node": "Send SMS to Customer", "type": "main", "index": 0 }]] },
+    "Send SMS to Customer": { "main": [[{ "node": "Notify AI Dispatcher", "type": "main", "index": 0 }]] },
+    "Notify AI Dispatcher": { "main": [[{ "node": "Critical Delay > 45min?", "type": "main", "index": 0 }]] },
+    "Critical Delay > 45min?": { "main": [[{ "node": "Alert Operations Manager", "type": "main", "index": 0 }], []] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Operations" }, { "name": "Customer Comms" }]
+}

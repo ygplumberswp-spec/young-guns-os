@@ -1,0 +1,126 @@
+{
+  "name": "YGOS - Warranty Expiry Notification",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 1 * *" }]
+        }
+      },
+      "id": "monthly-1st",
+      "name": "1st of Month 9am",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/warranties/expiring?daysAhead=30",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-expiring",
+      "name": "Get Expiring Warranties",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "has-expiring",
+              "leftValue": "={{ $json.data.length }}",
+              "rightValue": "0",
+              "operator": { "type": "number", "operation": "gt" }
+            }
+          ]
+        }
+      },
+      "id": "has-expiring",
+      "name": "Any Expiring?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-warranties",
+      "name": "Split Warranties",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "EMAIL" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "subject", "value": "Your Warranty is Expiring Soon" },
+            { "name": "content", "value": "Hi {{ $json.customer.firstName }},\n\nYour warranty for {{ $json.description }} (Job #{{ $json.job.jobNumber }}) expires on {{ $json.expiryDate }}.\n\nWant to extend your coverage? Contact us on 1300 000 000 or book a maintenance check to keep everything running smoothly.\n\nRegards,\nYoung Guns Plumbing" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-expiry-email",
+      "name": "Send Expiry Email",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "WARRANTY_EXPIRING" },
+            { "name": "title", "value": "Warranty Expiring: {{ $json.customer.lastName }}" },
+            { "name": "body", "value": "Warranty for {{ $json.description }} expires {{ $json.expiryDate }}. Opportunity to upsell extended warranty or maintenance plan." },
+            { "name": "channel", "value": "IN_APP" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-office",
+      "name": "Notify Office (Upsell Opportunity)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "1st of Month 9am": { "main": [[{ "node": "Get Expiring Warranties", "type": "main", "index": 0 }]] },
+    "Get Expiring Warranties": { "main": [[{ "node": "Any Expiring?", "type": "main", "index": 0 }]] },
+    "Any Expiring?": { "main": [[{ "node": "Split Warranties", "type": "main", "index": 0 }], []] },
+    "Split Warranties": { "main": [[{ "node": "Send Expiry Email", "type": "main", "index": 0 }]] },
+    "Send Expiry Email": { "main": [[{ "node": "Notify Office (Upsell Opportunity)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Warranty" }, { "name": "Customer Comms" }]
+}

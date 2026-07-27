@@ -1,0 +1,137 @@
+{
+  "name": "YGOS - Job Complete → Auto Generate Invoice",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ygos/job-completed",
+        "options": {}
+      },
+      "id": "webhook-job-complete",
+      "name": "Webhook: Job Completed",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "job-completed"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/jobs/{{ $json.body.jobId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-job",
+      "name": "Get Job Details",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "is-completed",
+              "leftValue": "={{ $json.data.status }}",
+              "rightValue": "COMPLETED",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        }
+      },
+      "id": "check-status",
+      "name": "Is Job Completed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const job = $input.item.json.data;\n\nconst lineItems = [];\n\n// Add labour charges\nif (job.timeEntries && job.timeEntries.length > 0) {\n  const totalMinutes = job.timeEntries.reduce((sum, entry) => {\n    const start = new Date(entry.startTime);\n    const end = new Date(entry.endTime);\n    return sum + (end - start) / 60000;\n  }, 0);\n  const hours = Math.ceil(totalMinutes / 30) * 0.5; // Round up to nearest 30min\n  lineItems.push({\n    description: `Labour - ${job.type} (${hours} hrs)`,\n    quantity: hours,\n    unitPrice: job.labourRate || 120,\n    gstIncluded: true\n  });\n}\n\n// Add materials from job\nif (job.materials && job.materials.length > 0) {\n  for (const mat of job.materials) {\n    lineItems.push({\n      description: mat.name,\n      quantity: mat.quantity,\n      unitPrice: mat.unitPrice,\n      gstIncluded: true\n    });\n  }\n}\n\nreturn {\n  json: {\n    customerId: job.customerId,\n    jobId: job.id,\n    lineItems,\n    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],\n    notes: `Invoice for ${job.type} - Job #${job.jobNumber}`\n  }\n};"
+      },
+      "id": "build-invoice",
+      "name": "Build Invoice Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/invoices",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "create-invoice",
+      "name": "Create Invoice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1120, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/xero/sync-invoice/{{ $json.data.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "allowUnauthorizedCerts": false }
+      },
+      "id": "sync-xero",
+      "name": "Sync to Xero",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1340, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "INVOICE_GENERATED" },
+            { "name": "title", "value": "Invoice Auto-Generated" },
+            { "name": "body", "value": "Invoice created for Job #{{ $node['Get Job Details'].json.data.jobNumber }}. Review and send to customer." },
+            { "name": "channel", "value": "IN_APP" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "notify-office",
+      "name": "Notify Office",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1560, 200],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook: Job Completed": { "main": [[{ "node": "Get Job Details", "type": "main", "index": 0 }]] },
+    "Get Job Details": { "main": [[{ "node": "Is Job Completed?", "type": "main", "index": 0 }]] },
+    "Is Job Completed?": { "main": [[{ "node": "Build Invoice Data", "type": "main", "index": 0 }], []] },
+    "Build Invoice Data": { "main": [[{ "node": "Create Invoice", "type": "main", "index": 0 }]] },
+    "Create Invoice": { "main": [[{ "node": "Sync to Xero", "type": "main", "index": 0 }]] },
+    "Sync to Xero": { "main": [[{ "node": "Notify Office", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Finance" }, { "name": "Automation" }]
+}

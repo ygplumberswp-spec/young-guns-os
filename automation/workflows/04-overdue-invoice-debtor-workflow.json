@@ -1,0 +1,194 @@
+{
+  "name": "YGOS - Overdue Invoice Debtor Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{ "field": "cronExpression", "expression": "0 9 * * 1-5" }]
+        }
+      },
+      "id": "schedule-9am-weekdays",
+      "name": "9am Weekdays",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/invoices/overdue",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "get-overdue",
+      "name": "Get Overdue Invoices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [460, 300],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "options": {}
+      },
+      "id": "split-invoices",
+      "name": "Split Invoices",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const invoice = $input.item.json;\nconst dueDate = new Date(invoice.dueDate);\nconst now = new Date();\nconst daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24));\n\nlet action = 'none';\nlet escalation = 'low';\n\nif (daysOverdue <= 7) {\n  action = 'friendly_reminder';\n  escalation = 'low';\n} else if (daysOverdue <= 14) {\n  action = 'second_reminder';\n  escalation = 'medium';\n} else if (daysOverdue <= 30) {\n  action = 'final_notice';\n  escalation = 'high';\n} else {\n  action = 'debt_collection';\n  escalation = 'critical';\n}\n\nreturn {\n  json: {\n    ...invoice,\n    daysOverdue,\n    action,\n    escalation\n  }\n};"
+      },
+      "id": "calculate-escalation",
+      "name": "Calculate Escalation Level",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "rules": [
+            { "output": 0, "conditions": { "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "friendly_reminder", "operator": { "type": "string", "operation": "equals" } }] } },
+            { "output": 1, "conditions": { "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "second_reminder", "operator": { "type": "string", "operation": "equals" } }] } },
+            { "output": 2, "conditions": { "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "final_notice", "operator": { "type": "string", "operation": "equals" } }] } },
+            { "output": 3, "conditions": { "conditions": [{ "leftValue": "={{ $json.action }}", "rightValue": "debt_collection", "operator": { "type": "string", "operation": "equals" } }] } }
+          ]
+        }
+      },
+      "id": "route-by-action",
+      "name": "Route by Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "SMS" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "content", "value": "Hi {{ $json.customer.firstName }}, this is a friendly reminder that invoice {{ $json.invoiceNumber }} for ${{ $json.total }} is now overdue. Please arrange payment at your earliest convenience. Call us on 1300 000 000 if you have any questions." }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-friendly-reminder",
+      "name": "Send Friendly SMS Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 100],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "EMAIL" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "subject", "value": "Second Reminder: Invoice {{ $json.invoiceNumber }} Overdue" },
+            { "name": "content", "value": "Dear {{ $json.customer.firstName }},\n\nThis is a second reminder regarding invoice {{ $json.invoiceNumber }} for ${{ $json.total }}, which is now {{ $json.daysOverdue }} days overdue.\n\nPlease arrange payment within 7 days to avoid further action.\n\nRegards,\nYoung Guns Plumbing" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-second-reminder",
+      "name": "Send Email - Second Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 250],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/communications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "customerId", "value": "={{ $json.customerId }}" },
+            { "name": "channel", "value": "EMAIL" },
+            { "name": "direction", "value": "OUTBOUND" },
+            { "name": "subject", "value": "FINAL NOTICE: Invoice {{ $json.invoiceNumber }}" },
+            { "name": "content", "value": "Dear {{ $json.customer.firstName }},\n\nThis is a final notice regarding invoice {{ $json.invoiceNumber }} for ${{ $json.total }}, which is now {{ $json.daysOverdue }} days overdue.\n\nIf payment is not received within 7 days, this account will be referred to our debt recovery team.\n\nPlease contact us immediately on 1300 000 000 to arrange payment.\n\nRegards,\nYoung Guns Plumbing" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "send-final-notice",
+      "name": "Send Final Notice",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 400],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.YGOS_API_URL}}/api/v1/notifications",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "type", "value": "DEBT_COLLECTION_REQUIRED" },
+            { "name": "title", "value": "URGENT: Debt Collection Required" },
+            { "name": "body", "value": "Invoice {{ $json.invoiceNumber }} (${{ $json.total }}) for {{ $json.customer.firstName }} {{ $json.customer.lastName }} is {{ $json.daysOverdue }} days overdue. Refer to debt collection." },
+            { "name": "channel", "value": "PUSH" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "escalate-debt-collection",
+      "name": "Escalate to Debt Collection",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [1400, 550],
+      "credentials": {
+        "httpHeaderAuth": { "id": "ygos-api-key", "name": "YGOS API Auth" }
+      }
+    }
+  ],
+  "connections": {
+    "9am Weekdays": { "main": [[{ "node": "Get Overdue Invoices", "type": "main", "index": 0 }]] },
+    "Get Overdue Invoices": { "main": [[{ "node": "Split Invoices", "type": "main", "index": 0 }]] },
+    "Split Invoices": { "main": [[{ "node": "Calculate Escalation Level", "type": "main", "index": 0 }]] },
+    "Calculate Escalation Level": { "main": [[{ "node": "Route by Action", "type": "main", "index": 0 }]] },
+    "Route by Action": {
+      "main": [
+        [{ "node": "Send Friendly SMS Reminder", "type": "main", "index": 0 }],
+        [{ "node": "Send Email - Second Reminder", "type": "main", "index": 0 }],
+        [{ "node": "Send Final Notice", "type": "main", "index": 0 }],
+        [{ "node": "Escalate to Debt Collection", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "tags": [{ "name": "YGOS" }, { "name": "Finance" }, { "name": "Debtors" }]
+}
