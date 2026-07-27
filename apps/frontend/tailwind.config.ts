@@ -5,6 +5,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        border: 'hsl(var(--border))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
         brand: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -17,14 +40,14 @@ const config: Config = {
           800: '#1e3a8a',
           900: '#172554',
         },
-        accent: {
-          50: '#fef3c7',
-          100: '#fde68a',
-          200: '#fcd34d',
-          300: '#fbbf24',
-          400: '#f59e0b',
-          500: '#d97706',
-        },
+      },
+      borderColor: {
+        DEFAULT: 'hsl(var(--border))',
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
     },
   },
