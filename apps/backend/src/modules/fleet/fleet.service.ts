@@ -77,17 +77,17 @@ export class FleetService {
     }));
   }
 
-  async getVehiclesNeedingService(branchId: string) {
+  async getVehiclesNeedingService(branchId?: string) {
     const now = new Date();
-    return this.prisma.vehicle.findMany({
-      where: {
-        branchId,
-        OR: [
-          { nextServiceDate: { lte: now } },
-          { insuranceExpiry: { lte: now } },
-          { regoExpiry: { lte: now } },
-        ],
-      },
-    });
+    const where: Record<string, unknown> = {
+      OR: [
+        { nextServiceDate: { lte: now } },
+        { insuranceExpiry: { lte: now } },
+        { regoExpiry: { lte: now } },
+      ],
+    };
+    if (branchId) where.branchId = branchId;
+
+    return this.prisma.vehicle.findMany({ where });
   }
 }

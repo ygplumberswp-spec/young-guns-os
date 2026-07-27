@@ -29,6 +29,11 @@ enum CustomerSource {
 }
 
 export class CreateCustomerDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  branchId?: string;
+
   @ApiProperty({ enum: CustomerType, default: CustomerType.RESIDENTIAL })
   @IsOptional()
   @IsEnum(CustomerType)

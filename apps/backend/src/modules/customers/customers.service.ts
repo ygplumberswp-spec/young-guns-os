@@ -9,20 +9,25 @@ export class CustomersService {
   constructor(private prisma: PrismaService) {}
 
   async create(organizationId: string, dto: CreateCustomerDto) {
+    const { branchId, ...customerData } = dto;
     return this.prisma.customer.create({
       data: {
         organizationId,
-        ...dto,
+        ...customerData,
       },
       include: { properties: true },
     });
   }
 
-  async findAll(organizationId: string, pagination: PaginationDto) {
-    const { page = 1, limit = 20, search } = pagination;
+  async findAll(organizationId: string, pagination: PaginationDto & { phone?: string }) {
+    const { page = 1, limit = 20, search, phone } = pagination;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = { organizationId };
+
+    if (phone) {
+      where.phone = { contains: phone };
+    }
 
     if (search) {
       where.OR = [

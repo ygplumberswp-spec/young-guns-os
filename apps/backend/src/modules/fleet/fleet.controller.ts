@@ -55,4 +55,11 @@ export class FleetController {
   getMaintenanceDue(@Query('branchId') branchId: string) {
     return this.fleetService.getVehiclesNeedingService(branchId);
   }
+
+  @Get('service-due')
+  @RequirePermissions('fleet:read')
+  @ApiOperation({ summary: 'Get vehicles with service due (alias)' })
+  getServiceDue(@Query('branchId') branchId?: string) {
+    return this.fleetService.getVehiclesNeedingService(branchId || '');
+  }
 }

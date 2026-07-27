@@ -74,4 +74,19 @@ export class AiController {
   handleDelay(@Body() dto: { jobId: string; delayMinutes: number }) {
     return this.dispatcher.handleDelay(dto.jobId, dto.delayMinutes);
   }
+
+  @Post('dispatcher/auto-assign')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('ai:execute')
+  @ApiOperation({ summary: 'Auto-assign a job via AI dispatcher' })
+  autoAssign(@Body() dto: { jobId: string }) {
+    return this.dispatcher.autoAssign(dto.jobId);
+  }
+
+  @Post('receptionist/handle-call')
+  @ApiOperation({ summary: 'AI Receptionist handles an inbound call (n8n compatible)' })
+  handleCallN8n(@Body() dto: { callerNumber: string; customerId?: string; customerName?: string; isReturning: string; callType?: string; branchId?: string }) {
+    return this.receptionist.handleIncomingCall(dto.callerNumber, dto.branchId || 'default');
+  }
 }

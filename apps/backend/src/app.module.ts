@@ -30,6 +30,7 @@ import { WarrantyModule } from './modules/warranty/warranty.module';
 import { MaintenanceModule } from './modules/maintenance/maintenance.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 import { CommunicationsModule } from './modules/communications/communications.module';
+import { XeroModule } from './modules/xero/xero.module';
 import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
 
 @Module({
@@ -73,6 +74,7 @@ import { MultiBranchModule } from './modules/multi-branch/multi-branch.module';
     MaintenanceModule,
     ReportingModule,
     CommunicationsModule,
+    XeroModule,
     MultiBranchModule,
   ],
 })

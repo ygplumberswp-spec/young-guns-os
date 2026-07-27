@@ -121,6 +121,48 @@ Business Rules:
     };
   }
 
+  async autoAssign(jobId: string): Promise<AiResponse> {
+    const job = await this.prisma.job.findUnique({
+      where: { id: jobId },
+      include: { property: true },
+    });
+
+    if (!job) {
+      return { content: 'Job not found', shouldEscalate: false, metadata: {} };
+    }
+
+    const technicians = await this.prisma.technicianProfile.findMany({
+      where: { isAvailable: true, user: { isActive: true } },
+      include: { user: true },
+    });
+
+    const allJobs = await this.prisma.job.findMany({
+      where: { status: { in: ['SCHEDULED', 'DISPATCHED', 'EN_ROUTE', 'ON_SITE', 'IN_PROGRESS'] } },
+    });
+
+    const bestTech = this.findBestTechnician(job, technicians, allJobs);
+
+    if (bestTech) {
+      await this.prisma.job.update({
+        where: { id: jobId },
+        data: { assignedToId: bestTech.userId, status: 'SCHEDULED' },
+      });
+
+      return {
+        content: `Job auto-assigned to ${bestTech.user.firstName} ${bestTech.user.lastName}`,
+        shouldEscalate: false,
+        metadata: { jobId, technicianId: bestTech.userId },
+      };
+    }
+
+    return {
+      content: 'No available technician found for auto-assignment',
+      shouldEscalate: true,
+      escalationReason: 'No technician available',
+      metadata: { jobId },
+    };
+  }
+
   private findBestTechnician(
     job: any,
     technicians: any[],

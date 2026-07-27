@@ -17,8 +17,10 @@ export class InvoicesController {
   @Post()
   @RequirePermissions('invoices:create')
   @ApiOperation({ summary: 'Create an invoice' })
-  create(@CurrentUser('id') userId: string, @Body() dto: any) {
-    return this.invoicesService.create(dto.branchId, userId, dto);
+  create(@CurrentUser('id') userId: string, @CurrentUser('branches') branches: string[], @Body() dto: any) {
+    const items = dto.items || dto.lineItems || [];
+    const branchId = dto.branchId || branches[0];
+    return this.invoicesService.create(branchId, userId, { ...dto, items });
   }
 
   @Get()

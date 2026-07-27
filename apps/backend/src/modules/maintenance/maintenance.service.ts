@@ -59,6 +59,13 @@ export class MaintenanceService {
     return { processed: reminders.length };
   }
 
+  async markReminded(id: string) {
+    return this.prisma.maintenanceSchedule.update({
+      where: { id },
+      data: { reminderSent: true },
+    });
+  }
+
   async completeService(id: string) {
     const schedule = await this.prisma.maintenanceSchedule.findUnique({ where: { id } });
     if (!schedule) return;

@@ -44,13 +44,17 @@ export class ReferralsService {
   }
 
   async getTopReferrers(limit = 10) {
-    const referrals = await this.prisma.referral.groupBy({
-      by: ['referrerId'],
-      _count: true,
-      where: { status: 'CONVERTED' },
-      orderBy: { _count: { referrerId: 'desc' } },
-      take: limit,
-    });
-    return referrals;
+    try {
+      const referrals = await this.prisma.referral.groupBy({
+        by: ['referrerId'],
+        _count: true,
+        where: { status: 'CONVERTED' },
+        orderBy: { _count: { referrerId: 'desc' } },
+        take: limit,
+      });
+      return referrals;
+    } catch {
+      return [];
+    }
   }
 }

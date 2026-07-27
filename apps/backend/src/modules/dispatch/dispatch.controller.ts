@@ -30,6 +30,17 @@ export class DispatchController {
     return this.dispatchService.getDispatchBoard(branchId, targetDate);
   }
 
+  @Get('technicians')
+  @RequirePermissions('dispatch:read')
+  @ApiOperation({ summary: 'Get technicians (alias)' })
+  getTechnicians(
+    @Query('branchId') branchId: string,
+    @Query('date') date?: string,
+  ) {
+    const targetDate = date ? new Date(date) : new Date();
+    return this.dispatchService.getAvailableTechnicians(branchId, targetDate);
+  }
+
   @Get('technicians/available')
   @RequirePermissions('dispatch:read')
   @ApiOperation({ summary: 'Get available technicians' })

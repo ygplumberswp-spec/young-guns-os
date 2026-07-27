@@ -41,8 +41,9 @@ export class CustomersController {
   findAll(
     @CurrentUser('organizationId') orgId: string,
     @Query() pagination: PaginationDto,
+    @Query('phone') phone?: string,
   ) {
-    return this.customersService.findAll(orgId, pagination);
+    return this.customersService.findAll(orgId, { ...pagination, phone });
   }
 
   @Get('top')

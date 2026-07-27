@@ -26,7 +26,8 @@ export class BookingsController {
   @Post()
   @RequirePermissions('bookings:create')
   @ApiOperation({ summary: 'Create a new booking' })
-  create(@Query('branchId') branchId: string, @Body() dto: CreateBookingDto) {
+  create(@Query('branchId') queryBranchId: string, @Body() dto: CreateBookingDto) {
+    const branchId = queryBranchId || dto.branchId || '';
     return this.bookingsService.create(branchId, dto);
   }
 
@@ -67,5 +68,13 @@ export class BookingsController {
   @ApiOperation({ summary: 'Cancel a booking' })
   cancel(@Param('id') id: string) {
     return this.bookingsService.cancel(id);
+  }
+
+  @Post(':id/convert-to-job')
+  @RequirePermissions('bookings:update')
+  @ApiOperation({ summary: 'Convert a booking into a job' })
+  async convertToJob(@Param('id') id: string) {
+    const booking = await this.bookingsService.findById(id);
+    return this.bookingsService.convertToJob(id, booking.jobId || id);
   }
 }

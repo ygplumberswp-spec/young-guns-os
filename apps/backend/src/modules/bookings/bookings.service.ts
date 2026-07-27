@@ -8,15 +8,16 @@ export class BookingsService {
   constructor(private prisma: PrismaService) {}
 
   async create(branchId: string, dto: CreateBookingDto) {
+    const dateStr = dto.preferredDate || dto.scheduledDate;
     return this.prisma.booking.create({
       data: {
         branchId,
-        customerName: dto.customerName,
-        customerPhone: dto.customerPhone,
+        customerName: dto.customerName || 'N/A',
+        customerPhone: dto.customerPhone || '',
         customerEmail: dto.customerEmail,
-        preferredDate: new Date(dto.preferredDate),
+        preferredDate: dateStr ? new Date(dateStr) : new Date(),
         preferredTimeSlot: dto.preferredTimeSlot,
-        source: dto.source,
+        source: dto.source as any,
         notes: dto.notes,
         aiSummary: dto.aiSummary,
       },

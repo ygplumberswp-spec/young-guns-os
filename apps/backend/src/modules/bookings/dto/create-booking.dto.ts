@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsEmail } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, IsEmail, Allow } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 enum BookingSource {
@@ -11,22 +11,40 @@ enum BookingSource {
 }
 
 export class CreateBookingDto {
-  @ApiProperty({ example: 'John Smith' })
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  customerName: string;
+  branchId?: string;
 
-  @ApiProperty({ example: '0412345678' })
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  customerPhone: string;
+  customerId?: string;
+
+  @ApiPropertyOptional({ example: 'John Smith' })
+  @IsOptional()
+  @IsString()
+  customerName?: string;
+
+  @ApiPropertyOptional({ example: '0412345678' })
+  @IsOptional()
+  @IsString()
+  customerPhone?: string;
 
   @ApiPropertyOptional({ example: 'john@example.com' })
   @IsOptional()
   @IsEmail()
   customerEmail?: string;
 
-  @ApiProperty()
-  @IsDateString()
-  preferredDate: string;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  preferredDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  scheduledDate?: string;
 
   @ApiPropertyOptional({ example: '09:00-11:00' })
   @IsOptional()
@@ -41,10 +59,24 @@ export class CreateBookingDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
+  type?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
   notes?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   aiSummary?: string;
+
+  @IsOptional()
+  @Allow()
+  metadata?: any;
 }

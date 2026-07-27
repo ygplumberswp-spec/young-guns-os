@@ -41,6 +41,15 @@ export class XeroController {
     return this.xeroService.syncInvoiceToXero(invoiceId);
   }
 
+  @Post('sync-invoice/:invoiceId')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @RequirePermissions('invoices:update')
+  @ApiOperation({ summary: 'Sync invoice to Xero (n8n compatible)' })
+  syncInvoiceAlias(@Param('invoiceId') invoiceId: string) {
+    return this.xeroService.syncInvoiceToXero(invoiceId);
+  }
+
   @Post('sync/contact/:customerId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

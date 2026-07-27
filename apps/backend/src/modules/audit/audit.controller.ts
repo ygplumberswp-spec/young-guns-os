@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
@@ -13,6 +13,23 @@ import { CurrentUser } from '../../decorators/current-user.decorator';
 @ApiBearerAuth()
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create an audit log entry' })
+  create(
+    @CurrentUser('organizationId') orgId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: { action: string; resource: string; resourceId?: string; metadata?: Record<string, unknown> },
+  ) {
+    return this.auditService.log({
+      organizationId: orgId,
+      userId,
+      action: dto.action,
+      resource: dto.resource,
+      resourceId: dto.resourceId,
+      metadata: dto.metadata,
+    });
+  }
 
   @Get()
   @RequirePermissions('audit:read')
