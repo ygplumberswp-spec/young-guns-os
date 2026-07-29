@@ -47,6 +47,15 @@ import type { FleetIntelligenceService } from './fleet-intelligence.service.js';
 import type { PersonalCommunicationsIntelligenceService } from './personal-communications-intelligence.service.js';
 import type { EnterpriseSecurityService } from './enterprise-security.service.js';
 import type { EnterpriseAutomationStudioService } from './enterprise-automation-studio.service.js';
+import type { EnterpriseKnowledgeGraphService } from './enterprise-knowledge-graph.service.js';
+import type { EnterpriseMissionControlService } from './enterprise-mission-control.service.js';
+import type { EnterpriseEvolutionService } from './enterprise-evolution.service.js';
+import type { EnterpriseDeveloperPlatformService } from './enterprise-developer-platform.service.js';
+import type { EnterpriseSaasPlatformService } from './enterprise-saas-platform.service.js';
+import type { AiProviderResilienceService } from './ai-provider-resilience.service.js';
+import { AiProviderResilienceError } from './ai-provider-resilience.service.js';
+import { AiOperationsError } from './ai-operations.service.js';
+import type { EnterpriseDigitalTwinService } from './enterprise-digital-twin.service.js';
 import type { IntegrationPlatformService } from './integration-platform.service.js';
 import type { EnterpriseAnalyticsService } from './enterprise-analytics.service.js';
 import type { TeamService } from './team.service.js';
@@ -117,6 +126,13 @@ type AuraServiceDeps = {
   integrationPlatformService: IntegrationPlatformService;
   enterpriseAnalyticsService: EnterpriseAnalyticsService;
   enterpriseAutomationStudioService: EnterpriseAutomationStudioService;
+  enterpriseDigitalTwinService: EnterpriseDigitalTwinService;
+  enterpriseKnowledgeGraphService: EnterpriseKnowledgeGraphService;
+  enterpriseMissionControlService: EnterpriseMissionControlService;
+  enterpriseEvolutionService: EnterpriseEvolutionService;
+  enterpriseDeveloperPlatformService: EnterpriseDeveloperPlatformService;
+  enterpriseSaasPlatformService: EnterpriseSaasPlatformService;
+  aiProviderResilienceService: AiProviderResilienceService;
   teamService: TeamService;
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
@@ -171,6 +187,13 @@ export class AuraService {
   private readonly integrationPlatformService: IntegrationPlatformService;
   private readonly enterpriseAnalyticsService: EnterpriseAnalyticsService;
   private readonly enterpriseAutomationStudioService: EnterpriseAutomationStudioService;
+  private readonly enterpriseDigitalTwinService: EnterpriseDigitalTwinService;
+  private readonly enterpriseKnowledgeGraphService: EnterpriseKnowledgeGraphService;
+  private readonly enterpriseMissionControlService: EnterpriseMissionControlService;
+  private readonly enterpriseEvolutionService: EnterpriseEvolutionService;
+  private readonly enterpriseDeveloperPlatformService: EnterpriseDeveloperPlatformService;
+  private readonly enterpriseSaasPlatformService: EnterpriseSaasPlatformService;
+  private readonly aiProviderResilienceService: AiProviderResilienceService;
   private readonly teamService: TeamService;
   private readonly intelligenceService: IntelligenceService;
   private readonly recommendationsService: RecommendationsService;
@@ -224,6 +247,13 @@ export class AuraService {
     integrationPlatformService,
     enterpriseAnalyticsService,
     enterpriseAutomationStudioService,
+    enterpriseDigitalTwinService,
+    enterpriseKnowledgeGraphService,
+    enterpriseMissionControlService,
+    enterpriseEvolutionService,
+    enterpriseDeveloperPlatformService,
+    enterpriseSaasPlatformService,
+    aiProviderResilienceService,
     teamService,
     intelligenceService,
     recommendationsService,
@@ -276,6 +306,13 @@ export class AuraService {
     this.integrationPlatformService = integrationPlatformService;
     this.enterpriseAnalyticsService = enterpriseAnalyticsService;
     this.enterpriseAutomationStudioService = enterpriseAutomationStudioService;
+    this.enterpriseDigitalTwinService = enterpriseDigitalTwinService;
+    this.enterpriseKnowledgeGraphService = enterpriseKnowledgeGraphService;
+    this.enterpriseMissionControlService = enterpriseMissionControlService;
+    this.enterpriseEvolutionService = enterpriseEvolutionService;
+    this.enterpriseDeveloperPlatformService = enterpriseDeveloperPlatformService;
+    this.enterpriseSaasPlatformService = enterpriseSaasPlatformService;
+    this.aiProviderResilienceService = aiProviderResilienceService;
     this.teamService = teamService;
     this.intelligenceService = intelligenceService;
     this.recommendationsService = recommendationsService;
@@ -384,10 +421,10 @@ export class AuraService {
       throw new AuraError('EMPTY_MESSAGE', 'Message content is required');
     }
 
-    if (!this.provider) {
+    if (!this.provider && !(await this.aiProviderResilienceService.hasConfiguredProviders(scope.companyId))) {
       throw new AuraError(
         'PROVIDER_NOT_CONFIGURED',
-        'AURA AI provider is not configured. Set AURA_OPENAI_API_KEY in the server environment.',
+        'No AI providers are configured. Configure tenant providers or set AURA_OPENAI_API_KEY.',
       );
     }
 
@@ -438,11 +475,27 @@ export class AuraService {
     let assistantContent: string;
 
     try {
-      assistantContent = await this.provider.generate({
-        messages: [...priorMessages, { role: 'user', content: trimmed }],
-        context,
-      });
+      const result = await this.aiProviderResilienceService.generate(
+        scope.companyId,
+        {
+          messages: [...priorMessages, { role: 'user', content: trimmed }],
+          context,
+        },
+        {
+          operationType: 'conversation',
+          routingCategory: 'summarization',
+          conversationId,
+          userId: scope.userId,
+        },
+      );
+      assistantContent = result.content;
     } catch (error) {
+      if (error instanceof AiOperationsError) {
+        throw new AuraError(error.code, error.message);
+      }
+      if (error instanceof AiProviderResilienceError) {
+        throw new AuraError(error.code, error.message);
+      }
       if (error instanceof AuraProviderError) {
         throw new AuraError(error.code, error.message);
       }
@@ -728,6 +781,40 @@ export class AuraService {
       const enterpriseAutomationStudio =
         await this.enterpriseAutomationStudioService.buildAutomationAuraContext(companyId);
       context = { ...context, enterpriseAutomationStudio };
+    }
+
+    if (hasAnyPermission(permissions, ['knowledge:read', 'knowledge:write', 'agents:read'])) {
+      const enterpriseKnowledgeGraph =
+        await this.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
+      context = { ...context, enterpriseKnowledgeGraph };
+    }
+
+    if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {
+      const enterpriseDigitalTwin =
+        await this.enterpriseDigitalTwinService.buildDigitalTwinAuraContext(companyId);
+      context = { ...context, enterpriseDigitalTwin };
+    }
+
+    if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {
+      const enterpriseMissionControl =
+        await this.enterpriseMissionControlService.buildMissionControlAuraContext(companyId);
+      context = { ...context, enterpriseMissionControl };
+    }
+
+    if (hasAnyPermission(permissions, ['intelligence:read', 'executive:read', 'executive:write', 'agents:read'])) {
+      const enterpriseEvolution = await this.enterpriseEvolutionService.buildEvolutionAuraContext(companyId);
+      context = { ...context, enterpriseEvolution };
+    }
+
+    if (hasAnyPermission(permissions, ['integrations:read', 'integrations:manage', 'agents:read'])) {
+      const enterpriseDeveloperPlatform =
+        await this.enterpriseDeveloperPlatformService.buildDeveloperAuraContext(companyId);
+      context = { ...context, enterpriseDeveloperPlatform };
+    }
+
+    if (hasAnyPermission(permissions, ['saas:read', 'saas:manage', 'platform:read', 'agents:read'])) {
+      const enterpriseSaasPlatform = await this.enterpriseSaasPlatformService.buildSaasAuraContext(companyId);
+      context = { ...context, enterpriseSaasPlatform };
     }
 
     if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {

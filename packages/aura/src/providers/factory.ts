@@ -23,3 +23,5 @@ export function createAuraProvider(config: AuraConfig): AuraProvider {
     `Unsupported AURA provider: ${config.provider}`,
   );
 }
+
+export { createRuntimeAuraProvider, resolveDefaultBaseUrl, type RuntimeProviderConfig } from './runtime.factory.js';

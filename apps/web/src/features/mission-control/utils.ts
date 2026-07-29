@@ -1,0 +1,24 @@
+export function canAccessMissionControl(permissions: string[]): boolean {
+  return (
+    permissions.includes('*') ||
+    permissions.includes('executive:read') ||
+    permissions.includes('executive:write') ||
+    permissions.includes('intelligence:read')
+  );
+}
+
+export function canManageMissionControl(permissions: string[]): boolean {
+  return permissions.includes('*') || permissions.includes('executive:write');
+}
+
+export function formatModuleName(module: string): string {
+  return module.replace(/_/g, ' ');
+}
+
+export function formatSeverity(severity: string): string {
+  return severity.replace(/_/g, ' ');
+}
+
+export function formatStatus(status: string): string {
+  return status.replace(/_/g, ' ');
+}

@@ -13,7 +13,12 @@ const NAV_ITEMS = [
   { href: '/portal/quotes', label: 'Quotes' },
   { href: '/portal/finance', label: 'Finance' },
   { href: '/portal/appointments', label: 'Appointments' },
+  { href: '/portal/documents', label: 'Documents' },
   { href: '/portal/communications', label: 'Communications' },
+  { href: '/portal/profile', label: 'Profile' },
+  { href: '/portal/feedback', label: 'Feedback' },
+  { href: '/portal/loyalty', label: 'Loyalty' },
+  { href: '/portal/assets', label: 'Assets' },
   { href: '/portal/knowledge', label: 'Knowledge' },
   { href: '/portal/notifications', label: 'Notifications' },
 ];

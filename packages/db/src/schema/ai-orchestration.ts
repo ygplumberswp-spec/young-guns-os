@@ -12,6 +12,8 @@ export const aiProviderKeyEnum = pgEnum('ai_provider_key', [
   'ollama',
   'azure_openai',
   'openrouter',
+  'groq',
+  'mistral',
   'custom',
 ]);
 
@@ -68,6 +70,14 @@ export const aiFailoverReasonEnum = pgEnum('ai_failover_reason', [
   'timeout',
   'rate_limit',
   'degraded_performance',
+  'credit_exhausted',
+  'context_window_exceeded',
+]);
+
+export const aiAccessModeEnum = pgEnum('ai_access_mode', [
+  'platform_managed',
+  'tenant_credentials',
+  'hybrid',
 ]);
 
 export const aiMemoryContextTypeEnum = pgEnum('ai_memory_context_type', [
@@ -277,3 +287,81 @@ export type AiRoutingRule = typeof aiRoutingRules.$inferSelect;
 export type AiPromptTemplate = typeof aiPromptTemplates.$inferSelect;
 export type AiPromptVersion = typeof aiPromptVersions.$inferSelect;
 export type AiConfigurationAction = typeof aiConfigurationActions.$inferSelect;
+
+export const aiProviderResilienceConfigs = pgTable('ai_provider_resilience_configs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .unique()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  fallbackOrder: jsonb('fallback_order')
+    .$type<Array<{ providerKey: string; modelKey?: string; providerId?: string }>>()
+    .notNull()
+    .default([]),
+  maxRetries: integer('max_retries').notNull().default(3),
+  retryBaseDelayMs: integer('retry_base_delay_ms').notNull().default(500),
+  queueEnabled: boolean('queue_enabled').notNull().default(true),
+  lowCreditWarningCents: integer('low_credit_warning_cents').notNull().default(1000),
+  highUsageWarningTokens: integer('high_usage_warning_tokens').notNull().default(500_000),
+  hardSpendingLimitEnabled: boolean('hard_spending_limit_enabled').notNull().default(false),
+  hardSpendingLimitCents: integer('hard_spending_limit_cents'),
+  taskRoutingEnabled: boolean('task_routing_enabled').notNull().default(true),
+  aiAccessMode: aiAccessModeEnum('ai_access_mode').notNull().default('platform_managed'),
+  blockedCategories: jsonb('blocked_categories').$type<string[]>().notNull().default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const aiComparisonRuns = pgTable('ai_comparison_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  subject: text('subject').notNull(),
+  taskPrompt: text('task_prompt').notNull(),
+  routingCategory: aiRoutingCategoryEnum('routing_category'),
+  status: text('status').notNull().default('pending_approval'),
+  consolidatedRecommendation: text('consolidated_recommendation'),
+  disagreementSummary: text('disagreement_summary'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const aiComparisonResults = pgTable('ai_comparison_results', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  comparisonRunId: uuid('comparison_run_id')
+    .notNull()
+    .references(() => aiComparisonRuns.id, { onDelete: 'cascade' }),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  providerId: uuid('provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
+  providerKey: aiProviderKeyEnum('provider_key').notNull(),
+  modelKey: text('model_key').notNull(),
+  responseContent: text('response_content').notNull(),
+  promptTokens: integer('prompt_tokens').notNull().default(0),
+  completionTokens: integer('completion_tokens').notNull().default(0),
+  latencyMs: integer('latency_ms'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const aiRequestQueue = pgTable('ai_request_queue', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  companyId: uuid('company_id')
+    .notNull()
+    .references(() => companies.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  status: text('status').notNull().default('pending'),
+  operationType: text('operation_type').notNull(),
+  routingCategory: text('routing_category'),
+  payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
+  attempts: integer('attempts').notNull().default(0),
+  maxAttempts: integer('max_attempts').notNull().default(5),
+  lastError: text('last_error'),
+  scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull().defaultNow(),
+  processedAt: timestamp('processed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

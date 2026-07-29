@@ -1,4 +1,5 @@
 import type {
+  AiComparisonRunSummary,
   AiConfigurationActionSummary,
   AiExecutiveDashboard,
   AiModelSummary,
@@ -6,9 +7,12 @@ import type {
   AiPromptVersionSummary,
   AiProviderSummary,
   AiRoutingRuleSummary,
+  CreateAiComparisonRunRequest,
   CreateAiConfigurationActionRequest,
   CreateAiPromptTemplateRequest,
   CreateAiProviderRequest,
+  SyncAiMemoryRequest,
+  UnifiedAiGatewayStatus,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
 
@@ -77,4 +81,42 @@ export async function createAiConfigurationAction(accessToken: string, body: Cre
     body,
   });
   return data.action;
+}
+
+export async function fetchAiGatewayStatus(accessToken: string) {
+  const data = await request<{ status: UnifiedAiGatewayStatus }>('/ai-orchestration/gateway/status', {
+    accessToken,
+  });
+  return data.status;
+}
+
+export async function fetchAiFailovers(accessToken: string) {
+  const data = await request<{ failovers: Array<{ id: string; reason: string; loggedAt: string }> }>(
+    '/ai-orchestration/failovers',
+    { accessToken },
+  );
+  return data.failovers;
+}
+
+export async function fetchAiComparisonRuns(accessToken: string) {
+  const data = await request<{ runs: AiComparisonRunSummary[] }>('/ai-orchestration/comparisons', { accessToken });
+  return data.runs;
+}
+
+export async function createAiComparisonRun(accessToken: string, body: CreateAiComparisonRunRequest) {
+  const data = await request<{ run: AiComparisonRunSummary }>('/ai-orchestration/comparisons', {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+  return data.run;
+}
+
+export async function syncAiMemory(accessToken: string, body: SyncAiMemoryRequest) {
+  const data = await request<{ syncRecordId: string; deduplicated: boolean }>('/ai-orchestration/memory-sync', {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+  return data;
 }

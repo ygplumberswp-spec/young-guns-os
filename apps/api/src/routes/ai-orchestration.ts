@@ -2,6 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { AiOrchestrationService } from '../services/ai-orchestration.service.js';
 import { AiOrchestrationError } from '../services/ai-orchestration.service.js';
+import type { AiUnifiedGatewayService } from '../services/ai-unified-gateway.service.js';
+import type { AiMemorySyncService } from '../services/ai-memory-sync.service.js';
+import type { AiComparisonService } from '../services/ai-comparison.service.js';
+import { AiComparisonError } from '../services/ai-comparison.service.js';
+import type { AiProviderResilienceService } from '../services/ai-provider-resilience.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -13,6 +18,8 @@ const providerKeySchema = z.enum([
   'ollama',
   'azure_openai',
   'openrouter',
+  'groq',
+  'mistral',
   'custom',
 ]);
 
@@ -124,8 +131,38 @@ const qualityEvaluationSchema = z.object({
   confidenceScore: z.number().min(0).max(1).optional(),
 });
 
+const memorySyncSchema = z.object({
+  contextType: z.enum(['business', 'customer', 'job', 'finance', 'executive', 'workflow']),
+  syncKey: z.string().trim().min(1).max(200),
+  title: z.string().trim().min(1).max(500),
+  content: z.string().trim().min(1).max(20000),
+  summary: z.string().trim().max(5000).optional(),
+  conversationId: z.string().uuid().optional(),
+  providerId: z.string().uuid().optional(),
+  classification: z.enum(['public', 'internal', 'confidential', 'restricted']).optional(),
+});
+
+const comparisonRunSchema = z.object({
+  subject: z.string().trim().min(1).max(500),
+  taskPrompt: z.string().trim().min(1).max(20000),
+  routingCategory: routingCategorySchema.optional(),
+  providerTargets: z
+    .array(
+      z.object({
+        providerKey: providerKeySchema,
+        modelKey: z.string().optional(),
+        providerId: z.string().uuid().optional(),
+      }),
+    )
+    .optional(),
+});
+
 type AiOrchestrationRouterDeps = {
   aiOrchestrationService: AiOrchestrationService;
+  aiUnifiedGatewayService: AiUnifiedGatewayService;
+  aiMemorySyncService: AiMemorySyncService;
+  aiComparisonService: AiComparisonService;
+  aiProviderResilienceService: AiProviderResilienceService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -141,6 +178,10 @@ function getRouteParam(value: string | string[]): string {
 
 export function createAiOrchestrationRouter({
   aiOrchestrationService,
+  aiUnifiedGatewayService,
+  aiMemorySyncService,
+  aiComparisonService,
+  aiProviderResilienceService,
   teamService,
   jwtSecret,
   authService,
@@ -396,6 +437,95 @@ export function createAiOrchestrationRouter({
     const { companyId } = getAuth(req);
     const context = await aiOrchestrationService.buildAiOrchestrationAuraContext(companyId);
     res.json({ data: { context } });
+  });
+
+  router.get('/gateway/status', requireRead, async (req, res) => {
+    const status = await aiUnifiedGatewayService.getGatewayStatus(getAuth(req).companyId);
+    res.json({ data: { status } });
+  });
+
+  router.get('/resilience', requireRead, async (req, res) => {
+    const resilience = await aiProviderResilienceService.getResilienceStatus(getAuth(req).companyId);
+    res.json({ data: { resilience } });
+  });
+
+  router.post('/memory-sync', requireWrite, async (req, res) => {
+    const auth = getAuth(req);
+    const parsed = memorySyncSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid memory sync payload' } });
+      return;
+    }
+
+    const result = await aiMemorySyncService.syncApprovedContext(
+      { companyId: auth.companyId, userId: auth.userId },
+      parsed.data,
+    );
+    res.status(201).json({ data: result });
+  });
+
+  router.get('/comparisons', requireRead, async (req, res) => {
+    const runs = await aiComparisonService.listComparisonRuns(getAuth(req).companyId);
+    res.json({ data: { runs } });
+  });
+
+  router.post('/comparisons', requireWrite, async (req, res) => {
+    const auth = getAuth(req);
+    const parsed = comparisonRunSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison payload' } });
+      return;
+    }
+
+    try {
+      const run = await aiComparisonService.createComparisonRun(
+        { companyId: auth.companyId, userId: auth.userId },
+        parsed.data,
+        {
+          messages: [{ role: 'user', content: parsed.data.taskPrompt }],
+          context: {
+            companyId: auth.companyId,
+            companyName: 'Tenant',
+            userName: 'Operator',
+            industry: null,
+            businessType: null,
+            preferences: {},
+          },
+        },
+      );
+      res.status(201).json({ data: { run } });
+    } catch (error) {
+      if (error instanceof AiComparisonError) {
+        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        return;
+      }
+      throw error;
+    }
+  });
+
+  router.patch('/comparisons/:runId/status', requireWrite, async (req, res) => {
+    const auth = getAuth(req);
+    const statusSchema = z.object({ status: z.enum(['approved', 'rejected']) });
+    const parsed = statusSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison status payload' } });
+      return;
+    }
+
+    try {
+      const run = await aiComparisonService.updateComparisonStatus(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.runId),
+        parsed.data.status,
+      );
+      res.json({ data: { run } });
+    } catch (error) {
+      if (error instanceof AiComparisonError) {
+        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        return;
+      }
+      throw error;
+    }
   });
 
   return router;

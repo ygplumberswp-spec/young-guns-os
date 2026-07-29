@@ -5,6 +5,8 @@ export type AiProviderKey =
   | 'ollama'
   | 'azure_openai'
   | 'openrouter'
+  | 'groq'
+  | 'mistral'
   | 'custom';
 
 export type AiProviderStatus = 'active' | 'inactive' | 'degraded';
@@ -54,7 +56,11 @@ export type AiFailoverReason =
   | 'provider_unavailable'
   | 'timeout'
   | 'rate_limit'
-  | 'degraded_performance';
+  | 'degraded_performance'
+  | 'credit_exhausted'
+  | 'context_window_exceeded';
+
+export type AiAccessMode = 'platform_managed' | 'tenant_credentials' | 'hybrid';
 
 export type AiMemoryContextType =
   | 'business'
@@ -180,6 +186,54 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
     supportedModels: [],
     defaultCapabilities: ['function_calling', 'streaming'],
     supportsMultimodal: true,
+    apiVersion: 'v1',
+  },
+  {
+    providerKey: 'groq',
+    name: 'Groq',
+    description: 'Fast inference via Groq OpenAI-compatible API.',
+    supportedModels: [
+      {
+        modelKey: 'llama-3.3-70b-versatile',
+        displayName: 'Llama 3.3 70B',
+        contextWindow: 128000,
+        capabilities: ['max_context', 'streaming', 'reasoning'],
+        multimodal: false,
+      },
+      {
+        modelKey: 'llama-3.1-8b-instant',
+        displayName: 'Llama 3.1 8B Instant',
+        contextWindow: 128000,
+        capabilities: ['streaming'],
+        multimodal: false,
+      },
+    ],
+    defaultCapabilities: ['streaming'],
+    supportsMultimodal: false,
+    apiVersion: 'v1',
+  },
+  {
+    providerKey: 'mistral',
+    name: 'Mistral AI',
+    description: 'Mistral models via OpenAI-compatible API.',
+    supportedModels: [
+      {
+        modelKey: 'mistral-large-latest',
+        displayName: 'Mistral Large',
+        contextWindow: 128000,
+        capabilities: ['max_context', 'structured_output', 'function_calling', 'streaming', 'reasoning'],
+        multimodal: false,
+      },
+      {
+        modelKey: 'mistral-small-latest',
+        displayName: 'Mistral Small',
+        contextWindow: 32000,
+        capabilities: ['streaming', 'structured_output'],
+        multimodal: false,
+      },
+    ],
+    defaultCapabilities: ['streaming', 'structured_output'],
+    supportsMultimodal: false,
     apiVersion: 'v1',
   },
   {

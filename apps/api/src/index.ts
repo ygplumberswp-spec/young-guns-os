@@ -56,8 +56,81 @@ import { MobileSyncService } from './services/mobile-sync.service.js';
 import { TechnicianWorkflowService } from './services/technician-workflow.service.js';
 import { WorkflowStudioService } from './services/workflow-studio.service.js';
 import { EnterpriseAutomationStudioService } from './services/enterprise-automation-studio.service.js';
+import { EnterpriseDigitalTwinService } from './services/enterprise-digital-twin.service.js';
+import { EnterpriseKnowledgeGraphService } from './services/enterprise-knowledge-graph.service.js';
+import { EnterpriseMissionControlService } from './services/enterprise-mission-control.service.js';
+import { EnterpriseEvolutionService } from './services/enterprise-evolution.service.js';
+import { EnterpriseDeveloperPlatformService } from './services/enterprise-developer-platform.service.js';
+import { EnterpriseSaasPlatformService } from './services/enterprise-saas-platform.service.js';
+import { EnterpriseProductionReadinessService } from './services/enterprise-production-readiness.service.js';
+import { createEnterpriseProductionReadinessRouter } from './routes/enterprise-production-readiness.js';
+import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-platform.service.js';
+import { createEnterpriseMobilePlatformRouter } from './routes/enterprise-mobile-platform.js';
+import { EnterpriseUnifiedCommunicationsService } from './services/enterprise-unified-communications.service.js';
+import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
+import { EnterpriseCustomerExperienceService } from './services/enterprise-customer-experience.service.js';
+import { createEnterpriseCustomerExperienceRouter } from './routes/enterprise-customer-experience.js';
+import { EnterpriseAssetLifecycleService } from './services/enterprise-asset-lifecycle.service.js';
+import { createEnterpriseAssetLifecycleRouter } from './routes/enterprise-asset-lifecycle.js';
+import { EnterpriseWorkforceIntelligenceService } from './services/enterprise-workforce-intelligence.service.js';
+import { createEnterpriseWorkforceIntelligenceRouter } from './routes/enterprise-workforce-intelligence.js';
+import { EnterpriseLegalComplianceService } from './services/enterprise-legal-compliance.service.js';
+import { createEnterpriseLegalComplianceRouter } from './routes/enterprise-legal-compliance.js';
+import { EnterpriseFinancialPlanningService } from './services/enterprise-financial-planning.service.js';
+import { createEnterpriseFinancialPlanningRouter } from './routes/enterprise-financial-planning.js';
+import { EnterpriseSalesIntelligenceService } from './services/enterprise-sales-intelligence.service.js';
+import { createEnterpriseSalesIntelligenceRouter } from './routes/enterprise-sales-intelligence.js';
+import { EnterpriseMarketingIntelligenceService } from './services/enterprise-marketing-intelligence.service.js';
+import { createEnterpriseMarketingIntelligenceRouter } from './routes/enterprise-marketing-intelligence.js';
+import { EnterpriseServiceDeliveryService } from './services/enterprise-service-delivery.service.js';
+import { createEnterpriseServiceDeliveryRouter } from './routes/enterprise-service-delivery.js';
+import { EnterpriseItOperationsService } from './services/enterprise-it-operations.service.js';
+import { createEnterpriseItOperationsRouter } from './routes/enterprise-it-operations.js';
+import { EnterpriseBusinessEvolutionService } from './services/enterprise-business-evolution.service.js';
+import { createEnterpriseBusinessEvolutionRouter } from './routes/enterprise-business-evolution.js';
+import { EnterpriseAppBuilderService } from './services/enterprise-app-builder.service.js';
+import { createEnterpriseAppBuilderRouter } from './routes/enterprise-app-builder.js';
+import { EnterpriseIndustryPackService } from './services/enterprise-industry-packs.service.js';
+import { createEnterpriseIndustryPacksRouter } from './routes/enterprise-industry-packs.js';
+import { EnterprisePublicDeveloperPlatformService } from './services/enterprise-public-developer-platform.service.js';
+import { createEnterprisePublicDeveloperPlatformRouter } from './routes/enterprise-public-developer-platform.js';
+import { EnterpriseSaasManagementService } from './services/enterprise-saas-management.service.js';
+import { createEnterpriseSaasManagementRouter } from './routes/enterprise-saas-management.js';
+import { EnterpriseVoiceReceptionService } from './services/enterprise-voice-reception.service.js';
+import { createEnterpriseVoiceReceptionRouter } from './routes/enterprise-voice-reception.js';
+import { EnterpriseDocumentAiService } from './services/enterprise-document-ai.service.js';
+import { createEnterpriseDocumentAiRouter } from './routes/enterprise-document-ai.js';
+import { EnterpriseBusinessContinuityService } from './services/enterprise-business-continuity.service.js';
+import { EnterpriseGlobalSearchService } from './services/enterprise-global-search.service.js';
+import { EnterpriseDataMigrationService } from './services/enterprise-data-migration.service.js';
+import { EnterpriseNotificationsService } from './services/enterprise-notifications.service.js';
+import { EnterprisePlatformHealthService } from './services/enterprise-platform-health.service.js';
+import { EnterpriseLaunchCenterService } from './services/enterprise-launch-center.service.js';
+import { EnterpriseReleaseCenterService } from './services/enterprise-release-center.service.js';
+import { EnterpriseProductionLaunchService } from './services/enterprise-production-launch.service.js';
+import { EnterpriseReleaseManagementService } from './services/enterprise-release-management.service.js';
+import { createEnterpriseReleaseManagementRouter } from './routes/enterprise-release-management.js';
+import { createEnterpriseBusinessContinuityRouter } from './routes/enterprise-business-continuity.js';
+import { createEnterpriseGlobalSearchRouter } from './routes/enterprise-global-search.js';
+import { createEnterpriseDataMigrationRouter } from './routes/enterprise-data-migration.js';
+import { createEnterpriseNotificationsRouter } from './routes/enterprise-notifications.js';
+import { createEnterprisePlatformHealthRouter } from './routes/enterprise-platform-health.js';
+import { createEnterpriseLaunchCenterRouter } from './routes/enterprise-launch-center.js';
+import { createEnterpriseReleaseCenterRouter } from './routes/enterprise-release-center.js';
+import { createEnterpriseProductionLaunchRouter } from './routes/enterprise-production-launch.js';
+import { AiOperationsService } from './services/ai-operations.service.js';
+import { AiProviderResilienceService } from './services/ai-provider-resilience.service.js';
+import { AiMemorySyncService } from './services/ai-memory-sync.service.js';
+import { AiComparisonService } from './services/ai-comparison.service.js';
+import { AiUnifiedGatewayService } from './services/ai-unified-gateway.service.js';
 import { createAutomationRouter } from './routes/automation.js';
 import { createEnterpriseAutomationStudioRouter } from './routes/enterprise-automation-studio.js';
+import { createEnterpriseDigitalTwinRouter } from './routes/enterprise-digital-twin.js';
+import { createEnterpriseKnowledgeGraphRouter } from './routes/enterprise-knowledge-graph.js';
+import { createEnterpriseMissionControlRouter } from './routes/enterprise-mission-control.js';
+import { createEnterpriseEvolutionRouter } from './routes/enterprise-evolution.js';
+import { createEnterpriseDeveloperPlatformRouter } from './routes/enterprise-developer-platform.js';
+import { createEnterpriseSaasPlatformRouter } from './routes/enterprise-saas-platform.js';
 import { createAgentOrchestrationRouter } from './routes/agent-orchestration.js';
 import { createSalesRouter } from './routes/sales.js';
 import { createMarketingRouter } from './routes/marketing.js';
@@ -141,6 +214,10 @@ if (auraProvider) {
 
 const companyService = new CompanyService(db);
 const teamService = new TeamService(db, env.APP_URL);
+const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
+  db,
+  teamService,
+});
 const crmService = new CrmService(db);
 const jobsService = new JobsService(db);
 const schedulingService = new SchedulingService(db);
@@ -242,6 +319,17 @@ const executiveService = new ExecutiveService({
   workforceService,
   procurementService,
 });
+const enterpriseDigitalTwinService = new EnterpriseDigitalTwinService({
+  db,
+  jobsService,
+  schedulingService,
+  fleetService,
+  inventoryService,
+  financeService,
+  workforceService,
+  procurementService,
+  executiveService,
+});
 const financeIntelligenceService = new FinanceIntelligenceService({
   db,
   financeService,
@@ -249,6 +337,10 @@ const financeIntelligenceService = new FinanceIntelligenceService({
   procurementService,
 });
 const knowledgeService = new KnowledgeService({ db });
+const enterpriseKnowledgeGraphService = new EnterpriseKnowledgeGraphService({
+  db,
+  knowledgeService,
+});
 const businessIntelligenceService = new BusinessIntelligenceService({
   db,
   analyticsService,
@@ -320,6 +412,35 @@ const aiOrchestrationService = new AiOrchestrationService(db, notificationServic
   auraConfig,
   isAuraConfigured: isAuraProviderConfigured(auraConfig),
 });
+const aiOperationsService = new AiOperationsService({
+  db,
+  enterpriseSaasPlatformService,
+});
+const aiMemorySyncService = new AiMemorySyncService({
+  db,
+  memoryService,
+  enterpriseKnowledgeGraphService,
+});
+const aiProviderResilienceService = new AiProviderResilienceService({
+  db,
+  aiOrchestrationService,
+  aiOperationsService,
+  aiMemorySyncService,
+  auraConfig,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  envProvider: auraProvider,
+});
+const aiComparisonService = new AiComparisonService({
+  db,
+  aiProviderResilienceService,
+});
+const aiUnifiedGatewayService = new AiUnifiedGatewayService({
+  aiOrchestrationService,
+  aiOperationsService,
+  aiProviderResilienceService,
+  aiMemorySyncService,
+  aiComparisonService,
+});
 const dispatchIntelligenceService = new DispatchIntelligenceService(
   db,
   notificationService,
@@ -346,6 +467,345 @@ const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY ?? env.JWT_SECRET,
 );
+const enterpriseMissionControlService = new EnterpriseMissionControlService({
+  db,
+  executiveService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseAutomationStudioService,
+  enterpriseSecurityService,
+  integrationPlatformService,
+  jobsService,
+  schedulingService,
+  fleetService,
+  inventoryService,
+  financeService,
+  crmService,
+  salesService,
+  leadsService,
+  marketingService,
+  aiOperationsService,
+});
+const enterpriseProductionReadinessService = new EnterpriseProductionReadinessService({
+  db,
+  databaseUrl: env.DATABASE_URL,
+  jwtSecret: env.JWT_SECRET,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  enterpriseSaasPlatformService,
+  enterpriseMissionControlService,
+  aiOrchestrationService,
+  aiProviderResilienceService,
+});
+const enterpriseMobilePlatformService = new EnterpriseMobilePlatformService({
+  db,
+  enterpriseSaasPlatformService,
+  mobileSyncService,
+  mobileWorkforceService,
+  integrationsService,
+  dispatchIntelligenceService,
+});
+const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicationsService({
+  db,
+  enterpriseSaasPlatformService,
+  communicationsIntelligenceService,
+  voiceService,
+  whatsappService,
+  integrationsService,
+  integrationHubService,
+});
+const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
+  db,
+  enterpriseSaasPlatformService,
+  portalExperienceService,
+  enterpriseUnifiedCommunicationsService,
+  integrationsService,
+});
+const enterpriseAssetLifecycleService = new EnterpriseAssetLifecycleService({
+  db,
+  enterpriseSaasPlatformService,
+  assetEquipmentIntelligenceService,
+  enterpriseDigitalTwinService,
+});
+const enterpriseWorkforceIntelligenceService = new EnterpriseWorkforceIntelligenceService({
+  db,
+  enterpriseSaasPlatformService,
+  workforceService,
+  recruitingService,
+  schedulingService,
+  mobileWorkforceService,
+  analyticsService,
+});
+const enterpriseLegalComplianceService = new EnterpriseLegalComplianceService({
+  db,
+  enterpriseSaasPlatformService,
+  documentsService,
+  financeService,
+  procurementService,
+});
+const enterpriseFinancialPlanningService = new EnterpriseFinancialPlanningService({
+  db,
+  enterpriseSaasPlatformService,
+  financeService,
+  financeIntelligenceService,
+  analyticsService,
+  procurementService,
+});
+const enterpriseSalesIntelligenceService = new EnterpriseSalesIntelligenceService({
+  db,
+  enterpriseSaasPlatformService,
+  crmService,
+  salesService,
+  leadsService,
+  marketingService,
+  financeService,
+  analyticsService,
+});
+const enterpriseMarketingIntelligenceService = new EnterpriseMarketingIntelligenceService({
+  db,
+  enterpriseSaasPlatformService,
+  marketingService,
+  crmService,
+  leadsService,
+  financeService,
+  analyticsService,
+});
+const enterpriseServiceDeliveryService = new EnterpriseServiceDeliveryService({
+  db,
+  enterpriseSaasPlatformService,
+  jobsService,
+  qualityAssuranceService,
+  dispatchIntelligenceService,
+  schedulingService,
+  financeService,
+  analyticsService,
+  crmService,
+});
+const enterpriseItOperationsService = new EnterpriseItOperationsService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseProductionReadinessService,
+  enterpriseMissionControlService,
+  enterpriseSecurityService,
+  aiProviderResilienceService,
+  aiOperationsService,
+  integrationPlatformService,
+  analyticsService,
+});
+const enterpriseEvolutionService = new EnterpriseEvolutionService({
+  db,
+  enterpriseMissionControlService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseAutomationStudioService,
+  executiveService,
+  intelligenceService,
+  recommendationsService,
+  aiOrchestrationService,
+  memoryService,
+  jobsService,
+  schedulingService,
+  fleetService,
+  inventoryService,
+  financeService,
+});
+const enterpriseBusinessEvolutionService = new EnterpriseBusinessEvolutionService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseEvolutionService,
+  enterpriseMissionControlService,
+  enterpriseKnowledgeGraphService,
+  enterpriseDigitalTwinService,
+  enterpriseAutomationStudioService,
+  enterpriseItOperationsService,
+  enterpriseFinancialPlanningService,
+  enterpriseWorkforceIntelligenceService,
+  enterpriseCustomerExperienceService,
+  enterpriseServiceDeliveryService,
+  jobsService,
+  financeService,
+  leadsService,
+  marketingService,
+  analyticsService,
+  aiOrchestrationService,
+});
+const enterpriseDeveloperPlatformService = new EnterpriseDeveloperPlatformService({
+  db,
+  integrationApiManagementService,
+  integrationPlatformService,
+  integrationHubService,
+  connectorEngineService,
+  apiPublicUrl,
+});
+const enterpriseAppBuilderService = new EnterpriseAppBuilderService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseDeveloperPlatformService,
+  enterpriseMissionControlService,
+  enterpriseItOperationsService,
+  enterpriseBusinessEvolutionService,
+  enterpriseProductionReadinessService,
+  enterpriseAutomationStudioService,
+});
+const enterpriseIndustryPackService = new EnterpriseIndustryPackService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseMissionControlService,
+  enterpriseLegalComplianceService,
+  enterpriseAppBuilderService,
+  enterpriseServiceDeliveryService,
+  enterpriseAssetLifecycleService,
+  jobsService,
+  financeService,
+});
+const enterprisePublicDeveloperPlatformService = new EnterprisePublicDeveloperPlatformService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseMissionControlService,
+  enterpriseItOperationsService,
+  enterpriseDeveloperPlatformService,
+  integrationApiManagementService,
+  integrationPlatformService,
+  integrationHubService,
+});
+const enterpriseSaasManagementService = new EnterpriseSaasManagementService({
+  db,
+  enterpriseSaasPlatformService,
+  enterpriseMissionControlService,
+  financeService,
+  aiOperationsService,
+});
+const enterpriseVoiceReceptionService = new EnterpriseVoiceReceptionService({
+  db,
+  voiceService,
+  communicationsIntelligenceService,
+  enterpriseUnifiedCommunicationsService,
+  crmService,
+  schedulingService,
+  jobsService,
+  leadsService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+});
+const enterpriseDocumentAiService = new EnterpriseDocumentAiService({
+  db,
+  documentsService,
+  crmService,
+  jobsService,
+  financeService,
+  inventoryService,
+  procurementService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+});
+const enterpriseBusinessContinuityService = new EnterpriseBusinessContinuityService({
+  db,
+  enterpriseProductionReadinessService,
+  enterpriseItOperationsService,
+  enterpriseSecurityService,
+  enterpriseMissionControlService,
+});
+const enterpriseGlobalSearchService = new EnterpriseGlobalSearchService({
+  db,
+  crmService,
+  jobsService,
+  financeService,
+  leadsService,
+  inventoryService,
+  fleetService,
+  procurementService,
+  documentsService,
+  enterpriseDocumentAiService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+});
+const enterpriseDataMigrationService = new EnterpriseDataMigrationService({
+  db,
+  crmService,
+  leadsService,
+  financeService,
+  jobsService,
+  inventoryService,
+  procurementService,
+  fleetService,
+  enterpriseMissionControlService,
+});
+const enterpriseNotificationsService = new EnterpriseNotificationsService({
+  db,
+  notificationService,
+  enterpriseMissionControlService,
+});
+const enterprisePlatformHealthService = new EnterprisePlatformHealthService({
+  db,
+  databaseUrl: env.DATABASE_URL,
+  jwtSecret: env.JWT_SECRET,
+  enterpriseItOperationsService,
+  enterpriseProductionReadinessService,
+  enterpriseMissionControlService,
+  integrationPlatformService,
+  aiProviderResilienceService,
+  enterpriseSaasPlatformService,
+});
+const enterpriseLaunchCenterService = new EnterpriseLaunchCenterService({
+  db,
+  databaseUrl: env.DATABASE_URL,
+  jwtSecret: env.JWT_SECRET,
+  enterpriseProductionReadinessService,
+  enterprisePlatformHealthService,
+  enterpriseSecurityService,
+  enterpriseBusinessContinuityService,
+  integrationPlatformService,
+  aiProviderResilienceService,
+  enterpriseNotificationsService,
+  enterpriseDocumentAiService,
+  enterpriseSaasPlatformService,
+  enterpriseMissionControlService,
+});
+const enterpriseReleaseCenterService = new EnterpriseReleaseCenterService({
+  db,
+  databaseUrl: env.DATABASE_URL,
+  jwtSecret: env.JWT_SECRET,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  enterpriseLaunchCenterService,
+  enterprisePlatformHealthService,
+  enterpriseSecurityService,
+  enterpriseMissionControlService,
+  integrationPlatformService,
+  aiProviderResilienceService,
+  enterpriseDocumentAiService,
+  enterpriseKnowledgeGraphService,
+  enterpriseSaasPlatformService,
+  enterpriseIndustryPackService,
+  enterpriseBusinessContinuityService,
+  enterpriseVoiceReceptionService,
+  enterpriseProductionReadinessService,
+  enterpriseGlobalSearchService,
+});
+const enterpriseProductionLaunchService = new EnterpriseProductionLaunchService({
+  db,
+  databaseUrl: env.DATABASE_URL,
+  jwtSecret: env.JWT_SECRET,
+  jwtRefreshSecret: env.JWT_REFRESH_SECRET,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  apiPublicUrl: env.API_PUBLIC_URL,
+  redisUrl: env.REDIS_URL,
+  nodeEnv: env.NODE_ENV,
+  enterpriseMissionControlService,
+  enterpriseSecurityService,
+  integrationPlatformService,
+  aiProviderResilienceService,
+  enterpriseProductionReadinessService,
+  enterpriseSaasManagementService,
+  enterpriseMobilePlatformService,
+  enterpriseReleaseCenterService,
+});
+const enterpriseReleaseManagementService = new EnterpriseReleaseManagementService({
+  db,
+  enterpriseMissionControlService,
+  enterpriseMobilePlatformService,
+  enterpriseProductionLaunchService,
+  enterpriseReleaseCenterService,
+});
 const agentRuntimeService = new AgentRuntimeService({
   db,
   provider: auraProvider,
@@ -394,6 +854,41 @@ const agentRuntimeService = new AgentRuntimeService({
   connectorEngineService,
   enterpriseAnalyticsService,
   enterpriseAutomationStudioService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+  enterpriseEvolutionService,
+  enterpriseDeveloperPlatformService,
+  enterpriseSaasPlatformService,
+  enterpriseProductionReadinessService,
+  enterpriseMobilePlatformService,
+  enterpriseUnifiedCommunicationsService,
+  enterpriseCustomerExperienceService,
+  enterpriseAssetLifecycleService,
+  enterpriseWorkforceIntelligenceService,
+  enterpriseLegalComplianceService,
+  enterpriseFinancialPlanningService,
+  enterpriseSalesIntelligenceService,
+  enterpriseMarketingIntelligenceService,
+  enterpriseServiceDeliveryService,
+  enterpriseItOperationsService,
+  enterpriseBusinessEvolutionService,
+  enterpriseAppBuilderService,
+  enterpriseIndustryPackService,
+  enterprisePublicDeveloperPlatformService,
+  enterpriseSaasManagementService,
+  enterpriseVoiceReceptionService,
+  enterpriseDocumentAiService,
+  enterpriseBusinessContinuityService,
+  enterpriseGlobalSearchService,
+  enterpriseDataMigrationService,
+  enterpriseNotificationsService,
+  enterprisePlatformHealthService,
+  enterpriseLaunchCenterService,
+  enterpriseReleaseCenterService,
+  enterpriseProductionLaunchService,
+  enterpriseReleaseManagementService,
+  aiProviderResilienceService,
   automationService,
 });
 const agentOrchestrationEngineService = new AgentOrchestrationEngineService({
@@ -446,6 +941,12 @@ const auraService = new AuraService({
   integrationPlatformService,
   enterpriseAnalyticsService,
   enterpriseAutomationStudioService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+  enterpriseEvolutionService,
+  enterpriseDeveloperPlatformService,
+  enterpriseSaasPlatformService,
   teamService,
   intelligenceService,
   recommendationsService,
@@ -464,6 +965,7 @@ const auraService = new AuraService({
   financeIntelligenceService,
   knowledgeService,
   businessIntelligenceService,
+  aiProviderResilienceService,
 });
 
 const app: Express = express();
@@ -653,6 +1155,62 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/digital-twin',
+  createEnterpriseDigitalTwinRouter({
+    enterpriseDigitalTwinService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/knowledge-graph',
+  createEnterpriseKnowledgeGraphRouter({
+    enterpriseKnowledgeGraphService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/mission-control',
+  createEnterpriseMissionControlRouter({
+    enterpriseMissionControlService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/evolution',
+  createEnterpriseEvolutionRouter({
+    enterpriseEvolutionService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/developer-platform',
+  createEnterpriseDeveloperPlatformRouter({
+    enterpriseDeveloperPlatformService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/platform',
+  createEnterpriseSaasPlatformRouter({
+    enterpriseSaasPlatformService,
+    aiOperationsService,
+    aiProviderResilienceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/agent-orchestration',
   createAgentOrchestrationRouter({
     orchestrationService: agentOrchestrationService,
@@ -826,11 +1384,45 @@ app.use(
     enterpriseSecurityService,
     integrationPlatformService,
     connectorEngineService,
-    enterpriseAnalyticsService,
-    enterpriseAutomationStudioService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
+  enterpriseAnalyticsService,
+  enterpriseAutomationStudioService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+  enterpriseEvolutionService,
+  enterpriseDeveloperPlatformService,
+  enterpriseSaasPlatformService,
+  enterpriseProductionReadinessService,
+  enterpriseMobilePlatformService,
+  enterpriseUnifiedCommunicationsService,
+  enterpriseCustomerExperienceService,
+  enterpriseAssetLifecycleService,
+  enterpriseWorkforceIntelligenceService,
+  enterpriseLegalComplianceService,
+  enterpriseFinancialPlanningService,
+  enterpriseSalesIntelligenceService,
+  enterpriseMarketingIntelligenceService,
+  enterpriseServiceDeliveryService,
+  enterpriseItOperationsService,
+  enterpriseBusinessEvolutionService,
+  enterpriseAppBuilderService,
+  enterpriseIndustryPackService,
+  enterprisePublicDeveloperPlatformService,
+  enterpriseSaasManagementService,
+  enterpriseVoiceReceptionService,
+  enterpriseDocumentAiService,
+  enterpriseBusinessContinuityService,
+  enterpriseGlobalSearchService,
+  enterpriseDataMigrationService,
+  enterpriseNotificationsService,
+  enterprisePlatformHealthService,
+  enterpriseLaunchCenterService,
+  enterpriseReleaseCenterService,
+  enterpriseProductionLaunchService,
+  enterpriseReleaseManagementService,
+  teamService,
+  jwtSecret: env.JWT_SECRET,
+  authService,
   }),
 );
 app.use(
@@ -864,7 +1456,250 @@ app.use(
   '/api/v1/ai-orchestration',
   createAiOrchestrationRouter({
     aiOrchestrationService,
+    aiUnifiedGatewayService,
+    aiMemorySyncService,
+    aiComparisonService,
+    aiProviderResilienceService,
     teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/operations',
+  createEnterpriseProductionReadinessRouter({
+    enterpriseProductionReadinessService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-mobile',
+  createEnterpriseMobilePlatformRouter({
+    enterpriseMobilePlatformService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-communications',
+  createEnterpriseUnifiedCommunicationsRouter({
+    enterpriseUnifiedCommunicationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-customer-experience',
+  createEnterpriseCustomerExperienceRouter({
+    enterpriseCustomerExperienceService,
+    portalExperienceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-asset-lifecycle',
+  createEnterpriseAssetLifecycleRouter({
+    enterpriseAssetLifecycleService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-workforce',
+  createEnterpriseWorkforceIntelligenceRouter({
+    enterpriseWorkforceIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-legal-compliance',
+  createEnterpriseLegalComplianceRouter({
+    enterpriseLegalComplianceService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-financial-planning',
+  createEnterpriseFinancialPlanningRouter({
+    enterpriseFinancialPlanningService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-sales-intelligence',
+  createEnterpriseSalesIntelligenceRouter({
+    enterpriseSalesIntelligenceService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-marketing-intelligence',
+  createEnterpriseMarketingIntelligenceRouter({
+    enterpriseMarketingIntelligenceService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-service-delivery',
+  createEnterpriseServiceDeliveryRouter({
+    enterpriseServiceDeliveryService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-it-operations',
+  createEnterpriseItOperationsRouter({
+    enterpriseItOperationsService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-business-evolution',
+  createEnterpriseBusinessEvolutionRouter({
+    enterpriseBusinessEvolutionService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-app-builder',
+  createEnterpriseAppBuilderRouter({
+    enterpriseAppBuilderService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-industry-packs',
+  createEnterpriseIndustryPacksRouter({
+    enterpriseIndustryPackService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-public-developer',
+  createEnterprisePublicDeveloperPlatformRouter({
+    enterprisePublicDeveloperPlatformService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-saas-management',
+  createEnterpriseSaasManagementRouter({
+    enterpriseSaasManagementService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-voice-reception',
+  createEnterpriseVoiceReceptionRouter({
+    enterpriseVoiceReceptionService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-document-ai',
+  createEnterpriseDocumentAiRouter({
+    enterpriseDocumentAiService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-business-continuity',
+  createEnterpriseBusinessContinuityRouter({
+    enterpriseBusinessContinuityService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-global-search',
+  createEnterpriseGlobalSearchRouter({
+    enterpriseGlobalSearchService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-data-migration',
+  createEnterpriseDataMigrationRouter({
+    enterpriseDataMigrationService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-notifications',
+  createEnterpriseNotificationsRouter({
+    enterpriseNotificationsService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-platform-health',
+  createEnterprisePlatformHealthRouter({
+    enterprisePlatformHealthService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-launch-center',
+  createEnterpriseLaunchCenterRouter({
+    enterpriseLaunchCenterService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-release-center',
+  createEnterpriseReleaseCenterRouter({
+    enterpriseReleaseCenterService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-production-launch',
+  createEnterpriseProductionLaunchRouter({
+    enterpriseProductionLaunchService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/enterprise-release-management',
+  createEnterpriseReleaseManagementRouter({
+    enterpriseReleaseManagementService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

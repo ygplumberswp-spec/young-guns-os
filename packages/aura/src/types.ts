@@ -451,6 +451,141 @@ export type AuraGenerateContext = {
     failedRunCount: number;
     recommendationCount: number;
   };
+  enterpriseDigitalTwin?: {
+    summary: string;
+    healthScore: number | null;
+    activeScenarioCount: number;
+    completedSimulationCount: number;
+    pendingRecommendationCount: number;
+    operationalRiskLevel: string;
+    pendingActionCount: number;
+  };
+  enterpriseKnowledgeGraph?: {
+    summary: string;
+    entityCount: number;
+    relationshipCount: number;
+    memoryEntryCount: number;
+    indexedCount: number;
+    pendingRecommendationCount: number;
+    pendingActionCount: number;
+  };
+  enterpriseMissionControl?: {
+    summary: string;
+    businessHealthScore: number | null;
+    pendingAlertCount: number;
+    criticalAlertCount: number;
+    activeIncidentCount: number;
+    pendingRecommendationCount: number;
+    pendingActionCount: number;
+  };
+  enterpriseEvolution?: {
+    summary: string;
+    optimizationScore: number | null;
+    learningProgressPercent: number | null;
+    aiConfidenceScore: number | null;
+    pendingRecommendationCount: number;
+    pendingOptimizationCount: number;
+    patternCount: number;
+  };
+  enterpriseDeveloperPlatform?: {
+    summary: string;
+    apiRequestCount: number;
+    installedExtensionCount: number;
+    webhookSubscriptionCount: number;
+    pendingActionCount: number;
+    sdkPackageCount: number;
+  };
+  enterpriseSaasPlatform?: {
+    summary: string;
+    isPlatformOwner: boolean;
+    tenantCount: number;
+    activeSubscriptionCount: number;
+    pendingActionCount: number;
+    subscriptionStatus: string | null;
+  };
+  documentAi?: {
+    summary: string;
+    pendingOcrCount: number;
+    failedOcrCount: number;
+    reviewBacklogCount: number;
+    openAlertCount: number;
+    overallDocumentAiHealthStatus: string;
+  };
+  businessContinuity?: {
+    summary: string;
+    failedBackupCount: number;
+    restoreReadinessStatus: string;
+    recoveryReadinessStatus: string;
+    openAlertCount: number;
+    overallBusinessContinuityHealthStatus: string;
+  };
+  searchIntelligence?: {
+    summary: string;
+    indexedCount: number;
+    failedIndexCount: number;
+    openAlertCount: number;
+    overallSearchHealthStatus: string;
+  };
+  migrationIntelligence?: {
+    summary: string;
+    activeImportCount: number;
+    failedImportCount: number;
+    rollbackAvailableCount: number;
+    openAlertCount: number;
+    overallMigrationHealthStatus: string;
+  };
+  notificationIntelligence?: {
+    summary: string;
+    activeAlertCount: number;
+    failedDeliveryCount: number;
+    pendingEscalationCount: number;
+    openAlertCount: number;
+    overallNotificationHealthStatus: string;
+  };
+  platformHealth?: {
+    summary: string;
+    overallHealthScore: number | null;
+    criticalIncidentCount: number;
+    failedDiagnosticCount: number;
+    openAlertCount: number;
+    overallPlatformHealthStatus: string;
+  };
+  launchReadiness?: {
+    summary: string;
+    overallScore: number | null;
+    criticalBlockerCount: number;
+    failedCheckCount: number;
+    pendingApprovalCount: number;
+    openAlertCount: number;
+    overallLaunchReadinessStatus: string;
+  };
+  releaseCandidate?: {
+    summary: string;
+    readinessScore: number | null;
+    failedValidationCount: number;
+    warningCount: number;
+    optimizationCount: number;
+    openAlertCount: number;
+    overallReleaseStatus: string;
+  };
+  productionLaunch?: {
+    summary: string;
+    launchStatus: string;
+    failedProviderCount: number;
+    missingConfigCount: number;
+    pendingApprovalCount: number;
+    openAlertCount: number;
+    overallProductionStatus: string;
+  };
+  releaseManagement?: {
+    summary: string;
+    releaseStatus: string;
+    documentationCompleteness: number;
+    pendingChecklistCount: number;
+    mobileReady: boolean;
+    openAlertCount: number;
+    overallReleaseStatus: string;
+  };
   integrationHub?: {
     providerCount: number;
     configuredConnectionCount: number;

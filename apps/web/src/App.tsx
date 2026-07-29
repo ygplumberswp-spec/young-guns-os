@@ -43,6 +43,44 @@ import { WorkflowCreatePage } from './pages/automation/WorkflowCreatePage';
 import { WorkflowDetailPage } from './pages/automation/WorkflowDetailPage';
 import { ExecutionListPage } from './pages/automation/ExecutionListPage';
 import { AutomationStudioPage } from './pages/automation-studio/AutomationStudioPage';
+import { DigitalTwinPage } from './pages/digital-twin/DigitalTwinPage';
+import { KnowledgeGraphPage } from './pages/knowledge/KnowledgeGraphPage';
+import { MissionControlPage } from './pages/mission-control/MissionControlPage';
+import { EvolutionPage } from './pages/evolution/EvolutionPage';
+import { DevelopersPage } from './pages/developers/DevelopersPage';
+import { DeveloperPortalPage } from './pages/developer/DeveloperPortalPage';
+import { SaasManagementPage } from './pages/saas-management/SaasManagementPage';
+import { VoiceReceptionPage } from './pages/voice-reception/VoiceReceptionPage';
+import { DocumentAiPage } from './pages/document-ai/DocumentAiPage';
+import { BusinessContinuityPage } from './pages/business-continuity/BusinessContinuityPage';
+import { GlobalSearchPage } from './pages/global-search/GlobalSearchPage';
+import { DataMigrationPage } from './pages/data-migration/DataMigrationPage';
+import { NotificationsPage } from './pages/notifications/NotificationsPage';
+import { PlatformHealthPage } from './pages/platform-health/PlatformHealthPage';
+import { LaunchCenterPage } from './pages/launch-center/LaunchCenterPage';
+import { ReleaseCenterPage } from './pages/release-center/ReleaseCenterPage';
+import { GoLivePage } from './pages/go-live/GoLivePage';
+import { ReleasePage } from './pages/release/ReleasePage';
+import { OwnerBillingPage } from './pages/settings/OwnerBillingPage';
+import { PlatformPage } from './pages/platform/PlatformPage';
+import { OperationsPage } from './pages/operations/OperationsPage';
+import { MobilePlatformPage } from './pages/mobile-platform/MobilePlatformPage';
+import { MobileDispatcherPage } from './pages/mobile-platform/MobileDispatcherPage';
+import { CommunicationsHubPage } from './pages/communications-hub/CommunicationsHubPage';
+import { CustomerExperiencePage } from './pages/customer-experience/CustomerExperiencePage';
+import { AssetIntelligencePage } from './pages/asset-intelligence/AssetIntelligencePage';
+import { WorkforceIntelligencePage } from './pages/workforce-intelligence/WorkforceIntelligencePage';
+import { LegalCompliancePage } from './pages/legal-compliance/LegalCompliancePage';
+import { FinancialPlanningPage } from './pages/financial-planning/FinancialPlanningPage';
+import { SalesIntelligencePage } from './pages/sales-intelligence/SalesIntelligencePage';
+import { MarketingIntelligencePage } from './pages/marketing-intelligence/MarketingIntelligencePage';
+import { ServiceDeliveryPage } from './pages/service-delivery/ServiceDeliveryPage';
+import { ItOperationsPage } from './pages/it-operations/ItOperationsPage';
+import { BusinessEvolutionPage } from './pages/business-evolution/BusinessEvolutionPage';
+import { AppBuilderPage } from './pages/app-builder/AppBuilderPage';
+import { IndustryPacksPage } from './pages/industry-packs/IndustryPacksPage';
+import { ManagerWorkspacePage } from './pages/workforce-intelligence/ManagerWorkspacePage';
+import { SelfServicePage } from './pages/workforce-intelligence/SelfServicePage';
 import { AgentDashboardPage } from './pages/agents/AgentDashboardPage';
 import { AgentProfileCreatePage } from './pages/agents/AgentProfileCreatePage';
 import { AgentProfileDetailPage } from './pages/agents/AgentProfileDetailPage';
@@ -59,6 +97,11 @@ import { PortalAppointmentsPage } from './pages/portal/PortalAppointmentsPage';
 import { PortalCommunicationsPage } from './pages/portal/PortalCommunicationsPage';
 import { PortalKnowledgePage } from './pages/portal/PortalKnowledgePage';
 import { PortalNotificationsPage } from './pages/portal/PortalNotificationsPage';
+import { PortalDocumentsPage } from './pages/portal/PortalDocumentsPage';
+import { PortalProfilePage } from './pages/portal/PortalProfilePage';
+import { PortalFeedbackPage } from './pages/portal/PortalFeedbackPage';
+import { PortalLoyaltyPage } from './pages/portal/PortalLoyaltyPage';
+import { PortalAssetsPage } from './pages/portal/PortalAssetsPage';
 import { MobileLayout } from './layouts/MobileLayout';
 import { MobileDashboardPage } from './pages/mobile/MobileDashboardPage';
 import { MobileJobsPage } from './pages/mobile/MobileJobsPage';
@@ -111,6 +154,11 @@ export function App() {
                   <Route path="/portal/communications" component={PortalCommunicationsPage} />
                   <Route path="/portal/knowledge" component={PortalKnowledgePage} />
                   <Route path="/portal/notifications" component={PortalNotificationsPage} />
+                  <Route path="/portal/documents" component={PortalDocumentsPage} />
+                  <Route path="/portal/profile" component={PortalProfilePage} />
+                  <Route path="/portal/feedback" component={PortalFeedbackPage} />
+                  <Route path="/portal/loyalty" component={PortalLoyaltyPage} />
+                  <Route path="/portal/assets" component={PortalAssetsPage} />
                   <Route path="/portal" component={PortalDashboardPage} />
                 </Switch>
               </PortalLayout>
@@ -136,6 +184,44 @@ export function App() {
           <ProtectedRoute>
             <AppLayout>
               <Switch>
+                <Route path="/platform" component={PlatformPage} />
+                <Route path="/operations" component={OperationsPage} />
+                <Route path="/mobile-platform/dispatcher" component={MobileDispatcherPage} />
+                <Route path="/mobile-platform" component={MobilePlatformPage} />
+                <Route path="/communications-hub" component={CommunicationsHubPage} />
+                <Route path="/customer-experience" component={CustomerExperiencePage} />
+                <Route path="/asset-intelligence" component={AssetIntelligencePage} />
+                <Route path="/workforce-intelligence" component={WorkforceIntelligencePage} />
+                <Route path="/legal-compliance" component={LegalCompliancePage} />
+                <Route path="/financial-planning" component={FinancialPlanningPage} />
+                <Route path="/sales-intelligence" component={SalesIntelligencePage} />
+                <Route path="/marketing-intelligence" component={MarketingIntelligencePage} />
+                <Route path="/service-delivery" component={ServiceDeliveryPage} />
+                <Route path="/it-operations" component={ItOperationsPage} />
+                <Route path="/business-evolution" component={BusinessEvolutionPage} />
+                <Route path="/app-builder" component={AppBuilderPage} />
+                <Route path="/industry-packs" component={IndustryPacksPage} />
+                <Route path="/workforce/manager" component={ManagerWorkspacePage} />
+                <Route path="/workforce/self-service" component={SelfServicePage} />
+                <Route path="/developers" component={DevelopersPage} />
+                <Route path="/developer" component={DeveloperPortalPage} />
+                <Route path="/saas-management" component={SaasManagementPage} />
+                <Route path="/voice-reception" component={VoiceReceptionPage} />
+                <Route path="/document-ai" component={DocumentAiPage} />
+                <Route path="/business-continuity" component={BusinessContinuityPage} />
+                <Route path="/global-search" component={GlobalSearchPage} />
+                <Route path="/data-migration" component={DataMigrationPage} />
+                <Route path="/notifications" component={NotificationsPage} />
+                <Route path="/platform-health" component={PlatformHealthPage} />
+                <Route path="/launch-center" component={LaunchCenterPage} />
+                <Route path="/release-center" component={ReleaseCenterPage} />
+                <Route path="/go-live" component={GoLivePage} />
+                <Route path="/release" component={ReleasePage} />
+                <Route path="/settings/billing" component={OwnerBillingPage} />
+                <Route path="/evolution" component={EvolutionPage} />
+                <Route path="/mission-control" component={MissionControlPage} />
+                <Route path="/knowledge" component={KnowledgeGraphPage} />
+                <Route path="/digital-twin" component={DigitalTwinPage} />
                 <Route path="/automation-studio" component={AutomationStudioPage} />
                 <Route path="/automation/new" component={WorkflowCreatePage} />
                 <Route path="/automation/executions" component={ExecutionListPage} />

@@ -1088,6 +1088,317 @@ function formatEnterpriseAutomationStudioContext(context: AuraGenerateContext): 
   return lines.join('\n');
 }
 
+function formatEnterpriseDigitalTwinContext(context: AuraGenerateContext): string | null {
+  const twin = context.enterpriseDigitalTwin;
+
+  if (!twin) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${twin.summary}`,
+    `- Health score: ${twin.healthScore ?? '—'}`,
+    `- Active scenarios: ${twin.activeScenarioCount}`,
+    `- Completed simulations: ${twin.completedSimulationCount}`,
+    `- Pending recommendations: ${twin.pendingRecommendationCount}`,
+    `- Operational risk: ${twin.operationalRiskLevel}`,
+    `- Pending actions: ${twin.pendingActionCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatEnterpriseKnowledgeGraphContext(context: AuraGenerateContext): string | null {
+  const graph = context.enterpriseKnowledgeGraph;
+
+  if (!graph) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${graph.summary}`,
+    `- Indexed entities: ${graph.entityCount}`,
+    `- Relationships: ${graph.relationshipCount}`,
+    `- Memory entries: ${graph.memoryEntryCount}`,
+    `- Semantic index records: ${graph.indexedCount}`,
+    `- Pending recommendations: ${graph.pendingRecommendationCount}`,
+    `- Pending actions: ${graph.pendingActionCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatEnterpriseMissionControlContext(context: AuraGenerateContext): string | null {
+  const missionControl = context.enterpriseMissionControl;
+
+  if (!missionControl) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${missionControl.summary}`,
+    `- Business health score: ${missionControl.businessHealthScore ?? '—'}`,
+    `- Pending alerts: ${missionControl.pendingAlertCount}`,
+    `- Critical alerts: ${missionControl.criticalAlertCount}`,
+    `- Active incidents: ${missionControl.activeIncidentCount}`,
+    `- Pending recommendations: ${missionControl.pendingRecommendationCount}`,
+    `- Pending command actions: ${missionControl.pendingActionCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatEnterpriseEvolutionContext(context: AuraGenerateContext): string | null {
+  const evolution = context.enterpriseEvolution;
+
+  if (!evolution) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${evolution.summary}`,
+    `- Optimization score: ${evolution.optimizationScore ?? '—'}`,
+    `- Learning progress: ${evolution.learningProgressPercent ?? '—'}%`,
+    `- AI confidence: ${evolution.aiConfidenceScore ?? '—'}`,
+    `- Pending recommendations: ${evolution.pendingRecommendationCount}`,
+    `- Pending optimizations: ${evolution.pendingOptimizationCount}`,
+    `- Patterns detected: ${evolution.patternCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatEnterpriseDeveloperPlatformContext(context: AuraGenerateContext): string | null {
+  const developerPlatform = context.enterpriseDeveloperPlatform;
+
+  if (!developerPlatform) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${developerPlatform.summary}`,
+    `- API requests tracked: ${developerPlatform.apiRequestCount}`,
+    `- Installed extensions: ${developerPlatform.installedExtensionCount}`,
+    `- Webhook subscriptions: ${developerPlatform.webhookSubscriptionCount}`,
+    `- SDK packages generated: ${developerPlatform.sdkPackageCount}`,
+    `- Pending platform actions: ${developerPlatform.pendingActionCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatEnterpriseSaasPlatformContext(context: AuraGenerateContext): string | null {
+  const saasPlatform = context.enterpriseSaasPlatform;
+
+  if (!saasPlatform) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${saasPlatform.summary}`,
+    `- Platform owner tenant: ${saasPlatform.isPlatformOwner ? 'yes' : 'no'}`,
+    `- Customer tenants: ${saasPlatform.tenantCount}`,
+    `- Active subscriptions: ${saasPlatform.activeSubscriptionCount}`,
+    `- Subscription status: ${saasPlatform.subscriptionStatus ?? 'none'}`,
+    `- Pending platform actions: ${saasPlatform.pendingActionCount}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatDocumentAiContext(context: AuraGenerateContext): string | null {
+  const documentAi = context.documentAi;
+
+  if (!documentAi) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${documentAi.summary}`,
+    `- Pending OCR jobs: ${documentAi.pendingOcrCount}`,
+    `- Failed OCR jobs: ${documentAi.failedOcrCount}`,
+    `- Review backlog: ${documentAi.reviewBacklogCount}`,
+    `- Open alerts: ${documentAi.openAlertCount}`,
+    `- Health status: ${documentAi.overallDocumentAiHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatBusinessContinuityContext(context: AuraGenerateContext): string | null {
+  const businessContinuity = context.businessContinuity;
+
+  if (!businessContinuity) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${businessContinuity.summary}`,
+    `- Failed backups: ${businessContinuity.failedBackupCount}`,
+    `- Restore readiness: ${businessContinuity.restoreReadinessStatus}`,
+    `- Recovery readiness: ${businessContinuity.recoveryReadinessStatus}`,
+    `- Open alerts: ${businessContinuity.openAlertCount}`,
+    `- Health status: ${businessContinuity.overallBusinessContinuityHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatSearchIntelligenceContext(context: AuraGenerateContext): string | null {
+  const searchIntelligence = context.searchIntelligence;
+
+  if (!searchIntelligence) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${searchIntelligence.summary}`,
+    `- Indexed records: ${searchIntelligence.indexedCount}`,
+    `- Failed index entries: ${searchIntelligence.failedIndexCount}`,
+    `- Open alerts: ${searchIntelligence.openAlertCount}`,
+    `- Health status: ${searchIntelligence.overallSearchHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatMigrationIntelligenceContext(context: AuraGenerateContext): string | null {
+  const migrationIntelligence = context.migrationIntelligence;
+
+  if (!migrationIntelligence) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${migrationIntelligence.summary}`,
+    `- Active imports: ${migrationIntelligence.activeImportCount}`,
+    `- Failed imports: ${migrationIntelligence.failedImportCount}`,
+    `- Rollback available: ${migrationIntelligence.rollbackAvailableCount}`,
+    `- Open alerts: ${migrationIntelligence.openAlertCount}`,
+    `- Health status: ${migrationIntelligence.overallMigrationHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatNotificationIntelligenceContext(context: AuraGenerateContext): string | null {
+  const notificationIntelligence = context.notificationIntelligence;
+
+  if (!notificationIntelligence) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${notificationIntelligence.summary}`,
+    `- Active alerts: ${notificationIntelligence.activeAlertCount}`,
+    `- Failed deliveries: ${notificationIntelligence.failedDeliveryCount}`,
+    `- Pending escalations: ${notificationIntelligence.pendingEscalationCount}`,
+    `- Open platform alerts: ${notificationIntelligence.openAlertCount}`,
+    `- Health status: ${notificationIntelligence.overallNotificationHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatPlatformHealthContext(context: AuraGenerateContext): string | null {
+  const platformHealth = context.platformHealth;
+
+  if (!platformHealth) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${platformHealth.summary}`,
+    `- Health score: ${platformHealth.overallHealthScore ?? '—'}`,
+    `- Critical incidents: ${platformHealth.criticalIncidentCount}`,
+    `- Failed diagnostics: ${platformHealth.failedDiagnosticCount}`,
+    `- Open alerts: ${platformHealth.openAlertCount}`,
+    `- Health status: ${platformHealth.overallPlatformHealthStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatLaunchReadinessContext(context: AuraGenerateContext): string | null {
+  const launchReadiness = context.launchReadiness;
+
+  if (!launchReadiness) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${launchReadiness.summary}`,
+    `- Readiness score: ${launchReadiness.overallScore ?? '—'}`,
+    `- Critical blockers: ${launchReadiness.criticalBlockerCount}`,
+    `- Failed checks: ${launchReadiness.failedCheckCount}`,
+    `- Pending approvals: ${launchReadiness.pendingApprovalCount}`,
+    `- Open alerts: ${launchReadiness.openAlertCount}`,
+    `- Launch status: ${launchReadiness.overallLaunchReadinessStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatReleaseCandidateContext(context: AuraGenerateContext): string | null {
+  const releaseCandidate = context.releaseCandidate;
+
+  if (!releaseCandidate) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${releaseCandidate.summary}`,
+    `- Readiness score: ${releaseCandidate.readinessScore ?? '—'}`,
+    `- Failed validations: ${releaseCandidate.failedValidationCount}`,
+    `- Warnings: ${releaseCandidate.warningCount}`,
+    `- Optimization opportunities: ${releaseCandidate.optimizationCount}`,
+    `- Open alerts: ${releaseCandidate.openAlertCount}`,
+    `- Release status: ${releaseCandidate.overallReleaseStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatProductionLaunchContext(context: AuraGenerateContext): string | null {
+  const productionLaunch = context.productionLaunch;
+
+  if (!productionLaunch) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${productionLaunch.summary}`,
+    `- Launch status: ${productionLaunch.launchStatus}`,
+    `- Failed providers: ${productionLaunch.failedProviderCount}`,
+    `- Missing config: ${productionLaunch.missingConfigCount}`,
+    `- Pending approvals: ${productionLaunch.pendingApprovalCount}`,
+    `- Open alerts: ${productionLaunch.openAlertCount}`,
+    `- Production status: ${productionLaunch.overallProductionStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
+function formatReleaseManagementContext(context: AuraGenerateContext): string | null {
+  const releaseManagement = context.releaseManagement;
+
+  if (!releaseManagement) {
+    return null;
+  }
+
+  const lines = [
+    `- Summary: ${releaseManagement.summary}`,
+    `- Release status: ${releaseManagement.releaseStatus}`,
+    `- Documentation completeness: ${releaseManagement.documentationCompleteness}%`,
+    `- Pending checklist items: ${releaseManagement.pendingChecklistCount}`,
+    `- Mobile ready: ${releaseManagement.mobileReady ? 'yes' : 'no'}`,
+    `- Open alerts: ${releaseManagement.openAlertCount}`,
+    `- Overall release status: ${releaseManagement.overallReleaseStatus}`,
+  ];
+
+  return lines.join('\n');
+}
+
 function formatIntegrationHubContext(context: AuraGenerateContext): string | null {
   const integrationHub = context.integrationHub;
 
@@ -1748,6 +2059,22 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
   const integrationPlatformSection = formatIntegrationPlatformContext(context);
   const enterpriseAnalyticsSection = formatEnterpriseAnalyticsContext(context);
   const enterpriseAutomationStudioSection = formatEnterpriseAutomationStudioContext(context);
+  const enterpriseDigitalTwinSection = formatEnterpriseDigitalTwinContext(context);
+  const enterpriseKnowledgeGraphSection = formatEnterpriseKnowledgeGraphContext(context);
+  const enterpriseMissionControlSection = formatEnterpriseMissionControlContext(context);
+  const enterpriseEvolutionSection = formatEnterpriseEvolutionContext(context);
+  const enterpriseDeveloperPlatformSection = formatEnterpriseDeveloperPlatformContext(context);
+  const enterpriseSaasPlatformSection = formatEnterpriseSaasPlatformContext(context);
+  const documentAiSection = formatDocumentAiContext(context);
+  const businessContinuitySection = formatBusinessContinuityContext(context);
+  const searchIntelligenceSection = formatSearchIntelligenceContext(context);
+  const migrationIntelligenceSection = formatMigrationIntelligenceContext(context);
+  const notificationIntelligenceSection = formatNotificationIntelligenceContext(context);
+  const platformHealthSection = formatPlatformHealthContext(context);
+  const launchReadinessSection = formatLaunchReadinessContext(context);
+  const releaseCandidateSection = formatReleaseCandidateContext(context);
+  const productionLaunchSection = formatProductionLaunchContext(context);
+  const releaseManagementSection = formatReleaseManagementContext(context);
   const integrationHubSection = formatIntegrationHubContext(context);
   const integrationApiManagementSection = formatIntegrationApiManagementContext(context);
   const xeroAccountingSection = formatXeroAccountingContext(context);
@@ -1797,6 +2124,36 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     enterpriseAnalyticsSection ? 'Enterprise Analytics, Data Warehouse & Business Intelligence Platform' : null,
     enterpriseAutomationStudioSection
       ? 'Enterprise Automation Studio, Workflow Designer & AI Process Orchestration Platform'
+      : null,
+    enterpriseDigitalTwinSection
+      ? 'Enterprise Digital Twin, Operational Simulation & Decision Intelligence Platform'
+      : null,
+    enterpriseKnowledgeGraphSection
+      ? 'Enterprise Knowledge Graph, Semantic Search & Organizational Memory Platform'
+      : null,
+    enterpriseMissionControlSection
+      ? 'Enterprise Command Center, Mission Control & Executive Operations Platform'
+      : null,
+    enterpriseEvolutionSection
+      ? 'Enterprise Autonomous Optimization, Continuous Learning & Evolution Platform'
+      : null,
+    enterpriseDeveloperPlatformSection
+      ? 'Enterprise Developer Platform, Extension Marketplace & SDK Ecosystem'
+      : null,
+    enterpriseSaasPlatformSection
+      ? 'Enterprise White-Label, Multi-Tenant SaaS & Subscription Platform'
+      : null,
+    documentAiSection
+      ? 'Enterprise Document AI, OCR & Intelligent Document Processing Platform'
+      : null,
+    businessContinuitySection
+      ? 'Enterprise Backup, Disaster Recovery & Business Continuity Platform'
+      : null,
+    searchIntelligenceSection
+      ? 'Enterprise Global Search, Universal Timeline & Cross-Module Activity Intelligence'
+      : null,
+    migrationIntelligenceSection
+      ? 'Enterprise Data Import, Export & Migration Platform'
       : null,
     integrationHubSection ? 'Integration Hub' : null,
     integrationApiManagementSection ? 'Integration API Management' : null,
@@ -1895,6 +2252,52 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       : '') +
     (enterpriseAutomationStudioSection
       ? `Enterprise automation studio:\n${enterpriseAutomationStudioSection}\n\n`
+      : '') +
+    (enterpriseDigitalTwinSection
+      ? `Enterprise digital twin:\n${enterpriseDigitalTwinSection}\n\n`
+      : '') +
+    (enterpriseKnowledgeGraphSection
+      ? `Enterprise knowledge graph:\n${enterpriseKnowledgeGraphSection}\n\n`
+      : '') +
+    (enterpriseMissionControlSection
+      ? `Enterprise mission control:\n${enterpriseMissionControlSection}\n\n`
+      : '') +
+    (enterpriseEvolutionSection
+      ? `Enterprise evolution platform:\n${enterpriseEvolutionSection}\n\n`
+      : '') +
+    (enterpriseDeveloperPlatformSection
+      ? `Enterprise developer platform:\n${enterpriseDeveloperPlatformSection}\n\n`
+      : '') +
+    (enterpriseSaasPlatformSection
+      ? `Enterprise SaaS platform:\n${enterpriseSaasPlatformSection}\n\n`
+      : '') +
+    (documentAiSection ? `Enterprise document AI:\n${documentAiSection}\n\n` : '') +
+    (businessContinuitySection
+      ? `Enterprise business continuity:\n${businessContinuitySection}\n\n`
+      : '') +
+    (searchIntelligenceSection
+      ? `Enterprise global search:\n${searchIntelligenceSection}\n\n`
+      : '') +
+    (migrationIntelligenceSection
+      ? `Enterprise data migration:\n${migrationIntelligenceSection}\n\n`
+      : '') +
+    (notificationIntelligenceSection
+      ? `Enterprise notification center:\n${notificationIntelligenceSection}\n\n`
+      : '') +
+    (platformHealthSection
+      ? `Enterprise platform health:\n${platformHealthSection}\n\n`
+      : '') +
+    (launchReadinessSection
+      ? `Enterprise launch readiness:\n${launchReadinessSection}\n\n`
+      : '') +
+    (releaseCandidateSection
+      ? `Enterprise release candidate:\n${releaseCandidateSection}\n\n`
+      : '') +
+    (productionLaunchSection
+      ? `Enterprise production launch:\n${productionLaunchSection}\n\n`
+      : '') +
+    (releaseManagementSection
+      ? `Enterprise release management:\n${releaseManagementSection}\n\n`
       : '') +
     (integrationHubSection ? `Integration Hub context:\n${integrationHubSection}\n\n` : '') +
     (integrationApiManagementSection

@@ -11,6 +11,14 @@ import type {
   PortalQuoteDetail,
   PortalDashboardResponse,
   NotificationSummary,
+  CxCustomerDashboard,
+  CxDocumentCentre,
+  CxAppointmentBookingSummary,
+  CxCustomerPropertySummary,
+  CxReviewFeedbackSummary,
+  CxLoyaltyReferralSummary,
+  CxEngagementPreferencesSummary,
+  CxTechnicianTrackingSummary,
 } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 
@@ -232,4 +240,133 @@ export async function createPortalRequest(
     body,
   });
   return data.request;
+}
+
+export async function fetchCxPortalDashboard(accessToken: string): Promise<CxCustomerDashboard> {
+  const data = await portalRequest<{ dashboard: CxCustomerDashboard }>(
+    '/enterprise-customer-experience/portal/dashboard',
+    { accessToken },
+  );
+  return data.dashboard;
+}
+
+export async function fetchCxPortalDocuments(accessToken: string): Promise<CxDocumentCentre> {
+  const data = await portalRequest<{ documentCentre: CxDocumentCentre }>(
+    '/enterprise-customer-experience/portal/documents',
+    { accessToken },
+  );
+  return data.documentCentre;
+}
+
+export async function fetchCxPortalBookings(accessToken: string): Promise<CxAppointmentBookingSummary[]> {
+  const data = await portalRequest<{ bookings: CxAppointmentBookingSummary[] }>(
+    '/enterprise-customer-experience/portal/bookings',
+    { accessToken },
+  );
+  return data.bookings;
+}
+
+export async function createCxPortalBooking(
+  accessToken: string,
+  body: {
+    subject: string;
+    bookingType?: 'standard' | 'emergency' | 'reschedule' | 'cancellation';
+    preferredDate?: string;
+    preferredTimeWindow?: string;
+    jobNotes?: string;
+    photoUrls?: string[];
+  },
+) {
+  const data = await portalRequest<{ booking: CxAppointmentBookingSummary }>(
+    '/enterprise-customer-experience/portal/bookings',
+    { method: 'POST', accessToken, body },
+  );
+  return data.booking;
+}
+
+export async function fetchCxPortalProperties(accessToken: string): Promise<CxCustomerPropertySummary[]> {
+  const data = await portalRequest<{ properties: CxCustomerPropertySummary[] }>(
+    '/enterprise-customer-experience/portal/properties',
+    { accessToken },
+  );
+  return data.properties;
+}
+
+export async function createCxPortalProperty(
+  accessToken: string,
+  body: { propertyName: string; addressLine1?: string; city?: string; postalCode?: string; isPrimary?: boolean },
+) {
+  const data = await portalRequest<{ property: CxCustomerPropertySummary }>(
+    '/enterprise-customer-experience/portal/properties',
+    { method: 'POST', accessToken, body },
+  );
+  return data.property;
+}
+
+export async function fetchCxPortalReviews(accessToken: string): Promise<CxReviewFeedbackSummary[]> {
+  const data = await portalRequest<{ reviews: CxReviewFeedbackSummary[] }>(
+    '/enterprise-customer-experience/portal/reviews',
+    { accessToken },
+  );
+  return data.reviews;
+}
+
+export async function submitCxPortalReview(
+  accessToken: string,
+  body: {
+    reviewType: CxReviewFeedbackSummary['reviewType'];
+    subject: string;
+    feedback: string;
+    rating?: number;
+    jobId?: string;
+  },
+) {
+  const data = await portalRequest<{ review: CxReviewFeedbackSummary }>(
+    '/enterprise-customer-experience/portal/reviews',
+    { method: 'POST', accessToken, body },
+  );
+  return data.review;
+}
+
+export async function fetchCxPortalReferrals(accessToken: string): Promise<CxLoyaltyReferralSummary[]> {
+  const data = await portalRequest<{ referrals: CxLoyaltyReferralSummary[] }>(
+    '/enterprise-customer-experience/portal/referrals',
+    { accessToken },
+  );
+  return data.referrals;
+}
+
+export async function createCxPortalReferral(accessToken: string, referredEmail: string) {
+  const data = await portalRequest<{ referral: CxLoyaltyReferralSummary }>(
+    '/enterprise-customer-experience/portal/referrals',
+    { method: 'POST', accessToken, body: { referredEmail } },
+  );
+  return data.referral;
+}
+
+export async function fetchCxEngagementPreferences(accessToken: string): Promise<CxEngagementPreferencesSummary> {
+  const data = await portalRequest<{ preferences: CxEngagementPreferencesSummary }>(
+    '/enterprise-customer-experience/portal/engagement-preferences',
+    { accessToken },
+  );
+  return data.preferences;
+}
+
+export async function updateCxEngagementPreferences(
+  accessToken: string,
+  body: Partial<CxEngagementPreferencesSummary>,
+) {
+  const data = await portalRequest<{ preferences: CxEngagementPreferencesSummary }>(
+    '/enterprise-customer-experience/portal/engagement-preferences',
+    { method: 'PATCH', accessToken, body },
+  );
+  return data.preferences;
+}
+
+export async function fetchCxTechnicianTracking(accessToken: string, jobId: string): Promise<CxTechnicianTrackingSummary> {
+  const data = await portalRequest<{ tracking: CxTechnicianTrackingSummary }>(
+    `/enterprise-customer-experience/portal/tracking/${jobId}`,
+    { accessToken },
+  );
+  return data.tracking;
 }

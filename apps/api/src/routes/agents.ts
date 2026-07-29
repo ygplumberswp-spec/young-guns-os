@@ -15,6 +15,40 @@ import type { ExecutiveService } from '../services/executive.service.js';
 import type { FinanceIntelligenceService } from '../services/finance-intelligence.service.js';
 import type { KnowledgeService } from '../services/knowledge.service.js';
 import type { BusinessIntelligenceService } from '../services/business-intelligence.service.js';
+import type { EnterpriseKnowledgeGraphService } from '../services/enterprise-knowledge-graph.service.js';
+import type { EnterpriseMissionControlService } from '../services/enterprise-mission-control.service.js';
+import type { EnterpriseEvolutionService } from '../services/enterprise-evolution.service.js';
+import type { EnterpriseDeveloperPlatformService } from '../services/enterprise-developer-platform.service.js';
+import type { EnterpriseSaasPlatformService } from '../services/enterprise-saas-platform.service.js';
+import type { EnterpriseProductionReadinessService } from '../services/enterprise-production-readiness.service.js';
+import type { EnterpriseMobilePlatformService } from '../services/enterprise-mobile-platform.service.js';
+import type { EnterpriseUnifiedCommunicationsService } from '../services/enterprise-unified-communications.service.js';
+import type { EnterpriseCustomerExperienceService } from '../services/enterprise-customer-experience.service.js';
+import type { EnterpriseAssetLifecycleService } from '../services/enterprise-asset-lifecycle.service.js';
+import type { EnterpriseWorkforceIntelligenceService } from '../services/enterprise-workforce-intelligence.service.js';
+import type { EnterpriseLegalComplianceService } from '../services/enterprise-legal-compliance.service.js';
+import type { EnterpriseFinancialPlanningService } from '../services/enterprise-financial-planning.service.js';
+import type { EnterpriseSalesIntelligenceService } from '../services/enterprise-sales-intelligence.service.js';
+import type { EnterpriseMarketingIntelligenceService } from '../services/enterprise-marketing-intelligence.service.js';
+import type { EnterpriseServiceDeliveryService } from '../services/enterprise-service-delivery.service.js';
+import type { EnterpriseItOperationsService } from '../services/enterprise-it-operations.service.js';
+import type { EnterpriseBusinessEvolutionService } from '../services/enterprise-business-evolution.service.js';
+import type { EnterpriseAppBuilderService } from '../services/enterprise-app-builder.service.js';
+import type { EnterpriseIndustryPackService } from '../services/enterprise-industry-packs.service.js';
+import type { EnterprisePublicDeveloperPlatformService } from '../services/enterprise-public-developer-platform.service.js';
+import type { EnterpriseSaasManagementService } from '../services/enterprise-saas-management.service.js';
+import type { EnterpriseVoiceReceptionService } from '../services/enterprise-voice-reception.service.js';
+import type { EnterpriseDocumentAiService } from '../services/enterprise-document-ai.service.js';
+import type { EnterpriseBusinessContinuityService } from '../services/enterprise-business-continuity.service.js';
+import type { EnterpriseGlobalSearchService } from '../services/enterprise-global-search.service.js';
+import type { EnterpriseDataMigrationService } from '../services/enterprise-data-migration.service.js';
+import type { EnterpriseNotificationsService } from '../services/enterprise-notifications.service.js';
+import type { EnterprisePlatformHealthService } from '../services/enterprise-platform-health.service.js';
+import type { EnterpriseLaunchCenterService } from '../services/enterprise-launch-center.service.js';
+import type { EnterpriseReleaseCenterService } from '../services/enterprise-release-center.service.js';
+import type { EnterpriseProductionLaunchService } from '../services/enterprise-production-launch.service.js';
+import type { EnterpriseReleaseManagementService } from '../services/enterprise-release-management.service.js';
+import type { EnterpriseDigitalTwinService } from '../services/enterprise-digital-twin.service.js';
 import type { EnterpriseAutomationStudioService } from '../services/enterprise-automation-studio.service.js';
 import type { WorkflowStudioService } from '../services/workflow-studio.service.js';
 import type { PortalExperienceService } from '../services/portal-experience.service.js';
@@ -50,6 +84,40 @@ const agentKeySchema = z.enum([
   'integration',
   'business_intelligence',
   'automation',
+  'decision_intelligence',
+  'knowledge',
+  'executive_operations',
+  'evolution',
+  'developer',
+  'saas',
+  'production_operations',
+  'mobile_field',
+  'communications',
+  'customer_experience',
+  'asset_intelligence',
+  'workforce_intelligence',
+  'legal_compliance',
+  'financial_planning',
+  'sales_intelligence',
+  'marketing_intelligence',
+  'service_delivery',
+  'it_operations',
+  'business_evolution',
+  'app_builder',
+  'industry_intelligence',
+  'developer_platform',
+  'saas_management',
+  'voice_reception',
+  'document_intelligence',
+  'business_continuity',
+  'search_intelligence',
+  'migration_intelligence',
+  'notification_intelligence',
+  'platform_health',
+  'launch_readiness',
+  'release_candidate',
+  'production_launch',
+  'release_manager',
 ]);
 const profileStatusSchema = z.enum(['draft', 'active', 'paused']);
 
@@ -133,6 +201,40 @@ type AgentsRouterDeps = {
   connectorEngineService: ConnectorEngineService;
   enterpriseAnalyticsService: EnterpriseAnalyticsService;
   enterpriseAutomationStudioService: EnterpriseAutomationStudioService;
+  enterpriseDigitalTwinService: EnterpriseDigitalTwinService;
+  enterpriseKnowledgeGraphService: EnterpriseKnowledgeGraphService;
+  enterpriseMissionControlService: EnterpriseMissionControlService;
+  enterpriseEvolutionService: EnterpriseEvolutionService;
+  enterpriseDeveloperPlatformService: EnterpriseDeveloperPlatformService;
+  enterpriseSaasPlatformService: EnterpriseSaasPlatformService;
+  enterpriseProductionReadinessService: EnterpriseProductionReadinessService;
+  enterpriseMobilePlatformService: EnterpriseMobilePlatformService;
+  enterpriseUnifiedCommunicationsService: EnterpriseUnifiedCommunicationsService;
+  enterpriseCustomerExperienceService: EnterpriseCustomerExperienceService;
+  enterpriseAssetLifecycleService: EnterpriseAssetLifecycleService;
+  enterpriseWorkforceIntelligenceService: EnterpriseWorkforceIntelligenceService;
+  enterpriseLegalComplianceService: EnterpriseLegalComplianceService;
+  enterpriseFinancialPlanningService: EnterpriseFinancialPlanningService;
+  enterpriseSalesIntelligenceService: EnterpriseSalesIntelligenceService;
+  enterpriseMarketingIntelligenceService: EnterpriseMarketingIntelligenceService;
+  enterpriseServiceDeliveryService: EnterpriseServiceDeliveryService;
+  enterpriseItOperationsService: EnterpriseItOperationsService;
+  enterpriseBusinessEvolutionService: EnterpriseBusinessEvolutionService;
+  enterpriseAppBuilderService: EnterpriseAppBuilderService;
+  enterpriseIndustryPackService: EnterpriseIndustryPackService;
+  enterprisePublicDeveloperPlatformService: EnterprisePublicDeveloperPlatformService;
+  enterpriseSaasManagementService: EnterpriseSaasManagementService;
+  enterpriseVoiceReceptionService: EnterpriseVoiceReceptionService;
+  enterpriseDocumentAiService: EnterpriseDocumentAiService;
+  enterpriseBusinessContinuityService: EnterpriseBusinessContinuityService;
+  enterpriseGlobalSearchService: EnterpriseGlobalSearchService;
+  enterpriseDataMigrationService: EnterpriseDataMigrationService;
+  enterpriseNotificationsService: EnterpriseNotificationsService;
+  enterprisePlatformHealthService: EnterprisePlatformHealthService;
+  enterpriseLaunchCenterService: EnterpriseLaunchCenterService;
+  enterpriseReleaseCenterService: EnterpriseReleaseCenterService;
+  enterpriseProductionLaunchService: EnterpriseProductionLaunchService;
+  enterpriseReleaseManagementService: EnterpriseReleaseManagementService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -157,7 +259,7 @@ export function createAgentsRouter({
   procurementService,
   executiveService,
   financeIntelligenceService,
-  knowledgeService,
+  knowledgeService: _knowledgeService,
   businessIntelligenceService: _businessIntelligenceService,
   workflowStudioService: _workflowStudioService,
   integrationApiManagementService,
@@ -175,6 +277,40 @@ export function createAgentsRouter({
   connectorEngineService: _connectorEngineService,
   enterpriseAnalyticsService,
   enterpriseAutomationStudioService,
+  enterpriseDigitalTwinService,
+  enterpriseKnowledgeGraphService,
+  enterpriseMissionControlService,
+  enterpriseEvolutionService,
+  enterpriseDeveloperPlatformService,
+  enterpriseSaasPlatformService,
+  enterpriseProductionReadinessService,
+  enterpriseMobilePlatformService,
+  enterpriseUnifiedCommunicationsService,
+  enterpriseCustomerExperienceService,
+  enterpriseAssetLifecycleService,
+  enterpriseWorkforceIntelligenceService,
+  enterpriseLegalComplianceService,
+  enterpriseFinancialPlanningService,
+  enterpriseSalesIntelligenceService,
+  enterpriseMarketingIntelligenceService,
+  enterpriseServiceDeliveryService,
+  enterpriseItOperationsService,
+  enterpriseBusinessEvolutionService,
+  enterpriseAppBuilderService,
+  enterpriseIndustryPackService,
+  enterprisePublicDeveloperPlatformService,
+  enterpriseSaasManagementService,
+  enterpriseVoiceReceptionService,
+  enterpriseDocumentAiService,
+  enterpriseBusinessContinuityService,
+  enterpriseGlobalSearchService,
+  enterpriseDataMigrationService,
+  enterpriseNotificationsService,
+  enterprisePlatformHealthService,
+  enterpriseLaunchCenterService,
+  enterpriseReleaseCenterService,
+  enterpriseProductionLaunchService,
+  enterpriseReleaseManagementService,
   teamService,
   jwtSecret,
   authService,
@@ -296,8 +432,9 @@ export function createAgentsRouter({
     requireAnyPermission('agents:read', 'knowledge:read', 'knowledge:write', 'intelligence:read'),
     async (req, res) => {
       const { companyId } = getAuth(req);
-      const context = await knowledgeService.buildAuraContext(companyId);
-      res.json({ data: { context } });
+      const registry = getAgentRegistryEntry('knowledge');
+      const context = await enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
+      res.json({ data: { registry, context } });
     },
   );
 
@@ -319,6 +456,537 @@ export function createAgentsRouter({
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('automation');
       const context = await enterpriseAutomationStudioService.buildAutomationAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/decision-intelligence',
+    requireAnyPermission('agents:read', 'executive:read', 'executive:write', 'intelligence:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('decision_intelligence');
+      const context = await enterpriseDigitalTwinService.buildDigitalTwinAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/executive-operations',
+    requireAnyPermission('agents:read', 'executive:read', 'executive:write', 'intelligence:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('executive_operations');
+      const context = await enterpriseMissionControlService.buildMissionControlAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/evolution',
+    requireAnyPermission('agents:read', 'intelligence:read', 'executive:read', 'ai_orchestration:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('evolution');
+      const context = await enterpriseEvolutionService.buildEvolutionAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/developer',
+    requireAnyPermission('agents:read', 'integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('developer');
+      const context = await enterpriseDeveloperPlatformService.buildDeveloperAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/saas',
+    requireAnyPermission('agents:read', 'saas:read', 'saas:manage', 'platform:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('saas');
+      const context = await enterpriseSaasPlatformService.buildSaasAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/production-operations',
+    requireAnyPermission('agents:read', 'ops:read', 'ops:manage', 'platform:read', 'platform:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = getAgentRegistryEntry('production_operations');
+      const context = await enterpriseProductionReadinessService.buildAuraContext(companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/mobile-field',
+    requireAnyPermission('agents:read', 'mobile:read', 'mobile:write', 'mobile:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('mobile_field');
+      const context = await enterpriseMobilePlatformService.buildAuraContext({
+        companyId: auth.companyId,
+        userId: auth.userId,
+      });
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/communications',
+    requireAnyPermission('agents:read', 'communications:read', 'communications:write', 'communications:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('communications');
+      const context = await enterpriseUnifiedCommunicationsService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/customer-experience',
+    requireAnyPermission(
+      'agents:read',
+      'customer_experience:read',
+      'customer_experience:write',
+      'customer_experience:manage',
+      'portal:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('customer_experience');
+      const context = await enterpriseCustomerExperienceService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/asset-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'asset_lifecycle:read',
+      'asset_lifecycle:write',
+      'asset_lifecycle:manage',
+      'asset_equipment:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('asset_intelligence');
+      const context = await enterpriseAssetLifecycleService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/workforce-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'workforce:read',
+      'workforce:write',
+      'workforce_intelligence:read',
+      'workforce_intelligence:write',
+      'workforce_intelligence:manage',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('workforce_intelligence');
+      const context = await enterpriseWorkforceIntelligenceService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/legal-compliance',
+    requireAnyPermission(
+      'agents:read',
+      'legal_compliance:read',
+      'legal_compliance:write',
+      'legal_compliance:manage',
+      'documents:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('legal_compliance');
+      const context = await enterpriseLegalComplianceService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/financial-planning',
+    requireAnyPermission(
+      'agents:read',
+      'financial_planning:read',
+      'financial_planning:write',
+      'financial_planning:manage',
+      'finance:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('financial_planning');
+      const context = await enterpriseFinancialPlanningService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/sales-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'sales_intelligence:read',
+      'sales_intelligence:write',
+      'sales_intelligence:manage',
+      'sales:read',
+      'leads:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('sales_intelligence');
+      const context = await enterpriseSalesIntelligenceService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/marketing-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'marketing_intelligence:read',
+      'marketing_intelligence:write',
+      'marketing_intelligence:manage',
+      'marketing:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('marketing_intelligence');
+      const context = await enterpriseMarketingIntelligenceService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/service-delivery',
+    requireAnyPermission(
+      'agents:read',
+      'service_delivery:read',
+      'service_delivery:write',
+      'service_delivery:manage',
+      'jobs:read',
+      'quality:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('service_delivery');
+      const context = await enterpriseServiceDeliveryService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/it-operations',
+    requireAnyPermission(
+      'agents:read',
+      'it_operations:read',
+      'it_operations:write',
+      'it_operations:manage',
+      'ops:read',
+      'ops:manage',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('it_operations');
+      const context = await enterpriseItOperationsService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/business-evolution',
+    requireAnyPermission(
+      'agents:read',
+      'business_evolution:read',
+      'business_evolution:write',
+      'business_evolution:manage',
+      'intelligence:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('business_evolution');
+      const context = await enterpriseBusinessEvolutionService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/app-builder',
+    requireAnyPermission(
+      'agents:read',
+      'app_builder:read',
+      'app_builder:write',
+      'app_builder:manage',
+      'platform:read',
+      'platform:manage',
+      'intelligence:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('app_builder');
+      const context = await enterpriseAppBuilderService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/industry-packs',
+    requireAnyPermission(
+      'agents:read',
+      'industry_packs:read',
+      'industry_packs:write',
+      'industry_packs:manage',
+      'intelligence:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('industry_intelligence');
+      const context = await enterpriseIndustryPackService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/developer-platform',
+    requireAnyPermission(
+      'agents:read',
+      'public_developer:read',
+      'public_developer:write',
+      'public_developer:manage',
+      'integrations:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('developer_platform');
+      const context = await enterprisePublicDeveloperPlatformService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/saas-management',
+    requireAnyPermission(
+      'agents:read',
+      'saas_management:read',
+      'saas_management:write',
+      'saas_management:manage',
+      'saas:read',
+      'platform:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('saas_management');
+      const context = await enterpriseSaasManagementService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/voice-reception',
+    requireAnyPermission(
+      'agents:read',
+      'voice_reception:read',
+      'voice_reception:write',
+      'voice_reception:manage',
+      'voice:read',
+      'communications:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('voice_reception');
+      const context = await enterpriseVoiceReceptionService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/document-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'document_ai:read',
+      'document_ai:write',
+      'document_ai:manage',
+      'documents:read',
+      'knowledge:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('document_intelligence');
+      const context = await enterpriseDocumentAiService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/business-continuity',
+    requireAnyPermission(
+      'agents:read',
+      'business_continuity:read',
+      'business_continuity:write',
+      'business_continuity:manage',
+      'ops:read',
+      'it_operations:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('business_continuity');
+      const context = await enterpriseBusinessContinuityService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/search-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'search:read',
+      'search:write',
+      'search:manage',
+      'intelligence:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('search_intelligence');
+      const context = await enterpriseGlobalSearchService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/migration-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'data_migration:read',
+      'data_migration:write',
+      'data_migration:manage',
+      'integrations:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('migration_intelligence');
+      const context = await enterpriseDataMigrationService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/notification-intelligence',
+    requireAnyPermission(
+      'agents:read',
+      'notifications:read',
+      'notifications:write',
+      'notifications:manage',
+      'integrations:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('notification_intelligence');
+      const context = await enterpriseNotificationsService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/platform-health',
+    requireAnyPermission(
+      'agents:read',
+      'platform_health:read',
+      'platform_health:write',
+      'platform_health:manage',
+      'it_operations:read',
+      'integrations:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('platform_health');
+      const context = await enterprisePlatformHealthService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/launch-center',
+    requireAnyPermission(
+      'agents:read',
+      'launch_center:read',
+      'launch_center:write',
+      'launch_center:manage',
+      'ops:read',
+      'platform_health:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('launch_readiness');
+      const context = await enterpriseLaunchCenterService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/release-center',
+    requireAnyPermission(
+      'agents:read',
+      'release_center:read',
+      'release_center:write',
+      'release_center:manage',
+      'ops:read',
+      'launch_center:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('release_candidate');
+      const context = await enterpriseReleaseCenterService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/go-live',
+    requireAnyPermission(
+      'agents:read',
+      'production_launch:read',
+      'production_launch:write',
+      'production_launch:manage',
+      'ops:read',
+      'release_center:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('production_launch');
+      const context = await enterpriseProductionLaunchService.buildAuraContext(auth.companyId);
+      res.json({ data: { registry, context } });
+    },
+  );
+
+  router.get(
+    '/release',
+    requireAnyPermission(
+      'agents:read',
+      'release_manager:read',
+      'release_manager:write',
+      'release_manager:manage',
+      'ops:read',
+      'production_launch:read',
+    ),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const registry = getAgentRegistryEntry('release_manager');
+      const context = await enterpriseReleaseManagementService.buildAuraContext(auth.companyId);
       res.json({ data: { registry, context } });
     },
   );
