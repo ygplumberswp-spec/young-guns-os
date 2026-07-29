@@ -1,0 +1,206 @@
+import { useEffect, useMemo, useState } from 'react';
+import { AGENT_REGISTRY, AI_NAME, type AgentKey, type AgentTaskSummary } from '@titan/shared';
+import { hasAnyPermission } from '@titan/auth/browser';
+import { useSearch } from 'wouter';
+import { useAuth } from '../../lib/auth-context';
+import { fetchAgentRegistry } from '../../lib/agents-api';
+import { AuraBusinessDashboard } from '../../features/aura/AuraBusinessDashboard';
+import { AuraComposer } from '../../features/aura/AuraComposer';
+import { AuraConversationList } from '../../features/aura/AuraConversationList';
+import { AuraMessageList } from '../../features/aura/AuraMessageList';
+import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
+import { useAuraChat } from '../../features/aura/useAuraChat';
+
+export function AuraPage() {
+  const { user, accessToken } = useAuth();
+  const search = useSearch();
+  const searchParams = new URLSearchParams(search);
+  const customerId = searchParams.get('customerId') ?? undefined;
+  const jobId = searchParams.get('jobId') ?? undefined;
+  const vehicleId = searchParams.get('vehicleId') ?? undefined;
+  const schedulingView = searchParams.get('scheduling') === '1';
+  const [conversationMode, setConversationMode] = useState<'aura' | 'agent'>('agent');
+  const [selectedAgentKey, setSelectedAgentKey] = useState<AgentKey>('executive');
+  const [registry, setRegistry] = useState(AGENT_REGISTRY);
+
+  const pageContext =
+    customerId || jobId || vehicleId || schedulingView
+      ? { customerId, jobId, vehicleId, schedulingView }
+      : undefined;
+
+  const {
+    conversations,
+    activeConversation,
+    messages,
+    agentMessages,
+    pendingTasks,
+    lastRunTools,
+    isLoading,
+    isSending,
+    error,
+    startConversation,
+    selectConversation,
+    sendMessage,
+    sendAgentMessage,
+    updateTask,
+    removeConversation,
+  } = useAuraChat(pageContext);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    void fetchAgentRegistry(accessToken)
+      .then(setRegistry)
+      .catch(() => setRegistry(AGENT_REGISTRY));
+  }, [accessToken]);
+
+  const contextLabel = schedulingView
+    ? 'Scheduling context active'
+    : vehicleId
+      ? 'Vehicle context active'
+      : jobId
+        ? 'Job context active'
+        : customerId
+          ? 'Customer context active'
+          : '';
+
+  const activeAgent = useMemo(
+    () => registry.find((entry) => entry.agentKey === selectedAgentKey) ?? registry[0],
+    [registry, selectedAgentKey],
+  );
+
+  const canWriteMemory = useMemo(
+    () => (user ? hasAnyPermission(user.permissions, ['intelligence:write']) : false),
+    [user],
+  );
+
+  const canViewIntelligence = useMemo(
+    () =>
+      user
+        ? hasAnyPermission(user.permissions, ['intelligence:read', 'intelligence:write', 'agents:read'])
+        : false,
+    [user],
+  );
+
+  function handleTaskUpdated(task: AgentTaskSummary) {
+    updateTask(task);
+  }
+
+  if (!user) {
+    return null;
+  }
+
+  return (
+    <div className="aura-page">
+      <header className="aura-page__header">
+        <div>
+          <p className="aura-page__eyebrow">{AI_NAME} Intelligence</p>
+          <h1 className="aura-page__title">Business Command Centre</h1>
+          <p className="aura-page__subtitle">
+            {user.companyName} · {user.firstName} {user.lastName}
+            {contextLabel ? ` · ${contextLabel}` : ''}
+          </p>
+        </div>
+        <div className="aura-page__controls">
+          <label className="aura-mode-toggle">
+            <span>Mode</span>
+            <select
+              className="titan-input"
+              value={conversationMode}
+              onChange={(event) => setConversationMode(event.target.value as 'aura' | 'agent')}
+            >
+              <option value="agent">Operational agent</option>
+              <option value="aura">General conversation</option>
+            </select>
+          </label>
+          {conversationMode === 'agent' ? (
+            <label className="aura-mode-toggle">
+              <span>Agent</span>
+              <select
+                className="titan-input"
+                value={selectedAgentKey}
+                onChange={(event) => setSelectedAgentKey(event.target.value as AgentKey)}
+              >
+                {registry.map((entry) => (
+                  <option key={entry.agentKey} value={entry.agentKey}>
+                    {entry.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
+      </header>
+
+      {canViewIntelligence && accessToken ? (
+        <AuraBusinessDashboard accessToken={accessToken} canWriteMemory={canWriteMemory} />
+      ) : null}
+
+      <div className="aura-layout">
+        <AuraConversationList
+          conversations={conversations}
+          activeConversationId={activeConversation?.id ?? null}
+          onSelect={(id) => void selectConversation(id)}
+          onCreate={() => void startConversation()}
+          onDelete={(id) => void removeConversation(id)}
+        />
+
+        <section className="aura-chat">
+          {isLoading ? (
+            <div className="aura-chat__loading">Loading AURA...</div>
+          ) : (
+            <>
+              {conversationMode === 'agent' && activeAgent ? (
+                <div className="aura-agent-banner">
+                  <strong>{activeAgent.name}</strong>
+                  <span>{activeAgent.description}</span>
+                </div>
+              ) : null}
+
+              {error ? <p className="aura-chat__error">{error}</p> : null}
+
+              {conversationMode === 'agent' ? (
+                <>
+                  <AuraMessageList messages={agentMessages} isSending={isSending} />
+                  {lastRunTools.length > 0 ? (
+                    <div className="aura-tool-activity">
+                      <p className="aura-tool-activity__title">Tool activity</p>
+                      <ul>
+                        {lastRunTools.map((tool) => (
+                          <li key={tool}>{tool}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {pendingTasks.length > 0 ? (
+                    <div className="aura-task-list">
+                      <p className="aura-task-list__title">Pending approvals</p>
+                      {pendingTasks.map((task) => (
+                        <AuraTaskApprovalCard
+                          key={task.id}
+                          task={task}
+                          accessToken={accessToken ?? ''}
+                          onUpdated={handleTaskUpdated}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  <AuraComposer
+                    onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
+                    disabled={isSending}
+                    placeholder={`Ask the ${activeAgent?.name ?? 'agent'}…`}
+                  />
+                </>
+              ) : (
+                <>
+                  <AuraMessageList messages={messages} isSending={isSending} />
+                  <AuraComposer onSend={sendMessage} disabled={isSending} />
+                </>
+              )}
+            </>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

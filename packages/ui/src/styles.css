@@ -1,0 +1,252 @@
+.titan-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.titan-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.titan-btn--sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+}
+
+.titan-btn--md {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+.titan-btn--lg {
+  padding: 0.625rem 1.25rem;
+  font-size: 1rem;
+}
+
+.titan-btn--primary {
+  background-color: #1a1a2e;
+  color: #ffffff;
+}
+
+.titan-btn--primary:hover:not(:disabled) {
+  background-color: #2d2d44;
+}
+
+.titan-btn--secondary {
+  background-color: #ffffff;
+  color: #1a1a2e;
+  border-color: #e2e8f0;
+}
+
+.titan-btn--secondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+}
+
+.titan-btn--ghost {
+  background-color: transparent;
+  color: #475569;
+}
+
+.titan-btn--ghost:hover:not(:disabled) {
+  background-color: #f1f5f9;
+}
+
+.titan-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.titan-input-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.titan-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.titan-input:focus {
+  outline: 2px solid #94a3b8;
+  outline-offset: 1px;
+}
+
+.titan-input--error {
+  border-color: #ef4444;
+}
+
+.titan-input-error {
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+.titan-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.titan-shell__header {
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  padding: 0 1.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.titan-shell__body {
+  display: flex;
+  flex: 1;
+}
+
+.titan-shell__sidebar {
+  width: 14rem;
+  border-right: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  padding: 1rem;
+}
+
+.titan-shell__main {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.titan-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.titan-page-header__title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.titan-page-header__description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.titan-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+}
+
+.titan-empty-state__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+}
+
+.titan-empty-state__description {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0 0 1.5rem;
+  max-width: 24rem;
+}
+
+.titan-stat-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.titan-stat-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.titan-stat-card__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.titan-stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 0.875rem;
+}
+
+.titan-stat-card__value {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.titan-stat-card__hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.titan-panel {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.titan-panel__header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.titan-panel__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.titan-panel__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.titan-panel__body {
+  padding: 1.25rem;
+}

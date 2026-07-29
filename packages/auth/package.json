@@ -1,0 +1,31 @@
+{
+  "name": "@titan/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./src/browser.ts",
+      "development": "./src/browser.ts",
+      "default": "./dist/browser.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && tsc -p tsconfig.browser.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.9",
+    "typescript": "catalog:"
+  }
+}

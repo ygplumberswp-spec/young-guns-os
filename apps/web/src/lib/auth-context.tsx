@@ -1,0 +1,147 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+import type { AuthSession, AuthUser } from '@titan/shared';
+import * as api from './api-client';
+import * as teamApi from './team-api';
+
+type AuthContextValue = {
+  user: AuthUser | null;
+  accessToken: string | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  signup: (input: {
+    companyName: string;
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) => Promise<void>;
+  login: (input: { email: string; password: string }) => Promise<void>;
+  acceptInvite: (input: {
+    token: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      try {
+        const restored = await api.restoreSession();
+
+        if (cancelled) {
+          return;
+        }
+
+        if (restored) {
+          setUser(restored.user);
+          setAccessToken(restored.session.accessToken);
+          return;
+        }
+
+        setUser(null);
+        setAccessToken(null);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void bootstrap();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const applyAuth = useCallback((payload: { user: AuthUser; session: AuthSession }) => {
+    setUser(payload.user);
+    setAccessToken(payload.session.accessToken);
+  }, []);
+
+  const signup = useCallback(
+    async (input: {
+      companyName: string;
+      email: string;
+      password: string;
+      firstName: string;
+      lastName: string;
+    }) => {
+      const result = await api.signup(input);
+      applyAuth(result);
+    },
+    [applyAuth],
+  );
+
+  const login = useCallback(
+    async (input: { email: string; password: string }) => {
+      const result = await api.login(input);
+      applyAuth(result);
+    },
+    [applyAuth],
+  );
+
+  const acceptInvite = useCallback(
+    async (input: {
+      token: string;
+      firstName: string;
+      lastName: string;
+      password: string;
+    }) => {
+      const result = await teamApi.acceptInvite(input);
+      applyAuth(result);
+    },
+    [applyAuth],
+  );
+
+  const logout = useCallback(async () => {
+    await api.logout();
+    setUser(null);
+    setAccessToken(null);
+  }, []);
+
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      accessToken,
+      isLoading,
+      isAuthenticated: Boolean(user && accessToken),
+      signup,
+      login,
+      acceptInvite,
+      logout,
+    }),
+    [user, accessToken, isLoading, signup, login, acceptInvite, logout],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error('useAuth must be used within AuthProvider');
+  }
+
+  return context;
+}

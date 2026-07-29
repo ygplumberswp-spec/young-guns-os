@@ -1,0 +1,25 @@
+{
+  "name": "titan-aura-v1",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "sh -c 'case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "typecheck": "tsc --build && pnpm -r --if-present run typecheck",
+    "dev": "pnpm -r --parallel --filter @titan/api --filter @titan/web run dev",
+    "db:migrate": "pnpm --filter @titan/db db:migrate",
+    "lint": "pnpm -r --if-present run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@10.12.1"
+}

@@ -1,0 +1,24 @@
+import { Link, useLocation } from 'wouter';
+
+const tabs = [
+  { href: '/inventory/products', label: 'Products' },
+  { href: '/inventory/stock', label: 'Stock' },
+];
+
+export function InventoryNav() {
+  const [location] = useLocation();
+
+  return (
+    <nav className="inventory-nav" aria-label="Inventory sections">
+      {tabs.map((tab) => (
+        <Link
+          key={tab.href}
+          href={tab.href}
+          className={`inventory-nav__link ${location.startsWith(tab.href) ? 'inventory-nav__link--active' : ''}`}
+        >
+          {tab.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}

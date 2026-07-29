@@ -1,0 +1,29 @@
+{
+  "name": "@titan/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "postgres": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "drizzle-kit": "^0.31.1",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,139 @@
+import { FormEvent, useEffect, useState } from 'react';
+import { Link, useLocation } from 'wouter';
+import { Button, Input, PageHeader } from '@titan/ui';
+import type { InvoiceSummary, PaymentMethod } from '@titan/shared';
+import { parseMoneyInput, PAYMENT_METHOD_OPTIONS } from '@titan/shared';
+import { ApiClientError } from '../../lib/api-client';
+import { createPayment, fetchInvoices } from '../../lib/finance-api';
+import { useAuth } from '../../lib/auth-context';
+import { FinanceNav } from '../../features/finance/FinanceNav';
+import { canManageFinance } from '../../features/finance/utils';
+
+export function PaymentCreatePage() {
+  const { accessToken, user } = useAuth();
+  const [, navigate] = useLocation();
+  const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [invoiceId, setInvoiceId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [method, setMethod] = useState<PaymentMethod>('other');
+  const [reference, setReference] = useState('');
+  const [paidAt, setPaidAt] = useState('');
+  const [notes, setNotes] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canWrite = user ? canManageFinance(user.permissions) : false;
+
+  useEffect(() => {
+    if (user && !canWrite) navigate('/finance/payments');
+  }, [canWrite, navigate, user]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInvoices() {
+      if (!accessToken) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const data = await fetchInvoices(accessToken);
+        const openInvoices = data.filter((invoice) => invoice.status !== 'cancelled' && invoice.status !== 'paid');
+
+        if (!cancelled) {
+          setInvoices(openInvoices);
+          setInvoiceId(openInvoices[0]?.id ?? '');
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load invoices');
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    void loadInvoices();
+    return () => { cancelled = true; };
+  }, [accessToken]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !canWrite || !invoiceId) return;
+
+    const amountCents = parseMoneyInput(amount);
+    if (amountCents === null || amountCents <= 0) {
+      setError('Enter a valid amount greater than zero');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      await createPayment(accessToken, {
+        invoiceId,
+        amountCents,
+        method,
+        reference: reference.trim() || null,
+        paidAt: paidAt ? new Date(paidAt).toISOString() : undefined,
+        notes: notes.trim() || null,
+      });
+      navigate('/finance/payments');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to record payment');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (isLoading) return <p className="page-muted">Loading form…</p>;
+
+  return (
+    <div className="finance-page">
+      <PageHeader
+        title="Record payment"
+        description="Record a payment against an invoice."
+        actions={<Link href="/finance/payments"><Button variant="secondary">Back to payments</Button></Link>}
+      />
+      <FinanceNav />
+      {error ? <p className="form-error">{error}</p> : null}
+
+      {invoices.length === 0 ? (
+        <div>
+          <p className="page-muted">Create an open invoice before recording a payment.</p>
+          <Link href="/finance/invoices/new"><Button>New invoice</Button></Link>
+        </div>
+      ) : (
+        <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
+          <label className="titan-input-group">
+            <span className="titan-input-label">Invoice</span>
+            <select className="titan-input" value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} required>
+              {invoices.map((invoice) => (
+                <option key={invoice.id} value={invoice.id}>
+                  {invoice.invoiceNumber} · {invoice.title} · {invoice.customerName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input label="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+          <label className="titan-input-group">
+            <span className="titan-input-label">Method</span>
+            <select className="titan-input" value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+              {PAYMENT_METHOD_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <Input label="Reference" value={reference} onChange={(e) => setReference(e.target.value)} />
+          <Input label="Paid at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+          <label className="titan-input-group">
+            <span className="titan-input-label">Notes</span>
+            <textarea className="titan-input finance-textarea" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </label>
+          <Button type="submit" disabled={isSaving || !invoiceId}>{isSaving ? 'Saving…' : 'Record payment'}</Button>
+        </form>
+      )}
+    </div>
+  );
+}

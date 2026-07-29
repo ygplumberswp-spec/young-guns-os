@@ -1,0 +1,417 @@
+export type IntegrationProvider =
+  | 'cartrack'
+  | 'xero'
+  | 'email'
+  | 'yoco'
+  | 'whatsapp'
+  | 'google_calendar'
+  | 'google_maps'
+  | 'microsoft_365'
+  | 'resend'
+  | 'custom';
+
+export type IntegrationConnectionStatus = 'disconnected' | 'pending' | 'connected' | 'error';
+
+export type IntegrationMappingStatus = 'unmapped' | 'mapped' | 'ignored';
+
+export type IntegrationProviderCategory = 'fleet' | 'accounting' | 'communications' | 'payments';
+
+export type IntegrationProviderAvailability = 'available' | 'planned';
+
+export type IntegrationSyncJobStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export type IntegrationSyncJobType = 'manual' | 'scheduled';
+
+export type IntegrationWebhookEventStatus = 'received' | 'processed' | 'failed' | 'ignored';
+
+export const INTEGRATION_CONNECTION_STATUS_OPTIONS: Array<{
+  value: IntegrationConnectionStatus;
+  label: string;
+}> = [
+  { value: 'disconnected', label: 'Disconnected' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'connected', label: 'Connected' },
+  { value: 'error', label: 'Error' },
+];
+
+export const INTEGRATION_SYNC_JOB_STATUS_OPTIONS: Array<{
+  value: IntegrationSyncJobStatus;
+  label: string;
+}> = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'running', label: 'Running' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+export const INTEGRATION_WEBHOOK_EVENT_STATUS_OPTIONS: Array<{
+  value: IntegrationWebhookEventStatus;
+  label: string;
+}> = [
+  { value: 'received', label: 'Received' },
+  { value: 'processed', label: 'Processed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'ignored', label: 'Ignored' },
+];
+
+export type IntegrationProviderRegistryEntry = {
+  provider: IntegrationProvider;
+  name: string;
+  description: string;
+  category: IntegrationProviderCategory;
+  availability: IntegrationProviderAvailability;
+  settingsPath: string | null;
+  supportsSync: boolean;
+  supportsWebhooks: boolean;
+};
+
+export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] = [
+  {
+    provider: 'cartrack',
+    name: 'Cartrack',
+    description: 'Fleet GPS tracking and vehicle telematics integration.',
+    category: 'fleet',
+    availability: 'available',
+    settingsPath: '/integrations/cartrack',
+    supportsSync: true,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'xero',
+    name: 'Xero',
+    description: 'Accounting connection for organisation verification and future finance sync.',
+    category: 'accounting',
+    availability: 'available',
+    settingsPath: '/integrations/xero',
+    supportsSync: true,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'email',
+    name: 'Email (SMTP)',
+    description: 'Transactional email delivery via your SMTP provider.',
+    category: 'communications',
+    availability: 'available',
+    settingsPath: '/integrations/email',
+    supportsSync: true,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'yoco',
+    name: 'Yoco',
+    description: 'Payment provider connection for business verification and future payment flows.',
+    category: 'payments',
+    availability: 'available',
+    settingsPath: '/integrations/yoco',
+    supportsSync: true,
+    supportsWebhooks: true,
+  },
+  {
+    provider: 'whatsapp',
+    name: 'WhatsApp Business',
+    description: 'WhatsApp Business API for customer messaging and notifications.',
+    category: 'communications',
+    availability: 'available',
+    settingsPath: '/integrations/whatsapp',
+    supportsSync: false,
+    supportsWebhooks: true,
+  },
+  {
+    provider: 'google_calendar',
+    name: 'Google Calendar',
+    description: 'Calendar sync for scheduling and appointment coordination.',
+    category: 'communications',
+    availability: 'planned',
+    settingsPath: null,
+    supportsSync: true,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'google_maps',
+    name: 'Google Maps',
+    description: 'Maps and geocoding for fleet routing and location services.',
+    category: 'fleet',
+    availability: 'planned',
+    settingsPath: null,
+    supportsSync: false,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'microsoft_365',
+    name: 'Microsoft 365',
+    description: 'Microsoft 365 integration for email, calendar, and productivity.',
+    category: 'communications',
+    availability: 'planned',
+    settingsPath: null,
+    supportsSync: true,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'resend',
+    name: 'Resend',
+    description: 'Transactional email delivery via Resend API.',
+    category: 'communications',
+    availability: 'planned',
+    settingsPath: null,
+    supportsSync: true,
+    supportsWebhooks: true,
+  },
+  {
+    provider: 'custom',
+    name: 'Custom Integration',
+    description: 'Tenant-defined custom API integration.',
+    category: 'communications',
+    availability: 'planned',
+    settingsPath: null,
+    supportsSync: true,
+    supportsWebhooks: true,
+  },
+];
+
+export function getIntegrationProviderRegistryEntry(
+  provider: IntegrationProvider,
+): IntegrationProviderRegistryEntry | undefined {
+  return INTEGRATION_PROVIDER_REGISTRY.find((entry) => entry.provider === provider);
+}
+
+export type IntegrationProviderStatus = IntegrationProviderRegistryEntry & {
+  connectionId: string | null;
+  connectionStatus: IntegrationConnectionStatus;
+  isConfigured: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+};
+
+export type IntegrationHubStats = {
+  providerCount: number;
+  configuredConnectionCount: number;
+  connectedCount: number;
+  errorCount: number;
+  syncJobCount: number;
+  activeSyncJobCount: number;
+  webhookEndpointCount: number;
+  activeWebhookEndpointCount: number;
+  webhookEventCount: number;
+};
+
+export type IntegrationHubDashboard = {
+  stats: IntegrationHubStats;
+  providers: IntegrationProviderStatus[];
+  recentSyncJobs: IntegrationSyncJobSummary[];
+  recentWebhookEvents: IntegrationWebhookEventSummary[];
+};
+
+export type IntegrationSyncJobSummary = {
+  id: string;
+  provider: IntegrationProvider;
+  providerName: string;
+  jobType: IntegrationSyncJobType;
+  status: IntegrationSyncJobStatus;
+  syncScope: string | null;
+  startedAt: string;
+  completedAt: string | null;
+  errorMessage: string | null;
+  connectionId: string | null;
+};
+
+export type IntegrationSyncJobDetail = IntegrationSyncJobSummary & {
+  resultSummary: Record<string, unknown> | null;
+};
+
+export type IntegrationWebhookEndpointSummary = {
+  id: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type IntegrationWebhookEndpointDetail = IntegrationWebhookEndpointSummary & {
+  secret?: string;
+};
+
+export type IntegrationWebhookEventSummary = {
+  id: string;
+  endpointId: string | null;
+  endpointName: string | null;
+  provider: IntegrationProvider | null;
+  eventType: string;
+  status: IntegrationWebhookEventStatus;
+  receivedAt: string;
+  processedAt: string | null;
+  errorMessage: string | null;
+};
+
+export type CreateIntegrationWebhookEndpointRequest = {
+  name: string;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+export type UpdateIntegrationWebhookEndpointRequest = {
+  name?: string;
+  description?: string | null;
+  isActive?: boolean;
+};
+
+export type CartrackConnectionSummary = {
+  provider: 'cartrack';
+  status: IntegrationConnectionStatus;
+  baseUrl: string | null;
+  usernameHint: string | null;
+  hasCredentials: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+  mappedVehicleCount: number;
+  unmappedVehicleCount: number;
+  positionCount: number;
+};
+
+export type SaveCartrackConnectionRequest = {
+  baseUrl: string;
+  username: string;
+  password: string;
+};
+
+export type IntegrationVehicleMappingSummary = {
+  id: string;
+  externalVehicleId: string;
+  externalRegistration: string | null;
+  externalName: string | null;
+  status: IntegrationMappingStatus;
+  vehicleId: string | null;
+  vehicleName: string | null;
+  vehicleLicensePlate: string | null;
+  lastSeenAt: string | null;
+  updatedAt: string;
+};
+
+export type UpdateIntegrationVehicleMappingRequest = {
+  vehicleId?: string | null;
+  status?: IntegrationMappingStatus;
+};
+
+export type CartrackSyncResult = {
+  externalVehicleCount: number;
+  mappingsCreated: number;
+  mappingsUpdated: number;
+  autoMappedCount: number;
+  positionsStored: number;
+  syncedAt: string;
+  syncJobId?: string;
+};
+
+export type FleetTrackingContext = {
+  cartrackStatus: IntegrationConnectionStatus;
+  cartrackConnected: boolean;
+  mappedVehicleCount: number;
+  unmappedVehicleCount: number;
+  positionCount: number;
+  lastSyncAt: string | null;
+  latestPositions: Array<{
+    vehicleId: string | null;
+    vehicleName: string | null;
+    licensePlate: string | null;
+    externalVehicleId: string;
+    latitude: number;
+    longitude: number;
+    speedKmh: number | null;
+    recordedAt: string;
+  }>;
+};
+
+export type XeroConnectionSummary = {
+  provider: 'xero';
+  status: IntegrationConnectionStatus;
+  clientIdHint: string | null;
+  tenantId: string | null;
+  organisationName: string | null;
+  organisationId: string | null;
+  baseCurrency: string | null;
+  hasCredentials: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+};
+
+export type SaveXeroConnectionRequest = {
+  clientId: string;
+  clientSecret: string;
+  tenantId: string;
+};
+
+export type XeroSyncResult = {
+  organisationName: string;
+  organisationId: string;
+  baseCurrency: string | null;
+  syncedAt: string;
+  syncJobId?: string;
+};
+
+export type EmailConnectionSummary = {
+  provider: 'email';
+  status: IntegrationConnectionStatus;
+  host: string | null;
+  port: number | null;
+  secure: boolean;
+  usernameHint: string | null;
+  fromEmail: string | null;
+  fromName: string | null;
+  hasCredentials: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+};
+
+export type SaveEmailConnectionRequest = {
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  password: string;
+  fromEmail: string;
+  fromName?: string | null;
+};
+
+export type EmailSyncResult = {
+  verified: true;
+  fromEmail: string;
+  host: string;
+  syncedAt: string;
+  syncJobId?: string;
+};
+
+export type YocoConnectionSummary = {
+  provider: 'yoco';
+  status: IntegrationConnectionStatus;
+  environment: 'test' | 'live';
+  secretKeyHint: string | null;
+  businessName: string | null;
+  businessId: string | null;
+  hasCredentials: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+};
+
+export type SaveYocoConnectionRequest = {
+  secretKey: string;
+  environment?: 'test' | 'live';
+};
+
+export type YocoSyncResult = {
+  businessName: string;
+  businessId: string;
+  environment: 'test' | 'live';
+  syncedAt: string;
+  syncJobId?: string;
+};
