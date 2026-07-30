@@ -3,7 +3,7 @@ import { Link } from 'wouter';
 import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobList';
 
 export function JobListPage() {
@@ -12,11 +12,9 @@ export function JobListPage() {
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
 
-  const { data: jobs, error, isLoading } = useCachedQuery({
+  const { data: jobs, error, isLoading } = useStaffCachedQuery({
     queryKey: 'jobs/list',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 30_000,
     fetcher: async () => fetchJobs(accessToken!),
   });
 

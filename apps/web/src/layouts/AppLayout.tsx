@@ -7,7 +7,8 @@ import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
 import { filterOwnerStaffNav, toStaffIdentity } from '../lib/role-experience';
 import { groupNavItems } from '../lib/nav-groups';
-import { prefetchOwnerRoute } from '../routes/route-prefetch';
+import { prefetchNavIntent } from '../lib/route-prefetch-registry';
+import { useStaffPreloadContext } from '../lib/preload-coordinator';
 import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
 import { NavIcon } from '../components/NavIcon';
 
@@ -40,6 +41,13 @@ export function AppLayout({ children }: AppLayoutProps) {
   const groupedNavItems = useMemo(() => groupNavItems(navItems), [navItems]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
   const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
+  const preloadContext = useStaffPreloadContext();
+
+  const handleNavIntent = (href: string) => {
+    if (preloadContext) {
+      prefetchNavIntent(href, preloadContext);
+    }
+  };
 
   const shellClassName = [
     'owner-shell',
@@ -146,8 +154,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                         setPendingHref(item.href);
                         setMobileNavOpen(false);
                       }}
-                      onMouseEnter={() => prefetchOwnerRoute(item.href)}
-                      onFocus={() => prefetchOwnerRoute(item.href)}
+                      onMouseEnter={() => handleNavIntent(item.href)}
+                      onFocus={() => handleNavIntent(item.href)}
+                      onTouchStart={() => handleNavIntent(item.href)}
                     >
                       <NavIcon name={item.label} />
                       <span className="app-nav__label">{item.label}</span>

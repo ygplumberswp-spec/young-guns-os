@@ -4,7 +4,7 @@ import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, INVOICE_STATUS_OPTIONS, type InvoiceSummary } from '@titan/shared';
 import { fetchInvoices } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 
@@ -18,11 +18,9 @@ export function InvoiceListPage() {
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
 
-  const { data: invoices, error, isLoading } = useCachedQuery({
+  const { data: invoices, error, isLoading } = useStaffCachedQuery({
     queryKey: 'finance/invoices',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 30_000,
     fetcher: async () => fetchInvoices(accessToken!),
   });
 

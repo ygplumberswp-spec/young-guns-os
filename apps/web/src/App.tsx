@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { Route, Switch } from 'wouter';
 import { AuthProvider } from './lib/auth-context';
+import { PreloadCoordinator } from './components/PreloadCoordinator';
 import { CompanyLocaleProvider } from './lib/company-locale-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OwnerStaffRoute, TechnicianRoute } from './components/StaffExperienceRoute';
@@ -44,6 +45,7 @@ export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
+        <PreloadCoordinator />
         <Switch>
           <Route path="/auth/login" component={LoginPage} />
           <Route path="/auth/signup" component={SignupPage} />

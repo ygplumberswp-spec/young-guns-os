@@ -10,6 +10,7 @@
     "dev": "pnpm -r --parallel --filter @titan/api --filter @titan/web run dev",
     "db:migrate": "pnpm --filter @titan/db db:migrate",
     "lint": "pnpm -r --if-present run lint",
+    "test": "pnpm --filter @titan/shared run test && pnpm --filter @titan/auth run test && pnpm --filter @titan/web run test",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

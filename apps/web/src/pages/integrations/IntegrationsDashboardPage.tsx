@@ -11,6 +11,7 @@ import {
   syncIntegrationConnectors,
 } from '../../lib/integration-platform-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
@@ -83,11 +84,9 @@ export function IntegrationsDashboardPage() {
     error: hubError,
     isLoading: hubLoading,
     refetch: refetchHub,
-  } = useCachedQuery({
+  } = useStaffCachedQuery({
     queryKey: 'integrations/hub-dashboard',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 60_000,
     fetcher: async () => fetchIntegrationHubDashboard(accessToken!),
   });
 

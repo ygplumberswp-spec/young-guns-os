@@ -9,7 +9,7 @@ import {
   fetchTeamRoles,
 } from '../../lib/team-api';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 
 export function TeamSettingsPage() {
   const { accessToken, user } = useAuth();
@@ -29,27 +29,21 @@ export function TeamSettingsPage() {
     [user],
   );
 
-  const membersQuery = useCachedQuery({
+  const membersQuery = useStaffCachedQuery({
     queryKey: 'team/members',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 60_000,
     fetcher: async () => fetchTeamMembers(accessToken!),
   });
 
-  const rolesQuery = useCachedQuery({
+  const rolesQuery = useStaffCachedQuery({
     queryKey: 'team/roles',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 120_000,
     fetcher: async () => fetchTeamRoles(accessToken!),
   });
 
-  const invitesQuery = useCachedQuery({
+  const invitesQuery = useStaffCachedQuery({
     queryKey: 'team/invites',
-    accessToken,
     enabled: canView && canManage,
-    staleTimeMs: 30_000,
     fetcher: async () => fetchTeamInvites(accessToken!),
   });
 

@@ -8,11 +8,13 @@ import { fetchCustomers } from '../../lib/crm-api';
 import { createQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
 
 export function QuoteCreatePage() {
   const { accessToken, user } = useAuth();
+  const { invalidateQuotes } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -91,6 +93,7 @@ export function QuoteCreatePage() {
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         notes: notes.trim() || null,
       });
+      invalidateQuotes();
       navigate('/finance/quotes');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create quote');

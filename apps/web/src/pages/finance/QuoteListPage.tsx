@@ -4,7 +4,7 @@ import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, QUOTE_STATUS_OPTIONS, type QuoteSummary } from '@titan/shared';
 import { fetchQuotes } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 
@@ -18,11 +18,9 @@ export function QuoteListPage() {
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
 
-  const { data: quotes, error, isLoading } = useCachedQuery({
+  const { data: quotes, error, isLoading } = useStaffCachedQuery({
     queryKey: 'finance/quotes',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 30_000,
     fetcher: async () => fetchQuotes(accessToken!),
   });
 

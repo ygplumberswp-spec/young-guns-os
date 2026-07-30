@@ -10,6 +10,8 @@ import {
 import type { AuthSession, AuthUser } from '@titan/shared';
 import * as api from './api-client';
 import * as teamApi from './team-api';
+import { clearAllQueryCache, clearQueryCacheForScope } from './query-cache';
+import { resetPreloadSession } from './preload-coordinator';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -74,7 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyAuth = useCallback((payload: { user: AuthUser; session: AuthSession }) => {
-    setUser(payload.user);
+    setUser((previous) => {
+      if (previous && previous.id !== payload.user.id) {
+        clearAllQueryCache();
+        resetPreloadSession();
+      }
+      return payload.user;
+    });
     setAccessToken(payload.session.accessToken);
   }, []);
 
@@ -115,10 +123,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    const scope =
+      user ?
+        {
+          tenantId: user.companyId,
+          actorId: user.id,
+          actorKind: 'staff' as const,
+          roleName: user.roleName,
+        }
+      : null;
+
     await api.logout();
+    if (scope) {
+      clearQueryCacheForScope(scope);
+    }
+    clearAllQueryCache();
+    resetPreloadSession();
     setUser(null);
     setAccessToken(null);
-  }, []);
+  }, [user]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

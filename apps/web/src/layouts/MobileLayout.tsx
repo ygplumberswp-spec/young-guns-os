@@ -3,6 +3,8 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
 import { useAuth } from '../lib/auth-context';
 import { filterTechnicianNav } from '../lib/role-experience';
+import { prefetchNavIntent } from '../lib/route-prefetch-registry';
+import { useStaffPreloadContext } from '../lib/preload-coordinator';
 
 type MobileLayoutProps = {
   children: ReactNode;
@@ -13,6 +15,13 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const { user, logout } = useAuth();
 
   const navItems = useMemo(() => (user ? filterTechnicianNav(user) : []), [user]);
+  const preloadContext = useStaffPreloadContext();
+
+  const handleNavIntent = (href: string) => {
+    if (preloadContext) {
+      prefetchNavIntent(href, preloadContext);
+    }
+  };
 
   return (
     <div className="portal-shell">
@@ -44,6 +53,9 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               key={item.href}
               href={item.href}
               className={`portal-nav__link ${location === item.href ? 'portal-nav__link--active' : ''}`}
+              onMouseEnter={() => handleNavIntent(item.href)}
+              onFocus={() => handleNavIntent(item.href)}
+              onTouchStart={() => handleNavIntent(item.href)}
             >
               {item.label}
             </Link>

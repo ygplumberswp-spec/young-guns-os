@@ -9,6 +9,8 @@ import {
 } from 'react';
 import type { PortalAuthSession, PortalAuthUser } from '@titan/shared';
 import * as portalApi from './portal-api-client';
+import { clearAllQueryCache, clearQueryCacheForScope } from './query-cache';
+import { resetPreloadSession } from './preload-coordinator';
 
 type PortalAuthContextValue = {
   user: PortalAuthUser | null;
@@ -60,7 +62,13 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyAuth = useCallback((payload: { user: PortalAuthUser; session: PortalAuthSession }) => {
-    setUser(payload.user);
+    setUser((previous) => {
+      if (previous && previous.id !== payload.user.id) {
+        clearAllQueryCache();
+        resetPreloadSession();
+      }
+      return payload.user;
+    });
     setAccessToken(payload.session.accessToken);
   }, []);
 
@@ -73,10 +81,25 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
+    const scope =
+      user ?
+        {
+          tenantId: user.companyId,
+          actorId: user.id,
+          actorKind: 'portal' as const,
+          customerId: user.customerId,
+        }
+      : null;
+
     await portalApi.portalLogout();
+    if (scope) {
+      clearQueryCacheForScope(scope);
+    }
+    clearAllQueryCache();
+    resetPreloadSession();
     setUser(null);
     setAccessToken(null);
-  }, []);
+  }, [user]);
 
   const value = useMemo<PortalAuthContextValue>(
     () => ({

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { LoadingState, StatCard } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { fetchCrmStats } from '../../lib/crm-api';
@@ -6,7 +6,9 @@ import { fetchFinanceStats } from '../../lib/finance-api';
 import { fetchJobsStats } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCompanyLocale } from '../../lib/company-locale-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { useStaffPreloadContext } from '../../lib/preload-coordinator';
+import { scheduleDashboardBackgroundPrep } from '../../lib/route-prefetch-registry';
 import { DASHBOARD_METRICS } from './constants';
 import { DashboardMetricIcon } from './DashboardMetricIcon';
 
@@ -30,29 +32,36 @@ export function DashboardStats() {
     [user],
   );
 
-  const crmStats = useCachedQuery({
+  const crmStats = useStaffCachedQuery({
     queryKey: 'crm/stats',
-    accessToken,
     enabled: Boolean(accessToken && canViewCustomers),
-    staleTimeMs: 60_000,
     fetcher: async () => fetchCrmStats(accessToken!),
   });
 
-  const jobsStats = useCachedQuery({
+  const jobsStats = useStaffCachedQuery({
     queryKey: 'jobs/stats',
-    accessToken,
     enabled: Boolean(accessToken && canViewJobs),
-    staleTimeMs: 60_000,
     fetcher: async () => fetchJobsStats(accessToken!),
   });
 
-  const financeStats = useCachedQuery({
+  const financeStats = useStaffCachedQuery({
     queryKey: 'finance/stats',
-    accessToken,
     enabled: Boolean(accessToken && canViewFinance),
-    staleTimeMs: 60_000,
     fetcher: async () => fetchFinanceStats(accessToken!),
   });
+
+  const preloadContext = useStaffPreloadContext();
+  const metricsReady =
+    (!canViewCustomers || crmStats.data !== undefined) &&
+    (!canViewJobs || jobsStats.data !== undefined) &&
+    (!canViewFinance || financeStats.data !== undefined);
+
+  useEffect(() => {
+    if (!preloadContext || preloadContext.kind !== 'staff' || !metricsReady) {
+      return;
+    }
+    scheduleDashboardBackgroundPrep(preloadContext);
+  }, [preloadContext, metricsReady]);
 
   const metrics = DASHBOARD_METRICS.map((metric) => {
     if (metric.id === 'customers') {

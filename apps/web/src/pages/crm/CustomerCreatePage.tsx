@@ -6,10 +6,12 @@ import { CUSTOMER_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createCustomer } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { canManageCustomers } from '../../features/crm/CustomerList';
 
 export function CustomerCreatePage() {
   const { accessToken, user } = useAuth();
+  const { invalidateCustomers } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -46,6 +48,7 @@ export function CustomerCreatePage() {
         notes: notes.trim() || null,
       });
 
+      invalidateCustomers();
       navigate(`/crm/${customer.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create customer');

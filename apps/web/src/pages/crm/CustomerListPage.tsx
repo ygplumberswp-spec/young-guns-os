@@ -3,7 +3,8 @@ import { Link } from 'wouter';
 import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { CacheStaleNotice } from '../../components/CacheStaleNotice';
 import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/crm/CustomerList';
 
 export function CustomerListPage() {
@@ -19,11 +20,9 @@ export function CustomerListPage() {
     [user],
   );
 
-  const { data: customers, error, isLoading } = useCachedQuery({
+  const { data: customers, error, isLoading, isStale, refetch } = useStaffCachedQuery({
     queryKey: 'crm/customers',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 30_000,
     fetcher: async () => fetchCustomers(accessToken!),
   });
 
@@ -49,9 +48,11 @@ export function CustomerListPage() {
         }
       />
 
+      <CacheStaleNotice isStale={isStale} error={error} onRetry={() => void refetch()} />
+
       <PageLoadState
-        isLoading={isLoading}
-        error={error}
+        isLoading={isLoading && customers === undefined}
+        error={error && customers === undefined ? error : null}
         isEmpty={(customers?.length ?? 0) === 0}
         emptyTitle="No customers yet"
         emptyDescription="Add your first customer to start building your CRM."

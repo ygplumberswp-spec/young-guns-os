@@ -11,7 +11,7 @@ import {
   syncMissionControlTimeline,
 } from '../../lib/mission-control-api-client';
 import { useAuth } from '../../lib/auth-context';
-import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import {
   canAccessMissionControl,
@@ -44,11 +44,9 @@ export function MissionControlPage() {
     error: loadError,
     isLoading,
     refetch,
-  } = useCachedQuery({
+  } = useStaffCachedQuery({
     queryKey: 'mission-control/dashboard',
-    accessToken,
     enabled: canView,
-    staleTimeMs: 60_000,
     fetcher: async () => fetchMissionControlDashboard(accessToken!),
   });
 

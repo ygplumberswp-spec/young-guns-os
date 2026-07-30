@@ -3,6 +3,8 @@ import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
 import { usePortalAuth } from '../lib/portal-auth-context';
 import { filterPortalNav } from '../lib/role-experience';
+import { prefetchNavIntent } from '../lib/route-prefetch-registry';
+import { usePortalPreloadContext } from '../lib/preload-coordinator';
 
 type PortalLayoutProps = {
   children: ReactNode;
@@ -16,6 +18,13 @@ export function PortalLayout({ children }: PortalLayoutProps) {
     () => (user ? filterPortalNav(user.permissions) : []),
     [user],
   );
+  const preloadContext = usePortalPreloadContext();
+
+  const handleNavIntent = (href: string) => {
+    if (preloadContext) {
+      prefetchNavIntent(href, preloadContext);
+    }
+  };
 
   return (
     <div className="portal-shell">
@@ -47,6 +56,9 @@ export function PortalLayout({ children }: PortalLayoutProps) {
               key={`${item.href}:${item.label}`}
               href={item.href}
               className={`portal-nav__link ${location === item.href ? 'portal-nav__link--active' : ''}`}
+              onMouseEnter={() => handleNavIntent(item.href)}
+              onFocus={() => handleNavIntent(item.href)}
+              onTouchStart={() => handleNavIntent(item.href)}
             >
               {item.label}
             </Link>

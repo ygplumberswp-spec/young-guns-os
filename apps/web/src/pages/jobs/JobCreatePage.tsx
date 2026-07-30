@@ -7,10 +7,12 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { createJob } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { canManageJobs } from '../../features/jobs/JobList';
 
 export function JobCreatePage() {
   const { accessToken, user } = useAuth();
+  const { invalidateJobs } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [customerId, setCustomerId] = useState('');
@@ -83,6 +85,7 @@ export function JobCreatePage() {
         notes: notes.trim() || null,
       });
 
+      invalidateJobs();
       navigate(`/jobs/${job.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create job');
