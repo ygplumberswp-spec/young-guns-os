@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, LoadingState, PageHeader } from '@titan/ui';
+import { Button, Input, PageHeader } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -7,17 +7,23 @@ import {
   fetchTeamInvites,
   fetchTeamMembers,
   fetchTeamRoles,
+  revokeTeamInvite,
+  updateTeamMemberStatus,
 } from '../../lib/team-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
 export function TeamSettingsPage() {
   const { accessToken, user } = useAuth();
+  const { invalidateTeam } = useStaffMutationInvalidation();
   const [isInviting, setIsInviting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [roleId, setRoleId] = useState('');
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
 
   const canManage = useMemo(
     () => (user ? hasAnyPermission(user.permissions, ['users:manage']) : false),
@@ -32,25 +38,24 @@ export function TeamSettingsPage() {
   const membersQuery = useStaffCachedQuery({
     queryKey: 'team/members',
     enabled: canView,
-    fetcher: async () => fetchTeamMembers(accessToken!),
+    fetcher: (signal) => fetchTeamMembers(accessToken!, { signal }),
   });
 
   const rolesQuery = useStaffCachedQuery({
     queryKey: 'team/roles',
     enabled: canView,
-    fetcher: async () => fetchTeamRoles(accessToken!),
+    fetcher: (signal) => fetchTeamRoles(accessToken!, { signal }),
   });
 
   const invitesQuery = useStaffCachedQuery({
     queryKey: 'team/invites',
     enabled: canView && canManage,
-    fetcher: async () => fetchTeamInvites(accessToken!),
+    fetcher: (signal) => fetchTeamInvites(accessToken!, { signal }),
   });
 
   const members = membersQuery.data ?? [];
   const assignableRoles = rolesQuery.data?.assignableRoles ?? [];
   const invites = invitesQuery.data ?? [];
-  const isLoading = membersQuery.isLoading || rolesQuery.isLoading;
 
   useEffect(() => {
     if (!roleId && assignableRoles[0]?.id) {
@@ -58,7 +63,7 @@ export function TeamSettingsPage() {
     }
   }, [assignableRoles, roleId]);
 
-  async function loadTeam() {
+  async function reloadTeam() {
     await Promise.all([
       membersQuery.refetch(),
       rolesQuery.refetch(),
@@ -74,18 +79,49 @@ export function TeamSettingsPage() {
     }
 
     setIsInviting(true);
-    setError(null);
+    setActionError(null);
     setInviteUrl(null);
 
     try {
       const result = await createTeamInvite(accessToken, { email, roleId });
       setInviteUrl(result.inviteUrl);
       setEmail('');
-      await loadTeam();
+      invalidateTeam();
+      await reloadTeam();
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to create invite');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to create invite');
     } finally {
       setIsInviting(false);
+    }
+  }
+
+  async function handleRevokeInvite(inviteId: string) {
+    if (!accessToken || !canManage) return;
+    setPendingActionId(inviteId);
+    setActionError(null);
+    try {
+      await revokeTeamInvite(accessToken, inviteId);
+      invalidateTeam();
+      await invitesQuery.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to revoke invite');
+    } finally {
+      setPendingActionId(null);
+    }
+  }
+
+  async function handleToggleMember(memberId: string, isActive: boolean) {
+    if (!accessToken || !canManage) return;
+    setPendingActionId(memberId);
+    setActionError(null);
+    try {
+      await updateTeamMemberStatus(accessToken, memberId, isActive);
+      invalidateTeam();
+      await membersQuery.refetch();
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to update member');
+    } finally {
+      setPendingActionId(null);
     }
   }
 
@@ -98,18 +134,6 @@ export function TeamSettingsPage() {
     );
   }
 
-  if (isLoading) {
-    return (
-      <>
-      <PageHeader
-        title="Users & Access"
-        description="Manage users, roles and invitations for your company workspace."
-      />
-        <LoadingState label="Loading team…" />
-      </>
-    );
-  }
-
   return (
     <>
       <PageHeader
@@ -117,7 +141,7 @@ export function TeamSettingsPage() {
         description="Manage users, roles and invitations for your company workspace."
       />
 
-      {error ? <p className="settings-alert settings-alert--error">{error}</p> : null}
+      {actionError ? <p className="settings-alert settings-alert--error">{actionError}</p> : null}
 
       {canManage ? (
         <section className="settings-section">
@@ -162,69 +186,60 @@ export function TeamSettingsPage() {
         </section>
       ) : null}
 
-      <section className="settings-section">
-        <h2 className="settings-section__title">Active members</h2>
-        <div className="team-table-wrap">
-          <table className="team-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="team-table__empty">
-                    No team members found.
-                  </td>
-                </tr>
-              ) : (
-                members.map((member) => (
-                  <tr key={member.id}>
-                    <td>
-                      {member.firstName} {member.lastName}
-                    </td>
-                    <td>{member.email}</td>
-                    <td>{member.roleName}</td>
-                    <td>{member.isActive ? 'Active' : 'Inactive'}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {canManage ? (
+      <AnalyticsTabPanel
+        isLoading={membersQuery.isLoading}
+        error={membersQuery.error}
+        hasData={membersQuery.data !== undefined}
+        loadingLabel="Loading team members…"
+        onRetry={() => void membersQuery.refetch()}
+      >
         <section className="settings-section">
-          <h2 className="settings-section__title">Pending invites</h2>
+          <h2 className="settings-section__title">Active members</h2>
           <div className="team-table-wrap">
             <table className="team-table">
               <thead>
                 <tr>
+                  <th>Name</th>
                   <th>Email</th>
                   <th>Role</th>
-                  <th>Invited by</th>
-                  <th>Expires</th>
+                  <th>Status</th>
+                  {canManage ? <th>Actions</th> : null}
                 </tr>
               </thead>
               <tbody>
-                {invites.length === 0 ? (
+                {members.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="team-table__empty">
-                      No pending invites.
+                    <td colSpan={canManage ? 5 : 4} className="team-table__empty">
+                      No team members found.
                     </td>
                   </tr>
                 ) : (
-                  invites.map((invite) => (
-                    <tr key={invite.id}>
-                      <td>{invite.email}</td>
-                      <td>{invite.roleName}</td>
-                      <td>{invite.invitedByName}</td>
-                      <td>{new Date(invite.expiresAt).toLocaleString()}</td>
+                  members.map((member) => (
+                    <tr key={member.id}>
+                      <td>
+                        {member.firstName} {member.lastName}
+                      </td>
+                      <td>{member.email}</td>
+                      <td>{member.roleName}</td>
+                      <td>{member.isActive ? 'Active' : 'Suspended'}</td>
+                      {canManage ? (
+                        <td>
+                          {member.id !== user?.id ? (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={pendingActionId === member.id}
+                              onClick={() =>
+                                void handleToggleMember(member.id, !member.isActive)
+                              }
+                            >
+                              {member.isActive ? 'Suspend' : 'Restore'}
+                            </Button>
+                          ) : (
+                            <span className="page-muted">You</span>
+                          )}
+                        </td>
+                      ) : null}
                     </tr>
                   ))
                 )}
@@ -232,6 +247,58 @@ export function TeamSettingsPage() {
             </table>
           </div>
         </section>
+      </AnalyticsTabPanel>
+
+      {canManage ? (
+        <AnalyticsTabPanel
+          isLoading={invitesQuery.isLoading}
+          error={invitesQuery.error}
+          hasData={invitesQuery.data !== undefined}
+          isEmpty={invites.length === 0}
+          emptyTitle="No pending invites"
+          emptyDescription="Create an invite link to add office staff, dispatchers or technicians."
+          loadingLabel="Loading invites…"
+          onRetry={() => void invitesQuery.refetch()}
+        >
+          {invites.length > 0 ? (
+            <section className="settings-section">
+              <h2 className="settings-section__title">Pending invites</h2>
+              <div className="team-table-wrap">
+                <table className="team-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Invited by</th>
+                      <th>Expires</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invites.map((invite) => (
+                      <tr key={invite.id}>
+                        <td>{invite.email}</td>
+                        <td>{invite.roleName}</td>
+                        <td>{invite.invitedByName}</td>
+                        <td>{new Date(invite.expiresAt).toLocaleString()}</td>
+                        <td>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            disabled={pendingActionId === invite.id}
+                            onClick={() => void handleRevokeInvite(invite.id)}
+                          >
+                            Revoke
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+        </AnalyticsTabPanel>
       ) : null}
     </>
   );

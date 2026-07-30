@@ -17,7 +17,7 @@ export { ApiClientError as IntegrationPlatformApiClientError };
 
 export async function fetchIntegrationPlatformDashboard(
   accessToken: string,
-  options?: { includeVault?: boolean; refreshConnectors?: boolean },
+  options?: { includeVault?: boolean; refreshConnectors?: boolean; signal?: AbortSignal; timeoutMs?: number },
 ) {
   const params = new URLSearchParams();
   if (options?.includeVault) {
@@ -30,6 +30,8 @@ export async function fetchIntegrationPlatformDashboard(
   const path = query ? `/integration-platform/dashboard?${query}` : '/integration-platform/dashboard';
   const data = await request<{ dashboard: IntegrationPlatformExecutiveDashboard }>(path, {
     accessToken,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs ?? 20_000,
   });
   return data.dashboard;
 }

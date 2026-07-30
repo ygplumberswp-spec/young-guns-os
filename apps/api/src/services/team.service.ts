@@ -222,6 +222,74 @@ export class TeamService {
   getAssignableRoles(allRoles: TeamRole[]): TeamRole[] {
     return allRoles.filter((role) => role.name !== OWNER_ROLE_NAME);
   }
+
+  async revokeInvite(scope: TenantScope, inviteId: string): Promise<void> {
+    const invite = await this.db.query.userInvites.findFirst({
+      where: and(eq(userInvites.id, inviteId), eq(userInvites.companyId, scope.companyId)),
+    });
+
+    if (!invite || invite.acceptedAt || invite.revokedAt) {
+      throw new TeamError('INVITE_NOT_FOUND', 'Invite not found or already closed');
+    }
+
+    await this.db
+      .update(userInvites)
+      .set({ revokedAt: new Date() })
+      .where(eq(userInvites.id, inviteId));
+  }
+
+  async updateMemberStatus(
+    scope: TenantScope,
+    memberId: string,
+    isActive: boolean,
+  ): Promise<TeamMember> {
+    if (memberId === scope.userId && !isActive) {
+      throw new TeamError('SELF_LOCKOUT', 'You cannot suspend your own account');
+    }
+
+    const member = await this.db.query.users.findFirst({
+      where: and(eq(users.id, memberId), eq(users.companyId, scope.companyId)),
+      with: { role: true },
+    });
+
+    if (!member) {
+      throw new TeamError('MEMBER_NOT_FOUND', 'Team member not found');
+    }
+
+    if (!isActive && member.role?.name === OWNER_ROLE_NAME) {
+      const activeOwners = await this.db.query.users.findMany({
+        where: and(eq(users.companyId, scope.companyId), eq(users.isActive, true)),
+        with: { role: true },
+      });
+
+      const ownerCount = activeOwners.filter((user) => user.role?.name === OWNER_ROLE_NAME).length;
+      if (ownerCount <= 1) {
+        throw new TeamError('LAST_OWNER', 'Cannot suspend the last active Company Owner');
+      }
+    }
+
+    const [updated] = await this.db
+      .update(users)
+      .set({ isActive })
+      .where(eq(users.id, memberId))
+      .returning();
+
+    if (!updated) {
+      throw new TeamError('UPDATE_FAILED', 'Unable to update member status');
+    }
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      firstName: updated.firstName,
+      lastName: updated.lastName,
+      roleId: updated.roleId,
+      roleName: member.role?.name ?? 'Unknown',
+      isActive: updated.isActive,
+      lastLoginAt: updated.lastLoginAt ? updated.lastLoginAt.toISOString() : null,
+      createdAt: updated.createdAt.toISOString(),
+    };
+  }
 }
 
 export { ADMIN_ROLE_NAME, MEMBER_ROLE_NAME, OWNER_ROLE_NAME };

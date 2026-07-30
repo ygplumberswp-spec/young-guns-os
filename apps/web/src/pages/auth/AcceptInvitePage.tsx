@@ -3,7 +3,7 @@ import { useLocation } from 'wouter';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import type { InvitePreview } from '@titan/shared';
-import { validatePasswordStrength } from '@titan/auth/browser';
+import { validatePasswordStrength, getStaffHomePath } from '@titan/auth/browser';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchInvitePreview } from '../../lib/team-api';
 import { useAuth } from '../../lib/auth-context';
@@ -85,8 +85,12 @@ function AcceptInviteForm() {
     setError(null);
 
     try {
-      await acceptInvite({ token, firstName, lastName, password });
-      setLocation('/');
+      const payload = await acceptInvite({ token, firstName, lastName, password });
+      const home = getStaffHomePath({
+        roleName: payload.user.roleName,
+        permissions: payload.user.permissions,
+      });
+      setLocation(home);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to accept invite');
     } finally {

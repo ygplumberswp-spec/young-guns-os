@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { AuraService } from '../services/aura.service.js';
 import { AuraError } from '../services/aura.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { requireAnyPermission } from '../middleware/rbac.js';
 import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 const sendMessageSchema = z.object({
@@ -58,17 +59,19 @@ function handleAuraError(res: import('express').Response, error: unknown) {
 export function createAuraRouter({ auraService, db, jwtSecret, authService }: AuraRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+  const requireAuraRead = requireAnyPermission('agents:read', 'intelligence:read', '*');
+  const requireAuraWrite = requireAnyPermission('agents:write', 'intelligence:write', '*');
 
   router.use(requireAuth);
   applyStaffOwnerGuards(router, db);
 
-  router.get('/conversations', async (req, res) => {
+  router.get('/conversations', requireAuraRead, async (req, res) => {
     const { companyId, userId } = getAuth(req);
     const conversations = await auraService.listConversations({ companyId, userId });
     res.json({ data: { conversations } });
   });
 
-  router.post('/conversations', async (req, res) => {
+  router.post('/conversations', requireAuraWrite, async (req, res) => {
     const { companyId, userId } = getAuth(req);
 
     try {
@@ -79,11 +82,11 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
     }
   });
 
-  router.get('/conversations/:conversationId', async (req, res) => {
+  router.get('/conversations/:conversationId', requireAuraRead, async (req, res) => {
     const { companyId, userId } = getAuth(req);
     const conversation = await auraService.getConversation(
       { companyId, userId },
-      req.params.conversationId,
+      req.params.conversationId as string,
     );
 
     if (!conversation) {
@@ -96,11 +99,11 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
     res.json({ data: { conversation } });
   });
 
-  router.delete('/conversations/:conversationId', async (req, res) => {
+  router.delete('/conversations/:conversationId', requireAuraWrite, async (req, res) => {
     const { companyId, userId } = getAuth(req);
     const deleted = await auraService.deleteConversation(
       { companyId, userId },
-      req.params.conversationId,
+      req.params.conversationId as string,
     );
 
     if (!deleted) {
@@ -113,7 +116,7 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
     res.json({ data: { success: true } });
   });
 
-  router.post('/conversations/:conversationId/messages', async (req, res) => {
+  router.post('/conversations/:conversationId/messages', requireAuraWrite, async (req, res) => {
     const parsed = sendMessageSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -132,7 +135,7 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
     try {
       const result = await auraService.sendMessage(
         { companyId, userId },
-        req.params.conversationId,
+        req.params.conversationId as string,
         parsed.data.content,
         parsed.data.pageContext,
       );

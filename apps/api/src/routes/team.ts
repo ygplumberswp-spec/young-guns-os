@@ -77,6 +77,48 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
     }
   });
 
+  router.delete('/invites/:inviteId', requireAnyPermission('users:manage'), async (req, res) => {
+    const auth = getAuth(req);
+
+    try {
+      await teamService.revokeInvite({ companyId: auth.companyId, userId: auth.userId }, req.params.inviteId as string);
+      res.json({ data: { success: true } });
+    } catch (error) {
+      handleTeamError(res, error);
+    }
+  });
+
+  const updateMemberStatusSchema = z.object({
+    isActive: z.boolean(),
+  });
+
+  router.patch('/members/:memberId/status', requireAnyPermission('users:manage'), async (req, res) => {
+    const auth = getAuth(req);
+    const parsed = updateMemberStatusSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid member status payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const member = await teamService.updateMemberStatus(
+        { companyId: auth.companyId, userId: auth.userId },
+        req.params.memberId as string,
+        parsed.data.isActive,
+      );
+      res.json({ data: { member } });
+    } catch (error) {
+      handleTeamError(res, error);
+    }
+  });
+
   return router;
 }
 
@@ -87,7 +129,11 @@ function handleTeamError(res: import('express').Response, error: unknown) {
         ? 400
         : error.code === 'EMAIL_IN_USE'
           ? 409
-          : 400;
+          : error.code === 'INVITE_NOT_FOUND' || error.code === 'MEMBER_NOT_FOUND'
+            ? 404
+            : error.code === 'SELF_LOCKOUT' || error.code === 'LAST_OWNER'
+              ? 403
+              : 400;
 
     res.status(status).json({
       error: {

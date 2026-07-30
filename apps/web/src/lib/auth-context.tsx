@@ -31,7 +31,7 @@ type AuthContextValue = {
     firstName: string;
     lastName: string;
     password: string;
-  }) => Promise<void>;
+  }) => Promise<api.AuthPayload>;
   logout: () => Promise<void>;
 };
 
@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }) => {
       const result = await teamApi.acceptInvite(input);
       applyAuth(result);
+      return result;
     },
     [applyAuth],
   );

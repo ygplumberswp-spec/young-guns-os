@@ -12,9 +12,12 @@ import { request } from './api-client';
 
 export async function fetchIntegrationHubDashboard(
   accessToken: string,
+  options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<IntegrationHubDashboard> {
   const data = await request<{ dashboard: IntegrationHubDashboard }>('/integrations/hub/dashboard', {
     accessToken,
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs ?? 20_000,
   });
   return data.dashboard;
 }

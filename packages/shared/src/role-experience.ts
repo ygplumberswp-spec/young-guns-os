@@ -83,6 +83,10 @@ export const CLIENT_PORTAL_NAV_ITEMS: NavItemConfig[] = [
 export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/crm',
   '/leads',
+  '/jobs',
+  '/communications',
+  '/documents',
+  '/dispatch',
   '/scheduling',
   '/finance',
   '/inventory',

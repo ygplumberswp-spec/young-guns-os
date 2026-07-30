@@ -87,7 +87,7 @@ export function IntegrationsDashboardPage() {
   } = useStaffCachedQuery({
     queryKey: 'integrations/hub-dashboard',
     enabled: canView,
-    fetcher: async () => fetchIntegrationHubDashboard(accessToken!),
+    fetcher: (signal) => fetchIntegrationHubDashboard(accessToken!, { signal }),
   });
 
   const {
@@ -96,12 +96,11 @@ export function IntegrationsDashboardPage() {
     isLoading: platformLoading,
     isFetching: platformFetching,
     refetch: refetchPlatform,
-  } = useCachedQuery({
+  } = useStaffCachedQuery({
     queryKey: 'integrations/platform-dashboard',
-    accessToken,
-    enabled: canView,
+    enabled: canView && viewMode === 'advanced' && advancedOpen,
     staleTimeMs: 60_000,
-    fetcher: async () => fetchIntegrationPlatformDashboard(accessToken!),
+    fetcher: (signal) => fetchIntegrationPlatformDashboard(accessToken!, { signal }),
   });
 
   const { data: vaultEntries, isLoading: vaultLoading } = useCachedQuery({
@@ -206,7 +205,7 @@ export function IntegrationsDashboardPage() {
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      {monitoring ? (
+      {viewMode === 'advanced' && advancedOpen && monitoring ? (
         <section className="integrations-section">
           <div className="stat-grid">
             <StatCard label="Connected" value={String(monitoring.connectedServiceCount)} />
@@ -225,8 +224,6 @@ export function IntegrationsDashboardPage() {
             <LoadingState label="Loading connection summary…" />
           ) : null}
         </section>
-      ) : platformLoading && !platformDashboard ? (
-        <LoadingState label="Loading connection summary…" />
       ) : null}
 
       {hubLoading && !hubDashboard ? (

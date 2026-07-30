@@ -15,10 +15,17 @@ import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as MobileApiClientError };
 
-export async function fetchMobileWorkforceDashboard(accessToken: string) {
+export async function fetchMobileWorkforceDashboard(
+  accessToken: string,
+  options?: { signal?: AbortSignal; timeoutMs?: number },
+) {
   const data = await request<{ dashboard: MobileWorkforceDashboard }>(
     '/mobile/technician/workforce/dashboard',
-    { accessToken },
+    {
+      accessToken,
+      signal: options?.signal,
+      timeoutMs: options?.timeoutMs ?? 20_000,
+    },
   );
   return data.dashboard;
 }
