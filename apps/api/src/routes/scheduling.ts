@@ -5,6 +5,7 @@ import { SchedulingError } from '../services/scheduling.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 const scheduleJobSchema = z.object({
   scheduledAt: z.string().datetime(),
@@ -22,6 +23,7 @@ const updateScheduleSchema = z.object({
 type SchedulingRouterDeps = {
   schedulingService: SchedulingService;
   teamService: TeamService;
+  db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -37,6 +39,7 @@ function getRouteParam(value: string | string[]): string {
 export function createSchedulingRouter({
   schedulingService,
   teamService,
+  db,
   jwtSecret,
   authService,
 }: SchedulingRouterDeps): Router {
@@ -44,6 +47,7 @@ export function createSchedulingRouter({
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
 
   router.use(requireAuth);
+  applyStaffOwnerGuards(router, db);
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);

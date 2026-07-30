@@ -55,6 +55,7 @@ import { workflowAuditLogs } from './workflow-audit-logs';
 import { portalUserPermissions } from './portal-user-permissions';
 import { portalSessions } from './portal-sessions';
 import { portalUsers } from './portal-users';
+import { portalUserInvites } from './portal-user-invites';
 import { portalCustomerRequests } from './portal-customer-requests';
 import {
   mobileCompanyAnnouncements,
@@ -960,6 +961,21 @@ export const portalUsersRelations = relations(portalUsers, ({ one, many }) => ({
   permissions: many(portalUserPermissions),
   sessions: many(portalSessions),
   customerRequests: many(portalCustomerRequests),
+}));
+
+export const portalUserInvitesRelations = relations(portalUserInvites, ({ one }) => ({
+  company: one(companies, {
+    fields: [portalUserInvites.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [portalUserInvites.customerId],
+    references: [customers.id],
+  }),
+  invitedBy: one(users, {
+    fields: [portalUserInvites.invitedByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const portalSessionsRelations = relations(portalSessions, ({ one }) => ({

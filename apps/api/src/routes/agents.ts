@@ -68,6 +68,7 @@ import type { IntegrationApiManagementService } from '../services/integration-ap
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 const agentKeySchema = z.enum([
   'executive',
@@ -236,6 +237,7 @@ type AgentsRouterDeps = {
   enterpriseProductionLaunchService: EnterpriseProductionLaunchService;
   enterpriseReleaseManagementService: EnterpriseReleaseManagementService;
   teamService: TeamService;
+  db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -312,6 +314,7 @@ export function createAgentsRouter({
   enterpriseProductionLaunchService,
   enterpriseReleaseManagementService,
   teamService,
+  db,
   jwtSecret,
   authService,
 }: AgentsRouterDeps): Router {
@@ -319,6 +322,7 @@ export function createAgentsRouter({
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
 
   router.use(requireAuth);
+  applyStaffOwnerGuards(router, db);
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);

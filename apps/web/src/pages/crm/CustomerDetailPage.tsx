@@ -1,10 +1,16 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
-import type { CustomerDetail, CustomerStatus, WhatsappMessageSummary } from '@titan/shared';
+import type { CustomerDetail, CustomerStatus, CustomerPortalAccessSummary, WhatsappMessageSummary } from '@titan/shared';
 import { AI_NAME, CUSTOMER_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { addCustomerActivity, fetchCustomer, updateCustomer } from '../../lib/crm-api';
+import {
+  createCustomerPortalInvite,
+  fetchCustomerPortalAccess,
+  revokeCustomerPortalInvite,
+  revokePortalUserAccess,
+} from '../../lib/portal-admin-api';
 import {
   approveWhatsappDraft,
   fetchWhatsappMessages,
@@ -40,6 +46,11 @@ export function CustomerDetailPage() {
   const [isLoadingWhatsapp, setIsLoadingWhatsapp] = useState(false);
   const [isSendingWhatsapp, setIsSendingWhatsapp] = useState(false);
   const [sendAsDraft, setSendAsDraft] = useState(true);
+  const [portalAccess, setPortalAccess] = useState<CustomerPortalAccessSummary | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [isPortalLoading, setIsPortalLoading] = useState(false);
+  const [isInvitingPortal, setIsInvitingPortal] = useState(false);
 
   const canWrite = useMemo(
     () => (user ? canManageCustomers(user.permissions) : false),
@@ -55,6 +66,32 @@ export function CustomerDetailPage() {
     [user],
   );
 
+  const canManagePortal = useMemo(
+    () =>
+      user
+        ? user.permissions.includes('portal:manage') ||
+          user.permissions.includes('customers:write') ||
+          user.permissions.includes('*')
+        : false,
+    [user],
+  );
+
+  async function loadPortalAccess() {
+    if (!accessToken || !customerId || !canManagePortal) {
+      return;
+    }
+
+    setIsPortalLoading(true);
+    try {
+      const access = await fetchCustomerPortalAccess(accessToken, customerId);
+      setPortalAccess(access);
+    } catch {
+      setPortalAccess(null);
+    } finally {
+      setIsPortalLoading(false);
+    }
+  }
+
   async function loadCustomer() {
     if (!accessToken || !customerId) {
       return;
@@ -67,6 +104,9 @@ export function CustomerDetailPage() {
     setPhone(data.phone ?? '');
     setStatus(data.status);
     setNotes(data.notes ?? '');
+    if (data.email) {
+      setInviteEmail(data.email);
+    }
 
     if (canCommunicate) {
       setIsLoadingWhatsapp(true);
@@ -92,6 +132,7 @@ export function CustomerDetailPage() {
 
       try {
         await loadCustomer();
+        await loadPortalAccess();
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load customer');
@@ -108,7 +149,59 @@ export function CustomerDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken, customerId, canCommunicate]);
+  }, [accessToken, customerId, canCommunicate, canManagePortal]);
+
+  async function handleInvitePortal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !customerId || !canManagePortal || !inviteEmail.trim()) {
+      return;
+    }
+
+    setIsInvitingPortal(true);
+    setError(null);
+    setInviteUrl(null);
+
+    try {
+      const result = await createCustomerPortalInvite(accessToken, customerId, {
+        email: inviteEmail.trim(),
+      });
+      setInviteUrl(result.inviteUrl);
+      await loadPortalAccess();
+      setSuccess('Customer portal invitation created.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to create portal invitation');
+    } finally {
+      setIsInvitingPortal(false);
+    }
+  }
+
+  async function handleRevokePortalInvite(inviteId: string) {
+    if (!accessToken || !customerId || !canManagePortal) {
+      return;
+    }
+
+    try {
+      await revokeCustomerPortalInvite(accessToken, customerId, inviteId);
+      await loadPortalAccess();
+      setSuccess('Invitation revoked.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to revoke invitation');
+    }
+  }
+
+  async function handleRevokePortalAccess(portalUserId: string) {
+    if (!accessToken || !canManagePortal) {
+      return;
+    }
+
+    try {
+      await revokePortalUserAccess(accessToken, portalUserId);
+      await loadPortalAccess();
+      setSuccess('Portal access deactivated.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to revoke portal access');
+    }
+  }
 
   async function handleSendWhatsapp(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -381,6 +474,62 @@ export function CustomerDetailPage() {
             </ul>
           )}
         </Panel>
+
+        {canManagePortal ? (
+          <Panel title="Customer portal access">
+            {isPortalLoading ? <p className="page-muted">Loading portal access…</p> : null}
+            {portalAccess?.portalUser ? (
+              <div className="stack-form">
+                <p>
+                  Active portal user: <strong>{portalAccess.portalUser.email}</strong>
+                  {portalAccess.portalUser.isActive ? ' · Active' : ' · Inactive'}
+                </p>
+                {portalAccess.portalUser.isActive ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => void handleRevokePortalAccess(portalAccess.portalUser!.id)}
+                  >
+                    Deactivate portal login
+                  </Button>
+                ) : null}
+              </div>
+            ) : portalAccess?.pendingInvite ? (
+              <div className="stack-form">
+                <p>
+                  Invitation pending for <strong>{portalAccess.pendingInvite.email}</strong> until{' '}
+                  {new Date(portalAccess.pendingInvite.expiresAt).toLocaleString()}.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => void handleRevokePortalInvite(portalAccess.pendingInvite!.id)}
+                >
+                  Revoke invitation
+                </Button>
+              </div>
+            ) : (
+              <form className="stack-form" onSubmit={(event) => void handleInvitePortal(event)}>
+                <p className="page-muted">
+                  Invite this customer to their own portal. Creating the customer record does not grant login access.
+                </p>
+                <Input
+                  label="Invitation email"
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(event) => setInviteEmail(event.target.value)}
+                  required
+                />
+                <Button type="submit" disabled={isInvitingPortal || !inviteEmail.trim()}>
+                  {isInvitingPortal ? 'Creating invitation…' : 'Invite to portal'}
+                </Button>
+                {inviteUrl ? (
+                  <p className="page-muted">Share this secure link with the customer: {inviteUrl}</p>
+                ) : null}
+              </form>
+            )}
+          </Panel>
+        ) : null}
 
         <Panel title="WhatsApp">
           {isLoadingWhatsapp ? (

@@ -5,6 +5,7 @@ import { CrmError } from '../services/crm.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 const customerStatusSchema = z.enum(['active', 'inactive', 'lead']);
 
@@ -31,6 +32,7 @@ const createActivitySchema = z.object({
 type CrmRouterDeps = {
   crmService: CrmService;
   teamService: TeamService;
+  db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -43,11 +45,12 @@ function getRouteParam(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function createCrmRouter({ crmService, teamService, jwtSecret, authService }: CrmRouterDeps): Router {
+export function createCrmRouter({ crmService, teamService, db, jwtSecret, authService }: CrmRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
 
   router.use(requireAuth);
+  applyStaffOwnerGuards(router, db);
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);

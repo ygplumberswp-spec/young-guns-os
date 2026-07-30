@@ -107,10 +107,10 @@ export function TeamSettingsPage() {
   if (isLoading) {
     return (
       <>
-        <PageHeader
-          title="Team Members"
-          description="Manage users in your company workspace. Invites are link-based until email delivery is added."
-        />
+      <PageHeader
+        title="Users & Access"
+        description="Manage users, roles and invitations for your company workspace."
+      />
         <LoadingState label="Loading team…" />
       </>
     );
@@ -119,8 +119,8 @@ export function TeamSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Team Members"
-        description="Manage users in your company workspace. Invites are link-based until email delivery is added."
+        title="Users & Access"
+        description="Manage users, roles and invitations for your company workspace."
       />
 
       {error ? <p className="settings-alert settings-alert--error">{error}</p> : null}

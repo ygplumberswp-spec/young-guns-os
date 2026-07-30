@@ -5,9 +5,11 @@ import type { TenantCapabilityBuilderService } from '../services/tenant-capabili
 import { TenantCapabilityBuilderError } from '../services/tenant-capability-builder.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 type RouterDeps = {
   tenantCapabilityBuilderService: TenantCapabilityBuilderService;
+  db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -42,15 +44,17 @@ function getAuth(req: import('express').Request) {
 
 export function createTenantCapabilitiesRouter({
   tenantCapabilityBuilderService,
+  db,
   jwtSecret,
   authService,
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('agents:read', 'agents:write', '*');
-  const requireWrite = requireAnyPermission('agents:write', '*');
+  const requireRead = requireAnyPermission('agents:read', 'agents:write', 'agents:manage', '*');
+  const requireWrite = requireAnyPermission('agents:write', 'agents:manage', '*');
 
   router.use(requireAuth);
+  applyStaffOwnerGuards(router, db);
 
   router.get('/', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);

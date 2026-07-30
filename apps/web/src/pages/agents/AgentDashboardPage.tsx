@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
 import type { AgentProfileSummary, AgentRegistryEntry, TenantCapabilitySummary } from '@titan/shared';
-import { hasAnyPermission } from '@titan/auth/browser';
+import { hasAgentManagePermission } from '@titan/auth/browser';
 import {
   fetchAgentProfiles,
   fetchAgentRegistry,
@@ -106,7 +106,7 @@ export function AgentDashboardPage() {
   const canAdvanced = useMemo(
     () =>
       user
-        ? hasAnyPermission(user.permissions, ['agents:manage', 'platform:admin'])
+        ? hasAgentManagePermission(user.permissions)
         : false,
     [user],
   );

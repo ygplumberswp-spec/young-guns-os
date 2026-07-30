@@ -6,6 +6,8 @@ export const MEMBER_ROLE_NAME = 'Member';
 
 export const TECHNICIAN_ROLE_NAME = 'Technician';
 
+export const DISPATCHER_ROLE_NAME = 'Dispatcher';
+
 /** Owner role receives wildcard — full access within the tenant. */
 export const OWNER_PERMISSIONS = ['*'] as const;
 
@@ -37,6 +39,7 @@ export const ADMIN_PERMISSIONS = [
   'automation:write',
   'agents:read',
   'agents:write',
+  'agents:manage',
   'recruiting:read',
   'recruiting:write',
   'intelligence:read',
@@ -178,12 +181,34 @@ export const TECHNICIAN_PERMISSIONS = [
   'mobile:write',
   'jobs:read',
   'jobs:write',
-  'dispatch:read',
   'documents:read',
   'documents:write',
   'communications:read',
   'communications:write',
   'inventory:read',
+] as const;
+
+/** Dispatcher / office operations — scheduling, customers, jobs and communications without platform admin. */
+export const DISPATCHER_PERMISSIONS = [
+  'customers:read',
+  'customers:write',
+  'jobs:read',
+  'jobs:write',
+  'dispatch:read',
+  'dispatch:write',
+  'leads:read',
+  'leads:write',
+  'finance:read',
+  'communications:read',
+  'communications:write',
+  'documents:read',
+  'documents:write',
+  'portal:read',
+  'portal:manage',
+  'mobile:read',
+  'inventory:read',
+  'fleet:read',
+  'users:read',
 ] as const;
 
 export const MEMBER_PERMISSIONS = [
@@ -243,6 +268,7 @@ export type Permission =
   | (typeof ADMIN_PERMISSIONS)[number]
   | (typeof MEMBER_PERMISSIONS)[number]
   | (typeof TECHNICIAN_PERMISSIONS)[number]
+  | (typeof DISPATCHER_PERMISSIONS)[number]
   | '*';
 
 export const DEFAULT_TEAM_ROLES = [
@@ -266,6 +292,11 @@ export const DEFAULT_TEAM_ROLES = [
     permissions: [...TECHNICIAN_PERMISSIONS],
     isSystem: true,
   },
+  {
+    name: DISPATCHER_ROLE_NAME,
+    permissions: [...DISPATCHER_PERMISSIONS],
+    isSystem: true,
+  },
 ] as const;
 
 export function hasPermission(userPermissions: string[], required: string): boolean {
@@ -278,4 +309,9 @@ export function hasPermission(userPermissions: string[], required: string): bool
 
 export function hasAnyPermission(userPermissions: string[], required: string[]): boolean {
   return required.some((permission) => hasPermission(userPermissions, permission));
+}
+
+/** Advanced agent administration — manage implies write. */
+export function hasAgentManagePermission(userPermissions: string[]): boolean {
+  return hasAnyPermission(userPermissions, ['agents:manage', 'agents:write', '*']);
 }

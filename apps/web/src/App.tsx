@@ -15,6 +15,7 @@ import { AcceptInvitePage } from './pages/auth/AcceptInvitePage';
 import { PortalGuestRoute, PortalProtectedRoute } from './components/PortalProtectedRoute';
 import { PortalLayout } from './layouts/PortalLayout';
 import { PortalLoginPage } from './pages/portal/PortalLoginPage';
+import { PortalAcceptInvitePage } from './pages/portal/PortalAcceptInvitePage';
 import { PortalDashboardPage } from './pages/portal/PortalDashboardPage';
 import { PortalJobsPage } from './pages/portal/PortalJobsPage';
 import { PortalQuotesPage } from './pages/portal/PortalQuotesPage';
@@ -50,6 +51,11 @@ export function App() {
           {import.meta.env.DEV ? (
             <Route path="/dev/error-boundary-test" component={DevErrorBoundaryTestPage} />
           ) : null}
+          <Route path="/portal/accept-invite">
+            <PortalRouteShell>
+              <PortalAcceptInvitePage />
+            </PortalRouteShell>
+          </Route>
           <Route path="/portal/login">
             <PortalRouteShell>
               <PortalGuestRoute>

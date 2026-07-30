@@ -128,6 +128,8 @@ import type { IntegrationPlatformService } from './integration-platform.service.
 import type { InventoryService } from './inventory.service.js';
 import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { TenantCapabilityBuilderService } from './tenant-capability-builder.service.js';
+import type { AiOperationsService } from './ai-operations.service.js';
 
 export class EnterpriseMissionControlError extends Error {
   constructor(
@@ -158,7 +160,8 @@ type EnterpriseMissionControlDeps = {
   salesService: SalesService;
   leadsService: LeadsService;
   marketingService: MarketingService;
-  aiOperationsService: import('./ai-operations.service.js').AiOperationsService;
+  aiOperationsService: AiOperationsService;
+  tenantCapabilityBuilderService: TenantCapabilityBuilderService;
 };
 
 export class EnterpriseMissionControlService {
@@ -1398,6 +1401,9 @@ export class EnterpriseMissionControlService {
       this.buildReleaseManagementModuleStats(companyId),
     ]);
 
+    const capabilitySnapshots =
+      await this.deps.tenantCapabilityBuilderService.listMissionControlSnapshots(companyId);
+
     return [
       {
         module: 'jobs',
@@ -1678,6 +1684,7 @@ export class EnterpriseMissionControlService {
         summary: knowledgeContext.summary,
         metrics: knowledgeContext as unknown as Record<string, unknown>,
       },
+      ...capabilitySnapshots,
     ];
   }
 

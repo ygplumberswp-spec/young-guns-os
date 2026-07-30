@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { AuraService } from '../services/aura.service.js';
 import { AuraError } from '../services/aura.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
 
 const sendMessageSchema = z.object({
   content: z.string().trim().min(1).max(8000),
@@ -18,6 +19,7 @@ const sendMessageSchema = z.object({
 
 type AuraRouterDeps = {
   auraService: AuraService;
+  db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -53,11 +55,12 @@ function handleAuraError(res: import('express').Response, error: unknown) {
   throw error;
 }
 
-export function createAuraRouter({ auraService, jwtSecret, authService }: AuraRouterDeps): Router {
+export function createAuraRouter({ auraService, db, jwtSecret, authService }: AuraRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
 
   router.use(requireAuth);
+  applyStaffOwnerGuards(router, db);
 
   router.get('/conversations', async (req, res) => {
     const { companyId, userId } = getAuth(req);

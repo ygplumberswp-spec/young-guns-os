@@ -149,6 +149,40 @@ export type UpdatePortalUserRequest = {
   permissions?: PortalAccessPermission[];
 };
 
+export type PortalUserInviteSummary = {
+  id: string;
+  customerId: string;
+  email: string;
+  permissions: PortalAccessPermission[];
+  invitedByName: string;
+  expiresAt: string;
+  createdAt: string;
+};
+
+export type PortalInvitePreview = {
+  email: string;
+  companyName: string;
+  customerName: string;
+  expiresAt: string;
+};
+
+export type CreatePortalUserInviteResponse = {
+  invite: PortalUserInviteSummary;
+  inviteUrl: string;
+};
+
+export type AcceptPortalInviteRequest = {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+};
+
+export type CustomerPortalAccessSummary = {
+  portalUser: PortalUserSummary | null;
+  pendingInvite: PortalUserInviteSummary | null;
+};
+
 export function isPortalAccessPermission(value: string): value is PortalAccessPermission {
   return PORTAL_ACCESS_PERMISSION_OPTIONS.some((option) => option.value === value);
 }

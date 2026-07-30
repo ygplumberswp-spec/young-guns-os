@@ -46,6 +46,7 @@ export * from './agent-executions';
 export * from './portal-users';
 export * from './portal-sessions';
 export * from './portal-user-permissions';
+export * from './portal-user-invites';
 export * from './integration-sync-jobs';
 export * from './integration-webhook-endpoints';
 export * from './integration-webhook-events';

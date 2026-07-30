@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -211,15 +212,29 @@ export function MissionControlPage() {
                   <EmptyState title="No systems to show" description="No module snapshots available." />
                 ) : (
                   <div className="data-list">
-                    {visibleSnapshots.map((snapshot) => (
+                    {visibleSnapshots.map((snapshot) => {
+                      const manageHref =
+                        typeof snapshot.metrics.manageHref === 'string'
+                          ? snapshot.metrics.manageHref
+                          : null;
+
+                      return (
                       <div key={snapshot.module} className="data-list-item">
                         <strong>{formatModuleName(snapshot.module)}</strong>
                         <span className={`status-pill status-pill--${snapshot.status}`}>
                           {formatStatus(snapshot.status)}
                         </span>
                         <p>{snapshot.summary}</p>
+                        {manageHref ? (
+                          <Link href={manageHref}>
+                            <Button variant="secondary" size="sm">
+                              Manage capability
+                            </Button>
+                          </Link>
+                        ) : null}
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
                 {viewMode === 'simple' ? (

@@ -33,6 +33,7 @@ import {
   tenantCapabilityTests,
   tenantCapabilityVersions,
 } from '@titan/db';
+import { listMissionControlSnapshots } from './tenant-capability-mission-control.js';
 
 export class TenantCapabilityBuilderError extends Error {
   constructor(
@@ -63,6 +64,23 @@ export class TenantCapabilityBuilderService {
       orderBy: [desc(tenantCapabilities.updatedAt)],
     });
     return rows.map((row) => toSummary(row));
+  }
+
+  async listMissionControlSnapshots(companyId: string) {
+    const rows = await this.db.query.tenantCapabilities.findMany({
+      where: eq(tenantCapabilities.companyId, companyId),
+      orderBy: [desc(tenantCapabilities.updatedAt)],
+    });
+
+    return listMissionControlSnapshots(
+      rows.map((row) => ({
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        status: row.status,
+        healthState: row.healthState as { status?: string } | null,
+      })),
+    );
   }
 
   async getCapability(companyId: string, capabilityId: string): Promise<TenantCapabilityDetail | null> {

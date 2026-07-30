@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { AGENT_REGISTRY, AI_NAME, type AgentKey, type AgentTaskSummary } from '@titan/shared';
-import { hasAnyPermission } from '@titan/auth/browser';
+import { hasAgentManagePermission, hasAnyPermission } from '@titan/auth/browser';
 import { useSearch } from 'wouter';
 import { EmptyState, LoadingState } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
@@ -125,7 +125,7 @@ export function AuraPage() {
   );
 
   const canManageAgents = useMemo(
-    () => (user ? hasAnyPermission(user.permissions, ['agents:manage', 'platform:admin']) : false),
+    () => (user ? hasAgentManagePermission(user.permissions) : false),
     [user],
   );
 

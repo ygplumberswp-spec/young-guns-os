@@ -82,6 +82,11 @@ const updatePortalUserSchema = z.object({
   permissions: z.array(portalAccessPermissionSchema).optional(),
 });
 
+const createPortalInviteSchema = z.object({
+  email: z.string().trim().email(),
+  permissions: z.array(portalAccessPermissionSchema).optional(),
+});
+
 type PortalRouterDeps = {
   portalService: PortalService;
   portalExperienceService: PortalExperienceService;
@@ -417,6 +422,92 @@ export function createPortalRouter({
           parsed.data,
         );
         res.json({ data: { user } });
+      } catch (error) {
+        handlePortalError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/users/:id/revoke-access',
+    requireStaffAuth,
+    requireAnyPermission('portal:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const user = await portalService.revokePortalUserAccess(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+        );
+        res.json({ data: { user } });
+      } catch (error) {
+        handlePortalError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/customers/:customerId/access',
+    requireStaffAuth,
+    requireAnyPermission('portal:read', 'portal:manage', 'customers:read', 'customers:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const access = await portalService.getCustomerPortalAccess(
+        companyId,
+        getRouteParam(req.params.customerId),
+      );
+      res.json({ data: access });
+    },
+  );
+
+  router.post(
+    '/customers/:customerId/invites',
+    requireStaffAuth,
+    requireAnyPermission('portal:manage', 'customers:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = createPortalInviteSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid portal invitation payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const result = await portalService.createCustomerPortalInvite(
+          { companyId: auth.companyId, userId: auth.userId },
+          {
+            customerId: getRouteParam(req.params.customerId),
+            email: parsed.data.email,
+            permissions: parsed.data.permissions,
+          },
+        );
+        res.status(201).json({ data: result });
+      } catch (error) {
+        handlePortalError(res, error);
+      }
+    },
+  );
+
+  router.delete(
+    '/customers/:customerId/invites/:inviteId',
+    requireStaffAuth,
+    requireAnyPermission('portal:manage', 'customers:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        await portalService.revokeCustomerPortalInvite(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.customerId),
+          getRouteParam(req.params.inviteId),
+        );
+        res.json({ data: { success: true } });
       } catch (error) {
         handlePortalError(res, error);
       }

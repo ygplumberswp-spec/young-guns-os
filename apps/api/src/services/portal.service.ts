@@ -1,18 +1,24 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
-import type {
-  CreatePortalUserRequest,
-  PortalDashboardResponse,
-  PortalStats,
-  PortalUserDetail,
-  PortalUserSummary,
-  UpdatePortalUserRequest,
-} from '@titan/shared';
+import { and, desc, eq, isNull, sql } from 'drizzle-orm';
 import {
   DEFAULT_PORTAL_ACCESS_PERMISSIONS,
   isPortalAccessPermission,
   PORTAL_ACCESS_PERMISSION_OPTIONS,
+  type CreatePortalUserRequest,
+  type CreatePortalUserInviteResponse,
+  type CustomerPortalAccessSummary,
   type PortalAccessPermission,
+  type PortalDashboardResponse,
+  type PortalStats,
+  type PortalUserDetail,
+  type PortalUserInviteSummary,
+  type PortalUserSummary,
+  type UpdatePortalUserRequest,
 } from '@titan/shared';
+import {
+  generateInviteToken,
+  hashInviteToken,
+  INVITE_TOKEN_TTL_MS,
+} from '@titan/auth';
 import type { DatabaseClient } from '@titan/db';
 import {
   communications,
@@ -20,9 +26,13 @@ import {
   documents,
   invoices,
   jobs,
+  portalUserInvites,
   portalUserPermissions,
   portalUsers,
+  portalSessions,
   quotes,
+  securityAuditLogs,
+  users,
 } from '@titan/db';
 import { hashPassword } from './portal-auth.service.js';
 
@@ -55,8 +65,16 @@ type PortalScope = {
   permissions: PortalAccessPermission[];
 };
 
+type TenantScope = {
+  companyId: string;
+  userId: string;
+};
+
 export class PortalService {
-  constructor(private readonly db: DatabaseClient) {}
+  constructor(
+    private readonly db: DatabaseClient,
+    private readonly appUrl: string,
+  ) {}
 
   async listPortalUsers(companyId: string): Promise<PortalUserSummary[]> {
     const rows = await this.db.query.portalUsers.findMany({
@@ -360,6 +378,216 @@ export class PortalService {
     return PORTAL_ACCESS_PERMISSION_OPTIONS;
   }
 
+  async getCustomerPortalAccess(
+    companyId: string,
+    customerId: string,
+  ): Promise<CustomerPortalAccessSummary> {
+    await this.ensureCustomerBelongsToCompany(companyId, customerId);
+
+    const portalUser = await this.db.query.portalUsers.findFirst({
+      where: and(eq(portalUsers.companyId, companyId), eq(portalUsers.customerId, customerId)),
+      with: { customer: true, permissions: true },
+    });
+
+    const pendingInviteRow = await this.db.query.portalUserInvites.findFirst({
+      where: and(
+        eq(portalUserInvites.companyId, companyId),
+        eq(portalUserInvites.customerId, customerId),
+        isNull(portalUserInvites.acceptedAt),
+        isNull(portalUserInvites.revokedAt),
+      ),
+      with: { invitedBy: true },
+      orderBy: [desc(portalUserInvites.createdAt)],
+    });
+
+    const now = new Date();
+    const pendingInvite =
+      pendingInviteRow && pendingInviteRow.expiresAt >= now
+        ? toPortalInviteSummary(pendingInviteRow)
+        : null;
+
+    return {
+      portalUser: portalUser ? toPortalUserSummary(portalUser) : null,
+      pendingInvite,
+    };
+  }
+
+  async createCustomerPortalInvite(
+    scope: TenantScope,
+    input: {
+      customerId: string;
+      email: string;
+      permissions?: PortalAccessPermission[];
+    },
+  ): Promise<CreatePortalUserInviteResponse> {
+    const customerId = input.customerId;
+    const email = input.email.trim().toLowerCase();
+
+    if (!email) {
+      throw new PortalError('VALIDATION_ERROR', 'Email is required');
+    }
+
+    await this.ensureCustomerBelongsToCompany(scope.companyId, customerId);
+
+    const existingPortalUser = await this.db.query.portalUsers.findFirst({
+      where: and(
+        eq(portalUsers.companyId, scope.companyId),
+        eq(portalUsers.customerId, customerId),
+      ),
+    });
+
+    if (existingPortalUser) {
+      throw new PortalError('PORTAL_USER_EXISTS', 'This customer already has portal access');
+    }
+
+    const emailUsedByOtherCustomer = await this.db.query.portalUsers.findFirst({
+      where: and(eq(portalUsers.companyId, scope.companyId), eq(portalUsers.email, email)),
+    });
+
+    if (emailUsedByOtherCustomer) {
+      throw new PortalError('INVITE_NOT_AVAILABLE', 'Unable to send invitation for this email');
+    }
+
+    await this.db
+      .update(portalUserInvites)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(
+          eq(portalUserInvites.companyId, scope.companyId),
+          eq(portalUserInvites.customerId, customerId),
+          isNull(portalUserInvites.acceptedAt),
+          isNull(portalUserInvites.revokedAt),
+        ),
+      );
+
+    const permissions = normalizePermissions(input.permissions ?? DEFAULT_PORTAL_ACCESS_PERMISSIONS);
+    const token = generateInviteToken();
+    const tokenHash = hashInviteToken(token);
+    const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS);
+
+    const [invite] = await this.db
+      .insert(portalUserInvites)
+      .values({
+        companyId: scope.companyId,
+        customerId,
+        email,
+        permissions,
+        invitedByUserId: scope.userId,
+        tokenHash,
+        expiresAt,
+      })
+      .returning();
+
+    if (!invite) {
+      throw new PortalError('INVITE_FAILED', 'Unable to create portal invitation');
+    }
+
+    const inviter = await this.db.query.users.findFirst({
+      where: eq(users.id, scope.userId),
+    });
+
+    await this.recordPortalAudit(scope, {
+      action: 'customer_invited',
+      entityType: 'customer',
+      entityId: customerId,
+      metadata: { email, inviteId: invite.id },
+    });
+
+    const inviteSummary: PortalUserInviteSummary = {
+      id: invite.id,
+      customerId: invite.customerId,
+      email: invite.email,
+      permissions,
+      invitedByName: inviter ? `${inviter.firstName} ${inviter.lastName}` : 'Unknown',
+      expiresAt: invite.expiresAt.toISOString(),
+      createdAt: invite.createdAt.toISOString(),
+    };
+
+    return {
+      invite: inviteSummary,
+      inviteUrl: `${this.appUrl.replace(/\/$/, '')}/portal/accept-invite?token=${token}`,
+    };
+  }
+
+  async revokeCustomerPortalInvite(
+    scope: TenantScope,
+    customerId: string,
+    inviteId: string,
+  ): Promise<void> {
+    await this.ensureCustomerBelongsToCompany(scope.companyId, customerId);
+
+    const [updated] = await this.db
+      .update(portalUserInvites)
+      .set({ revokedAt: new Date() })
+      .where(
+        and(
+          eq(portalUserInvites.id, inviteId),
+          eq(portalUserInvites.companyId, scope.companyId),
+          eq(portalUserInvites.customerId, customerId),
+          isNull(portalUserInvites.acceptedAt),
+          isNull(portalUserInvites.revokedAt),
+        ),
+      )
+      .returning();
+
+    if (!updated) {
+      throw new PortalError('INVITE_NOT_FOUND', 'Invitation not found');
+    }
+
+    await this.recordPortalAudit(scope, {
+      action: 'customer_invitation_revoked',
+      entityType: 'customer',
+      entityId: customerId,
+      metadata: { inviteId },
+    });
+  }
+
+  async revokePortalUserAccess(scope: TenantScope, portalUserId: string): Promise<PortalUserDetail> {
+    const existing = await this.db.query.portalUsers.findFirst({
+      where: and(eq(portalUsers.id, portalUserId), eq(portalUsers.companyId, scope.companyId)),
+    });
+
+    if (!existing) {
+      throw new PortalError('PORTAL_USER_NOT_FOUND', 'Portal user not found');
+    }
+
+    await this.db
+      .update(portalSessions)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(portalSessions.portalUserId, portalUserId), isNull(portalSessions.revokedAt)));
+
+    const updated = await this.updatePortalUser(scope.companyId, portalUserId, { isActive: false });
+
+    await this.recordPortalAudit(scope, {
+      action: 'customer_access_revoked',
+      entityType: 'portal_user',
+      entityId: portalUserId,
+      metadata: { customerId: existing.customerId },
+    });
+
+    return updated;
+  }
+
+  private async recordPortalAudit(
+    scope: TenantScope,
+    input: {
+      action: string;
+      entityType: string;
+      entityId: string;
+      metadata?: Record<string, unknown>;
+    },
+  ) {
+    await this.db.insert(securityAuditLogs).values({
+      companyId: scope.companyId,
+      category: 'authentication',
+      action: input.action,
+      userId: scope.userId,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      metadata: input.metadata ?? {},
+    });
+  }
+
   private async replacePermissions(
     companyId: string,
     portalUserId: string,
@@ -400,6 +628,28 @@ export class PortalService {
 
 function normalizePermissions(permissions: string[]): PortalAccessPermission[] {
   return [...new Set(permissions.filter(isPortalAccessPermission))];
+}
+
+function toPortalInviteSummary(
+  row: typeof portalUserInvites.$inferSelect & {
+    invitedBy?: typeof users.$inferSelect | null;
+  },
+): PortalUserInviteSummary {
+  const permissions = Array.isArray(row.permissions)
+    ? row.permissions.filter((value): value is PortalAccessPermission =>
+        typeof value === 'string' && isPortalAccessPermission(value),
+      )
+    : [];
+
+  return {
+    id: row.id,
+    customerId: row.customerId,
+    email: row.email,
+    permissions,
+    invitedByName: row.invitedBy ? `${row.invitedBy.firstName} ${row.invitedBy.lastName}` : 'Unknown',
+    expiresAt: row.expiresAt.toISOString(),
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 function toPortalUserSummary(

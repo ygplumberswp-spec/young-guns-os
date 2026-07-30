@@ -7,7 +7,7 @@ import {
   resolveStaffExperience,
   type StaffIdentity,
 } from '@titan/auth/browser';
-import { OWNER_ONLY_ROUTE_PREFIXES, TECHNICIAN_ALLOWED_ROUTE_PREFIXES } from '@titan/shared';
+import { OWNER_ONLY_ROUTE_PREFIXES, DISPATCHER_BLOCKED_ROUTE_PREFIXES, TECHNICIAN_ALLOWED_ROUTE_PREFIXES } from '@titan/shared';
 import { useAuth } from '../lib/auth-context';
 
 function toStaffIdentity(user: { roleName: string; permissions: string[] }): StaffIdentity {
@@ -20,6 +20,10 @@ function isOwnerOnlyPath(path: string): boolean {
 
 function isTechnicianAllowedPath(path: string): boolean {
   return TECHNICIAN_ALLOWED_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+function isDispatcherBlockedPath(path: string): boolean {
+  return DISPATCHER_BLOCKED_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
 type OwnerStaffRouteProps = {
@@ -37,9 +41,14 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
   );
 
   useEffect(() => {
-    if (isLoading || !isAuthenticated || !user || experience !== 'technician') return;
-    if (isOwnerOnlyPath(location) || location === '/') {
-      setLocation(getStaffHomePath(toStaffIdentity(user)));
+    if (isLoading || !isAuthenticated || !user) return;
+    const identity = toStaffIdentity(user);
+    if (experience === 'technician' && (isOwnerOnlyPath(location) || location === '/')) {
+      setLocation(getStaffHomePath(identity));
+      return;
+    }
+    if (experience === 'dispatcher' && isDispatcherBlockedPath(location)) {
+      setLocation('/');
     }
   }, [experience, isAuthenticated, isLoading, location, setLocation, user]);
 
@@ -52,6 +61,10 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
   }
 
   if (experience === 'technician' && (isOwnerOnlyPath(location) || location === '/')) {
+    return null;
+  }
+
+  if (experience === 'dispatcher' && isDispatcherBlockedPath(location)) {
     return null;
   }
 

@@ -12,6 +12,15 @@ export function canManageMissionControl(permissions: string[]): boolean {
 }
 
 export function formatModuleName(module: string): string {
+  if (module.startsWith('tenant_capability:')) {
+    const slug = module.slice('tenant_capability:'.length);
+    return slug
+      .split('-')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
+
   return module
     .split('_')
     .filter(Boolean)

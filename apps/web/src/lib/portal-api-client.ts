@@ -154,6 +154,27 @@ export async function restorePortalSession(): Promise<PortalAuthPayload | null> 
   return parseResponse<PortalAuthPayload>(response);
 }
 
+export async function fetchPortalInvitePreview(token: string) {
+  const data = await portalRequest<{ preview: import('@titan/shared').PortalInvitePreview }>(
+    `/portal/auth/invite-preview?token=${encodeURIComponent(token)}`,
+    { skipAuthRefresh: true },
+  );
+  return data.preview;
+}
+
+export async function acceptPortalInvite(body: {
+  token: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+}) {
+  return portalRequest<PortalAuthPayload>('/portal/auth/accept-invite', {
+    method: 'POST',
+    body,
+    skipAuthRefresh: true,
+  });
+}
+
 export async function fetchPortalDashboard(
   accessToken: string,
 ): Promise<PortalDashboardResponse> {

@@ -2,18 +2,21 @@ import { and, eq, isNull } from 'drizzle-orm';
 import {
   createPortalAccessToken,
   generateRefreshToken,
+  hashInviteToken,
   hashPassword,
   hashRefreshToken,
   REFRESH_TOKEN_TTL_MS,
+  validatePasswordStrength,
   verifyPassword,
 } from '@titan/auth';
-import type { PortalAuthSession, PortalAuthUser } from '@titan/shared';
+import type { PortalAuthSession, PortalAuthUser, PortalInvitePreview } from '@titan/shared';
 import { isPortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   companies,
   customers,
   portalSessions,
+  portalUserInvites,
   portalUserPermissions,
   portalUsers,
 } from '@titan/db';
@@ -132,6 +135,117 @@ export class PortalAuthService {
     });
 
     return Boolean(session && session.expiresAt >= new Date());
+  }
+
+  async getInvitePreview(token: string): Promise<PortalInvitePreview> {
+    const invite = await this.findActivePortalInvite(token);
+
+    if (!invite.company || !invite.customer) {
+      throw new PortalAuthError('INVITE_INVALID', 'Invite is invalid');
+    }
+
+    return {
+      email: invite.email,
+      companyName: invite.company.name,
+      customerName: invite.customer.name,
+      expiresAt: invite.expiresAt.toISOString(),
+    };
+  }
+
+  async acceptInvite(input: {
+    token: string;
+    firstName: string;
+    lastName: string;
+    password: string;
+    userAgent?: string;
+    ipAddress?: string;
+  }): Promise<PortalAuthResult> {
+    const passwordError = validatePasswordStrength(input.password);
+    if (passwordError) {
+      throw new PortalAuthError('WEAK_PASSWORD', passwordError);
+    }
+
+    const invite = await this.findActivePortalInvite(input.token);
+
+    if (!invite.company || !invite.customer) {
+      throw new PortalAuthError('INVITE_INVALID', 'Invite is invalid');
+    }
+
+    const existingPortalUser = await this.db.query.portalUsers.findFirst({
+      where: and(
+        eq(portalUsers.companyId, invite.companyId),
+        eq(portalUsers.customerId, invite.customerId),
+      ),
+    });
+
+    if (existingPortalUser) {
+      throw new PortalAuthError('PORTAL_USER_EXISTS', 'Portal access already exists');
+    }
+
+    const passwordHash = await hashPassword(input.password);
+    const permissions = Array.isArray(invite.permissions)
+      ? invite.permissions.filter(
+          (value): value is string => typeof value === 'string' && isPortalAccessPermission(value),
+        )
+      : [];
+
+    const portalUserId = await this.db.transaction(async (tx) => {
+      const [created] = await tx
+        .insert(portalUsers)
+        .values({
+          companyId: invite.companyId,
+          customerId: invite.customerId,
+          email: invite.email,
+          passwordHash,
+          firstName: input.firstName.trim(),
+          lastName: input.lastName.trim(),
+        })
+        .returning();
+
+      if (!created) {
+        throw new PortalAuthError('INVITE_FAILED', 'Unable to create portal account');
+      }
+
+      if (permissions.length > 0) {
+        await tx.insert(portalUserPermissions).values(
+          permissions.map((permission) => ({
+            companyId: invite.companyId,
+            portalUserId: created.id,
+            permission,
+          })),
+        );
+      }
+
+      await tx
+        .update(portalUserInvites)
+        .set({ acceptedAt: new Date() })
+        .where(eq(portalUserInvites.id, invite.id));
+
+      return created.id;
+    });
+
+    return this.createSessionForPortalUser(portalUserId, input.userAgent, input.ipAddress);
+  }
+
+  private async findActivePortalInvite(token: string) {
+    const tokenHash = hashInviteToken(token);
+    const invite = await this.db.query.portalUserInvites.findFirst({
+      where: and(
+        eq(portalUserInvites.tokenHash, tokenHash),
+        isNull(portalUserInvites.acceptedAt),
+        isNull(portalUserInvites.revokedAt),
+      ),
+      with: {
+        company: true,
+        customer: true,
+      },
+    });
+
+    if (!invite || invite.expiresAt < new Date()) {
+      throw new PortalAuthError('INVITE_INVALID', 'Invite is invalid or expired');
+    }
+
+    return invite;
   }
 
   private async createSessionForPortalUser(

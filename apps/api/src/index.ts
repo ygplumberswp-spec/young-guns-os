@@ -494,6 +494,7 @@ const enterpriseMissionControlService = new EnterpriseMissionControlService({
   leadsService,
   marketingService,
   aiOperationsService,
+  tenantCapabilityBuilderService,
 });
 const enterpriseProductionReadinessService = new EnterpriseProductionReadinessService({
   db,
@@ -914,7 +915,7 @@ const stopAutomationWorkers = startAutomationWorkers({
   orchestrationEngine: agentOrchestrationEngineService,
 });
 const portalAuthService = new PortalAuthService(db, { jwtSecret: env.JWT_SECRET });
-const portalService = new PortalService(db);
+const portalService = new PortalService(db, env.APP_URL);
 
 const auraService = new AuraService({
   db,
@@ -1023,6 +1024,7 @@ app.use(
   '/api/v1/aura',
   createAuraRouter({
     auraService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1049,6 +1051,7 @@ app.use(
   createCrmRouter({
     crmService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1068,6 +1071,7 @@ app.use(
   createSchedulingRouter({
     schedulingService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1435,6 +1439,7 @@ app.use(
     enterpriseProductionLaunchService,
     enterpriseReleaseManagementService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1443,6 +1448,7 @@ app.use(
   '/api/v1/tenant-capabilities',
   createTenantCapabilitiesRouter({
     tenantCapabilityBuilderService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

@@ -1,5 +1,6 @@
 import {
   ADMIN_ROLE_NAME,
+  DISPATCHER_ROLE_NAME,
   MEMBER_ROLE_NAME,
   OWNER_ROLE_NAME,
   TECHNICIAN_ROLE_NAME,
@@ -7,7 +8,7 @@ import {
   hasPermission,
 } from './permissions.js';
 
-export type StaffExperience = 'platform_owner' | 'technician' | 'staff';
+export type StaffExperience = 'platform_owner' | 'technician' | 'dispatcher' | 'staff';
 
 export type StaffIdentity = {
   roleName: string;
@@ -22,12 +23,19 @@ export function isTechnicianRole(identity: StaffIdentity): boolean {
   return identity.roleName === TECHNICIAN_ROLE_NAME;
 }
 
+export function isDispatcherRole(identity: StaffIdentity): boolean {
+  return identity.roleName === DISPATCHER_ROLE_NAME;
+}
+
 export function resolveStaffExperience(identity: StaffIdentity): StaffExperience {
   if (isPlatformOwner(identity)) {
     return 'platform_owner';
   }
   if (isTechnicianRole(identity)) {
     return 'technician';
+  }
+  if (isDispatcherRole(identity)) {
+    return 'dispatcher';
   }
   return 'staff';
 }
@@ -59,6 +67,7 @@ export const TECHNICIAN_DENIED_PERMISSIONS = [
   'saas:manage',
   'ops:manage',
   'agents:write',
+  'agents:manage',
   'mission-control',
 ] as const;
 
@@ -84,4 +93,5 @@ export {
   ADMIN_ROLE_NAME,
   MEMBER_ROLE_NAME,
   TECHNICIAN_ROLE_NAME,
+  DISPATCHER_ROLE_NAME,
 };
