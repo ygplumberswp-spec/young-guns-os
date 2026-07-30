@@ -1,4 +1,5 @@
 import { and, desc, eq, gte, isNull } from 'drizzle-orm';
+import type { Logger } from 'pino';
 import { hashPassword } from '@titan/auth';
 import type {
   CreateSecurityActionRequest,
@@ -83,6 +84,7 @@ export class EnterpriseSecurityService {
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey: string,
+    private readonly logger?: Logger,
   ) {}
 
   async ensureTenantDefaults(companyId: string): Promise<void> {
@@ -132,14 +134,23 @@ export class EnterpriseSecurityService {
         ),
       }),
       this.db.query.securityRiskAlerts.findMany({
-        where: and(eq(securityRiskAlerts.companyId, companyId), eq(securityRiskAlerts.resolved, false)),
+        where: and(
+          eq(securityRiskAlerts.companyId, companyId),
+          eq(securityRiskAlerts.resolved, false),
+        ),
       }),
       this.listActions(companyId, 'pending_approval'),
       this.db.query.securityAuditLogs.findMany({
-        where: and(eq(securityAuditLogs.companyId, companyId), gte(securityAuditLogs.occurredAt, since24h)),
+        where: and(
+          eq(securityAuditLogs.companyId, companyId),
+          gte(securityAuditLogs.occurredAt, since24h),
+        ),
       }),
       this.db.query.securityMfaSettings.findMany({
-        where: and(eq(securityMfaSettings.companyId, companyId), eq(securityMfaSettings.enabled, true)),
+        where: and(
+          eq(securityMfaSettings.companyId, companyId),
+          eq(securityMfaSettings.enabled, true),
+        ),
       }),
       this.db.query.users.findMany({
         where: and(eq(users.companyId, companyId), eq(users.isActive, true)),
@@ -152,7 +163,7 @@ export class EnterpriseSecurityService {
 
     const mfaAdoptionPercent =
       tenantUsers.length > 0 ? Math.round((mfaSettings.length / tenantUsers.length) * 100) : null;
-    const securityScore = computeSecurityScore({
+    const scoreResult = computeSecurityScore({
       mfaAdoptionPercent,
       failedLoginCount24h: failedLogins.length,
       unresolvedRiskAlerts: riskAlerts.length,
@@ -163,7 +174,8 @@ export class EnterpriseSecurityService {
 
     return {
       summary: `${activeSessions.length} active session(s), ${riskAlerts.length} risk alert(s), ${pendingActions.length} pending security action(s).`,
-      securityScore,
+      securityScore: scoreResult.score,
+      securityScoreFactors: scoreResult.factors,
       activeSessionCount: activeSessions.length,
       trustedDeviceCount: trustedDevices.filter((device) => device.approved).length,
       failedLoginCount24h: failedLogins.length,
@@ -215,30 +227,55 @@ export class EnterpriseSecurityService {
     riskLevel?: SecurityRiskLevel;
     metadata?: Record<string, unknown>;
   }): Promise<void> {
-    await this.db.insert(securityLoginEvents).values({
-      companyId: input.companyId,
-      userId: input.userId,
-      eventType: input.eventType,
-      ipAddress: input.ipAddress,
-      userAgent: input.userAgent,
-      geoHint: input.geoHint,
-      riskLevel: input.riskLevel ?? 'low',
-      metadata: input.metadata ?? {},
-    });
-
-    if (input.companyId && input.eventType === 'login_failed') {
-      await this.evaluateFailedLoginRisk(input.companyId, input.userId, input.ipAddress);
-    }
-
-    if (input.companyId && input.eventType === 'login_success' && input.userId) {
-      await this.recordAuditLog({
+    try {
+      await this.db.insert(securityLoginEvents).values({
         companyId: input.companyId,
-        category: 'authentication',
-        action: 'login_success',
         userId: input.userId,
+        eventType: input.eventType,
         ipAddress: input.ipAddress,
         userAgent: input.userAgent,
+        geoHint: input.geoHint,
+        riskLevel: input.riskLevel ?? 'low',
+        metadata: input.metadata ?? {},
       });
+    } catch (error) {
+      this.logger?.warn(
+        {
+          err: error,
+          eventType: input.eventType,
+          companyId: input.companyId,
+          userId: input.userId,
+        },
+        'Failed to persist security login event — continuing without blocking auth',
+      );
+      return;
+    }
+
+    try {
+      if (input.companyId && input.eventType === 'login_failed') {
+        await this.evaluateFailedLoginRisk(input.companyId, input.userId, input.ipAddress);
+      }
+
+      if (input.companyId && input.eventType === 'login_success' && input.userId) {
+        await this.recordAuditLog({
+          companyId: input.companyId,
+          category: 'authentication',
+          action: 'login_success',
+          userId: input.userId,
+          ipAddress: input.ipAddress,
+          userAgent: input.userAgent,
+        });
+      }
+    } catch (error) {
+      this.logger?.warn(
+        {
+          err: error,
+          eventType: input.eventType,
+          companyId: input.companyId,
+          userId: input.userId,
+        },
+        'Security login follow-up step failed — auth is unaffected',
+      );
     }
   }
 
@@ -282,7 +319,10 @@ export class EnterpriseSecurityService {
     }));
   }
 
-  async listActiveSessions(companyId: string, currentSessionId?: string): Promise<SecuritySessionSummary[]> {
+  async listActiveSessions(
+    companyId: string,
+    currentSessionId?: string,
+  ): Promise<SecuritySessionSummary[]> {
     const rows = await this.db.query.sessions.findMany({
       where: and(
         eq(sessions.companyId, companyId),
@@ -333,6 +373,26 @@ export class EnterpriseSecurityService {
     });
   }
 
+  async revokeAllOtherSessions(scope: StaffScope, currentSessionId: string): Promise<number> {
+    const activeSessions = await this.listActiveSessions(scope.companyId, currentSessionId);
+    const toRevoke = activeSessions.filter((session) => !session.isCurrent);
+
+    for (const session of toRevoke) {
+      await this.revokeSession(scope, session.id);
+    }
+
+    await this.recordAuditLog({
+      companyId: scope.companyId,
+      category: 'authentication',
+      action: 'sessions_revoked_all_other',
+      userId: scope.userId,
+      sessionId: currentSessionId,
+      metadata: { revokedCount: toRevoke.length },
+    });
+
+    return toRevoke.length;
+  }
+
   async getTenantPolicy(companyId: string): Promise<SecurityTenantPolicySummary> {
     await this.ensureTenantDefaults(companyId);
     const policy = await this.db.query.securityTenantPolicies.findFirst({
@@ -374,7 +434,10 @@ export class EnterpriseSecurityService {
 
   async getMfaSettings(scope: StaffScope): Promise<SecurityMfaSettingsSummary> {
     const row = await this.db.query.securityMfaSettings.findFirst({
-      where: and(eq(securityMfaSettings.companyId, scope.companyId), eq(securityMfaSettings.userId, scope.userId)),
+      where: and(
+        eq(securityMfaSettings.companyId, scope.companyId),
+        eq(securityMfaSettings.userId, scope.userId),
+      ),
     });
 
     return {
@@ -389,7 +452,10 @@ export class EnterpriseSecurityService {
     const backupCodes = generateBackupCodes();
     const backupCodesHashed = await Promise.all(backupCodes.map((code) => hashPassword(code)));
     const existing = await this.db.query.securityMfaSettings.findFirst({
-      where: and(eq(securityMfaSettings.companyId, scope.companyId), eq(securityMfaSettings.userId, scope.userId)),
+      where: and(
+        eq(securityMfaSettings.companyId, scope.companyId),
+        eq(securityMfaSettings.userId, scope.userId),
+      ),
     });
 
     const payload = {
@@ -402,7 +468,10 @@ export class EnterpriseSecurityService {
     };
 
     if (existing) {
-      await this.db.update(securityMfaSettings).set(payload).where(eq(securityMfaSettings.id, existing.id));
+      await this.db
+        .update(securityMfaSettings)
+        .set(payload)
+        .where(eq(securityMfaSettings.id, existing.id));
     } else {
       await this.db.insert(securityMfaSettings).values(payload);
     }
@@ -410,9 +479,15 @@ export class EnterpriseSecurityService {
     return { otpauthUri: buildTotpUri(secret, accountEmail), backupCodes };
   }
 
-  async verifyMfaSetup(scope: StaffScope, verificationCode: string): Promise<SecurityMfaSettingsSummary> {
+  async verifyMfaSetup(
+    scope: StaffScope,
+    verificationCode: string,
+  ): Promise<SecurityMfaSettingsSummary> {
     const row = await this.db.query.securityMfaSettings.findFirst({
-      where: and(eq(securityMfaSettings.companyId, scope.companyId), eq(securityMfaSettings.userId, scope.userId)),
+      where: and(
+        eq(securityMfaSettings.companyId, scope.companyId),
+        eq(securityMfaSettings.userId, scope.userId),
+      ),
     });
 
     if (!row?.totpSecretEncrypted) {
@@ -444,10 +519,16 @@ export class EnterpriseSecurityService {
     };
   }
 
-  async listTrustedDevices(companyId: string, userId?: string): Promise<SecurityTrustedDeviceSummary[]> {
+  async listTrustedDevices(
+    companyId: string,
+    userId?: string,
+  ): Promise<SecurityTrustedDeviceSummary[]> {
     const rows = await this.db.query.securityTrustedDevices.findMany({
       where: userId
-        ? and(eq(securityTrustedDevices.companyId, companyId), eq(securityTrustedDevices.userId, userId))
+        ? and(
+            eq(securityTrustedDevices.companyId, companyId),
+            eq(securityTrustedDevices.userId, userId),
+          )
         : eq(securityTrustedDevices.companyId, companyId),
       orderBy: [desc(securityTrustedDevices.lastSeenAt)],
     });
@@ -463,7 +544,10 @@ export class EnterpriseSecurityService {
     }));
   }
 
-  async registerTrustedDevice(scope: StaffScope, input: RegisterTrustedDeviceRequest): Promise<SecurityTrustedDeviceSummary> {
+  async registerTrustedDevice(
+    scope: StaffScope,
+    input: RegisterTrustedDeviceRequest,
+  ): Promise<SecurityTrustedDeviceSummary> {
     const policy = await this.getTenantPolicy(scope.companyId);
     const [device] = await this.db
       .insert(securityTrustedDevices)
@@ -478,7 +562,10 @@ export class EnterpriseSecurityService {
       .returning();
 
     if (!device) {
-      throw new EnterpriseSecurityError('DEVICE_REGISTER_FAILED', 'Unable to register trusted device');
+      throw new EnterpriseSecurityError(
+        'DEVICE_REGISTER_FAILED',
+        'Unable to register trusted device',
+      );
     }
 
     await this.recordAuditLog({
@@ -501,11 +588,19 @@ export class EnterpriseSecurityService {
     };
   }
 
-  async approveTrustedDevice(scope: StaffScope, deviceId: string): Promise<SecurityTrustedDeviceSummary> {
+  async approveTrustedDevice(
+    scope: StaffScope,
+    deviceId: string,
+  ): Promise<SecurityTrustedDeviceSummary> {
     const [updated] = await this.db
       .update(securityTrustedDevices)
       .set({ approved: true, lastSeenAt: new Date() })
-      .where(and(eq(securityTrustedDevices.id, deviceId), eq(securityTrustedDevices.companyId, scope.companyId)))
+      .where(
+        and(
+          eq(securityTrustedDevices.id, deviceId),
+          eq(securityTrustedDevices.companyId, scope.companyId),
+        ),
+      )
       .returning();
 
     if (!updated) {
@@ -554,7 +649,9 @@ export class EnterpriseSecurityService {
       grantType: row.grantType,
       permissions: row.permissions,
       grantedToUserId: row.grantedToUserId,
-      grantedToUserName: row.grantedTo ? `${row.grantedTo.firstName} ${row.grantedTo.lastName}`.trim() : null,
+      grantedToUserName: row.grantedTo
+        ? `${row.grantedTo.firstName} ${row.grantedTo.lastName}`.trim()
+        : null,
       grantedByUserId: row.grantedByUserId,
       expiresAt: row.expiresAt?.toISOString() ?? null,
       approved: row.approved,
@@ -584,7 +681,9 @@ export class EnterpriseSecurityService {
       throw new EnterpriseSecurityError('GRANT_CREATE_FAILED', 'Unable to create permission grant');
     }
 
-    const grantedTo = await this.db.query.users.findFirst({ where: eq(users.id, grant.grantedToUserId) });
+    const grantedTo = await this.db.query.users.findFirst({
+      where: eq(users.id, grant.grantedToUserId),
+    });
 
     return {
       id: grant.id,
@@ -599,7 +698,10 @@ export class EnterpriseSecurityService {
     };
   }
 
-  async listActions(companyId: string, status?: SecurityActionStatus): Promise<SecurityActionSummary[]> {
+  async listActions(
+    companyId: string,
+    status?: SecurityActionStatus,
+  ): Promise<SecurityActionSummary[]> {
     const rows = await this.db.query.securityActions.findMany({
       where: status
         ? and(eq(securityActions.companyId, companyId), eq(securityActions.status, status))
@@ -619,7 +721,10 @@ export class EnterpriseSecurityService {
     }));
   }
 
-  async createAction(scope: StaffScope, input: CreateSecurityActionRequest): Promise<SecurityActionSummary> {
+  async createAction(
+    scope: StaffScope,
+    input: CreateSecurityActionRequest,
+  ): Promise<SecurityActionSummary> {
     const [action] = await this.db
       .insert(securityActions)
       .values({
@@ -710,7 +815,10 @@ export class EnterpriseSecurityService {
       .returning();
 
     if (!requestRow) {
-      throw new EnterpriseSecurityError('PRIVACY_REQUEST_FAILED', 'Unable to create privacy request');
+      throw new EnterpriseSecurityError(
+        'PRIVACY_REQUEST_FAILED',
+        'Unable to create privacy request',
+      );
     }
 
     return {
@@ -724,7 +832,10 @@ export class EnterpriseSecurityService {
     };
   }
 
-  async listRiskAlerts(companyId: string, includeResolved = true): Promise<SecurityRiskAlertSummary[]> {
+  async listRiskAlerts(
+    companyId: string,
+    includeResolved = true,
+  ): Promise<SecurityRiskAlertSummary[]> {
     const rows = await this.db.query.securityRiskAlerts.findMany({
       where: includeResolved
         ? eq(securityRiskAlerts.companyId, companyId)
@@ -748,7 +859,9 @@ export class EnterpriseSecurityService {
     const [updated] = await this.db
       .update(securityRiskAlerts)
       .set({ resolved: true })
-      .where(and(eq(securityRiskAlerts.id, alertId), eq(securityRiskAlerts.companyId, scope.companyId)))
+      .where(
+        and(eq(securityRiskAlerts.id, alertId), eq(securityRiskAlerts.companyId, scope.companyId)),
+      )
       .returning();
 
     if (!updated) {
@@ -841,7 +954,13 @@ export class EnterpriseSecurityService {
     deviceFingerprint?: string;
     method: string;
     path: string;
-  }): Promise<{ allowed: boolean; code?: string; message?: string; statusCode?: number; touchDevice?: boolean }> {
+  }): Promise<{
+    allowed: boolean;
+    code?: string;
+    message?: string;
+    statusCode?: number;
+    touchDevice?: boolean;
+  }> {
     await this.ensureTenantDefaults(input.companyId);
 
     if (!input.permissions.length) {
@@ -864,14 +983,27 @@ export class EnterpriseSecurityService {
     });
 
     if (!session) {
-      return { allowed: false, code: 'SESSION_INVALID', message: 'Session is invalid or expired', statusCode: 401 };
+      return {
+        allowed: false,
+        code: 'SESSION_INVALID',
+        message: 'Session is invalid or expired',
+        statusCode: 401,
+      };
     }
 
     const policy = await this.getTenantPolicy(input.companyId);
     const timeoutMs = policy.sessionTimeoutMinutes * 60 * 1000;
     if (session.createdAt.getTime() + timeoutMs < Date.now()) {
-      await this.db.update(sessions).set({ revokedAt: new Date() }).where(eq(sessions.id, session.id));
-      return { allowed: false, code: 'SESSION_TIMEOUT', message: 'Session exceeded tenant timeout policy', statusCode: 401 };
+      await this.db
+        .update(sessions)
+        .set({ revokedAt: new Date() })
+        .where(eq(sessions.id, session.id));
+      return {
+        allowed: false,
+        code: 'SESSION_TIMEOUT',
+        message: 'Session exceeded tenant timeout policy',
+        statusCode: 401,
+      };
     }
 
     if (policy.trustedDeviceRequired && input.deviceFingerprint) {
@@ -934,7 +1066,11 @@ export class EnterpriseSecurityService {
         windowStartedAt: windowStart,
       });
 
-      return { allowed: true, remaining: input.maxRequests - 1, resetAt: windowStart.getTime() + input.windowMs };
+      return {
+        allowed: true,
+        remaining: input.maxRequests - 1,
+        resetAt: windowStart.getTime() + input.windowMs,
+      };
     }
 
     const nextCount = existing.requestCount + 1;
@@ -953,8 +1089,12 @@ export class EnterpriseSecurityService {
   async getComplianceSummary(companyId: string): Promise<SecurityComplianceSummary> {
     await this.ensureTenantDefaults(companyId);
     const [policy, workspace] = await Promise.all([
-      this.db.query.securityTenantPolicies.findFirst({ where: eq(securityTenantPolicies.companyId, companyId) }),
-      this.db.query.securityWorkspaceSettings.findFirst({ where: eq(securityWorkspaceSettings.companyId, companyId) }),
+      this.db.query.securityTenantPolicies.findFirst({
+        where: eq(securityTenantPolicies.companyId, companyId),
+      }),
+      this.db.query.securityWorkspaceSettings.findFirst({
+        where: eq(securityWorkspaceSettings.companyId, companyId),
+      }),
     ]);
 
     return {
@@ -1006,7 +1146,11 @@ export class EnterpriseSecurityService {
     return credential;
   }
 
-  private async evaluateFailedLoginRisk(companyId: string, userId?: string, ipAddress?: string): Promise<void> {
+  private async evaluateFailedLoginRisk(
+    companyId: string,
+    userId?: string,
+    ipAddress?: string,
+  ): Promise<void> {
     const since = new Date(Date.now() - 15 * 60 * 1000);
     const conditions = [
       eq(securityLoginEvents.companyId, companyId),
@@ -1033,7 +1177,9 @@ export class EnterpriseSecurityService {
   }
 }
 
-function mapTenantPolicy(policy: typeof securityTenantPolicies.$inferSelect): SecurityTenantPolicySummary {
+function mapTenantPolicy(
+  policy: typeof securityTenantPolicies.$inferSelect,
+): SecurityTenantPolicySummary {
   return {
     mfaRequired: policy.mfaRequired,
     sessionTimeoutMinutes: policy.sessionTimeoutMinutes,
@@ -1055,15 +1201,79 @@ function computeSecurityScore(input: {
   pendingActionCount: number;
   compliance: SecurityComplianceSummary;
   encryption: SecurityEncryptionSummary;
-}): number | null {
+}): { score: number | null; factors: import('@titan/shared').SecurityScoreFactor[] } {
+  const factors: import('@titan/shared').SecurityScoreFactor[] = [];
   let score = 100;
-  if (input.mfaAdoptionPercent !== null) {
-    score -= Math.max(0, 30 - Math.round(input.mfaAdoptionPercent * 0.3));
+
+  if (input.mfaAdoptionPercent === null) {
+    factors.push({
+      label: 'MFA adoption',
+      impact: 0,
+      detail: 'Not assessed — no active users to measure adoption.',
+    });
+  } else {
+    const mfaImpact = Math.max(0, 30 - Math.round(input.mfaAdoptionPercent * 0.3));
+    if (mfaImpact > 0) {
+      factors.push({
+        label: 'MFA adoption',
+        impact: -mfaImpact,
+        detail: `${input.mfaAdoptionPercent}% of active users have MFA enabled.`,
+      });
+    }
+    score -= mfaImpact;
   }
-  score -= Math.min(20, input.failedLoginCount24h * 2);
-  score -= Math.min(25, input.unresolvedRiskAlerts * 5);
-  score -= Math.min(10, input.pendingActionCount);
-  if (!input.compliance.auditLoggingEnabled) score -= 10;
-  if (!input.encryption.integrationCredentialsEncrypted) score -= 10;
-  return Math.max(0, Math.min(100, score));
+
+  const failedLoginImpact = Math.min(20, input.failedLoginCount24h * 2);
+  if (failedLoginImpact > 0) {
+    factors.push({
+      label: 'Failed logins (24h)',
+      impact: -failedLoginImpact,
+      detail: `${input.failedLoginCount24h} failed login attempt(s) in the last 24 hours.`,
+    });
+    score -= failedLoginImpact;
+  }
+
+  const alertImpact = Math.min(25, input.unresolvedRiskAlerts * 5);
+  if (alertImpact > 0) {
+    factors.push({
+      label: 'Unresolved risk alerts',
+      impact: -alertImpact,
+      detail: `${input.unresolvedRiskAlerts} unresolved risk alert(s).`,
+    });
+    score -= alertImpact;
+  }
+
+  const actionImpact = Math.min(10, input.pendingActionCount);
+  if (actionImpact > 0) {
+    factors.push({
+      label: 'Pending security actions',
+      impact: -actionImpact,
+      detail: `${input.pendingActionCount} security action(s) awaiting approval.`,
+    });
+    score -= actionImpact;
+  }
+
+  if (!input.compliance.auditLoggingEnabled) {
+    factors.push({ label: 'Audit logging', impact: -10, detail: 'Audit logging is disabled.' });
+    score -= 10;
+  }
+
+  if (!input.encryption.integrationCredentialsEncrypted) {
+    factors.push({
+      label: 'Integration credential encryption',
+      impact: -10,
+      detail: 'Integration credentials are not fully encrypted.',
+    });
+    score -= 10;
+  }
+
+  if (factors.length === 0) {
+    factors.push({
+      label: 'Baseline',
+      impact: 0,
+      detail: 'No deductions from current security signals.',
+    });
+  }
+
+  return { score: Math.max(0, Math.min(100, score)), factors };
 }

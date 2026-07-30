@@ -28,7 +28,7 @@ export const DASHBOARD_METRICS: DashboardMetric[] = [
   {
     id: 'revenue',
     label: 'Revenue (MTD)',
-    value: '$0.00',
+    value: '—',
     hint: 'Payments received this month',
   },
 ];
@@ -47,13 +47,13 @@ export const DASHBOARD_EMPTY_PANELS: DashboardEmptyPanel[] = [
     title: 'Recent Activity',
     description: 'Latest updates across your business',
     emptyTitle: 'No activity yet',
-    emptyDescription: 'Activity will appear here once you start using TITAN modules.',
+    emptyDescription: 'Recent updates from customers, jobs, and finance will appear here.',
   },
   {
     id: 'upcoming-work',
     title: 'Upcoming Work',
     description: 'Scheduled jobs and tasks',
-    emptyTitle: 'Nothing scheduled',
-    emptyDescription: 'Jobs and schedules will show here in a future milestone.',
+    emptyTitle: 'No upcoming work scheduled',
+    emptyDescription: 'Scheduled jobs and tasks will appear here when they are assigned.',
   },
 ];

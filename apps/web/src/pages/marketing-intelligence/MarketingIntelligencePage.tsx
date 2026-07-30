@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, GroupedTabNav, PageHeader, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseMarketingIntelligenceDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -20,36 +20,10 @@ import {
   formatLifecycleStatus,
   formatWorkflowStatus,
 } from '../../features/marketing-intelligence/utils';
-
-type MarketingIntelligenceTab =
-  | 'overview'
-  | 'strategy'
-  | 'campaigns'
-  | 'calendar'
-  | 'audiences'
-  | 'content'
-  | 'brand'
-  | 'assets'
-  | 'social'
-  | 'listening'
-  | 'reviews'
-  | 'advertising'
-  | 'email'
-  | 'messaging'
-  | 'website'
-  | 'seo'
-  | 'journeys'
-  | 'leads'
-  | 'attribution'
-  | 'roi'
-  | 'growth'
-  | 'referrals'
-  | 'experiments'
-  | 'market'
-  | 'alerts'
-  | 'providers'
-  | 'settings'
-  | 'assistant';
+import {
+  MARKETING_INTELLIGENCE_TAB_GROUPS,
+  type MarketingIntelligenceTab,
+} from '../../features/marketing-intelligence/tabs';
 
 export function MarketingIntelligencePage() {
   const { accessToken, user } = useAuth();
@@ -60,11 +34,23 @@ export function MarketingIntelligencePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessMarketingIntelligence(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageMarketingIntelligence(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessMarketingIntelligence(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageMarketingIntelligence(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -84,7 +70,11 @@ export function MarketingIntelligencePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load marketing intelligence dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load marketing intelligence dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -115,41 +105,15 @@ export function MarketingIntelligencePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Marketing Intelligence" description="You do not have permission to view marketing intelligence." />
+        <PageHeader
+          title="Marketing Intelligence"
+          description="You do not have permission to view marketing intelligence."
+        />
       </div>
     );
   }
 
-  const tabs: Array<{ id: MarketingIntelligenceTab; label: string }> = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'strategy', label: 'Strategy' },
-    { id: 'campaigns', label: 'Campaigns' },
-    { id: 'calendar', label: 'Calendar' },
-    { id: 'audiences', label: 'Audiences' },
-    { id: 'content', label: 'Content Studio' },
-    { id: 'brand', label: 'Brand' },
-    { id: 'assets', label: 'Asset Library' },
-    { id: 'social', label: 'Social Media' },
-    { id: 'listening', label: 'Social Listening' },
-    { id: 'reviews', label: 'Reviews & Reputation' },
-    { id: 'advertising', label: 'Paid Advertising' },
-    { id: 'email', label: 'Email' },
-    { id: 'messaging', label: 'SMS & WhatsApp' },
-    { id: 'website', label: 'Website & Landing Pages' },
-    { id: 'seo', label: 'SEO & Local Presence' },
-    { id: 'journeys', label: 'Customer Journeys' },
-    { id: 'leads', label: 'Lead Generation' },
-    { id: 'attribution', label: 'Attribution' },
-    { id: 'roi', label: 'ROI & Profitability' },
-    { id: 'growth', label: 'Customer Growth' },
-    { id: 'referrals', label: 'Referrals & Partners' },
-    { id: 'experiments', label: 'Experiments' },
-    { id: 'market', label: 'Market Intelligence' },
-    { id: 'alerts', label: 'Alerts' },
-    { id: 'providers', label: 'Providers' },
-    { id: 'settings', label: 'Settings' },
-    { id: 'assistant', label: 'AI Assistant' },
-  ];
+  const tabs = MARKETING_INTELLIGENCE_TAB_GROUPS;
 
   return (
     <div className="automation-page">
@@ -165,27 +129,28 @@ export function MarketingIntelligencePage() {
         }
       />
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <GroupedTabNav
+        groups={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as MarketingIntelligenceTab)}
+        ariaLabel="Marketing intelligence sections"
+      />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {isLoading ? <p>Loading marketing intelligence...</p> : null}
+      {isLoading ? (
+        <p className="page-muted" role="status">
+          Loading marketing intelligence…
+        </p>
+      ) : null}
 
       {dashboard && activeTab === 'overview' ? (
         <>
           <div className="stat-grid">
-            <StatCard label="Active Campaigns" value={String(dashboard.marketingStats.activeCampaignCount)} />
+            <StatCard
+              label="Active Campaigns"
+              value={String(dashboard.marketingStats.activeCampaignCount)}
+            />
             <StatCard label="Campaign Plans" value={String(dashboard.campaignPlanCount)} />
             <StatCard label="Strategies" value={String(dashboard.strategyCount)} />
             <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
@@ -194,21 +159,28 @@ export function MarketingIntelligencePage() {
           </div>
           <Panel
             title="Campaign Monitoring"
-            description={dashboard.campaignMonitoring.alerts.join(' · ') || 'No active alerts from real data'}
+            description={
+              dashboard.campaignMonitoring.alerts.join(' · ') || 'No active alerts from real data'
+            }
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
               <li>Pending reviews: {dashboard.campaignMonitoring.pendingReviewCount}</li>
               <li>Overdue content: {dashboard.campaignMonitoring.overdueContentCount}</li>
               <li>Budget overspend risk: {dashboard.campaignMonitoring.budgetOverspendCount}</li>
-              <li>Provider sync failures: {dashboard.campaignMonitoring.adapterSyncFailureCount}</li>
+              <li>
+                Provider sync failures: {dashboard.campaignMonitoring.adapterSyncFailureCount}
+              </li>
             </ul>
             {canWrite ? (
               <div className="panel-actions">
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureMarketingAnalytics(accessToken!), 'Analytics captured from real marketing data.')
+                    void runAction(
+                      () => captureMarketingAnalytics(accessToken!),
+                      'Analytics captured from real marketing data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -217,7 +189,10 @@ export function MarketingIntelligencePage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncMarketingAlerts(accessToken!), 'Marketing alerts synced from real records.')
+                    void runAction(
+                      () => syncMarketingAlerts(accessToken!),
+                      'Marketing alerts synced from real records.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -226,10 +201,25 @@ export function MarketingIntelligencePage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
-                <li>Total spend: {formatCurrency(dashboard.analytics.totalSpendCents, dashboard.analytics.currency)}</li>
-                <li>Attributed revenue: {formatCurrency(dashboard.analytics.attributedRevenueCents, dashboard.analytics.currency)}</li>
+                <li>
+                  Total spend:{' '}
+                  {formatCurrency(
+                    dashboard.analytics.totalSpendCents,
+                    dashboard.analytics.currency,
+                  )}
+                </li>
+                <li>
+                  Attributed revenue:{' '}
+                  {formatCurrency(
+                    dashboard.analytics.attributedRevenueCents,
+                    dashboard.analytics.currency,
+                  )}
+                </li>
                 <li>Social posts: {dashboard.analytics.socialPostCount}</li>
                 <li>Email campaigns: {dashboard.analytics.emailCampaignCount}</li>
               </ul>
@@ -241,7 +231,10 @@ export function MarketingIntelligencePage() {
       {dashboard && activeTab === 'strategy' ? (
         <Panel title="Marketing Strategy" description="Draft → Review → Approval → Active">
           {dashboard.recentStrategies.length === 0 ? (
-            <EmptyState title="No strategies" description="Marketing strategies appear when created in the workspace." />
+            <EmptyState
+              title="No strategies"
+              description="Marketing strategies appear when created in the workspace."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentStrategies.map((strategy) => (
@@ -257,15 +250,25 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'campaigns' ? (
-        <Panel title="Campaign Plans" description="Publication and paid-media activation require approval">
+        <Panel
+          title="Campaign Plans"
+          description="Publication and paid-media activation require approval"
+        >
           {dashboard.recentCampaignPlans.length === 0 ? (
-            <EmptyState title="No campaign plans" description="Campaign plans appear when created from real marketing objectives." />
+            <EmptyState
+              title="No campaign plans"
+              description="Campaign plans appear when created from real marketing objectives."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentCampaignPlans.map((campaign) => (
                 <li key={campaign.id}>
-                  <strong>{campaign.name}</strong> — {formatLifecycleStatus(campaign.lifecycleStatus)} ({formatWorkflowStatus(campaign.workflowStatus)})
-                  {campaign.budgetCents != null ? ` · ${formatCurrency(campaign.budgetCents, dashboard.currency)}` : ''}
+                  <strong>{campaign.name}</strong> —{' '}
+                  {formatLifecycleStatus(campaign.lifecycleStatus)} (
+                  {formatWorkflowStatus(campaign.workflowStatus)})
+                  {campaign.budgetCents != null
+                    ? ` · ${formatCurrency(campaign.budgetCents, dashboard.currency)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -273,21 +276,51 @@ export function MarketingIntelligencePage() {
         </Panel>
       ) : null}
 
-      {dashboard && ['calendar', 'audiences', 'brand', 'assets', 'listening', 'advertising', 'messaging', 'website', 'seo', 'journeys', 'leads', 'attribution', 'growth', 'referrals', 'experiments'].includes(activeTab) ? (
-        <Panel title={tabs.find((t) => t.id === activeTab)?.label ?? 'Marketing'} description="Real tenant data only — no fake campaigns or engagement">
-          <p>Configure and manage {tabs.find((t) => t.id === activeTab)?.label?.toLowerCase()} through the marketing intelligence API and provider adapters.</p>
+      {dashboard &&
+      [
+        'calendar',
+        'audiences',
+        'brand',
+        'assets',
+        'listening',
+        'advertising',
+        'messaging',
+        'website',
+        'seo',
+        'journeys',
+        'leads',
+        'attribution',
+        'growth',
+        'referrals',
+        'experiments',
+      ].includes(activeTab) ? (
+        <Panel
+          title={tabs.find((t) => t.id === activeTab)?.label ?? 'Marketing'}
+          description="Real tenant data only — no fake campaigns or engagement"
+        >
+          <p>
+            Configure and manage {tabs.find((t) => t.id === activeTab)?.label?.toLowerCase()}{' '}
+            through the marketing intelligence API and provider adapters.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'content' ? (
-        <Panel title="Content Studio" description="AI-generated content requires human review before publication">
+        <Panel
+          title="Content Studio"
+          description="AI-generated content requires human review before publication"
+        >
           {dashboard.recentContentItems.length === 0 ? (
-            <EmptyState title="No content items" description="Content items appear when created in the content operations workspace." />
+            <EmptyState
+              title="No content items"
+              description="Content items appear when created in the content operations workspace."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentContentItems.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.title}</strong> — {item.contentType} ({formatWorkflowStatus(item.contentStatus)})
+                  <strong>{item.title}</strong> — {item.contentType} (
+                  {formatWorkflowStatus(item.contentStatus)})
                 </li>
               ))}
             </ul>
@@ -296,14 +329,21 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'social' ? (
-        <Panel title="Social Media" description="Scheduling and publishing through configured providers only">
+        <Panel
+          title="Social Media"
+          description="Scheduling and publishing through configured providers only"
+        >
           {dashboard.recentSocialPosts.length === 0 ? (
-            <EmptyState title="No social posts" description="Social posts appear when drafted and scheduled." />
+            <EmptyState
+              title="No social posts"
+              description="Social posts appear when drafted and scheduled."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentSocialPosts.map((post) => (
                 <li key={post.id}>
-                  <strong>{post.title ?? 'Social post'}</strong> — {formatWorkflowStatus(post.contentStatus)}
+                  <strong>{post.title ?? 'Social post'}</strong> —{' '}
+                  {formatWorkflowStatus(post.contentStatus)}
                   {post.scheduledAt ? ` · scheduled ${post.scheduledAt}` : ''}
                 </li>
               ))}
@@ -313,15 +353,23 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'reviews' ? (
-        <Panel title="Reviews & Reputation" description="Never generate fake reviews — response drafts require approval">
-          <p>Review management integrates with Customer Experience and configured review providers.</p>
+        <Panel
+          title="Reviews & Reputation"
+          description="Never generate fake reviews — response drafts require approval"
+        >
+          <p>
+            Review management integrates with Customer Experience and configured review providers.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'email' ? (
         <Panel title="Email Marketing" description="Consent checks required before every send">
           {dashboard.recentEmailCampaigns.length === 0 ? (
-            <EmptyState title="No email campaigns" description="Email campaigns appear when created with consent validation." />
+            <EmptyState
+              title="No email campaigns"
+              description="Email campaigns appear when created with consent validation."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentEmailCampaigns.map((campaign) => (
@@ -338,14 +386,19 @@ export function MarketingIntelligencePage() {
       {dashboard && activeTab === 'roi' ? (
         <Panel title="ROI & Profitability" description="Real spend and revenue — no fabricated ROI">
           {dashboard.recentRoiSnapshots.length === 0 ? (
-            <EmptyState title="No ROI snapshots" description="ROI snapshots appear when calculated from real financial data." />
+            <EmptyState
+              title="No ROI snapshots"
+              description="ROI snapshots appear when calculated from real financial data."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentRoiSnapshots.map((snapshot) => (
                 <li key={snapshot.id}>
                   ROI snapshot — {snapshot.capturedAt}
                   {snapshot.roiPercent != null ? ` · ROI ${snapshot.roiPercent}%` : ''}
-                  {snapshot.spendCents != null ? ` · spend ${formatCurrency(snapshot.spendCents, dashboard.currency)}` : ''}
+                  {snapshot.spendCents != null
+                    ? ` · spend ${formatCurrency(snapshot.spendCents, dashboard.currency)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -354,9 +407,15 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'market' ? (
-        <Panel title="Market Intelligence" description="Verified facts, provider data, and AI inference are clearly distinguished">
+        <Panel
+          title="Market Intelligence"
+          description="Verified facts, provider data, and AI inference are clearly distinguished"
+        >
           {dashboard.recentMarketIntelligence.length === 0 ? (
-            <EmptyState title="No market intelligence records" description="Market intelligence appears from research and connected sources." />
+            <EmptyState
+              title="No market intelligence records"
+              description="Market intelligence appears from research and connected sources."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentMarketIntelligence.map((record) => (
@@ -371,9 +430,15 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'alerts' ? (
-        <Panel title="Marketing Alerts" description="Real alerts from campaigns, providers, consent, and reputation">
+        <Panel
+          title="Marketing Alerts"
+          description="Real alerts from campaigns, providers, consent, and reputation"
+        >
           {dashboard.recentAlerts.length === 0 ? (
-            <EmptyState title="No open alerts" description="Alerts are generated from real tenant activity." />
+            <EmptyState
+              title="No open alerts"
+              description="Alerts are generated from real tenant activity."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentAlerts.map((alert) => (
@@ -388,7 +453,10 @@ export function MarketingIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="Marketing Providers" description="Vendor-agnostic — Meta, Google, Mailchimp, HubSpot, and more">
+        <Panel
+          title="Marketing Providers"
+          description="Vendor-agnostic — Meta, Google, Mailchimp, HubSpot, and more"
+        >
           <p>{dashboard.providerCount} marketing provider adapter(s) configured.</p>
         </Panel>
       ) : null}
@@ -398,24 +466,47 @@ export function MarketingIntelligencePage() {
           <ul className="simple-list">
             <li>Platform owner tenant: {dashboard.isPlatformOwner ? 'Yes' : 'No'}</li>
             <li>Currency: {dashboard.currency}</li>
-            <li>Brand templates: {Object.keys(dashboard.platformConfig.brandTemplates ?? {}).length}</li>
-            <li>Campaign templates: {Object.keys(dashboard.platformConfig.campaignTemplates ?? {}).length}</li>
-            <li>Attribution standards configured: {Object.keys(dashboard.platformConfig.attributionStandards ?? {}).length > 0 ? 'Yes' : 'No'}</li>
+            <li>
+              Brand templates: {Object.keys(dashboard.platformConfig.brandTemplates ?? {}).length}
+            </li>
+            <li>
+              Campaign templates:{' '}
+              {Object.keys(dashboard.platformConfig.campaignTemplates ?? {}).length}
+            </li>
+            <li>
+              Attribution standards configured:{' '}
+              {Object.keys(dashboard.platformConfig.attributionStandards ?? {}).length > 0
+                ? 'Yes'
+                : 'No'}
+            </li>
             <li>Audit retention: {dashboard.platformConfig.auditRetentionDays} days</li>
           </ul>
         </Panel>
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Marketing Intelligence Agent" description="Recommendations and drafts only — no autonomous publication or ad spend">
+        <Panel
+          title="AURA Marketing Intelligence Agent"
+          description="Recommendations and drafts only — no autonomous publication or ad spend"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'marketing_intelligence' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(
+                content,
+                'marketing_intelligence' as import('@titan/shared').AgentKey,
+              )
+            }
             placeholder="Ask about campaigns, content, audiences, attribution, or marketing ROI…"
           />
         </Panel>

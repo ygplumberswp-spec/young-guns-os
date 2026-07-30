@@ -15,6 +15,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:sync-journal": "node scripts/sync-journal-and-migrate.mjs",
+    "db:check-security": "node --env-file=../../apps/api/.env scripts/check-security-tables.mjs",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

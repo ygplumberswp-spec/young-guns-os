@@ -53,15 +53,43 @@ export class IntegrationPlatformService {
   constructor(private readonly deps: IntegrationPlatformDeps) {}
 
   async getExecutiveDashboard(companyId: string): Promise<IntegrationPlatformExecutiveDashboard> {
-    const [connectors, monitoring, recentTraces, recentConflicts, pendingActions, vaultEntries] =
+    const startedAt = Date.now();
+    const timings: Record<string, number> = {};
+
+    const connectorsStarted = Date.now();
+    const connectors = await this.deps.connectorEngine.listConnectors(companyId);
+    timings.connectors = Date.now() - connectorsStarted;
+
+    const parallelStarted = Date.now();
+    const [monitoring, recentTraces, recentConflicts, pendingActions, vaultEntries] =
       await Promise.all([
-        this.deps.connectorEngine.listConnectors(companyId),
-        this.getMonitoringSummary(companyId),
-        this.listGatewayTraces(companyId, 20),
-        this.listSyncConflicts(companyId),
-        this.listActions(companyId, 'pending_approval'),
-        this.listCredentialsVault(companyId),
+        this.getMonitoringSummary(companyId, connectors).then((result) => {
+          timings.monitoring = Date.now() - parallelStarted;
+          return result;
+        }),
+        this.listGatewayTraces(companyId, 20).then((result) => {
+          timings.traces = Date.now() - parallelStarted;
+          return result;
+        }),
+        this.listSyncConflicts(companyId, 25).then((result) => {
+          timings.conflicts = Date.now() - parallelStarted;
+          return result;
+        }),
+        this.listActions(companyId, 'pending_approval', 25).then((result) => {
+          timings.actions = Date.now() - parallelStarted;
+          return result;
+        }),
+        this.listCredentialsVault(companyId).then((result) => {
+          timings.vault = Date.now() - parallelStarted;
+          return result;
+        }),
       ]);
+    timings.parallelBatch = Date.now() - parallelStarted;
+
+    const durationMs = Date.now() - startedAt;
+    if (durationMs > 2000) {
+      console.warn('[integration-platform] slow dashboard', { companyId, durationMs, timings });
+    }
 
     return {
       summary: `${monitoring.connectedServiceCount} connected service(s), ${monitoring.errorServiceCount} error(s), ${monitoring.activeSyncJobCount} active sync job(s).`,
@@ -75,14 +103,17 @@ export class IntegrationPlatformService {
   }
 
   async buildIntegrationAuraContext(companyId: string): Promise<IntegrationPlatformAuraContext> {
-    const dashboard = await this.getExecutiveDashboard(companyId);
+    const connectors = await this.deps.connectorEngine.listConnectors(companyId);
+    const monitoring = await this.getMonitoringSummary(companyId, connectors);
+    const pendingActions = await this.listActions(companyId, 'pending_approval', 10);
+
     return {
-      summary: dashboard.summary,
-      connectedServiceCount: dashboard.monitoring.connectedServiceCount,
-      errorServiceCount: dashboard.monitoring.errorServiceCount,
-      activeSyncJobCount: dashboard.monitoring.activeSyncJobCount,
-      failedRequestCount24h: dashboard.monitoring.failedRequestCount24h,
-      pendingActionCount: dashboard.pendingActionCount,
+      summary: `${monitoring.connectedServiceCount} connected service(s), ${monitoring.errorServiceCount} error(s), ${monitoring.activeSyncJobCount} active sync job(s).`,
+      connectedServiceCount: monitoring.connectedServiceCount,
+      errorServiceCount: monitoring.errorServiceCount,
+      activeSyncJobCount: monitoring.activeSyncJobCount,
+      failedRequestCount24h: monitoring.failedRequestCount24h,
+      pendingActionCount: pendingActions.length,
     };
   }
 
@@ -112,7 +143,10 @@ export class IntegrationPlatformService {
     });
   }
 
-  async listGatewayTraces(companyId: string, limit = 100): Promise<IntegrationGatewayTraceSummary[]> {
+  async listGatewayTraces(
+    companyId: string,
+    limit = 100,
+  ): Promise<IntegrationGatewayTraceSummary[]> {
     const rows = await this.deps.db.query.integrationApiGatewayTraces.findMany({
       where: eq(integrationApiGatewayTraces.companyId, companyId),
       orderBy: [desc(integrationApiGatewayTraces.occurredAt)],
@@ -132,9 +166,13 @@ export class IntegrationPlatformService {
     }));
   }
 
-  async getMonitoringSummary(companyId: string): Promise<IntegrationMonitoringSummary> {
+  async getMonitoringSummary(
+    companyId: string,
+    connectorsInput?: Awaited<ReturnType<ConnectorEngineService['listConnectors']>>,
+  ): Promise<IntegrationMonitoringSummary> {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const connectors = await this.deps.connectorEngine.listConnectors(companyId);
+    const connectors =
+      connectorsInput ?? (await this.deps.connectorEngine.listConnectors(companyId));
 
     const [activeSyncJobs, failedRequests, usageRows] = await Promise.all([
       this.deps.db.query.integrationSyncJobs.findMany({
@@ -142,6 +180,7 @@ export class IntegrationPlatformService {
           eq(integrationSyncJobs.companyId, companyId),
           inArray(integrationSyncJobs.status, ['pending', 'running']),
         ),
+        limit: 50,
       }),
       this.deps.db.query.integrationRequestLogs.findMany({
         where: and(
@@ -149,9 +188,14 @@ export class IntegrationPlatformService {
           gte(integrationRequestLogs.createdAt, since24h),
           sql`${integrationRequestLogs.statusCode} >= 400`,
         ),
+        limit: 100,
       }),
       this.deps.db.query.integrationApiUsage.findMany({
-        where: and(eq(integrationApiUsage.companyId, companyId), gte(integrationApiUsage.periodStart, since24h)),
+        where: and(
+          eq(integrationApiUsage.companyId, companyId),
+          gte(integrationApiUsage.periodStart, since24h),
+        ),
+        limit: 200,
       }),
     ]);
 
@@ -173,7 +217,9 @@ export class IntegrationPlatformService {
     }
 
     const successRatePercent =
-      totalRequests > 0 ? Math.round(((totalRequests - totalFailures) / totalRequests) * 100) : null;
+      totalRequests > 0
+        ? Math.round(((totalRequests - totalFailures) / totalRequests) * 100)
+        : null;
 
     return {
       connectedServiceCount,
@@ -243,7 +289,9 @@ export class IntegrationPlatformService {
             syncScope: input.syncScope ?? 'incremental',
             frequencyMinutes: input.frequencyMinutes ?? 60,
             enabled: input.enabled ?? false,
-            nextRunAt: input.enabled ? new Date(Date.now() + (input.frequencyMinutes ?? 60) * 60_000) : null,
+            nextRunAt: input.enabled
+              ? new Date(Date.now() + (input.frequencyMinutes ?? 60) * 60_000)
+              : null,
           })
           .returning();
 
@@ -262,11 +310,14 @@ export class IntegrationPlatformService {
     };
   }
 
-  async listSyncConflicts(companyId: string): Promise<IntegrationSyncConflictSummary[]> {
+  async listSyncConflicts(
+    companyId: string,
+    limit = 25,
+  ): Promise<IntegrationSyncConflictSummary[]> {
     const rows = await this.deps.db.query.integrationSyncConflicts.findMany({
       where: eq(integrationSyncConflicts.companyId, companyId),
       orderBy: [desc(integrationSyncConflicts.detectedAt)],
-      limit: 100,
+      limit,
     });
 
     return rows.map((row) => ({
@@ -280,12 +331,18 @@ export class IntegrationPlatformService {
     }));
   }
 
-  async resolveSyncConflict(scope: StaffScope, conflictId: string): Promise<IntegrationSyncConflictSummary> {
+  async resolveSyncConflict(
+    scope: StaffScope,
+    conflictId: string,
+  ): Promise<IntegrationSyncConflictSummary> {
     const [updated] = await this.deps.db
       .update(integrationSyncConflicts)
       .set({ status: 'resolved', resolvedAt: new Date() })
       .where(
-        and(eq(integrationSyncConflicts.id, conflictId), eq(integrationSyncConflicts.companyId, scope.companyId)),
+        and(
+          eq(integrationSyncConflicts.id, conflictId),
+          eq(integrationSyncConflicts.companyId, scope.companyId),
+        ),
       )
       .returning();
 
@@ -307,12 +364,17 @@ export class IntegrationPlatformService {
   async listActions(
     companyId: string,
     status?: IntegrationPlatformActionStatus,
+    limit = 50,
   ): Promise<IntegrationPlatformActionSummary[]> {
     const rows = await this.deps.db.query.integrationPlatformActions.findMany({
       where: status
-        ? and(eq(integrationPlatformActions.companyId, companyId), eq(integrationPlatformActions.status, status))
+        ? and(
+            eq(integrationPlatformActions.companyId, companyId),
+            eq(integrationPlatformActions.status, status),
+          )
         : eq(integrationPlatformActions.companyId, companyId),
       orderBy: [desc(integrationPlatformActions.createdAt)],
+      limit,
     });
 
     return rows.map((row) => ({
@@ -366,7 +428,12 @@ export class IntegrationPlatformService {
     const [updated] = await this.deps.db
       .update(integrationPlatformActions)
       .set({ status, updatedAt: new Date() })
-      .where(and(eq(integrationPlatformActions.id, actionId), eq(integrationPlatformActions.companyId, scope.companyId)))
+      .where(
+        and(
+          eq(integrationPlatformActions.id, actionId),
+          eq(integrationPlatformActions.companyId, scope.companyId),
+        ),
+      )
       .returning();
 
     if (!updated) {
@@ -476,7 +543,10 @@ export class IntegrationPlatformService {
     }));
   }
 
-  async retryConnectorSync(scope: StaffScope, connectorId: string): Promise<{ syncJobId: string | null }> {
+  async retryConnectorSync(
+    scope: StaffScope,
+    connectorId: string,
+  ): Promise<{ syncJobId: string | null }> {
     const connector = await this.deps.connectorEngine.getConnector(scope.companyId, connectorId);
     const manager = await this.deps.apiManagementService.getSyncManagerStatus(scope.companyId);
     const failedJob = manager.syncJobs.find(

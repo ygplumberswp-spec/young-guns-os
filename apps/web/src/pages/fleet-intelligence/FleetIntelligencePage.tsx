@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
 import type { FleetExecutiveDashboard } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
+import { useCompanyLocale } from '../../lib/company-locale-context';
 import {
   FleetIntelligenceApiClientError,
   analyzeDriverBehaviour,
@@ -52,6 +53,7 @@ function canWrite(permissions: string[]) {
 
 export function FleetIntelligencePage() {
   const { accessToken, user } = useAuth();
+  const { formatMoney } = useCompanyLocale();
   const [activeTab, setActiveTab] = useState<FleetTab>('dashboard');
   const [dashboard, setDashboard] = useState<FleetExecutiveDashboard | null>(null);
   const [trips, setTrips] = useState<Awaited<ReturnType<typeof fetchTripHistory>>>([]);
@@ -397,13 +399,16 @@ export function FleetIntelligencePage() {
             ) : (
               <>
                 <p>
-                  Total: {costs?.analytics.totalOperatingCostCents ?? 0} cents · Cost/km:{' '}
-                  {costs?.analytics.costPerKilometreCents ?? '—'} cents
+                  Total: {formatMoney(costs?.analytics.totalOperatingCostCents ?? 0)} · Cost/km:{' '}
+                  {costs?.analytics.costPerKilometreCents != null
+                    ? formatMoney(costs.analytics.costPerKilometreCents)
+                    : '—'}
                 </p>
                 <ul className="list">
                   {costs?.costs.slice(0, 50).map((cost) => (
                     <li key={cost.id}>
-                      {cost.vehicleName ?? 'Fleet-wide'} · {cost.costType} · {cost.amountCents} {cost.currency}
+                      {cost.vehicleName ?? 'Fleet-wide'} · {cost.costType} ·{' '}
+                      {formatMoney(cost.amountCents, cost.currency)}
                     </li>
                   ))}
                 </ul>

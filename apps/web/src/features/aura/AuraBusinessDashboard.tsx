@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Button, Panel } from '@titan/ui';
+import { Link } from 'wouter';
+import { Button, EmptyState, LoadingState } from '@titan/ui';
 import type { IntelligenceDashboard, Recommendation } from '@titan/shared';
+import { useEffect, useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createAuraMemory,
@@ -26,6 +27,9 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
     let cancelled = false;
 
     async function load() {
+      setIsLoading(true);
+      setError(null);
+
       try {
         const [dashboardData, recommendationData] = await Promise.all([
           fetchIntelligenceDashboard(accessToken),
@@ -38,10 +42,14 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load intelligence dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load business intelligence',
+          );
         }
       } finally {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -74,91 +82,92 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
   }
 
   if (isLoading) {
-    return <p className="page-muted">Loading business intelligence…</p>;
+    return <LoadingState label="Loading business intelligence…" />;
+  }
+
+  if (error) {
+    const providerMissing =
+      error.toLowerCase().includes('provider') ||
+      error.toLowerCase().includes('openai') ||
+      error.toLowerCase().includes('not configured');
+
+    if (providerMissing) {
+      return (
+        <EmptyState
+          title="AI provider not configured"
+          description="Connect an AI provider in Integration Settings before using AURA business intelligence."
+          action={
+            <Link href="/integrations">
+              <Button>Open Integration Settings</Button>
+            </Link>
+          }
+        />
+      );
+    }
+
+    return (
+      <EmptyState
+        title="Business intelligence unavailable"
+        description={error}
+        action={
+          <Link href="/integrations">
+            <Button variant="secondary">Review integrations</Button>
+          </Link>
+        }
+      />
+    );
   }
 
   if (!dashboard) {
-    return error ? <p className="form-error">{error}</p> : null;
+    return (
+      <EmptyState
+        title="No business intelligence yet"
+        description="Insights will appear here once your workspace has operational data and an configured AI provider."
+        action={
+          <Link href="/integrations">
+            <Button variant="secondary">Integration settings</Button>
+          </Link>
+        }
+      />
+    );
   }
 
   return (
-    <div className="aura-intelligence">
-      <Panel title="Business intelligence">
-        <p className="aura-intelligence__greeting">{dashboard.greeting.message}</p>
-        <dl className="aura-intelligence__grid">
-          <div>
-            <dt>Jobs today</dt>
-            <dd>{dashboard.todaysJobs.count}</dd>
-          </div>
-          <div>
-            <dt>Upcoming schedule</dt>
-            <dd>{dashboard.upcomingSchedule.count}</dd>
-          </div>
-          <div>
-            <dt>Outstanding invoices</dt>
-            <dd>{dashboard.outstandingInvoices.count}</dd>
-          </div>
-          <div>
-            <dt>Follow-ups</dt>
-            <dd>{dashboard.customerFollowUps.count}</dd>
-          </div>
-          <div>
-            <dt>Pending approvals</dt>
-            <dd>{dashboard.pendingApprovals.count}</dd>
-          </div>
-          <div>
-            <dt>Automation failures</dt>
-            <dd>{dashboard.automationFailures.count}</dd>
-          </div>
-          <div>
-            <dt>Fleet issues</dt>
-            <dd>{dashboard.fleetIssues.count}</dd>
-          </div>
-          <div>
-            <dt>Low stock</dt>
-            <dd>{dashboard.lowStockCount}</dd>
-          </div>
-        </dl>
-      </Panel>
-
-      {recommendations.length > 0 ? (
-        <Panel title="Recommendations">
-          <ul className="aura-intelligence__list">
-            {recommendations.slice(0, 8).map((item) => (
-              <li key={item.id}>
-                <strong>{item.title}</strong>
-                <span className="aura-intelligence__priority">{item.priority}</span>
-                <p className="page-muted">{item.description}</p>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      ) : null}
-
+    <div className="aura-business-dashboard">
+      <p className="page-muted">{dashboard.greeting.message}</p>
+      {recommendations.length === 0 ? (
+        <EmptyState
+          title="No recommendations yet"
+          description="Recommendations are generated from real tenant data when sufficient evidence is available."
+        />
+      ) : (
+        <ul className="simple-list">
+          {recommendations.slice(0, 5).map((item) => (
+            <li key={item.id}>
+              <strong>{item.title}</strong> — {item.description}
+              <span className="page-muted"> · Draft recommendation</span>
+            </li>
+          ))}
+        </ul>
+      )}
       {canWriteMemory ? (
-        <Panel title="Save a business rule">
-          <p className="page-muted">
-            Example: Always create three quote options: Economy, Recommended, Premium.
-          </p>
+        <div className="aura-memory-form">
           <textarea
-            className="titan-input aura-intelligence__memory-input"
-            rows={3}
+            className="settings-textarea"
             value={memoryDraft}
             onChange={(event) => setMemoryDraft(event.target.value)}
             placeholder="Enter a business rule for AURA to remember…"
+            rows={3}
           />
-          {memorySuccess ? <p className="form-success">{memorySuccess}</p> : null}
           <Button
-            type="button"
             disabled={isSavingMemory || !memoryDraft.trim()}
             onClick={() => void handleSaveMemory()}
           >
             {isSavingMemory ? 'Saving…' : 'Save to company memory'}
           </Button>
-        </Panel>
+          {memorySuccess ? <p className="form-success">{memorySuccess}</p> : null}
+        </div>
       ) : null}
-
-      {error ? <p className="form-error">{error}</p> : null}
     </div>
   );
 }

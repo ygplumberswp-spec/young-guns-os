@@ -4,6 +4,28 @@ export type CompanyPreferences = {
   locale?: string;
   aiTone?: 'professional' | 'friendly' | 'concise';
   notes?: string;
+  tradingName?: string;
+  ownerName?: string;
+  ownerJobTitle?: string;
+  companyTelephone?: string;
+  companyEmail?: string;
+  website?: string;
+  physicalAddress?: string;
+  postalAddress?: string;
+  companyRegistrationNumber?: string;
+  vatNumber?: string;
+  primaryContactName?: string;
+  primaryContactEmail?: string;
+  primaryContactPhone?: string;
+  businessDescription?: string;
+  servicesOffered?: string;
+  operatingHours?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  brandPrimaryColor?: string;
+  brandAccentColor?: string;
+  logoFileId?: string | null;
+  profileImageFileId?: string | null;
 };
 
 export type CompanyProfile = {

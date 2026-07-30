@@ -1,11 +1,15 @@
 import { Route, Switch } from 'wouter';
 import { AuthProvider } from './lib/auth-context';
+import { CompanyLocaleProvider } from './lib/company-locale-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { OwnerStaffRoute, TechnicianRoute } from './components/StaffExperienceRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { PortalRouteShell } from './components/PortalRouteShell';
 import { AppLayout } from './layouts/AppLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { AuraPage } from './pages/aura/AuraPage';
 import { CompanySettingsPage } from './pages/settings/CompanySettingsPage';
+import { AboutSettingsPage } from './pages/settings/AboutSettingsPage';
 import { TeamSettingsPage } from './pages/settings/TeamSettingsPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -86,7 +90,6 @@ import { AgentDashboardPage } from './pages/agents/AgentDashboardPage';
 import { AgentProfileCreatePage } from './pages/agents/AgentProfileCreatePage';
 import { AgentProfileDetailPage } from './pages/agents/AgentProfileDetailPage';
 import { AgentExecutionListPage } from './pages/agents/AgentExecutionListPage';
-import { PortalAuthProvider } from './lib/portal-auth-context';
 import { PortalGuestRoute, PortalProtectedRoute } from './components/PortalProtectedRoute';
 import { PortalLayout } from './layouts/PortalLayout';
 import { PortalLoginPage } from './pages/portal/PortalLoginPage';
@@ -130,170 +133,191 @@ import { DispatchIntelligencePage } from './pages/dispatch-intelligence/Dispatch
 import { FleetIntelligencePage } from './pages/fleet-intelligence/FleetIntelligencePage';
 import { EnterpriseSecurityPage } from './pages/enterprise-security/EnterpriseSecurityPage';
 import { PersonalCommunicationsIntelligencePage } from './pages/personal-communications-intelligence/PersonalCommunicationsIntelligencePage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { DevErrorBoundaryTestPage } from './pages/dev/DevErrorBoundaryTestPage';
 
 export function App() {
   return (
-    <AuthProvider>
-      <PortalAuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
         <Switch>
           <Route path="/auth/login" component={LoginPage} />
           <Route path="/auth/signup" component={SignupPage} />
           <Route path="/auth/accept-invite" component={AcceptInvitePage} />
+          {import.meta.env.DEV ? (
+            <Route path="/dev/error-boundary-test" component={DevErrorBoundaryTestPage} />
+          ) : null}
           <Route path="/portal/login">
-            <PortalGuestRoute>
-              <PortalLoginPage />
-            </PortalGuestRoute>
+            <PortalRouteShell>
+              <PortalGuestRoute>
+                <PortalLoginPage />
+              </PortalGuestRoute>
+            </PortalRouteShell>
           </Route>
-          <Route path="/portal">
-            <PortalProtectedRoute>
-              <PortalLayout>
-                <Switch>
-                  <Route path="/portal/jobs" component={PortalJobsPage} />
-                  <Route path="/portal/quotes" component={PortalQuotesPage} />
-                  <Route path="/portal/finance" component={PortalFinancePage} />
-                  <Route path="/portal/appointments" component={PortalAppointmentsPage} />
-                  <Route path="/portal/communications" component={PortalCommunicationsPage} />
-                  <Route path="/portal/knowledge" component={PortalKnowledgePage} />
-                  <Route path="/portal/notifications" component={PortalNotificationsPage} />
-                  <Route path="/portal/documents" component={PortalDocumentsPage} />
-                  <Route path="/portal/profile" component={PortalProfilePage} />
-                  <Route path="/portal/feedback" component={PortalFeedbackPage} />
-                  <Route path="/portal/loyalty" component={PortalLoyaltyPage} />
-                  <Route path="/portal/assets" component={PortalAssetsPage} />
-                  <Route path="/portal" component={PortalDashboardPage} />
-                </Switch>
-              </PortalLayout>
-            </PortalProtectedRoute>
+          <Route path="/portal" nest>
+            <PortalRouteShell>
+              <PortalProtectedRoute>
+                <PortalLayout>
+                  <Switch>
+                    <Route path="/portal/jobs" component={PortalJobsPage} />
+                    <Route path="/portal/quotes" component={PortalQuotesPage} />
+                    <Route path="/portal/finance" component={PortalFinancePage} />
+                    <Route path="/portal/appointments" component={PortalAppointmentsPage} />
+                    <Route path="/portal/communications" component={PortalCommunicationsPage} />
+                    <Route path="/portal/knowledge" component={PortalKnowledgePage} />
+                    <Route path="/portal/notifications" component={PortalNotificationsPage} />
+                    <Route path="/portal/documents" component={PortalDocumentsPage} />
+                    <Route path="/portal/profile" component={PortalProfilePage} />
+                    <Route path="/portal/feedback" component={PortalFeedbackPage} />
+                    <Route path="/portal/loyalty" component={PortalLoyaltyPage} />
+                    <Route path="/portal/assets" component={PortalAssetsPage} />
+                    <Route path="/portal" component={PortalDashboardPage} />
+                  </Switch>
+                </PortalLayout>
+              </PortalProtectedRoute>
+            </PortalRouteShell>
           </Route>
-          <Route path="/mobile">
+          <Route path="/mobile" nest>
             <ProtectedRoute>
               <TechnicianRoute>
                 <MobileLayout>
-                <Switch>
-                  <Route path="/mobile/jobs/:jobId" component={MobileJobDetailPage} />
-                  <Route path="/mobile/jobs" component={MobileJobsPage} />
-                  <Route path="/mobile/route" component={MobileRoutePage} />
-                  <Route path="/mobile/inventory" component={MobileInventoryPage} />
-                  <Route path="/mobile/time" component={MobileTimePage} />
-                  <Route path="/mobile/notifications" component={MobileNotificationsPage} />
-                  <Route path="/mobile/sync" component={MobileSyncPage} />
-                  <Route path="/mobile" component={MobileDashboardPage} />
-                </Switch>
+                  <Switch>
+                    <Route path="/mobile/jobs/:jobId" component={MobileJobDetailPage} />
+                    <Route path="/mobile/jobs" component={MobileJobsPage} />
+                    <Route path="/mobile/route" component={MobileRoutePage} />
+                    <Route path="/mobile/inventory" component={MobileInventoryPage} />
+                    <Route path="/mobile/time" component={MobileTimePage} />
+                    <Route path="/mobile/notifications" component={MobileNotificationsPage} />
+                    <Route path="/mobile/sync" component={MobileSyncPage} />
+                    <Route path="/mobile" component={MobileDashboardPage} />
+                  </Switch>
                 </MobileLayout>
               </TechnicianRoute>
             </ProtectedRoute>
           </Route>
-          <Route path="/">
-          <ProtectedRoute>
-            <OwnerStaffRoute>
-            <AppLayout>
-              <Switch>
-                <Route path="/platform" component={PlatformPage} />
-                <Route path="/operations" component={OperationsPage} />
-                <Route path="/mobile-platform/dispatcher" component={MobileDispatcherPage} />
-                <Route path="/mobile-platform" component={MobilePlatformPage} />
-                <Route path="/communications-hub" component={CommunicationsHubPage} />
-                <Route path="/customer-experience" component={CustomerExperiencePage} />
-                <Route path="/asset-intelligence" component={AssetIntelligencePage} />
-                <Route path="/workforce-intelligence" component={WorkforceIntelligencePage} />
-                <Route path="/legal-compliance" component={LegalCompliancePage} />
-                <Route path="/financial-planning" component={FinancialPlanningPage} />
-                <Route path="/sales-intelligence" component={SalesIntelligencePage} />
-                <Route path="/marketing-intelligence" component={MarketingIntelligencePage} />
-                <Route path="/service-delivery" component={ServiceDeliveryPage} />
-                <Route path="/it-operations" component={ItOperationsPage} />
-                <Route path="/business-evolution" component={BusinessEvolutionPage} />
-                <Route path="/app-builder" component={AppBuilderPage} />
-                <Route path="/industry-packs" component={IndustryPacksPage} />
-                <Route path="/workforce/manager" component={ManagerWorkspacePage} />
-                <Route path="/workforce/self-service" component={SelfServicePage} />
-                <Route path="/developers" component={DevelopersPage} />
-                <Route path="/developer" component={DeveloperPortalPage} />
-                <Route path="/saas-management" component={SaasManagementPage} />
-                <Route path="/voice-reception" component={VoiceReceptionPage} />
-                <Route path="/document-ai" component={DocumentAiPage} />
-                <Route path="/business-continuity" component={BusinessContinuityPage} />
-                <Route path="/global-search" component={GlobalSearchPage} />
-                <Route path="/data-migration" component={DataMigrationPage} />
-                <Route path="/notifications" component={NotificationsPage} />
-                <Route path="/platform-health" component={PlatformHealthPage} />
-                <Route path="/launch-center" component={LaunchCenterPage} />
-                <Route path="/release-center" component={ReleaseCenterPage} />
-                <Route path="/go-live" component={GoLivePage} />
-                <Route path="/release" component={ReleasePage} />
-                <Route path="/settings/billing" component={OwnerBillingPage} />
-                <Route path="/evolution" component={EvolutionPage} />
-                <Route path="/mission-control" component={MissionControlPage} />
-                <Route path="/knowledge" component={KnowledgeGraphPage} />
-                <Route path="/digital-twin" component={DigitalTwinPage} />
-                <Route path="/automation-studio" component={AutomationStudioPage} />
-                <Route path="/automation/new" component={WorkflowCreatePage} />
-                <Route path="/automation/executions" component={ExecutionListPage} />
-                <Route path="/automation/:id" component={WorkflowDetailPage} />
-                <Route path="/automation" component={WorkflowListPage} />
-                <Route path="/documents/new" component={DocumentCreatePage} />
-                <Route path="/documents/categories/new" component={CategoryCreatePage} />
-                <Route path="/documents/categories" component={CategoryListPage} />
-                <Route path="/documents/:id" component={DocumentDetailPage} />
-                <Route path="/documents" component={DocumentListPage} />
-                <Route path="/communications/messages/new" component={MessageCreatePage} />
-                <Route path="/communications/messages" component={MessageListPage} />
-                <Route path="/communications/templates/new" component={TemplateCreatePage} />
-                <Route path="/communications/templates" component={TemplateListPage} />
-                <Route path="/fleet/new" component={VehicleCreatePage} />
-                <Route path="/fleet/:id" component={VehicleDetailPage} />
-                <Route path="/fleet" component={VehicleListPage} />
-                <Route path="/inventory/products/new" component={ProductCreatePage} />
-                <Route path="/inventory/products" component={ProductListPage} />
-                <Route path="/inventory/stock" component={StockOverviewPage} />
-                <Route path="/finance/quotes/new" component={QuoteCreatePage} />
-                <Route path="/finance/quotes" component={QuoteListPage} />
-                <Route path="/finance/invoices/new" component={InvoiceCreatePage} />
-                <Route path="/finance/invoices" component={InvoiceListPage} />
-                <Route path="/finance/payments/new" component={PaymentCreatePage} />
-                <Route path="/finance/payments" component={PaymentListPage} />
-                <Route path="/scheduling" component={SchedulingPage} />
-                <Route path="/jobs/new" component={JobCreatePage} />
-                <Route path="/jobs/:id" component={JobDetailPage} />
-                <Route path="/jobs" component={JobListPage} />
-                <Route path="/crm/new" component={CustomerCreatePage} />
-                <Route path="/crm/:id" component={CustomerDetailPage} />
-                <Route path="/crm" component={CustomerListPage} />
-                <Route path="/aura/agents/new" component={AgentProfileCreatePage} />
-                <Route path="/aura/agents/executions" component={AgentExecutionListPage} />
-                <Route path="/aura/agents/:id" component={AgentProfileDetailPage} />
-                <Route path="/aura/agents" component={AgentDashboardPage} />
-                <Route path="/aura" component={AuraPage} />
-                <Route path="/analytics" component={AnalyticsPage} />
-                <Route path="/quality" component={QualityPage} />
-                <Route path="/communications-intelligence" component={CommunicationsIntelligencePage} />
-                <Route path="/asset-equipment" component={AssetEquipmentPage} />
-                <Route path="/ai-orchestration" component={AiOrchestrationPage} />
-                <Route path="/dispatch-intelligence" component={DispatchIntelligencePage} />
-                <Route path="/fleet-intelligence" component={FleetIntelligencePage} />
-                <Route path="/security" component={EnterpriseSecurityPage} />
-                <Route path="/personal-communications-intelligence" component={PersonalCommunicationsIntelligencePage} />
-                <Route path="/recruiting" component={RecruitingPage} />
-                <Route path="/integrations/cartrack" component={CartrackSettingsPage} />
-                <Route path="/integrations/xero" component={XeroSettingsPage} />
-                <Route path="/integrations/email" component={EmailSettingsPage} />
-                <Route path="/integrations/yoco" component={YocoSettingsPage} />
-                <Route path="/integrations/whatsapp" component={WhatsappSettingsPage} />
-                <Route path="/integrations/sync-jobs" component={SyncJobListPage} />
-                <Route path="/integrations/webhooks" component={WebhookFoundationPage} />
-                <Route path="/integrations" component={IntegrationsDashboardPage} />
-                <Route path="/settings/cartrack" component={CartrackSettingsPage} />
-                <Route path="/settings/portal" component={PortalSettingsPage} />
-                <Route path="/settings/company" component={CompanySettingsPage} />
-                <Route path="/settings/team" component={TeamSettingsPage} />
-                <Route path="/" component={DashboardPage} />
-              </Switch>
-            </AppLayout>
-            </OwnerStaffRoute>
-          </ProtectedRoute>
-        </Route>
-      </Switch>
-      </PortalAuthProvider>
-    </AuthProvider>
+          <Route path="/" nest>
+            <ProtectedRoute>
+              <OwnerStaffRoute>
+                <CompanyLocaleProvider>
+                  <AppLayout>
+                    <Switch>
+                      <Route path="/leads" component={SalesIntelligencePage} />
+                      <Route path="/marketing" component={MarketingIntelligencePage} />
+                      <Route path="/platform" component={PlatformPage} />
+                      <Route path="/operations" component={OperationsPage} />
+                      <Route path="/mobile-platform/dispatcher" component={MobileDispatcherPage} />
+                      <Route path="/mobile-platform" component={MobilePlatformPage} />
+                      <Route path="/communications-hub" component={CommunicationsHubPage} />
+                      <Route path="/customer-experience" component={CustomerExperiencePage} />
+                      <Route path="/asset-intelligence" component={AssetIntelligencePage} />
+                      <Route path="/workforce-intelligence" component={WorkforceIntelligencePage} />
+                      <Route path="/legal-compliance" component={LegalCompliancePage} />
+                      <Route path="/financial-planning" component={FinancialPlanningPage} />
+                      <Route path="/sales-intelligence" component={SalesIntelligencePage} />
+                      <Route path="/marketing-intelligence" component={MarketingIntelligencePage} />
+                      <Route path="/service-delivery" component={ServiceDeliveryPage} />
+                      <Route path="/it-operations" component={ItOperationsPage} />
+                      <Route path="/business-evolution" component={BusinessEvolutionPage} />
+                      <Route path="/app-builder" component={AppBuilderPage} />
+                      <Route path="/industry-packs" component={IndustryPacksPage} />
+                      <Route path="/workforce/manager" component={ManagerWorkspacePage} />
+                      <Route path="/workforce/self-service" component={SelfServicePage} />
+                      <Route path="/developers" component={DevelopersPage} />
+                      <Route path="/developer" component={DeveloperPortalPage} />
+                      <Route path="/saas-management" component={SaasManagementPage} />
+                      <Route path="/voice-reception" component={VoiceReceptionPage} />
+                      <Route path="/document-ai" component={DocumentAiPage} />
+                      <Route path="/business-continuity" component={BusinessContinuityPage} />
+                      <Route path="/global-search" component={GlobalSearchPage} />
+                      <Route path="/data-migration" component={DataMigrationPage} />
+                      <Route path="/notifications" component={NotificationsPage} />
+                      <Route path="/platform-health" component={PlatformHealthPage} />
+                      <Route path="/launch-center" component={LaunchCenterPage} />
+                      <Route path="/release-center" component={ReleaseCenterPage} />
+                      <Route path="/go-live" component={GoLivePage} />
+                      <Route path="/release" component={ReleasePage} />
+                      <Route path="/settings/billing" component={OwnerBillingPage} />
+                      <Route path="/evolution" component={EvolutionPage} />
+                      <Route path="/mission-control" component={MissionControlPage} />
+                      <Route path="/knowledge" component={KnowledgeGraphPage} />
+                      <Route path="/digital-twin" component={DigitalTwinPage} />
+                      <Route path="/automation-studio" component={AutomationStudioPage} />
+                      <Route path="/automation/new" component={WorkflowCreatePage} />
+                      <Route path="/automation/executions" component={ExecutionListPage} />
+                      <Route path="/automation/:id" component={WorkflowDetailPage} />
+                      <Route path="/automation" component={WorkflowListPage} />
+                      <Route path="/documents/new" component={DocumentCreatePage} />
+                      <Route path="/documents/categories/new" component={CategoryCreatePage} />
+                      <Route path="/documents/categories" component={CategoryListPage} />
+                      <Route path="/documents/:id" component={DocumentDetailPage} />
+                      <Route path="/documents" component={DocumentListPage} />
+                      <Route path="/communications/messages/new" component={MessageCreatePage} />
+                      <Route path="/communications/messages" component={MessageListPage} />
+                      <Route path="/communications/templates/new" component={TemplateCreatePage} />
+                      <Route path="/communications/templates" component={TemplateListPage} />
+                      <Route path="/fleet/new" component={VehicleCreatePage} />
+                      <Route path="/fleet/:id" component={VehicleDetailPage} />
+                      <Route path="/fleet" component={VehicleListPage} />
+                      <Route path="/inventory/products/new" component={ProductCreatePage} />
+                      <Route path="/inventory/products" component={ProductListPage} />
+                      <Route path="/inventory/stock" component={StockOverviewPage} />
+                      <Route path="/finance/quotes/new" component={QuoteCreatePage} />
+                      <Route path="/finance/quotes" component={QuoteListPage} />
+                      <Route path="/finance/invoices/new" component={InvoiceCreatePage} />
+                      <Route path="/finance/invoices" component={InvoiceListPage} />
+                      <Route path="/finance/payments/new" component={PaymentCreatePage} />
+                      <Route path="/finance/payments" component={PaymentListPage} />
+                      <Route path="/scheduling" component={SchedulingPage} />
+                      <Route path="/jobs/new" component={JobCreatePage} />
+                      <Route path="/jobs/:id" component={JobDetailPage} />
+                      <Route path="/jobs" component={JobListPage} />
+                      <Route path="/crm/new" component={CustomerCreatePage} />
+                      <Route path="/crm/:id" component={CustomerDetailPage} />
+                      <Route path="/crm" component={CustomerListPage} />
+                      <Route path="/aura/agents/new" component={AgentProfileCreatePage} />
+                      <Route path="/aura/agents/executions" component={AgentExecutionListPage} />
+                      <Route path="/aura/agents/:id" component={AgentProfileDetailPage} />
+                      <Route path="/aura/agents" component={AgentDashboardPage} />
+                      <Route path="/aura" component={AuraPage} />
+                      <Route path="/analytics" component={AnalyticsPage} />
+                      <Route path="/quality" component={QualityPage} />
+                      <Route
+                        path="/communications-intelligence"
+                        component={CommunicationsIntelligencePage}
+                      />
+                      <Route path="/asset-equipment" component={AssetEquipmentPage} />
+                      <Route path="/ai-orchestration" component={AiOrchestrationPage} />
+                      <Route path="/dispatch-intelligence" component={DispatchIntelligencePage} />
+                      <Route path="/fleet-intelligence" component={FleetIntelligencePage} />
+                      <Route path="/security" component={EnterpriseSecurityPage} />
+                      <Route
+                        path="/personal-communications-intelligence"
+                        component={PersonalCommunicationsIntelligencePage}
+                      />
+                      <Route path="/recruiting" component={RecruitingPage} />
+                      <Route path="/integrations/cartrack" component={CartrackSettingsPage} />
+                      <Route path="/integrations/xero" component={XeroSettingsPage} />
+                      <Route path="/integrations/email" component={EmailSettingsPage} />
+                      <Route path="/integrations/yoco" component={YocoSettingsPage} />
+                      <Route path="/integrations/whatsapp" component={WhatsappSettingsPage} />
+                      <Route path="/integrations/sync-jobs" component={SyncJobListPage} />
+                      <Route path="/integrations/webhooks" component={WebhookFoundationPage} />
+                      <Route path="/integrations" component={IntegrationsDashboardPage} />
+                      <Route path="/settings/cartrack" component={CartrackSettingsPage} />
+                      <Route path="/settings/portal" component={PortalSettingsPage} />
+                      <Route path="/settings/company" component={CompanySettingsPage} />
+                      <Route path="/settings/about" component={AboutSettingsPage} />
+                      <Route path="/settings/team" component={TeamSettingsPage} />
+                      <Route path="/" component={DashboardPage} />
+                      <Route path="/:rest*" component={NotFoundPage} />
+                    </Switch>
+                  </AppLayout>
+                </CompanyLocaleProvider>
+              </OwnerStaffRoute>
+            </ProtectedRoute>
+          </Route>
+        </Switch>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

@@ -1,5 +1,10 @@
 import { eq } from 'drizzle-orm';
-import type { CompanyProfile, CompanyPreferences, UpdateCompanyProfileRequest } from '@titan/shared';
+import type {
+  CompanyProfile,
+  CompanyPreferences,
+  UpdateCompanyProfileRequest,
+} from '@titan/shared';
+import { DEFAULT_COMPANY_PREFERENCES } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { companies } from '@titan/db';
 
@@ -45,9 +50,7 @@ export class CompanyService {
       .set({
         name: input.name !== undefined ? input.name.trim() : existing.name,
         industry:
-          input.industry !== undefined
-            ? normalizeNullableText(input.industry)
-            : existing.industry,
+          input.industry !== undefined ? normalizeNullableText(input.industry) : existing.industry,
         businessType:
           input.businessType !== undefined
             ? normalizeNullableText(input.businessType)
@@ -75,7 +78,10 @@ function toCompanyProfile(company: typeof companies.$inferSelect): CompanyProfil
     slug: company.slug,
     industry: company.industry,
     businessType: company.businessType,
-    preferences: company.preferences ?? {},
+    preferences: {
+      ...DEFAULT_COMPANY_PREFERENCES,
+      ...(company.preferences ?? {}),
+    },
     createdAt: company.createdAt.toISOString(),
     updatedAt: company.updatedAt.toISOString(),
   };

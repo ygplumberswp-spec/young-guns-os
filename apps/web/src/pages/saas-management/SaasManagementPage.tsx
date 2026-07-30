@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import {
+  Button,
+  EmptyState,
+  GroupedTabNav,
+  LoadingState,
+  PageHeader,
+  Panel,
+  StatCard,
+} from '@titan/ui';
 import type { EnterpriseSaasManagementDashboard, SmOwnerBillingSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -52,11 +60,17 @@ export function SaasManagementPage() {
   const [dashboard, setDashboard] = useState<EnterpriseSaasManagementDashboard | null>(null);
   const [ownerBilling, setOwnerBilling] = useState<SmOwnerBillingSummary | null>(null);
   const [licenses, setLicenses] = useState<Awaited<ReturnType<typeof fetchSaasLicenses>>>([]);
-  const [paymentProviders, setPaymentProviders] = useState<Awaited<ReturnType<typeof fetchPaymentProviders>>>([]);
-  const [billingPolicies, setBillingPolicies] = useState<Awaited<ReturnType<typeof fetchBillingPolicies>>>([]);
+  const [paymentProviders, setPaymentProviders] = useState<
+    Awaited<ReturnType<typeof fetchPaymentProviders>>
+  >([]);
+  const [billingPolicies, setBillingPolicies] = useState<
+    Awaited<ReturnType<typeof fetchBillingPolicies>>
+  >([]);
   const [coupons, setCoupons] = useState<Awaited<ReturnType<typeof fetchSaasCoupons>>>([]);
   const [partners, setPartners] = useState<Awaited<ReturnType<typeof fetchSaasPartners>>>([]);
-  const [usageThresholds, setUsageThresholds] = useState<Awaited<ReturnType<typeof fetchUsageThresholds>>>([]);
+  const [usageThresholds, setUsageThresholds] = useState<
+    Awaited<ReturnType<typeof fetchUsageThresholds>>
+  >([]);
   const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchSaasAuditLogs>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
@@ -64,11 +78,20 @@ export function SaasManagementPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessSaasManagement(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageSaasManagement(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageSaasManagement(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: SaasManagementTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -83,6 +106,25 @@ export function SaasManagementPage() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'audit', label: 'Audit' },
     { id: 'assistant', label: 'AI Assistant' },
+  ];
+
+  const tabGroups = [
+    { id: 'overview', label: 'Overview', tabs: [{ id: 'overview', label: 'Overview' }] },
+    {
+      id: 'subscriptions',
+      label: 'Subscriptions',
+      tabs: tabs.filter((t) => ['plans', 'subscriptions', 'tenants', 'licenses'].includes(t.id)),
+    },
+    {
+      id: 'billing',
+      label: 'Billing',
+      tabs: tabs.filter((t) => ['billing', 'usage', 'add-ons'].includes(t.id)),
+    },
+    {
+      id: 'administration',
+      label: 'Administration',
+      tabs: tabs.filter((t) => ['partners', 'notifications', 'audit', 'assistant'].includes(t.id)),
+    },
   ];
 
   async function loadDashboard() {
@@ -101,7 +143,8 @@ export function SaasManagementPage() {
       try {
         await loadDashboard();
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load SaaS management');
+        if (!cancelled)
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load SaaS management');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -141,7 +184,8 @@ export function SaasManagementPage() {
             break;
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load tab data');
+        if (!cancelled)
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load tab data');
       } finally {
         if (!cancelled) setIsSupplementaryLoading(false);
       }
@@ -171,7 +215,10 @@ export function SaasManagementPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="SaaS Management" description="You do not have permission to view SaaS management." />
+        <PageHeader
+          title="SaaS Management"
+          description="You do not have permission to view SaaS management."
+        />
       </div>
     );
   }
@@ -186,13 +233,21 @@ export function SaasManagementPage() {
         actions={
           canWrite ? (
             <div className="page-header-actions">
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => syncSaasAlerts(accessToken!), 'SaaS alerts synced.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(() => syncSaasAlerts(accessToken!), 'SaaS alerts synced.')
+                }
+              >
                 Sync Alerts
               </Button>
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => captureSaasAnalytics(accessToken!), 'Analytics captured.')}
+                onClick={() =>
+                  void runAction(() => captureSaasAnalytics(accessToken!), 'Analytics captured.')
+                }
               >
                 Capture Analytics
               </Button>
@@ -207,16 +262,15 @@ export function SaasManagementPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
-          <button key={tab.id} type="button" className={activeTab === tab.id ? 'tab-button active' : 'tab-button'} onClick={() => setActiveTab(tab.id)}>
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <GroupedTabNav
+        groups={tabGroups}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as SaasManagementTab)}
+        ariaLabel="SaaS management sections"
+      />
 
       {isLoading ? (
-        <Panel title="Loading">Loading SaaS management…</Panel>
+        <LoadingState label="Loading SaaS management" />
       ) : !dashboard ? (
         <EmptyState title="No data" description="SaaS management dashboard is unavailable." />
       ) : (
@@ -224,19 +278,42 @@ export function SaasManagementPage() {
           {activeTab === 'overview' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Billing Health" value={formatStatus(dashboard.overallBillingHealthStatus)} />
-                <StatCard label="Active Subscriptions" value={String(dashboard.activeSubscriptionCount)} />
-                <StatCard label="Trial Expirations" value={String(dashboard.trialExpirationCount)} />
+                <StatCard
+                  label="Billing Health"
+                  value={formatStatus(dashboard.overallBillingHealthStatus)}
+                />
+                <StatCard
+                  label="Active Subscriptions"
+                  value={String(dashboard.activeSubscriptionCount)}
+                />
+                <StatCard
+                  label="Trial Expirations"
+                  value={String(dashboard.trialExpirationCount)}
+                />
                 <StatCard label="Failed Payments" value={String(dashboard.failedPaymentCount)} />
                 <StatCard label="Licenses" value={String(dashboard.licenseCount)} />
                 <StatCard label="Partners" value={String(dashboard.partnerCount)} />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
-                <StatCard label="Platform Owner" value={dashboard.isPlatformOwner ? 'Yes' : 'No'} />
+                <StatCard
+                  label="TITAN Platform Owner"
+                  value={dashboard.isPlatformOwner ? 'Yes' : 'No'}
+                />
               </div>
+              <Panel title="Platform owner status">
+                <p>
+                  {dashboard.isPlatformOwner
+                    ? 'This tenant is registered as the TITAN platform owner with full platform visibility.'
+                    : `This workspace is a tenant account (${user?.roleName ?? 'member'}). TITAN Platform Owner privileges require the tenant to be marked as platform_owner in SaaS tenant profiles.`}
+                </p>
+              </Panel>
               <Panel title="Summary">
                 <p>{dashboard.summary}</p>
                 {dashboard.usageMonitoring.alerts.length > 0 ? (
-                  <ul>{dashboard.usageMonitoring.alerts.map((a) => <li key={a}>{a}</li>)}</ul>
+                  <ul>
+                    {dashboard.usageMonitoring.alerts.map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
                 ) : null}
               </Panel>
             </>
@@ -245,14 +322,19 @@ export function SaasManagementPage() {
           {activeTab === 'plans' ? (
             <Panel title="Subscription Plans">
               {dashboard.plans.length === 0 ? (
-                <EmptyState title="No plans" description="Create configurable subscription plans from the platform owner tenant." />
+                <EmptyState
+                  title="No plans"
+                  description="Create configurable subscription plans from the platform owner tenant."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.plans.map((plan) => (
                     <div key={plan.id} className="data-list-item">
                       <strong>{plan.name}</strong>
                       <span className="status-pill">{formatStatus(plan.tier)}</span>
-                      <span>{formatCurrency(plan.priceCents)} / {plan.billingInterval}</span>
+                      <span>
+                        {formatCurrency(plan.priceCents)} / {plan.billingInterval}
+                      </span>
                       <p>{plan.description}</p>
                       <span>Features: {plan.features.join(', ') || '—'}</span>
                     </div>
@@ -269,16 +351,49 @@ export function SaasManagementPage() {
                   <div className="data-list-item">
                     <strong>{legacy.subscription.plan?.name ?? 'No plan'}</strong>
                     <span className="status-pill">{formatStatus(legacy.subscription.status)}</span>
-                    {legacy.subscription.trialEndsAt ? <span>Trial ends {new Date(legacy.subscription.trialEndsAt).toLocaleDateString()}</span> : null}
+                    {legacy.subscription.trialEndsAt ? (
+                      <span>
+                        Trial ends {new Date(legacy.subscription.trialEndsAt).toLocaleDateString()}
+                      </span>
+                    ) : null}
                     {canWrite && legacy.subscription.plan ? (
                       <div className="page-header-actions">
-                        <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => upgradeSubscription(accessToken!, legacy.subscription!.plan!.id), 'Upgrade requested.')}>
+                        <Button
+                          variant="secondary"
+                          disabled={isWorking}
+                          onClick={() =>
+                            void runAction(
+                              () =>
+                                upgradeSubscription(accessToken!, legacy.subscription!.plan!.id),
+                              'Upgrade requested.',
+                            )
+                          }
+                        >
                           Upgrade
                         </Button>
-                        <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => downgradeSubscription(accessToken!, legacy.subscription!.plan!.id), 'Downgrade requested.')}>
+                        <Button
+                          variant="secondary"
+                          disabled={isWorking}
+                          onClick={() =>
+                            void runAction(
+                              () =>
+                                downgradeSubscription(accessToken!, legacy.subscription!.plan!.id),
+                              'Downgrade requested.',
+                            )
+                          }
+                        >
                           Downgrade
                         </Button>
-                        <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => cancelSubscription(accessToken!), 'Cancellation requested.')}>
+                        <Button
+                          variant="secondary"
+                          disabled={isWorking}
+                          onClick={() =>
+                            void runAction(
+                              () => cancelSubscription(accessToken!),
+                              'Cancellation requested.',
+                            )
+                          }
+                        >
                           Cancel
                         </Button>
                       </div>
@@ -286,7 +401,10 @@ export function SaasManagementPage() {
                   </div>
                 </div>
               ) : (
-                <EmptyState title="No subscription" description="No active subscription on record." />
+                <EmptyState
+                  title="No subscription"
+                  description="No active subscription on record."
+                />
               )}
             </Panel>
           ) : null}
@@ -294,7 +412,14 @@ export function SaasManagementPage() {
           {activeTab === 'tenants' ? (
             <Panel title="Tenants">
               {dashboard.tenants.length === 0 ? (
-                <EmptyState title="No tenants" description={dashboard.isPlatformOwner ? 'Provision tenants from the platform API.' : 'Tenant list is available to platform owners only.'} />
+                <EmptyState
+                  title="No tenants"
+                  description={
+                    dashboard.isPlatformOwner
+                      ? 'Provision tenants from the platform API.'
+                      : 'Tenant list is available to platform owners only.'
+                  }
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.tenants.map((tenant) => (
@@ -314,14 +439,20 @@ export function SaasManagementPage() {
             <Panel title="Licenses">
               {isSupplementaryLoading ? <p>Loading licenses…</p> : null}
               {licenses.length === 0 ? (
-                <EmptyState title="No licenses" description="License records appear when licenses are created for tenants." />
+                <EmptyState
+                  title="No licenses"
+                  description="License records appear when licenses are created for tenants."
+                />
               ) : (
                 <div className="data-list">
                   {licenses.map((license) => (
                     <div key={license.id} className="data-list-item">
                       <strong>{license.licenseKey}</strong>
                       <span className="status-pill">{formatStatus(license.status)}</span>
-                      <span>{license.seatsUsed}{license.seatLimit ? ` / ${license.seatLimit}` : ''} seats</span>
+                      <span>
+                        {license.seatsUsed}
+                        {license.seatLimit ? ` / ${license.seatLimit}` : ''} seats
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -333,14 +464,20 @@ export function SaasManagementPage() {
             <>
               <Panel title="Owner Billing">
                 {ownerBilling?.subscription ? (
-                  <p>Current plan: {ownerBilling.subscription.plan?.name ?? 'None'} ({formatStatus(ownerBilling.subscription.status)})</p>
+                  <p>
+                    Current plan: {ownerBilling.subscription.plan?.name ?? 'None'} (
+                    {formatStatus(ownerBilling.subscription.status)})
+                  </p>
                 ) : (
                   <p>No subscription on record.</p>
                 )}
               </Panel>
               <Panel title="Billing Records">
                 {(ownerBilling?.billingRecords ?? dashboard.billingRecords).length === 0 ? (
-                  <EmptyState title="No billing records" description="Billing records are created through the existing SaaS billing abstraction." />
+                  <EmptyState
+                    title="No billing records"
+                    description="Billing records are created through the existing SaaS billing abstraction."
+                  />
                 ) : (
                   <div className="data-list">
                     {(ownerBilling?.billingRecords ?? dashboard.billingRecords).map((record) => (
@@ -355,7 +492,10 @@ export function SaasManagementPage() {
               </Panel>
               <Panel title="Payment Providers">
                 {paymentProviders.length === 0 ? (
-                  <EmptyState title="No payment providers" description="Configure payment providers through the billing abstraction. No provider is hardcoded." />
+                  <EmptyState
+                    title="No payment providers"
+                    description="Configure payment providers through the billing abstraction. No provider is hardcoded."
+                  />
                 ) : (
                   <div className="data-list">
                     {paymentProviders.map((p) => (
@@ -370,7 +510,10 @@ export function SaasManagementPage() {
               </Panel>
               <Panel title="Billing Policies">
                 {billingPolicies.length === 0 ? (
-                  <EmptyState title="No billing policies" description="Configure retry, proration, tax, and currency policies." />
+                  <EmptyState
+                    title="No billing policies"
+                    description="Configure retry, proration, tax, and currency policies."
+                  />
                 ) : (
                   <div className="data-list">
                     {billingPolicies.map((p) => (
@@ -384,14 +527,19 @@ export function SaasManagementPage() {
               </Panel>
               <Panel title="Coupons">
                 {coupons.length === 0 ? (
-                  <EmptyState title="No coupons" description="Promotional codes and coupons can be configured by platform owners." />
+                  <EmptyState
+                    title="No coupons"
+                    description="Promotional codes and coupons can be configured by platform owners."
+                  />
                 ) : (
                   <div className="data-list">
                     {coupons.map((c) => (
                       <div key={c.id} className="data-list-item">
                         <strong>{c.name}</strong>
                         <code>{c.couponCode}</code>
-                        <span>{c.discountType}: {c.discountValue}</span>
+                        <span>
+                          {c.discountType}: {c.discountValue}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -404,19 +552,39 @@ export function SaasManagementPage() {
             <Panel title="Usage Monitoring">
               <div className="stat-grid">
                 <StatCard label="Users" value={String(dashboard.usageMonitoring.userCount)} />
-                <StatCard label="API Calls" value={String(dashboard.usageMonitoring.apiRequestCount)} />
-                <StatCard label="AI Requests" value={String(dashboard.usageMonitoring.aiUsageCount)} />
-                <StatCard label="Automations" value={String(dashboard.usageMonitoring.automationCount)} />
-                <StatCard label="Documents" value={String(dashboard.usageMonitoring.documentCount)} />
-                <StatCard label="Integrations" value={String(dashboard.usageMonitoring.integrationCount)} />
-                <StatCard label="Industry Packs" value={String(dashboard.usageMonitoring.industryPackCount)} />
+                <StatCard
+                  label="API Calls"
+                  value={String(dashboard.usageMonitoring.apiRequestCount)}
+                />
+                <StatCard
+                  label="AI Requests"
+                  value={String(dashboard.usageMonitoring.aiUsageCount)}
+                />
+                <StatCard
+                  label="Automations"
+                  value={String(dashboard.usageMonitoring.automationCount)}
+                />
+                <StatCard
+                  label="Documents"
+                  value={String(dashboard.usageMonitoring.documentCount)}
+                />
+                <StatCard
+                  label="Integrations"
+                  value={String(dashboard.usageMonitoring.integrationCount)}
+                />
+                <StatCard
+                  label="Industry Packs"
+                  value={String(dashboard.usageMonitoring.industryPackCount)}
+                />
               </div>
               {usageThresholds.length > 0 ? (
                 <div className="data-list">
                   {usageThresholds.map((t) => (
                     <div key={t.id} className="data-list-item">
                       <strong>{t.metricKey}</strong>
-                      <span>Warning {t.warningPercent}% / Critical {t.criticalPercent}%</span>
+                      <span>
+                        Warning {t.warningPercent}% / Critical {t.criticalPercent}%
+                      </span>
                       {t.limitValue ? <span>Limit: {t.limitValue}</span> : null}
                     </div>
                   ))}
@@ -428,13 +596,18 @@ export function SaasManagementPage() {
           {activeTab === 'add-ons' ? (
             <Panel title="Add-ons">
               {dashboard.addOns.length === 0 ? (
-                <EmptyState title="No add-ons" description="Configure add-on catalog entries for tenant purchases." />
+                <EmptyState
+                  title="No add-ons"
+                  description="Configure add-on catalog entries for tenant purchases."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.addOns.map((addOn) => (
                     <div key={addOn.id} className="data-list-item">
                       <strong>{addOn.name}</strong>
-                      <span>{formatCurrency(addOn.priceCents, addOn.currency)} / {addOn.billingInterval}</span>
+                      <span>
+                        {formatCurrency(addOn.priceCents, addOn.currency)} / {addOn.billingInterval}
+                      </span>
                       <p>{addOn.description}</p>
                     </div>
                   ))}
@@ -447,7 +620,10 @@ export function SaasManagementPage() {
             <Panel title="Partners & Resellers">
               {isSupplementaryLoading ? <p>Loading partners…</p> : null}
               {partners.length === 0 ? (
-                <EmptyState title="No partners" description="Register reseller and white-label partner accounts." />
+                <EmptyState
+                  title="No partners"
+                  description="Register reseller and white-label partner accounts."
+                />
               ) : (
                 <div className="data-list">
                   {partners.map((partner) => (
@@ -466,7 +642,10 @@ export function SaasManagementPage() {
           {activeTab === 'notifications' ? (
             <Panel title="Notifications">
               {dashboard.recentNotifications.length === 0 ? (
-                <EmptyState title="No notifications" description="Billing and subscription notifications appear when events occur." />
+                <EmptyState
+                  title="No notifications"
+                  description="Billing and subscription notifications appear when events occur."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentNotifications.map((n) => (
@@ -499,7 +678,10 @@ export function SaasManagementPage() {
             <Panel title="Audit Logs">
               {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
               {auditLogs.length === 0 ? (
-                <EmptyState title="No audit logs" description="SaaS management actions are recorded for complete auditability." />
+                <EmptyState
+                  title="No audit logs"
+                  description="SaaS management actions are recorded for complete auditability."
+                />
               ) : (
                 <div className="data-list">
                   {auditLogs.map((log) => (
@@ -518,11 +700,21 @@ export function SaasManagementPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'saas_management' as import('@titan/shared').AgentKey)}
+                onSend={(content) =>
+                  void sendAgentMessage(
+                    content,
+                    'saas_management' as import('@titan/shared').AgentKey,
+                  )
+                }
                 placeholder="Ask about subscriptions, billing, usage, licenses, or plan recommendations…"
               />
             </Panel>

@@ -16,6 +16,7 @@ import type {
   BevUserFeedbackSummary,
   EnterpriseBusinessEvolutionDashboard,
 } from '@titan/shared';
+import { formatMoney } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureBevAnalytics,
@@ -106,7 +107,7 @@ const emptySupplementary: SupplementaryData = {
 
 function formatCurrency(cents: number | null): string {
   if (cents == null) return '—';
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(cents / 100);
+  return formatMoney(cents);
 }
 
 export function BusinessEvolutionPage() {
@@ -120,11 +121,23 @@ export function BusinessEvolutionPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessBusinessEvolution(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageBusinessEvolution(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessBusinessEvolution(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageBusinessEvolution(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -144,7 +157,11 @@ export function BusinessEvolutionPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load business evolution dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load business evolution dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -253,7 +270,10 @@ export function BusinessEvolutionPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Business Evolution" description="You do not have permission to view business evolution." />
+        <PageHeader
+          title="Business Evolution"
+          description="You do not have permission to view business evolution."
+        />
       </div>
     );
   }
@@ -342,19 +362,29 @@ export function BusinessEvolutionPage() {
             <StatCard label="Observations" value={String(dashboard.observationCount)} />
             <StatCard label="Patterns" value={String(dashboard.patternCount)} />
             <StatCard label="Hypotheses" value={String(dashboard.hypothesisCount)} />
-            <StatCard label="Open Recommendations" value={String(dashboard.openRecommendationCount)} />
+            <StatCard
+              label="Open Recommendations"
+              value={String(dashboard.openRecommendationCount)}
+            />
             <StatCard label="Active Experiments" value={String(dashboard.activeExperimentCount)} />
             <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
             <StatCard label="Learning Confidence" value={dashboard.overallLearningConfidence} />
-            <StatCard label="Improvement Items" value={String(dashboard.continuousImprovementCount)} />
+            <StatCard
+              label="Improvement Items"
+              value={String(dashboard.continuousImprovementCount)}
+            />
           </div>
           <Panel
             title="Evolution Monitoring"
-            description={dashboard.evolutionMonitoring.alerts.join(' · ') || 'No active evolution signals'}
+            description={
+              dashboard.evolutionMonitoring.alerts.join(' · ') || 'No active evolution signals'
+            }
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
-              <li>Pending recommendations: {dashboard.evolutionMonitoring.pendingRecommendationCount}</li>
+              <li>
+                Pending recommendations: {dashboard.evolutionMonitoring.pendingRecommendationCount}
+              </li>
               <li>Active experiments: {dashboard.evolutionMonitoring.activeExperimentCount}</li>
               <li>Validated lessons: {dashboard.evolutionMonitoring.validatedLessonCount}</li>
               <li>Maturity assessments: {dashboard.maturityAssessmentCount}</li>
@@ -364,7 +394,10 @@ export function BusinessEvolutionPage() {
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncBevObservations(accessToken!), 'Observations synced from real platform data.')
+                    void runAction(
+                      () => syncBevObservations(accessToken!),
+                      'Observations synced from real platform data.',
+                    )
                   }
                 >
                   Sync Observations
@@ -373,7 +406,10 @@ export function BusinessEvolutionPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => detectBevPatterns(accessToken!), 'Patterns detected from observation data.')
+                    void runAction(
+                      () => detectBevPatterns(accessToken!),
+                      'Patterns detected from observation data.',
+                    )
                   }
                 >
                   Detect Patterns
@@ -382,7 +418,10 @@ export function BusinessEvolutionPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncBevEvolutionAlerts(accessToken!), 'Evolution alerts synced from platform signals.')
+                    void runAction(
+                      () => syncBevEvolutionAlerts(accessToken!),
+                      'Evolution alerts synced from platform signals.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -391,7 +430,10 @@ export function BusinessEvolutionPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureBevAnalytics(accessToken!), 'Analytics captured from real learning data.')
+                    void runAction(
+                      () => captureBevAnalytics(accessToken!),
+                      'Analytics captured from real learning data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -400,7 +442,10 @@ export function BusinessEvolutionPage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
                 <li>Observations: {dashboard.analytics.observationCount}</li>
                 <li>Patterns: {dashboard.analytics.patternCount}</li>
@@ -415,15 +460,23 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'observations' ? (
-        <Panel title="Observations" description="Raw learning signals captured from platform modules">
+        <Panel
+          title="Observations"
+          description="Raw learning signals captured from platform modules"
+        >
           {dashboard.recentObservations.length === 0 ? (
-            <EmptyState title="No observations" description="Sync observations from real platform activity." />
+            <EmptyState
+              title="No observations"
+              description="Sync observations from real platform activity."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentObservations.map((observation) => (
                 <div key={observation.id} className="data-list-item">
                   <strong>{observation.title}</strong>
-                  <span className="status-pill">{formatLearningStage(observation.learningStage)}</span>
+                  <span className="status-pill">
+                    {formatLearningStage(observation.learningStage)}
+                  </span>
                   <p>
                     {observation.observationType}
                     {observation.sourceModule ? ` · ${observation.sourceModule}` : ''}
@@ -438,7 +491,10 @@ export function BusinessEvolutionPage() {
       {dashboard && activeTab === 'patterns' ? (
         <Panel title="Patterns" description="Detected trends from aggregated observations">
           {dashboard.recentPatterns.length === 0 ? (
-            <EmptyState title="No patterns" description="Run pattern detection after syncing observations." />
+            <EmptyState
+              title="No patterns"
+              description="Run pattern detection after syncing observations."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentPatterns.map((pattern) => (
@@ -459,13 +515,18 @@ export function BusinessEvolutionPage() {
       {dashboard && activeTab === 'hypotheses' ? (
         <Panel title="Hypotheses" description="Proposed changes derived from detected patterns">
           {dashboard.recentHypotheses.length === 0 ? (
-            <EmptyState title="No hypotheses" description="Hypotheses are created from validated patterns." />
+            <EmptyState
+              title="No hypotheses"
+              description="Hypotheses are created from validated patterns."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentHypotheses.map((hypothesis) => (
                 <div key={hypothesis.id} className="data-list-item">
                   <strong>{hypothesis.title}</strong>
-                  <span className="status-pill">{formatLearningStage(hypothesis.learningStage)}</span>
+                  <span className="status-pill">
+                    {formatLearningStage(hypothesis.learningStage)}
+                  </span>
                   <p>Risk: {hypothesis.riskLevel}</p>
                 </div>
               ))}
@@ -475,15 +536,23 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'recommendations' ? (
-        <Panel title="Recommendations" description="Governed improvement proposals requiring approval">
+        <Panel
+          title="Recommendations"
+          description="Governed improvement proposals requiring approval"
+        >
           {dashboard.recentRecommendations.length === 0 ? (
-            <EmptyState title="No recommendations" description="Recommendations appear after hypothesis review." />
+            <EmptyState
+              title="No recommendations"
+              description="Recommendations appear after hypothesis review."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentRecommendations.map((recommendation) => (
                 <div key={recommendation.id} className="data-list-item">
                   <strong>{recommendation.title}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(recommendation.workflowStatus)}</span>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(recommendation.workflowStatus)}
+                  </span>
                   <p>
                     {recommendation.category} · Risk: {recommendation.riskLevel}
                     {recommendation.approvalRequired ? ' · approval required' : ''}
@@ -496,15 +565,23 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'experiments' ? (
-        <Panel title="Experiments" description="Controlled tests with safety controls and spending limits">
+        <Panel
+          title="Experiments"
+          description="Controlled tests with safety controls and spending limits"
+        >
           {dashboard.recentExperiments.length === 0 ? (
-            <EmptyState title="No experiments" description="Experiments are scheduled from approved recommendations." />
+            <EmptyState
+              title="No experiments"
+              description="Experiments are scheduled from approved recommendations."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentExperiments.map((experiment) => (
                 <div key={experiment.id} className="data-list-item">
                   <strong>{experiment.title}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(experiment.workflowStatus)}</span>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(experiment.workflowStatus)}
+                  </span>
                   <p>
                     {experiment.experimentType} · Risk: {experiment.riskLevel}
                     {experiment.hasSafetyControls ? ' · safety controls' : ''}
@@ -517,9 +594,15 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'outcomes' ? (
-        <Panel title="Outcomes" description="Measured results from experiments and implemented recommendations">
+        <Panel
+          title="Outcomes"
+          description="Measured results from experiments and implemented recommendations"
+        >
           {dashboard.recentOutcomes.length === 0 ? (
-            <EmptyState title="No outcomes" description="Outcomes are recorded after experiment completion." />
+            <EmptyState
+              title="No outcomes"
+              description="Outcomes are recorded after experiment completion."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentOutcomes.map((outcome) => (
@@ -528,7 +611,9 @@ export function BusinessEvolutionPage() {
                   <span className="status-pill">{formatLearningStage(outcome.learningStage)}</span>
                   <p>
                     {outcome.operationalImpact ?? '—'}
-                    {outcome.financialImpactCents != null ? ` · ${formatCurrency(outcome.financialImpactCents)}` : ''}
+                    {outcome.financialImpactCents != null
+                      ? ` · ${formatCurrency(outcome.financialImpactCents)}`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -538,9 +623,15 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'continuous-improvement' ? (
-        <Panel title="Continuous Improvement" description="Tracked improvement items from outcomes and feedback">
+        <Panel
+          title="Continuous Improvement"
+          description="Tracked improvement items from outcomes and feedback"
+        >
           {dashboard.recentImprovementItems.length === 0 ? (
-            <EmptyState title="No improvement items" description="Improvement items are created from validated outcomes." />
+            <EmptyState
+              title="No improvement items"
+              description="Improvement items are created from validated outcomes."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentImprovementItems.map((item: BevContinuousImprovementItemSummary) => (
@@ -558,10 +649,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'process-mining' ? (
-        <Panel title="Process Mining" description="Discovered process flows from operational event data">
+        <Panel
+          title="Process Mining"
+          description="Discovered process flows from operational event data"
+        >
           {isSupplementaryLoading ? <p>Loading process mining results...</p> : null}
           {supplementary.processMiningResults.length === 0 ? (
-            <EmptyState title="No process mining results" description="Sync process mining to discover workflow patterns." />
+            <EmptyState
+              title="No process mining results"
+              description="Sync process mining to discover workflow patterns."
+            />
           ) : (
             <div className="data-list">
               {supplementary.processMiningResults.map((result) => (
@@ -578,7 +675,10 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'workflow-optimization' ? (
-        <Panel title="Workflow Optimization" description="Optimization proposals from the legacy evolution engine">
+        <Panel
+          title="Workflow Optimization"
+          description="Optimization proposals from the legacy evolution engine"
+        >
           {dashboard.legacyEvolution && dashboard.legacyEvolution.optimizations.length > 0 ? (
             <div className="data-list">
               {dashboard.legacyEvolution.optimizations.map((optimization) => (
@@ -590,7 +690,10 @@ export function BusinessEvolutionPage() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No workflow optimizations" description="Optimizations appear from the legacy evolution platform." />
+            <EmptyState
+              title="No workflow optimizations"
+              description="Optimizations appear from the legacy evolution platform."
+            />
           )}
           <Link href="/evolution">
             <Button variant="secondary">Open Legacy Evolution</Button>
@@ -599,10 +702,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'agent-performance' ? (
-        <Panel title="Agent Performance" description="Task volume, success rates, and cost from real agent telemetry">
+        <Panel
+          title="Agent Performance"
+          description="Task volume, success rates, and cost from real agent telemetry"
+        >
           {isSupplementaryLoading ? <p>Loading agent performance...</p> : null}
           {supplementary.agentPerformanceSnapshots.length === 0 ? (
-            <EmptyState title="No agent performance snapshots" description="Capture agent performance from live agent runs." />
+            <EmptyState
+              title="No agent performance snapshots"
+              description="Capture agent performance from live agent runs."
+            />
           ) : (
             <div className="data-list">
               {supplementary.agentPerformanceSnapshots.map((snapshot) => (
@@ -622,16 +731,24 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'agent-improvement' ? (
-        <Panel title="Agent Improvement" description="Prompt, policy, and capability improvements with rollback plans">
+        <Panel
+          title="Agent Improvement"
+          description="Prompt, policy, and capability improvements with rollback plans"
+        >
           {isSupplementaryLoading ? <p>Loading agent improvements...</p> : null}
           {supplementary.agentImprovements.length === 0 ? (
-            <EmptyState title="No agent improvements" description="Agent improvements are proposed from performance analysis." />
+            <EmptyState
+              title="No agent improvements"
+              description="Agent improvements are proposed from performance analysis."
+            />
           ) : (
             <div className="data-list">
               {supplementary.agentImprovements.map((improvement) => (
                 <div key={improvement.id} className="data-list-item">
                   <strong>{improvement.title}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(improvement.workflowStatus)}</span>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(improvement.workflowStatus)}
+                  </span>
                   <p>
                     {improvement.agentKey} · {improvement.improvementType}
                     {improvement.securityReviewRequired ? ' · security review required' : ''}
@@ -644,16 +761,24 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'evaluations' ? (
-        <Panel title="AI Evaluations" description="Structured evaluation runs against real datasets">
+        <Panel
+          title="AI Evaluations"
+          description="Structured evaluation runs against real datasets"
+        >
           {isSupplementaryLoading ? <p>Loading evaluations...</p> : null}
           {supplementary.aiEvaluations.length === 0 ? (
-            <EmptyState title="No AI evaluations" description="Evaluations are scheduled from the evaluation templates." />
+            <EmptyState
+              title="No AI evaluations"
+              description="Evaluations are scheduled from the evaluation templates."
+            />
           ) : (
             <div className="data-list">
               {supplementary.aiEvaluations.map((evaluation) => (
                 <div key={evaluation.id} className="data-list-item">
                   <strong>{evaluation.evaluationKey}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(evaluation.workflowStatus)}</span>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(evaluation.workflowStatus)}
+                  </span>
                   <p>
                     {evaluation.evaluationType}
                     {evaluation.evaluatedAt ? ` · ${evaluation.evaluatedAt}` : ''}
@@ -666,10 +791,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'knowledge' ? (
-        <Panel title="Knowledge Reinforcement" description="Validated lessons linked to the knowledge graph">
+        <Panel
+          title="Knowledge Reinforcement"
+          description="Validated lessons linked to the knowledge graph"
+        >
           {isSupplementaryLoading ? <p>Loading knowledge reinforcements...</p> : null}
           {supplementary.knowledgeReinforcements.length === 0 ? (
-            <EmptyState title="No knowledge reinforcements" description="Validated outcomes reinforce the knowledge graph." />
+            <EmptyState
+              title="No knowledge reinforcements"
+              description="Validated outcomes reinforce the knowledge graph."
+            />
           ) : (
             <div className="data-list">
               {supplementary.knowledgeReinforcements.map((lesson) => (
@@ -685,7 +816,10 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'digital-twin' ? (
-        <Panel title="Digital Twin" description="Simulation and scenario modeling for business evolution decisions">
+        <Panel
+          title="Digital Twin"
+          description="Simulation and scenario modeling for business evolution decisions"
+        >
           <p>Explore process and operational simulations in the Digital Twin platform.</p>
           <Link href="/digital-twin">
             <Button variant="secondary">Open Digital Twin</Button>
@@ -694,17 +828,27 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'financial-impact' ? (
-        <Panel title="Financial Impact" description="Measured financial outcomes from experiments and recommendations">
+        <Panel
+          title="Financial Impact"
+          description="Measured financial outcomes from experiments and recommendations"
+        >
           {isSupplementaryLoading ? <p>Loading financial impact data...</p> : null}
           {financialOutcomes.length === 0 ? (
-            <EmptyState title="No financial impact data" description="Financial impact is recorded when outcomes are measured." />
+            <EmptyState
+              title="No financial impact data"
+              description="Financial impact is recorded when outcomes are measured."
+            />
           ) : (
             <div className="data-list">
               {financialOutcomes.map((outcome) => (
                 <div key={outcome.id} className="data-list-item">
                   <strong>{outcome.title}</strong>
-                  <span className="status-pill">{formatCurrency(outcome.financialImpactCents)}</span>
-                  <p>{formatLearningStage(outcome.learningStage)} · {outcome.measuredAt}</p>
+                  <span className="status-pill">
+                    {formatCurrency(outcome.financialImpactCents)}
+                  </span>
+                  <p>
+                    {formatLearningStage(outcome.learningStage)} · {outcome.measuredAt}
+                  </p>
                 </div>
               ))}
             </div>
@@ -713,10 +857,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'customer-impact' ? (
-        <Panel title="Customer Impact" description="Customer-facing outcomes from improvement initiatives">
+        <Panel
+          title="Customer Impact"
+          description="Customer-facing outcomes from improvement initiatives"
+        >
           {isSupplementaryLoading ? <p>Loading customer impact data...</p> : null}
           {customerOutcomes.length === 0 ? (
-            <EmptyState title="No customer impact data" description="Customer impact is recorded in outcome measurements." />
+            <EmptyState
+              title="No customer impact data"
+              description="Customer impact is recorded in outcome measurements."
+            />
           ) : (
             <div className="data-list">
               {customerOutcomes.map((outcome) => (
@@ -731,10 +881,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'workforce-impact' ? (
-        <Panel title="Workforce Impact" description="Workforce outcomes from operational improvements">
+        <Panel
+          title="Workforce Impact"
+          description="Workforce outcomes from operational improvements"
+        >
           {isSupplementaryLoading ? <p>Loading workforce impact data...</p> : null}
           {workforceOutcomes.length === 0 ? (
-            <EmptyState title="No workforce impact data" description="Workforce impact is recorded in outcome measurements." />
+            <EmptyState
+              title="No workforce impact data"
+              description="Workforce impact is recorded in outcome measurements."
+            />
           ) : (
             <div className="data-list">
               {workforceOutcomes.map((outcome) => (
@@ -749,15 +905,23 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'it-operations-learning' ? (
-        <Panel title="IT Operations Learning" description="Observations and learning signals from IT operations modules">
+        <Panel
+          title="IT Operations Learning"
+          description="Observations and learning signals from IT operations modules"
+        >
           {itObservations.length === 0 ? (
-            <EmptyState title="No IT operations learning data" description="IT learning signals appear when IT operations modules emit observations." />
+            <EmptyState
+              title="No IT operations learning data"
+              description="IT learning signals appear when IT operations modules emit observations."
+            />
           ) : (
             <div className="data-list">
               {itObservations.map((observation) => (
                 <div key={observation.id} className="data-list-item">
                   <strong>{observation.title}</strong>
-                  <span className="status-pill">{formatLearningStage(observation.learningStage)}</span>
+                  <span className="status-pill">
+                    {formatLearningStage(observation.learningStage)}
+                  </span>
                   <p>{observation.observationType}</p>
                 </div>
               ))}
@@ -770,10 +934,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'strategic-roadmap' ? (
-        <Panel title="Strategic Roadmap" description="Long-term improvement themes and budget tracking">
+        <Panel
+          title="Strategic Roadmap"
+          description="Long-term improvement themes and budget tracking"
+        >
           {isSupplementaryLoading ? <p>Loading strategic roadmap...</p> : null}
           {supplementary.strategicRoadmapItems.length === 0 ? (
-            <EmptyState title="No roadmap items" description="Strategic roadmap items are created from validated recommendations." />
+            <EmptyState
+              title="No roadmap items"
+              description="Strategic roadmap items are created from validated recommendations."
+            />
           ) : (
             <div className="data-list">
               {supplementary.strategicRoadmapItems.map((item) => (
@@ -782,7 +952,9 @@ export function BusinessEvolutionPage() {
                   <span className="status-pill">{formatWorkflowStatus(item.workflowStatus)}</span>
                   <p>
                     {item.themeKey} · Priority: {item.priority}
-                    {item.budgetCents != null ? ` · Budget ${formatCurrency(item.budgetCents)}` : ''}
+                    {item.budgetCents != null
+                      ? ` · Budget ${formatCurrency(item.budgetCents)}`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -792,10 +964,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'maturity' ? (
-        <Panel title="Maturity Assessments" description="Domain maturity scores and reviewer confidence">
+        <Panel
+          title="Maturity Assessments"
+          description="Domain maturity scores and reviewer confidence"
+        >
           {isSupplementaryLoading ? <p>Loading maturity assessments...</p> : null}
           {supplementary.maturityAssessments.length === 0 ? (
-            <EmptyState title="No maturity assessments" description="Maturity assessments track learning capability by domain." />
+            <EmptyState
+              title="No maturity assessments"
+              description="Maturity assessments track learning capability by domain."
+            />
           ) : (
             <div className="data-list">
               {supplementary.maturityAssessments.map((assessment) => (
@@ -804,7 +982,9 @@ export function BusinessEvolutionPage() {
                   <span className="status-pill">{assessment.score ?? '—'}</span>
                   <p>
                     {assessment.frameworkKey}
-                    {assessment.confidenceScore ? ` · Confidence: ${assessment.confidenceScore}` : ''}
+                    {assessment.confidenceScore
+                      ? ` · Confidence: ${assessment.confidenceScore}`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -814,10 +994,16 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'feedback' ? (
-        <Panel title="User Feedback" description="Ratings and comments on recommendations, experiments, and outcomes">
+        <Panel
+          title="User Feedback"
+          description="Ratings and comments on recommendations, experiments, and outcomes"
+        >
           {isSupplementaryLoading ? <p>Loading feedback...</p> : null}
           {supplementary.userFeedback.length === 0 ? (
-            <EmptyState title="No user feedback" description="Feedback is collected on evolution artifacts." />
+            <EmptyState
+              title="No user feedback"
+              description="Feedback is collected on evolution artifacts."
+            />
           ) : (
             <div className="data-list">
               {supplementary.userFeedback.map((item) => (
@@ -833,37 +1019,52 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'alerts' ? (
-        <Panel title="Evolution Alerts" description="Open alerts from learning pipeline and platform modules">
+        <Panel
+          title="Evolution Alerts"
+          description="Open alerts from learning pipeline and platform modules"
+        >
           {isSupplementaryLoading && supplementary.evolutionAlerts.length === 0 ? (
             <p>Loading alerts...</p>
           ) : null}
-          {(supplementary.evolutionAlerts.length > 0 ? supplementary.evolutionAlerts : dashboard.recentAlerts).length ===
-          0 ? (
-            <EmptyState title="No evolution alerts" description="Sync alerts from platform learning signals." />
+          {(supplementary.evolutionAlerts.length > 0
+            ? supplementary.evolutionAlerts
+            : dashboard.recentAlerts
+          ).length === 0 ? (
+            <EmptyState
+              title="No evolution alerts"
+              description="Sync alerts from platform learning signals."
+            />
           ) : (
             <div className="data-list">
-              {(supplementary.evolutionAlerts.length > 0 ? supplementary.evolutionAlerts : dashboard.recentAlerts).map(
-                (alert) => (
-                  <div key={alert.id} className="data-list-item">
-                    <strong>{alert.title}</strong>
-                    <span className="status-pill">{formatSeverity(alert.severity)}</span>
-                    <p>
-                      {alert.alertType} · {alert.status}
-                      {alert.sourceModule ? ` · ${alert.sourceModule}` : ''}
-                    </p>
-                  </div>
-                ),
-              )}
+              {(supplementary.evolutionAlerts.length > 0
+                ? supplementary.evolutionAlerts
+                : dashboard.recentAlerts
+              ).map((alert) => (
+                <div key={alert.id} className="data-list-item">
+                  <strong>{alert.title}</strong>
+                  <span className="status-pill">{formatSeverity(alert.severity)}</span>
+                  <p>
+                    {alert.alertType} · {alert.status}
+                    {alert.sourceModule ? ` · ${alert.sourceModule}` : ''}
+                  </p>
+                </div>
+              ))}
             </div>
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'audit' ? (
-        <Panel title="Audit Trail" description="Complete history of business evolution actions and changes">
+        <Panel
+          title="Audit Trail"
+          description="Complete history of business evolution actions and changes"
+        >
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
-            <EmptyState title="No audit logs" description="Audit entries are recorded for every business evolution action." />
+            <EmptyState
+              title="No audit logs"
+              description="Audit entries are recorded for every business evolution action."
+            />
           ) : (
             <div className="data-list">
               {supplementary.auditLogs.map((log) => (
@@ -881,18 +1082,48 @@ export function BusinessEvolutionPage() {
       ) : null}
 
       {dashboard && activeTab === 'settings' ? (
-        <Panel title="Platform Configuration" description="Learning governance, safety defaults, and data source settings">
+        <Panel
+          title="Platform Configuration"
+          description="Learning governance, safety defaults, and data source settings"
+        >
           <ul className="simple-list">
             <li>Audit retention: {dashboard.platformConfig.auditRetentionDays} days</li>
-            <li>Learning governance keys: {Object.keys(dashboard.platformConfig.learningGovernance).length}</li>
-            <li>Experiment safety defaults: {Object.keys(dashboard.platformConfig.experimentSafetyDefaults).length}</li>
-            <li>Evaluation templates: {Object.keys(dashboard.platformConfig.evaluationTemplates).length}</li>
-            <li>Aggregation thresholds: {Object.keys(dashboard.platformConfig.aggregationThresholds).length}</li>
-            <li>Cross-tenant privacy rules: {Object.keys(dashboard.platformConfig.crossTenantPrivacyRules).length}</li>
-            <li>Agent improvement standards: {Object.keys(dashboard.platformConfig.agentImprovementStandards).length}</li>
-            <li>Autonomous allowlist: {Object.keys(dashboard.platformConfig.autonomousAllowlist).length}</li>
-            <li>Rollback requirements: {Object.keys(dashboard.platformConfig.rollbackRequirements).length}</li>
-            <li>Recommendation thresholds: {Object.keys(dashboard.platformConfig.recommendationThresholds).length}</li>
+            <li>
+              Learning governance keys:{' '}
+              {Object.keys(dashboard.platformConfig.learningGovernance).length}
+            </li>
+            <li>
+              Experiment safety defaults:{' '}
+              {Object.keys(dashboard.platformConfig.experimentSafetyDefaults).length}
+            </li>
+            <li>
+              Evaluation templates:{' '}
+              {Object.keys(dashboard.platformConfig.evaluationTemplates).length}
+            </li>
+            <li>
+              Aggregation thresholds:{' '}
+              {Object.keys(dashboard.platformConfig.aggregationThresholds).length}
+            </li>
+            <li>
+              Cross-tenant privacy rules:{' '}
+              {Object.keys(dashboard.platformConfig.crossTenantPrivacyRules).length}
+            </li>
+            <li>
+              Agent improvement standards:{' '}
+              {Object.keys(dashboard.platformConfig.agentImprovementStandards).length}
+            </li>
+            <li>
+              Autonomous allowlist:{' '}
+              {Object.keys(dashboard.platformConfig.autonomousAllowlist).length}
+            </li>
+            <li>
+              Rollback requirements:{' '}
+              {Object.keys(dashboard.platformConfig.rollbackRequirements).length}
+            </li>
+            <li>
+              Recommendation thresholds:{' '}
+              {Object.keys(dashboard.platformConfig.recommendationThresholds).length}
+            </li>
             <li>Learning scope: {Object.keys(dashboard.platformConfig.learningScope).length}</li>
             <li>Data sources: {Object.keys(dashboard.platformConfig.dataSources).length}</li>
           </ul>
@@ -910,12 +1141,20 @@ export function BusinessEvolutionPage() {
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
             onSend={(content) =>
-              void sendAgentMessage(content, 'business_evolution' as import('@titan/shared').AgentKey)
+              void sendAgentMessage(
+                content,
+                'business_evolution' as import('@titan/shared').AgentKey,
+              )
             }
             placeholder="Ask about observations, patterns, experiments, recommendations, or learning governance…"
           />

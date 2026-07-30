@@ -72,6 +72,7 @@ function LoginForm() {
         <p className="auth-card__footer">
           New company? <Link href="/auth/signup">Create your workspace</Link>
         </p>
+        <p className="product-attribution">Created by Young Guns Plumbing</p>
       </div>
     </AuthLayout>
   );

@@ -238,7 +238,10 @@ export class FinanceService {
     }
 
     if (invoice.status === 'cancelled') {
-      throw new FinanceError('VALIDATION_ERROR', 'Cannot record payment against a cancelled invoice');
+      throw new FinanceError(
+        'VALIDATION_ERROR',
+        'Cannot record payment against a cancelled invoice',
+      );
     }
 
     const currency = input.currency?.trim() || invoice.currency;
@@ -309,7 +312,9 @@ export class FinanceService {
     const [openQuotesRow] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(quotes)
-      .where(and(eq(quotes.companyId, companyId), inArray(quotes.status, [...OPEN_QUOTE_STATUSES])));
+      .where(
+        and(eq(quotes.companyId, companyId), inArray(quotes.status, [...OPEN_QUOTE_STATUSES])),
+      );
 
     const [invoiceCountRow] = await this.db
       .select({ count: sql<number>`count(*)::int` })
@@ -463,10 +468,13 @@ export class FinanceService {
       where: eq(companies.id, companyId),
     });
 
-    return company?.preferences?.currency?.trim() || 'USD';
+    return company?.preferences?.currency?.trim() || 'ZAR';
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -482,7 +490,11 @@ export class FinanceService {
     customerId: string,
   ): Promise<void> {
     const job = await this.db.query.jobs.findFirst({
-      where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId), eq(jobs.customerId, customerId)),
+      where: and(
+        eq(jobs.id, jobId),
+        eq(jobs.companyId, companyId),
+        eq(jobs.customerId, customerId),
+      ),
     });
 
     if (!job) {
@@ -496,7 +508,11 @@ export class FinanceService {
     customerId: string,
   ): Promise<void> {
     const quote = await this.db.query.quotes.findFirst({
-      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId), eq(quotes.customerId, customerId)),
+      where: and(
+        eq(quotes.id, quoteId),
+        eq(quotes.companyId, companyId),
+        eq(quotes.customerId, customerId),
+      ),
     });
 
     if (!quote) {
@@ -516,7 +532,7 @@ type InvoiceWithRelations = typeof invoices.$inferSelect & {
 };
 
 type PaymentWithRelations = typeof payments.$inferSelect & {
-  invoice: ({ invoiceNumber: string; title: string; customer: { name: string } | null } | null);
+  invoice: { invoiceNumber: string; title: string; customer: { name: string } | null } | null;
 };
 
 function toQuoteSummary(row: QuoteWithRelations): QuoteSummary {

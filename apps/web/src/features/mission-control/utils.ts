@@ -12,7 +12,11 @@ export function canManageMissionControl(permissions: string[]): boolean {
 }
 
 export function formatModuleName(module: string): string {
-  return module.replace(/_/g, ' ');
+  return module
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 export function formatSeverity(severity: string): string {

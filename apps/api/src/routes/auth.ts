@@ -1,8 +1,10 @@
-import { Router } from 'express';
+import { Router, type Response } from 'express';
+import type { Logger } from 'pino';
 import { z } from 'zod';
 import { validatePasswordStrength } from '@titan/auth';
 import type { AuthService } from '../services/auth.service.js';
 import { AuthError } from '../services/auth.service.js';
+import type { EnterpriseSecurityService } from '../services/enterprise-security.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 
 const signupSchema = z.object({
@@ -31,17 +33,20 @@ type AuthRouterDeps = {
   authService: AuthService;
   jwtSecret: string;
   isProduction: boolean;
-  enterpriseSecurityService?: import('../services/enterprise-security.service.js').EnterpriseSecurityService;
+  logger?: Logger;
+  enterpriseSecurityService?: EnterpriseSecurityService;
 };
 
 export function createAuthRouter({
   authService,
   jwtSecret,
   isProduction,
+  logger,
   enterpriseSecurityService,
 }: AuthRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+  const authLog = logger?.child({ module: 'auth' });
 
   router.post('/signup', async (req, res) => {
     const parsed = signupSchema.safeParse(req.body);
@@ -69,14 +74,23 @@ export function createAuthRouter({
       return;
     }
 
+    authLog?.info({ email: parsed.data.email, companyName: parsed.data.companyName }, 'Signup request received');
+
     try {
+      authLog?.debug({ email: parsed.data.email }, 'Creating company, roles, and user');
       const result = await authService.signup({
         ...parsed.data,
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip,
       });
 
+      authLog?.info(
+        { userId: result.user.id, companyId: result.user.companyId, sessionExpiresIn: result.session.expiresIn },
+        'Signup succeeded — session created',
+      );
+
       setRefreshCookie(res, result.refreshToken, isProduction);
+      authLog?.debug({ userId: result.user.id }, 'Refresh cookie set');
 
       res.status(201).json({
         data: {
@@ -85,7 +99,7 @@ export function createAuthRouter({
         },
       });
     } catch (error) {
-      handleAuthError(res, error);
+      handleAuthError(res, error, authLog);
     }
   });
 
@@ -103,24 +117,31 @@ export function createAuthRouter({
       return;
     }
 
+    authLog?.info({ email: parsed.data.email, ip: req.ip }, 'Login request received');
+
     try {
+      authLog?.debug({ email: parsed.data.email }, 'Looking up user and verifying password');
       const result = await authService.login({
         ...parsed.data,
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip,
       });
 
-      if (enterpriseSecurityService) {
-        await enterpriseSecurityService.recordLoginEvent({
-          companyId: result.user.companyId,
-          userId: result.user.id,
-          eventType: 'login_success',
-          ipAddress: req.ip,
-          userAgent: req.headers['user-agent'],
-        });
-      }
+      authLog?.info(
+        { userId: result.user.id, companyId: result.user.companyId, sessionExpiresIn: result.session.expiresIn },
+        'Login succeeded — JWT issued',
+      );
+
+      await recordSecurityLoginEvent(enterpriseSecurityService, authLog, {
+        companyId: result.user.companyId,
+        userId: result.user.id,
+        eventType: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
 
       setRefreshCookie(res, result.refreshToken, isProduction);
+      authLog?.debug({ userId: result.user.id }, 'Refresh cookie set');
 
       res.json({
         data: {
@@ -129,15 +150,15 @@ export function createAuthRouter({
         },
       });
     } catch (error) {
-      if (enterpriseSecurityService && error instanceof AuthError && error.code === 'INVALID_CREDENTIALS') {
-        await enterpriseSecurityService.recordLoginEvent({
+      if (error instanceof AuthError && error.code === 'INVALID_CREDENTIALS') {
+        await recordSecurityLoginEvent(enterpriseSecurityService, authLog, {
           eventType: 'login_failed',
           ipAddress: req.ip,
           userAgent: req.headers['user-agent'],
           metadata: { email: parsed.data.email },
         });
       }
-      handleAuthError(res, error);
+      handleAuthError(res, error, authLog);
     }
   });
 
@@ -158,7 +179,7 @@ export function createAuthRouter({
       const preview = await authService.getInvitePreview(token);
       res.json({ data: { preview } });
     } catch (error) {
-      handleAuthError(res, error);
+      handleAuthError(res, error, authLog);
     }
   });
 
@@ -204,7 +225,7 @@ export function createAuthRouter({
         },
       });
     } catch (error) {
-      handleAuthError(res, error);
+      handleAuthError(res, error, authLog);
     }
   });
 
@@ -234,8 +255,8 @@ export function createAuthRouter({
       await authService.logout(refreshToken);
     }
 
-    if (enterpriseSecurityService && authContext) {
-      await enterpriseSecurityService.recordLoginEvent({
+    if (authContext) {
+      await recordSecurityLoginEvent(enterpriseSecurityService, authLog, {
         companyId: authContext.companyId,
         userId: authContext.userId,
         eventType: 'logout',
@@ -255,6 +276,7 @@ export function createAuthRouter({
     const refreshToken = req.cookies?.[REFRESH_COOKIE_NAME] as string | undefined;
 
     if (!refreshToken) {
+      authLog?.debug('Refresh request without cookie — expected before login');
       res.status(401).json({
         error: {
           code: 'SESSION_MISSING',
@@ -264,8 +286,14 @@ export function createAuthRouter({
       return;
     }
 
+    authLog?.debug('Refresh request received — validating refresh token');
+
     try {
       const result = await authService.refresh(refreshToken);
+      authLog?.info(
+        { userId: result.user.id, sessionExpiresIn: result.session.expiresIn },
+        'Refresh succeeded — new access token issued',
+      );
       setRefreshCookie(res, result.refreshToken, isProduction);
 
       res.json({
@@ -276,7 +304,7 @@ export function createAuthRouter({
       });
     } catch (error) {
       clearRefreshCookie(res, isProduction);
-      handleAuthError(res, error);
+      handleAuthError(res, error, authLog);
     }
   });
 
@@ -325,19 +353,61 @@ function clearRefreshCookie(res: import('express').Response, isProduction: boole
   });
 }
 
-function handleAuthError(res: import('express').Response, error: unknown) {
+type SecurityLoginEventInput = Parameters<EnterpriseSecurityService['recordLoginEvent']>[0];
+
+async function recordSecurityLoginEvent(
+  enterpriseSecurityService: EnterpriseSecurityService | undefined,
+  authLog: Logger | undefined,
+  input: SecurityLoginEventInput,
+): Promise<void> {
+  if (!enterpriseSecurityService) {
+    return;
+  }
+
+  try {
+    await enterpriseSecurityService.recordLoginEvent(input);
+  } catch (error) {
+    authLog?.warn({ err: error, eventType: input.eventType }, 'Security login event logging failed — auth continues');
+  }
+}
+
+function isDatabaseUnavailable(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  const message = error.message.toLowerCase();
+  const causeMessage =
+    error.cause instanceof Error ? error.cause.message.toLowerCase() : String(error.cause ?? '').toLowerCase();
+
+  return (
+    message.includes('connect') ||
+    message.includes('econnrefused') ||
+    message.includes('timeout') ||
+    causeMessage.includes('connect') ||
+    causeMessage.includes('econnrefused') ||
+    causeMessage.includes('timeout')
+  );
+}
+
+function handleAuthError(res: Response, error: unknown, authLog?: Logger) {
   if (error instanceof AuthError) {
     const status =
       error.code === 'INVALID_CREDENTIALS'
         ? 401
         : error.code === 'EMAIL_IN_USE'
           ? 409
-          : error.code === 'SESSION_EXPIRED'
-            ? 401
-            : error.code === 'INVITE_INVALID'
-              ? 400
-              : 400;
+          : error.code === 'USER_NOT_FOUND'
+            ? 404
+            : error.code === 'SESSION_EXPIRED' || error.code === 'SESSION_INVALID'
+              ? 401
+              : error.code === 'INVITE_INVALID'
+                ? 400
+                : error.code === 'SIGNUP_FAILED' || error.code === 'SESSION_FAILED'
+                  ? 503
+                  : 400;
 
+    authLog?.info({ code: error.code, status }, 'Auth request rejected');
     res.status(status).json({
       error: {
         code: error.code,
@@ -347,5 +417,22 @@ function handleAuthError(res: import('express').Response, error: unknown) {
     return;
   }
 
-  throw error;
+  authLog?.error({ err: error }, 'Unexpected auth error');
+
+  if (isDatabaseUnavailable(error)) {
+    res.status(503).json({
+      error: {
+        code: 'DATABASE_UNAVAILABLE',
+        message: 'Authentication service is temporarily unavailable. Please try again.',
+      },
+    });
+    return;
+  }
+
+  res.status(500).json({
+    error: {
+      code: 'INTERNAL_ERROR',
+      message: 'An unexpected error occurred',
+    },
+  });
 }

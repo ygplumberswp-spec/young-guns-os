@@ -15,6 +15,7 @@ import { createHealthRouter } from './routes/health.js';
 import { AuthService } from './services/auth.service.js';
 import { AuraService } from './services/aura.service.js';
 import { CompanyService } from './services/company.service.js';
+import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
 import { createCrmRouter } from './routes/crm.js';
 import { createJobsRouter } from './routes/jobs.js';
@@ -202,17 +203,19 @@ const authService = new AuthService(db, {
   jwtSecret: env.JWT_SECRET,
 });
 
-const auraProvider = isAuraProviderConfigured(auraConfig)
-  ? createAuraProvider(auraConfig)
-  : null;
+const auraProvider = isAuraProviderConfigured(auraConfig) ? createAuraProvider(auraConfig) : null;
 
 if (auraProvider) {
-  logger.info({ provider: auraProvider.name, model: auraConfig.openaiModel }, 'AURA provider ready');
+  logger.info(
+    { provider: auraProvider.name, model: auraConfig.openaiModel },
+    'AURA provider ready',
+  );
 } else {
   logger.warn('AURA provider not configured — set AURA_OPENAI_API_KEY to enable AI responses');
 }
 
 const companyService = new CompanyService(db);
+const companyMediaService = new CompanyMediaService(process.env.COMPANY_MEDIA_STORAGE_PATH ?? null);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -466,6 +469,7 @@ const personalCommunicationsIntelligenceService = new PersonalCommunicationsInte
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY ?? env.JWT_SECRET,
+  logger.child({ module: 'enterprise-security' }),
 );
 const enterpriseMissionControlService = new EnterpriseMissionControlService({
   db,
@@ -1005,6 +1009,7 @@ app.use(
     authService,
     jwtSecret: env.JWT_SECRET,
     isProduction: env.NODE_ENV === 'production',
+    logger,
     enterpriseSecurityService,
   }),
 );
@@ -1020,6 +1025,7 @@ app.use(
   '/api/v1/company',
   createCompanyRouter({
     companyService,
+    companyMediaService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1386,45 +1392,45 @@ app.use(
     enterpriseSecurityService,
     integrationPlatformService,
     connectorEngineService,
-  enterpriseAnalyticsService,
-  enterpriseAutomationStudioService,
-  enterpriseDigitalTwinService,
-  enterpriseKnowledgeGraphService,
-  enterpriseMissionControlService,
-  enterpriseEvolutionService,
-  enterpriseDeveloperPlatformService,
-  enterpriseSaasPlatformService,
-  enterpriseProductionReadinessService,
-  enterpriseMobilePlatformService,
-  enterpriseUnifiedCommunicationsService,
-  enterpriseCustomerExperienceService,
-  enterpriseAssetLifecycleService,
-  enterpriseWorkforceIntelligenceService,
-  enterpriseLegalComplianceService,
-  enterpriseFinancialPlanningService,
-  enterpriseSalesIntelligenceService,
-  enterpriseMarketingIntelligenceService,
-  enterpriseServiceDeliveryService,
-  enterpriseItOperationsService,
-  enterpriseBusinessEvolutionService,
-  enterpriseAppBuilderService,
-  enterpriseIndustryPackService,
-  enterprisePublicDeveloperPlatformService,
-  enterpriseSaasManagementService,
-  enterpriseVoiceReceptionService,
-  enterpriseDocumentAiService,
-  enterpriseBusinessContinuityService,
-  enterpriseGlobalSearchService,
-  enterpriseDataMigrationService,
-  enterpriseNotificationsService,
-  enterprisePlatformHealthService,
-  enterpriseLaunchCenterService,
-  enterpriseReleaseCenterService,
-  enterpriseProductionLaunchService,
-  enterpriseReleaseManagementService,
-  teamService,
-  jwtSecret: env.JWT_SECRET,
-  authService,
+    enterpriseAnalyticsService,
+    enterpriseAutomationStudioService,
+    enterpriseDigitalTwinService,
+    enterpriseKnowledgeGraphService,
+    enterpriseMissionControlService,
+    enterpriseEvolutionService,
+    enterpriseDeveloperPlatformService,
+    enterpriseSaasPlatformService,
+    enterpriseProductionReadinessService,
+    enterpriseMobilePlatformService,
+    enterpriseUnifiedCommunicationsService,
+    enterpriseCustomerExperienceService,
+    enterpriseAssetLifecycleService,
+    enterpriseWorkforceIntelligenceService,
+    enterpriseLegalComplianceService,
+    enterpriseFinancialPlanningService,
+    enterpriseSalesIntelligenceService,
+    enterpriseMarketingIntelligenceService,
+    enterpriseServiceDeliveryService,
+    enterpriseItOperationsService,
+    enterpriseBusinessEvolutionService,
+    enterpriseAppBuilderService,
+    enterpriseIndustryPackService,
+    enterprisePublicDeveloperPlatformService,
+    enterpriseSaasManagementService,
+    enterpriseVoiceReceptionService,
+    enterpriseDocumentAiService,
+    enterpriseBusinessContinuityService,
+    enterpriseGlobalSearchService,
+    enterpriseDataMigrationService,
+    enterpriseNotificationsService,
+    enterprisePlatformHealthService,
+    enterpriseLaunchCenterService,
+    enterpriseReleaseCenterService,
+    enterpriseProductionLaunchService,
+    enterpriseReleaseManagementService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, GroupedTabNav, PageHeader, Panel, StatCard } from '@titan/ui';
 import type { EnterpriseSalesIntelligenceDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -20,31 +20,10 @@ import {
   formatPercent,
   formatWorkflowStatus,
 } from '../../features/sales-intelligence/utils';
-
-type SalesIntelligenceTab =
-  | 'overview'
-  | 'leads'
-  | 'opportunities'
-  | 'pipelines'
-  | 'activities'
-  | 'quotes'
-  | 'forecasts'
-  | 'accounts'
-  | 'renewals'
-  | 'growth'
-  | 'retention'
-  | 'pricing'
-  | 'commissions'
-  | 'targets'
-  | 'leakage'
-  | 'marketing'
-  | 'partners'
-  | 'tenders'
-  | 'winloss'
-  | 'alerts'
-  | 'providers'
-  | 'settings'
-  | 'assistant';
+import {
+  SALES_INTELLIGENCE_TAB_GROUPS,
+  type SalesIntelligenceTab,
+} from '../../features/sales-intelligence/tabs';
 
 export function SalesIntelligencePage() {
   const { accessToken, user } = useAuth();
@@ -55,11 +34,23 @@ export function SalesIntelligencePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessSalesIntelligence(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageSalesIntelligence(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessSalesIntelligence(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageSalesIntelligence(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -79,7 +70,11 @@ export function SalesIntelligencePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load sales intelligence dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load sales intelligence dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -110,36 +105,15 @@ export function SalesIntelligencePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Sales Intelligence" description="You do not have permission to view sales intelligence." />
+        <PageHeader
+          title="Sales Intelligence"
+          description="You do not have permission to view sales intelligence."
+        />
       </div>
     );
   }
 
-  const tabs: Array<{ id: SalesIntelligenceTab; label: string }> = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'leads', label: 'Leads' },
-    { id: 'opportunities', label: 'Opportunities' },
-    { id: 'pipelines', label: 'Pipelines' },
-    { id: 'activities', label: 'Activities' },
-    { id: 'quotes', label: 'Quotes & Proposals' },
-    { id: 'forecasts', label: 'Forecasts' },
-    { id: 'accounts', label: 'Accounts' },
-    { id: 'renewals', label: 'Renewals' },
-    { id: 'growth', label: 'Customer Growth' },
-    { id: 'retention', label: 'Retention' },
-    { id: 'pricing', label: 'Pricing & Discounts' },
-    { id: 'commissions', label: 'Commissions' },
-    { id: 'targets', label: 'Targets' },
-    { id: 'leakage', label: 'Revenue Leakage' },
-    { id: 'marketing', label: 'Marketing Attribution' },
-    { id: 'partners', label: 'Partners & Referrals' },
-    { id: 'tenders', label: 'Tenders' },
-    { id: 'winloss', label: 'Win/Loss' },
-    { id: 'alerts', label: 'Alerts' },
-    { id: 'providers', label: 'Providers' },
-    { id: 'settings', label: 'Settings' },
-    { id: 'assistant', label: 'AI Assistant' },
-  ];
+  const tabs = SALES_INTELLIGENCE_TAB_GROUPS;
 
   return (
     <div className="automation-page">
@@ -158,22 +132,20 @@ export function SalesIntelligencePage() {
         }
       />
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <GroupedTabNav
+        groups={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as SalesIntelligenceTab)}
+        ariaLabel="Sales intelligence sections"
+      />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {isLoading ? <p>Loading sales intelligence...</p> : null}
+      {isLoading ? (
+        <p className="page-muted" role="status">
+          Loading sales intelligence…
+        </p>
+      ) : null}
 
       {dashboard && activeTab === 'overview' ? (
         <>
@@ -182,7 +154,10 @@ export function SalesIntelligencePage() {
               label="Pipeline Value"
               value={formatCurrency(dashboard.salesStats.pipelineValueCents, dashboard.currency)}
             />
-            <StatCard label="Open Opportunities" value={String(dashboard.salesStats.openOpportunityCount)} />
+            <StatCard
+              label="Open Opportunities"
+              value={String(dashboard.salesStats.openOpportunityCount)}
+            />
             <StatCard label="Active Leads" value={String(dashboard.leadStats.activeLeadCount)} />
             <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
             <StatCard label="Renewals Tracked" value={String(dashboard.renewalCount)} />
@@ -197,7 +172,10 @@ export function SalesIntelligencePage() {
           </div>
           <Panel
             title="Revenue Monitoring"
-            description={dashboard.revenueMonitoring.alerts.join(' · ') || 'No active revenue alerts from real data'}
+            description={
+              dashboard.revenueMonitoring.alerts.join(' · ') ||
+              'No active revenue alerts from real data'
+            }
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
@@ -212,7 +190,10 @@ export function SalesIntelligencePage() {
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureSalesAnalytics(accessToken!), 'Analytics captured from real sales data.')
+                    void runAction(
+                      () => captureSalesAnalytics(accessToken!),
+                      'Analytics captured from real sales data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -221,7 +202,10 @@ export function SalesIntelligencePage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncSalesAlerts(accessToken!), 'Sales alerts synced from real records.')
+                    void runAction(
+                      () => syncSalesAlerts(accessToken!),
+                      'Sales alerts synced from real records.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -230,13 +214,32 @@ export function SalesIntelligencePage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
                 <li>
-                  Weighted pipeline: {formatCurrency(dashboard.analytics.weightedPipelineCents, dashboard.analytics.currency)}
+                  Weighted pipeline:{' '}
+                  {formatCurrency(
+                    dashboard.analytics.weightedPipelineCents,
+                    dashboard.analytics.currency,
+                  )}
                 </li>
-                <li>Renewal exposure: {formatCurrency(dashboard.analytics.renewalExposureCents, dashboard.analytics.currency)}</li>
-                <li>Revenue leakage: {formatCurrency(dashboard.analytics.revenueLeakageCents, dashboard.analytics.currency)}</li>
+                <li>
+                  Renewal exposure:{' '}
+                  {formatCurrency(
+                    dashboard.analytics.renewalExposureCents,
+                    dashboard.analytics.currency,
+                  )}
+                </li>
+                <li>
+                  Revenue leakage:{' '}
+                  {formatCurrency(
+                    dashboard.analytics.revenueLeakageCents,
+                    dashboard.analytics.currency,
+                  )}
+                </li>
               </ul>
             </Panel>
           ) : null}
@@ -250,12 +253,18 @@ export function SalesIntelligencePage() {
             <StatCard label="Qualified" value={String(dashboard.leadStats.qualifiedLeadCount)} />
             <StatCard label="Converted" value={String(dashboard.leadStats.convertedLeadCount)} />
           </div>
-          <p>Leads are managed through the unified lead registry with deduplication and source attribution.</p>
+          <p>
+            Leads are managed through the unified lead registry with deduplication and source
+            attribution.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'opportunities' ? (
-        <Panel title="Opportunities" description="Open and won opportunities from real CRM and sales records">
+        <Panel
+          title="Opportunities"
+          description="Open and won opportunities from real CRM and sales records"
+        >
           <div className="stat-grid">
             <StatCard label="Open" value={String(dashboard.salesStats.openOpportunityCount)} />
             <StatCard label="Won" value={String(dashboard.salesStats.wonOpportunityCount)} />
@@ -270,13 +279,17 @@ export function SalesIntelligencePage() {
       {dashboard && activeTab === 'pipelines' ? (
         <Panel title="Sales Pipelines" description="Configurable pipelines — no hard-coded stages">
           {dashboard.recentPipelines.length === 0 ? (
-            <EmptyState title="No pipelines" description="Create pipelines in revenue operations settings." />
+            <EmptyState
+              title="No pipelines"
+              description="Create pipelines in revenue operations settings."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentPipelines.map((pipeline) => (
                 <li key={pipeline.id}>
                   <strong>{pipeline.name}</strong>
-                  {pipeline.pipelineType ? ` · ${pipeline.pipelineType}` : ''} · {pipeline.stageCount} stage(s)
+                  {pipeline.pipelineType ? ` · ${pipeline.pipelineType}` : ''} ·{' '}
+                  {pipeline.stageCount} stage(s)
                   {pipeline.isActive ? '' : ' · inactive'}
                 </li>
               ))}
@@ -286,13 +299,22 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'activities' ? (
-        <Panel title="Sales Activities" description="Linked to the Unified Communications Platform where available">
-          <p>Sales activities integrate with calls, emails, WhatsApp, meetings, and tasks from connected communications.</p>
+        <Panel
+          title="Sales Activities"
+          description="Linked to the Unified Communications Platform where available"
+        >
+          <p>
+            Sales activities integrate with calls, emails, WhatsApp, meetings, and tasks from
+            connected communications.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'quotes' ? (
-        <Panel title="Quotes & Proposals" description="Integrated with finance quotes — approved versions are immutable">
+        <Panel
+          title="Quotes & Proposals"
+          description="Integrated with finance quotes — approved versions are immutable"
+        >
           <p>
             Quote conversion rate:{' '}
             {dashboard.salesStats.quoteConversionRatePercent != null
@@ -306,19 +328,28 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'forecasts' ? (
-        <Panel title="Sales Forecasts" description="Evidence-based forecasts — simulations are clearly marked">
+        <Panel
+          title="Sales Forecasts"
+          description="Evidence-based forecasts — simulations are clearly marked"
+        >
           {dashboard.recentForecasts.length === 0 ? (
-            <EmptyState title="No forecasts" description="Forecasts appear when created from pipeline and historical data." />
+            <EmptyState
+              title="No forecasts"
+              description="Forecasts appear when created from pipeline and historical data."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentForecasts.map((forecast) => (
                 <li key={forecast.id}>
-                  <strong>{forecast.title}</strong> — {formatWorkflowStatus(forecast.workflowStatus)}
+                  <strong>{forecast.title}</strong> —{' '}
+                  {formatWorkflowStatus(forecast.workflowStatus)}
                   {forecast.isSimulation ? ' · simulation' : ''}
                   {forecast.pipelineValueCents != null
                     ? ` · pipeline ${formatCurrency(forecast.pipelineValueCents, forecast.currency)}`
                     : ''}
-                  {forecast.confidenceScore ? ` · confidence ${formatPercent(forecast.confidenceScore)}` : ''}
+                  {forecast.confidenceScore
+                    ? ` · confidence ${formatPercent(forecast.confidenceScore)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -336,9 +367,15 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'renewals' ? (
-        <Panel title="Renewals" description="Service agreements, subscriptions, and contract renewals">
+        <Panel
+          title="Renewals"
+          description="Service agreements, subscriptions, and contract renewals"
+        >
           {dashboard.recentRenewals.length === 0 ? (
-            <EmptyState title="No renewals" description="Renewals appear when tracked from real contracts and agreements." />
+            <EmptyState
+              title="No renewals"
+              description="Renewals appear when tracked from real contracts and agreements."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentRenewals.map((renewal) => (
@@ -348,7 +385,9 @@ export function SalesIntelligencePage() {
                   {renewal.currentValueCents != null
                     ? ` · ${formatCurrency(renewal.currentValueCents, dashboard.currency)}`
                     : ''}
-                  {renewal.renewalProbability ? ` · probability ${formatPercent(renewal.renewalProbability)}` : ''}
+                  {renewal.renewalProbability
+                    ? ` · probability ${formatPercent(renewal.renewalProbability)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -357,15 +396,23 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'growth' ? (
-        <Panel title="Customer Growth" description="Recommendations only — based on real customer data">
+        <Panel
+          title="Customer Growth"
+          description="Recommendations only — based on real customer data"
+        >
           {dashboard.recentGrowthSnapshots.length === 0 ? (
-            <EmptyState title="No growth opportunities" description="Growth snapshots appear when analyzed from real customer records." />
+            <EmptyState
+              title="No growth opportunities"
+              description="Growth snapshots appear when analyzed from real customer records."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentGrowthSnapshots.map((snapshot) => (
                 <li key={snapshot.id}>
                   <strong>{snapshot.title}</strong> — {snapshot.opportunityType}
-                  {snapshot.confidenceScore ? ` · confidence ${formatPercent(snapshot.confidenceScore)}` : ''}
+                  {snapshot.confidenceScore
+                    ? ` · confidence ${formatPercent(snapshot.confidenceScore)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -374,15 +421,23 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'retention' ? (
-        <Panel title="Retention & Churn Intelligence" description="Recommendations only — no discriminatory scoring">
+        <Panel
+          title="Retention & Churn Intelligence"
+          description="Recommendations only — no discriminatory scoring"
+        >
           {dashboard.recentRetentionSnapshots.length === 0 ? (
-            <EmptyState title="No retention signals" description="Retention analysis appears when real customer behaviour is available." />
+            <EmptyState
+              title="No retention signals"
+              description="Retention analysis appears when real customer behaviour is available."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentRetentionSnapshots.map((snapshot) => (
                 <li key={snapshot.id}>
                   Risk level: <strong>{snapshot.riskLevel}</strong>
-                  {snapshot.confidenceScore ? ` · confidence ${formatPercent(snapshot.confidenceScore)}` : ''}
+                  {snapshot.confidenceScore
+                    ? ` · confidence ${formatPercent(snapshot.confidenceScore)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -391,27 +446,44 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'pricing' ? (
-        <Panel title="Pricing & Discounts" description="Draft → Review → Approval → Execution for discount governance">
-          <p>Pricing intelligence uses real cost and commercial data. AURA may recommend prices within configured policy only.</p>
+        <Panel
+          title="Pricing & Discounts"
+          description="Draft → Review → Approval → Execution for discount governance"
+        >
+          <p>
+            Pricing intelligence uses real cost and commercial data. AURA may recommend prices
+            within configured policy only.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'commissions' ? (
-        <Panel title="Commissions" description="Formulas and source transactions visible — payroll export requires approval">
+        <Panel
+          title="Commissions"
+          description="Formulas and source transactions visible — payroll export requires approval"
+        >
           <p>Commission plans and entries are configured per tenant with full audit history.</p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'targets' ? (
-        <Panel title="Sales Targets & Performance" description="Supporting data and formulas shown — no hidden scoring">
+        <Panel
+          title="Sales Targets & Performance"
+          description="Supporting data and formulas shown — no hidden scoring"
+        >
           {dashboard.recentTargets.length === 0 ? (
-            <EmptyState title="No targets" description="Targets appear when configured for your sales teams." />
+            <EmptyState
+              title="No targets"
+              description="Targets appear when configured for your sales teams."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentTargets.map((target) => (
                 <li key={target.id}>
                   <strong>{target.title}</strong> — {target.targetType} ({target.status})
-                  {target.progressPercent ? ` · progress ${formatPercent(target.progressPercent)}` : ''}
+                  {target.progressPercent
+                    ? ` · progress ${formatPercent(target.progressPercent)}`
+                    : ''}
                 </li>
               ))}
             </ul>
@@ -420,9 +492,15 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'leakage' ? (
-        <Panel title="Revenue Leakage" description="Warnings and draft actions only — from real operational and finance records">
+        <Panel
+          title="Revenue Leakage"
+          description="Warnings and draft actions only — from real operational and finance records"
+        >
           {dashboard.recentLeakageFindings.length === 0 ? (
-            <EmptyState title="No leakage findings" description="Leakage detection runs against real jobs, quotes, and invoices." />
+            <EmptyState
+              title="No leakage findings"
+              description="Leakage detection runs against real jobs, quotes, and invoices."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentLeakageFindings.map((finding) => (
@@ -439,33 +517,56 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'marketing' ? (
-        <Panel title="Marketing Attribution" description="Campaign attribution from real marketing and sales records">
-          <p>Cost per lead, cost per opportunity, and ROI metrics use connected marketing campaign data only.</p>
+        <Panel
+          title="Marketing Attribution"
+          description="Campaign attribution from real marketing and sales records"
+        >
+          <p>
+            Cost per lead, cost per opportunity, and ROI metrics use connected marketing campaign
+            data only.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'partners' ? (
-        <Panel title="Partners & Referrals" description="Referral partners, agents, and strategic partners">
-          <p>Partner referrals are tracked with revenue, commission, and compliance audit history.</p>
+        <Panel
+          title="Partners & Referrals"
+          description="Referral partners, agents, and strategic partners"
+        >
+          <p>
+            Partner referrals are tracked with revenue, commission, and compliance audit history.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'tenders' ? (
         <Panel title="Tenders & Bids" description="Final submission requires human approval">
-          <p>Tender management supports bid opportunities, compliance documents, and win/loss debriefs.</p>
+          <p>
+            Tender management supports bid opportunities, compliance documents, and win/loss
+            debriefs.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'winloss' ? (
         <Panel title="Win/Loss Intelligence" description="Trends from real closed opportunities">
-          <p>Win and loss reasons, competitors, and process issues are captured from actual opportunity outcomes.</p>
+          <p>
+            Win and loss reasons, competitors, and process issues are captured from actual
+            opportunity outcomes.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'alerts' ? (
-        <Panel title="Revenue Operations Alerts" description="Real alerts from leads, quotes, renewals, and CRM sync">
+        <Panel
+          title="Revenue Operations Alerts"
+          description="Real alerts from leads, quotes, renewals, and CRM sync"
+        >
           {dashboard.recentAlerts.length === 0 ? (
-            <EmptyState title="No open alerts" description="Alerts are generated from real tenant activity." />
+            <EmptyState
+              title="No open alerts"
+              description="Alerts are generated from real tenant activity."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentAlerts.map((alert) => (
@@ -480,7 +581,10 @@ export function SalesIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="CRM Providers" description="Vendor-agnostic — Salesforce, HubSpot, Zoho, Dynamics, and more">
+        <Panel
+          title="CRM Providers"
+          description="Vendor-agnostic — Salesforce, HubSpot, Zoho, Dynamics, and more"
+        >
           <p>{dashboard.crmProviderCount} CRM provider adapter(s) configured.</p>
         </Panel>
       ) : null}
@@ -490,24 +594,48 @@ export function SalesIntelligencePage() {
           <ul className="simple-list">
             <li>Platform owner tenant: {dashboard.isPlatformOwner ? 'Yes' : 'No'}</li>
             <li>Currency: {dashboard.currency}</li>
-            <li>Pipeline templates: {Object.keys(dashboard.platformConfig.pipelineTemplates ?? {}).length}</li>
-            <li>Playbook templates: {Object.keys(dashboard.platformConfig.playbookTemplates ?? {}).length}</li>
-            <li>Forecast methodology configured: {Object.keys(dashboard.platformConfig.forecastMethodology ?? {}).length > 0 ? 'Yes' : 'No'}</li>
+            <li>
+              Pipeline templates:{' '}
+              {Object.keys(dashboard.platformConfig.pipelineTemplates ?? {}).length}
+            </li>
+            <li>
+              Playbook templates:{' '}
+              {Object.keys(dashboard.platformConfig.playbookTemplates ?? {}).length}
+            </li>
+            <li>
+              Forecast methodology configured:{' '}
+              {Object.keys(dashboard.platformConfig.forecastMethodology ?? {}).length > 0
+                ? 'Yes'
+                : 'No'}
+            </li>
             <li>Audit retention: {dashboard.platformConfig.auditRetentionDays} days</li>
           </ul>
         </Panel>
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Sales Intelligence Agent" description="Recommendations and drafts only — no autonomous customer contact or pricing approval">
+        <Panel
+          title="AURA Sales Intelligence Agent"
+          description="Recommendations and drafts only — no autonomous customer contact or pricing approval"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'sales_intelligence' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(
+                content,
+                'sales_intelligence' as import('@titan/shared').AgentKey,
+              )
+            }
             placeholder="Ask about pipeline, leads, forecasts, renewals, or customer growth…"
           />
         </Panel>

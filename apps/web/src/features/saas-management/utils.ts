@@ -29,6 +29,8 @@ export function formatSeverity(severity: string): string {
   return severity.replace(/_/g, ' ');
 }
 
-export function formatCurrency(cents: number, currency = 'USD'): string {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
+import { formatMoney } from '@titan/shared';
+
+export function formatCurrency(cents: number, currency = 'ZAR'): string {
+  return formatMoney(cents, currency);
 }

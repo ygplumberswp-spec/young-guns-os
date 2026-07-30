@@ -143,6 +143,27 @@
       "breakpoints": true
     },
     {
+      "idx": 20,
+      "version": "7",
+      "when": 1753848000000,
+      "tag": "0020_agent_runtime_recruiting",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1753851600000,
+      "tag": "0021_automation_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1753855200000,
+      "tag": "0022_intelligence_layer",
+      "breakpoints": true
+    },
+    {
       "idx": 23,
       "version": "7",
       "when": 1753858800000,
@@ -245,6 +266,356 @@
       "version": "7",
       "when": 1753909200000,
       "tag": "0038_workflow_automation_studio",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1753912800000,
+      "tag": "0039_integration_hub_api_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1753916400000,
+      "tag": "0040_customer_portal_mobile_experience",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1753920000000,
+      "tag": "0041_mobile_workforce_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1753923600000,
+      "tag": "0042_quality_assurance_comeback_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1753927200000,
+      "tag": "0043_voice_communications_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1753930800000,
+      "tag": "0044_asset_equipment_maintenance_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1753934400000,
+      "tag": "0045_ai_orchestration_multi_model_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1753938000000,
+      "tag": "0046_ai_receptionist_call_centre_intelligent_dispatch",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1753941600000,
+      "tag": "0047_fleet_intelligence_gps_analytics",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1753945200000,
+      "tag": "0048_personal_communications_intelligence_whatsapp_assistant",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1753948800000,
+      "tag": "0049_enterprise_security_zero_trust_compliance",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1753952400000,
+      "tag": "0050_enterprise_integration_hub_api_gateway_connector_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1753956000000,
+      "tag": "0051_enterprise_analytics_data_warehouse_business_intelligence_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1753959600000,
+      "tag": "0052_enterprise_automation_studio_workflow_designer_ai_orchestration",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1753963200000,
+      "tag": "0053_enterprise_digital_twin_operational_simulation_decision_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1753966800000,
+      "tag": "0054_enterprise_knowledge_graph_semantic_search_organizational_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1753970400000,
+      "tag": "0055_enterprise_command_center_mission_control_executive_operations",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1753974000000,
+      "tag": "0056_enterprise_autonomous_optimization_continuous_learning_evolution",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1753977600000,
+      "tag": "0057_enterprise_developer_platform_extension_marketplace_sdk_ecosystem",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1753981200000,
+      "tag": "0058_enterprise_white_label_multi_tenant_saas_subscription_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1753984800000,
+      "tag": "0059_platform_owner_unlimited_ai_operations_provider_resilience",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1753988400000,
+      "tag": "0060_multi_ai_provider_unified_aura_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1753992000000,
+      "tag": "0061_enterprise_production_readiness_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1753995600000,
+      "tag": "0062_enterprise_mobile_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1753999200000,
+      "tag": "0063_enterprise_unified_communications_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1754002800000,
+      "tag": "0064_enterprise_customer_experience_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1754006400000,
+      "tag": "0065_enterprise_asset_lifecycle_iot_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1754010000000,
+      "tag": "0066_enterprise_workforce_intelligence_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1754013600000,
+      "tag": "0067_enterprise_legal_compliance_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1754017200000,
+      "tag": "0068_enterprise_financial_planning_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1754020800000,
+      "tag": "0069_enterprise_sales_intelligence_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1754024400000,
+      "tag": "0070_enterprise_marketing_intelligence_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1754028000000,
+      "tag": "0071_enterprise_service_delivery_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1754031600000,
+      "tag": "0072_enterprise_it_operations_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1754035200000,
+      "tag": "0073_enterprise_business_evolution_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1754038800000,
+      "tag": "0074_enterprise_app_builder_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1754042400000,
+      "tag": "0075_enterprise_industry_packs_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1754046000000,
+      "tag": "0076_enterprise_public_developer_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1754049600000,
+      "tag": "0077_enterprise_saas_management_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1754053200000,
+      "tag": "0078_enterprise_voice_reception_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1754056800000,
+      "tag": "0079_enterprise_document_ai_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1754060400000,
+      "tag": "0080_enterprise_business_continuity_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1754064000000,
+      "tag": "0081_enterprise_global_search_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1754067600000,
+      "tag": "0082_enterprise_data_migration_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1754071200000,
+      "tag": "0083_enterprise_notification_center_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1754074800000,
+      "tag": "0084_enterprise_platform_health_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1754078400000,
+      "tag": "0085_enterprise_platform_launch_readiness_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1754082000000,
+      "tag": "0086_enterprise_release_center_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1754085600000,
+      "tag": "0087_enterprise_production_launch_platform",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1754089200000,
+      "tag": "0088_enterprise_release_management_platform",
       "breakpoints": true
     }
   ]

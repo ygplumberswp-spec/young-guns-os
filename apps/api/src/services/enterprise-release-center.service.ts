@@ -131,18 +131,20 @@ export class EnterpriseReleaseCenterService {
       this.listPlatformAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const latestIntegrationRun = integrationRuns[0] ?? null;
     const latestWorkflowRun = workflowRuns[0] ?? null;
-    const latestIntegrationResults =
-      latestIntegrationRun
-        ? ((await this.integrationValidationService.getRunDetail(companyId, latestIntegrationRun.id))?.results ?? [])
-        : [];
-    const latestWorkflowResults =
-      latestWorkflowRun
-        ? ((await this.workflowValidationService.getRunDetail(companyId, latestWorkflowRun.id))?.results ?? [])
-        : [];
+    const latestIntegrationResults = latestIntegrationRun
+      ? ((await this.integrationValidationService.getRunDetail(companyId, latestIntegrationRun.id))
+          ?.results ?? [])
+      : [];
+    const latestWorkflowResults = latestWorkflowRun
+      ? ((await this.workflowValidationService.getRunDetail(companyId, latestWorkflowRun.id))
+          ?.results ?? [])
+      : [];
 
     const releaseReadiness = this.buildReleaseReadinessSummary({
       latestReport: latestReleaseReport,
@@ -200,7 +202,10 @@ export class EnterpriseReleaseCenterService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateRcPlatformConfigRequest): Promise<RcPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateRcPlatformConfigRequest,
+  ): Promise<RcPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(rcPlatformConfig)
@@ -218,24 +223,34 @@ export class EnterpriseReleaseCenterService {
     return toPlatformConfigSummary(updated ?? existing);
   }
 
-  runIntegrationValidation = (scope: StaffScope) => this.integrationValidationService.runIntegrationValidation(scope);
-  listIntegrationRuns = (companyId: string) => this.integrationValidationService.listRuns(companyId);
+  runIntegrationValidation = (scope: StaffScope) =>
+    this.integrationValidationService.runIntegrationValidation(scope);
+  listIntegrationRuns = (companyId: string) =>
+    this.integrationValidationService.listRuns(companyId);
   getIntegrationRunDetail = (companyId: string, runId: string) =>
     this.integrationValidationService.getRunDetail(companyId, runId);
 
-  runWorkflowValidation = (scope: StaffScope) => this.workflowValidationService.runWorkflowValidation(scope);
+  runWorkflowValidation = (scope: StaffScope) =>
+    this.workflowValidationService.runWorkflowValidation(scope);
   listWorkflowRuns = (companyId: string) => this.workflowValidationService.listRuns(companyId);
   getWorkflowRunDetail = (companyId: string, runId: string) =>
     this.workflowValidationService.getRunDetail(companyId, runId);
 
-  capturePerformanceSnapshot = (scope: StaffScope) => this.performanceService.capturePerformanceSnapshot(scope);
-  getLatestPerformanceSnapshot = (companyId: string) => this.performanceService.getLatestSnapshot(companyId);
+  capturePerformanceSnapshot = (scope: StaffScope) =>
+    this.performanceService.capturePerformanceSnapshot(scope);
+  getLatestPerformanceSnapshot = (companyId: string) =>
+    this.performanceService.getLatestSnapshot(companyId);
 
-  runSecurityVerification = (scope: StaffScope) => this.releaseCandidateService.runSecurityVerification(scope);
-  runConfigurationReview = (scope: StaffScope) => this.releaseCandidateService.runConfigurationReview(scope);
-  generateReleaseReport = (scope: StaffScope) => this.releaseCandidateService.generateReleaseReport(scope);
-  listReleaseChecklist = (companyId: string) => this.releaseCandidateService.listChecklist(companyId);
-  getLatestReleaseReport = (companyId: string) => this.releaseCandidateService.getLatestReport(companyId);
+  runSecurityVerification = (scope: StaffScope) =>
+    this.releaseCandidateService.runSecurityVerification(scope);
+  runConfigurationReview = (scope: StaffScope) =>
+    this.releaseCandidateService.runConfigurationReview(scope);
+  generateReleaseReport = (scope: StaffScope) =>
+    this.releaseCandidateService.generateReleaseReport(scope);
+  listReleaseChecklist = (companyId: string) =>
+    this.releaseCandidateService.listChecklist(companyId);
+  getLatestReleaseReport = (companyId: string) =>
+    this.releaseCandidateService.getLatestReport(companyId);
 
   async syncPlatformAlerts(scope: StaffScope): Promise<RcPlatformAlertSummary[]> {
     const dashboard = await this.getDashboard(scope.companyId);
@@ -244,12 +259,48 @@ export class EnterpriseReleaseCenterService {
     const readiness = dashboard.releaseReadiness;
 
     const defs = [
-      ['failed_validations', 'critical', 'Failed release validations', `${readiness.failedValidationCount} failed validation(s)`, readiness.failedValidationCount > 0],
-      ['configuration_warnings', 'warning', 'Configuration warnings', `${readiness.configurationWarningCount} configuration warning(s)`, readiness.configurationWarningCount > 0],
-      ['security_alerts', 'critical', 'Security verification alerts', `${readiness.securityAlertCount} security alert(s)`, readiness.securityAlertCount > 0],
-      ['performance_opportunities', 'warning', 'Performance optimization opportunities', `${readiness.optimizationCount} optimization opportunity(ies)`, readiness.optimizationCount > 0],
-      ['pending_checklist', 'warning', 'Pending release checklist items', `${readiness.pendingChecklistCount} pending checklist item(s)`, readiness.pendingChecklistCount > 0],
-      ['not_ready', 'critical', 'Not ready for release', `Status: ${readiness.overallStatus}`, readiness.overallStatus === 'blocked' || readiness.overallStatus === 'not_ready'],
+      [
+        'failed_validations',
+        'critical',
+        'Failed release validations',
+        `${readiness.failedValidationCount} failed validation(s)`,
+        readiness.failedValidationCount > 0,
+      ],
+      [
+        'configuration_warnings',
+        'warning',
+        'Configuration warnings',
+        `${readiness.configurationWarningCount} configuration warning(s)`,
+        readiness.configurationWarningCount > 0,
+      ],
+      [
+        'security_alerts',
+        'critical',
+        'Security verification alerts',
+        `${readiness.securityAlertCount} security alert(s)`,
+        readiness.securityAlertCount > 0,
+      ],
+      [
+        'performance_opportunities',
+        'warning',
+        'Performance optimization opportunities',
+        `${readiness.optimizationCount} optimization opportunity(ies)`,
+        readiness.optimizationCount > 0,
+      ],
+      [
+        'pending_checklist',
+        'warning',
+        'Pending release checklist items',
+        `${readiness.pendingChecklistCount} pending checklist item(s)`,
+        readiness.pendingChecklistCount > 0,
+      ],
+      [
+        'not_ready',
+        'critical',
+        'Not ready for release',
+        `Status: ${readiness.overallStatus}`,
+        readiness.overallStatus === 'blocked' || readiness.overallStatus === 'not_ready',
+      ],
     ] as const;
 
     for (const [alertType, severity, title, description, active] of defs) {
@@ -296,7 +347,10 @@ export class EnterpriseReleaseCenterService {
     return toAnalyticsSummary(created!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateRcActionDraftRequest): Promise<RcActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateRcActionDraftRequest,
+  ): Promise<RcActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(rcActionDrafts)
       .values({
@@ -335,21 +389,45 @@ export class EnterpriseReleaseCenterService {
       (input.latestIntegrationRun?.failedCount ?? 0) + (input.latestWorkflowRun?.failedCount ?? 0);
     const warningCount =
       input.latestReport?.warningCount ??
-      (input.latestIntegrationRun?.warningCount ?? 0) + (input.latestWorkflowRun?.warningCount ?? 0);
+      (input.latestIntegrationRun?.warningCount ?? 0) +
+        (input.latestWorkflowRun?.warningCount ?? 0);
     const optimizationCount =
-      input.latestReport?.optimizationCount ?? input.latestPerformanceSnapshot?.optimizationOpportunities.length ?? 0;
+      input.latestReport?.optimizationCount ??
+      input.latestPerformanceSnapshot?.optimizationOpportunities.length ??
+      0;
     const configurationWarningCount = input.latestConfigurationReview?.warningCount ?? 0;
     const securityAlertCount = input.latestSecurityVerification?.criticalCount ?? 0;
     const passedChecklistCount = input.releaseChecklist.filter((i) => i.status === 'passed').length;
-    const pendingChecklistCount = input.releaseChecklist.filter((i) => i.status === 'pending' && i.isRequired).length;
+    const pendingChecklistCount = input.releaseChecklist.filter(
+      (i) => i.status === 'pending' && i.isRequired,
+    ).length;
 
     let overallStatus: RcReleaseStatus = input.latestReport?.overallStatus ?? 'unknown';
-    if (!input.latestReport) {
-      const criticalBlockers = failedValidationCount + securityAlertCount + (input.latestConfigurationReview?.missingConfigCount ?? 0);
+    const hasAssessmentEvidence =
+      Boolean(input.latestReport) ||
+      Boolean(input.latestIntegrationRun) ||
+      Boolean(input.latestWorkflowRun) ||
+      Boolean(input.latestSecurityVerification) ||
+      Boolean(input.latestConfigurationReview);
+
+    if (!hasAssessmentEvidence) {
+      overallStatus = 'unknown';
+    } else if (!input.latestReport) {
+      const criticalBlockers =
+        failedValidationCount +
+        securityAlertCount +
+        (input.latestConfigurationReview?.missingConfigCount ?? 0);
       if (criticalBlockers > 0) overallStatus = 'blocked';
       else if (failedValidationCount > 0) overallStatus = 'not_ready';
       else if (warningCount > 0 || pendingChecklistCount > 0) overallStatus = 'warning';
-      else if (input.latestIntegrationRun?.status === 'passed' && input.latestWorkflowRun?.status === 'passed') overallStatus = 'ready';
+      else if (
+        input.latestIntegrationRun?.status === 'passed' &&
+        input.latestWorkflowRun?.status === 'passed'
+      ) {
+        overallStatus = 'ready';
+      } else {
+        overallStatus = 'unknown';
+      }
     }
 
     return {
@@ -368,7 +446,10 @@ export class EnterpriseReleaseCenterService {
   private async listPlatformAlerts(companyId: string, filters?: { status?: string }) {
     const rows = await this.deps.db.query.rcPlatformAlerts.findMany({
       where: filters?.status
-        ? and(eq(rcPlatformAlerts.companyId, companyId), eq(rcPlatformAlerts.status, filters.status as 'open'))
+        ? and(
+            eq(rcPlatformAlerts.companyId, companyId),
+            eq(rcPlatformAlerts.status, filters.status as 'open'),
+          )
         : eq(rcPlatformAlerts.companyId, companyId),
       orderBy: [desc(rcPlatformAlerts.createdAt)],
       limit: 50,
@@ -393,7 +474,13 @@ export class EnterpriseReleaseCenterService {
     return created!;
   }
 
-  private async logAudit(scope: StaffScope, actionType: string, entityType?: string, entityId?: string, metadata?: Record<string, unknown>) {
+  private async logAudit(
+    scope: StaffScope,
+    actionType: string,
+    entityType?: string,
+    entityId?: string,
+    metadata?: Record<string, unknown>,
+  ) {
     await this.deps.db.insert(rcAuditLogs).values({
       companyId: scope.companyId,
       userId: scope.userId,
@@ -405,7 +492,9 @@ export class EnterpriseReleaseCenterService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof rcPlatformConfig.$inferSelect): RcPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof rcPlatformConfig.$inferSelect,
+): RcPlatformConfigSummary {
   return {
     validationPolicy: (row.validationPolicy ?? {}) as Record<string, unknown>,
     performancePolicy: (row.performancePolicy ?? {}) as Record<string, unknown>,
@@ -428,7 +517,11 @@ function toPlatformAlertSummary(row: typeof rcPlatformAlerts.$inferSelect): RcPl
 }
 
 function toAnalyticsSummary(row: typeof rcAnalyticsSnapshots.$inferSelect): RcAnalyticsSummary {
-  return { id: row.id, metrics: (row.metrics ?? {}) as Record<string, unknown>, capturedAt: row.capturedAt.toISOString() };
+  return {
+    id: row.id,
+    metrics: (row.metrics ?? {}) as Record<string, unknown>,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
 function toActionDraftSummary(row: typeof rcActionDrafts.$inferSelect): RcActionDraftSummary {

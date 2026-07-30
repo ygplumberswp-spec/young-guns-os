@@ -12,7 +12,7 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard">
-      <DashboardWelcome user={user} />
+      <DashboardWelcome />
       <DashboardStats />
       <DashboardEmptyPanels />
     </div>

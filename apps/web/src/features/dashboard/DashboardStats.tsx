@@ -1,24 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatCard } from '@titan/ui';
-import { formatMoney } from '@titan/shared';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCrmStats } from '../../lib/crm-api';
 import { fetchFinanceStats } from '../../lib/finance-api';
 import { fetchJobsStats } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCompanyLocale } from '../../lib/company-locale-context';
 import { DASHBOARD_METRICS } from './constants';
 
 export function DashboardStats() {
   const { accessToken, user } = useAuth();
+  const { formatMoney, currency: companyCurrency } = useCompanyLocale();
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [activeJobCount, setActiveJobCount] = useState<number | null>(null);
   const [openQuoteCount, setOpenQuoteCount] = useState<number | null>(null);
   const [revenueMtdCents, setRevenueMtdCents] = useState<number | null>(null);
-  const [revenueCurrency, setRevenueCurrency] = useState('USD');
+  const [revenueCurrency, setRevenueCurrency] = useState(companyCurrency);
 
   const canViewCustomers = useMemo(
-    () => (user ? hasAnyPermission(user.permissions, ['customers:read', 'customers:write']) : false),
+    () =>
+      user ? hasAnyPermission(user.permissions, ['customers:read', 'customers:write']) : false,
     [user],
   );
 
@@ -137,12 +139,7 @@ export function DashboardStats() {
   return (
     <section className="dashboard-stats" aria-label="Business metrics">
       {metrics.map((metric) => (
-        <StatCard
-          key={metric.id}
-          label={metric.label}
-          value={metric.value}
-          hint={metric.hint}
-        />
+        <StatCard key={metric.id} label={metric.label} value={metric.value} hint={metric.hint} />
       ))}
     </section>
   );

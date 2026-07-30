@@ -191,16 +191,20 @@ export class EnterpriseMissionControlService {
 
     const pendingAlerts = alerts.filter((a) => a.status === 'pending' || a.status === 'escalated');
     const criticalAlerts = alerts.filter((a) => a.severity === 'critical' || a.severity === 'high');
+    const uniqueModuleSnapshots = dedupeModuleSnapshots(moduleSnapshots);
 
     return {
-      summary: `Mission control live — health ${executiveStats.healthScore ?? '—'}/100, ${pendingAlerts.length} pending alert(s), ${incidents.length} active incident(s), ${moduleSnapshots.length} module(s) monitored.`,
+      summary: `Mission control live — health ${executiveStats.healthScore ?? 'Not assessed'}, ${pendingAlerts.length} pending alert(s), ${incidents.length} active incident(s), ${uniqueModuleSnapshots.length} module(s) monitored.`,
       executiveStats,
       businessHealthScore: healthSnapshot?.overallScore ?? executiveStats.healthScore,
       pendingAlertCount: pendingAlerts.length,
       criticalAlertCount: criticalAlerts.length,
       activeIncidentCount: incidents.length,
-      systemHealthStatus: this.resolveSystemHealth(executiveStats.healthScore, criticalAlerts.length),
-      moduleSnapshots,
+      systemHealthStatus: this.resolveSystemHealth(
+        executiveStats.healthScore,
+        criticalAlerts.length,
+      ),
+      moduleSnapshots: uniqueModuleSnapshots,
       departmentHealth: departmentHealth.slice(0, 12),
       recentAlerts: alerts.slice(0, 20),
       activeIncidents: incidents.slice(0, 10),
@@ -211,7 +215,9 @@ export class EnterpriseMissionControlService {
     };
   }
 
-  async buildMissionControlAuraContext(companyId: string): Promise<EnterpriseMissionControlAuraContext> {
+  async buildMissionControlAuraContext(
+    companyId: string,
+  ): Promise<EnterpriseMissionControlAuraContext> {
     const dashboard = await this.getMissionControlDashboard(companyId);
     return {
       summary: dashboard.summary,
@@ -219,7 +225,8 @@ export class EnterpriseMissionControlService {
       pendingAlertCount: dashboard.pendingAlertCount,
       criticalAlertCount: dashboard.criticalAlertCount,
       activeIncidentCount: dashboard.activeIncidentCount,
-      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending').length,
+      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending')
+        .length,
       pendingActionCount: dashboard.pendingActionCount,
     };
   }
@@ -227,124 +234,182 @@ export class EnterpriseMissionControlService {
   async syncAlertsFromModules(companyId: string): Promise<MissionControlAlertSummary[]> {
     const created: MissionControlAlertSummary[] = [];
 
-    const [executiveAlertRows, failedRuns, errorIntegrations, twinDashboard, automationMonitoring, salesAlerts, marketingAlerts, serviceDeliveryAlerts, itOperationsAlerts, businessEvolutionAlerts, appBuilderAlerts, industryAlerts, developerPlatformAlerts, saasManagementAlerts, voiceReceptionAlerts, documentAiAlerts, businessContinuityAlerts, globalSearchAlerts, dataMigrationAlerts, notificationPlatformAlerts, platformHealthAlerts, launchCenterAlerts, releaseCenterAlerts, productionLaunchAlerts, releaseManagementAlerts] =
-      await Promise.all([
-        this.deps.db.query.executiveAlerts.findMany({
-          where: and(eq(executiveAlerts.companyId, companyId), inArray(executiveAlerts.status, ['pending', 'acknowledged'])),
-          limit: 20,
-        }),
-        this.deps.db.query.workflowRuns.findMany({
-          where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'failed')),
-          orderBy: [desc(workflowRuns.startedAt)],
-          limit: 10,
-        }),
-        this.deps.db.query.integrationConnections.findMany({
-          where: and(eq(integrationConnections.companyId, companyId), eq(integrationConnections.status, 'error')),
-          limit: 10,
-        }),
-        this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(companyId),
-        this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
-        this.deps.db.query.siSalesAlerts.findMany({
-          where: and(eq(siSalesAlerts.companyId, companyId), eq(siSalesAlerts.status, 'open')),
-          orderBy: [desc(siSalesAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.miMarketingAlerts.findMany({
-          where: and(eq(miMarketingAlerts.companyId, companyId), eq(miMarketingAlerts.status, 'open')),
-          orderBy: [desc(miMarketingAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.sdServiceAlerts.findMany({
-          where: and(eq(sdServiceAlerts.companyId, companyId), eq(sdServiceAlerts.status, 'open')),
-          orderBy: [desc(sdServiceAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.itoItAlerts.findMany({
-          where: and(eq(itoItAlerts.companyId, companyId), eq(itoItAlerts.status, 'open')),
-          orderBy: [desc(itoItAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.bevEvolutionAlerts.findMany({
-          where: and(eq(bevEvolutionAlerts.companyId, companyId), eq(bevEvolutionAlerts.status, 'open')),
-          orderBy: [desc(bevEvolutionAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.abAppBuilderAlerts.findMany({
-          where: and(eq(abAppBuilderAlerts.companyId, companyId), eq(abAppBuilderAlerts.status, 'open')),
-          orderBy: [desc(abAppBuilderAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.ipIndustryAlerts.findMany({
-          where: and(eq(ipIndustryAlerts.companyId, companyId), eq(ipIndustryAlerts.status, 'open')),
-          orderBy: [desc(ipIndustryAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.pdpDeveloperAlerts.findMany({
-          where: and(eq(pdpDeveloperAlerts.companyId, companyId), eq(pdpDeveloperAlerts.status, 'open')),
-          orderBy: [desc(pdpDeveloperAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.smSaasAlerts.findMany({
-          where: and(eq(smSaasAlerts.companyId, companyId), eq(smSaasAlerts.status, 'open')),
-          orderBy: [desc(smSaasAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.vrVoiceAlerts.findMany({
-          where: and(eq(vrVoiceAlerts.companyId, companyId), eq(vrVoiceAlerts.status, 'open')),
-          orderBy: [desc(vrVoiceAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.dipDocumentAlerts.findMany({
-          where: and(eq(dipDocumentAlerts.companyId, companyId), eq(dipDocumentAlerts.status, 'open')),
-          orderBy: [desc(dipDocumentAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.bcContinuityAlerts.findMany({
-          where: and(eq(bcContinuityAlerts.companyId, companyId), eq(bcContinuityAlerts.status, 'open')),
-          orderBy: [desc(bcContinuityAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.gsSearchAlerts.findMany({
-          where: and(eq(gsSearchAlerts.companyId, companyId), eq(gsSearchAlerts.status, 'open')),
-          orderBy: [desc(gsSearchAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.dmMigrationAlerts.findMany({
-          where: and(eq(dmMigrationAlerts.companyId, companyId), eq(dmMigrationAlerts.status, 'open')),
-          orderBy: [desc(dmMigrationAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.ncPlatformAlerts.findMany({
-          where: and(eq(ncPlatformAlerts.companyId, companyId), eq(ncPlatformAlerts.status, 'open')),
-          orderBy: [desc(ncPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.phPlatformAlerts.findMany({
-          where: and(eq(phPlatformAlerts.companyId, companyId), eq(phPlatformAlerts.status, 'open')),
-          orderBy: [desc(phPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.lncPlatformAlerts.findMany({
-          where: and(eq(lncPlatformAlerts.companyId, companyId), eq(lncPlatformAlerts.status, 'open')),
-          orderBy: [desc(lncPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.rcPlatformAlerts.findMany({
-          where: and(eq(rcPlatformAlerts.companyId, companyId), eq(rcPlatformAlerts.status, 'open')),
-          orderBy: [desc(rcPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.plPlatformAlerts.findMany({
-          where: and(eq(plPlatformAlerts.companyId, companyId), eq(plPlatformAlerts.status, 'open')),
-          orderBy: [desc(plPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-        this.deps.db.query.rlmPlatformAlerts.findMany({
-          where: and(eq(rlmPlatformAlerts.companyId, companyId), eq(rlmPlatformAlerts.status, 'open')),
-          orderBy: [desc(rlmPlatformAlerts.createdAt)],
-          limit: 20,
-        }),
-      ]);
+    const [
+      executiveAlertRows,
+      failedRuns,
+      errorIntegrations,
+      twinDashboard,
+      automationMonitoring,
+      salesAlerts,
+      marketingAlerts,
+      serviceDeliveryAlerts,
+      itOperationsAlerts,
+      businessEvolutionAlerts,
+      appBuilderAlerts,
+      industryAlerts,
+      developerPlatformAlerts,
+      saasManagementAlerts,
+      voiceReceptionAlerts,
+      documentAiAlerts,
+      businessContinuityAlerts,
+      globalSearchAlerts,
+      dataMigrationAlerts,
+      notificationPlatformAlerts,
+      platformHealthAlerts,
+      launchCenterAlerts,
+      releaseCenterAlerts,
+      productionLaunchAlerts,
+      releaseManagementAlerts,
+    ] = await Promise.all([
+      this.deps.db.query.executiveAlerts.findMany({
+        where: and(
+          eq(executiveAlerts.companyId, companyId),
+          inArray(executiveAlerts.status, ['pending', 'acknowledged']),
+        ),
+        limit: 20,
+      }),
+      this.deps.db.query.workflowRuns.findMany({
+        where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'failed')),
+        orderBy: [desc(workflowRuns.startedAt)],
+        limit: 10,
+      }),
+      this.deps.db.query.integrationConnections.findMany({
+        where: and(
+          eq(integrationConnections.companyId, companyId),
+          eq(integrationConnections.status, 'error'),
+        ),
+        limit: 10,
+      }),
+      this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(companyId),
+      this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
+      this.deps.db.query.siSalesAlerts.findMany({
+        where: and(eq(siSalesAlerts.companyId, companyId), eq(siSalesAlerts.status, 'open')),
+        orderBy: [desc(siSalesAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.miMarketingAlerts.findMany({
+        where: and(
+          eq(miMarketingAlerts.companyId, companyId),
+          eq(miMarketingAlerts.status, 'open'),
+        ),
+        orderBy: [desc(miMarketingAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.sdServiceAlerts.findMany({
+        where: and(eq(sdServiceAlerts.companyId, companyId), eq(sdServiceAlerts.status, 'open')),
+        orderBy: [desc(sdServiceAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.itoItAlerts.findMany({
+        where: and(eq(itoItAlerts.companyId, companyId), eq(itoItAlerts.status, 'open')),
+        orderBy: [desc(itoItAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.bevEvolutionAlerts.findMany({
+        where: and(
+          eq(bevEvolutionAlerts.companyId, companyId),
+          eq(bevEvolutionAlerts.status, 'open'),
+        ),
+        orderBy: [desc(bevEvolutionAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.abAppBuilderAlerts.findMany({
+        where: and(
+          eq(abAppBuilderAlerts.companyId, companyId),
+          eq(abAppBuilderAlerts.status, 'open'),
+        ),
+        orderBy: [desc(abAppBuilderAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.ipIndustryAlerts.findMany({
+        where: and(eq(ipIndustryAlerts.companyId, companyId), eq(ipIndustryAlerts.status, 'open')),
+        orderBy: [desc(ipIndustryAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.pdpDeveloperAlerts.findMany({
+        where: and(
+          eq(pdpDeveloperAlerts.companyId, companyId),
+          eq(pdpDeveloperAlerts.status, 'open'),
+        ),
+        orderBy: [desc(pdpDeveloperAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.smSaasAlerts.findMany({
+        where: and(eq(smSaasAlerts.companyId, companyId), eq(smSaasAlerts.status, 'open')),
+        orderBy: [desc(smSaasAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.vrVoiceAlerts.findMany({
+        where: and(eq(vrVoiceAlerts.companyId, companyId), eq(vrVoiceAlerts.status, 'open')),
+        orderBy: [desc(vrVoiceAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.dipDocumentAlerts.findMany({
+        where: and(
+          eq(dipDocumentAlerts.companyId, companyId),
+          eq(dipDocumentAlerts.status, 'open'),
+        ),
+        orderBy: [desc(dipDocumentAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.bcContinuityAlerts.findMany({
+        where: and(
+          eq(bcContinuityAlerts.companyId, companyId),
+          eq(bcContinuityAlerts.status, 'open'),
+        ),
+        orderBy: [desc(bcContinuityAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.gsSearchAlerts.findMany({
+        where: and(eq(gsSearchAlerts.companyId, companyId), eq(gsSearchAlerts.status, 'open')),
+        orderBy: [desc(gsSearchAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.dmMigrationAlerts.findMany({
+        where: and(
+          eq(dmMigrationAlerts.companyId, companyId),
+          eq(dmMigrationAlerts.status, 'open'),
+        ),
+        orderBy: [desc(dmMigrationAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.ncPlatformAlerts.findMany({
+        where: and(eq(ncPlatformAlerts.companyId, companyId), eq(ncPlatformAlerts.status, 'open')),
+        orderBy: [desc(ncPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.phPlatformAlerts.findMany({
+        where: and(eq(phPlatformAlerts.companyId, companyId), eq(phPlatformAlerts.status, 'open')),
+        orderBy: [desc(phPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.lncPlatformAlerts.findMany({
+        where: and(
+          eq(lncPlatformAlerts.companyId, companyId),
+          eq(lncPlatformAlerts.status, 'open'),
+        ),
+        orderBy: [desc(lncPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.rcPlatformAlerts.findMany({
+        where: and(eq(rcPlatformAlerts.companyId, companyId), eq(rcPlatformAlerts.status, 'open')),
+        orderBy: [desc(rcPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.plPlatformAlerts.findMany({
+        where: and(eq(plPlatformAlerts.companyId, companyId), eq(plPlatformAlerts.status, 'open')),
+        orderBy: [desc(plPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+      this.deps.db.query.rlmPlatformAlerts.findMany({
+        where: and(
+          eq(rlmPlatformAlerts.companyId, companyId),
+          eq(rlmPlatformAlerts.status, 'open'),
+        ),
+        orderBy: [desc(rlmPlatformAlerts.createdAt)],
+        limit: 20,
+      }),
+    ]);
 
     for (const alert of executiveAlertRows) {
       const category = mapExecutiveAlertCategory(alert.alertType);
@@ -413,7 +478,12 @@ export class EnterpriseMissionControlService {
     for (const alert of salesAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'financial',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'sales_intelligence',
@@ -426,7 +496,12 @@ export class EnterpriseMissionControlService {
     for (const alert of marketingAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'marketing_intelligence',
@@ -439,7 +514,12 @@ export class EnterpriseMissionControlService {
     for (const alert of serviceDeliveryAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'service_delivery',
@@ -452,7 +532,12 @@ export class EnterpriseMissionControlService {
     for (const alert of itOperationsAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'it_operations',
@@ -465,7 +550,12 @@ export class EnterpriseMissionControlService {
     for (const alert of businessEvolutionAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'business_evolution',
@@ -478,12 +568,21 @@ export class EnterpriseMissionControlService {
     for (const alert of appBuilderAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'app_builder',
         sourceEntityId: alert.id,
-        context: { alertType: alert.alertType, status: alert.status, featureRequestId: alert.featureRequestId },
+        context: {
+          alertType: alert.alertType,
+          status: alert.status,
+          featureRequestId: alert.featureRequestId,
+        },
       });
       created.push(row);
     }
@@ -491,12 +590,21 @@ export class EnterpriseMissionControlService {
     for (const alert of industryAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'industry_packs',
         sourceEntityId: alert.id,
-        context: { alertType: alert.alertType, status: alert.status, packCatalogId: alert.packCatalogId },
+        context: {
+          alertType: alert.alertType,
+          status: alert.status,
+          packCatalogId: alert.packCatalogId,
+        },
       });
       created.push(row);
     }
@@ -504,7 +612,12 @@ export class EnterpriseMissionControlService {
     for (const alert of developerPlatformAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'integration',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'public_developer_platform',
@@ -517,12 +630,21 @@ export class EnterpriseMissionControlService {
     for (const alert of saasManagementAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'financial',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'saas_management',
         sourceEntityId: alert.id,
-        context: { alertType: alert.alertType, status: alert.status, targetCompanyId: alert.targetCompanyId },
+        context: {
+          alertType: alert.alertType,
+          status: alert.status,
+          targetCompanyId: alert.targetCompanyId,
+        },
       });
       created.push(row);
     }
@@ -530,7 +652,12 @@ export class EnterpriseMissionControlService {
     for (const alert of voiceReceptionAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'voice_reception',
@@ -543,7 +670,12 @@ export class EnterpriseMissionControlService {
     for (const alert of documentAiAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'document_ai',
@@ -556,7 +688,12 @@ export class EnterpriseMissionControlService {
     for (const alert of businessContinuityAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'business_continuity',
@@ -569,7 +706,12 @@ export class EnterpriseMissionControlService {
     for (const alert of globalSearchAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'global_search',
@@ -582,7 +724,12 @@ export class EnterpriseMissionControlService {
     for (const alert of dataMigrationAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'data_migration',
@@ -595,7 +742,12 @@ export class EnterpriseMissionControlService {
     for (const alert of notificationPlatformAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'notifications',
@@ -608,7 +760,12 @@ export class EnterpriseMissionControlService {
     for (const alert of platformHealthAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'platform_health',
@@ -621,7 +778,12 @@ export class EnterpriseMissionControlService {
     for (const alert of launchCenterAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'launch_center',
@@ -634,7 +796,12 @@ export class EnterpriseMissionControlService {
     for (const alert of releaseCenterAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'release_center',
@@ -647,7 +814,12 @@ export class EnterpriseMissionControlService {
     for (const alert of productionLaunchAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'production_launch',
@@ -660,7 +832,12 @@ export class EnterpriseMissionControlService {
     for (const alert of releaseManagementAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'operational',
-        severity: alert.severity === 'critical' ? 'critical' : alert.severity === 'warning' ? 'medium' : 'low',
+        severity:
+          alert.severity === 'critical'
+            ? 'critical'
+            : alert.severity === 'warning'
+              ? 'medium'
+              : 'low',
         title: alert.title,
         description: alert.description ?? alert.alertType,
         sourceModule: 'release_management',
@@ -670,7 +847,8 @@ export class EnterpriseMissionControlService {
       created.push(row);
     }
 
-    const aiAlerts = await this.deps.aiOperationsService.getMissionControlAlertCandidates(companyId);
+    const aiAlerts =
+      await this.deps.aiOperationsService.getMissionControlAlertCandidates(companyId);
     for (const alert of aiAlerts) {
       const row = await this.upsertAlert(companyId, {
         category: 'ai',
@@ -712,10 +890,16 @@ export class EnterpriseMissionControlService {
     return created;
   }
 
-  async listAlerts(companyId: string, status?: MissionControlAlertSummary['status'][]): Promise<MissionControlAlertSummary[]> {
+  async listAlerts(
+    companyId: string,
+    status?: MissionControlAlertSummary['status'][],
+  ): Promise<MissionControlAlertSummary[]> {
     const rows = await this.deps.db.query.missionControlAlerts.findMany({
       where: status
-        ? and(eq(missionControlAlerts.companyId, companyId), inArray(missionControlAlerts.status, status))
+        ? and(
+            eq(missionControlAlerts.companyId, companyId),
+            inArray(missionControlAlerts.status, status),
+          )
         : eq(missionControlAlerts.companyId, companyId),
       orderBy: [desc(missionControlAlerts.createdAt)],
       limit: 100,
@@ -723,7 +907,10 @@ export class EnterpriseMissionControlService {
     return rows.map(toAlertSummary);
   }
 
-  async acknowledgeAlert(scope: StaffScope, input: AcknowledgeMissionControlAlertRequest): Promise<MissionControlAlertSummary> {
+  async acknowledgeAlert(
+    scope: StaffScope,
+    input: AcknowledgeMissionControlAlertRequest,
+  ): Promise<MissionControlAlertSummary> {
     const alert = await this.ensureAlert(scope.companyId, input.alertId);
     const [updated] = await this.deps.db
       .update(missionControlAlerts)
@@ -747,7 +934,10 @@ export class EnterpriseMissionControlService {
     return toAlertSummary(updated!);
   }
 
-  async createIncident(scope: StaffScope, input: CreateMissionControlIncidentRequest): Promise<MissionControlIncidentSummary> {
+  async createIncident(
+    scope: StaffScope,
+    input: CreateMissionControlIncidentRequest,
+  ): Promise<MissionControlIncidentSummary> {
     const [row] = await this.deps.db
       .insert(missionControlIncidents)
       .values({
@@ -798,7 +988,8 @@ export class EnterpriseMissionControlService {
         ownerUserId: input.ownerUserId,
         rootCause: input.rootCause,
         resolutionSummary: input.resolutionSummary,
-        resolvedAt: input.status === 'resolved' || input.status === 'closed' ? new Date() : undefined,
+        resolvedAt:
+          input.status === 'resolved' || input.status === 'closed' ? new Date() : undefined,
         updatedAt: new Date(),
       })
       .where(eq(missionControlIncidents.id, incidentId))
@@ -840,7 +1031,10 @@ export class EnterpriseMissionControlService {
   ): Promise<MissionControlIncidentSummary[]> {
     const rows = await this.deps.db.query.missionControlIncidents.findMany({
       where: statuses
-        ? and(eq(missionControlIncidents.companyId, companyId), inArray(missionControlIncidents.status, statuses))
+        ? and(
+            eq(missionControlIncidents.companyId, companyId),
+            inArray(missionControlIncidents.status, statuses),
+          )
         : eq(missionControlIncidents.companyId, companyId),
       orderBy: [desc(missionControlIncidents.updatedAt)],
       limit: 50,
@@ -848,7 +1042,10 @@ export class EnterpriseMissionControlService {
     return rows.map(toIncidentSummary);
   }
 
-  async getIncidentTimeline(companyId: string, incidentId: string): Promise<MissionControlIncidentTimelineSummary[]> {
+  async getIncidentTimeline(
+    companyId: string,
+    incidentId: string,
+  ): Promise<MissionControlIncidentTimelineSummary[]> {
     await this.ensureIncident(companyId, incidentId);
     const rows = await this.deps.db.query.missionControlIncidentTimeline.findMany({
       where: and(
@@ -867,7 +1064,9 @@ export class EnterpriseMissionControlService {
   }
 
   async captureOperationsMap(companyId: string): Promise<MissionControlOperationsMapPoint[]> {
-    await this.deps.db.delete(missionControlOperationsMap).where(eq(missionControlOperationsMap.companyId, companyId));
+    await this.deps.db
+      .delete(missionControlOperationsMap)
+      .where(eq(missionControlOperationsMap.companyId, companyId));
 
     const [gpsRows, vehicleRows, activeJobs] = await Promise.all([
       this.deps.db.query.gpsPositions.findMany({
@@ -877,7 +1076,10 @@ export class EnterpriseMissionControlService {
       }),
       this.deps.db.query.vehicles.findMany({ where: eq(vehicles.companyId, companyId), limit: 50 }),
       this.deps.db.query.jobs.findMany({
-        where: and(eq(jobs.companyId, companyId), inArray(jobs.status, ['scheduled', 'in_progress'])),
+        where: and(
+          eq(jobs.companyId, companyId),
+          inArray(jobs.status, ['scheduled', 'in_progress']),
+        ),
         limit: 30,
       }),
     ]);
@@ -967,20 +1169,23 @@ export class EnterpriseMissionControlService {
     return rows.map(toTimelineSummary);
   }
 
-  async refreshDepartmentHealth(companyId: string): Promise<MissionControlDepartmentHealthSummary[]> {
-    const snapshots = await this.buildModuleSnapshots(companyId);
-    await this.deps.db.delete(missionControlDepartmentHealth).where(eq(missionControlDepartmentHealth.companyId, companyId));
+  async refreshDepartmentHealth(
+    companyId: string,
+  ): Promise<MissionControlDepartmentHealthSummary[]> {
+    const snapshots = dedupeModuleSnapshots(await this.buildModuleSnapshots(companyId));
+    await this.deps.db
+      .delete(missionControlDepartmentHealth)
+      .where(eq(missionControlDepartmentHealth.companyId, companyId));
 
     const created: MissionControlDepartmentHealthSummary[] = [];
     for (const snapshot of snapshots) {
-      const healthScore = snapshot.status === 'healthy' ? 85 : snapshot.status === 'warning' ? 60 : 40;
       const [row] = await this.deps.db
         .insert(missionControlDepartmentHealth)
         .values({
           companyId,
           departmentKey: snapshot.module,
-          departmentName: snapshot.module.replace(/_/g, ' '),
-          healthScore,
+          departmentName: formatDepartmentLabel(snapshot.module),
+          healthScore: null,
           status: snapshot.status,
           metrics: snapshot.metrics,
         })
@@ -995,14 +1200,22 @@ export class EnterpriseMissionControlService {
     const rows = await this.deps.db.query.missionControlDepartmentHealth.findMany({
       where: eq(missionControlDepartmentHealth.companyId, companyId),
       orderBy: [desc(missionControlDepartmentHealth.capturedAt)],
-      limit: 20,
+      limit: 50,
     });
 
     if (rows.length === 0) {
-      return this.refreshDepartmentHealth(companyId);
+      return [];
     }
 
-    return rows.map(toDepartmentHealthSummary);
+    const deduped = new Map<string, MissionControlDepartmentHealthSummary>();
+    for (const row of rows) {
+      const summary = toDepartmentHealthSummary(row);
+      if (!deduped.has(summary.departmentKey)) {
+        deduped.set(summary.departmentKey, summary);
+      }
+    }
+
+    return [...deduped.values()];
   }
 
   async generateRecommendations(companyId: string): Promise<MissionControlRecommendationSummary[]> {
@@ -1073,7 +1286,10 @@ export class EnterpriseMissionControlService {
   ): Promise<MissionControlCommandActionSummary[]> {
     const rows = await this.deps.db.query.missionControlCommandActions.findMany({
       where: status
-        ? and(eq(missionControlCommandActions.companyId, companyId), eq(missionControlCommandActions.status, status))
+        ? and(
+            eq(missionControlCommandActions.companyId, companyId),
+            eq(missionControlCommandActions.status, status),
+          )
         : eq(missionControlCommandActions.companyId, companyId),
       orderBy: [desc(missionControlCommandActions.createdAt)],
       limit: 50,
@@ -1215,7 +1431,10 @@ export class EnterpriseMissionControlService {
       },
       {
         module: 'sales_intelligence',
-        status: salesStats.openOpportunityCount > 0 || leadStats.activeLeadCount > 0 ? 'healthy' : 'warning',
+        status:
+          salesStats.openOpportunityCount > 0 || leadStats.activeLeadCount > 0
+            ? 'healthy'
+            : 'warning',
         summary: `${salesStats.openOpportunityCount} open opportunit${salesStats.openOpportunityCount === 1 ? 'y' : 'ies'}; pipeline ${(salesStats.pipelineValueCents / 100).toFixed(2)}; ${leadStats.activeLeadCount} active lead(s)`,
         metrics: { sales: salesStats, leads: leadStats } as unknown as Record<string, unknown>,
       },
@@ -1229,107 +1448,197 @@ export class EnterpriseMissionControlService {
         module: 'service_delivery',
         status: jobsStats.activeCount > 0 ? 'healthy' : 'warning',
         summary: `${jobsStats.activeCount} active job(s) of ${jobsStats.totalCount} total; dispatch ${schedulingStats.scheduledCount} scheduled`,
-        metrics: { jobs: jobsStats, scheduling: schedulingStats } as unknown as Record<string, unknown>,
+        metrics: { jobs: jobsStats, scheduling: schedulingStats } as unknown as Record<
+          string,
+          unknown
+        >,
       },
       {
         module: 'it_operations',
-        status: itOperationsStats.overallHealthStatus === 'healthy' ? 'healthy' : itOperationsStats.overallHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          itOperationsStats.overallHealthStatus === 'healthy'
+            ? 'healthy'
+            : itOperationsStats.overallHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${itOperationsStats.openIncidentCount} open incident(s), ${itOperationsStats.openAlertCount} alert(s), ${itOperationsStats.degradedMonitorCount} degraded monitor(s), ${itOperationsStats.selfHealingSuccessCount} recent self-healing success(es)`,
         metrics: itOperationsStats as unknown as Record<string, unknown>,
       },
       {
         module: 'business_evolution',
-        status: businessEvolutionStats.overallLearningStatus === 'healthy' ? 'healthy' : businessEvolutionStats.overallLearningStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          businessEvolutionStats.overallLearningStatus === 'healthy'
+            ? 'healthy'
+            : businessEvolutionStats.overallLearningStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${businessEvolutionStats.openRecommendationCount} active recommendation(s), ${businessEvolutionStats.activeExperimentCount} active experiment(s), ${businessEvolutionStats.openAlertCount} evolution alert(s), ${businessEvolutionStats.validatedLessonCount} validated lesson(s)`,
         metrics: businessEvolutionStats as unknown as Record<string, unknown>,
       },
       {
         module: 'app_builder',
-        status: appBuilderStats.overallBuildHealthStatus === 'healthy' ? 'healthy' : appBuilderStats.overallBuildHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          appBuilderStats.overallBuildHealthStatus === 'healthy'
+            ? 'healthy'
+            : appBuilderStats.overallBuildHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${appBuilderStats.activeFeatureRequestCount} active feature request(s), ${appBuilderStats.pendingApprovalCount} pending approval(s), ${appBuilderStats.failedTestCount} failed test(s), ${appBuilderStats.openAlertCount} app builder alert(s)`,
         metrics: appBuilderStats as unknown as Record<string, unknown>,
       },
       {
         module: 'industry_packs',
-        status: industryPacksStats.overallIndustryHealthStatus === 'healthy' ? 'healthy' : industryPacksStats.overallIndustryHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          industryPacksStats.overallIndustryHealthStatus === 'healthy'
+            ? 'healthy'
+            : industryPacksStats.overallIndustryHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${industryPacksStats.activePackCount} active pack(s), ${industryPacksStats.openComplianceAlertCount} compliance alert(s), ${industryPacksStats.pendingCertificateCount} pending certificate(s), ${industryPacksStats.openAlertCount} industry alert(s)`,
         metrics: industryPacksStats as unknown as Record<string, unknown>,
       },
       {
         module: 'public_developer_platform',
-        status: publicDeveloperStats.overallDeveloperHealthStatus === 'healthy' ? 'healthy' : publicDeveloperStats.overallDeveloperHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          publicDeveloperStats.overallDeveloperHealthStatus === 'healthy'
+            ? 'healthy'
+            : publicDeveloperStats.overallDeveloperHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${publicDeveloperStats.openAlertCount} developer alert(s), ${publicDeveloperStats.webhookFailureCount} webhook failure(s), ${publicDeveloperStats.rateLimitPolicyCount} rate limit polic${publicDeveloperStats.rateLimitPolicyCount === 1 ? 'y' : 'ies'}, ${publicDeveloperStats.sdkGenerationCount} SDK generation(s)`,
         metrics: publicDeveloperStats as unknown as Record<string, unknown>,
       },
       {
         module: 'saas_management',
-        status: saasManagementStats.overallSaasHealthStatus === 'healthy' ? 'healthy' : saasManagementStats.overallSaasHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          saasManagementStats.overallSaasHealthStatus === 'healthy'
+            ? 'healthy'
+            : saasManagementStats.overallSaasHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${saasManagementStats.activeSubscriptionCount} active subscription(s), ${saasManagementStats.trialExpirationCount} trial(s), ${saasManagementStats.failedPaymentCount} failed payment(s), ${saasManagementStats.openAlertCount} SaaS alert(s)`,
         metrics: saasManagementStats as unknown as Record<string, unknown>,
       },
       {
         module: 'voice_reception',
-        status: voiceReceptionStats.overallVoiceHealthStatus === 'healthy' ? 'healthy' : voiceReceptionStats.overallVoiceHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          voiceReceptionStats.overallVoiceHealthStatus === 'healthy'
+            ? 'healthy'
+            : voiceReceptionStats.overallVoiceHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${voiceReceptionStats.activeCallCount} active call(s), ${voiceReceptionStats.missedCallCount} missed call(s), ${voiceReceptionStats.openAlertCount} voice alert(s), AI receptionist ${voiceReceptionStats.aiReceptionistEnabled ? 'enabled' : 'disabled'}`,
         metrics: voiceReceptionStats as unknown as Record<string, unknown>,
       },
       {
         module: 'document_ai',
-        status: documentAiStats.overallDocumentAiHealthStatus === 'healthy' ? 'healthy' : documentAiStats.overallDocumentAiHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          documentAiStats.overallDocumentAiHealthStatus === 'healthy'
+            ? 'healthy'
+            : documentAiStats.overallDocumentAiHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${documentAiStats.pendingOcrCount} OCR job(s) queued, ${documentAiStats.failedOcrCount} failed extraction(s), ${documentAiStats.reviewBacklogCount} review item(s), ${documentAiStats.expiringDocumentCount} expiring document(s), ${documentAiStats.duplicateAlertCount} duplicate alert(s)`,
         metrics: documentAiStats as unknown as Record<string, unknown>,
       },
       {
         module: 'business_continuity',
-        status: businessContinuityStats.overallBusinessContinuityHealthStatus === 'healthy' ? 'healthy' : businessContinuityStats.overallBusinessContinuityHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          businessContinuityStats.overallBusinessContinuityHealthStatus === 'healthy'
+            ? 'healthy'
+            : businessContinuityStats.overallBusinessContinuityHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${businessContinuityStats.failedBackupCount} failed backup(s), restore ${businessContinuityStats.restoreReadinessStatus}, recovery ${businessContinuityStats.recoveryReadinessStatus}, ${businessContinuityStats.verificationFailureCount} verification failure(s), ${businessContinuityStats.openAlertCount} alert(s)`,
         metrics: businessContinuityStats as unknown as Record<string, unknown>,
       },
       {
         module: 'global_search',
-        status: globalSearchStats.overallSearchHealthStatus === 'healthy' ? 'healthy' : globalSearchStats.overallSearchHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          globalSearchStats.overallSearchHealthStatus === 'healthy'
+            ? 'healthy'
+            : globalSearchStats.overallSearchHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${globalSearchStats.indexedCount} indexed record(s), ${globalSearchStats.failedIndexCount} failed index(es), ${globalSearchStats.pendingIndexCount} pending, ${globalSearchStats.timelineEntryCount} timeline event(s), ${globalSearchStats.openAlertCount} alert(s)`,
         metrics: globalSearchStats as unknown as Record<string, unknown>,
       },
       {
         module: 'data_migration',
-        status: dataMigrationStats.overallMigrationHealthStatus === 'healthy' ? 'healthy' : dataMigrationStats.overallMigrationHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          dataMigrationStats.overallMigrationHealthStatus === 'healthy'
+            ? 'healthy'
+            : dataMigrationStats.overallMigrationHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${dataMigrationStats.activeImportCount} active import(s), ${dataMigrationStats.failedImportCount} failed import(s), ${dataMigrationStats.rollbackAvailableCount} rollback available, ${dataMigrationStats.activeExportCount} export job(s), ${dataMigrationStats.openAlertCount} alert(s)`,
         metrics: dataMigrationStats as unknown as Record<string, unknown>,
       },
       {
         module: 'notifications',
-        status: notificationStats.overallNotificationHealthStatus === 'healthy' ? 'healthy' : notificationStats.overallNotificationHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          notificationStats.overallNotificationHealthStatus === 'healthy'
+            ? 'healthy'
+            : notificationStats.overallNotificationHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `${notificationStats.activeAlertCount} active alert(s), ${notificationStats.failedDeliveryCount} failed delivery(s), ${notificationStats.pendingEscalationCount} pending escalation(s), ${notificationStats.queuedDeliveryCount} queued delivery(s), ${notificationStats.openAlertCount} platform alert(s)`,
         metrics: notificationStats as unknown as Record<string, unknown>,
       },
       {
         module: 'platform_health',
-        status: platformHealthStats.overallPlatformHealthStatus === 'healthy' ? 'healthy' : platformHealthStats.overallPlatformHealthStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          platformHealthStats.overallPlatformHealthStatus === 'healthy'
+            ? 'healthy'
+            : platformHealthStats.overallPlatformHealthStatus === 'degraded'
+              ? 'warning'
+              : 'critical',
         summary: `Health score ${platformHealthStats.overallHealthScore ?? '—'}, ${platformHealthStats.criticalIncidentCount} critical incident(s), ${platformHealthStats.failedDiagnosticCount} failed diagnostic(s), ${platformHealthStats.degradedServiceCount} degraded service(s), ${platformHealthStats.openAlertCount} alert(s)`,
         metrics: platformHealthStats as unknown as Record<string, unknown>,
       },
       {
         module: 'launch_center',
-        status: launchCenterStats.overallLaunchReadinessStatus === 'healthy' ? 'healthy' : launchCenterStats.overallLaunchReadinessStatus === 'warning' ? 'warning' : launchCenterStats.overallLaunchReadinessStatus === 'degraded' ? 'warning' : 'critical',
+        status:
+          launchCenterStats.overallLaunchReadinessStatus === 'healthy'
+            ? 'healthy'
+            : launchCenterStats.overallLaunchReadinessStatus === 'warning'
+              ? 'warning'
+              : launchCenterStats.overallLaunchReadinessStatus === 'degraded'
+                ? 'warning'
+                : 'critical',
         summary: `Readiness score ${launchCenterStats.overallScore ?? '—'}, ${launchCenterStats.criticalBlockerCount} critical blocker(s), ${launchCenterStats.failedCheckCount} failed check(s), ${launchCenterStats.pendingApprovalCount} pending approval(s), ${launchCenterStats.openAlertCount} alert(s)`,
         metrics: launchCenterStats as unknown as Record<string, unknown>,
       },
       {
         module: 'release_center',
-        status: releaseCenterStats.overallReleaseStatus === 'healthy' ? 'healthy' : releaseCenterStats.overallReleaseStatus === 'warning' ? 'warning' : 'critical',
+        status:
+          releaseCenterStats.overallReleaseStatus === 'healthy'
+            ? 'healthy'
+            : releaseCenterStats.overallReleaseStatus === 'warning'
+              ? 'warning'
+              : 'critical',
         summary: `Readiness score ${releaseCenterStats.readinessScore ?? '—'}, ${releaseCenterStats.failedValidationCount} failed validation(s), ${releaseCenterStats.warningCount} warning(s), ${releaseCenterStats.openAlertCount} alert(s)`,
         metrics: releaseCenterStats as unknown as Record<string, unknown>,
       },
       {
         module: 'production_launch',
-        status: productionLaunchStats.overallProductionStatus === 'healthy' ? 'healthy' : productionLaunchStats.overallProductionStatus === 'warning' ? 'warning' : 'critical',
+        status:
+          productionLaunchStats.overallProductionStatus === 'healthy'
+            ? 'healthy'
+            : productionLaunchStats.overallProductionStatus === 'warning'
+              ? 'warning'
+              : 'critical',
         summary: `Launch status ${productionLaunchStats.launchStatus}, ${productionLaunchStats.failedProviderCount} provider failure(s), ${productionLaunchStats.pendingApprovalCount} pending approval(s), ${productionLaunchStats.openAlertCount} alert(s)`,
         metrics: productionLaunchStats as unknown as Record<string, unknown>,
       },
       {
         module: 'release_management',
-        status: releaseManagementStats.overallReleaseStatus === 'healthy' ? 'healthy' : releaseManagementStats.overallReleaseStatus === 'warning' ? 'warning' : 'critical',
+        status:
+          releaseManagementStats.overallReleaseStatus === 'healthy'
+            ? 'healthy'
+            : releaseManagementStats.overallReleaseStatus === 'warning'
+              ? 'warning'
+              : 'critical',
         summary: `Release status ${releaseManagementStats.releaseStatus}, documentation ${releaseManagementStats.documentationCompleteness}%, ${releaseManagementStats.pendingChecklistCount} pending checklist item(s), ${releaseManagementStats.openAlertCount} alert(s)`,
         metrics: releaseManagementStats as unknown as Record<string, unknown>,
       },
@@ -1387,15 +1696,22 @@ export class EnterpriseMissionControlService {
         columns: { id: true, healthStatus: true },
       }),
       this.deps.db.query.itoSelfHealingActions.findMany({
-        where: and(eq(itoSelfHealingActions.companyId, companyId), eq(itoSelfHealingActions.workflowStatus, 'executed')),
+        where: and(
+          eq(itoSelfHealingActions.companyId, companyId),
+          eq(itoSelfHealingActions.workflowStatus, 'executed'),
+        ),
         columns: { id: true },
         limit: 100,
       }),
     ]);
 
-    const openIncidentCount = incidents.filter((i) => !['resolved', 'closed'].includes(i.status)).length;
+    const openIncidentCount = incidents.filter(
+      (i) => !['resolved', 'closed'].includes(i.status),
+    ).length;
     const openAlertCount = alerts.length;
-    const degradedMonitorCount = monitors.filter((m) => m.healthStatus === 'degraded' || m.healthStatus === 'unhealthy').length;
+    const degradedMonitorCount = monitors.filter(
+      (m) => m.healthStatus === 'degraded' || m.healthStatus === 'unhealthy',
+    ).length;
     const unhealthyMonitorCount = monitors.filter((m) => m.healthStatus === 'unhealthy').length;
     const overallHealthStatus =
       openIncidentCount > 0 || unhealthyMonitorCount > 0
@@ -1425,22 +1741,36 @@ export class EnterpriseMissionControlService {
         columns: { id: true, workflowStatus: true },
       }),
       this.deps.db.query.bevEvolutionAlerts.findMany({
-        where: and(eq(bevEvolutionAlerts.companyId, companyId), eq(bevEvolutionAlerts.status, 'open')),
+        where: and(
+          eq(bevEvolutionAlerts.companyId, companyId),
+          eq(bevEvolutionAlerts.status, 'open'),
+        ),
         columns: { id: true },
       }),
       this.deps.db.query.bevKnowledgeReinforcements.findMany({
-        where: and(eq(bevKnowledgeReinforcements.companyId, companyId), eq(bevKnowledgeReinforcements.learningStage, 'validated')),
+        where: and(
+          eq(bevKnowledgeReinforcements.companyId, companyId),
+          eq(bevKnowledgeReinforcements.learningStage, 'validated'),
+        ),
         columns: { id: true },
         limit: 100,
       }),
     ]);
 
-    const openRecommendationCount = recommendations.filter((r) => !['validated', 'rejected', 'rolled_back', 'failed'].includes(r.workflowStatus)).length;
-    const activeExperimentCount = experiments.filter((e) => ['active', 'scheduled', 'approved'].includes(e.workflowStatus)).length;
+    const openRecommendationCount = recommendations.filter(
+      (r) => !['validated', 'rejected', 'rolled_back', 'failed'].includes(r.workflowStatus),
+    ).length;
+    const activeExperimentCount = experiments.filter((e) =>
+      ['active', 'scheduled', 'approved'].includes(e.workflowStatus),
+    ).length;
     const openAlertCount = alerts.length;
     const validatedLessonCount = lessons.length;
     const overallLearningStatus =
-      openAlertCount > 0 ? 'degraded' : openRecommendationCount > 0 || activeExperimentCount > 0 ? 'healthy' : 'healthy';
+      openAlertCount > 0
+        ? 'degraded'
+        : openRecommendationCount > 0 || activeExperimentCount > 0
+          ? 'healthy'
+          : 'healthy';
 
     return {
       openRecommendationCount,
@@ -1452,40 +1782,53 @@ export class EnterpriseMissionControlService {
   }
 
   private async buildAppBuilderModuleStats(companyId: string) {
-    const [featureRequests, workspaces, approvals, testRuns, deployments, alerts] = await Promise.all([
-      this.deps.db.query.abFeatureRequests.findMany({
-        where: eq(abFeatureRequests.companyId, companyId),
-        columns: { id: true, workflowStatus: true },
-      }),
-      this.deps.db.query.abDevelopmentWorkspaces.findMany({
-        where: eq(abDevelopmentWorkspaces.companyId, companyId),
-        columns: { id: true, status: true },
-      }),
-      this.deps.db.query.abApprovalRecords.findMany({
-        where: eq(abApprovalRecords.companyId, companyId),
-        columns: { id: true, workflowStatus: true },
-      }),
-      this.deps.db.query.abTestRuns.findMany({
-        where: eq(abTestRuns.companyId, companyId),
-        columns: { id: true, workflowStatus: true },
-      }),
-      this.deps.db.query.abDeployments.findMany({
-        where: eq(abDeployments.companyId, companyId),
-        columns: { id: true, workflowStatus: true },
-      }),
-      this.deps.db.query.abAppBuilderAlerts.findMany({
-        where: and(eq(abAppBuilderAlerts.companyId, companyId), eq(abAppBuilderAlerts.status, 'open')),
-        columns: { id: true },
-      }),
-    ]);
+    const [featureRequests, workspaces, approvals, testRuns, deployments, alerts] =
+      await Promise.all([
+        this.deps.db.query.abFeatureRequests.findMany({
+          where: eq(abFeatureRequests.companyId, companyId),
+          columns: { id: true, workflowStatus: true },
+        }),
+        this.deps.db.query.abDevelopmentWorkspaces.findMany({
+          where: eq(abDevelopmentWorkspaces.companyId, companyId),
+          columns: { id: true, status: true },
+        }),
+        this.deps.db.query.abApprovalRecords.findMany({
+          where: eq(abApprovalRecords.companyId, companyId),
+          columns: { id: true, workflowStatus: true },
+        }),
+        this.deps.db.query.abTestRuns.findMany({
+          where: eq(abTestRuns.companyId, companyId),
+          columns: { id: true, workflowStatus: true },
+        }),
+        this.deps.db.query.abDeployments.findMany({
+          where: eq(abDeployments.companyId, companyId),
+          columns: { id: true, workflowStatus: true },
+        }),
+        this.deps.db.query.abAppBuilderAlerts.findMany({
+          where: and(
+            eq(abAppBuilderAlerts.companyId, companyId),
+            eq(abAppBuilderAlerts.status, 'open'),
+          ),
+          columns: { id: true },
+        }),
+      ]);
 
     const activeFeatureRequestCount = featureRequests.filter(
-      (request) => !['deployed', 'rejected', 'rolled_back', 'cancelled'].includes(request.workflowStatus),
+      (request) =>
+        !['deployed', 'rejected', 'rolled_back', 'cancelled'].includes(request.workflowStatus),
     ).length;
-    const activeWorkspaceCount = workspaces.filter((workspace) => workspace.status === 'active').length;
-    const pendingApprovalCount = approvals.filter((approval) => approval.workflowStatus === 'pending').length;
-    const failedTestCount = testRuns.filter((testRun) => testRun.workflowStatus === 'failed').length;
-    const failedDeploymentCount = deployments.filter((deployment) => deployment.workflowStatus === 'failed').length;
+    const activeWorkspaceCount = workspaces.filter(
+      (workspace) => workspace.status === 'active',
+    ).length;
+    const pendingApprovalCount = approvals.filter(
+      (approval) => approval.workflowStatus === 'pending',
+    ).length;
+    const failedTestCount = testRuns.filter(
+      (testRun) => testRun.workflowStatus === 'failed',
+    ).length;
+    const failedDeploymentCount = deployments.filter(
+      (deployment) => deployment.workflowStatus === 'failed',
+    ).length;
     const openAlertCount = alerts.length;
     const overallBuildHealthStatus =
       openAlertCount > 0 || failedTestCount > 0 || failedDeploymentCount > 0
@@ -1527,11 +1870,19 @@ export class EnterpriseMissionControlService {
 
     const activePackCount = installations.filter((i) => i.status === 'installed').length;
     const draftFrameworkCount = frameworks.filter((f) => f.workflowStatus === 'draft').length;
-    const pendingCertificateCount = certificates.filter((c) => c.status === 'pending_approval').length;
+    const pendingCertificateCount = certificates.filter(
+      (c) => c.status === 'pending_approval',
+    ).length;
     const openAlertCount = alerts.length;
-    const openComplianceAlertCount = alerts.filter((a) => a.alertType.includes('compliance')).length;
+    const openComplianceAlertCount = alerts.filter((a) =>
+      a.alertType.includes('compliance'),
+    ).length;
     const overallIndustryHealthStatus =
-      openAlertCount > 2 ? 'critical' : openAlertCount > 0 || pendingCertificateCount > 0 ? 'degraded' : 'healthy';
+      openAlertCount > 2
+        ? 'critical'
+        : openAlertCount > 0 || pendingCertificateCount > 0
+          ? 'degraded'
+          : 'healthy';
 
     return {
       activePackCount,
@@ -1547,7 +1898,10 @@ export class EnterpriseMissionControlService {
   private async buildPublicDeveloperModuleStats(companyId: string) {
     const [alerts, rateLimitPolicies, sdkGenerations] = await Promise.all([
       this.deps.db.query.pdpDeveloperAlerts.findMany({
-        where: and(eq(pdpDeveloperAlerts.companyId, companyId), eq(pdpDeveloperAlerts.status, 'open')),
+        where: and(
+          eq(pdpDeveloperAlerts.companyId, companyId),
+          eq(pdpDeveloperAlerts.status, 'open'),
+        ),
         columns: { id: true, alertType: true, severity: true },
       }),
       this.deps.db.query.pdpRateLimitPolicies.findMany({
@@ -1605,7 +1959,8 @@ export class EnterpriseMissionControlService {
     const trialExpirationCount = alerts.filter((a) => a.alertType.includes('trial')).length;
     const activeLicenseCount = licenses.filter((l) => l.status === 'active').length;
     const metrics = (analytics?.metrics ?? {}) as Record<string, unknown>;
-    const activeSubscriptionCount = typeof metrics.activeSubscriptions === 'number' ? metrics.activeSubscriptions : 0;
+    const activeSubscriptionCount =
+      typeof metrics.activeSubscriptions === 'number' ? metrics.activeSubscriptions : 0;
     const overallSaasHealthStatus =
       criticalAlertCount > 0 || failedPaymentCount > 2
         ? 'critical'
@@ -1649,10 +2004,13 @@ export class EnterpriseMissionControlService {
     const openAlertCount = alerts.length;
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
     const activeCallCount = voiceSessionsRows.filter((s) => s.status === 'active').length;
-    const missedCallCount = voiceSessionsRows.filter((s) => s.status === 'missed' || s.status === 'abandoned').length;
+    const missedCallCount = voiceSessionsRows.filter(
+      (s) => s.status === 'missed' || s.status === 'abandoned',
+    ).length;
     const aiReceptionistEnabled = aiConfig?.enabled ?? false;
     const metrics = (analytics?.metrics ?? {}) as Record<string, unknown>;
-    const queuedCallCount = typeof metrics.queuedCallCount === 'number' ? metrics.queuedCallCount : 0;
+    const queuedCallCount =
+      typeof metrics.queuedCallCount === 'number' ? metrics.queuedCallCount : 0;
     const overallVoiceHealthStatus =
       criticalAlertCount > 0
         ? 'critical'
@@ -1667,7 +2025,9 @@ export class EnterpriseMissionControlService {
       missedCallCount,
       queuedCallCount,
       aiReceptionistEnabled,
-      emergencyRoutingConfigured: alerts.every((a) => a.alertType !== 'emergency_routing_unconfigured'),
+      emergencyRoutingConfigured: alerts.every(
+        (a) => a.alertType !== 'emergency_routing_unconfigured',
+      ),
       overallVoiceHealthStatus,
     };
   }
@@ -1675,7 +2035,10 @@ export class EnterpriseMissionControlService {
   private async buildDocumentAiModuleStats(companyId: string) {
     const [alerts, ocrProviders, analytics, ocrJobs, reviewQueue] = await Promise.all([
       this.deps.db.query.dipDocumentAlerts.findMany({
-        where: and(eq(dipDocumentAlerts.companyId, companyId), eq(dipDocumentAlerts.status, 'open')),
+        where: and(
+          eq(dipDocumentAlerts.companyId, companyId),
+          eq(dipDocumentAlerts.status, 'open'),
+        ),
         columns: { id: true, alertType: true, severity: true },
       }),
       this.deps.db.query.dipOcrProviderConfigs.findMany({
@@ -1692,19 +2055,31 @@ export class EnterpriseMissionControlService {
         limit: 500,
       }),
       this.deps.db.query.dipReviewQueueItems.findMany({
-        where: and(eq(dipReviewQueueItems.companyId, companyId), inArray(dipReviewQueueItems.status, ['pending', 'in_review'])),
+        where: and(
+          eq(dipReviewQueueItems.companyId, companyId),
+          inArray(dipReviewQueueItems.status, ['pending', 'in_review']),
+        ),
         columns: { id: true, status: true },
       }),
     ]);
 
     const openAlertCount = alerts.length;
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
-    const pendingOcrCount = ocrJobs.filter((j) => j.status === 'pending' || j.status === 'processing').length;
+    const pendingOcrCount = ocrJobs.filter(
+      (j) => j.status === 'pending' || j.status === 'processing',
+    ).length;
     const failedOcrCount = ocrJobs.filter((j) => j.status === 'failed').length;
     const reviewBacklogCount = reviewQueue.length;
     const metrics = (analytics?.metrics ?? {}) as Record<string, unknown>;
-    const expiringDocumentCount = typeof metrics.expiringDocumentCount === 'number' ? metrics.expiringDocumentCount : alerts.filter((a) => a.alertType === 'expiry' || a.alertType === 'expiring_document').length;
-    const duplicateAlertCount = typeof metrics.duplicateAlertCount === 'number' ? metrics.duplicateAlertCount : alerts.filter((a) => a.alertType === 'duplicate').length;
+    const expiringDocumentCount =
+      typeof metrics.expiringDocumentCount === 'number'
+        ? metrics.expiringDocumentCount
+        : alerts.filter((a) => a.alertType === 'expiry' || a.alertType === 'expiring_document')
+            .length;
+    const duplicateAlertCount =
+      typeof metrics.duplicateAlertCount === 'number'
+        ? metrics.duplicateAlertCount
+        : alerts.filter((a) => a.alertType === 'duplicate').length;
     const platformEnabled = ocrProviders.some((p) => p.enabled);
     const overallDocumentAiHealthStatus =
       criticalAlertCount > 0 || failedOcrCount > 5
@@ -1729,7 +2104,10 @@ export class EnterpriseMissionControlService {
   private async buildBusinessContinuityModuleStats(companyId: string) {
     const [alerts, analytics, backupJobs, verificationRecords] = await Promise.all([
       this.deps.db.query.bcContinuityAlerts.findMany({
-        where: and(eq(bcContinuityAlerts.companyId, companyId), eq(bcContinuityAlerts.status, 'open')),
+        where: and(
+          eq(bcContinuityAlerts.companyId, companyId),
+          eq(bcContinuityAlerts.status, 'open'),
+        ),
         columns: { id: true, alertType: true, severity: true },
       }),
       this.deps.db.query.bcAnalyticsSnapshots.findFirst({
@@ -1749,16 +2127,29 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = alerts.length;
-    const criticalAlertCount = alerts.filter((a: { severity: string }) => a.severity === 'critical').length;
-    const failedBackupCount = backupJobs.filter((j: { status: string }) => j.status === 'failed').length;
+    const criticalAlertCount = alerts.filter(
+      (a: { severity: string }) => a.severity === 'critical',
+    ).length;
+    const failedBackupCount = backupJobs.filter(
+      (j: { status: string }) => j.status === 'failed',
+    ).length;
     const verificationFailureCount = verificationRecords.filter(
-      (v: { status: string; passed: boolean | null }) => v.status === 'failed' || v.passed === false,
+      (v: { status: string; passed: boolean | null }) =>
+        v.status === 'failed' || v.passed === false,
     ).length;
     const metrics = (analytics?.metrics ?? {}) as Record<string, unknown>;
     const restoreReadinessStatus =
-      typeof metrics.restoreReadinessStatus === 'string' ? metrics.restoreReadinessStatus : verificationFailureCount > 0 ? 'not_ready' : 'ready';
+      typeof metrics.restoreReadinessStatus === 'string'
+        ? metrics.restoreReadinessStatus
+        : verificationFailureCount > 0
+          ? 'not_ready'
+          : 'ready';
     const recoveryReadinessStatus =
-      typeof metrics.recoveryReadinessStatus === 'string' ? metrics.recoveryReadinessStatus : failedBackupCount > 0 ? 'degraded' : 'ready';
+      typeof metrics.recoveryReadinessStatus === 'string'
+        ? metrics.recoveryReadinessStatus
+        : failedBackupCount > 0
+          ? 'degraded'
+          : 'ready';
     const overallBusinessContinuityHealthStatus =
       criticalAlertCount > 0 || failedBackupCount > 3
         ? 'critical'
@@ -1800,10 +2191,18 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = alerts.length;
-    const criticalAlertCount = alerts.filter((a: { severity: string }) => a.severity === 'critical').length;
-    const indexedCount = indexEntries.filter((e: { status: string }) => e.status === 'indexed').length;
-    const pendingIndexCount = indexEntries.filter((e: { status: string }) => e.status === 'pending').length;
-    const failedIndexCount = indexEntries.filter((e: { status: string }) => e.status === 'failed').length;
+    const criticalAlertCount = alerts.filter(
+      (a: { severity: string }) => a.severity === 'critical',
+    ).length;
+    const indexedCount = indexEntries.filter(
+      (e: { status: string }) => e.status === 'indexed',
+    ).length;
+    const pendingIndexCount = indexEntries.filter(
+      (e: { status: string }) => e.status === 'pending',
+    ).length;
+    const failedIndexCount = indexEntries.filter(
+      (e: { status: string }) => e.status === 'failed',
+    ).length;
     const timelineEntryCount = timelineEntries.length;
     const metrics = (analytics?.metrics ?? {}) as Record<string, unknown>;
     const overallSearchHealthStatus =
@@ -1820,7 +2219,8 @@ export class EnterpriseMissionControlService {
       pendingIndexCount,
       failedIndexCount,
       timelineEntryCount,
-      recentSearchCount: typeof metrics.recentSearchCount === 'number' ? metrics.recentSearchCount : 0,
+      recentSearchCount:
+        typeof metrics.recentSearchCount === 'number' ? metrics.recentSearchCount : 0,
       overallSearchHealthStatus,
     };
   }
@@ -1828,7 +2228,10 @@ export class EnterpriseMissionControlService {
   private async buildDataMigrationModuleStats(companyId: string) {
     const [alerts, analytics, importJobs, exportJobs] = await Promise.all([
       this.deps.db.query.dmMigrationAlerts.findMany({
-        where: and(eq(dmMigrationAlerts.companyId, companyId), eq(dmMigrationAlerts.status, 'open')),
+        where: and(
+          eq(dmMigrationAlerts.companyId, companyId),
+          eq(dmMigrationAlerts.status, 'open'),
+        ),
         columns: { id: true, alertType: true, severity: true },
       }),
       this.deps.db.query.dmAnalyticsSnapshots.findFirst({
@@ -1848,14 +2251,24 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = alerts.length;
-    const criticalAlertCount = alerts.filter((a: { severity: string }) => a.severity === 'critical').length;
+    const criticalAlertCount = alerts.filter(
+      (a: { severity: string }) => a.severity === 'critical',
+    ).length;
     const activeImportCount = importJobs.filter((j: { status: string }) =>
       ['importing', 'pending_approval', 'approved'].includes(j.status),
     ).length;
-    const failedImportCount = importJobs.filter((j: { status: string }) => j.status === 'failed').length;
-    const rollbackAvailableCount = importJobs.filter((j: { rollbackStatus: string }) => j.rollbackStatus === 'available').length;
-    const activeExportCount = exportJobs.filter((j: { status: string }) => j.status === 'running' || j.status === 'pending').length;
-    const failedExportCount = exportJobs.filter((j: { status: string }) => j.status === 'failed').length;
+    const failedImportCount = importJobs.filter(
+      (j: { status: string }) => j.status === 'failed',
+    ).length;
+    const rollbackAvailableCount = importJobs.filter(
+      (j: { rollbackStatus: string }) => j.rollbackStatus === 'available',
+    ).length;
+    const activeExportCount = exportJobs.filter(
+      (j: { status: string }) => j.status === 'running' || j.status === 'pending',
+    ).length;
+    const failedExportCount = exportJobs.filter(
+      (j: { status: string }) => j.status === 'failed',
+    ).length;
     const overallMigrationHealthStatus =
       criticalAlertCount > 0 || failedImportCount > 5
         ? 'critical'
@@ -1904,10 +2317,16 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = platformAlerts.length;
-    const criticalAlertCount = platformAlerts.filter((a: { severity: string }) => a.severity === 'critical').length;
+    const criticalAlertCount = platformAlerts.filter(
+      (a: { severity: string }) => a.severity === 'critical',
+    ).length;
     const activeAlertCount = alerts.length;
-    const failedDeliveryCount = deliveryJobs.filter((j: { status: string }) => j.status === 'failed').length;
-    const queuedDeliveryCount = deliveryJobs.filter((j: { status: string }) => j.status === 'queued').length;
+    const failedDeliveryCount = deliveryJobs.filter(
+      (j: { status: string }) => j.status === 'failed',
+    ).length;
+    const queuedDeliveryCount = deliveryJobs.filter(
+      (j: { status: string }) => j.status === 'queued',
+    ).length;
     const pendingEscalationCount = escalations.length;
     const overallNotificationHealthStatus =
       criticalAlertCount > 0 || failedDeliveryCount > 10
@@ -1929,7 +2348,14 @@ export class EnterpriseMissionControlService {
   }
 
   private async buildPlatformHealthModuleStats(companyId: string) {
-    const [platformAlerts, analytics, healthSnapshots, diagnosticRuns, capacitySnapshots, incidents] = await Promise.all([
+    const [
+      platformAlerts,
+      analytics,
+      healthSnapshots,
+      diagnosticRuns,
+      capacitySnapshots,
+      incidents,
+    ] = await Promise.all([
       this.deps.db.query.phPlatformAlerts.findMany({
         where: and(eq(phPlatformAlerts.companyId, companyId), eq(phPlatformAlerts.status, 'open')),
         columns: { id: true, alertType: true, severity: true },
@@ -1959,12 +2385,22 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = platformAlerts.length;
-    const criticalAlertCount = platformAlerts.filter((a: { severity: string }) => a.severity === 'critical').length;
-    const openIncidents = incidents.filter((i: { status: string }) => !['resolved', 'closed'].includes(i.status));
-    const criticalIncidentCount = openIncidents.filter((i: { severity: string }) => i.severity === 'critical').length;
+    const criticalAlertCount = platformAlerts.filter(
+      (a: { severity: string }) => a.severity === 'critical',
+    ).length;
+    const openIncidents = incidents.filter(
+      (i: { status: string }) => !['resolved', 'closed'].includes(i.status),
+    );
+    const criticalIncidentCount = openIncidents.filter(
+      (i: { severity: string }) => i.severity === 'critical',
+    ).length;
     const failedDiagnosticCount = diagnosticRuns[0]?.failedCount ?? 0;
     const overallHealthScore = healthSnapshots?.overallHealthScore ?? null;
-    const degradedServiceCount = healthSnapshots?.overallHealthStatus === 'degraded' || healthSnapshots?.overallHealthStatus === 'unhealthy' ? 1 : 0;
+    const degradedServiceCount =
+      healthSnapshots?.overallHealthStatus === 'degraded' ||
+      healthSnapshots?.overallHealthStatus === 'unhealthy'
+        ? 1
+        : 0;
     const overallPlatformHealthStatus =
       criticalAlertCount > 0 || criticalIncidentCount > 0
         ? 'critical'
@@ -1979,7 +2415,8 @@ export class EnterpriseMissionControlService {
       failedDiagnosticCount,
       overallHealthScore,
       degradedServiceCount,
-      capacityTrend: (capacitySnapshots?.forecast as Record<string, unknown> | undefined)?.trend ?? 'unknown',
+      capacityTrend:
+        (capacitySnapshots?.forecast as Record<string, unknown> | undefined)?.trend ?? 'unknown',
       analyticsMetrics: (analytics?.metrics ?? {}) as Record<string, unknown>,
       overallPlatformHealthStatus,
     };
@@ -1988,7 +2425,10 @@ export class EnterpriseMissionControlService {
   private async buildLaunchCenterModuleStats(companyId: string) {
     const [platformAlerts, latestScore, latestScan, pendingWizards, analytics] = await Promise.all([
       this.deps.db.query.lncPlatformAlerts.findMany({
-        where: and(eq(lncPlatformAlerts.companyId, companyId), eq(lncPlatformAlerts.status, 'open')),
+        where: and(
+          eq(lncPlatformAlerts.companyId, companyId),
+          eq(lncPlatformAlerts.status, 'open'),
+        ),
         columns: { id: true, alertType: true, severity: true },
       }),
       this.deps.db.query.lncReadinessScores.findFirst({
@@ -2010,9 +2450,12 @@ export class EnterpriseMissionControlService {
     ]);
 
     const openAlertCount = platformAlerts.length;
-    const criticalBlockerCount = latestScore?.criticalBlockerCount ?? latestScan?.criticalBlockerCount ?? 0;
+    const criticalBlockerCount =
+      latestScore?.criticalBlockerCount ?? latestScan?.criticalBlockerCount ?? 0;
     const failedCheckCount = latestScan?.failedCount ?? 0;
-    const pendingApprovalCount = pendingWizards.filter((w) => w.status === 'pending_approval').length;
+    const pendingApprovalCount = pendingWizards.filter(
+      (w) => w.status === 'pending_approval',
+    ).length;
     const overallScore = latestScore?.overallScore ?? null;
     const overallLaunchReadinessStatus =
       criticalBlockerCount > 0
@@ -2036,34 +2479,40 @@ export class EnterpriseMissionControlService {
   }
 
   private async buildReleaseCenterModuleStats(companyId: string) {
-    const [platformAlerts, latestReport, latestIntegrationRun, latestWorkflowRun, analytics] = await Promise.all([
-      this.deps.db.query.rcPlatformAlerts.findMany({
-        where: and(eq(rcPlatformAlerts.companyId, companyId), eq(rcPlatformAlerts.status, 'open')),
-        columns: { id: true, alertType: true, severity: true },
-      }),
-      this.deps.db.query.rcReleaseCandidateReports.findFirst({
-        where: eq(rcReleaseCandidateReports.companyId, companyId),
-        orderBy: [desc(rcReleaseCandidateReports.generatedAt)],
-      }),
-      this.deps.db.query.rcIntegrationValidationRuns.findFirst({
-        where: eq(rcIntegrationValidationRuns.companyId, companyId),
-        orderBy: [desc(rcIntegrationValidationRuns.createdAt)],
-      }),
-      this.deps.db.query.rcWorkflowValidationRuns.findFirst({
-        where: eq(rcWorkflowValidationRuns.companyId, companyId),
-        orderBy: [desc(rcWorkflowValidationRuns.createdAt)],
-      }),
-      this.deps.db.query.rcAnalyticsSnapshots.findFirst({
-        where: eq(rcAnalyticsSnapshots.companyId, companyId),
-        orderBy: [desc(rcAnalyticsSnapshots.capturedAt)],
-      }),
-    ]);
+    const [platformAlerts, latestReport, latestIntegrationRun, latestWorkflowRun, analytics] =
+      await Promise.all([
+        this.deps.db.query.rcPlatformAlerts.findMany({
+          where: and(
+            eq(rcPlatformAlerts.companyId, companyId),
+            eq(rcPlatformAlerts.status, 'open'),
+          ),
+          columns: { id: true, alertType: true, severity: true },
+        }),
+        this.deps.db.query.rcReleaseCandidateReports.findFirst({
+          where: eq(rcReleaseCandidateReports.companyId, companyId),
+          orderBy: [desc(rcReleaseCandidateReports.generatedAt)],
+        }),
+        this.deps.db.query.rcIntegrationValidationRuns.findFirst({
+          where: eq(rcIntegrationValidationRuns.companyId, companyId),
+          orderBy: [desc(rcIntegrationValidationRuns.createdAt)],
+        }),
+        this.deps.db.query.rcWorkflowValidationRuns.findFirst({
+          where: eq(rcWorkflowValidationRuns.companyId, companyId),
+          orderBy: [desc(rcWorkflowValidationRuns.createdAt)],
+        }),
+        this.deps.db.query.rcAnalyticsSnapshots.findFirst({
+          where: eq(rcAnalyticsSnapshots.companyId, companyId),
+          orderBy: [desc(rcAnalyticsSnapshots.capturedAt)],
+        }),
+      ]);
 
     const openAlertCount = platformAlerts.length;
     const failedValidationCount =
       latestReport?.failedValidationCount ??
       (latestIntegrationRun?.failedCount ?? 0) + (latestWorkflowRun?.failedCount ?? 0);
-    const warningCount = latestReport?.warningCount ?? (latestIntegrationRun?.warningCount ?? 0) + (latestWorkflowRun?.warningCount ?? 0);
+    const warningCount =
+      latestReport?.warningCount ??
+      (latestIntegrationRun?.warningCount ?? 0) + (latestWorkflowRun?.warningCount ?? 0);
     const readinessScore = latestReport?.readinessScore ?? null;
     const overallReleaseStatus =
       latestReport?.overallStatus === 'blocked' || latestReport?.overallStatus === 'not_ready'
@@ -2087,28 +2536,32 @@ export class EnterpriseMissionControlService {
   }
 
   private async buildProductionLaunchModuleStats(companyId: string) {
-    const [platformAlerts, latestIntegrationRun, pendingDeployments, pendingWizards, analytics] = await Promise.all([
-      this.deps.db.query.plPlatformAlerts.findMany({
-        where: and(eq(plPlatformAlerts.companyId, companyId), eq(plPlatformAlerts.status, 'open')),
-        columns: { id: true, alertType: true, severity: true },
-      }),
-      this.deps.db.query.plLiveIntegrationVerificationRuns.findFirst({
-        where: eq(plLiveIntegrationVerificationRuns.companyId, companyId),
-        orderBy: [desc(plLiveIntegrationVerificationRuns.createdAt)],
-      }),
-      this.deps.db.query.plDeploymentPipelineRuns.findMany({
-        where: eq(plDeploymentPipelineRuns.companyId, companyId),
-        columns: { id: true, status: true },
-      }),
-      this.deps.db.query.plGoLiveWizards.findMany({
-        where: eq(plGoLiveWizards.companyId, companyId),
-        columns: { id: true, status: true },
-      }),
-      this.deps.db.query.plAnalyticsSnapshots.findFirst({
-        where: eq(plAnalyticsSnapshots.companyId, companyId),
-        orderBy: [desc(plAnalyticsSnapshots.capturedAt)],
-      }),
-    ]);
+    const [platformAlerts, latestIntegrationRun, pendingDeployments, pendingWizards, analytics] =
+      await Promise.all([
+        this.deps.db.query.plPlatformAlerts.findMany({
+          where: and(
+            eq(plPlatformAlerts.companyId, companyId),
+            eq(plPlatformAlerts.status, 'open'),
+          ),
+          columns: { id: true, alertType: true, severity: true },
+        }),
+        this.deps.db.query.plLiveIntegrationVerificationRuns.findFirst({
+          where: eq(plLiveIntegrationVerificationRuns.companyId, companyId),
+          orderBy: [desc(plLiveIntegrationVerificationRuns.createdAt)],
+        }),
+        this.deps.db.query.plDeploymentPipelineRuns.findMany({
+          where: eq(plDeploymentPipelineRuns.companyId, companyId),
+          columns: { id: true, status: true },
+        }),
+        this.deps.db.query.plGoLiveWizards.findMany({
+          where: eq(plGoLiveWizards.companyId, companyId),
+          columns: { id: true, status: true },
+        }),
+        this.deps.db.query.plAnalyticsSnapshots.findFirst({
+          where: eq(plAnalyticsSnapshots.companyId, companyId),
+          orderBy: [desc(plAnalyticsSnapshots.capturedAt)],
+        }),
+      ]);
 
     const openAlertCount = platformAlerts.length;
     const failedProviderCount = latestIntegrationRun?.failedCount ?? 0;
@@ -2143,35 +2596,42 @@ export class EnterpriseMissionControlService {
   }
 
   private async buildReleaseManagementModuleStats(companyId: string) {
-    const [platformAlerts, versionRecord, checklistItems, documentationArtifacts, analytics] = await Promise.all([
-      this.deps.db.query.rlmPlatformAlerts.findMany({
-        where: and(eq(rlmPlatformAlerts.companyId, companyId), eq(rlmPlatformAlerts.status, 'open')),
-        columns: { id: true, alertType: true, severity: true },
-      }),
-      this.deps.db.query.rlmVersionRecords.findFirst({
-        where: eq(rlmVersionRecords.companyId, companyId),
-        orderBy: [desc(rlmVersionRecords.createdAt)],
-      }),
-      this.deps.db.query.rlmLaunchChecklistItems.findMany({
-        where: eq(rlmLaunchChecklistItems.companyId, companyId),
-        columns: { id: true, status: true, isRequired: true },
-      }),
-      this.deps.db.query.rlmDocumentationArtifacts.findMany({
-        where: eq(rlmDocumentationArtifacts.companyId, companyId),
-        columns: { id: true, completenessPercent: true },
-      }),
-      this.deps.db.query.rlmAnalyticsSnapshots.findFirst({
-        where: eq(rlmAnalyticsSnapshots.companyId, companyId),
-        orderBy: [desc(rlmAnalyticsSnapshots.capturedAt)],
-      }),
-    ]);
+    const [platformAlerts, versionRecord, checklistItems, documentationArtifacts, analytics] =
+      await Promise.all([
+        this.deps.db.query.rlmPlatformAlerts.findMany({
+          where: and(
+            eq(rlmPlatformAlerts.companyId, companyId),
+            eq(rlmPlatformAlerts.status, 'open'),
+          ),
+          columns: { id: true, alertType: true, severity: true },
+        }),
+        this.deps.db.query.rlmVersionRecords.findFirst({
+          where: eq(rlmVersionRecords.companyId, companyId),
+          orderBy: [desc(rlmVersionRecords.createdAt)],
+        }),
+        this.deps.db.query.rlmLaunchChecklistItems.findMany({
+          where: eq(rlmLaunchChecklistItems.companyId, companyId),
+          columns: { id: true, status: true, isRequired: true },
+        }),
+        this.deps.db.query.rlmDocumentationArtifacts.findMany({
+          where: eq(rlmDocumentationArtifacts.companyId, companyId),
+          columns: { id: true, completenessPercent: true },
+        }),
+        this.deps.db.query.rlmAnalyticsSnapshots.findFirst({
+          where: eq(rlmAnalyticsSnapshots.companyId, companyId),
+          orderBy: [desc(rlmAnalyticsSnapshots.capturedAt)],
+        }),
+      ]);
 
     const openAlertCount = platformAlerts.length;
-    const pendingChecklistCount = checklistItems.filter((i) => i.isRequired && i.status === 'pending').length;
+    const pendingChecklistCount = checklistItems.filter(
+      (i) => i.isRequired && i.status === 'pending',
+    ).length;
     const documentationCompleteness =
       documentationArtifacts.length > 0
         ? Math.round(
-            documentationArtifacts.reduce((sum, doc) => sum + doc.completenessPercent, 0) / documentationArtifacts.length,
+            documentationArtifacts.reduce((sum, doc) => sum + doc.completenessPercent, 0) /
+              documentationArtifacts.length,
           )
         : 0;
     const releaseStatus = versionRecord?.status ?? 'unknown';
@@ -2245,7 +2705,10 @@ export class EnterpriseMissionControlService {
 
   private async ensureAlert(companyId: string, alertId: string) {
     const row = await this.deps.db.query.missionControlAlerts.findFirst({
-      where: and(eq(missionControlAlerts.companyId, companyId), eq(missionControlAlerts.id, alertId)),
+      where: and(
+        eq(missionControlAlerts.companyId, companyId),
+        eq(missionControlAlerts.id, alertId),
+      ),
     });
     if (!row) throw new EnterpriseMissionControlError('NOT_FOUND', 'Alert not found');
     return row;
@@ -2253,7 +2716,10 @@ export class EnterpriseMissionControlService {
 
   private async ensureIncident(companyId: string, incidentId: string) {
     const row = await this.deps.db.query.missionControlIncidents.findFirst({
-      where: and(eq(missionControlIncidents.companyId, companyId), eq(missionControlIncidents.id, incidentId)),
+      where: and(
+        eq(missionControlIncidents.companyId, companyId),
+        eq(missionControlIncidents.id, incidentId),
+      ),
     });
     if (!row) throw new EnterpriseMissionControlError('NOT_FOUND', 'Incident not found');
     return row;
@@ -2261,7 +2727,12 @@ export class EnterpriseMissionControlService {
 }
 
 function mapExecutiveAlertCategory(alertType: string): MissionControlAlertSummary['category'] {
-  if (alertType.includes('invoice') || alertType.includes('revenue') || alertType.includes('margin')) return 'financial';
+  if (
+    alertType.includes('invoice') ||
+    alertType.includes('revenue') ||
+    alertType.includes('margin')
+  )
+    return 'financial';
   if (alertType.includes('stock')) return 'inventory';
   if (alertType.includes('customer')) return 'operational';
   return 'operational';
@@ -2282,7 +2753,9 @@ function toAlertSummary(row: typeof missionControlAlerts.$inferSelect): MissionC
   };
 }
 
-function toIncidentSummary(row: typeof missionControlIncidents.$inferSelect): MissionControlIncidentSummary {
+function toIncidentSummary(
+  row: typeof missionControlIncidents.$inferSelect,
+): MissionControlIncidentSummary {
   return {
     id: row.id,
     title: row.title,
@@ -2298,7 +2771,9 @@ function toIncidentSummary(row: typeof missionControlIncidents.$inferSelect): Mi
   };
 }
 
-function toMapPoint(row: typeof missionControlOperationsMap.$inferSelect): MissionControlOperationsMapPoint {
+function toMapPoint(
+  row: typeof missionControlOperationsMap.$inferSelect,
+): MissionControlOperationsMapPoint {
   return {
     id: row.id,
     mapType: row.mapType,
@@ -2311,7 +2786,9 @@ function toMapPoint(row: typeof missionControlOperationsMap.$inferSelect): Missi
   };
 }
 
-function toTimelineSummary(row: typeof missionControlTimelineEvents.$inferSelect): MissionControlTimelineEventSummary {
+function toTimelineSummary(
+  row: typeof missionControlTimelineEvents.$inferSelect,
+): MissionControlTimelineEventSummary {
   return {
     id: row.id,
     eventType: row.eventType,
@@ -2349,7 +2826,9 @@ function toRecommendationSummary(
   };
 }
 
-function toActionSummary(row: typeof missionControlCommandActions.$inferSelect): MissionControlCommandActionSummary {
+function toActionSummary(
+  row: typeof missionControlCommandActions.$inferSelect,
+): MissionControlCommandActionSummary {
   return {
     id: row.id,
     actionType: row.actionType,
@@ -2359,4 +2838,26 @@ function toActionSummary(row: typeof missionControlCommandActions.$inferSelect):
     incidentId: row.incidentId,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function formatDepartmentLabel(moduleKey: string): string {
+  return moduleKey
+    .split('_')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function dedupeModuleSnapshots(
+  snapshots: MissionControlModuleSnapshot[],
+): MissionControlModuleSnapshot[] {
+  const byModule = new Map<string, MissionControlModuleSnapshot>();
+
+  for (const snapshot of snapshots) {
+    if (!byModule.has(snapshot.module)) {
+      byModule.set(snapshot.module, snapshot);
+    }
+  }
+
+  return [...byModule.values()];
 }

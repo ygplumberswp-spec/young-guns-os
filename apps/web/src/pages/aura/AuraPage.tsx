@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { AGENT_REGISTRY, AI_NAME, type AgentKey, type AgentTaskSummary } from '@titan/shared';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { useSearch } from 'wouter';
+import { EmptyState, LoadingState } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import { fetchAgentRegistry } from '../../lib/agents-api';
+import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
 import { AuraBusinessDashboard } from '../../features/aura/AuraBusinessDashboard';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraConversationList } from '../../features/aura/AuraConversationList';
@@ -22,6 +25,7 @@ export function AuraPage() {
   const [conversationMode, setConversationMode] = useState<'aura' | 'agent'>('agent');
   const [selectedAgentKey, setSelectedAgentKey] = useState<AgentKey>('executive');
   const [registry, setRegistry] = useState(AGENT_REGISTRY);
+  const [aiProviderConfigured, setAiProviderConfigured] = useState<boolean | null>(null);
 
   const pageContext =
     customerId || jobId || vehicleId || schedulingView
@@ -52,6 +56,14 @@ export function AuraPage() {
     void fetchAgentRegistry(accessToken)
       .then(setRegistry)
       .catch(() => setRegistry(AGENT_REGISTRY));
+
+    void fetchAiProviders(accessToken)
+      .then((providers) => {
+        setAiProviderConfigured(
+          providers.some((provider) => provider.isConfigured && provider.credentialsConfigured),
+        );
+      })
+      .catch(() => setAiProviderConfigured(false));
   }, [accessToken]);
 
   const contextLabel = schedulingView
@@ -77,7 +89,11 @@ export function AuraPage() {
   const canViewIntelligence = useMemo(
     () =>
       user
-        ? hasAnyPermission(user.permissions, ['intelligence:read', 'intelligence:write', 'agents:read'])
+        ? hasAnyPermission(user.permissions, [
+            'intelligence:read',
+            'intelligence:write',
+            'agents:read',
+          ])
         : false,
     [user],
   );
@@ -136,6 +152,20 @@ export function AuraPage() {
         <AuraBusinessDashboard accessToken={accessToken} canWriteMemory={canWriteMemory} />
       ) : null}
 
+      {aiProviderConfigured === false ? (
+        <EmptyState
+          title="AI provider not configured"
+          description="Configure an AI provider with valid credentials before sending messages to AURA."
+          action={
+            <Link href="/integrations">
+              <button type="button" className="titan-button titan-button--secondary">
+                Integration settings
+              </button>
+            </Link>
+          }
+        />
+      ) : null}
+
       <div className="aura-layout">
         <AuraConversationList
           conversations={conversations}
@@ -147,7 +177,7 @@ export function AuraPage() {
 
         <section className="aura-chat">
           {isLoading ? (
-            <div className="aura-chat__loading">Loading AURA...</div>
+            <LoadingState label="Loading AURA conversations" />
           ) : (
             <>
               {conversationMode === 'agent' && activeAgent ? (
@@ -187,14 +217,26 @@ export function AuraPage() {
                   ) : null}
                   <AuraComposer
                     onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
-                    disabled={isSending}
-                    placeholder={`Ask the ${activeAgent?.name ?? 'agent'}…`}
+                    disabled={isSending || aiProviderConfigured === false}
+                    placeholder={
+                      aiProviderConfigured === false
+                        ? 'Configure an AI provider to send messages'
+                        : `Ask the ${activeAgent?.name ?? 'agent'}…`
+                    }
                   />
                 </>
               ) : (
                 <>
                   <AuraMessageList messages={messages} isSending={isSending} />
-                  <AuraComposer onSend={sendMessage} disabled={isSending} />
+                  <AuraComposer
+                    onSend={sendMessage}
+                    disabled={isSending || aiProviderConfigured === false}
+                    placeholder={
+                      aiProviderConfigured === false
+                        ? 'Configure an AI provider to send messages'
+                        : undefined
+                    }
+                  />
                 </>
               )}
             </>

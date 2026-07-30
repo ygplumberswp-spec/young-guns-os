@@ -15,7 +15,13 @@ const actionTypeSchema = z.enum([
   'session_revocation',
   'privacy_request',
 ]);
-const actionStatusSchema = z.enum(['pending_approval', 'approved', 'rejected', 'executed', 'cancelled']);
+const actionStatusSchema = z.enum([
+  'pending_approval',
+  'approved',
+  'rejected',
+  'executed',
+  'cancelled',
+]);
 const grantTypeSchema = z.enum(['temporary', 'delegated', 'executive_override']);
 const privacyTypeSchema = z.enum(['data_export', 'data_deletion', 'consent_update']);
 
@@ -93,7 +99,12 @@ export function createEnterpriseSecurityRouter({
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireZeroTrust = createZeroTrustMiddleware({ enterpriseSecurityService });
   const requireRateLimit = createRateLimitMiddleware({ enterpriseSecurityService });
-  const requireRead = requireAnyPermission('security:read', 'security:write', 'settings:manage', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'security:read',
+    'security:write',
+    'settings:manage',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('security:write', 'settings:manage');
 
   router.use(requireAuth);
@@ -120,7 +131,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = policySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid security policy payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid security policy payload' } });
       return;
     }
 
@@ -149,7 +162,10 @@ export function createEnterpriseSecurityRouter({
 
   router.get('/sessions', requireRead, async (req, res) => {
     const auth = getAuth(req);
-    const sessions = await enterpriseSecurityService.listActiveSessions(auth.companyId, auth.sessionId);
+    const sessions = await enterpriseSecurityService.listActiveSessions(
+      auth.companyId,
+      auth.sessionId,
+    );
     res.json({ data: { sessions } });
   });
 
@@ -161,6 +177,19 @@ export function createEnterpriseSecurityRouter({
         getRouteParam(req.params.sessionId),
       );
       res.json({ data: { success: true } });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  router.post('/sessions/revoke-others', requireWrite, async (req, res) => {
+    const auth = getAuth(req);
+    try {
+      const revokedCount = await enterpriseSecurityService.revokeAllOtherSessions(
+        { companyId: auth.companyId, userId: auth.userId },
+        auth.sessionId,
+      );
+      res.json({ data: { success: true, revokedCount } });
     } catch (error) {
       handleError(res, error);
     }
@@ -198,7 +227,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = mfaVerifySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid MFA verification payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid MFA verification payload' } });
       return;
     }
 
@@ -223,7 +254,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = deviceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid trusted device payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid trusted device payload' } });
       return;
     }
 
@@ -261,7 +294,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = grantSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid permission grant payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid permission grant payload' } });
       return;
     }
 
@@ -305,7 +340,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid security action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid security action payload' } });
       return;
     }
 
@@ -324,7 +361,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = z.object({ status: actionStatusSchema }).safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action status payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action status payload' } });
       return;
     }
 
@@ -350,7 +389,9 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = privacySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy request payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy request payload' } });
       return;
     }
 
@@ -369,7 +410,11 @@ export function createEnterpriseSecurityRouter({
     const auth = getAuth(req);
     const parsed = webauthnSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid WebAuthn credential payload' } });
+      res
+        .status(400)
+        .json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid WebAuthn credential payload' },
+        });
       return;
     }
 

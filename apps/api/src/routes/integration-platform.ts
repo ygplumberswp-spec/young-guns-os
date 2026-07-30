@@ -14,7 +14,13 @@ const actionTypeSchema = z.enum([
   'sync_retry',
   'credential_rotation',
 ]);
-const actionStatusSchema = z.enum(['pending_approval', 'approved', 'rejected', 'executed', 'cancelled']);
+const actionStatusSchema = z.enum([
+  'pending_approval',
+  'approved',
+  'rejected',
+  'executed',
+  'cancelled',
+]);
 const syncScopeSchema = z.enum(['incremental', 'full', 'event_driven']);
 
 const actionSchema = z.object({
@@ -64,7 +70,11 @@ export function createIntegrationPlatformRouter({
     integrationPlatformService,
     connectorEngine: connectorEngineService,
   });
-  const requireRead = requireAnyPermission('integrations:read', 'integrations:manage', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'integrations:read',
+    'integrations:manage',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('integrations:manage');
 
   router.use(requireAuth);
@@ -75,9 +85,12 @@ export function createIntegrationPlatformRouter({
   });
 
   router.get('/dashboard', requireRead, async (req, res) => {
+    const startedAt = Date.now();
     const { companyId } = getAuth(req);
     const dashboard = await integrationPlatformService.getExecutiveDashboard(companyId);
-    res.json({ data: { dashboard } });
+    const durationMs = Date.now() - startedAt;
+    res.setHeader('Server-Timing', `dashboard;dur=${durationMs}`);
+    res.json({ data: { dashboard, meta: { durationMs } } });
   });
 
   router.get('/connectors', requireRead, async (req, res) => {
@@ -122,7 +135,9 @@ export function createIntegrationPlatformRouter({
     const auth = getAuth(req);
     const parsed = scheduleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync schedule payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync schedule payload' } });
       return;
     }
 
@@ -167,7 +182,11 @@ export function createIntegrationPlatformRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid integration action payload' } });
+      res
+        .status(400)
+        .json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid integration action payload' },
+        });
       return;
     }
 
@@ -186,7 +205,9 @@ export function createIntegrationPlatformRouter({
     const auth = getAuth(req);
     const parsed = z.object({ status: actionStatusSchema }).safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action status payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action status payload' } });
       return;
     }
 
@@ -225,7 +246,9 @@ export function createIntegrationPlatformRouter({
     const auth = getAuth(req);
     const parsed = diagnosticSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid diagnostic payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid diagnostic payload' } });
       return;
     }
 

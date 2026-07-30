@@ -26,6 +26,8 @@ export function formatProviderType(type: string) {
   return type.replace(/_/g, ' ');
 }
 
-export function formatCurrency(cents: number, currency = 'USD') {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
+import { formatMoney } from '@titan/shared';
+
+export function formatCurrency(cents: number, currency = 'ZAR') {
+  return formatMoney(cents, currency);
 }

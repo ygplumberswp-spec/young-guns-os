@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
 import type { EnterpriseMissionControlDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -21,12 +21,7 @@ import {
 } from '../../features/mission-control/utils';
 
 type MissionControlTab =
-  | 'dashboard'
-  | 'alerts'
-  | 'incidents'
-  | 'timeline'
-  | 'operations-map'
-  | 'recommendations';
+  'dashboard' | 'alerts' | 'incidents' | 'timeline' | 'operations-map' | 'recommendations';
 
 export function MissionControlPage() {
   const { accessToken, user } = useAuth();
@@ -38,7 +33,10 @@ export function MissionControlPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessMissionControl(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageMissionControl(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageMissionControl(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -91,7 +89,10 @@ export function MissionControlPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Mission Control" description="You do not have permission to view mission control." />
+        <PageHeader
+          title="Mission Control"
+          description="You do not have permission to view mission control."
+        />
       </div>
     );
   }
@@ -117,7 +118,10 @@ export function MissionControlPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => syncMissionControlAlerts(accessToken!), 'Alerts synced from live module data.')
+                  void runAction(
+                    () => syncMissionControlAlerts(accessToken!),
+                    'Alerts synced from live module data.',
+                  )
                 }
               >
                 Sync Alerts
@@ -142,18 +146,12 @@ export function MissionControlPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <TabNav
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={(tabId) => setActiveTab(tabId as MissionControlTab)}
+        ariaLabel="Mission control sections"
+      />
 
       {isLoading ? (
         <Panel title="Loading">Loading mission control dashboard…</Panel>
@@ -164,11 +162,17 @@ export function MissionControlPage() {
           {activeTab === 'dashboard' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Business Health" value={String(dashboard.businessHealthScore ?? '—')} />
+                <StatCard
+                  label="Business Health"
+                  value={String(dashboard.businessHealthScore ?? '—')}
+                />
                 <StatCard label="Pending Alerts" value={String(dashboard.pendingAlertCount)} />
                 <StatCard label="Critical Alerts" value={String(dashboard.criticalAlertCount)} />
                 <StatCard label="Active Incidents" value={String(dashboard.activeIncidentCount)} />
-                <StatCard label="System Health" value={formatStatus(dashboard.systemHealthStatus)} />
+                <StatCard
+                  label="System Health"
+                  value={formatStatus(dashboard.systemHealthStatus)}
+                />
                 <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
               </div>
 
@@ -184,7 +188,9 @@ export function MissionControlPage() {
                     {dashboard.moduleSnapshots.map((snapshot) => (
                       <div key={snapshot.module} className="data-list-item">
                         <strong>{formatModuleName(snapshot.module)}</strong>
-                        <span className={`status-pill status-${snapshot.status}`}>{formatStatus(snapshot.status)}</span>
+                        <span className={`status-pill status-${snapshot.status}`}>
+                          {formatStatus(snapshot.status)}
+                        </span>
                         <p>{snapshot.summary}</p>
                       </div>
                     ))}
@@ -194,14 +200,21 @@ export function MissionControlPage() {
 
               <Panel title="Department Health">
                 {dashboard.departmentHealth.length === 0 ? (
-                  <EmptyState title="No department health" description="Refresh department health from module data." />
+                  <EmptyState
+                    title="No department health"
+                    description="Refresh department health from module data."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.departmentHealth.map((dept) => (
                       <div key={dept.id} className="data-list-item">
-                        <strong>{dept.departmentName}</strong>
-                        <span>{dept.healthScore ?? '—'}/100</span>
-                        <span className={`status-pill status-${dept.status}`}>{formatStatus(dept.status)}</span>
+                        <strong>{formatModuleName(dept.departmentKey)}</strong>
+                        <span className={`status-pill status-${dept.status}`}>
+                          {formatStatus(dept.status)}
+                        </span>
+                        <span className="page-muted">
+                          {dept.healthScore != null ? `${dept.healthScore}/100` : 'Not assessed'}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -236,7 +249,9 @@ export function MissionControlPage() {
                   {dashboard.recentAlerts.map((alert) => (
                     <div key={alert.id} className="data-list-item">
                       <strong>{alert.title}</strong>
-                      <span className={`status-pill severity-${alert.severity}`}>{formatSeverity(alert.severity)}</span>
+                      <span className={`status-pill severity-${alert.severity}`}>
+                        {formatSeverity(alert.severity)}
+                      </span>
                       <span className="status-pill">{formatStatus(alert.status)}</span>
                       <p>{alert.description}</p>
                       {canWrite && alert.status === 'pending' ? (
@@ -302,7 +317,10 @@ export function MissionControlPage() {
                 </div>
               ) : null}
               {dashboard.timelineEvents.length === 0 ? (
-                <EmptyState title="No events" description="Sync the cross-module event stream from live data." />
+                <EmptyState
+                  title="No events"
+                  description="Sync the cross-module event stream from live data."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.timelineEvents.map((event) => (

@@ -1,10 +1,19 @@
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
 import { AI_NAME, APP_NAME } from '@titan/shared';
 import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
+import { useCompanyLocale } from '../lib/company-locale-context';
 import { filterOwnerStaffNav, toStaffIdentity } from '../lib/role-experience';
+import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
+
+function companyInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'CO';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ''}${parts[1][0] ?? ''}`.toUpperCase();
+}
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -12,30 +21,71 @@ type AppLayoutProps = {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, accessToken } = useAuth();
+  const { logoFileId, companyName: profileCompanyName } = useCompanyLocale();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navItems = useMemo(() => (user ? filterOwnerStaffNav(user) : []), [user]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
+  const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
+
+  const shellClassName = [
+    'owner-shell',
+    sidebarCollapsed ? 'owner-shell--collapsed' : '',
+    mobileNavOpen ? 'owner-shell--mobile-nav-open' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <AppShell
+      className={shellClassName}
       header={
         <div className="app-header">
-          <div>
-            <span className="brand">{APP_NAME}</span>
-            <span className="brand-sub">powered by {AI_NAME}</span>
+          <div className="app-header__start">
+            <button
+              type="button"
+              className="app-header__menu-toggle"
+              aria-label={mobileNavOpen ? 'Close navigation' : 'Open navigation'}
+              aria-expanded={mobileNavOpen}
+              onClick={() => setMobileNavOpen((open) => !open)}
+            >
+              Menu
+            </button>
+            <div>
+              <span className="brand">{APP_NAME}</span>
+              <span className="brand-sub">powered by {AI_NAME}</span>
+            </div>
           </div>
           <div className="app-header__user">
             {user ? (
               <>
-                <div className="app-header__meta">
-                  <span className="app-header__name">
-                    {user.firstName} {user.lastName}
+                <Link
+                  href="/settings/company"
+                  className="app-header__identity"
+                  title={`${displayCompanyName} — Company profile`}
+                >
+                  <span className="app-header__identity-mark" aria-hidden="true">
+                    {accessToken && logoFileId ? (
+                      <CompanyMediaImage
+                        accessToken={accessToken}
+                        fileId={logoFileId}
+                        alt=""
+                        className="app-header__identity-image"
+                        fallback={companyInitials(displayCompanyName)}
+                      />
+                    ) : (
+                      companyInitials(displayCompanyName)
+                    )}
                   </span>
-                  <span className="app-header__company">
-                    {user.companyName} · {user.roleName}
+                  <span className="app-header__meta">
+                    <span className="app-header__name">
+                      {user.firstName} {user.lastName}
+                    </span>
+                    <span className="app-header__role">{user.roleName}</span>
                   </span>
-                </div>
+                </Link>
                 {isTechnician ? (
                   <Link href="/mobile" className="app-header__link">
                     Field Mobile
@@ -50,19 +100,47 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       }
       sidebar={
-        <nav className="app-nav">
-          {navItems.map((item) => (
-            <Link
-              key={`${item.href}:${item.label}`}
-              href={item.href}
-              className={`app-nav__link ${location === item.href || (item.href !== '/' && location.startsWith(item.href)) ? 'app-nav__link--active' : ''}`}
+        <div className="app-sidebar">
+          <div className="app-nav__toolbar">
+            <button
+              type="button"
+              className="app-nav__collapse-toggle"
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!sidebarCollapsed}
+              onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
             >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+              {sidebarCollapsed ? '»' : '«'}
+            </button>
+          </div>
+          <nav className="app-nav" aria-label="Main navigation">
+            {navItems.map((item) => {
+              const isActive =
+                location === item.href || (item.href !== '/' && location.startsWith(item.href));
+
+              return (
+                <Link
+                  key={`${item.href}:${item.label}`}
+                  href={item.href}
+                  className={`app-nav__link${isActive ? ' app-nav__link--active' : ''}`}
+                  title={sidebarCollapsed ? item.label : undefined}
+                  onClick={() => setMobileNavOpen(false)}
+                >
+                  <span className="app-nav__label">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
       }
     >
+      {mobileNavOpen ? (
+        <button
+          type="button"
+          className="owner-shell__backdrop"
+          aria-label="Close navigation"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      ) : null}
       {children}
     </AppShell>
   );

@@ -18,8 +18,10 @@ export function canManageMarketingIntelligence(permissions: string[]) {
   );
 }
 
+import { formatMoney } from '@titan/shared';
+
 export function formatCurrency(cents: number, currency: string) {
-  return `${(cents / 100).toFixed(2)} ${currency}`;
+  return formatMoney(cents, currency);
 }
 
 export function formatWorkflowStatus(status: string) {

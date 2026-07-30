@@ -66,7 +66,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new AuthError('EMAIL_IN_USE', 'An account with this email already exists');
+      throw new AuthError('EMAIL_IN_USE', 'Account already exists');
     }
 
     const passwordHash = await hashPassword(input.password);
@@ -79,6 +79,11 @@ export class AuthService {
         .values({
           name: input.companyName.trim(),
           slug,
+          preferences: {
+            timezone: 'Africa/Johannesburg',
+            currency: 'ZAR',
+            locale: 'en-ZA',
+          },
         })
         .returning();
 
@@ -159,9 +164,7 @@ export class AuthService {
     await this.db
       .update(sessions)
       .set({ revokedAt: new Date() })
-      .where(
-        and(eq(sessions.refreshTokenHash, refreshTokenHash), isNull(sessions.revokedAt)),
-      );
+      .where(and(eq(sessions.refreshTokenHash, refreshTokenHash), isNull(sessions.revokedAt)));
   }
 
   async refresh(refreshToken: string): Promise<AuthResult> {
@@ -209,7 +212,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new AuthError('EMAIL_IN_USE', 'An account with this email already exists');
+      throw new AuthError('EMAIL_IN_USE', 'Account already exists');
     }
 
     const passwordHash = await hashPassword(input.password);
@@ -260,7 +263,11 @@ export class AuthService {
 
   async validateSession(sessionId: string, userId: string): Promise<boolean> {
     const session = await this.db.query.sessions.findFirst({
-      where: and(eq(sessions.id, sessionId), eq(sessions.userId, userId), isNull(sessions.revokedAt)),
+      where: and(
+        eq(sessions.id, sessionId),
+        eq(sessions.userId, userId),
+        isNull(sessions.revokedAt),
+      ),
     });
 
     return Boolean(session && session.expiresAt >= new Date());

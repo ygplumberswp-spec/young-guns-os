@@ -17,7 +17,8 @@ export type SecurityAuditCategory =
   | 'settings'
   | 'security';
 
-export type SecurityLoginEventType = 'login_success' | 'login_failed' | 'logout' | 'session_revoked' | 'suspicious';
+export type SecurityLoginEventType =
+  'login_success' | 'login_failed' | 'logout' | 'session_revoked' | 'suspicious';
 
 export type SecurityRiskLevel = 'low' | 'medium' | 'high' | 'critical';
 
@@ -29,14 +30,11 @@ export type SecurityActionType =
   | 'privacy_request';
 
 export type SecurityActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type SecurityPrivacyRequestType = 'data_export' | 'data_deletion' | 'consent_update';
-export type SecurityPrivacyRequestStatus = 'pending' | 'in_review' | 'approved' | 'completed' | 'rejected';
+export type SecurityPrivacyRequestStatus =
+  'pending' | 'in_review' | 'approved' | 'completed' | 'rejected';
 
 export type SecurityPermissionGrantType = 'temporary' | 'delegated' | 'executive_override';
 
@@ -166,9 +164,16 @@ export type SecurityEncryptionSummary = {
   personalWorkspaceEncrypted: boolean;
 };
 
+export type SecurityScoreFactor = {
+  label: string;
+  impact: number;
+  detail: string;
+};
+
 export type SecurityExecutiveDashboard = {
   summary: string;
   securityScore: number | null;
+  securityScoreFactors: SecurityScoreFactor[];
   activeSessionCount: number;
   trustedDeviceCount: number;
   failedLoginCount24h: number;

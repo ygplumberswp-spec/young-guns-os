@@ -2,12 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { EmptyState, PageHeader, Panel } from '@titan/ui';
 import type { PortalCustomerExperienceDashboard } from '@titan/shared';
+import { formatMoney } from '@titan/shared';
 import { PortalApiClientError, fetchPortalExperienceDashboard } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
-
-function formatMoney(cents: number, currency: string) {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(cents / 100);
-}
 
 export function PortalDashboardPage() {
   const { accessToken, user } = usePortalAuth();
@@ -44,7 +41,8 @@ export function PortalDashboardPage() {
 
   if (isLoading) return <p className="page-muted">Loading dashboard…</p>;
   if (error) return <p className="form-error">{error}</p>;
-  if (!dashboard) return <EmptyState title="No dashboard data" description="Your portal dashboard is empty." />;
+  if (!dashboard)
+    return <EmptyState title="No dashboard data" description="Your portal dashboard is empty." />;
 
   return (
     <div className="portal-page">
@@ -54,7 +52,10 @@ export function PortalDashboardPage() {
       />
 
       <div className="portal-grid">
-        <Panel title="Active jobs" description={`${dashboard.activeJobCount} active · ${dashboard.completedJobCount} completed`}>
+        <Panel
+          title="Active jobs"
+          description={`${dashboard.activeJobCount} active · ${dashboard.completedJobCount} completed`}
+        >
           <Link href="/portal/jobs">View jobs</Link>
         </Panel>
         <Panel title="Quotes" description={`${dashboard.pendingQuoteCount} pending approval`}>

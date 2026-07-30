@@ -33,7 +33,11 @@ import {
   runAnalyticsAggregation,
 } from '../../lib/enterprise-analytics-api-client';
 import { useAuth } from '../../lib/auth-context';
-import { canAccessAnalytics, canManageAnalytics, formatChangePercent } from '../../features/analytics/utils';
+import {
+  canAccessAnalytics,
+  canManageAnalytics,
+  formatChangePercent,
+} from '../../features/analytics/utils';
 import { ANALYTICS_PERIOD_OPTIONS, formatMoney, REPORT_TYPE_OPTIONS } from '@titan/shared';
 
 type AnalyticsTab =
@@ -237,7 +241,11 @@ export function AnalyticsPage() {
             <button
               key={tab.id}
               type="button"
-              className={activeTab === tab.id ? 'analytics-page__tab analytics-page__tab--active' : 'analytics-page__tab'}
+              className={
+                activeTab === tab.id
+                  ? 'analytics-page__tab analytics-page__tab--active'
+                  : 'analytics-page__tab'
+              }
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
@@ -296,11 +304,15 @@ export function AnalyticsPage() {
                 </div>
                 <div>
                   <dt>Payments received</dt>
-                  <dd>{formatMoney(dashboard.paymentPerformance.totalCents, dashboard.currency)}</dd>
+                  <dd>
+                    {formatMoney(dashboard.paymentPerformance.totalCents, dashboard.currency)}
+                  </dd>
                 </div>
                 <div>
                   <dt>Average payment</dt>
-                  <dd>{formatMoney(dashboard.paymentPerformance.averageCents, dashboard.currency)}</dd>
+                  <dd>
+                    {formatMoney(dashboard.paymentPerformance.averageCents, dashboard.currency)}
+                  </dd>
                 </div>
               </dl>
             </Panel>
@@ -372,13 +384,16 @@ export function AnalyticsPage() {
                 {runs.map((run) => (
                   <li key={run.id}>
                     <strong>
-                      {REPORT_TYPE_OPTIONS.find((option) => option.value === run.reportType)?.label ?? run.reportType}
+                      {REPORT_TYPE_OPTIONS.find((option) => option.value === run.reportType)
+                        ?.label ?? run.reportType}
                     </strong>
                     <span className="analytics-page__run-status">{run.status}</span>
                     <p className="page-muted">{run.summary ?? 'Report run recorded.'}</p>
                     <p className="page-muted">
                       {new Date(run.startedAt).toLocaleString()}
-                      {run.completedAt ? ` · completed ${new Date(run.completedAt).toLocaleString()}` : ''}
+                      {run.completedAt
+                        ? ` · completed ${new Date(run.completedAt).toLocaleString()}`
+                        : ''}
                     </p>
                   </li>
                 ))}
@@ -391,8 +406,8 @@ export function AnalyticsPage() {
       {!isLoading && profitability && activeTab === 'profitability' ? (
         <Panel title="Job profitability">
           <p className="page-muted">
-            Revenue is derived from linked invoices. Material and labour costs are not tracked in TITAN yet, so
-            estimated profit reflects revenue only.
+            Revenue is derived from linked invoices. Material and labour costs are not tracked in
+            TITAN yet, so estimated profit reflects revenue only.
           </p>
           <dl className="analytics-page__metrics analytics-page__metrics--inline">
             <div>
@@ -409,7 +424,10 @@ export function AnalyticsPage() {
             </div>
           </dl>
           {profitability.jobs.length === 0 ? (
-            <EmptyState title="No jobs in this period" description="Create jobs and invoices to analyze profitability." />
+            <EmptyState
+              title="No jobs in this period"
+              description="Create jobs and invoices to analyze profitability."
+            />
           ) : (
             <div className="analytics-page__table-wrap">
               <table className="analytics-page__table">
@@ -444,10 +462,14 @@ export function AnalyticsPage() {
       {!isLoading && technicians && activeTab === 'technicians' ? (
         <Panel title="Technician performance">
           <p className="page-muted">
-            Workload is based on assigned jobs in the selected period. Customer ratings are not available yet.
+            Workload is based on assigned jobs in the selected period. Customer ratings are not
+            available yet.
           </p>
           {technicians.technicians.length === 0 ? (
-            <EmptyState title="No technician assignments" description="Assign jobs to technicians to track workload." />
+            <EmptyState
+              title="No technician assignments"
+              description="Assign jobs to technicians to track workload."
+            />
           ) : (
             <div className="analytics-page__table-wrap">
               <table className="analytics-page__table">
@@ -514,13 +536,18 @@ export function AnalyticsPage() {
 
           <Panel title="Top customers by revenue">
             {customers.topCustomersByRevenue.length === 0 ? (
-              <EmptyState title="No payment data yet" description="Record payments to rank customer value." />
+              <EmptyState
+                title="No payment data yet"
+                description="Record payments to rank customer value."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {customers.topCustomersByRevenue.map((customer) => (
                   <li key={customer.customerId}>
                     <strong>{customer.customerName}</strong>
-                    <p className="page-muted">{formatMoney(customer.revenueCents, dashboard?.currency ?? 'USD')}</p>
+                    <p className="page-muted">
+                      {formatMoney(customer.revenueCents, dashboard?.currency ?? 'ZAR')}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -554,7 +581,10 @@ export function AnalyticsPage() {
 
           <Panel title="Outstanding invoices">
             {finance.outstandingInvoices.length === 0 ? (
-              <EmptyState title="No outstanding invoices" description="All synced invoices are paid or settled." />
+              <EmptyState
+                title="No outstanding invoices"
+                description="All synced invoices are paid or settled."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {finance.outstandingInvoices.slice(0, 10).map((invoice) => (
@@ -564,7 +594,9 @@ export function AnalyticsPage() {
                     </strong>
                     <p className="page-muted">
                       {formatMoney(invoice.outstandingCents, finance.currency)}
-                      {invoice.daysOverdue !== null ? ` · ${invoice.daysOverdue} day(s) overdue` : ''}
+                      {invoice.daysOverdue !== null
+                        ? ` · ${invoice.daysOverdue} day(s) overdue`
+                        : ''}
                     </p>
                   </li>
                 ))}
@@ -577,12 +609,27 @@ export function AnalyticsPage() {
       {!isLoading && enterpriseDashboard && activeTab === 'intelligence' ? (
         <>
           <section className="stat-grid">
-            <StatCard label="Active KPIs" value={String(enterpriseDashboard.stats.activeKpiCount)} />
+            <StatCard
+              label="Active KPIs"
+              value={String(enterpriseDashboard.stats.activeKpiCount)}
+            />
             <StatCard label="Dashboards" value={String(enterpriseDashboard.stats.dashboardCount)} />
-            <StatCard label="Pending insights" value={String(enterpriseDashboard.stats.pendingInsightCount)} />
-            <StatCard label="Scheduled reports" value={String(enterpriseDashboard.stats.scheduledReportCount)} />
-            <StatCard label="Forecasts" value={String(enterpriseDashboard.stats.latestForecastCount)} />
-            <StatCard label="Pending actions" value={String(enterpriseDashboard.pendingActionCount)} />
+            <StatCard
+              label="Pending insights"
+              value={String(enterpriseDashboard.stats.pendingInsightCount)}
+            />
+            <StatCard
+              label="Scheduled reports"
+              value={String(enterpriseDashboard.stats.scheduledReportCount)}
+            />
+            <StatCard
+              label="Forecasts"
+              value={String(enterpriseDashboard.stats.latestForecastCount)}
+            />
+            <StatCard
+              label="Pending actions"
+              value={String(enterpriseDashboard.pendingActionCount)}
+            />
           </section>
           <p className="page-muted">{enterpriseDashboard.summary}</p>
           <Panel title="Data lake modules">
@@ -596,7 +643,9 @@ export function AnalyticsPage() {
                     <span className="page-muted">
                       {' '}
                       · {module.recordCount} record(s)
-                      {module.lastActivityAt ? ` · last activity ${new Date(module.lastActivityAt).toLocaleString()}` : ''}
+                      {module.lastActivityAt
+                        ? ` · last activity ${new Date(module.lastActivityAt).toLocaleString()}`
+                        : ''}
                     </span>
                   </li>
                 ))}
@@ -647,7 +696,12 @@ export function AnalyticsPage() {
           {canWrite ? (
             <div className="analytics-page__section-header">
               <span className="page-muted">Insights generated from real operational signals.</span>
-              <Button size="sm" variant="secondary" disabled={isGenerating} onClick={() => void handleGenerateInsights()}>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isGenerating}
+                onClick={() => void handleGenerateInsights()}
+              >
                 {isGenerating ? 'Generating…' : 'Generate insights'}
               </Button>
             </div>
@@ -662,7 +716,9 @@ export function AnalyticsPage() {
               <ul className="analytics-page__run-list">
                 {insights.map((insight) => (
                   <li key={insight.id}>
-                    <strong>[{insight.priority}] {insight.title}</strong>
+                    <strong>
+                      [{insight.priority}] {insight.title}
+                    </strong>
                     <p className="page-muted">{insight.description}</p>
                   </li>
                 ))}
@@ -686,7 +742,9 @@ export function AnalyticsPage() {
                   <strong>{forecast.forecastType.replace(/_/g, ' ')}</strong>
                   <p className="page-muted">
                     {forecast.summary}
-                    {forecast.confidencePercent != null ? ` · ${forecast.confidencePercent}% confidence` : ''}
+                    {forecast.confidencePercent != null
+                      ? ` · ${forecast.confidencePercent}% confidence`
+                      : ''}
                   </p>
                 </li>
               ))}
@@ -705,7 +763,12 @@ export function AnalyticsPage() {
                 : 'Never'}
             </p>
             {canWrite ? (
-              <Button size="sm" variant="secondary" disabled={isAggregating} onClick={() => void handleRunAggregation()}>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isAggregating}
+                onClick={() => void handleRunAggregation()}
+              >
                 {isAggregating ? 'Aggregating…' : 'Run incremental aggregation'}
               </Button>
             ) : null}
@@ -713,7 +776,9 @@ export function AnalyticsPage() {
           <div className="analytics-page__grid">
             <Panel title="Historical snapshots">
               {enterpriseDashboard.warehouse.snapshots.length === 0 ? (
-                <p className="page-muted">No snapshots yet. Run aggregation to capture cross-module metrics.</p>
+                <p className="page-muted">
+                  No snapshots yet. Run aggregation to capture cross-module metrics.
+                </p>
               ) : (
                 <ul className="analytics-page__run-list">
                   {enterpriseDashboard.warehouse.snapshots.map((snapshot) => (
