@@ -1,18 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
 import type {
-  AnalyticsDashboard,
   AnalyticsPeriod,
-  BusinessInsightSummary,
-  BusinessKpiSummary,
-  CustomerAnalytics,
-  EnterpriseAnalyticsExecutiveDashboard,
-  FinanceAnalytics,
-  JobProfitabilityAnalytics,
-  PredictiveForecastSummary,
   ReportDefinitionSummary,
-  ReportRunSummary,
-  TechnicianPerformanceAnalytics,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -33,6 +23,7 @@ import {
   runAnalyticsAggregation,
 } from '../../lib/enterprise-analytics-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import {
   canAccessAnalytics,
   canManageAnalytics,
@@ -57,19 +48,6 @@ export function AnalyticsPage() {
   const { accessToken, user } = useAuth();
   const [period, setPeriod] = useState<AnalyticsPeriod>('monthly');
   const [activeTab, setActiveTab] = useState<AnalyticsTab>('dashboard');
-  const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
-  const [profitability, setProfitability] = useState<JobProfitabilityAnalytics | null>(null);
-  const [technicians, setTechnicians] = useState<TechnicianPerformanceAnalytics | null>(null);
-  const [customers, setCustomers] = useState<CustomerAnalytics | null>(null);
-  const [finance, setFinance] = useState<FinanceAnalytics | null>(null);
-  const [definitions, setDefinitions] = useState<ReportDefinitionSummary[]>([]);
-  const [runs, setRuns] = useState<ReportRunSummary[]>([]);
-  const [enterpriseDashboard, setEnterpriseDashboard] =
-    useState<EnterpriseAnalyticsExecutiveDashboard | null>(null);
-  const [kpis, setKpis] = useState<BusinessKpiSummary[]>([]);
-  const [insights, setInsights] = useState<BusinessInsightSummary[]>([]);
-  const [forecasts, setForecasts] = useState<PredictiveForecastSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAggregating, setIsAggregating] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,72 +56,140 @@ export function AnalyticsPage() {
   const canView = useMemo(() => (user ? canAccessAnalytics(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageAnalytics(user.permissions) : false), [user]);
 
+  const periodKey = `analytics:${period}`;
+
+  const dashboardQuery = useCachedQuery({
+    queryKey: `${periodKey}/dashboard`,
+    accessToken,
+    enabled: canView && (activeTab === 'dashboard' || activeTab === 'warehouse'),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchAnalyticsDashboard(accessToken!, { period }),
+  });
+
+  const profitabilityQuery = useCachedQuery({
+    queryKey: `${periodKey}/profitability`,
+    accessToken,
+    enabled: canView && activeTab === 'profitability',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchJobProfitability(accessToken!, { period }),
+  });
+
+  const techniciansQuery = useCachedQuery({
+    queryKey: `${periodKey}/technicians`,
+    accessToken,
+    enabled: canView && activeTab === 'technicians',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchTechnicianPerformance(accessToken!, { period }),
+  });
+
+  const customersQuery = useCachedQuery({
+    queryKey: `${periodKey}/customers`,
+    accessToken,
+    enabled: canView && activeTab === 'customers',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchCustomerAnalytics(accessToken!, { period }),
+  });
+
+  const financeQuery = useCachedQuery({
+    queryKey: `${periodKey}/finance`,
+    accessToken,
+    enabled: canView && activeTab === 'finance',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchFinanceAnalytics(accessToken!, { period }),
+  });
+
+  const reportsQuery = useCachedQuery({
+    queryKey: 'analytics/reports',
+    accessToken,
+    enabled: canView && activeTab === 'reports',
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchReportCatalog(accessToken!),
+  });
+
+  const enterpriseQuery = useCachedQuery({
+    queryKey: 'analytics/enterprise-dashboard',
+    accessToken,
+    enabled: canView && activeTab === 'intelligence',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchEnterpriseAnalyticsDashboard(accessToken!).catch(() => null),
+  });
+
+  const kpisQuery = useCachedQuery({
+    queryKey: 'analytics/kpis',
+    accessToken,
+    enabled: canView && activeTab === 'kpis',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchBusinessKpis(accessToken!).catch(() => []),
+  });
+
+  const insightsQuery = useCachedQuery({
+    queryKey: 'analytics/insights',
+    accessToken,
+    enabled: canView && activeTab === 'insights',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchBusinessInsights(accessToken!).catch(() => []),
+  });
+
+  const forecastsQuery = useCachedQuery({
+    queryKey: 'analytics/forecasts',
+    accessToken,
+    enabled: canView && activeTab === 'forecasts',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchPredictiveForecasts(accessToken!).catch(() => []),
+  });
+
+  const dashboard = dashboardQuery.data ?? null;
+  const profitability = profitabilityQuery.data ?? null;
+  const technicians = techniciansQuery.data ?? null;
+  const customers = customersQuery.data ?? null;
+  const finance = financeQuery.data ?? null;
+  const definitions = reportsQuery.data?.definitions ?? [];
+  const runs = reportsQuery.data?.runs ?? [];
+  const enterpriseDashboard = enterpriseQuery.data ?? null;
+  const kpis = kpisQuery.data ?? [];
+  const insights = insightsQuery.data ?? [];
+  const forecasts = forecastsQuery.data ?? [];
+
+  const isLoading =
+    (activeTab === 'dashboard' && dashboardQuery.isLoading && !dashboard) ||
+    (activeTab === 'warehouse' && dashboardQuery.isLoading && !dashboard) ||
+    (activeTab === 'profitability' && profitabilityQuery.isLoading && !profitability) ||
+    (activeTab === 'technicians' && techniciansQuery.isLoading && !technicians) ||
+    (activeTab === 'customers' && customersQuery.isLoading && !customers) ||
+    (activeTab === 'finance' && financeQuery.isLoading && !finance) ||
+    (activeTab === 'reports' && reportsQuery.isLoading && !reportsQuery.data) ||
+    (activeTab === 'intelligence' && enterpriseQuery.isLoading && !enterpriseDashboard) ||
+    (activeTab === 'kpis' && kpisQuery.isLoading && kpis.length === 0) ||
+    (activeTab === 'insights' && insightsQuery.isLoading && insights.length === 0) ||
+    (activeTab === 'forecasts' && forecastsQuery.isLoading && forecasts.length === 0);
+
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      const query = { period };
-
-      try {
-        const [
-          dashboardData,
-          profitabilityData,
-          technicianData,
-          customerData,
-          financeData,
-          reportCatalog,
-          enterpriseData,
-          kpiData,
-          insightData,
-          forecastData,
-        ] = await Promise.all([
-          fetchAnalyticsDashboard(accessToken, query),
-          fetchJobProfitability(accessToken, query),
-          fetchTechnicianPerformance(accessToken, query),
-          fetchCustomerAnalytics(accessToken, query),
-          fetchFinanceAnalytics(accessToken, query),
-          fetchReportCatalog(accessToken),
-          fetchEnterpriseAnalyticsDashboard(accessToken).catch(() => null),
-          fetchBusinessKpis(accessToken).catch(() => []),
-          fetchBusinessInsights(accessToken).catch(() => []),
-          fetchPredictiveForecasts(accessToken).catch(() => []),
-        ]);
-
-        if (!cancelled) {
-          setDashboard(dashboardData);
-          setProfitability(profitabilityData);
-          setTechnicians(technicianData);
-          setCustomers(customerData);
-          setFinance(financeData);
-          setDefinitions(reportCatalog.definitions);
-          setRuns(reportCatalog.runs);
-          setEnterpriseDashboard(enterpriseData);
-          setKpis(kpiData);
-          setInsights(insightData);
-          setForecasts(forecastData);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load analytics');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    const loadError =
+      dashboardQuery.error ??
+      profitabilityQuery.error ??
+      techniciansQuery.error ??
+      customersQuery.error ??
+      financeQuery.error ??
+      reportsQuery.error ??
+      enterpriseQuery.error ??
+      kpisQuery.error ??
+      insightsQuery.error ??
+      forecastsQuery.error;
+    if (loadError) {
+      setError(loadError);
     }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView, period]);
+  }, [
+    dashboardQuery.error,
+    profitabilityQuery.error,
+    techniciansQuery.error,
+    customersQuery.error,
+    financeQuery.error,
+    reportsQuery.error,
+    enterpriseQuery.error,
+    kpisQuery.error,
+    insightsQuery.error,
+    forecastsQuery.error,
+  ]);
 
   async function handleGenerateReport(reportType: ReportDefinitionSummary['reportType']) {
     if (!accessToken || !canWrite) return;
@@ -154,7 +200,7 @@ export function AnalyticsPage() {
 
     try {
       const run = await generateAnalyticsReport(accessToken, { reportType, period });
-      setRuns((current) => [run, ...current]);
+      await reportsQuery.refetch();
       setSuccess(run.summary ?? 'Report generated successfully.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to generate report');
@@ -169,8 +215,7 @@ export function AnalyticsPage() {
     setError(null);
     try {
       await runAnalyticsAggregation(accessToken);
-      const enterpriseData = await fetchEnterpriseAnalyticsDashboard(accessToken);
-      setEnterpriseDashboard(enterpriseData);
+      await enterpriseQuery.refetch();
       setSuccess('Data warehouse aggregation completed from live tenant records.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to run aggregation');
@@ -184,8 +229,8 @@ export function AnalyticsPage() {
     setIsGenerating(true);
     setError(null);
     try {
-      const generated = await generateBusinessInsights(accessToken);
-      setInsights(generated);
+      await generateBusinessInsights(accessToken);
+      await insightsQuery.refetch();
       setSuccess('Business insights generated from real operational data.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to generate insights');
@@ -254,7 +299,7 @@ export function AnalyticsPage() {
         </nav>
       </div>
 
-      {isLoading ? <p className="page-muted">Loading analytics…</p> : null}
+      {isLoading ? <LoadingState label="Loading analytics…" /> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 

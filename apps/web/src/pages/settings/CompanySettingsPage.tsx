@@ -10,13 +10,16 @@ import {
   updateCompanyProfile,
   uploadCompanyMedia,
 } from '../../lib/company-api';
+import { getCachedCompanyProfile } from '../../lib/company-profile-cache';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { CompanyMediaImage } from '../../features/company/CompanyMediaImage';
 import { useAuth } from '../../lib/auth-context';
 
 export function CompanySettingsPage() {
   const { accessToken, user } = useAuth();
-  const [profile, setProfile] = useState<CompanyProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [profile, setProfile] = useState<CompanyProfile | null>(() =>
+    accessToken ? getCachedCompanyProfile(accessToken) : null,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -53,70 +56,68 @@ export function CompanySettingsPage() {
 
   const canEdit = user?.permissions.includes('*') ?? false;
 
+  function applyProfileToForm(data: CompanyProfile) {
+    setProfile(data);
+    setName(data.name);
+    setIndustry(data.industry ?? '');
+    setBusinessType(data.businessType ?? '');
+    setTimezone(data.preferences.timezone ?? '');
+    setCurrency(data.preferences.currency ?? '');
+    setLocale(data.preferences.locale ?? '');
+    setAiTone(data.preferences.aiTone ?? 'professional');
+    setNotes(data.preferences.notes ?? '');
+    setTradingName(data.preferences.tradingName ?? '');
+    setOwnerName(data.preferences.ownerName ?? '');
+    setOwnerJobTitle(data.preferences.ownerJobTitle ?? '');
+    setCompanyTelephone(data.preferences.companyTelephone ?? '');
+    setCompanyEmail(data.preferences.companyEmail ?? '');
+    setWebsite(data.preferences.website ?? '');
+    setPhysicalAddress(data.preferences.physicalAddress ?? '');
+    setPostalAddress(data.preferences.postalAddress ?? '');
+    setCompanyRegistrationNumber(data.preferences.companyRegistrationNumber ?? '');
+    setVatNumber(data.preferences.vatNumber ?? '');
+    setBusinessDescription(data.preferences.businessDescription ?? '');
+    setServicesOffered(data.preferences.servicesOffered ?? '');
+    setOperatingHours(data.preferences.operatingHours ?? '');
+    setEmergencyContactName(data.preferences.emergencyContactName ?? '');
+    setEmergencyContactPhone(data.preferences.emergencyContactPhone ?? '');
+    setBrandPrimaryColor(data.preferences.brandPrimaryColor ?? '');
+    setBrandAccentColor(data.preferences.brandAccentColor ?? '');
+  }
+
+  const { data: loadedProfile, error: profileError, isLoading } = useCachedQuery({
+    queryKey: 'company/profile',
+    accessToken,
+    enabled: Boolean(accessToken),
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchCompanyProfile(accessToken!),
+  });
+
+  const { data: mediaStatus } = useCachedQuery({
+    queryKey: 'company/media-status',
+    accessToken,
+    enabled: Boolean(accessToken),
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchCompanyMediaStatus(accessToken!),
+  });
+
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadProfile() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchCompanyProfile(accessToken);
-
-        if (cancelled) {
-          return;
-        }
-
-        setProfile(data);
-        setName(data.name);
-        setIndustry(data.industry ?? '');
-        setBusinessType(data.businessType ?? '');
-        setTimezone(data.preferences.timezone ?? '');
-        setCurrency(data.preferences.currency ?? '');
-        setLocale(data.preferences.locale ?? '');
-        setAiTone(data.preferences.aiTone ?? 'professional');
-        setNotes(data.preferences.notes ?? '');
-        setTradingName(data.preferences.tradingName ?? '');
-        setOwnerName(data.preferences.ownerName ?? '');
-        setOwnerJobTitle(data.preferences.ownerJobTitle ?? '');
-        setCompanyTelephone(data.preferences.companyTelephone ?? '');
-        setCompanyEmail(data.preferences.companyEmail ?? '');
-        setWebsite(data.preferences.website ?? '');
-        setPhysicalAddress(data.preferences.physicalAddress ?? '');
-        setPostalAddress(data.preferences.postalAddress ?? '');
-        setCompanyRegistrationNumber(data.preferences.companyRegistrationNumber ?? '');
-        setVatNumber(data.preferences.vatNumber ?? '');
-        setBusinessDescription(data.preferences.businessDescription ?? '');
-        setServicesOffered(data.preferences.servicesOffered ?? '');
-        setOperatingHours(data.preferences.operatingHours ?? '');
-        setEmergencyContactName(data.preferences.emergencyContactName ?? '');
-        setEmergencyContactPhone(data.preferences.emergencyContactPhone ?? '');
-        setBrandPrimaryColor(data.preferences.brandPrimaryColor ?? '');
-        setBrandAccentColor(data.preferences.brandAccentColor ?? '');
-
-        const mediaStatus = await fetchCompanyMediaStatus(accessToken);
-        if (!cancelled) {
-          setMediaConfigured(mediaStatus.configured);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load company profile');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
+    if (loadedProfile) {
+      applyProfileToForm(loadedProfile);
     }
+  }, [loadedProfile]);
 
-    void loadProfile();
+  useEffect(() => {
+    if (mediaStatus) {
+      setMediaConfigured(mediaStatus.configured);
+    }
+  }, [mediaStatus]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  useEffect(() => {
+    if (profileError) {
+      setError(profileError);
+    }
+  }, [profileError]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -206,10 +207,6 @@ export function CompanySettingsPage() {
     }
   }
 
-  if (isLoading) {
-    return <LoadingState label="Loading company profile" />;
-  }
-
   return (
     <>
       <PageHeader
@@ -220,6 +217,9 @@ export function CompanySettingsPage() {
       {error ? <p className="settings-alert settings-alert--error">{error}</p> : null}
       {success ? <p className="settings-alert settings-alert--success">{success}</p> : null}
 
+      {isLoading && !profile ? (
+        <LoadingState label="Loading company profile…" />
+      ) : (
       <form className="settings-form" onSubmit={(event) => void handleSubmit(event)}>
         <section className="settings-section">
           <h2 className="settings-section__title">Business information</h2>
@@ -563,6 +563,7 @@ export function CompanySettingsPage() {
           </p>
         )}
       </form>
+      )}
     </>
   );
 }

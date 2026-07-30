@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input, LoadingState, PageHeader } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
-import type { TeamInvite, TeamMember, TeamRole } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createTeamInvite,
@@ -10,13 +9,10 @@ import {
   fetchTeamRoles,
 } from '../../lib/team-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 
 export function TeamSettingsPage() {
   const { accessToken, user } = useAuth();
-  const [members, setMembers] = useState<TeamMember[]>([]);
-  const [invites, setInvites] = useState<TeamInvite[]>([]);
-  const [assignableRoles, setAssignableRoles] = useState<TeamRole[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [isInviting, setIsInviting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
@@ -33,51 +29,48 @@ export function TeamSettingsPage() {
     [user],
   );
 
-  async function loadTeam() {
-    if (!accessToken) {
-      return;
-    }
+  const membersQuery = useCachedQuery({
+    queryKey: 'team/members',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchTeamMembers(accessToken!),
+  });
 
-    const [memberData, roleData, inviteData] = await Promise.all([
-      fetchTeamMembers(accessToken),
-      fetchTeamRoles(accessToken),
-      canManage ? fetchTeamInvites(accessToken) : Promise.resolve([]),
-    ]);
+  const rolesQuery = useCachedQuery({
+    queryKey: 'team/roles',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchTeamRoles(accessToken!),
+  });
 
-    setMembers(memberData);
-    setAssignableRoles(roleData.assignableRoles);
-    setInvites(inviteData);
-    setRoleId((current) => current || roleData.assignableRoles[0]?.id || '');
-  }
+  const invitesQuery = useCachedQuery({
+    queryKey: 'team/invites',
+    accessToken,
+    enabled: canView && canManage,
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchTeamInvites(accessToken!),
+  });
+
+  const members = membersQuery.data ?? [];
+  const assignableRoles = rolesQuery.data?.assignableRoles ?? [];
+  const invites = invitesQuery.data ?? [];
+  const isLoading = membersQuery.isLoading || rolesQuery.isLoading;
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function bootstrap() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await loadTeam();
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load team');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
+    if (!roleId && assignableRoles[0]?.id) {
+      setRoleId(assignableRoles[0].id);
     }
+  }, [assignableRoles, roleId]);
 
-    void bootstrap();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canManage, canView]);
+  async function loadTeam() {
+    await Promise.all([
+      membersQuery.refetch(),
+      rolesQuery.refetch(),
+      canManage ? invitesQuery.refetch() : Promise.resolve(),
+    ]);
+  }
 
   async function handleInvite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -112,7 +105,15 @@ export function TeamSettingsPage() {
   }
 
   if (isLoading) {
-    return <div className="settings-loading">Loading team...</div>;
+    return (
+      <>
+        <PageHeader
+          title="Team Members"
+          description="Manage users in your company workspace. Invites are link-based until email delivery is added."
+        />
+        <LoadingState label="Loading team…" />
+      </>
+    );
   }
 
   return (

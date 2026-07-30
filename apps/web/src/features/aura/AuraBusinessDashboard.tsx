@@ -1,13 +1,14 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState } from '@titan/ui';
-import type { IntelligenceDashboard, Recommendation } from '@titan/shared';
-import { useEffect, useState } from 'react';
+import type { Recommendation } from '@titan/shared';
+import { useState } from 'react';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createAuraMemory,
   fetchIntelligenceDashboard,
   fetchRecommendations,
 } from '../../lib/intelligence-api';
+import { useCachedQuery } from '../../lib/use-cached-query';
 
 type AuraBusinessDashboardProps = {
   accessToken: string;
@@ -15,49 +16,33 @@ type AuraBusinessDashboardProps = {
 };
 
 export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusinessDashboardProps) {
-  const [dashboard, setDashboard] = useState<IntelligenceDashboard | null>(null);
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [memoryDraft, setMemoryDraft] = useState('');
   const [isSavingMemory, setIsSavingMemory] = useState(false);
   const [memorySuccess, setMemorySuccess] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const dashboardQuery = useCachedQuery({
+    queryKey: 'intelligence/dashboard',
+    accessToken,
+    enabled: Boolean(accessToken),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchIntelligenceDashboard(accessToken),
+  });
 
-    async function load() {
-      setIsLoading(true);
-      setError(null);
+  const recommendationsQuery = useCachedQuery({
+    queryKey: 'intelligence/recommendations',
+    accessToken,
+    enabled: Boolean(accessToken),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchRecommendations(accessToken),
+  });
 
-      try {
-        const [dashboardData, recommendationData] = await Promise.all([
-          fetchIntelligenceDashboard(accessToken),
-          fetchRecommendations(accessToken),
-        ]);
-
-        if (!cancelled) {
-          setDashboard(dashboardData);
-          setRecommendations(recommendationData);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof ApiClientError ? err.message : 'Unable to load business intelligence',
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  const dashboard = dashboardQuery.data ?? null;
+  const recommendations = recommendationsQuery.data ?? [];
+  const isLoading =
+    (dashboardQuery.isLoading && !dashboard) ||
+    (recommendationsQuery.isLoading && recommendationsQuery.data === undefined);
+  const loadError = error ?? dashboardQuery.error ?? recommendationsQuery.error;
 
   async function handleSaveMemory() {
     if (!canWriteMemory || !memoryDraft.trim()) return;
@@ -85,11 +70,11 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
     return <LoadingState label="Loading business intelligence…" />;
   }
 
-  if (error) {
+  if (loadError) {
     const providerMissing =
-      error.toLowerCase().includes('provider') ||
-      error.toLowerCase().includes('openai') ||
-      error.toLowerCase().includes('not configured');
+      loadError.toLowerCase().includes('provider') ||
+      loadError.toLowerCase().includes('openai') ||
+      loadError.toLowerCase().includes('not configured');
 
     if (providerMissing) {
       return (
@@ -108,7 +93,7 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
     return (
       <EmptyState
         title="Business intelligence unavailable"
-        description={error}
+        description={loadError}
         action={
           <Link href="/integrations">
             <Button variant="secondary">Review integrations</Button>
@@ -142,7 +127,7 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
         />
       ) : (
         <ul className="simple-list">
-          {recommendations.slice(0, 5).map((item) => (
+          {recommendations.slice(0, 5).map((item: Recommendation) => (
             <li key={item.id}>
               <strong>{item.title}</strong> — {item.description}
               <span className="page-muted"> · Draft recommendation</span>

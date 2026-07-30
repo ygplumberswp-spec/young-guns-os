@@ -1,22 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { StatCard } from '@titan/ui';
+import { useMemo } from 'react';
+import { LoadingState, StatCard } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
-import { ApiClientError } from '../../lib/api-client';
 import { fetchCrmStats } from '../../lib/crm-api';
 import { fetchFinanceStats } from '../../lib/finance-api';
 import { fetchJobsStats } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCompanyLocale } from '../../lib/company-locale-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { DASHBOARD_METRICS } from './constants';
 
 export function DashboardStats() {
   const { accessToken, user } = useAuth();
   const { formatMoney, currency: companyCurrency } = useCompanyLocale();
-  const [customerCount, setCustomerCount] = useState<number | null>(null);
-  const [activeJobCount, setActiveJobCount] = useState<number | null>(null);
-  const [openQuoteCount, setOpenQuoteCount] = useState<number | null>(null);
-  const [revenueMtdCents, setRevenueMtdCents] = useState<number | null>(null);
-  const [revenueCurrency, setRevenueCurrency] = useState(companyCurrency);
 
   const canViewCustomers = useMemo(
     () =>
@@ -34,112 +29,93 @@ export function DashboardStats() {
     [user],
   );
 
-  useEffect(() => {
-    let cancelled = false;
+  const crmStats = useCachedQuery({
+    queryKey: 'crm/stats',
+    accessToken,
+    enabled: Boolean(accessToken && canViewCustomers),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchCrmStats(accessToken!),
+  });
 
-    async function loadStats() {
-      if (!accessToken) {
-        return;
-      }
+  const jobsStats = useCachedQuery({
+    queryKey: 'jobs/stats',
+    accessToken,
+    enabled: Boolean(accessToken && canViewJobs),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchJobsStats(accessToken!),
+  });
 
-      const tasks: Promise<void>[] = [];
-
-      if (canViewCustomers) {
-        tasks.push(
-          fetchCrmStats(accessToken)
-            .then((stats) => {
-              if (!cancelled) setCustomerCount(stats.customerCount);
-            })
-            .catch((err) => {
-              if (!cancelled && err instanceof ApiClientError) setCustomerCount(0);
-            }),
-        );
-      }
-
-      if (canViewJobs) {
-        tasks.push(
-          fetchJobsStats(accessToken)
-            .then((stats) => {
-              if (!cancelled) setActiveJobCount(stats.activeCount);
-            })
-            .catch((err) => {
-              if (!cancelled && err instanceof ApiClientError) setActiveJobCount(0);
-            }),
-        );
-      }
-
-      if (canViewFinance) {
-        tasks.push(
-          fetchFinanceStats(accessToken)
-            .then((stats) => {
-              if (!cancelled) {
-                setOpenQuoteCount(stats.openQuoteCount);
-                setRevenueMtdCents(stats.revenueMtdCents);
-                setRevenueCurrency(stats.currency);
-              }
-            })
-            .catch((err) => {
-              if (!cancelled && err instanceof ApiClientError) {
-                setOpenQuoteCount(0);
-                setRevenueMtdCents(0);
-              }
-            }),
-        );
-      }
-
-      await Promise.all(tasks);
-    }
-
-    void loadStats();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canViewCustomers, canViewFinance, canViewJobs]);
+  const financeStats = useCachedQuery({
+    queryKey: 'finance/stats',
+    accessToken,
+    enabled: Boolean(accessToken && canViewFinance),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchFinanceStats(accessToken!),
+  });
 
   const metrics = DASHBOARD_METRICS.map((metric) => {
     if (metric.id === 'customers') {
       return {
         ...metric,
-        value: customerCount === null ? '0' : String(customerCount),
+        value:
+          crmStats.isLoading && crmStats.data === undefined
+            ? '…'
+            : String(crmStats.data?.customerCount ?? 0),
         hint: canViewCustomers ? 'Live count from CRM' : metric.hint,
+        loading: crmStats.isLoading && !crmStats.data,
       };
     }
 
     if (metric.id === 'active-jobs') {
       return {
         ...metric,
-        value: activeJobCount === null ? '0' : String(activeJobCount),
+        value:
+          jobsStats.isLoading && jobsStats.data === undefined
+            ? '…'
+            : String(jobsStats.data?.activeCount ?? 0),
         hint: canViewJobs ? 'New, scheduled, and in progress' : metric.hint,
+        loading: jobsStats.isLoading && !jobsStats.data,
       };
     }
 
     if (metric.id === 'open-quotes') {
       return {
         ...metric,
-        value: openQuoteCount === null ? '0' : String(openQuoteCount),
+        value:
+          financeStats.isLoading && financeStats.data === undefined
+            ? '…'
+            : String(financeStats.data?.openQuoteCount ?? 0),
         hint: canViewFinance ? 'Draft and sent quotes' : metric.hint,
+        loading: financeStats.isLoading && !financeStats.data,
       };
     }
 
     if (metric.id === 'revenue') {
+      const revenueCurrency = financeStats.data?.currency ?? companyCurrency;
       return {
         ...metric,
         value:
-          revenueMtdCents === null
-            ? formatMoney(0, revenueCurrency)
-            : formatMoney(revenueMtdCents, revenueCurrency),
+          financeStats.isLoading && financeStats.data === undefined
+            ? '…'
+            : formatMoney(financeStats.data?.revenueMtdCents ?? 0, revenueCurrency),
         hint: canViewFinance ? 'Payments received this month' : metric.hint,
+        loading: financeStats.isLoading && !financeStats.data,
       };
     }
 
-    return metric;
+    return { ...metric, loading: false };
   });
 
   return (
     <section className="dashboard-stats" aria-label="Business metrics">
       {metrics.map((metric) => (
-        <StatCard key={metric.id} label={metric.label} value={metric.value} hint={metric.hint} />
+        <div key={metric.id} className="dashboard-stat-card">
+          {metric.loading ? (
+            <LoadingState label={`Loading ${metric.label.toLowerCase()}…`} />
+          ) : (
+            <StatCard label={metric.label} value={metric.value} hint={metric.hint} />
+          )}
+        </div>
       ))}
     </section>
   );

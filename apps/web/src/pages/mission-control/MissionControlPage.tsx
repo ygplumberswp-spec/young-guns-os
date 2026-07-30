@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
-import type { EnterpriseMissionControlDashboard } from '@titan/shared';
+import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   acknowledgeMissionControlAlert,
@@ -12,6 +11,7 @@ import {
   syncMissionControlTimeline,
 } from '../../lib/mission-control-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import {
   canAccessMissionControl,
   canManageMissionControl,
@@ -26,8 +26,6 @@ type MissionControlTab =
 export function MissionControlPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<MissionControlTab>('dashboard');
-  const [dashboard, setDashboard] = useState<EnterpriseMissionControlDashboard | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -38,37 +36,28 @@ export function MissionControlPage() {
     [user],
   );
 
-  async function loadDashboard() {
-    if (!accessToken) return;
-    const data = await fetchMissionControlDashboard(accessToken);
-    setDashboard(data);
-  }
+  const {
+    data: dashboard,
+    error: loadError,
+    isLoading,
+    refetch,
+  } = useCachedQuery({
+    queryKey: 'mission-control/dashboard',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchMissionControlDashboard(accessToken!),
+  });
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await loadDashboard();
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load mission control');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    if (loadError) {
+      setError(loadError);
     }
+  }, [loadError]);
 
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView]);
+  async function loadDashboard() {
+    await refetch();
+  }
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     if (!accessToken || !canWrite) return;
@@ -154,7 +143,7 @@ export function MissionControlPage() {
       />
 
       {isLoading ? (
-        <Panel title="Loading">Loading mission control dashboard…</Panel>
+        <LoadingState label="Loading mission control dashboard…" />
       ) : !dashboard ? (
         <EmptyState title="No data" description="Mission control dashboard is unavailable." />
       ) : (

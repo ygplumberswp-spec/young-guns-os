@@ -442,6 +442,10 @@ a {
   padding: 1.5rem;
 }
 
+.dashboard-stat-card .titan-loading-state {
+  min-height: 6rem;
+}
+
 .owner-shell--collapsed .titan-shell__sidebar {
   width: 3.75rem;
   padding-inline: 0.5rem;

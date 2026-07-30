@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, GroupedTabNav, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { EnterpriseMarketingIntelligenceDashboard } from '@titan/shared';
+import { Button, EmptyState, GroupedTabNav, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureMarketingAnalytics,
@@ -9,6 +8,7 @@ import {
   syncMarketingAlerts,
 } from '../../lib/enterprise-marketing-intelligence-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
@@ -28,8 +28,6 @@ import {
 export function MarketingIntelligencePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<MarketingIntelligenceTab>('overview');
-  const [dashboard, setDashboard] = useState<EnterpriseMarketingIntelligenceDashboard | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -52,39 +50,28 @@ export function MarketingIntelligencePage() {
     [user],
   );
 
-  async function loadDashboard() {
-    if (!accessToken) return;
-    const data = await fetchMarketingIntelligenceDashboard(accessToken);
-    setDashboard(data);
-  }
+  const {
+    data: dashboard,
+    error: loadError,
+    isLoading,
+    refetch,
+  } = useCachedQuery({
+    queryKey: 'marketing-intelligence/dashboard',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchMarketingIntelligenceDashboard(accessToken!),
+  });
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const data = await fetchMarketingIntelligenceDashboard(accessToken);
-        if (!cancelled) setDashboard(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof ApiClientError
-              ? err.message
-              : 'Unable to load marketing intelligence dashboard',
-          );
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    if (loadError) {
+      setError(loadError);
     }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView]);
+  }, [loadError]);
+
+  async function loadDashboard() {
+    await refetch();
+  }
 
   async function runAction(action: () => Promise<unknown>, message: string) {
     if (!accessToken) return;
@@ -138,11 +125,7 @@ export function MarketingIntelligencePage() {
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {isLoading ? (
-        <p className="page-muted" role="status">
-          Loading marketing intelligence…
-        </p>
-      ) : null}
+      {isLoading ? <LoadingState label="Loading marketing intelligence…" /> : null}
 
       {dashboard && activeTab === 'overview' ? (
         <>

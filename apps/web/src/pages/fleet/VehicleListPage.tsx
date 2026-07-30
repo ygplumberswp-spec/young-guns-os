@@ -1,44 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader } from '@titan/ui';
-import { ApiClientError } from '../../lib/api-client';
+import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessFleet, canManageFleet, VehicleList } from '../../features/fleet/VehicleList';
 
 export function VehicleListPage() {
   const { accessToken, user } = useAuth();
-  const [vehicles, setVehicles] = useState<Awaited<ReturnType<typeof fetchVehicles>>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessFleet(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFleet(user.permissions) : false), [user]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadVehicles() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchVehicles(accessToken);
-        if (!cancelled) setVehicles(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load vehicles');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void loadVehicles();
-    return () => { cancelled = true; };
-  }, [accessToken, canView]);
+  const { data: vehicles, error, isLoading } = useCachedQuery({
+    queryKey: 'fleet/vehicles',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchVehicles(accessToken!),
+  });
 
   if (!canView) {
     return (
@@ -62,10 +42,16 @@ export function VehicleListPage() {
         }
       />
 
-      {isLoading ? <p className="page-muted">Loading vehicles…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-
-      {!isLoading && !error ? <VehicleList vehicles={vehicles} canWrite={canWrite} /> : null}
+      <PageLoadState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={(vehicles?.length ?? 0) === 0}
+        emptyTitle="No vehicles yet"
+        emptyDescription="Add a vehicle to start tracking your fleet."
+        loadingLabel="Loading vehicles…"
+      >
+        <VehicleList vehicles={vehicles ?? []} canWrite={canWrite} />
+      </PageLoadState>
     </div>
   );
 }

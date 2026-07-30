@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader } from '@titan/ui';
-import { ApiClientError } from '../../lib/api-client';
+import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/crm/CustomerList';
 
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
-  const [customers, setCustomers] = useState<Awaited<ReturnType<typeof fetchCustomers>>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(
     () => (user ? canAccessCrm(user.permissions) : false),
@@ -22,38 +19,13 @@ export function CustomerListPage() {
     [user],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadCustomers() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchCustomers(accessToken);
-
-        if (!cancelled) {
-          setCustomers(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load customers');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadCustomers();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView]);
+  const { data: customers, error, isLoading } = useCachedQuery({
+    queryKey: 'crm/customers',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchCustomers(accessToken!),
+  });
 
   if (!canView) {
     return (
@@ -77,10 +49,16 @@ export function CustomerListPage() {
         }
       />
 
-      {isLoading ? <p className="page-muted">Loading customers…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-
-      {!isLoading && !error ? <CustomerList customers={customers} canWrite={canWrite} /> : null}
+      <PageLoadState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={(customers?.length ?? 0) === 0}
+        emptyTitle="No customers yet"
+        emptyDescription="Add your first customer to start building your CRM."
+        loadingLabel="Loading customers…"
+      >
+        <CustomerList customers={customers ?? []} canWrite={canWrite} />
+      </PageLoadState>
     </div>
   );
 }

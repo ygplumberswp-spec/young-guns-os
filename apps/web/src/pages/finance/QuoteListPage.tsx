@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, QUOTE_STATUS_OPTIONS, type QuoteSummary } from '@titan/shared';
-import { ApiClientError } from '../../lib/api-client';
 import { fetchQuotes } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 
@@ -14,37 +14,17 @@ function formatStatus(status: QuoteSummary['status']): string {
 
 export function QuoteListPage() {
   const { accessToken, user } = useAuth();
-  const [quotes, setQuotes] = useState<QuoteSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadQuotes() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchQuotes(accessToken);
-        if (!cancelled) setQuotes(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load quotes');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void loadQuotes();
-    return () => { cancelled = true; };
-  }, [accessToken, canView]);
+  const { data: quotes, error, isLoading } = useCachedQuery({
+    queryKey: 'finance/quotes',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchQuotes(accessToken!),
+  });
 
   if (!canView) {
     return (
@@ -69,39 +49,37 @@ export function QuoteListPage() {
       />
       <FinanceNav />
 
-      {isLoading ? <p className="page-muted">Loading quotes…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-
-      {!isLoading && !error ? (
-        quotes.length === 0 ? (
-          <EmptyState
-            title="No quotes yet"
-            description="Create your first quote to start tracking sales opportunities."
-            action={
-              canWrite ? (
-                <Link href="/finance/quotes/new">
-                  <Button>New quote</Button>
-                </Link>
-              ) : undefined
-            }
-          />
-        ) : (
-          <Panel title="Quotes">
-            <div className="finance-table-wrap">
-              <table className="finance-table">
-                <thead>
-                  <tr>
-                    <th>Number</th>
-                    <th>Title</th>
-                    <th>Customer</th>
-                    <th>Job</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {quotes.map((quote) => (
+      <PageLoadState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={(quotes?.length ?? 0) === 0}
+        emptyTitle="No quotes yet"
+        emptyDescription="Create your first quote to start tracking sales opportunities."
+        emptyAction={
+          canWrite ? (
+            <Link href="/finance/quotes/new">
+              <Button>New quote</Button>
+            </Link>
+          ) : undefined
+        }
+        loadingLabel="Loading quotes…"
+      >
+        <Panel title="Quotes">
+          <div className="finance-table-wrap">
+            <table className="finance-table">
+              <thead>
+                <tr>
+                  <th>Number</th>
+                  <th>Title</th>
+                  <th>Customer</th>
+                  <th>Job</th>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(quotes ?? []).map((quote) => (
                     <tr key={quote.id}>
                       <td>{quote.quoteNumber}</td>
                       <td>{quote.title}</td>
@@ -125,13 +103,12 @@ export function QuoteListPage() {
                       <td>{formatMoney(quote.amountCents, quote.currency)}</td>
                       <td>{new Date(quote.updatedAt).toLocaleDateString()}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
-        )
-      ) : null}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      </PageLoadState>
     </div>
   );
 }

@@ -9,15 +9,15 @@ import {
   StatCard,
   TabNav,
 } from '@titan/ui';
-import type { SecurityExecutiveDashboard } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
+import { buildQueryKey, invalidateQueryCachePrefix } from '../../lib/query-cache';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import {
   EnterpriseSecurityApiClientError,
   createPrivacyRequest,
   createSecurityAction,
   fetchActiveSessions,
   fetchAuditLogs,
-  fetchLoginEvents,
   fetchPrivacyRequests,
   fetchRiskAlerts,
   fetchSecurityActions,
@@ -54,94 +54,134 @@ function canWrite(permissions: string[]) {
 export function EnterpriseSecurityPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<SecurityTab>('dashboard');
-  const [dashboard, setDashboard] = useState<SecurityExecutiveDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchAuditLogs>>>([]);
-  const [loginEvents, setLoginEvents] = useState<Awaited<ReturnType<typeof fetchLoginEvents>>>([]);
-  const [sessions, setSessions] = useState<Awaited<ReturnType<typeof fetchActiveSessions>>>([]);
-  const [trustedDevices, setTrustedDevices] = useState<
-    Awaited<ReturnType<typeof fetchTrustedDevices>>
-  >([]);
-  const [riskAlerts, setRiskAlerts] = useState<Awaited<ReturnType<typeof fetchRiskAlerts>>>([]);
-  const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchSecurityActions>>>([]);
-  const [privacyRequests, setPrivacyRequests] = useState<
-    Awaited<ReturnType<typeof fetchPrivacyRequests>>
-  >([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [actionSubject, setActionSubject] = useState('');
   const [actionRecommendation, setActionRecommendation] = useState('');
   const [privacySubject, setPrivacySubject] = useState('');
-  const [mfaRequired, setMfaRequired] = useState(false);
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [isRevoking, setIsRevoking] = useState(false);
 
   const canView = useMemo(() => (user ? canAccess(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canWrite(user.permissions) : false), [user]);
 
-  async function loadPage() {
-    if (!accessToken) return;
-    const [
-      dashboardData,
-      auditRows,
-      loginRows,
-      sessionRows,
-      deviceRows,
-      alertRows,
-      actionRows,
-      privacyRows,
-      policy,
-    ] = await Promise.all([
-      fetchSecurityDashboard(accessToken),
-      fetchAuditLogs(accessToken),
-      fetchLoginEvents(accessToken),
-      fetchActiveSessions(accessToken),
-      fetchTrustedDevices(accessToken),
-      fetchRiskAlerts(accessToken),
-      fetchSecurityActions(accessToken),
-      fetchPrivacyRequests(accessToken),
-      fetchSecurityPolicy(accessToken),
-    ]);
-    setDashboard(dashboardData);
-    setAuditLogs(auditRows);
-    setLoginEvents(loginRows);
-    setSessions(sessionRows);
-    setTrustedDevices(deviceRows);
-    setRiskAlerts(alertRows);
-    setActions(actionRows);
-    setPrivacyRequests(privacyRows);
-    setMfaRequired(policy.mfaRequired);
-  }
+  const dashboardQuery = useCachedQuery({
+    queryKey: 'security/dashboard',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchSecurityDashboard(accessToken!),
+  });
+
+  const auditQuery = useCachedQuery({
+    queryKey: 'security/audit-logs',
+    accessToken,
+    enabled: canView && activeTab === 'audit',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchAuditLogs(accessToken!),
+  });
+
+  const sessionsQuery = useCachedQuery({
+    queryKey: 'security/sessions',
+    accessToken,
+    enabled: canView && activeTab === 'sessions',
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchActiveSessions(accessToken!),
+  });
+
+  const devicesQuery = useCachedQuery({
+    queryKey: 'security/trusted-devices',
+    accessToken,
+    enabled: canView && activeTab === 'devices',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchTrustedDevices(accessToken!),
+  });
+
+  const alertsQuery = useCachedQuery({
+    queryKey: 'security/risk-alerts',
+    accessToken,
+    enabled: canView && activeTab === 'alerts',
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchRiskAlerts(accessToken!),
+  });
+
+  const actionsQuery = useCachedQuery({
+    queryKey: 'security/actions',
+    accessToken,
+    enabled: canView && activeTab === 'actions',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchSecurityActions(accessToken!),
+  });
+
+  const privacyQuery = useCachedQuery({
+    queryKey: 'security/privacy-requests',
+    accessToken,
+    enabled: canView && activeTab === 'privacy',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchPrivacyRequests(accessToken!),
+  });
+
+  const policyQuery = useCachedQuery({
+    queryKey: 'security/policy',
+    accessToken,
+    enabled: canView && activeTab === 'policy',
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchSecurityPolicy(accessToken!),
+  });
+
+  const dashboard = dashboardQuery.data ?? null;
+  const auditLogs = auditQuery.data ?? [];
+  const sessions = sessionsQuery.data ?? [];
+  const trustedDevices = devicesQuery.data ?? [];
+  const riskAlerts = alertsQuery.data ?? [];
+  const actions = actionsQuery.data ?? [];
+  const privacyRequests = privacyQuery.data ?? [];
+  const [mfaRequired, setMfaRequired] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-
-    async function bootstrap() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        await loadPage();
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof EnterpriseSecurityApiClientError
-              ? err.message
-              : 'Unable to load security platform',
-          );
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+    if (policyQuery.data) {
+      setMfaRequired(policyQuery.data.mfaRequired);
     }
+  }, [policyQuery.data]);
 
-    void bootstrap();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView]);
+  useEffect(() => {
+    const loadError =
+      dashboardQuery.error ??
+      auditQuery.error ??
+      sessionsQuery.error ??
+      devicesQuery.error ??
+      alertsQuery.error ??
+      actionsQuery.error ??
+      privacyQuery.error ??
+      policyQuery.error;
+    if (loadError) {
+      setError(loadError);
+    }
+  }, [
+    dashboardQuery.error,
+    auditQuery.error,
+    sessionsQuery.error,
+    devicesQuery.error,
+    alertsQuery.error,
+    actionsQuery.error,
+    privacyQuery.error,
+    policyQuery.error,
+  ]);
+
+  async function loadPage() {
+    if (!accessToken) return;
+    invalidateQueryCachePrefix(buildQueryKey(accessToken, 'security/'));
+    await Promise.all([
+      dashboardQuery.refetch(),
+      activeTab === 'audit' ? auditQuery.refetch() : Promise.resolve(),
+      activeTab === 'sessions' ? sessionsQuery.refetch() : Promise.resolve(),
+      activeTab === 'devices' ? devicesQuery.refetch() : Promise.resolve(),
+      activeTab === 'alerts' ? alertsQuery.refetch() : Promise.resolve(),
+      activeTab === 'actions' ? actionsQuery.refetch() : Promise.resolve(),
+      activeTab === 'privacy' ? privacyQuery.refetch() : Promise.resolve(),
+      activeTab === 'policy' ? policyQuery.refetch() : Promise.resolve(),
+    ]);
+  }
 
   async function handleCreateAction(event: FormEvent) {
     event.preventDefault();
@@ -249,9 +289,10 @@ export function EnterpriseSecurityPage() {
         ariaLabel="Security sections"
       />
 
-      {isLoading ? (
-        <LoadingState label="Loading security platform" />
-      ) : activeTab === 'dashboard' && dashboard ? (
+      {activeTab === 'dashboard' ? (
+        dashboardQuery.isLoading ? (
+          <LoadingState label="Loading security dashboard…" />
+        ) : dashboard ? (
         <div className="stack gap-lg">
           <div className="stat-grid">
             <StatCard
@@ -312,7 +353,13 @@ export function EnterpriseSecurityPage() {
             </ul>
           </Panel>
         </div>
+        ) : (
+          <EmptyState title="No dashboard data" description="Security dashboard is unavailable." />
+        )
       ) : activeTab === 'audit' ? (
+        auditQuery.isLoading ? (
+          <LoadingState label="Loading audit logs…" />
+        ) : (
         <Panel title="Audit Logs">
           {auditLogs.length === 0 ? (
             <EmptyState
@@ -330,7 +377,11 @@ export function EnterpriseSecurityPage() {
             </ul>
           )}
         </Panel>
+        )
       ) : activeTab === 'sessions' ? (
+        sessionsQuery.isLoading ? (
+          <LoadingState label="Loading active sessions…" />
+        ) : (
         <Panel title="Active Sessions">
           <p className="page-muted">
             Count includes only non-revoked, non-expired sessions. Test and audit logins may
@@ -488,9 +539,12 @@ export function EnterpriseSecurityPage() {
               </table>
             </div>
           )}
-          <p className="page-muted">{loginEvents.length} login event(s) recorded.</p>
         </Panel>
+        )
       ) : activeTab === 'devices' ? (
+        devicesQuery.isLoading ? (
+          <LoadingState label="Loading trusted devices…" />
+        ) : (
         <Panel title="Trusted Devices">
           {trustedDevices.length === 0 ? (
             <EmptyState
@@ -508,7 +562,11 @@ export function EnterpriseSecurityPage() {
             </ul>
           )}
         </Panel>
+        )
       ) : activeTab === 'alerts' ? (
+        alertsQuery.isLoading ? (
+          <LoadingState label="Loading risk alerts…" />
+        ) : (
         <Panel title="Risk Alerts">
           {riskAlerts.length === 0 ? (
             <EmptyState
@@ -537,7 +595,11 @@ export function EnterpriseSecurityPage() {
             </ul>
           )}
         </Panel>
+        )
       ) : activeTab === 'actions' ? (
+        actionsQuery.isLoading ? (
+          <LoadingState label="Loading security actions…" />
+        ) : (
         <div className="stack gap-lg">
           <Panel title="Pending Security Actions">
             {actions.length === 0 ? (
@@ -573,7 +635,11 @@ export function EnterpriseSecurityPage() {
             </Panel>
           ) : null}
         </div>
+        )
       ) : activeTab === 'privacy' ? (
+        privacyQuery.isLoading ? (
+          <LoadingState label="Loading privacy requests…" />
+        ) : (
         <div className="stack gap-lg">
           <Panel title="Privacy Requests">
             {privacyRequests.length === 0 ? (
@@ -604,6 +670,9 @@ export function EnterpriseSecurityPage() {
             </Panel>
           ) : null}
         </div>
+        )
+      ) : policyQuery.isLoading ? (
+        <LoadingState label="Loading security policy…" />
       ) : (
         <Panel title="Tenant Security Policy">
           <label className="checkbox-row">

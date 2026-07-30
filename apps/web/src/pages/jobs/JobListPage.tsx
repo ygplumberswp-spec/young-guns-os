@@ -1,52 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader } from '@titan/ui';
-import { ApiClientError } from '../../lib/api-client';
+import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobList';
 
 export function JobListPage() {
   const { accessToken, user } = useAuth();
-  const [jobs, setJobs] = useState<Awaited<ReturnType<typeof fetchJobs>>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadJobs() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchJobs(accessToken);
-
-        if (!cancelled) {
-          setJobs(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load jobs');
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadJobs();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken, canView]);
+  const { data: jobs, error, isLoading } = useCachedQuery({
+    queryKey: 'jobs/list',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchJobs(accessToken!),
+  });
 
   if (!canView) {
     return (
@@ -70,10 +42,16 @@ export function JobListPage() {
         }
       />
 
-      {isLoading ? <p className="page-muted">Loading jobs…</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-
-      {!isLoading && !error ? <JobList jobs={jobs} canWrite={canWrite} /> : null}
+      <PageLoadState
+        isLoading={isLoading}
+        error={error}
+        isEmpty={(jobs?.length ?? 0) === 0}
+        emptyTitle="No jobs yet"
+        emptyDescription="Create a job to track work for your customers."
+        loadingLabel="Loading jobs…"
+      >
+        <JobList jobs={jobs ?? []} canWrite={canWrite} />
+      </PageLoadState>
     </div>
   );
 }
