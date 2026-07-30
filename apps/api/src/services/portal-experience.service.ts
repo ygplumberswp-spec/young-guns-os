@@ -28,6 +28,7 @@ import {
   sopDocuments,
   voiceSessions,
 } from '@titan/db';
+import { buildCustomerTrackingProgress, getActiveEnRouteTracking } from '../lib/tracking-privacy.js';
 import type { MobileService } from './mobile.service.js';
 import type { NotificationService } from './notification.service.js';
 
@@ -214,15 +215,38 @@ export class PortalExperienceService {
     const completedWorkSummary =
       job.status === 'completed' ? job.description?.trim() || job.title : null;
 
+    const etaAt = job.scheduledEndAt?.toISOString() ?? job.scheduledAt?.toISOString() ?? null;
+    let liveTracking: PortalJobTrackingDetail['liveTracking'] = null;
+
+    const trackingEligible =
+      job.assignedUserId &&
+      job.status !== 'cancelled' &&
+      job.status !== 'completed' &&
+      (job.status === 'scheduled' || job.status === 'in_progress' || job.status === 'new');
+
+    if (trackingEligible) {
+      const activeTracking = await getActiveEnRouteTracking(this.db, scope.companyId, jobId);
+      if (activeTracking && job.assignedUser) {
+        liveTracking = {
+          technicianDisplayName: `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim(),
+          status: 'en_route',
+          etaAt,
+          progressPercent: buildCustomerTrackingProgress(activeTracking.startedAt, etaAt),
+          startedAt: activeTracking.startedAt.toISOString(),
+        };
+      }
+    }
+
     return {
       job: {
         ...toJobSummary(job),
         description: job.description,
-        etaAt: job.scheduledEndAt?.toISOString() ?? job.scheduledAt?.toISOString() ?? null,
+        etaAt: liveTracking ? liveTracking.etaAt : null,
         completedWorkSummary,
       },
       timeline,
       documents: documentRows.map(toDocumentSummary),
+      liveTracking,
     };
   }
 

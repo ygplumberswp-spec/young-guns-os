@@ -1,25 +1,18 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
 import { useAuth } from '../lib/auth-context';
+import { filterTechnicianNav } from '../lib/role-experience';
 
 type MobileLayoutProps = {
   children: ReactNode;
 };
 
-const NAV_ITEMS = [
-  { href: '/mobile', label: 'Dashboard' },
-  { href: '/mobile/jobs', label: 'Jobs' },
-  { href: '/mobile/route', label: 'Route' },
-  { href: '/mobile/inventory', label: 'Inventory' },
-  { href: '/mobile/time', label: 'Time' },
-  { href: '/mobile/notifications', label: 'Notifications' },
-  { href: '/mobile/sync', label: 'Offline sync' },
-];
-
 export function MobileLayout({ children }: MobileLayoutProps) {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+
+  const navItems = useMemo(() => (user ? filterTechnicianNav(user) : []), [user]);
 
   return (
     <div className="portal-shell">
@@ -35,7 +28,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 <span className="portal-header__name">
                   {user.firstName} {user.lastName}
                 </span>
-                <span className="portal-header__company">Technician</span>
+                <span className="portal-header__company">{user.roleName}</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => void logout()}>
                 Sign out
@@ -46,7 +39,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       </header>
       <div className="portal-body">
         <nav className="portal-nav">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}

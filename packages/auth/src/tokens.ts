@@ -5,6 +5,7 @@ export type AccessTokenPayload = {
   sub: string;
   companyId: string;
   roleId: string;
+  roleName: string;
   sessionId: string;
   permissions: string[];
 };
@@ -30,13 +31,20 @@ export function verifyAccessToken(token: string, secret: string): AccessTokenPay
     throw new Error('Invalid access token');
   }
 
-  const { sub, companyId, roleId, sessionId, permissions } = decoded as AccessTokenPayload;
+  const { sub, companyId, roleId, roleName, sessionId, permissions } = decoded as AccessTokenPayload;
 
   if (!sub || !companyId || !roleId || !sessionId || !Array.isArray(permissions)) {
     throw new Error('Invalid access token payload');
   }
 
-  return { sub, companyId, roleId, sessionId, permissions };
+  return {
+    sub,
+    companyId,
+    roleId,
+    roleName: typeof roleName === 'string' ? roleName : 'Member',
+    sessionId,
+    permissions,
+  };
 }
 
 export function generateRefreshToken(): string {

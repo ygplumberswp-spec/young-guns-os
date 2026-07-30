@@ -1,31 +1,21 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
 import { usePortalAuth } from '../lib/portal-auth-context';
+import { filterPortalNav } from '../lib/role-experience';
 
 type PortalLayoutProps = {
   children: ReactNode;
 };
 
-const NAV_ITEMS = [
-  { href: '/portal', label: 'Dashboard' },
-  { href: '/portal/jobs', label: 'Jobs' },
-  { href: '/portal/quotes', label: 'Quotes' },
-  { href: '/portal/finance', label: 'Finance' },
-  { href: '/portal/appointments', label: 'Appointments' },
-  { href: '/portal/documents', label: 'Documents' },
-  { href: '/portal/communications', label: 'Communications' },
-  { href: '/portal/profile', label: 'Profile' },
-  { href: '/portal/feedback', label: 'Feedback' },
-  { href: '/portal/loyalty', label: 'Loyalty' },
-  { href: '/portal/assets', label: 'Assets' },
-  { href: '/portal/knowledge', label: 'Knowledge' },
-  { href: '/portal/notifications', label: 'Notifications' },
-];
-
 export function PortalLayout({ children }: PortalLayoutProps) {
   const [location] = useLocation();
   const { user, logout } = usePortalAuth();
+
+  const navItems = useMemo(
+    () => (user ? filterPortalNav(user.permissions) : []),
+    [user],
+  );
 
   return (
     <div className="portal-shell">
@@ -52,9 +42,9 @@ export function PortalLayout({ children }: PortalLayoutProps) {
       </header>
       <div className="portal-body">
         <nav className="portal-nav">
-          {NAV_ITEMS.map((item) => (
+          {navItems.map((item) => (
             <Link
-              key={item.href}
+              key={`${item.href}:${item.label}`}
               href={item.href}
               className={`portal-nav__link ${location === item.href ? 'portal-nav__link--active' : ''}`}
             >

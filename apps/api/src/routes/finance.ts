@@ -3,8 +3,10 @@ import { z } from 'zod';
 import type { FinanceService } from '../services/finance.service.js';
 import { FinanceError } from '../services/finance.service.js';
 import type { TeamService } from '../services/team.service.js';
+import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
 
 const quoteStatusSchema = z.enum(['draft', 'sent', 'accepted', 'declined', 'expired']);
 const invoiceStatusSchema = z.enum(['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled']);
@@ -47,6 +49,7 @@ const createPaymentSchema = z.object({
 type FinanceRouterDeps = {
   financeService: FinanceService;
   teamService: TeamService;
+  db: DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -58,13 +61,16 @@ function getAuth(req: import('express').Request) {
 export function createFinanceRouter({
   financeService,
   teamService,
+  db,
   jwtSecret,
   authService,
 }: FinanceRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+  const denyTechnician = createDenyTechnicianFromOwnerModules(db);
 
   router.use(requireAuth);
+  router.use(denyTechnician);
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);

@@ -38,6 +38,7 @@ export * from './documents.js';
 export * from './automation.js';
 export * from './agents.js';
 export * from './portal.js';
+export * from './role-experience.js';
 export * from './xero-sync.js';
 export * from './whatsapp.js';
 export * from './agent-runtime.js';

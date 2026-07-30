@@ -113,6 +113,48 @@ export class TechnicianWorkflowService {
     return updated;
   }
 
+  async markEnRoute(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
+    const job = await this.requireAssignedJob(scope, jobId);
+
+    if (!job.assignedUserId) {
+      throw new TechnicianWorkflowError('INVALID_STATE', 'Job must have an assigned technician');
+    }
+    if (!['scheduled', 'in_progress', 'new'].includes(job.status)) {
+      throw new TechnicianWorkflowError('INVALID_STATUS', 'Job cannot be marked en route from this status');
+    }
+
+    await this.logAction(scope, 'mark_en_route', 'job', jobId, {
+      previousStatus: job.status,
+      trackingEnabled: true,
+    });
+
+    return job;
+  }
+
+  async markArrived(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
+    const job = await this.requireAssignedJob(scope, jobId);
+    await this.logAction(scope, 'mark_arrived', 'job', jobId, { previousStatus: job.status });
+    return job;
+  }
+
+  async rejectDispatch(scope: TechnicianScope, jobId: string, reason?: string): Promise<JobDetail> {
+    const job = await this.requireAssignedJob(scope, jobId);
+
+    if (!['new', 'scheduled'].includes(job.status)) {
+      throw new TechnicianWorkflowError('INVALID_STATUS', 'Dispatch cannot be rejected from this status');
+    }
+
+    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
+      assignedUserId: null,
+      notes: reason?.trim()
+        ? `${job.notes ? `${job.notes}\n\n` : ''}Dispatch rejected: ${reason.trim()}`
+        : job.notes,
+    });
+
+    await this.logAction(scope, 'reject_dispatch', 'job', jobId, { reason: reason ?? null });
+    return updated;
+  }
+
   async addJobNote(scope: TechnicianScope, jobId: string, input: AddJobNoteRequest): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
     const note = input.note.trim();

@@ -1046,6 +1046,7 @@ app.use(
   createJobsRouter({
     jobsService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1064,6 +1065,7 @@ app.use(
   createFinanceRouter({
     financeService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

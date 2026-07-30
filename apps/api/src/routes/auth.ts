@@ -221,6 +221,7 @@ export function createAuthRouter({
           userId: payload.sub,
           companyId: payload.companyId,
           roleId: payload.roleId,
+          roleName: payload.roleName,
           sessionId: payload.sessionId,
           permissions: payload.permissions,
         };

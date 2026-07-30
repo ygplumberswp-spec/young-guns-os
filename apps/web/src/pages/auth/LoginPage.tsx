@@ -1,8 +1,10 @@
 import { FormEvent, useState } from 'react';
 import { Link, useLocation } from 'wouter';
+import { getStaffHomePath } from '@titan/auth/browser';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
+import { toStaffIdentity } from '../../lib/role-experience';
 import { ApiClientError } from '../../lib/api-client';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
@@ -28,8 +30,9 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      await login({ email, password });
-      setLocation('/');
+      const session = await login({ email, password });
+      const homePath = session?.user ? getStaffHomePath(toStaffIdentity(session.user)) : '/';
+      setLocation(homePath);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sign in');
     } finally {

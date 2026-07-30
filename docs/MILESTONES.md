@@ -1102,6 +1102,19 @@ Implementation follows small, production-ready milestones. Each milestone is ind
 - Mission Control integration — `rlm_platform_alerts` sync and `release_management` module snapshot (release status, documentation completeness, pending checklist items, version status)
 - TITAN Business OS v1.0.0 version record with feature summary, migration notes, and known limitations; final launch checklist covering infrastructure, security, integrations, mobile, documentation, monitoring, backups, billing, onboarding, and support
 
+## Role-Based Security — Platform Owner, Client & Technician ✅
+
+- **Technician role** added to `DEFAULT_TEAM_ROLES` with scoped field permissions (`mobile`, `jobs`, `dispatch`, `documents`, `communications`, `inventory:read` only)
+- **Role experience utilities** in `@titan/auth` — `resolveStaffExperience`, `isPlatformOwner`, `isTechnicianRole`, `getStaffHomePath`, `canAccessOwnerModule`
+- **Server-side authorization guards** — `requirePlatformOwner`, `createDenyTechnicianFromOwnerModules`, `createRequireAssignedJob`, `createRequireCustomerOwnership`, authorization failure audit logging to `security_audit_logs`
+- **JWT includes `roleName`** for server-side role checks without extra DB lookups
+- **Tracking privacy** — customer live tracking only after technician marks EN ROUTE; exposes display name, ETA, and progress only (no fleet map, routes, or GPS coordinates)
+- **Technician workflows** — `markEnRoute`, `markArrived`, `rejectDispatch` with mobile action audit trail
+- **Route security** — `OwnerStaffRoute` blocks technicians from owner URLs; `TechnicianRoute` guards `/mobile/*`; login redirects technicians to `/mobile`
+- **Dynamic navigation** — owner/staff nav filtered by permissions; client portal nav filtered by portal permissions; technician mobile nav aligned to field workflow
+- **API hardening** — finance and jobs routes deny technicians; technician fleet dashboard endpoint blocked; assigned-job enforcement on job detail API
+- **Tests** — `packages/auth/src/role-experience.test.ts` verifies owner, technician, and staff access rules
+
 ## Milestone 25+ — Other Integrations
 
 See full architecture plan in project documentation.

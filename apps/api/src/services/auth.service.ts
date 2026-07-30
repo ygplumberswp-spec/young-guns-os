@@ -330,6 +330,7 @@ export class AuthService {
         sub: user.id,
         companyId: user.companyId,
         roleId: user.roleId,
+        roleName: user.role.name,
         sessionId: session.id,
         permissions: user.role.permissions,
       },

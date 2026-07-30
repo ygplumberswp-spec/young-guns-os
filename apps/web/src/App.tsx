@@ -1,6 +1,7 @@
 import { Route, Switch } from 'wouter';
 import { AuthProvider } from './lib/auth-context';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { OwnerStaffRoute, TechnicianRoute } from './components/StaffExperienceRoute';
 import { AppLayout } from './layouts/AppLayout';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { AuraPage } from './pages/aura/AuraPage';
@@ -166,7 +167,8 @@ export function App() {
           </Route>
           <Route path="/mobile">
             <ProtectedRoute>
-              <MobileLayout>
+              <TechnicianRoute>
+                <MobileLayout>
                 <Switch>
                   <Route path="/mobile/jobs/:jobId" component={MobileJobDetailPage} />
                   <Route path="/mobile/jobs" component={MobileJobsPage} />
@@ -177,11 +179,13 @@ export function App() {
                   <Route path="/mobile/sync" component={MobileSyncPage} />
                   <Route path="/mobile" component={MobileDashboardPage} />
                 </Switch>
-              </MobileLayout>
+                </MobileLayout>
+              </TechnicianRoute>
             </ProtectedRoute>
           </Route>
           <Route path="/">
           <ProtectedRoute>
+            <OwnerStaffRoute>
             <AppLayout>
               <Switch>
                 <Route path="/platform" component={PlatformPage} />
@@ -285,6 +289,7 @@ export function App() {
                 <Route path="/" component={DashboardPage} />
               </Switch>
             </AppLayout>
+            </OwnerStaffRoute>
           </ProtectedRoute>
         </Route>
       </Switch>

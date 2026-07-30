@@ -3,8 +3,13 @@ import { z } from 'zod';
 import type { JobsService } from '../services/jobs.service.js';
 import { JobsError } from '../services/jobs.service.js';
 import type { TeamService } from '../services/team.service.js';
+import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import {
+  createDenyTechnicianFromOwnerModules,
+  createRequireAssignedJob,
+} from '../middleware/authorization-guards.js';
 
 const jobStatusSchema = z.enum(['new', 'scheduled', 'in_progress', 'completed', 'cancelled']);
 
@@ -33,6 +38,7 @@ const updateJobSchema = z.object({
 type JobsRouterDeps = {
   jobsService: JobsService;
   teamService: TeamService;
+  db: DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -45,11 +51,14 @@ function getRouteParam(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function createJobsRouter({ jobsService, teamService, jwtSecret, authService }: JobsRouterDeps): Router {
+export function createJobsRouter({ jobsService, teamService, db, jwtSecret, authService }: JobsRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+  const denyTechnician = createDenyTechnicianFromOwnerModules(db);
+  const requireAssignedJob = createRequireAssignedJob(db, (req) => getRouteParam(req.params.jobId));
 
   router.use(requireAuth);
+  router.use(denyTechnician);
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);
@@ -91,7 +100,7 @@ export function createJobsRouter({ jobsService, teamService, jwtSecret, authServ
     }
   });
 
-  router.get('/:jobId', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
+  router.get('/:jobId', requireAnyPermission('jobs:read', 'jobs:write'), requireAssignedJob, async (req, res) => {
     const { companyId } = getAuth(req);
     const job = await jobsService.getJob(companyId, getRouteParam(req.params.jobId));
 

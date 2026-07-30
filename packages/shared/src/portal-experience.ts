@@ -50,6 +50,15 @@ export type PortalJobTrackingDetail = {
   };
   timeline: PortalJobTimelineEntry[];
   documents: DocumentSummary[];
+  liveTracking: PortalTechnicianLiveTracking | null;
+};
+
+export type PortalTechnicianLiveTracking = {
+  technicianDisplayName: string;
+  status: 'en_route' | 'arriving' | 'arrived';
+  etaAt: string | null;
+  progressPercent: number | null;
+  startedAt: string;
 };
 
 export type PortalJobTimelineEntry = {

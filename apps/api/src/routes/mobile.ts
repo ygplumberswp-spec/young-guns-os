@@ -488,10 +488,13 @@ export function createMobileRouter({
     res.json({ data: { details } });
   });
 
-  technicianRouter.get('/fleet', requireAnyPermission('fleet:read', 'mobile:read'), async (req, res) => {
-    const auth = getAuth(req);
-    const fleet = await mobileService.getTechnicianFleetInfo(auth);
-    res.json({ data: { fleet } });
+  technicianRouter.get('/fleet', requireTechnicianAccess, async (_req, res) => {
+    res.status(403).json({
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Fleet dashboard access is restricted. Use Navigation for assigned job directions.',
+      },
+    });
   });
 
   technicianRouter.get('/notifications', requireMobileRead, async (req, res) => {
@@ -568,6 +571,37 @@ export function createMobileRouter({
     try {
       const auth = getAuth(req);
       const job = await technicianWorkflowService.completeJob(auth, getRouteParam(req.params.id));
+      res.json({ data: { job } });
+    } catch (error) {
+      handleTechnicianError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/en-route', requireMobileWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const job = await technicianWorkflowService.markEnRoute(auth, getRouteParam(req.params.id));
+      res.json({ data: { job } });
+    } catch (error) {
+      handleTechnicianError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/arrived', requireMobileWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const job = await technicianWorkflowService.markArrived(auth, getRouteParam(req.params.id));
+      res.json({ data: { job } });
+    } catch (error) {
+      handleTechnicianError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/reject-dispatch', requireMobileWrite, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const reason = typeof req.body?.reason === 'string' ? req.body.reason : undefined;
+      const job = await technicianWorkflowService.rejectDispatch(auth, getRouteParam(req.params.id), reason);
       res.json({ data: { job } });
     } catch (error) {
       handleTechnicianError(res, error);

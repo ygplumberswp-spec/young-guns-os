@@ -7,6 +7,7 @@ export type AuthenticatedRequest = Request & {
     userId: string;
     companyId: string;
     roleId: string;
+    roleName: string;
     sessionId: string;
     permissions: string[];
   };
@@ -51,6 +52,7 @@ export function createAuthMiddleware({ jwtSecret, authService }: AuthMiddlewareD
         userId: payload.sub,
         companyId: payload.companyId,
         roleId: payload.roleId,
+        roleName: payload.roleName,
         sessionId: payload.sessionId,
         permissions: payload.permissions,
       };

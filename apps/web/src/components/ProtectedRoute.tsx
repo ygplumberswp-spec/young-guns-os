@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
+import { toStaffIdentity } from '../lib/role-experience';
 
 type ProtectedRouteProps = {
   children: ReactNode;
@@ -34,14 +36,14 @@ type GuestRouteProps = {
 };
 
 export function GuestRoute({ children }: GuestRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      setLocation('/');
+    if (!isLoading && isAuthenticated && user) {
+      setLocation(getStaffHomePath(toStaffIdentity(user)));
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+  }, [isAuthenticated, isLoading, setLocation, user]);
 
   if (isLoading) {
     return (

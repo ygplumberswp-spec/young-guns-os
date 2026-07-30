@@ -4,6 +4,8 @@ export const ADMIN_ROLE_NAME = 'Admin';
 
 export const MEMBER_ROLE_NAME = 'Member';
 
+export const TECHNICIAN_ROLE_NAME = 'Technician';
+
 /** Owner role receives wildcard — full access within the tenant. */
 export const OWNER_PERMISSIONS = ['*'] as const;
 
@@ -170,6 +172,20 @@ export const ADMIN_PERMISSIONS = [
   'ops:manage',
 ] as const;
 
+/** Field technician — assigned jobs, mobile workflows, and job-scoped resources only. */
+export const TECHNICIAN_PERMISSIONS = [
+  'mobile:read',
+  'mobile:write',
+  'jobs:read',
+  'jobs:write',
+  'dispatch:read',
+  'documents:read',
+  'documents:write',
+  'communications:read',
+  'communications:write',
+  'inventory:read',
+] as const;
+
 export const MEMBER_PERMISSIONS = [
   'users:read',
   'customers:read',
@@ -226,6 +242,7 @@ export type Permission =
   | (typeof OWNER_PERMISSIONS)[number]
   | (typeof ADMIN_PERMISSIONS)[number]
   | (typeof MEMBER_PERMISSIONS)[number]
+  | (typeof TECHNICIAN_PERMISSIONS)[number]
   | '*';
 
 export const DEFAULT_TEAM_ROLES = [
@@ -242,6 +259,11 @@ export const DEFAULT_TEAM_ROLES = [
   {
     name: MEMBER_ROLE_NAME,
     permissions: [...MEMBER_PERMISSIONS],
+    isSystem: true,
+  },
+  {
+    name: TECHNICIAN_ROLE_NAME,
+    permissions: [...TECHNICIAN_PERMISSIONS],
     isSystem: true,
   },
 ] as const;

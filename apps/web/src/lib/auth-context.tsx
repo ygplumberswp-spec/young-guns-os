@@ -23,7 +23,7 @@ type AuthContextValue = {
     firstName: string;
     lastName: string;
   }) => Promise<void>;
-  login: (input: { email: string; password: string }) => Promise<void>;
+  login: (input: { email: string; password: string }) => Promise<{ user: AuthUser; session: AuthSession }>;
   acceptInvite: (input: {
     token: string;
     firstName: string;
@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: { email: string; password: string }) => {
       const result = await api.login(input);
       applyAuth(result);
+      return result;
     },
     [applyAuth],
   );
