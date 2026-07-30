@@ -39,4 +39,25 @@ export type SendAuraMessageResponse = {
   conversation: AuraConversation;
   userMessage: AuraMessage;
   assistantMessage: AuraMessage;
+  diagnostics?: AuraSendDiagnostics;
+};
+
+export type AuraSendDiagnostics = {
+  totalApiMs: number;
+  conversationHistoryMs: number;
+  contextBuildMs: number;
+  contextDomainsLoaded: string[];
+  contextDomainsSkipped: string[];
+  providerMs: number;
+  databaseMs: number;
+  agentRoutingMs: number;
+  specialistAgentsInvoked: number;
+  providerAttempts: number;
+  failoverCount: number;
+  retryCount: number;
+  promptTokens: number;
+  completionTokens: number;
+  estimatedInputChars: number;
+  agentsMinimalContext: boolean;
+  deferredAudit: boolean;
 };

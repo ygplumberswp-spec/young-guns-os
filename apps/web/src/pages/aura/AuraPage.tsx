@@ -268,6 +268,7 @@ export function AuraPage() {
             <AuraComposer
               onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
               disabled={isSending || aiProviderConfigured === false}
+              isWorking={isSending}
               placeholder={
                 aiProviderConfigured === false
                   ? 'Configure an AI provider to send messages'
@@ -278,6 +279,7 @@ export function AuraPage() {
             <AuraComposer
               onSend={sendMessage}
               disabled={isSending || aiProviderConfigured === false}
+              isWorking={isSending}
               placeholder={
                 aiProviderConfigured === false
                   ? 'Configure an AI provider to send messages'

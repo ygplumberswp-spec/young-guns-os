@@ -38,10 +38,13 @@ function handleAuraError(res: import('express').Response, error: unknown) {
           ? 400
           : error.code === 'PROVIDER_NOT_CONFIGURED' ||
               error.code === 'PROVIDER_UNAVAILABLE' ||
+              error.code === 'PROVIDER_TIMEOUT' ||
               error.code === 'PROVIDER_REQUEST_FAILED' ||
               error.code === 'PROVIDER_EMPTY_RESPONSE' ||
               error.code === 'PROVIDER_ERROR'
-            ? 503
+            ? error.code === 'PROVIDER_TIMEOUT'
+              ? 504
+              : 503
             : 400;
 
     res.status(status).json({
@@ -139,6 +142,21 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
         parsed.data.content,
         parsed.data.pageContext,
       );
+
+      if (result.diagnostics) {
+        const diagnostics = result.diagnostics;
+        res.setHeader(
+          'Server-Timing',
+          [
+            `total;dur=${diagnostics.totalApiMs}`,
+            `history;dur=${diagnostics.conversationHistoryMs}`,
+            `context;dur=${diagnostics.contextBuildMs}`,
+            `provider;dur=${diagnostics.providerMs}`,
+            `db;dur=${diagnostics.databaseMs}`,
+            `routing;dur=${diagnostics.agentRoutingMs}`,
+          ].join(', '),
+        );
+      }
 
       res.status(201).json({ data: result });
     } catch (error) {

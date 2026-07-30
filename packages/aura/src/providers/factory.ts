@@ -15,6 +15,7 @@ export function createAuraProvider(config: AuraConfig): AuraProvider {
       apiKey: config.openaiApiKey,
       model: config.openaiModel,
       baseUrl: config.openaiBaseUrl,
+      requestTimeoutMs: config.openaiRequestTimeoutMs,
     });
   }
 

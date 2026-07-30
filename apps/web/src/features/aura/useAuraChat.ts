@@ -16,6 +16,15 @@ type AgentChatMessage = AuraMessage & {
 };
 
 const conversationsCache = new Map<string, AuraConversationSummary[]>();
+const AURA_MESSAGE_TIMEOUT_MS = 90_000;
+
+function isTimeoutError(error: unknown): boolean {
+  if (error instanceof DOMException && error.name === 'TimeoutError') {
+    return true;
+  }
+
+  return error instanceof ApiClientError && error.code === 'PROVIDER_TIMEOUT';
+}
 
 export function useAuraChat(pageContext?: {
   customerId?: string;
@@ -37,6 +46,8 @@ export function useAuraChat(pageContext?: {
   const [pendingTasks, setPendingTasks] = useState<AgentTaskSummary[]>([]);
   const [lastRunTools, setLastRunTools] = useState<string[]>([]);
   const selectRequestId = useRef(0);
+  const sendRequestId = useRef(0);
+  const sendAbortController = useRef<AbortController | null>(null);
 
   const loadConversations = useCallback(async () => {
     if (!accessToken) {
@@ -85,26 +96,66 @@ export function useAuraChat(pageContext?: {
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!accessToken) {
+      if (!accessToken || isSending) {
         return;
       }
 
+      const requestId = ++sendRequestId.current;
+      sendAbortController.current?.abort();
+      const controller = new AbortController();
+      sendAbortController.current = controller;
+
+      const trimmed = content.trim();
+      const optimisticUserMessage: AuraMessage = {
+        id: `pending-user-${requestId}`,
+        conversationId: activeConversation?.id ?? 'pending',
+        role: 'user',
+        content: trimmed,
+        createdAt: new Date().toISOString(),
+      };
+
       setIsSending(true);
       setError(null);
+      setActiveConversation((current) => {
+        if (!current) {
+          return {
+            id: 'pending',
+            companyId: '',
+            userId: '',
+            title: 'New conversation',
+            createdAt: optimisticUserMessage.createdAt,
+            updatedAt: optimisticUserMessage.createdAt,
+            messages: [optimisticUserMessage],
+          };
+        }
+
+        return {
+          ...current,
+          messages: [...current.messages, optimisticUserMessage],
+        };
+      });
 
       try {
         let conversationId = activeConversation?.id;
 
-        if (!conversationId) {
+        if (!conversationId || conversationId === 'pending') {
           const created = await auraApi.createAuraConversation(accessToken);
           conversationId = created.id;
-          setActiveConversation(created);
+
+          if (requestId !== sendRequestId.current) {
+            return;
+          }
+
+          setActiveConversation({
+            ...created,
+            messages: [optimisticUserMessage],
+          });
         }
 
         const result = await auraApi.sendAuraMessage(
           accessToken,
           conversationId,
-          content,
+          trimmed,
           pageContext?.customerId ||
           pageContext?.jobId ||
           pageContext?.vehicleId ||
@@ -116,35 +167,73 @@ export function useAuraChat(pageContext?: {
                 schedulingView: pageContext.schedulingView,
               }
             : undefined,
+          {
+            signal: controller.signal,
+            timeoutMs: AURA_MESSAGE_TIMEOUT_MS,
+          },
         );
 
+        if (requestId !== sendRequestId.current) {
+          return;
+        }
+
         setActiveConversation((current) => {
-          if (!current || current.id !== result.conversation.id) {
+          if (!current || current.id === 'pending' || current.id !== result.conversation.id) {
             return {
               ...result.conversation,
               messages: [result.userMessage, result.assistantMessage],
             };
           }
 
+          const withoutOptimistic = current.messages.filter(
+            (message) => message.id !== optimisticUserMessage.id,
+          );
+
           return {
             ...result.conversation,
-            messages: [...current.messages, result.userMessage, result.assistantMessage],
+            messages: [...withoutOptimistic, result.userMessage, result.assistantMessage],
           };
         });
 
-        await loadConversations();
+        void loadConversations();
       } catch (err) {
-        setError(err instanceof ApiClientError ? err.message : 'Unable to send message');
+        if (requestId !== sendRequestId.current) {
+          return;
+        }
+
+        if (controller.signal.aborted && !(err instanceof ApiClientError)) {
+          return;
+        }
+
+        setActiveConversation((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            messages: current.messages.filter((message) => message.id !== optimisticUserMessage.id),
+          };
+        });
+
+        if (isTimeoutError(err)) {
+          setError('AURA took too long to respond. You can safely retry your message.');
+        } else {
+          setError(err instanceof ApiClientError ? err.message : 'Unable to send message');
+        }
       } finally {
-        setIsSending(false);
+        if (requestId === sendRequestId.current) {
+          setIsSending(false);
+          sendAbortController.current = null;
+        }
       }
     },
-    [accessToken, activeConversation, loadConversations, pageContext],
+    [accessToken, activeConversation, isSending, loadConversations, pageContext],
   );
 
   const sendAgentMessage = useCallback(
     async (content: string, agentKey: AgentKey) => {
-      if (!accessToken) {
+      if (!accessToken || isSending) {
         return;
       }
 
@@ -187,7 +276,7 @@ export function useAuraChat(pageContext?: {
         setIsSending(false);
       }
     },
-    [accessToken, activeConversation?.id, pageContext],
+    [accessToken, activeConversation?.id, isSending, pageContext],
   );
 
   const updateTask = useCallback((task: AgentTaskSummary) => {
@@ -251,6 +340,7 @@ export function useAuraChat(pageContext?: {
     return () => {
       cancelled = true;
       selectRequestId.current += 1;
+      sendAbortController.current?.abort();
     };
   }, [accessToken, loadConversations]);
 

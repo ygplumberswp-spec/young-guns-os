@@ -78,6 +78,12 @@ import type { FinanceIntelligenceService } from './finance-intelligence.service.
 import type { KnowledgeService } from './knowledge.service.js';
 import type { BusinessIntelligenceService } from './business-intelligence.service.js';
 import type { TenantCapabilityBuilderService } from './tenant-capability-builder.service.js';
+import {
+  listSkippedAuraContextDomains,
+  shouldLoadTenantCapabilities,
+  type AuraContextDomain,
+} from './aura-context-routing.js';
+import { buildSelectedAuraContext } from './aura-context-build.js';
 
 export class AuraError extends Error {
   constructor(
@@ -421,6 +427,7 @@ export class AuraService {
     content: string,
     pageContext?: AuraPageContext,
   ): Promise<SendAuraMessageResponse> {
+    const apiStarted = Date.now();
     const trimmed = content.trim();
 
     if (!trimmed) {
@@ -434,6 +441,7 @@ export class AuraService {
       );
     }
 
+    const historyStarted = Date.now();
     const conversation = await this.getConversation(scope, conversationId);
 
     if (!conversation) {
@@ -449,6 +457,7 @@ export class AuraService {
         })),
       this.config.maxHistoryMessages,
     );
+    const conversationHistoryMs = Date.now() - historyStarted;
 
     const user = await this.db.query.users.findFirst({
       where: and(eq(users.id, scope.userId), eq(users.companyId, scope.companyId)),
@@ -470,24 +479,41 @@ export class AuraService {
       `${user.firstName} ${user.lastName}`,
     );
 
-    const context = await this.buildAuraContext(
+    const permissions = user.role?.permissions ?? [];
+    const contextStarted = Date.now();
+    const loadedDomains: string[] = [];
+    const { context, agentsMinimal } = await this.buildAuraContext(
       scope.companyId,
       scope.userId,
       baseContext,
-      user.role?.permissions ?? [],
+      permissions,
+      trimmed,
       pageContext,
+      loadedDomains,
     );
+    const contextBuildMs = Date.now() - contextStarted;
 
     const enrichedContext = await this.enrichTenantCapabilityContext(
       scope.companyId,
       trimmed,
-      user.role?.permissions ?? [],
+      permissions,
       context,
     );
 
     let assistantContent: string;
+    let providerMs = 0;
+    let promptTokens = 0;
+    let completionTokens = 0;
+    let providerAttempts = 0;
+    let failoverCount = 0;
+    let retryCount = 0;
+    let agentRoutingMs = 0;
+    const estimatedInputChars =
+      JSON.stringify(enrichedContext).length +
+      priorMessages.reduce((sum, message) => sum + message.content.length, trimmed.length);
 
     try {
+      const providerStarted = Date.now();
       const result = await this.aiProviderResilienceService.generate(
         scope.companyId,
         {
@@ -501,7 +527,14 @@ export class AuraService {
           userId: scope.userId,
         },
       );
+      providerMs = result.providerLatencyMs ?? Date.now() - providerStarted;
       assistantContent = result.content;
+      promptTokens = result.promptTokens;
+      completionTokens = result.completionTokens;
+      providerAttempts = result.providerAttempts ?? 1;
+      failoverCount = result.failoverCount;
+      retryCount = result.retryCount ?? 0;
+      agentRoutingMs = result.agentRoutingMs ?? 0;
     } catch (error) {
       if (error instanceof AiOperationsError) {
         throw new AuraError(error.code, error.message);
@@ -516,6 +549,7 @@ export class AuraService {
       throw new AuraError('PROVIDER_ERROR', 'Unable to generate an AI response.');
     }
 
+    const dbStarted = Date.now();
     const result = await this.db.transaction(async (tx) => {
       const [storedUserMessage] = await tx
         .insert(auraMessages)
@@ -567,8 +601,34 @@ export class AuraService {
         assistantMessage: toMessage(storedAssistantMessage),
       };
     });
+    const databaseMs = Date.now() - dbStarted;
 
-    return result;
+    const skippedDomains = listSkippedAuraContextDomains(
+      new Set(loadedDomains as AuraContextDomain[]),
+    );
+
+    return {
+      ...result,
+      diagnostics: {
+        totalApiMs: Date.now() - apiStarted,
+        conversationHistoryMs,
+        contextBuildMs,
+        contextDomainsLoaded: loadedDomains,
+        contextDomainsSkipped: skippedDomains,
+        providerMs,
+        databaseMs,
+        agentRoutingMs,
+        specialistAgentsInvoked: 0,
+        providerAttempts,
+        failoverCount,
+        retryCount,
+        promptTokens,
+        completionTokens,
+        estimatedInputChars,
+        agentsMinimalContext: agentsMinimal,
+        deferredAudit: true,
+      },
+    };
   }
 
   async deleteConversation(scope: TenantScope, conversationId: string): Promise<boolean> {
@@ -593,6 +653,10 @@ export class AuraService {
     context: AuraGenerateContext,
   ): Promise<AuraGenerateContext> {
     if (!hasAnyPermission(permissions, ['agents:read', 'agents:write'])) {
+      return context;
+    }
+
+    if (!shouldLoadTenantCapabilities(message)) {
       return context;
     }
 
@@ -634,361 +698,75 @@ export class AuraService {
     userId: string,
     baseContext: AuraGenerateContext,
     permissions: string[],
+    message: string,
     pageContext?: AuraPageContext,
-  ): Promise<AuraGenerateContext> {
-    await this.teamService.ensureDefaultRoles(companyId);
-
-    let context = baseContext;
-
-    if (hasAnyPermission(permissions, ['customers:read', 'customers:write'])) {
-      const crm = await this.crmService.buildAuraContext(companyId, pageContext?.customerId);
-      context = { ...context, crm };
-    }
-
-    if (hasAnyPermission(permissions, ['jobs:read', 'jobs:write'])) {
-      const jobs = await this.jobsService.buildAuraContext(companyId, pageContext?.jobId);
-      context = { ...context, jobs };
-    }
-
-    if (hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write'])) {
-      const scheduling = await this.schedulingService.buildAuraContext(companyId);
-      context = { ...context, scheduling };
-    }
-
-    if (hasAnyPermission(permissions, ['finance:read', 'finance:write'])) {
-      const finance = await this.financeService.buildAuraContext(companyId);
-      context = { ...context, finance };
-    }
-
-    if (hasAnyPermission(permissions, ['inventory:read', 'inventory:write'])) {
-      const inventory = await this.inventoryService.buildAuraContext(companyId);
-      context = { ...context, inventory };
-    }
-
-    if (hasAnyPermission(permissions, ['fleet:read', 'fleet:write'])) {
-      const fleet = await this.fleetService.buildAuraContext(companyId, pageContext?.vehicleId);
-      const tracking = await this.integrationsService.buildFleetTrackingContext(companyId);
-      context = { ...context, fleet: { ...fleet, tracking } };
-    }
-
-    if (hasAnyPermission(permissions, ['communications:read', 'communications:write'])) {
-      const communications = await this.communicationsService.buildAuraContext(
-        companyId,
-        pageContext?.customerId,
-      );
-      context = { ...context, communications };
-    }
-
-    if (hasAnyPermission(permissions, ['documents:read', 'documents:write'])) {
-      const documents = await this.documentsService.buildAuraContext(
-        companyId,
-        pageContext?.customerId,
-        pageContext?.jobId,
-      );
-      context = { ...context, documents };
-    }
-
-    if (hasAnyPermission(permissions, ['automation:read', 'automation:write'])) {
-      const automation = await this.automationService.buildAuraContext(
-        companyId,
-        pageContext?.workflowId,
-      );
-      context = { ...context, automation };
-    }
-
-    if (hasAnyPermission(permissions, ['agents:read', 'agents:write'])) {
-      const agents = await this.agentsService.buildAuraContext(
-        companyId,
-        pageContext?.agentProfileId,
-      );
-      context = { ...context, agents };
-    }
-
-    if (hasAnyPermission(permissions, ['portal:read', 'portal:manage'])) {
-      const portal = await this.portalService.buildAuraContext(companyId);
-      const customerPortalExperience = pageContext?.customerId
-        ? await this.portalExperienceService.buildStaffCustomerAuraContext({
-            companyId,
-            customerId: pageContext.customerId,
-          })
-        : undefined;
-      context = {
-        ...context,
-        portal,
-        ...(customerPortalExperience ? { customerPortalExperience } : {}),
-      };
-    }
-
-    if (hasAnyPermission(permissions, ['communications:read', 'communications:write', 'integrations:read', 'integrations:manage'])) {
-      const whatsapp = await this.whatsappService.buildAuraContext(
-        companyId,
-        pageContext?.customerId,
-      );
-      context = { ...context, whatsapp };
-    }
-
-    if (hasAnyPermission(permissions, ['recruiting:read', 'recruiting:write'])) {
-      const recruiting = await this.recruitingService.buildAuraContext(companyId);
-      context = { ...context, recruiting };
-    }
-
-    if (hasAnyPermission(permissions, ['integrations:read', 'integrations:manage'])) {
-      const integrationHub = await this.integrationHubService.buildAuraContext(companyId);
-      const integrationApiManagement =
-        await this.integrationApiManagementService.buildAuraContext(companyId);
-      const xeroAccounting = await this.xeroSyncService.buildAuraContext(companyId);
-      context = {
-        ...context,
-        integrationHub,
-        integrationApiManagement,
-        ...(xeroAccounting ? { xeroAccounting } : {}),
-      };
-    }
-
-    if (hasAnyPermission(permissions, ['intelligence:read', 'agents:read'])) {
-      const intelligence = await this.intelligenceService.buildAuraContext(companyId);
-      const recommendations = await this.recommendationsService.getRecommendations(companyId);
-      context = {
-        ...context,
-        intelligence,
-        recommendations: {
-          count: recommendations.recommendations.length,
-          items: recommendations.recommendations.slice(0, 10).map((item) => ({
-            category: item.category,
-            priority: item.priority,
-            title: item.title,
-            description: item.description,
-          })),
-        },
-      };
-    }
-
-    if (hasAnyPermission(permissions, ['intelligence:read'])) {
-      const memory = await this.memoryService.buildAuraContext(companyId);
-      context = { ...context, memory };
-    }
-
-    if (hasAnyPermission(permissions, ['analytics:read', 'analytics:write'])) {
-      const analytics = await this.analyticsService.buildAuraContext(companyId, { period: 'monthly' });
-      context = { ...context, analytics };
-    }
-
-    if (hasAnyPermission(permissions, ['orchestration:read', 'orchestration:write', 'agents:read'])) {
-      const orchestration = await this.orchestrationService.buildAuraContext(companyId);
-      context = { ...context, orchestration };
-    }
-
-    if (hasAnyPermission(permissions, ['sales:read', 'sales:write', 'agents:read'])) {
-      const sales = await this.salesService.buildAuraContext(companyId);
-      context = { ...context, sales };
-    }
-
-    if (hasAnyPermission(permissions, ['marketing:read', 'marketing:write', 'agents:read'])) {
-      const marketing = await this.marketingService.buildAuraContext(companyId);
-      context = { ...context, marketing };
-    }
-
-    if (hasAnyPermission(permissions, ['leads:read', 'leads:write', 'agents:read'])) {
-      const leads = await this.leadsService.buildAuraContext(companyId);
-      context = { ...context, leads };
-    }
-
-    if (hasAnyPermission(permissions, ['voice:read', 'voice:write', 'agents:read'])) {
-      const voice = await this.voiceService.buildAuraContext(companyId);
-      context = { ...context, voice };
-    }
-
-    if (hasAnyPermission(permissions, ['customer_support:read', 'customer_support:write', 'agents:read'])) {
-      const customerSupport = await this.customerSupportService.buildAuraContext(companyId);
-      context = { ...context, customerSupport };
-    }
-
-    if (hasAnyPermission(permissions, ['workforce:read', 'workforce:write', 'recruiting:read', 'agents:read'])) {
-      const workforce = await this.workforceService.buildAuraContext(companyId);
-      context = { ...context, workforce };
-    }
-
-    if (hasAnyPermission(permissions, ['procurement:read', 'procurement:write', 'agents:read'])) {
-      const procurement = await this.procurementService.buildAuraContext(companyId);
-      context = { ...context, procurement };
-    }
-
-    if (hasAnyPermission(permissions, ['finance:read', 'finance:write', 'agents:read'])) {
-      const financeIntelligence = await this.financeIntelligenceService.buildAuraContext(companyId);
-      context = { ...context, financeIntelligence };
-    }
-
-    if (hasAnyPermission(permissions, ['knowledge:read', 'knowledge:write', 'agents:read'])) {
-      const knowledge = await this.knowledgeService.buildAuraContext(companyId);
-      context = { ...context, knowledge };
-    }
-
-    if (hasAnyPermission(permissions, ['bi:read', 'bi:write', 'intelligence:read', 'agents:read'])) {
-      const businessIntelligence = await this.businessIntelligenceService.buildAuraContext(companyId);
-      context = { ...context, businessIntelligence };
-    }
-
-    if (hasAnyPermission(permissions, ['bi:read', 'analytics:read', 'intelligence:read', 'agents:read'])) {
-      const enterpriseAnalytics = await this.enterpriseAnalyticsService.buildAnalyticsAuraContext(companyId);
-      context = { ...context, enterpriseAnalytics };
-    }
-
-    if (hasAnyPermission(permissions, ['automation:read', 'automation:write', 'agents:read'])) {
-      const enterpriseAutomationStudio =
-        await this.enterpriseAutomationStudioService.buildAutomationAuraContext(companyId);
-      context = { ...context, enterpriseAutomationStudio };
-    }
-
-    if (hasAnyPermission(permissions, ['knowledge:read', 'knowledge:write', 'agents:read'])) {
-      const enterpriseKnowledgeGraph =
-        await this.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
-      context = { ...context, enterpriseKnowledgeGraph };
-    }
-
-    if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {
-      const enterpriseDigitalTwin =
-        await this.enterpriseDigitalTwinService.buildDigitalTwinAuraContext(companyId);
-      context = { ...context, enterpriseDigitalTwin };
-    }
-
-    if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {
-      const enterpriseMissionControl =
-        await this.enterpriseMissionControlService.buildMissionControlAuraContext(companyId);
-      context = { ...context, enterpriseMissionControl };
-    }
-
-    if (hasAnyPermission(permissions, ['intelligence:read', 'executive:read', 'executive:write', 'agents:read'])) {
-      const enterpriseEvolution = await this.enterpriseEvolutionService.buildEvolutionAuraContext(companyId);
-      context = { ...context, enterpriseEvolution };
-    }
-
-    if (hasAnyPermission(permissions, ['integrations:read', 'integrations:manage', 'agents:read'])) {
-      const enterpriseDeveloperPlatform =
-        await this.enterpriseDeveloperPlatformService.buildDeveloperAuraContext(companyId);
-      context = { ...context, enterpriseDeveloperPlatform };
-    }
-
-    if (hasAnyPermission(permissions, ['saas:read', 'saas:manage', 'platform:read', 'agents:read'])) {
-      const enterpriseSaasPlatform = await this.enterpriseSaasPlatformService.buildSaasAuraContext(companyId);
-      context = { ...context, enterpriseSaasPlatform };
-    }
-
-    if (hasAnyPermission(permissions, ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'])) {
-      const executive = await this.executiveService.buildAuraContext(companyId);
-      context = { ...context, executive };
-    }
-
-    if (pageContext?.mobileRole === 'owner' && hasAnyPermission(permissions, ['mobile:read', 'intelligence:read'])) {
-      const ownerContext = await this.mobileService.buildOwnerAuraContext({
-        companyId,
-        userId,
-      });
-      context = {
-        ...context,
-        mobile: { role: 'owner', summary: ownerContext.summary, details: ownerContext },
-      };
-    }
-
-    if (pageContext?.mobileRole === 'technician' && hasAnyPermission(permissions, ['mobile:read', 'jobs:read'])) {
-      const [technicianContext, workforceContext] = await Promise.all([
-        this.mobileService.buildTechnicianAuraContext({ companyId, userId }),
-        this.mobileWorkforceService.buildWorkforceAuraContext({ companyId, userId }),
-      ]);
-      context = {
-        ...context,
-        mobile: { role: 'technician', summary: technicianContext.summary, details: technicianContext },
-        mobileWorkforceExperience: workforceContext,
-      };
-    }
-
-    if (hasAnyPermission(permissions, ['quality:read', 'quality:write', 'executive:read', 'agents:read'])) {
-      const qualityAssurance = await this.qualityAssuranceService.buildQualityAuraContext(companyId);
-      context = { ...context, qualityAssurance };
-    }
-
-    if (
-      hasAnyPermission(permissions, [
-        'communications_intelligence:read',
-        'communications_intelligence:write',
-        'communications:read',
-        'voice:read',
-        'customer_support:read',
-        'agents:read',
-      ])
-    ) {
-      const communicationsIntelligence =
-        await this.communicationsIntelligenceService.buildCommunicationsIntelligenceAuraContext(companyId);
-      context = { ...context, communicationsIntelligence };
-    }
-
-    if (hasAnyPermission(permissions, ['asset_equipment:read', 'asset_equipment:write', 'fleet:read', 'agents:read'])) {
-      const assetEquipment = await this.assetEquipmentIntelligenceService.buildAssetAuraContext(companyId);
-      context = { ...context, assetEquipment };
-    }
-
-    if (
-      hasAnyPermission(permissions, [
-        'ai_orchestration:read',
-        'ai_orchestration:write',
-        'agents:read',
-        'executive:read',
-      ])
-    ) {
-      const aiOrchestration = await this.aiOrchestrationService.buildAiOrchestrationAuraContext(companyId);
-      context = { ...context, aiOrchestration };
-    }
-
-    if (
-      hasAnyPermission(permissions, [
-        'dispatch_intelligence:read',
-        'dispatch_intelligence:write',
-        'dispatch:read',
-        'voice:read',
-        'agents:read',
-      ])
-    ) {
-      const dispatchIntelligence = await this.dispatchIntelligenceService.buildDispatchAuraContext(companyId);
-      context = { ...context, dispatchIntelligence };
-    }
-
-    if (
-      hasAnyPermission(permissions, [
-        'fleet_intelligence:read',
-        'fleet_intelligence:write',
-        'fleet:read',
-        'integrations:read',
-        'agents:read',
-      ])
-    ) {
-      const fleetIntelligence = await this.fleetIntelligenceService.buildFleetIntelligenceAuraContext(companyId);
-      context = { ...context, fleetIntelligence };
-    }
-
-    if (
-      hasAnyPermission(permissions, [
-        'personal_communications:read',
-        'personal_communications:write',
-        'communications_intelligence:read',
-        'communications:read',
-        'agents:read',
-      ])
-    ) {
-      const personalCommunications =
-        await this.personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(companyId);
-      context = { ...context, personalCommunications };
-    }
-
-    if (hasAnyPermission(permissions, ['security:read', 'security:write', 'settings:manage', 'agents:read'])) {
-      const security = await this.enterpriseSecurityService.buildSecurityAuraContext(companyId);
-      context = { ...context, security };
-    }
-
-    if (hasAnyPermission(permissions, ['integrations:read', 'integrations:manage', 'agents:read'])) {
-      const integrationPlatform = await this.integrationPlatformService.buildIntegrationAuraContext(companyId);
-      context = { ...context, integrationPlatform };
-    }
-
-    return context;
+    loadedDomains: string[] = [],
+  ): Promise<{ context: AuraGenerateContext; agentsMinimal: boolean }> {
+    return buildSelectedAuraContext(
+      {
+        teamService: this.teamService,
+        crmService: this.crmService,
+        jobsService: this.jobsService,
+        schedulingService: this.schedulingService,
+        financeService: this.financeService,
+        inventoryService: this.inventoryService,
+        fleetService: this.fleetService,
+        integrationsService: this.integrationsService,
+        communicationsService: this.communicationsService,
+        documentsService: this.documentsService,
+        automationService: this.automationService,
+        agentsService: this.agentsService,
+        portalService: this.portalService,
+        portalExperienceService: this.portalExperienceService,
+        whatsappService: this.whatsappService,
+        recruitingService: this.recruitingService,
+        integrationHubService: this.integrationHubService,
+        integrationApiManagementService: this.integrationApiManagementService,
+        xeroSyncService: this.xeroSyncService,
+        intelligenceService: this.intelligenceService,
+        recommendationsService: this.recommendationsService,
+        memoryService: this.memoryService,
+        analyticsService: this.analyticsService,
+        orchestrationService: this.orchestrationService,
+        salesService: this.salesService,
+        marketingService: this.marketingService,
+        leadsService: this.leadsService,
+        voiceService: this.voiceService,
+        customerSupportService: this.customerSupportService,
+        workforceService: this.workforceService,
+        procurementService: this.procurementService,
+        financeIntelligenceService: this.financeIntelligenceService,
+        knowledgeService: this.knowledgeService,
+        businessIntelligenceService: this.businessIntelligenceService,
+        enterpriseAnalyticsService: this.enterpriseAnalyticsService,
+        enterpriseAutomationStudioService: this.enterpriseAutomationStudioService,
+        enterpriseKnowledgeGraphService: this.enterpriseKnowledgeGraphService,
+        enterpriseDigitalTwinService: this.enterpriseDigitalTwinService,
+        enterpriseMissionControlService: this.enterpriseMissionControlService,
+        enterpriseEvolutionService: this.enterpriseEvolutionService,
+        enterpriseDeveloperPlatformService: this.enterpriseDeveloperPlatformService,
+        enterpriseSaasPlatformService: this.enterpriseSaasPlatformService,
+        executiveService: this.executiveService,
+        mobileService: this.mobileService,
+        mobileWorkforceService: this.mobileWorkforceService,
+        qualityAssuranceService: this.qualityAssuranceService,
+        communicationsIntelligenceService: this.communicationsIntelligenceService,
+        assetEquipmentIntelligenceService: this.assetEquipmentIntelligenceService,
+        aiOrchestrationService: this.aiOrchestrationService,
+        dispatchIntelligenceService: this.dispatchIntelligenceService,
+        fleetIntelligenceService: this.fleetIntelligenceService,
+        personalCommunicationsIntelligenceService: this.personalCommunicationsIntelligenceService,
+        enterpriseSecurityService: this.enterpriseSecurityService,
+        integrationPlatformService: this.integrationPlatformService,
+      },
+      companyId,
+      userId,
+      baseContext,
+      permissions,
+      message,
+      pageContext,
+      loadedDomains,
+    );
   }
 }
 

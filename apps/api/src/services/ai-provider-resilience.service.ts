@@ -92,6 +92,7 @@ export class AiProviderResilienceService {
     request: AuraGenerateRequest,
     options: AiGenerateWithResilienceOptions,
   ): Promise<AiGenerateWithResilienceResult> {
+    const routingStarted = Date.now();
     await this.assertRoutingAllowed(companyId, options);
     const config = await this.deps.aiOperationsService.ensureResilienceConfig(companyId);
     const chain = await this.buildProviderChain(
@@ -100,6 +101,7 @@ export class AiProviderResilienceService {
       config.fallbackOrder,
       config.taskRoutingEnabled,
     );
+    const agentRoutingMs = Date.now() - routingStarted;
 
     if (chain.length === 0) {
       throw new AiProviderResilienceError(
@@ -115,7 +117,17 @@ export class AiProviderResilienceService {
         }
       : request;
 
-    return this.executeProviderChain(companyId, sanitizedRequest, options, chain, config.maxRetries, config.retryBaseDelayMs, config.queueEnabled);
+    const result = await this.executeProviderChain(
+      companyId,
+      sanitizedRequest,
+      options,
+      chain,
+      config.maxRetries,
+      config.retryBaseDelayMs,
+      config.queueEnabled,
+    );
+
+    return { ...result, agentRoutingMs };
   }
 
   async generateForTarget(
@@ -221,7 +233,16 @@ export class AiProviderResilienceService {
     const completionTokens = estimateTokens(content);
     const costCents = estimateModelCostCents(candidate.pricingMetadata, promptTokens, completionTokens);
 
-    await this.recordSuccessfulUsage(companyId, options, candidate, promptTokens, completionTokens, costCents, latencyMs, 0);
+    await this.deferRecordSuccessfulUsage(
+      companyId,
+      options,
+      candidate,
+      promptTokens,
+      completionTokens,
+      costCents,
+      latencyMs,
+      0,
+    );
     return {
       content,
       providerKey: candidate.providerKey,
@@ -233,6 +254,9 @@ export class AiProviderResilienceService {
       costCents,
       failoverCount: 0,
       queued: false,
+      providerLatencyMs: latencyMs,
+      providerAttempts: 1,
+      retryCount: 0,
     };
   }
 
@@ -248,6 +272,7 @@ export class AiProviderResilienceService {
     const attempted: string[] = [];
     let failoverCount = 0;
     let lastError: Error | null = null;
+    let retryCount = 0;
 
     for (let index = 0; index < chain.length; index += 1) {
       const candidate = chain[index]!;
@@ -256,6 +281,7 @@ export class AiProviderResilienceService {
         attempted.push(`${candidate.providerKey}:${candidate.modelKey}`);
         try {
           if (attempt > 0) {
+            retryCount += 1;
             await sleep(retryBaseDelayMs * 2 ** (attempt - 1));
           }
 
@@ -268,7 +294,7 @@ export class AiProviderResilienceService {
           const completionTokens = estimateTokens(content);
           const costCents = estimateModelCostCents(candidate.pricingMetadata, promptTokens, completionTokens);
 
-          await this.recordSuccessfulUsage(
+          this.deferRecordSuccessfulUsage(
             companyId,
             options,
             candidate,
@@ -290,6 +316,9 @@ export class AiProviderResilienceService {
             costCents,
             failoverCount,
             queued: false,
+            providerLatencyMs: latencyMs,
+            providerAttempts: attempted.length,
+            retryCount,
           };
         } catch (error) {
           lastError = error instanceof Error ? error : new Error('Unknown provider error');
@@ -350,6 +379,28 @@ export class AiProviderResilienceService {
       `All configured AI providers are unavailable. Attempted: ${[...new Set(attempted)].join(', ')}. ${lastError?.message ?? ''}`.trim(),
       [...new Set(attempted)],
     );
+  }
+
+  private deferRecordSuccessfulUsage(
+    companyId: string,
+    options: AiGenerateWithResilienceOptions,
+    candidate: RuntimeProvider,
+    promptTokens: number,
+    completionTokens: number,
+    costCents: number,
+    latencyMs: number,
+    failoverCount: number,
+  ) {
+    void this.recordSuccessfulUsage(
+      companyId,
+      options,
+      candidate,
+      promptTokens,
+      completionTokens,
+      costCents,
+      latencyMs,
+      failoverCount,
+    ).catch(() => {});
   }
 
   private async recordSuccessfulUsage(
@@ -619,10 +670,10 @@ function estimateTokens(text: string) {
 function mapFailoverReason(
   error: unknown,
 ): 'provider_unavailable' | 'timeout' | 'rate_limit' | 'degraded_performance' | 'credit_exhausted' | 'context_window_exceeded' {
-  if (error instanceof AuraProviderError) {
-    if (error.code === 'PROVIDER_UNAVAILABLE') {
-      return 'provider_unavailable';
-    }
+    if (error instanceof AuraProviderError) {
+      if (error.code === 'PROVIDER_UNAVAILABLE' || error.code === 'PROVIDER_TIMEOUT') {
+        return error.code === 'PROVIDER_TIMEOUT' ? 'timeout' : 'provider_unavailable';
+      }
     if (error.details && typeof error.details === 'object' && 'status' in error.details) {
       const status = Number((error.details as { status?: number }).status);
       if (status === 429) {

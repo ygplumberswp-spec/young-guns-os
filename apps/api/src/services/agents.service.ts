@@ -351,6 +351,26 @@ export class AgentsService {
     };
   }
 
+  async buildAuraContextSummary(companyId: string): Promise<AuraAgentsContext> {
+    const stats = await this.getStats(companyId);
+
+    return {
+      availableAgentCount: stats.availableAgentCount,
+      configuredProfileCount: stats.configuredProfileCount,
+      activeProfileCount: stats.activeProfileCount,
+      executionCount: stats.executionCount,
+      registry: AGENT_REGISTRY.map((entry) => ({
+        agentKey: entry.agentKey,
+        name: entry.name,
+        configured: false,
+        foundationOnly: Boolean(entry.foundationOnly),
+      })),
+      profiles: [],
+      recentExecutions: [],
+      focusedProfile: null,
+    };
+  }
+
   async buildAuraContext(
     companyId: string,
     agentProfileId?: string,

@@ -102,4 +102,8 @@ export type AiGenerateWithResilienceResult = {
   costCents: number;
   failoverCount: number;
   queued: boolean;
+  providerLatencyMs?: number;
+  providerAttempts?: number;
+  retryCount?: number;
+  agentRoutingMs?: number;
 };

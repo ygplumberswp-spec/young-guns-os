@@ -41,11 +41,14 @@ export async function sendAuraMessage(
   conversationId: string,
   content: string,
   pageContext?: { customerId?: string; jobId?: string; vehicleId?: string; schedulingView?: boolean },
+  options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<SendAuraMessageResponse> {
   return request<SendAuraMessageResponse>(`/aura/conversations/${conversationId}/messages`, {
     method: 'POST',
     accessToken,
     body: { content, pageContext },
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs ?? 90_000,
   });
 }
 

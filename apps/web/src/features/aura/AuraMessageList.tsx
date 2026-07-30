@@ -43,7 +43,7 @@ export function AuraMessageList({ messages, isSending }: AuraMessageListProps) {
       {isSending ? (
         <article className="aura-message aura-message--assistant">
           <div className="aura-message__meta">{AI_NAME}</div>
-          <div className="aura-message__bubble aura-message__bubble--typing">Thinking...</div>
+          <div className="aura-message__bubble aura-message__bubble--typing">AURA is working…</div>
         </article>
       ) : null}
       <div ref={bottomRef} />

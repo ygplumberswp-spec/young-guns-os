@@ -6,6 +6,7 @@ export type OpenAiProviderConfig = {
   apiKey: string;
   model: string;
   baseUrl: string;
+  requestTimeoutMs?: number;
 };
 
 type OpenAiChatCompletionResponse = {
@@ -33,6 +34,12 @@ export class OpenAiProvider implements AuraProvider {
 
     let response: Response;
 
+    const timeoutMs = this.config.requestTimeoutMs ?? 60_000;
+    const signal =
+      typeof AbortSignal.timeout === 'function'
+        ? AbortSignal.timeout(timeoutMs)
+        : undefined;
+
     try {
       response = await fetch(`${this.config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
         method: 'POST',
@@ -46,8 +53,16 @@ export class OpenAiProvider implements AuraProvider {
           temperature: 0.7,
           max_tokens: 1024,
         }),
+        signal,
       });
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.name === 'TimeoutError') {
+        throw new AuraProviderError(
+          'PROVIDER_TIMEOUT',
+          'The AI provider did not respond in time. Please try again.',
+        );
+      }
+
       throw new AuraProviderError(
         'PROVIDER_UNAVAILABLE',
         'Unable to reach the AI provider. Check your network connection.',
