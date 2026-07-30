@@ -6,6 +6,7 @@ import type { AuthService } from '../services/auth.service.js';
 import { AuthError } from '../services/auth.service.js';
 import type { EnterpriseSecurityService } from '../services/enterprise-security.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { aiRoutingCache } from '../services/ai-routing-cache.js';
 
 const signupSchema = z.object({
   companyName: z.string().trim().min(2).max(120),
@@ -256,6 +257,7 @@ export function createAuthRouter({
     }
 
     if (authContext) {
+      aiRoutingCache.invalidateTenant(authContext.companyId);
       await recordSecurityLoginEvent(enterpriseSecurityService, authLog, {
         companyId: authContext.companyId,
         userId: authContext.userId,

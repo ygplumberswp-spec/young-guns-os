@@ -7,6 +7,8 @@ import type {
   AiGenerateWithResilienceResult,
   AiProviderKey,
   AiResilienceStatusSummary,
+  ProviderRoutingDiagnostics,
+  ProviderRoutingStageTimings,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -24,6 +26,12 @@ import {
 } from './ai-intelligent-routing.service.js';
 import type { AiMemorySyncService } from './ai-memory-sync.service.js';
 import type { AiOrchestrationService } from './ai-orchestration.service.js';
+import {
+  aiRoutingCache,
+  buildTenantSnapshotCacheKey,
+  resilienceConfigVersion,
+  type TenantRoutingSnapshot,
+} from './ai-routing-cache.js';
 import type { AiOperationsService } from './ai-operations.service.js';
 
 export class AiProviderResilienceError extends Error {
@@ -102,19 +110,105 @@ export class AiProviderResilienceService {
     config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>;
     chain: RuntimeProvider[];
     providerRoutingMs: number;
+    routingDiagnostics?: ProviderRoutingDiagnostics;
   }> {
     const started = Date.now();
-    const config = await this.assertRoutingAllowed(companyId, options);
+    const stages = createEmptyRoutingStages();
+    let dbQueryCount = 0;
+    let cacheHit = false;
+    let fastPathUsed = false;
+
+    const allowanceStarted = Date.now();
+    const allowanceCachedBefore = Boolean(aiRoutingCache.getAllowance(companyId));
+    await this.deps.aiOperationsService.assertAiOperationAllowed(
+      { companyId, userId: options.userId },
+      options.operationType,
+    );
+    const configCachedBefore = Boolean(aiRoutingCache.getConfig(companyId));
+    const config = await this.deps.aiOperationsService.ensureResilienceConfig(companyId);
+    stages.allowanceCheckMs = Date.now() - allowanceStarted;
+    stages.usageAllowanceLookupMs = stages.allowanceCheckMs;
+    cacheHit = allowanceCachedBefore && configCachedBefore;
+    dbQueryCount += configCachedBefore ? 0 : 1;
+
+    stages.policyValidationMs = Date.now();
+    if (
+      options.routingCategory &&
+      config.blockedCategories.includes(options.routingCategory)
+    ) {
+      throw new AiProviderResilienceError(
+        'ROUTING_BLOCKED',
+        `Routing category ${options.routingCategory} is blocked by tenant policy.`,
+      );
+    }
+    stages.policyValidationMs = Date.now() - stages.policyValidationMs;
+
+    const snapshotStarted = Date.now();
+    const snapshotCacheKey = buildTenantSnapshotCacheKey(companyId, options.routingCategory);
+    const cachedSnapshot = aiRoutingCache.getTenantSnapshot(snapshotCacheKey);
+    const snapshotCachedBefore =
+      Boolean(cachedSnapshot) &&
+      cachedSnapshot!.resilienceConfigVersion === resilienceConfigVersion(config);
+    let snapshot: TenantRoutingSnapshot;
+    if (snapshotCachedBefore) {
+      snapshot = cachedSnapshot!;
+    } else {
+      snapshot = await this.loadTenantRoutingSnapshot(companyId, options.routingCategory, config);
+      dbQueryCount += options.routingCategory ? 2 : 1;
+      aiRoutingCache.setTenantSnapshot(snapshotCacheKey, snapshot);
+    }
+    cacheHit = allowanceCachedBefore && configCachedBefore && snapshotCachedBefore;
+    stages.tenantSnapshotMs = Date.now() - snapshotStarted;
+    stages.tenantProviderLookupMs = snapshot.hasTenantProvider ? stages.tenantSnapshotMs : 0;
+    stages.routingRuleLookupMs = snapshot.hasRoutingRule ? stages.tenantSnapshotMs : 0;
+    stages.fallbackConfigLookupMs = snapshot.hasFallbackOrder ? stages.tenantSnapshotMs : 0;
+
+    if (this.canUseEnvironmentFastPath(snapshot, config, options)) {
+      const envStarted = Date.now();
+      const env = await this.resolveEnvironmentProvider();
+      stages.environmentProviderMs = Date.now() - envStarted;
+      if (env) {
+        fastPathUsed = true;
+        const chain = [env];
+        this.cacheProviderChain(this.buildProviderChainCacheKey(companyId, options, config), chain);
+        return {
+          config,
+          chain,
+          providerRoutingMs: Date.now() - started,
+          routingDiagnostics: buildRoutingDiagnostics(
+            Date.now() - started,
+            cacheHit,
+            fastPathUsed,
+            dbQueryCount,
+            chain.length,
+            stages,
+          ),
+        };
+      }
+    }
+
+    const chainStarted = Date.now();
     const chain = await this.buildProviderChain(
       companyId,
       options.routingCategory,
       config.fallbackOrder,
       config.taskRoutingEnabled,
     );
+    stages.providerChainBuildMs = Date.now() - chainStarted;
+    stages.providerRankingMs = stages.providerRankingOnlyMs;
+
     return {
       config,
       chain,
       providerRoutingMs: Date.now() - started,
+      routingDiagnostics: buildRoutingDiagnostics(
+        Date.now() - started,
+        cacheHit,
+        fastPathUsed,
+        dbQueryCount,
+        chain.length,
+        stages,
+      ),
     };
   }
 
@@ -236,12 +330,14 @@ export class AiProviderResilienceService {
     companyId: string,
     options: AiGenerateWithResilienceOptions,
   ) {
-    await this.deps.aiOperationsService.assertAiOperationAllowed(
-      { companyId, userId: options.userId },
-      options.operationType,
-    );
+    const [_, config] = await Promise.all([
+      this.deps.aiOperationsService.assertAiOperationAllowed(
+        { companyId, userId: options.userId },
+        options.operationType,
+      ),
+      this.deps.aiOperationsService.ensureResilienceConfig(companyId),
+    ]);
 
-    const config = await this.deps.aiOperationsService.ensureResilienceConfig(companyId);
     if (
       options.routingCategory &&
       config.blockedCategories.includes(options.routingCategory)
@@ -253,6 +349,68 @@ export class AiProviderResilienceService {
     }
 
     return config;
+  }
+
+  private canUseEnvironmentFastPath(
+    snapshot: TenantRoutingSnapshot,
+    config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>,
+    options: AiGenerateWithResilienceOptions,
+  ): boolean {
+    if (!this.deps.envProvider || this.deps.auraConfig.provider !== 'openai') {
+      return false;
+    }
+
+    if (snapshot.hasTenantProvider || snapshot.hasRoutingRule || snapshot.hasFallbackOrder) {
+      return false;
+    }
+
+    if (
+      options.routingCategory &&
+      config.blockedCategories.includes(options.routingCategory)
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  private async loadTenantRoutingSnapshot(
+    companyId: string,
+    routingCategory: AiGenerateWithResilienceOptions['routingCategory'],
+    config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>,
+  ): Promise<TenantRoutingSnapshot> {
+    const [tenantProvider, rule] = await Promise.all([
+      this.deps.db.query.aiProviders.findFirst({
+        where: and(eq(aiProviders.companyId, companyId), eq(aiProviders.isEnabled, true)),
+      }),
+      config.taskRoutingEnabled && routingCategory
+        ? this.deps.db.query.aiRoutingRules.findFirst({
+            where: and(
+              eq(aiRoutingRules.companyId, companyId),
+              eq(aiRoutingRules.category, routingCategory),
+              eq(aiRoutingRules.isEnabled, true),
+            ),
+            orderBy: [desc(aiRoutingRules.priorityOrder)],
+          })
+        : Promise.resolve(null),
+    ]);
+
+    return {
+      hasTenantProvider: Boolean(tenantProvider),
+      hasRoutingRule: Boolean(rule),
+      hasFallbackOrder: config.fallbackOrder.length > 0,
+      taskRoutingEnabled: config.taskRoutingEnabled,
+      blockedCategories: config.blockedCategories,
+      resilienceConfigVersion: resilienceConfigVersion(config),
+    };
+  }
+
+  private buildProviderChainCacheKey(
+    companyId: string,
+    options: AiGenerateWithResilienceOptions,
+    config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>,
+  ) {
+    return `${companyId}:${options.routingCategory ?? 'none'}:${config.taskRoutingEnabled}:${config.fallbackOrder.length}:${resilienceConfigVersion(config)}`;
   }
 
   private async executeSingleProvider(
@@ -360,6 +518,8 @@ export class AiProviderResilienceService {
           const reason = mapFailoverReason(error);
 
           if (candidate.providerId) {
+            aiRoutingCache.invalidateTenant(companyId);
+            this.invalidateProviderChainCache(companyId);
             await this.deps.db
               .update(aiProviders)
               .set({
@@ -485,6 +645,14 @@ export class AiProviderResilienceService {
       expiresAt: Date.now() + PROVIDER_CHAIN_CACHE_TTL_MS,
       chain,
     });
+  }
+
+  private invalidateProviderChainCache(companyId: string) {
+    for (const key of this.providerChainCache.keys()) {
+      if (key.startsWith(`${companyId}:`)) {
+        this.providerChainCache.delete(key);
+      }
+    }
   }
 
   private async buildProviderChain(
@@ -648,9 +816,11 @@ export class AiProviderResilienceService {
       runtime: candidate,
     }));
 
+    const rankingStarted = Date.now();
     const ranked = this.routingService.rankProviders(rankable, routingCategory).map((entry) => {
       return (entry as (typeof rankable)[number]).runtime;
     });
+    void rankingStarted;
 
     this.cacheProviderChain(cacheKey, ranked);
     return ranked;
@@ -807,6 +977,45 @@ export class AiProviderResilienceService {
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function createEmptyRoutingStages(): ProviderRoutingStageTimings {
+  return {
+    allowanceCheckMs: 0,
+    resilienceConfigMs: 0,
+    tenantSnapshotMs: 0,
+    providerChainBuildMs: 0,
+    providerRankingMs: 0,
+    environmentProviderMs: 0,
+    permissionValidationMs: 0,
+    policyValidationMs: 0,
+    usageAllowanceLookupMs: 0,
+    tenantProviderLookupMs: 0,
+    routingRuleLookupMs: 0,
+    fallbackConfigLookupMs: 0,
+    modelLookupMs: 0,
+    providerHealthLookupMs: 0,
+    providerRankingOnlyMs: 0,
+    encryptionMs: 0,
+  };
+}
+
+function buildRoutingDiagnostics(
+  totalRoutingMs: number,
+  cacheHit: boolean,
+  fastPathUsed: boolean,
+  dbQueryCount: number,
+  providerAttemptsPlanned: number,
+  stages: ProviderRoutingStageTimings,
+): ProviderRoutingDiagnostics {
+  return {
+    totalRoutingMs,
+    cacheHit,
+    fastPathUsed,
+    dbQueryCount,
+    providerAttemptsPlanned,
+    stages,
+  };
 }
 
 function estimateTokens(text: string) {

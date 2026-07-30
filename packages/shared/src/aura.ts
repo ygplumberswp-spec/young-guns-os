@@ -63,4 +63,6 @@ export type AuraSendDiagnostics = {
   estimatedInputChars: number;
   agentsMinimalContext: boolean;
   deferredAudit: boolean;
+  /** Development-only provider routing breakdown; omitted in production. */
+  routing?: import('./aura-routing-diagnostics.js').ProviderRoutingDiagnostics;
 };

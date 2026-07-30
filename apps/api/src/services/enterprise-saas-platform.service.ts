@@ -84,6 +84,55 @@ export class EnterpriseSaasPlatformService {
     return !(await this.isPlatformOwnerTenant(companyId));
   }
 
+  async getAiAllowanceSnapshot(companyId: string): Promise<{
+    isPlatformOwner: boolean;
+    subscriptionStatus: string | null;
+    subscriptionUsable: boolean;
+    monthlyTokenLimit: number | null;
+  }> {
+    await this.ensureTenantProfile(companyId);
+
+    const [profile, subscription, tokenEntitlement] = await Promise.all([
+      this.deps.db.query.saasTenantProfiles.findFirst({
+        where: eq(saasTenantProfiles.companyId, companyId),
+      }),
+      this.deps.db.query.saasSubscriptions.findFirst({
+        where: eq(saasSubscriptions.companyId, companyId),
+      }),
+      this.deps.db.query.saasFeatureEntitlements.findFirst({
+        where: and(
+          eq(saasFeatureEntitlements.companyId, companyId),
+          eq(saasFeatureEntitlements.featureKey, 'ai_tokens'),
+        ),
+      }),
+    ]);
+
+    const isPlatformOwner = profile?.tenantKind === 'platform_owner';
+    let monthlyTokenLimit: number | null = tokenEntitlement?.limitValue ?? null;
+
+    if (subscription?.planId) {
+      const plan = await this.deps.db.query.saasSubscriptionPlans.findFirst({
+        where: eq(saasSubscriptionPlans.id, subscription.planId),
+      });
+      const planLimit = plan?.limits?.aiTokens;
+      if (planLimit != null) {
+        monthlyTokenLimit = planLimit;
+      }
+    }
+
+    const subscriptionStatus = subscription?.status ?? null;
+    const subscriptionUsable =
+      subscriptionStatus != null &&
+      ['trial', 'active', 'grace_period'].includes(subscriptionStatus);
+
+    return {
+      isPlatformOwner,
+      subscriptionStatus,
+      subscriptionUsable,
+      monthlyTokenLimit,
+    };
+  }
+
   async getPlatformDashboard(companyId: string): Promise<EnterpriseSaasPlatformDashboard> {
     await this.ensureTenantProfile(companyId);
     const isPlatformOwner = await this.isPlatformOwnerTenant(companyId);

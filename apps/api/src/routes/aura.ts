@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { AuraService } from '../services/aura.service.js';
 import { AuraError } from '../services/aura.service.js';
+import { AiOperationsError } from '../services/ai-operations.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
@@ -48,6 +49,16 @@ function handleAuraError(res: import('express').Response, error: unknown) {
             : 400;
 
     res.status(status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  if (error instanceof AiOperationsError) {
+    res.status(error.code === 'AI_ALLOWANCE_EXCEEDED' ? 402 : 403).json({
       error: {
         code: error.code,
         message: error.message,
@@ -145,17 +156,22 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
 
       if (result.diagnostics) {
         const diagnostics = result.diagnostics;
-        res.setHeader(
-          'Server-Timing',
-          [
-            `total;dur=${diagnostics.totalApiMs}`,
-            `history;dur=${diagnostics.conversationHistoryMs}`,
-            `context;dur=${diagnostics.contextBuildMs}`,
-            `provider;dur=${diagnostics.providerMs}`,
-            `db;dur=${diagnostics.databaseMs}`,
-            `routing;dur=${diagnostics.providerRoutingMs}`,
-          ].join(', '),
-        );
+        const timingParts = [
+          `total;dur=${diagnostics.totalApiMs}`,
+          `history;dur=${diagnostics.conversationHistoryMs}`,
+          `context;dur=${diagnostics.contextBuildMs}`,
+          `provider;dur=${diagnostics.providerMs}`,
+          `db;dur=${diagnostics.databaseMs}`,
+          `routing;dur=${diagnostics.providerRoutingMs}`,
+        ];
+
+        if (process.env.NODE_ENV === 'development' && diagnostics.routing) {
+          timingParts.push(`routing-allowance;dur=${diagnostics.routing.stages.allowanceCheckMs}`);
+          timingParts.push(`routing-snapshot;dur=${diagnostics.routing.stages.tenantSnapshotMs}`);
+          timingParts.push(`routing-chain;dur=${diagnostics.routing.stages.providerChainBuildMs}`);
+        }
+
+        res.setHeader('Server-Timing', timingParts.join(', '));
       }
 
       res.status(201).json({ data: result });

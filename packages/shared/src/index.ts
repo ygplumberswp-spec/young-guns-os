@@ -25,6 +25,7 @@ export function isApiError(response: ApiResponse<unknown>): response is ApiError
 export * from './auth.js';
 export * from './cache-keys.js';
 export * from './aura.js';
+export * from './aura-routing-diagnostics.js';
 export * from './company.js';
 export * from './localisation.js';
 export * from './team.js';

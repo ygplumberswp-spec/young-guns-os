@@ -8,6 +8,7 @@ import type {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { aiProviderResilienceConfigs, aiUsageRecords } from '@titan/db';
+import { aiRoutingCache } from './ai-routing-cache.js';
 import type { EnterpriseSaasPlatformService } from './enterprise-saas-platform.service.js';
 
 export class AiOperationsError extends Error {
@@ -31,7 +32,8 @@ export class AiOperationsService {
   constructor(private readonly deps: AiOperationsDeps) {}
 
   async hasUnlimitedAiAccess(companyId: string): Promise<boolean> {
-    return this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const snapshot = await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
+    return snapshot.isPlatformOwner;
   }
 
   async assertAiOperationAllowed(
@@ -55,17 +57,37 @@ export class AiOperationsService {
   }
 
   async getAllowanceSummary(companyId: string): Promise<AiOperationAllowanceSummary> {
-    const unlimited = await this.hasUnlimitedAiAccess(companyId);
-    const { tokensUsed, costCents } = await this.getMonthlyUsageTotals(companyId);
-    const config = await this.ensureResilienceConfig(companyId);
+    const cached = aiRoutingCache.getAllowance(companyId);
+    if (cached) {
+      return cached;
+    }
 
-    if (unlimited) {
+    let snapshot = aiRoutingCache.getPolicySnapshot(companyId);
+    if (!snapshot) {
+      const loaded = await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
+      snapshot = {
+        isPlatformOwner: loaded.isPlatformOwner,
+        subscriptionUsable: loaded.subscriptionUsable,
+        monthlyTokenLimit: loaded.monthlyTokenLimit,
+      };
+      aiRoutingCache.setPolicySnapshot(companyId, snapshot);
+    }
+
+    const [usage, config] = await Promise.all([
+      this.getMonthlyUsageTotals(companyId),
+      this.ensureResilienceConfig(companyId, snapshot.isPlatformOwner),
+    ]);
+
+    const { tokensUsed, costCents } = usage;
+    let result: AiOperationAllowanceSummary;
+
+    if (snapshot.isPlatformOwner) {
       const hardBlocked =
         config.hardSpendingLimitEnabled &&
         config.hardSpendingLimitCents != null &&
         costCents >= config.hardSpendingLimitCents;
 
-      return {
+      result = {
         unlimited: true,
         titanLimitsEnforced: false,
         subscriptionRequired: false,
@@ -77,38 +99,40 @@ export class AiOperationsService {
         hardSpendingLimitEnabled: config.hardSpendingLimitEnabled,
         hardSpendingLimitCents: config.hardSpendingLimitCents,
       };
-    }
-
-    const subscriptionEnforced = await this.deps.enterpriseSaasPlatformService.shouldEnforceSubscription(
-      companyId,
-    );
-    if (subscriptionEnforced) {
-      const subscriptionUsable = await this.isCustomerSubscriptionUsable(companyId);
-      if (!subscriptionUsable) {
-        return {
-          unlimited: false,
-          titanLimitsEnforced: true,
-          subscriptionRequired: true,
-          allowed: false,
-          reason: 'subscription',
-          monthlyTokenLimit: null,
-          monthlyTokensUsed: tokensUsed,
-          monthlyCostCents: costCents,
-          hardSpendingLimitEnabled: false,
-          hardSpendingLimitCents: null,
-        };
-      }
-    }
-
-    const tokenLimit = await this.getCustomerMonthlyTokenLimit(companyId);
-    if (tokenLimit != null && tokensUsed >= tokenLimit) {
-      return {
+    } else if (!snapshot.subscriptionUsable) {
+      result = {
+        unlimited: false,
+        titanLimitsEnforced: true,
+        subscriptionRequired: true,
+        allowed: false,
+        reason: 'subscription',
+        monthlyTokenLimit: null,
+        monthlyTokensUsed: tokensUsed,
+        monthlyCostCents: costCents,
+        hardSpendingLimitEnabled: false,
+        hardSpendingLimitCents: null,
+      };
+    } else if (snapshot.monthlyTokenLimit != null && tokensUsed >= snapshot.monthlyTokenLimit) {
+      result = {
         unlimited: false,
         titanLimitsEnforced: true,
         subscriptionRequired: false,
         allowed: false,
         reason: 'ai_token_limit',
-        monthlyTokenLimit: tokenLimit,
+        monthlyTokenLimit: snapshot.monthlyTokenLimit,
+        monthlyTokensUsed: tokensUsed,
+        monthlyCostCents: costCents,
+        hardSpendingLimitEnabled: false,
+        hardSpendingLimitCents: null,
+      };
+    } else {
+      result = {
+        unlimited: false,
+        titanLimitsEnforced: true,
+        subscriptionRequired: false,
+        allowed: true,
+        reason: null,
+        monthlyTokenLimit: snapshot.monthlyTokenLimit,
         monthlyTokensUsed: tokensUsed,
         monthlyCostCents: costCents,
         hardSpendingLimitEnabled: false,
@@ -116,18 +140,8 @@ export class AiOperationsService {
       };
     }
 
-    return {
-      unlimited: false,
-      titanLimitsEnforced: true,
-      subscriptionRequired: false,
-      allowed: true,
-      reason: null,
-      monthlyTokenLimit: tokenLimit,
-      monthlyTokensUsed: tokensUsed,
-      monthlyCostCents: costCents,
-      hardSpendingLimitEnabled: false,
-      hardSpendingLimitCents: null,
-    };
+    aiRoutingCache.setAllowance(companyId, result);
+    return result;
   }
 
   async getMissionControlAlertCandidates(companyId: string): Promise<AiMissionControlAlertCandidate[]> {
@@ -224,27 +238,37 @@ export class AiOperationsService {
       })
       .where(eq(aiProviderResilienceConfigs.companyId, scope.companyId))
       .returning();
+    aiRoutingCache.invalidateTenant(scope.companyId);
     return this.toConfigSummary(row!);
   }
 
-  async ensureResilienceConfig(companyId: string) {
+  async ensureResilienceConfig(companyId: string, isPlatformOwner?: boolean) {
+    const cached = aiRoutingCache.getConfig(companyId);
+    if (cached) {
+      return cached;
+    }
+
     const existing = await this.deps.db.query.aiProviderResilienceConfigs.findFirst({
       where: eq(aiProviderResilienceConfigs.companyId, companyId),
     });
     if (existing) {
+      aiRoutingCache.setConfig(companyId, existing);
       return existing;
     }
 
-    const isOwner = await this.hasUnlimitedAiAccess(companyId);
+    const owner =
+      isPlatformOwner ??
+      (await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId)).isPlatformOwner;
     const [row] = await this.deps.db
       .insert(aiProviderResilienceConfigs)
       .values({
         companyId,
         hardSpendingLimitEnabled: false,
-        lowCreditWarningCents: isOwner ? 5000 : 1000,
-        highUsageWarningTokens: isOwner ? 1_000_000 : 500_000,
+        lowCreditWarningCents: owner ? 5000 : 1000,
+        highUsageWarningTokens: owner ? 1_000_000 : 500_000,
       })
       .returning();
+    aiRoutingCache.setConfig(companyId, row!);
     return row!;
   }
 
@@ -272,6 +296,7 @@ export class AiOperationsService {
       costCents: input.costCents ?? 0,
       metadata: input.metadata ?? {},
     });
+    aiRoutingCache.invalidateAllowance(input.companyId);
   }
 
   private async getMonthlyUsageTotals(companyId: string) {
@@ -291,23 +316,6 @@ export class AiOperationsService {
       tokensUsed: Number(row?.tokens ?? 0),
       costCents: Number(row?.cost ?? 0),
     };
-  }
-
-  private async getCustomerMonthlyTokenLimit(companyId: string): Promise<number | null> {
-    const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
-    const planLimit = dashboard.subscription?.plan?.limits?.aiTokens;
-    if (planLimit != null) {
-      return planLimit;
-    }
-
-    const entitlement = dashboard.entitlements.find((entry) => entry.featureKey === 'ai_tokens');
-    return entitlement?.limitValue ?? null;
-  }
-
-  private async isCustomerSubscriptionUsable(companyId: string): Promise<boolean> {
-    const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
-    const status = dashboard.subscription?.status;
-    return status != null && ['trial', 'active', 'grace_period'].includes(status);
   }
 
   private toConfigSummary(row: typeof aiProviderResilienceConfigs.$inferSelect) {

@@ -520,12 +520,19 @@ export class AuraService {
     let failoverCount = 0;
     let retryCount = 0;
     let providerRoutingMs = 0;
+    let routingDiagnostics: import('@titan/shared').ProviderRoutingDiagnostics | undefined;
     const estimatedInputChars =
       JSON.stringify(enrichedContext).length +
       priorMessages.reduce((sum, message) => sum + message.content.length, trimmed.length);
 
-    const preparedChain = await providerPrepPromise;
+    const preparedChain = await providerPrepPromise.catch((error) => {
+      if (error instanceof AiOperationsError) {
+        throw new AuraError(error.code, error.message);
+      }
+      throw error;
+    });
     providerRoutingMs = preparedChain.providerRoutingMs;
+    routingDiagnostics = preparedChain.routingDiagnostics;
 
     try {
       const providerStarted = Date.now();
@@ -617,6 +624,8 @@ export class AuraService {
       new Set(loadedDomains as AuraContextDomain[]),
     );
 
+    const isDevelopment = process.env.NODE_ENV === 'development';
+
     return {
       ...result,
       diagnostics: {
@@ -639,6 +648,7 @@ export class AuraService {
         estimatedInputChars,
         agentsMinimalContext: agentsMinimal,
         deferredAudit: true,
+        ...(isDevelopment && routingDiagnostics ? { routing: routingDiagnostics } : {}),
       },
     };
   }
