@@ -5,6 +5,12 @@ import { hasAnyPermission } from '@titan/auth/browser';
 import { useSearch } from 'wouter';
 import { EmptyState, LoadingState } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
+import {
+  getCachedAgentRegistry,
+  getCachedAiProviderConfigured,
+  setCachedAgentRegistry,
+  setCachedAiProviderConfigured,
+} from '../../lib/aura-page-cache';
 import { fetchAgentRegistry } from '../../lib/agents-api';
 import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
 import { AuraBusinessDashboard } from '../../features/aura/AuraBusinessDashboard';
@@ -24,8 +30,12 @@ export function AuraPage() {
   const schedulingView = searchParams.get('scheduling') === '1';
   const [conversationMode, setConversationMode] = useState<'aura' | 'agent'>('agent');
   const [selectedAgentKey, setSelectedAgentKey] = useState<AgentKey>('executive');
-  const [registry, setRegistry] = useState(AGENT_REGISTRY);
-  const [aiProviderConfigured, setAiProviderConfigured] = useState<boolean | null>(null);
+  const [registry, setRegistry] = useState(() =>
+    accessToken ? (getCachedAgentRegistry(accessToken) ?? AGENT_REGISTRY) : AGENT_REGISTRY,
+  );
+  const [aiProviderConfigured, setAiProviderConfigured] = useState<boolean | null>(() =>
+    accessToken ? getCachedAiProviderConfigured(accessToken) : null,
+  );
 
   const pageContext =
     customerId || jobId || vehicleId || schedulingView
@@ -53,17 +63,45 @@ export function AuraPage() {
   useEffect(() => {
     if (!accessToken) return;
 
+    let cancelled = false;
+
     void fetchAgentRegistry(accessToken)
-      .then(setRegistry)
-      .catch(() => setRegistry(AGENT_REGISTRY));
+      .then((nextRegistry) => {
+        if (cancelled) {
+          return;
+        }
+
+        setRegistry(nextRegistry);
+        setCachedAgentRegistry(accessToken, nextRegistry);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRegistry(AGENT_REGISTRY);
+        }
+      });
 
     void fetchAiProviders(accessToken)
       .then((providers) => {
-        setAiProviderConfigured(
-          providers.some((provider) => provider.isConfigured && provider.credentialsConfigured),
+        if (cancelled) {
+          return;
+        }
+
+        const configured = providers.some(
+          (provider) => provider.isConfigured && provider.credentialsConfigured,
         );
+        setAiProviderConfigured(configured);
+        setCachedAiProviderConfigured(accessToken, configured);
       })
-      .catch(() => setAiProviderConfigured(false));
+      .catch(() => {
+        if (!cancelled) {
+          setAiProviderConfigured(false);
+          setCachedAiProviderConfigured(accessToken, false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   const contextLabel = schedulingView
@@ -176,70 +214,68 @@ export function AuraPage() {
         />
 
         <section className="aura-chat">
+          {conversationMode === 'agent' && activeAgent ? (
+            <div className="aura-agent-banner">
+              <strong>{activeAgent.name}</strong>
+              <span>{activeAgent.description}</span>
+            </div>
+          ) : null}
+
+          {error ? <p className="aura-chat__error">{error}</p> : null}
+
           {isLoading ? (
             <LoadingState label="Loading AURA conversations" />
-          ) : (
+          ) : conversationMode === 'agent' ? (
             <>
-              {conversationMode === 'agent' && activeAgent ? (
-                <div className="aura-agent-banner">
-                  <strong>{activeAgent.name}</strong>
-                  <span>{activeAgent.description}</span>
+              <AuraMessageList messages={agentMessages} isSending={isSending} />
+              {lastRunTools.length > 0 ? (
+                <div className="aura-tool-activity">
+                  <p className="aura-tool-activity__title">Tool activity</p>
+                  <ul>
+                    {lastRunTools.map((tool) => (
+                      <li key={tool}>{tool}</li>
+                    ))}
+                  </ul>
                 </div>
               ) : null}
-
-              {error ? <p className="aura-chat__error">{error}</p> : null}
-
-              {conversationMode === 'agent' ? (
-                <>
-                  <AuraMessageList messages={agentMessages} isSending={isSending} />
-                  {lastRunTools.length > 0 ? (
-                    <div className="aura-tool-activity">
-                      <p className="aura-tool-activity__title">Tool activity</p>
-                      <ul>
-                        {lastRunTools.map((tool) => (
-                          <li key={tool}>{tool}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                  {pendingTasks.length > 0 ? (
-                    <div className="aura-task-list">
-                      <p className="aura-task-list__title">Pending approvals</p>
-                      {pendingTasks.map((task) => (
-                        <AuraTaskApprovalCard
-                          key={task.id}
-                          task={task}
-                          accessToken={accessToken ?? ''}
-                          onUpdated={handleTaskUpdated}
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  <AuraComposer
-                    onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
-                    disabled={isSending || aiProviderConfigured === false}
-                    placeholder={
-                      aiProviderConfigured === false
-                        ? 'Configure an AI provider to send messages'
-                        : `Ask the ${activeAgent?.name ?? 'agent'}…`
-                    }
-                  />
-                </>
-              ) : (
-                <>
-                  <AuraMessageList messages={messages} isSending={isSending} />
-                  <AuraComposer
-                    onSend={sendMessage}
-                    disabled={isSending || aiProviderConfigured === false}
-                    placeholder={
-                      aiProviderConfigured === false
-                        ? 'Configure an AI provider to send messages'
-                        : undefined
-                    }
-                  />
-                </>
-              )}
+              {pendingTasks.length > 0 ? (
+                <div className="aura-task-list">
+                  <p className="aura-task-list__title">Pending approvals</p>
+                  {pendingTasks.map((task) => (
+                    <AuraTaskApprovalCard
+                      key={task.id}
+                      task={task}
+                      accessToken={accessToken ?? ''}
+                      onUpdated={handleTaskUpdated}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </>
+          ) : (
+            <AuraMessageList messages={messages} isSending={isSending} />
+          )}
+
+          {conversationMode === 'agent' ? (
+            <AuraComposer
+              onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
+              disabled={isSending || aiProviderConfigured === false}
+              placeholder={
+                aiProviderConfigured === false
+                  ? 'Configure an AI provider to send messages'
+                  : `Ask the ${activeAgent?.name ?? 'agent'}…`
+              }
+            />
+          ) : (
+            <AuraComposer
+              onSend={sendMessage}
+              disabled={isSending || aiProviderConfigured === false}
+              placeholder={
+                aiProviderConfigured === false
+                  ? 'Configure an AI provider to send messages'
+                  : undefined
+              }
+            />
           )}
         </section>
       </div>

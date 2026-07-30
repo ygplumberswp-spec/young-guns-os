@@ -20,6 +20,7 @@ import {
 } from '@titan/shared';
 import { ApiClientError } from './api-client';
 import { fetchCompanyProfile } from './company-api';
+import { getCachedCompanyProfile } from './company-profile-cache';
 import { useAuth } from './auth-context';
 
 type CompanyLocaleContextValue = CompanyLocaleSettings & {
@@ -36,12 +37,32 @@ type CompanyLocaleContextValue = CompanyLocaleSettings & {
 
 const CompanyLocaleContext = createContext<CompanyLocaleContextValue | null>(null);
 
+function readCachedLocale(accessToken: string | null) {
+  if (!accessToken) {
+    return null;
+  }
+
+  const profile = getCachedCompanyProfile(accessToken);
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    locale: resolveCompanyLocale(profile.preferences),
+    logoFileId: profile.preferences.logoFileId ?? null,
+    companyName: profile.name,
+  };
+}
+
 export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
   const { accessToken, isAuthenticated } = useAuth();
-  const [locale, setLocale] = useState<CompanyLocaleSettings>(DEFAULT_COMPANY_LOCALE);
-  const [logoFileId, setLogoFileId] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const cachedLocale = readCachedLocale(accessToken);
+  const [locale, setLocale] = useState<CompanyLocaleSettings>(
+    () => cachedLocale?.locale ?? DEFAULT_COMPANY_LOCALE,
+  );
+  const [logoFileId, setLogoFileId] = useState<string | null>(() => cachedLocale?.logoFileId ?? null);
+  const [companyName, setCompanyName] = useState<string | null>(() => cachedLocale?.companyName ?? null);
+  const [isLoading, setIsLoading] = useState(() => Boolean(accessToken && isAuthenticated && !cachedLocale));
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +76,10 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      setIsLoading(true);
+      const hasCachedProfile = Boolean(getCachedCompanyProfile(accessToken));
+      if (!hasCachedProfile) {
+        setIsLoading(true);
+      }
 
       try {
         const profile = await fetchCompanyProfile(accessToken);

@@ -1,4 +1,11 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import {
+  clearInflightCompanyMediaBlobRequest,
+  getCachedCompanyMediaBlob,
+  getInflightCompanyMediaBlobRequest,
+  setCachedCompanyMediaBlob,
+  setInflightCompanyMediaBlobRequest,
+} from '../../lib/company-media-cache';
 import { request } from '../../lib/api-client';
 
 type CompanyMediaImageProps = {
@@ -9,6 +16,40 @@ type CompanyMediaImageProps = {
   fallback?: ReactNode;
 };
 
+async function loadCompanyMediaBlob(accessToken: string, fileId: string): Promise<string | null> {
+  const cached = getCachedCompanyMediaBlob(accessToken, fileId);
+  if (cached) {
+    return cached;
+  }
+
+  const inflight = getInflightCompanyMediaBlobRequest(accessToken, fileId);
+  if (inflight) {
+    return inflight;
+  }
+
+  const promise = (async () => {
+    const response = await fetch(`/api/v1/company/media/${fileId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    setCachedCompanyMediaBlob(accessToken, fileId, objectUrl);
+    return objectUrl;
+  })()
+    .catch(() => null)
+    .finally(() => {
+      clearInflightCompanyMediaBlobRequest(accessToken, fileId);
+    });
+
+  setInflightCompanyMediaBlobRequest(accessToken, fileId, promise);
+  return promise;
+}
+
 export function CompanyMediaImage({
   accessToken,
   fileId,
@@ -16,37 +57,28 @@ export function CompanyMediaImage({
   className,
   fallback = null,
 }: CompanyMediaImageProps) {
-  const [src, setSrc] = useState<string | null>(null);
+  const [src, setSrc] = useState<string | null>(() =>
+    getCachedCompanyMediaBlob(accessToken, fileId),
+  );
 
   useEffect(() => {
     let cancelled = false;
-    let objectUrl: string | null = null;
 
     async function load() {
-      const response = await fetch(`/api/v1/company/media/${fileId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (!response.ok) {
-        return;
-      }
-
-      const blob = await response.blob();
-      objectUrl = URL.createObjectURL(blob);
-      if (!cancelled) {
+      const objectUrl = await loadCompanyMediaBlob(accessToken, fileId);
+      if (!cancelled && objectUrl) {
         setSrc(objectUrl);
       }
     }
 
-    void load();
+    if (!src) {
+      void load();
+    }
 
     return () => {
       cancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
-  }, [accessToken, fileId]);
+  }, [accessToken, fileId, src]);
 
   if (!src) {
     return fallback ? <>{fallback}</> : null;

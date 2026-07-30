@@ -1,12 +1,39 @@
 import type { CompanyProfile, UpdateCompanyProfileRequest } from '@titan/shared';
 import { request } from './api-client';
+import {
+  clearInflightCompanyProfileRequest,
+  getCachedCompanyProfile,
+  getInflightCompanyProfileRequest,
+  setCachedCompanyProfile,
+  setInflightCompanyProfileRequest,
+} from './company-profile-cache';
 
 export async function fetchCompanyProfile(accessToken: string): Promise<CompanyProfile> {
-  const data = await request<{ profile: CompanyProfile }>('/company/profile', {
-    accessToken,
-  });
+  const cached = getCachedCompanyProfile(accessToken);
+  if (cached) {
+    return cached;
+  }
 
-  return data.profile;
+  const inflight = getInflightCompanyProfileRequest(accessToken);
+  if (inflight) {
+    return inflight;
+  }
+
+  const promise = request<{ profile: CompanyProfile }>('/company/profile', {
+    accessToken,
+  })
+    .then((data) => {
+      setCachedCompanyProfile(accessToken, data.profile);
+      clearInflightCompanyProfileRequest(accessToken);
+      return data.profile;
+    })
+    .catch((error) => {
+      clearInflightCompanyProfileRequest(accessToken);
+      throw error;
+    });
+
+  setInflightCompanyProfileRequest(accessToken, promise);
+  return promise;
 }
 
 export async function updateCompanyProfile(
@@ -19,6 +46,7 @@ export async function updateCompanyProfile(
     body,
   });
 
+  setCachedCompanyProfile(accessToken, data.profile);
   return data.profile;
 }
 
@@ -45,6 +73,7 @@ export async function uploadCompanyMedia(
     method: 'POST',
     body: input,
   });
+  setCachedCompanyProfile(accessToken, data.profile);
   return data.profile;
 }
 
@@ -56,5 +85,8 @@ export async function removeCompanyMedia(
     `/company/media/${fileId}`,
     { accessToken, method: 'DELETE' },
   );
+  if (data.profile) {
+    setCachedCompanyProfile(accessToken, data.profile);
+  }
   return data.profile;
 }

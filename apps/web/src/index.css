@@ -434,6 +434,14 @@ a {
   outline-offset: 1px;
 }
 
+.page-route-suspense {
+  display: flex;
+  min-height: 12rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
 .owner-shell--collapsed .titan-shell__sidebar {
   width: 3.75rem;
   padding-inline: 0.5rem;

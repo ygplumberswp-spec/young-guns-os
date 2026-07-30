@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
 import { AI_NAME, APP_NAME } from '@titan/shared';
@@ -6,6 +6,7 @@ import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
 import { filterOwnerStaffNav, toStaffIdentity } from '../lib/role-experience';
+import { prefetchOwnerRoute } from '../routes/route-prefetch';
 import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
 
 function companyInitials(name: string): string {
@@ -21,10 +22,17 @@ type AppLayoutProps = {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const { user, logout, accessToken } = useAuth();
   const { logoFileId, companyName: profileCompanyName } = useCompanyLocale();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [location]);
+
+  const activeLocation = pendingHref ?? location;
 
   const navItems = useMemo(() => (user ? filterOwnerStaffNav(user) : []), [user]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
@@ -117,7 +125,8 @@ export function AppLayout({ children }: AppLayoutProps) {
           <nav className="app-nav" aria-label="Main navigation">
             {navItems.map((item) => {
               const isActive =
-                location === item.href || (item.href !== '/' && location.startsWith(item.href));
+                activeLocation === item.href ||
+                (item.href !== '/' && activeLocation.startsWith(item.href));
 
               return (
                 <Link
@@ -125,7 +134,12 @@ export function AppLayout({ children }: AppLayoutProps) {
                   href={item.href}
                   className={`app-nav__link${isActive ? ' app-nav__link--active' : ''}`}
                   title={sidebarCollapsed ? item.label : undefined}
-                  onClick={() => setMobileNavOpen(false)}
+                  onClick={() => {
+                    setPendingHref(item.href);
+                    setMobileNavOpen(false);
+                  }}
+                  onMouseEnter={() => prefetchOwnerRoute(item.href)}
+                  onFocus={() => prefetchOwnerRoute(item.href)}
                 >
                   <span className="app-nav__label">{item.label}</span>
                 </Link>

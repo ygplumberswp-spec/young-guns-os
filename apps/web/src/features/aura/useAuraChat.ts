@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
   AgentKey,
   AgentTaskSummary,
@@ -15,6 +15,8 @@ type AgentChatMessage = AuraMessage & {
   toolsUsed?: string[];
 };
 
+const conversationsCache = new Map<string, AuraConversationSummary[]>();
+
 export function useAuraChat(pageContext?: {
   customerId?: string;
   jobId?: string;
@@ -22,14 +24,19 @@ export function useAuraChat(pageContext?: {
   schedulingView?: boolean;
 }) {
   const { accessToken } = useAuth();
-  const [conversations, setConversations] = useState<AuraConversationSummary[]>([]);
+  const [conversations, setConversations] = useState<AuraConversationSummary[]>(() =>
+    accessToken ? (conversationsCache.get(accessToken) ?? []) : [],
+  );
   const [activeConversation, setActiveConversation] = useState<AuraConversationDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() =>
+    accessToken ? !conversationsCache.has(accessToken) : false,
+  );
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [agentMessages, setAgentMessages] = useState<AgentChatMessage[]>([]);
   const [pendingTasks, setPendingTasks] = useState<AgentTaskSummary[]>([]);
   const [lastRunTools, setLastRunTools] = useState<string[]>([]);
+  const selectRequestId = useRef(0);
 
   const loadConversations = useCallback(async () => {
     if (!accessToken) {
@@ -37,6 +44,7 @@ export function useAuraChat(pageContext?: {
     }
 
     const items = await auraApi.listAuraConversations(accessToken);
+    conversationsCache.set(accessToken, items);
     setConversations(items);
     return items;
   }, [accessToken]);
@@ -47,8 +55,14 @@ export function useAuraChat(pageContext?: {
         return;
       }
 
+      const requestId = ++selectRequestId.current;
       setError(null);
       const conversation = await auraApi.getAuraConversation(accessToken, conversationId);
+
+      if (requestId !== selectRequestId.current) {
+        return;
+      }
+
       setActiveConversation(conversation);
     },
     [accessToken],
@@ -210,8 +224,17 @@ export function useAuraChat(pageContext?: {
         return;
       }
 
+      const cached = conversationsCache.get(accessToken);
+      if (cached) {
+        setConversations(cached);
+        setIsLoading(false);
+      }
+
       try {
-        await loadConversations();
+        const items = await loadConversations();
+        if (!cancelled && items) {
+          setConversations(items);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load AURA');
@@ -227,6 +250,7 @@ export function useAuraChat(pageContext?: {
 
     return () => {
       cancelled = true;
+      selectRequestId.current += 1;
     };
   }, [accessToken, loadConversations]);
 
