@@ -17,26 +17,52 @@ export function startAutomationWorkers(
   const orchestrationEngine = 'orchestrationEngine' in workers ? workers.orchestrationEngine : null;
   const intervalMs = options?.intervalMs ?? DEFAULT_INTERVAL_MS;
 
-  const queueTimer = setInterval(() => {
-    void workflowEngine.processPendingJobs().catch((error: unknown) => {
-      console.error('[automation-worker] Workflow queue processing failed', error);
-    });
+  let queueTickRunning = false;
+  let overdueTickRunning = false;
 
-    void workflowEngine.processDueSchedules().catch((error: unknown) => {
-      console.error('[automation-worker] Schedule processing failed', error);
-    });
-
-    if (orchestrationEngine) {
-      void orchestrationEngine.processPendingJobs().catch((error: unknown) => {
-        console.error('[automation-worker] Orchestration queue processing failed', error);
-      });
+  async function runQueueTick(): Promise<void> {
+    if (queueTickRunning) {
+      return;
     }
+
+    queueTickRunning = true;
+
+    try {
+      await workflowEngine.processPendingJobs();
+      await workflowEngine.processDueSchedules();
+
+      if (orchestrationEngine) {
+        await orchestrationEngine.processPendingJobs();
+      }
+    } catch (error: unknown) {
+      console.error('[automation-worker] Queue tick failed', error);
+    } finally {
+      queueTickRunning = false;
+    }
+  }
+
+  async function runOverdueTick(): Promise<void> {
+    if (overdueTickRunning) {
+      return;
+    }
+
+    overdueTickRunning = true;
+
+    try {
+      await workflowEngine.processPendingJobs(1);
+    } catch (error: unknown) {
+      console.error('[automation-worker] Overdue check failed', error);
+    } finally {
+      overdueTickRunning = false;
+    }
+  }
+
+  const queueTimer = setInterval(() => {
+    void runQueueTick();
   }, intervalMs);
 
   const overdueTimer = setInterval(() => {
-    void workflowEngine.processPendingJobs(1).catch((error: unknown) => {
-      console.error('[automation-worker] Overdue check failed', error);
-    });
+    void runOverdueTick();
   }, OVERDUE_CHECK_INTERVAL_MS);
 
   if (typeof queueTimer.unref === 'function') {
@@ -47,15 +73,7 @@ export function startAutomationWorkers(
     overdueTimer.unref();
   }
 
-  void workflowEngine.processPendingJobs().catch((error: unknown) => {
-    console.error('[automation-worker] Initial workflow queue processing failed', error);
-  });
-
-  if (orchestrationEngine) {
-    void orchestrationEngine.processPendingJobs().catch((error: unknown) => {
-      console.error('[automation-worker] Initial orchestration queue processing failed', error);
-    });
-  }
+  void runQueueTick();
 
   return () => {
     clearInterval(queueTimer);

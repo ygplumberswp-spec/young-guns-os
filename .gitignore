@@ -35,3 +35,8 @@ coverage/
 
 # Docker volumes
 infra/docker/data/
+
+# Local company media uploads (tenant-isolated files — do not commit)
+storage/company-media/*
+!storage/company-media/.gitkeep
+apps/api/storage/company-media/*

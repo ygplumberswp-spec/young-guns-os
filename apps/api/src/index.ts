@@ -4,8 +4,9 @@ import express, { type Express } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { createAuraProvider, isAuraProviderConfigured } from '@titan/aura';
-import { createDb } from '@titan/db';
+import { closeDb, createDb } from '@titan/db';
 import { loadAuraEnvConfig, loadEnv } from './config.js';
+import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createAuraRouter } from './routes/aura.js';
@@ -215,7 +216,8 @@ if (auraProvider) {
 }
 
 const companyService = new CompanyService(db);
-const companyMediaService = new CompanyMediaService(process.env.COMPANY_MEDIA_STORAGE_PATH ?? null);
+const companyMediaStoragePath = resolveCompanyMediaStoragePath(process.env.COMPANY_MEDIA_STORAGE_PATH);
+const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -904,7 +906,7 @@ bindAutomationEventEmitter(async (event) => {
   await workflowEngineService.emit(event);
   await agentOrchestrationEngineService.emit(event);
 });
-startAutomationWorkers({
+const stopAutomationWorkers = startAutomationWorkers({
   workflowEngine: workflowEngineService,
   orchestrationEngine: agentOrchestrationEngineService,
 });
@@ -1801,7 +1803,20 @@ app.use(notFoundHandler());
 app.use(createErrorHandler(logger));
 
 app.listen(env.PORT, env.HOST, () => {
-  logger.info({ port: env.PORT, host: env.HOST }, 'TITAN API started');
+  logger.info(
+    { port: env.PORT, host: env.HOST, companyMediaStoragePath },
+    'TITAN API started',
+  );
 });
+
+async function shutdown(signal: string) {
+  logger.info({ signal }, 'Shutting down TITAN API');
+  stopAutomationWorkers();
+  await closeDb();
+  process.exit(0);
+}
+
+process.once('SIGINT', () => void shutdown('SIGINT'));
+process.once('SIGTERM', () => void shutdown('SIGTERM'));
 
 export { app };
