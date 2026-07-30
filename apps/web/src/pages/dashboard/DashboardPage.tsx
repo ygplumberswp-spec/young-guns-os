@@ -11,7 +11,7 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="dashboard">
+    <div className="dashboard owner-page-content">
       <DashboardWelcome />
       <DashboardStats />
       <DashboardEmptyPanels />

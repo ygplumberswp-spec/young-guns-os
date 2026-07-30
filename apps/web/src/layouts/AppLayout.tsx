@@ -6,8 +6,10 @@ import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
 import { filterOwnerStaffNav, toStaffIdentity } from '../lib/role-experience';
+import { groupNavItems } from '../lib/nav-groups';
 import { prefetchOwnerRoute } from '../routes/route-prefetch';
 import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
+import { NavIcon } from '../components/NavIcon';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -35,6 +37,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const activeLocation = pendingHref ?? location;
 
   const navItems = useMemo(() => (user ? filterOwnerStaffNav(user) : []), [user]);
+  const groupedNavItems = useMemo(() => groupNavItems(navItems), [navItems]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
   const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
 
@@ -123,28 +126,36 @@ export function AppLayout({ children }: AppLayoutProps) {
             </button>
           </div>
           <nav className="app-nav" aria-label="Main navigation">
-            {navItems.map((item) => {
-              const isActive =
-                activeLocation === item.href ||
-                (item.href !== '/' && activeLocation.startsWith(item.href));
+            {groupedNavItems.map(({ group, items }) => (
+              <div key={group.id} className="app-nav__group">
+                {!sidebarCollapsed ? (
+                  <p className="app-nav__group-label">{group.label}</p>
+                ) : null}
+                {items.map((item) => {
+                  const isActive =
+                    activeLocation === item.href ||
+                    (item.href !== '/' && activeLocation.startsWith(item.href));
 
-              return (
-                <Link
-                  key={`${item.href}:${item.label}`}
-                  href={item.href}
-                  className={`app-nav__link${isActive ? ' app-nav__link--active' : ''}`}
-                  title={sidebarCollapsed ? item.label : undefined}
-                  onClick={() => {
-                    setPendingHref(item.href);
-                    setMobileNavOpen(false);
-                  }}
-                  onMouseEnter={() => prefetchOwnerRoute(item.href)}
-                  onFocus={() => prefetchOwnerRoute(item.href)}
-                >
-                  <span className="app-nav__label">{item.label}</span>
-                </Link>
-              );
-            })}
+                  return (
+                    <Link
+                      key={`${item.href}:${item.label}`}
+                      href={item.href}
+                      className={`app-nav__link${isActive ? ' app-nav__link--active' : ''}`}
+                      title={sidebarCollapsed ? item.label : undefined}
+                      onClick={() => {
+                        setPendingHref(item.href);
+                        setMobileNavOpen(false);
+                      }}
+                      onMouseEnter={() => prefetchOwnerRoute(item.href)}
+                      onFocus={() => prefetchOwnerRoute(item.href)}
+                    >
+                      <NavIcon name={item.label} />
+                      <span className="app-nav__label">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ))}
           </nav>
         </div>
       }

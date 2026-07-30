@@ -39,6 +39,8 @@ export type DashboardEmptyPanel = {
   description: string;
   emptyTitle: string;
   emptyDescription: string;
+  actionLabel?: string;
+  actionHref?: string;
 };
 
 export const DASHBOARD_EMPTY_PANELS: DashboardEmptyPanel[] = [
@@ -47,13 +49,17 @@ export const DASHBOARD_EMPTY_PANELS: DashboardEmptyPanel[] = [
     title: 'Recent Activity',
     description: 'Latest updates across your business',
     emptyTitle: 'No activity yet',
-    emptyDescription: 'Recent updates from customers, jobs, and finance will appear here.',
+    emptyDescription: 'Customer, job and finance updates will appear here as you work.',
+    actionLabel: 'Add customer',
+    actionHref: '/crm',
   },
   {
     id: 'upcoming-work',
     title: 'Upcoming Work',
     description: 'Scheduled jobs and tasks',
-    emptyTitle: 'No upcoming work scheduled',
-    emptyDescription: 'Scheduled jobs and tasks will appear here when they are assigned.',
+    emptyTitle: 'Nothing scheduled',
+    emptyDescription: 'Scheduled jobs and tasks will appear here once assigned.',
+    actionLabel: 'Schedule job',
+    actionHref: '/scheduling',
   },
 ];

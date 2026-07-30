@@ -8,6 +8,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { DASHBOARD_METRICS } from './constants';
+import { DashboardMetricIcon } from './DashboardMetricIcon';
 
 export function DashboardStats() {
   const { accessToken, user } = useAuth();
@@ -113,7 +114,12 @@ export function DashboardStats() {
           {metric.loading ? (
             <LoadingState label={`Loading ${metric.label.toLowerCase()}…`} />
           ) : (
-            <StatCard label={metric.label} value={metric.value} hint={metric.hint} />
+            <StatCard
+              label={metric.label}
+              value={metric.value}
+              hint={metric.hint}
+              icon={<DashboardMetricIcon metricId={metric.id} />}
+            />
           )}
         </div>
       ))}

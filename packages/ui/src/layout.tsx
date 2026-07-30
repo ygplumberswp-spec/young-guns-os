@@ -41,11 +41,13 @@ export type EmptyStateProps = HTMLAttributes<HTMLDivElement> & {
   title: string;
   description: string;
   action?: ReactNode;
+  icon?: ReactNode;
 };
 
-export function EmptyState({ title, description, action, className, ...props }: EmptyStateProps) {
+export function EmptyState({ title, description, action, icon, className, ...props }: EmptyStateProps) {
   return (
     <div className={clsx('titan-empty-state', className)} {...props}>
+      {icon ? <div className="titan-empty-state__icon">{icon}</div> : null}
       <h2 className="titan-empty-state__title">{title}</h2>
       <p className="titan-empty-state__description">{description}</p>
       {action ? <div className="titan-empty-state__action">{action}</div> : null}
