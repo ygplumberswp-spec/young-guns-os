@@ -23,13 +23,28 @@ function buildQuery(query: AnalyticsDashboardQuery = {}): string {
   return serialized ? `?${serialized}` : '';
 }
 
+const ANALYTICS_REQUEST_TIMEOUT_MS = 20_000;
+
+type AnalyticsRequestOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
+
+function requestOptions(options?: AnalyticsRequestOptions) {
+  return {
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs ?? ANALYTICS_REQUEST_TIMEOUT_MS,
+  };
+}
+
 export async function fetchAnalyticsDashboard(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<AnalyticsDashboard> {
   const data = await request<{ dashboard: AnalyticsDashboard }>(
     `/analytics/dashboard${buildQuery(query)}`,
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
   return data.dashboard;
 }
@@ -37,9 +52,11 @@ export async function fetchAnalyticsDashboard(
 export async function fetchAnalyticsTrends(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<AnalyticsTrends> {
   const data = await request<{ trends: AnalyticsTrends }>(`/analytics/trends${buildQuery(query)}`, {
     accessToken,
+    ...requestOptions(options),
   });
   return data.trends;
 }
@@ -47,10 +64,11 @@ export async function fetchAnalyticsTrends(
 export async function fetchJobProfitability(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<JobProfitabilityAnalytics> {
   const data = await request<{ profitability: JobProfitabilityAnalytics }>(
     `/analytics/profitability${buildQuery(query)}`,
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
   return data.profitability;
 }
@@ -58,10 +76,11 @@ export async function fetchJobProfitability(
 export async function fetchTechnicianPerformance(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<TechnicianPerformanceAnalytics> {
   const data = await request<{ technicians: TechnicianPerformanceAnalytics }>(
     `/analytics/technicians${buildQuery(query)}`,
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
   return data.technicians;
 }
@@ -69,10 +88,11 @@ export async function fetchTechnicianPerformance(
 export async function fetchCustomerAnalytics(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<CustomerAnalytics> {
   const data = await request<{ customers: CustomerAnalytics }>(
     `/analytics/customers${buildQuery(query)}`,
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
   return data.customers;
 }
@@ -80,20 +100,25 @@ export async function fetchCustomerAnalytics(
 export async function fetchFinanceAnalytics(
   accessToken: string,
   query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
 ): Promise<FinanceAnalytics> {
   const data = await request<{ finance: FinanceAnalytics }>(`/analytics/finance${buildQuery(query)}`, {
     accessToken,
+    ...requestOptions(options),
   });
   return data.finance;
 }
 
-export async function fetchReportCatalog(accessToken: string): Promise<{
+export async function fetchReportCatalog(
+  accessToken: string,
+  options?: AnalyticsRequestOptions,
+): Promise<{
   definitions: ReportDefinitionSummary[];
   runs: ReportRunSummary[];
 }> {
   return request<{ definitions: ReportDefinitionSummary[]; runs: ReportRunSummary[] }>(
     '/analytics/reports',
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
 }
 

@@ -8,7 +8,36 @@ type RequestOptions = {
   body?: unknown;
   accessToken?: string | null;
   skipAuthRefresh?: boolean;
+  signal?: AbortSignal | null;
+  timeoutMs?: number;
 };
+
+function combineSignals(signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
+  const active = signals.filter((signal): signal is AbortSignal => signal != null);
+  if (active.length === 0) return undefined;
+  if (active.length === 1) return active[0];
+
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  for (const signal of active) {
+    if (signal.aborted) {
+      controller.abort();
+      return controller.signal;
+    }
+    signal.addEventListener('abort', abort, { once: true });
+  }
+  return controller.signal;
+}
+
+function timeoutSignal(timeoutMs: number): AbortSignal {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs);
+  }
+
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs);
+  return controller.signal;
+}
 
 let refreshPromise: Promise<AuthSession | null> | null = null;
 
@@ -43,11 +72,17 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
+  const signal = combineSignals([
+    options.signal,
+    options.timeoutMs ? timeoutSignal(options.timeoutMs) : undefined,
+  ]);
+
   const response = await fetch(`${API_BASE}${path}`, {
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',
     body: options.body ? JSON.stringify(options.body) : undefined,
+    signal,
   });
 
   if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {

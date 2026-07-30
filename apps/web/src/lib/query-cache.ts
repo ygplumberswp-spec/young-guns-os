@@ -81,6 +81,15 @@ function notifySubscribers(queryKey: string, data: unknown): void {
   }
 }
 
+export function abortQueryCache(queryKey: string): void {
+  const pending = inflight.get(queryKey);
+  if (pending) {
+    pending.controller.abort();
+    inflight.delete(queryKey);
+  }
+  refreshing.delete(queryKey);
+}
+
 export function invalidateQueryCache(queryKey?: string): void {
   if (!queryKey) {
     cache.clear();

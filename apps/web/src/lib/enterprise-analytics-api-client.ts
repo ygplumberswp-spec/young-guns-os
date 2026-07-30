@@ -18,10 +18,27 @@ import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as EnterpriseAnalyticsApiClientError };
 
-export async function fetchEnterpriseAnalyticsDashboard(accessToken: string) {
+const ANALYTICS_REQUEST_TIMEOUT_MS = 20_000;
+
+type AnalyticsRequestOptions = {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
+
+function requestOptions(options?: AnalyticsRequestOptions) {
+  return {
+    signal: options?.signal,
+    timeoutMs: options?.timeoutMs ?? ANALYTICS_REQUEST_TIMEOUT_MS,
+  };
+}
+
+export async function fetchEnterpriseAnalyticsDashboard(
+  accessToken: string,
+  options?: AnalyticsRequestOptions,
+) {
   const data = await request<{ dashboard: EnterpriseAnalyticsExecutiveDashboard }>(
     '/enterprise-analytics/dashboard',
-    { accessToken },
+    { accessToken, ...requestOptions(options) },
   );
   return data.dashboard;
 }
@@ -74,14 +91,18 @@ export async function fetchAnalyticsSavedLayouts(accessToken: string) {
   return data.layouts;
 }
 
-export async function fetchBusinessKpis(accessToken: string) {
-  const data = await request<{ kpis: BusinessKpiSummary[] }>('/business-intelligence/kpis', { accessToken });
+export async function fetchBusinessKpis(accessToken: string, options?: AnalyticsRequestOptions) {
+  const data = await request<{ kpis: BusinessKpiSummary[] }>('/business-intelligence/kpis', {
+    accessToken,
+    ...requestOptions(options),
+  });
   return data.kpis;
 }
 
-export async function fetchBusinessInsights(accessToken: string) {
+export async function fetchBusinessInsights(accessToken: string, options?: AnalyticsRequestOptions) {
   const data = await request<{ insights: BusinessInsightSummary[] }>('/business-intelligence/insights', {
     accessToken,
+    ...requestOptions(options),
   });
   return data.insights;
 }
@@ -94,9 +115,10 @@ export async function generateBusinessInsights(accessToken: string) {
   return data.insights;
 }
 
-export async function fetchPredictiveForecasts(accessToken: string) {
+export async function fetchPredictiveForecasts(accessToken: string, options?: AnalyticsRequestOptions) {
   const data = await request<{ forecasts: PredictiveForecastSummary[] }>('/business-intelligence/forecasts', {
     accessToken,
+    ...requestOptions(options),
   });
   return data.forecasts;
 }

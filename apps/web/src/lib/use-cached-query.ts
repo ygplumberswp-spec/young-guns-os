@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { QueryCacheScope } from '@titan/shared';
 import { ApiClientError } from './api-client';
 import {
+  abortQueryCache,
   buildQueryKey,
   fetchQueryCache,
   isQueryCacheRefreshing,
@@ -52,6 +53,14 @@ export function useCachedQuery<T>({
   );
   const fetcherRef = useRef(fetcher);
   fetcherRef.current = fetcher;
+  const requestGenerationRef = useRef(0);
+
+  useEffect(() => {
+    if (!enabled) {
+      setIsLoading(false);
+      setIsFetching(false);
+    }
+  }, [enabled]);
 
   useEffect(() => {
     if (!enabled) {
@@ -115,11 +124,12 @@ export function useCachedQuery<T>({
   );
 
   useEffect(() => {
+    const generation = ++requestGenerationRef.current;
     let cancelled = false;
 
     async function run() {
       if (!enabled || !accessToken) {
-        if (!cancelled) {
+        if (!cancelled && requestGenerationRef.current === generation) {
           setIsLoading(false);
           setIsFetching(false);
         }
@@ -127,7 +137,7 @@ export function useCachedQuery<T>({
       }
 
       const existing = readQueryCache<T>(fullKey);
-      if (!cancelled) {
+      if (!cancelled && requestGenerationRef.current === generation) {
         if (existing === undefined) {
           setIsLoading(true);
         } else {
@@ -143,28 +153,30 @@ export function useCachedQuery<T>({
           staleTimeMs: resolvedStaleTimeMs,
           force: false,
         });
-        if (!cancelled) {
+        if (!cancelled && requestGenerationRef.current === generation) {
           setData(next);
           setIsStale(isQueryCacheStale(fullKey, resolvedStaleTimeMs));
         }
       } catch (err) {
-        if (cancelled || (err instanceof DOMException && err.name === 'AbortError')) {
+        if (cancelled || requestGenerationRef.current !== generation) {
+          return;
+        }
+
+        if (err instanceof DOMException && err.name === 'AbortError') {
           return;
         }
 
         const message = err instanceof ApiClientError ? err.message : 'Unable to load data';
         const fallback = readQueryCache<T>(fullKey);
-        if (!cancelled) {
-          if (fallback !== undefined) {
-            setData(fallback);
-            setIsStale(true);
-            setError(message);
-          } else {
-            setError(message);
-          }
+        if (fallback !== undefined) {
+          setData(fallback);
+          setIsStale(true);
+          setError(message);
+        } else {
+          setError(message);
         }
       } finally {
-        if (!cancelled) {
+        if (!cancelled && requestGenerationRef.current === generation) {
           setIsLoading(false);
           setIsFetching(isQueryCacheRefreshing(fullKey));
         }
@@ -175,6 +187,11 @@ export function useCachedQuery<T>({
 
     return () => {
       cancelled = true;
+      abortQueryCache(fullKey);
+      if (requestGenerationRef.current === generation) {
+        setIsLoading(false);
+        setIsFetching(false);
+      }
     };
   }, [accessToken, enabled, fullKey, keepPreviousData, resolvedStaleTimeMs]);
 
