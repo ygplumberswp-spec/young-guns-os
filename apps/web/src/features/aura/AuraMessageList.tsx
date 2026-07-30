@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { AuraMessage } from '@titan/shared';
 import { AI_NAME } from '@titan/shared';
+import { AuraMessageContent } from './AuraMessageContent';
 
 type AuraMessageListProps = {
   messages: AuraMessage[];
@@ -37,13 +38,15 @@ export function AuraMessageList({ messages, isSending }: AuraMessageListProps) {
           <div className="aura-message__meta">
             {message.role === 'assistant' ? AI_NAME : 'You'}
           </div>
-          <div className="aura-message__bubble">{message.content}</div>
+          <div className="aura-message__bubble">
+            <AuraMessageContent content={message.content} role={message.role} />
+          </div>
         </article>
       ))}
       {isSending ? (
         <article className="aura-message aura-message--assistant">
           <div className="aura-message__meta">{AI_NAME}</div>
-          <div className="aura-message__bubble aura-message__bubble--typing">AURA is working…</div>
+          <div className="aura-message__bubble aura-message__bubble--typing">AURA is thinking…</div>
         </article>
       ) : null}
       <div ref={bottomRef} />

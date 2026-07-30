@@ -46,11 +46,14 @@ export type AuraSendDiagnostics = {
   totalApiMs: number;
   conversationHistoryMs: number;
   contextBuildMs: number;
+  capabilityRoutingMs: number;
   contextDomainsLoaded: string[];
   contextDomainsSkipped: string[];
   providerMs: number;
   databaseMs: number;
+  /** @deprecated Use providerRoutingMs */
   agentRoutingMs: number;
+  providerRoutingMs: number;
   specialistAgentsInvoked: number;
   providerAttempts: number;
   failoverCount: number;

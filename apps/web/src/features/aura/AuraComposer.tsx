@@ -39,7 +39,7 @@ export function AuraComposer({
 
   return (
     <form className="aura-composer" onSubmit={(event) => void handleSubmit(event)}>
-      {isWorking ? <p className="aura-composer__status">AURA is working…</p> : null}
+      {isWorking ? <p className="aura-composer__status">AURA is thinking…</p> : null}
       <textarea
         className="aura-composer__input"
         placeholder={placeholder}

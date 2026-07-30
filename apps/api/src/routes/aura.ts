@@ -153,7 +153,7 @@ export function createAuraRouter({ auraService, db, jwtSecret, authService }: Au
             `context;dur=${diagnostics.contextBuildMs}`,
             `provider;dur=${diagnostics.providerMs}`,
             `db;dur=${diagnostics.databaseMs}`,
-            `routing;dur=${diagnostics.agentRoutingMs}`,
+            `routing;dur=${diagnostics.providerRoutingMs}`,
           ].join(', '),
         );
       }

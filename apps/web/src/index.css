@@ -1152,6 +1152,75 @@ a {
   font-style: italic;
 }
 
+.aura-message__plain {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.aura-message__markdown {
+  white-space: normal;
+}
+
+.aura-message__markdown :is(p, ul, ol, pre, blockquote, h1, h2, h3, h4) {
+  margin: 0 0 0.65rem;
+}
+
+.aura-message__markdown :is(p, ul, ol, pre, blockquote, h1, h2, h3, h4):last-child {
+  margin-bottom: 0;
+}
+
+.aura-message__markdown ul,
+.aura-message__markdown ol {
+  padding-left: 1.25rem;
+}
+
+.aura-message__markdown h1,
+.aura-message__markdown h2,
+.aura-message__markdown h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.aura-message__markdown strong {
+  font-weight: 700;
+}
+
+.aura-message__markdown a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.aura-message__markdown a:hover {
+  color: #1d4ed8;
+}
+
+.aura-message__code-block {
+  overflow-x: auto;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  background: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+}
+
+.aura-message__inline-code {
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.25rem;
+  background: #e2e8f0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+}
+
+.aura-message--user .aura-message__inline-code,
+.aura-message--user .aura-message__code-block {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.aura-message--user .aura-message__markdown a {
+  color: #bfdbfe;
+}
+
 .aura-empty-chat {
   flex: 1;
   display: flex;

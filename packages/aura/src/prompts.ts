@@ -763,6 +763,10 @@ function formatAgentsContext(context: AuraGenerateContext): string | null {
         `  - ${entry.name} (${entry.agentKey}) — ${entry.configured ? 'configured' : 'not configured'}${entry.foundationOnly ? ' [foundation only]' : ''}`,
       );
     }
+  } else if (agents.minimalOverview) {
+    lines.push(
+      '- Platform overview mode: specialist agents cover CRM, jobs, finance, scheduling, fleet, communications, documents, automation, analytics, recruiting, integrations, and executive intelligence. Route follow-up questions to the relevant module instead of listing every agent type.',
+    );
   }
 
   if (agents.profiles.length > 0) {

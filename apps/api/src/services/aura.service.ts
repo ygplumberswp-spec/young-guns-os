@@ -442,7 +442,14 @@ export class AuraService {
     }
 
     const historyStarted = Date.now();
-    const conversation = await this.getConversation(scope, conversationId);
+    const [conversation, user] = await Promise.all([
+      this.getConversation(scope, conversationId),
+      this.db.query.users.findFirst({
+        where: and(eq(users.id, scope.userId), eq(users.companyId, scope.companyId)),
+        with: { company: true, role: true },
+      }),
+    ]);
+    const conversationHistoryMs = Date.now() - historyStarted;
 
     if (!conversation) {
       throw new AuraError('NOT_FOUND', 'Conversation not found');
@@ -457,12 +464,6 @@ export class AuraService {
         })),
       this.config.maxHistoryMessages,
     );
-    const conversationHistoryMs = Date.now() - historyStarted;
-
-    const user = await this.db.query.users.findFirst({
-      where: and(eq(users.id, scope.userId), eq(users.companyId, scope.companyId)),
-      with: { company: true, role: true },
-    });
 
     if (!user?.company) {
       throw new AuraError('USER_NOT_FOUND', 'User not found');
@@ -480,6 +481,17 @@ export class AuraService {
     );
 
     const permissions = user.role?.permissions ?? [];
+    const generateOptions = {
+      operationType: 'conversation' as const,
+      routingCategory: 'summarization' as const,
+      conversationId,
+      userId: scope.userId,
+    };
+    const providerPrepPromise = this.aiProviderResilienceService.prepareProviderChain(
+      scope.companyId,
+      generateOptions,
+    );
+
     const contextStarted = Date.now();
     const loadedDomains: string[] = [];
     const { context, agentsMinimal } = await this.buildAuraContext(
@@ -507,10 +519,13 @@ export class AuraService {
     let providerAttempts = 0;
     let failoverCount = 0;
     let retryCount = 0;
-    let agentRoutingMs = 0;
+    let providerRoutingMs = 0;
     const estimatedInputChars =
       JSON.stringify(enrichedContext).length +
       priorMessages.reduce((sum, message) => sum + message.content.length, trimmed.length);
+
+    const preparedChain = await providerPrepPromise;
+    providerRoutingMs = preparedChain.providerRoutingMs;
 
     try {
       const providerStarted = Date.now();
@@ -520,12 +535,8 @@ export class AuraService {
           messages: [...priorMessages, { role: 'user', content: trimmed }],
           context: enrichedContext,
         },
-        {
-          operationType: 'conversation',
-          routingCategory: 'summarization',
-          conversationId,
-          userId: scope.userId,
-        },
+        generateOptions,
+        preparedChain,
       );
       providerMs = result.providerLatencyMs ?? Date.now() - providerStarted;
       assistantContent = result.content;
@@ -534,7 +545,6 @@ export class AuraService {
       providerAttempts = result.providerAttempts ?? 1;
       failoverCount = result.failoverCount;
       retryCount = result.retryCount ?? 0;
-      agentRoutingMs = result.agentRoutingMs ?? 0;
     } catch (error) {
       if (error instanceof AiOperationsError) {
         throw new AuraError(error.code, error.message);
@@ -613,11 +623,13 @@ export class AuraService {
         totalApiMs: Date.now() - apiStarted,
         conversationHistoryMs,
         contextBuildMs,
+        capabilityRoutingMs: contextBuildMs,
         contextDomainsLoaded: loadedDomains,
         contextDomainsSkipped: skippedDomains,
         providerMs,
         databaseMs,
-        agentRoutingMs,
+        agentRoutingMs: providerRoutingMs,
+        providerRoutingMs,
         specialistAgentsInvoked: 0,
         providerAttempts,
         failoverCount,

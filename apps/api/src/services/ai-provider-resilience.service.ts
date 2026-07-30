@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import { createRuntimeAuraProvider, resolveDefaultBaseUrl } from '@titan/aura';
 import type { AuraConfig, AuraGenerateRequest, AuraProvider } from '@titan/aura';
 import { AuraProviderError } from '@titan/aura';
@@ -67,8 +67,16 @@ type TargetGenerateOptions = AiGenerateWithResilienceOptions & {
   providerId?: string;
 };
 
+type ProviderChainCacheEntry = {
+  expiresAt: number;
+  chain: RuntimeProvider[];
+};
+
+const PROVIDER_CHAIN_CACHE_TTL_MS = 30_000;
+
 export class AiProviderResilienceService {
   private readonly routingService = new AiIntelligentRoutingService();
+  private readonly providerChainCache = new Map<string, ProviderChainCacheEntry>();
 
   constructor(private readonly deps: ResilienceDeps) {}
 
@@ -87,21 +95,43 @@ export class AiProviderResilienceService {
     }));
   }
 
-  async generate(
+  async prepareProviderChain(
     companyId: string,
-    request: AuraGenerateRequest,
     options: AiGenerateWithResilienceOptions,
-  ): Promise<AiGenerateWithResilienceResult> {
-    const routingStarted = Date.now();
-    await this.assertRoutingAllowed(companyId, options);
-    const config = await this.deps.aiOperationsService.ensureResilienceConfig(companyId);
+  ): Promise<{
+    config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>;
+    chain: RuntimeProvider[];
+    providerRoutingMs: number;
+  }> {
+    const started = Date.now();
+    const config = await this.assertRoutingAllowed(companyId, options);
     const chain = await this.buildProviderChain(
       companyId,
       options.routingCategory,
       config.fallbackOrder,
       config.taskRoutingEnabled,
     );
-    const agentRoutingMs = Date.now() - routingStarted;
+    return {
+      config,
+      chain,
+      providerRoutingMs: Date.now() - started,
+    };
+  }
+
+  async generate(
+    companyId: string,
+    request: AuraGenerateRequest,
+    options: AiGenerateWithResilienceOptions,
+    prepared?: {
+      config: Awaited<ReturnType<AiOperationsService['ensureResilienceConfig']>>;
+      chain: RuntimeProvider[];
+      providerRoutingMs: number;
+    },
+  ): Promise<AiGenerateWithResilienceResult> {
+    const preparedChain =
+      prepared ??
+      (await this.prepareProviderChain(companyId, options));
+    const { config, chain, providerRoutingMs } = preparedChain;
 
     if (chain.length === 0) {
       throw new AiProviderResilienceError(
@@ -127,7 +157,7 @@ export class AiProviderResilienceService {
       config.queueEnabled,
     );
 
-    return { ...result, agentRoutingMs };
+    return { ...result, providerRoutingMs, agentRoutingMs: providerRoutingMs };
   }
 
   async generateForTarget(
@@ -202,7 +232,10 @@ export class AiProviderResilienceService {
     };
   }
 
-  private async assertRoutingAllowed(companyId: string, options: AiGenerateWithResilienceOptions) {
+  private async assertRoutingAllowed(
+    companyId: string,
+    options: AiGenerateWithResilienceOptions,
+  ) {
     await this.deps.aiOperationsService.assertAiOperationAllowed(
       { companyId, userId: options.userId },
       options.operationType,
@@ -218,6 +251,8 @@ export class AiProviderResilienceService {
         `Routing category ${options.routingCategory} is blocked by tenant policy.`,
       );
     }
+
+    return config;
   }
 
   private async executeSingleProvider(
@@ -445,12 +480,25 @@ export class AiProviderResilienceService {
     }
   }
 
+  private cacheProviderChain(cacheKey: string, chain: RuntimeProvider[]) {
+    this.providerChainCache.set(cacheKey, {
+      expiresAt: Date.now() + PROVIDER_CHAIN_CACHE_TTL_MS,
+      chain,
+    });
+  }
+
   private async buildProviderChain(
     companyId: string,
     routingCategory: AiGenerateWithResilienceOptions['routingCategory'],
     configuredFallback: Array<{ providerKey: string; modelKey?: string; providerId?: string }>,
     taskRoutingEnabled: boolean,
   ): Promise<RuntimeProvider[]> {
+    const cacheKey = `${companyId}:${routingCategory ?? 'none'}:${taskRoutingEnabled}:${configuredFallback.length}`;
+    const cached = this.providerChainCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.chain;
+    }
+
     const chain: RuntimeProvider[] = [];
     const seen = new Set<string>();
 
@@ -465,8 +513,41 @@ export class AiProviderResilienceService {
       }
     };
 
+    if (
+      this.deps.envProvider &&
+      this.deps.auraConfig.provider === 'openai' &&
+      configuredFallback.length === 0
+    ) {
+      const [tenantProvider, rule] = await Promise.all([
+        this.deps.db.query.aiProviders.findFirst({
+          where: and(eq(aiProviders.companyId, companyId), eq(aiProviders.isEnabled, true)),
+        }),
+        taskRoutingEnabled && routingCategory
+          ? this.deps.db.query.aiRoutingRules.findFirst({
+              where: and(
+                eq(aiRoutingRules.companyId, companyId),
+                eq(aiRoutingRules.category, routingCategory),
+                eq(aiRoutingRules.isEnabled, true),
+              ),
+              orderBy: [desc(aiRoutingRules.priorityOrder)],
+            })
+          : Promise.resolve(null),
+      ]);
+
+      if (!tenantProvider && !rule) {
+        const env = await this.resolveEnvironmentProvider();
+        if (env) {
+          const fastChain = [env];
+          this.cacheProviderChain(cacheKey, fastChain);
+          return fastChain;
+        }
+      }
+    }
+
+    let rule: typeof aiRoutingRules.$inferSelect | null | undefined = null;
+
     if (taskRoutingEnabled && routingCategory) {
-      const rule = await this.deps.db.query.aiRoutingRules.findFirst({
+      rule = await this.deps.db.query.aiRoutingRules.findFirst({
         where: and(
           eq(aiRoutingRules.companyId, companyId),
           eq(aiRoutingRules.category, routingCategory),
@@ -476,14 +557,16 @@ export class AiProviderResilienceService {
       });
 
       if (rule?.primaryProviderId) {
-        const primaryProvider = await this.deps.db.query.aiProviders.findFirst({
-          where: and(eq(aiProviders.id, rule.primaryProviderId), eq(aiProviders.companyId, companyId)),
-        });
-        const primaryModel = rule.primaryModelId
-          ? await this.deps.db.query.aiModels.findFirst({
-              where: and(eq(aiModels.id, rule.primaryModelId), eq(aiModels.companyId, companyId)),
-            })
-          : null;
+        const [primaryProvider, primaryModel] = await Promise.all([
+          this.deps.db.query.aiProviders.findFirst({
+            where: and(eq(aiProviders.id, rule.primaryProviderId), eq(aiProviders.companyId, companyId)),
+          }),
+          rule.primaryModelId
+            ? this.deps.db.query.aiModels.findFirst({
+                where: and(eq(aiModels.id, rule.primaryModelId), eq(aiModels.companyId, companyId)),
+              })
+            : Promise.resolve(null),
+        ]);
 
         if (primaryProvider) {
           addCandidate(
@@ -497,18 +580,26 @@ export class AiProviderResilienceService {
         }
       }
 
-      for (const entry of rule?.fallbackChain ?? []) {
-        if (!entry.providerKey) {
-          continue;
-        }
-        addCandidate(await this.resolveRuntimeProvider(companyId, entry.providerKey, entry.modelKey, entry.providerId));
+      const resolved = await Promise.all(
+        (rule?.fallbackChain ?? []).map(async (entry) => {
+          if (!entry.providerKey) {
+            return null;
+          }
+          return this.resolveRuntimeProvider(companyId, entry.providerKey, entry.modelKey, entry.providerId);
+        }),
+      );
+      for (const candidate of resolved) {
+        addCandidate(candidate);
       }
     }
 
-    for (const entry of configuredFallback) {
-      addCandidate(
-        await this.resolveRuntimeProvider(companyId, entry.providerKey, entry.modelKey, entry.providerId),
-      );
+    const fallbackResolved = await Promise.all(
+      configuredFallback.map(async (entry) =>
+        this.resolveRuntimeProvider(companyId, entry.providerKey, entry.modelKey, entry.providerId),
+      ),
+    );
+    for (const candidate of fallbackResolved) {
+      addCandidate(candidate);
     }
 
     const tenantProviders = await this.deps.db.query.aiProviders.findMany({
@@ -516,12 +607,29 @@ export class AiProviderResilienceService {
       orderBy: [desc(aiProviders.priorityWeight)],
     });
 
-    for (const row of tenantProviders) {
-      const model = await this.deps.db.query.aiModels.findFirst({
-        where: and(eq(aiModels.providerId, row.id), eq(aiModels.isEnabled, true)),
-        orderBy: [desc(aiModels.createdAt)],
-      });
-      addCandidate(await this.resolveRuntimeProvider(companyId, row.providerKey, model?.modelKey, row.id));
+    const providerIds = tenantProviders.map((row) => row.id);
+    const modelRows =
+      providerIds.length > 0
+        ? await this.deps.db.query.aiModels.findMany({
+            where: and(inArray(aiModels.providerId, providerIds), eq(aiModels.isEnabled, true)),
+            orderBy: [desc(aiModels.createdAt)],
+          })
+        : [];
+
+    const modelByProviderId = new Map<string, (typeof modelRows)[number]>();
+    for (const model of modelRows) {
+      if (!modelByProviderId.has(model.providerId)) {
+        modelByProviderId.set(model.providerId, model);
+      }
+    }
+
+    const tenantResolved = await Promise.all(
+      tenantProviders.map(async (row) =>
+        this.resolveRuntimeProviderFromRow(companyId, row, modelByProviderId.get(row.id)),
+      ),
+    );
+    for (const candidate of tenantResolved) {
+      addCandidate(candidate);
     }
 
     addCandidate(await this.resolveEnvironmentProvider());
@@ -540,9 +648,47 @@ export class AiProviderResilienceService {
       runtime: candidate,
     }));
 
-    return this.routingService.rankProviders(rankable, routingCategory).map((entry) => {
+    const ranked = this.routingService.rankProviders(rankable, routingCategory).map((entry) => {
       return (entry as (typeof rankable)[number]).runtime;
     });
+
+    this.cacheProviderChain(cacheKey, ranked);
+    return ranked;
+  }
+
+  private async resolveRuntimeProviderFromRow(
+    _companyId: string,
+    row: typeof aiProviders.$inferSelect,
+    modelRow?: typeof aiModels.$inferSelect,
+  ): Promise<RuntimeProvider | null> {
+    const resolvedModelKey = modelRow?.modelKey ?? 'gpt-4o-mini';
+    const apiKey = await this.resolveProviderApiKey(row);
+    if (!apiKey && row.providerKey !== 'ollama') {
+      return null;
+    }
+
+    const provider = createRuntimeAuraProvider({
+      providerKey: row.providerKey,
+      apiKey: apiKey ?? 'ollama',
+      model: resolvedModelKey,
+      baseUrl: row.baseUrl ?? resolveDefaultBaseUrl(row.providerKey),
+      apiVersion: row.apiVersion,
+      extraConfig: row.config,
+    });
+
+    return {
+      providerKey: row.providerKey,
+      modelKey: resolvedModelKey,
+      providerId: row.id,
+      displayName: row.displayName,
+      provider,
+      contextWindow: modelRow?.contextWindow ?? 8192,
+      capabilities: (modelRow?.capabilities ?? []) as RankableProvider['capabilities'],
+      multimodal: Boolean(modelRow?.capabilities?.includes('multimodal') || modelRow?.capabilities?.includes('vision')),
+      averageLatencyMs: row.averageLatencyMs,
+      priorityWeight: row.priorityWeight,
+      pricingMetadata: modelRow?.pricingMetadata ?? {},
+    };
   }
 
   private async resolveRuntimeProvider(

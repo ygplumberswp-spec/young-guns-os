@@ -105,5 +105,7 @@ export type AiGenerateWithResilienceResult = {
   providerLatencyMs?: number;
   providerAttempts?: number;
   retryCount?: number;
+  providerRoutingMs?: number;
+  /** @deprecated Use providerRoutingMs */
   agentRoutingMs?: number;
 };

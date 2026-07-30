@@ -317,6 +317,7 @@ export type AuraGenerateContext = {
       enabledTools: string[];
       foundationOnly: boolean;
     } | null;
+    minimalOverview?: boolean;
   };
   tenantCapabilities?: {
     activeCapabilities: Array<{

@@ -70,6 +70,7 @@ export type AuraAgentsContext = {
     enabledTools: string[];
     foundationOnly: boolean;
   } | null;
+  minimalOverview?: boolean;
 };
 
 type TenantScope = {
@@ -328,26 +329,26 @@ export class AgentsService {
   }
 
   async getStats(companyId: string): Promise<AgentsStats> {
-    const [profileCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentProfiles)
-      .where(eq(agentProfiles.companyId, companyId));
-
-    const [activeProfileCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentProfiles)
-      .where(and(eq(agentProfiles.companyId, companyId), eq(agentProfiles.status, 'active')));
-
-    const [executionCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(agentExecutions)
-      .where(eq(agentExecutions.companyId, companyId));
+    const [profileCountRow, activeProfileCountRow, executionCountRow] = await Promise.all([
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentProfiles)
+        .where(eq(agentProfiles.companyId, companyId)),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentProfiles)
+        .where(and(eq(agentProfiles.companyId, companyId), eq(agentProfiles.status, 'active'))),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentExecutions)
+        .where(eq(agentExecutions.companyId, companyId)),
+    ]);
 
     return {
-      configuredProfileCount: profileCountRow?.count ?? 0,
-      activeProfileCount: activeProfileCountRow?.count ?? 0,
+      configuredProfileCount: profileCountRow[0]?.count ?? 0,
+      activeProfileCount: activeProfileCountRow[0]?.count ?? 0,
       availableAgentCount: AGENT_REGISTRY.length,
-      executionCount: executionCountRow?.count ?? 0,
+      executionCount: executionCountRow[0]?.count ?? 0,
     };
   }
 
@@ -359,15 +360,11 @@ export class AgentsService {
       configuredProfileCount: stats.configuredProfileCount,
       activeProfileCount: stats.activeProfileCount,
       executionCount: stats.executionCount,
-      registry: AGENT_REGISTRY.map((entry) => ({
-        agentKey: entry.agentKey,
-        name: entry.name,
-        configured: false,
-        foundationOnly: Boolean(entry.foundationOnly),
-      })),
+      registry: [],
       profiles: [],
       recentExecutions: [],
       focusedProfile: null,
+      minimalOverview: true,
     };
   }
 

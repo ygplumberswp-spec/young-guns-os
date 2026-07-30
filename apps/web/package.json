@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/*.test.ts"
+    "test": "tsx --test src/lib/*.test.ts src/features/aura/*.test.ts"
   },
   "dependencies": {
     "@titan/auth": "workspace:*",
@@ -16,6 +16,9 @@
     "@titan/ui": "workspace:*",
     "react": "catalog:",
     "react-dom": "catalog:",
+    "react-markdown": "^10.1.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "wouter": "catalog:"
   },
   "devDependencies": {
