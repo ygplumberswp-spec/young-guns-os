@@ -6,6 +6,7 @@ import pinoHttp from 'pino-http';
 import { createAuraProvider, isAuraProviderConfigured } from '@titan/aura';
 import { closeDb, createDb } from '@titan/db';
 import { loadAuraEnvConfig, loadEnv } from './config.js';
+import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createAuthRouter } from './routes/auth.js';
@@ -200,6 +201,11 @@ const auraConfig = loadAuraEnvConfig();
 const logger = pino({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
 });
+
+const dbDiagnosticsEnabled = env.NODE_ENV !== 'production';
+if (dbDiagnosticsEnabled) {
+  attachDbQueryDiagnostics();
+}
 
 const db = createDb(env.DATABASE_URL);
 const authService = new AuthService(db, {
@@ -998,6 +1004,10 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+
+if (dbDiagnosticsEnabled) {
+  app.use(createDbDiagnosticsMiddleware(true));
+}
 
 app.get('/', (_req, res) => {
   res.json({

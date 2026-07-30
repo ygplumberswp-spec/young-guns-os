@@ -15,6 +15,7 @@ import { WhatsappServiceError } from '../services/whatsapp.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { invalidateIntegrationReadCaches } from '../services/api-read-cache.js';
 
 const saveCartrackSchema = z.object({
   baseUrl: z.string().trim().url().max(500),
@@ -151,6 +152,25 @@ export function createIntegrationsRouter({
   router.use(async (req, _res, next) => {
     const { companyId } = getAuth(req);
     await teamService.ensureDefaultRoles(companyId);
+    next();
+  });
+
+  router.use((req, res, next) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+      next();
+      return;
+    }
+
+    res.on('finish', () => {
+      if (res.statusCode >= 400) {
+        return;
+      }
+      try {
+        invalidateIntegrationReadCaches(getAuth(req).companyId);
+      } catch {
+        // Unauthenticated mutation paths are ignored.
+      }
+    });
     next();
   });
 
@@ -576,7 +596,16 @@ export function createIntegrationsRouter({
 
   router.get('/hub/dashboard', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
-    const dashboard = await integrationHubService.getDashboard(companyId);
+    const startedAt = Date.now();
+    const simple = req.query.simple === 'true' || req.query.view === 'simple';
+    const dashboard = await integrationHubService.getDashboard(companyId, { simple });
+    const durationMs = Date.now() - startedAt;
+    const existingTiming = res.getHeader('Server-Timing');
+    const hubTiming = `hub;dur=${durationMs}`;
+    res.setHeader(
+      'Server-Timing',
+      existingTiming ? `${existingTiming}, ${hubTiming}` : hubTiming,
+    );
     res.json({ data: { dashboard } });
   });
 

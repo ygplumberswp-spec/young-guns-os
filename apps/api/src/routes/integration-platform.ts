@@ -7,6 +7,7 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { createApiGatewayMiddleware } from '../middleware/api-gateway.js';
 import type { ConnectorEngineService } from '../services/connector-engine.service.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import { invalidateIntegrationReadCaches } from '../services/api-read-cache.js';
 
 const actionTypeSchema = z.enum([
   'integration_repair',
@@ -109,6 +110,7 @@ export function createIntegrationPlatformRouter({
     const { companyId } = getAuth(req);
     await connectorEngineService.ensureConnectors(companyId);
     await connectorEngineService.syncConnectorStatuses(companyId);
+    invalidateIntegrationReadCaches(companyId);
     const connectors = await connectorEngineService.listConnectors(companyId);
     res.json({ data: { connectors } });
   });

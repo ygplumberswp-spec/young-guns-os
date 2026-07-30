@@ -87,7 +87,7 @@ export function IntegrationsDashboardPage() {
   } = useStaffCachedQuery({
     queryKey: 'integrations/hub-dashboard',
     enabled: canView,
-    fetcher: (signal) => fetchIntegrationHubDashboard(accessToken!, { signal }),
+    fetcher: (signal) => fetchIntegrationHubDashboard(accessToken!, { signal, simple: viewMode === 'simple' }),
   });
 
   const {

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import type {
   AcknowledgeMissionControlAlertRequest,
   AddMissionControlIncidentTimelineRequest,
@@ -22,6 +22,7 @@ import {
   executiveAlerts,
   gpsPositions,
   integrationConnections,
+  integrationSyncJobs,
   jobs,
   missionControlAlertHistory,
   missionControlAlerts,
@@ -109,6 +110,16 @@ import {
   rlmAnalyticsSnapshots,
   itoHealthMonitors,
   itoSelfHealingActions,
+  securityRiskAlerts,
+  securityActions,
+  securityLoginEvents,
+  digitalTwinScenarios,
+  digitalTwinSimulations,
+  digitalTwinRecommendations,
+  knowledgeGraphEntities,
+  knowledgeGraphRelationships,
+  knowledgeGraphRecommendations,
+  knowledgeSemanticIndex,
   vehicles,
   voiceSessions,
   workflowRuns,
@@ -169,20 +180,41 @@ export class EnterpriseMissionControlService {
   constructor(private readonly deps: EnterpriseMissionControlDeps) {}
 
   async getMissionControlDashboard(companyId: string): Promise<EnterpriseMissionControlDashboard> {
+    const [summary, moduleSnapshots] = await Promise.all([
+      this.getMissionControlSummary(companyId),
+      this.getMissionControlModuleSnapshots(companyId),
+    ]);
+
+    return {
+      ...summary,
+      moduleSnapshots,
+    };
+  }
+
+  async getMissionControlSummary(
+    companyId: string,
+  ): Promise<Omit<EnterpriseMissionControlDashboard, 'moduleSnapshots'>> {
     return cachedTenantRead(
-      buildTenantCacheKey(companyId, 'mission-control/dashboard'),
-      () => this.loadMissionControlDashboard(companyId),
+      buildTenantCacheKey(companyId, 'mission-control/summary'),
+      () => this.loadMissionControlSummary(companyId),
       CACHE_TTLS.dashboard,
     );
   }
 
-  private async loadMissionControlDashboard(
+  async getMissionControlModuleSnapshots(companyId: string): Promise<MissionControlModuleSnapshot[]> {
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'mission-control/modules'),
+      () => this.buildModuleSnapshots(companyId),
+      CACHE_TTLS.dashboard,
+    );
+  }
+
+  private async loadMissionControlSummary(
     companyId: string,
-  ): Promise<EnterpriseMissionControlDashboard> {
+  ): Promise<Omit<EnterpriseMissionControlDashboard, 'moduleSnapshots'>> {
     const [
       executiveStats,
       healthSnapshot,
-      moduleSnapshots,
       departmentHealth,
       alerts,
       incidents,
@@ -193,7 +225,6 @@ export class EnterpriseMissionControlService {
     ] = await Promise.all([
       this.deps.executiveService.getStats(companyId),
       this.deps.executiveService.getLatestHealthSnapshot(companyId),
-      this.buildModuleSnapshots(companyId),
       this.listDepartmentHealth(companyId),
       this.listAlerts(companyId),
       this.listIncidents(companyId, ['open', 'investigating']),
@@ -205,10 +236,9 @@ export class EnterpriseMissionControlService {
 
     const pendingAlerts = alerts.filter((a) => a.status === 'pending' || a.status === 'escalated');
     const criticalAlerts = alerts.filter((a) => a.severity === 'critical' || a.severity === 'high');
-    const uniqueModuleSnapshots = dedupeModuleSnapshots(moduleSnapshots);
 
     return {
-      summary: `Mission control live — health ${executiveStats.healthScore ?? 'Not assessed'}, ${pendingAlerts.length} pending alert(s), ${incidents.length} active incident(s), ${uniqueModuleSnapshots.length} module(s) monitored.`,
+      summary: `Mission control live — health ${executiveStats.healthScore ?? 'Not assessed'}, ${pendingAlerts.length} pending alert(s), ${incidents.length} active incident(s).`,
       executiveStats,
       businessHealthScore: healthSnapshot?.overallScore ?? executiveStats.healthScore,
       pendingAlertCount: pendingAlerts.length,
@@ -218,7 +248,6 @@ export class EnterpriseMissionControlService {
         executiveStats.healthScore,
         criticalAlerts.length,
       ),
-      moduleSnapshots: uniqueModuleSnapshots,
       departmentHealth: departmentHealth.slice(0, 12),
       recentAlerts: alerts.slice(0, 20),
       activeIncidents: incidents.slice(0, 10),
@@ -232,7 +261,7 @@ export class EnterpriseMissionControlService {
   async buildMissionControlAuraContext(
     companyId: string,
   ): Promise<EnterpriseMissionControlAuraContext> {
-    const dashboard = await this.getMissionControlDashboard(companyId);
+    const dashboard = await this.getMissionControlSummary(companyId);
     return {
       summary: dashboard.summary,
       businessHealthScore: dashboard.businessHealthScore,
@@ -1389,10 +1418,10 @@ export class EnterpriseMissionControlService {
       this.deps.marketingService.getStats(companyId),
       this.deps.crmService.getStats(companyId),
       this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
-      this.deps.enterpriseSecurityService.buildSecurityAuraContext(companyId),
-      this.deps.integrationPlatformService.buildIntegrationAuraContext(companyId),
-      this.deps.enterpriseDigitalTwinService.buildDigitalTwinAuraContext(companyId),
-      this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId),
+      this.buildSecurityModuleStats(companyId),
+      this.buildIntegrationModuleStats(companyId),
+      this.buildDigitalTwinModuleStats(companyId),
+      this.buildKnowledgeGraphModuleStats(companyId),
       this.buildItOperationsModuleStats(companyId),
       this.buildBusinessEvolutionModuleStats(companyId),
       this.buildAppBuilderModuleStats(companyId),
@@ -1415,7 +1444,7 @@ export class EnterpriseMissionControlService {
     const capabilitySnapshots =
       await this.deps.tenantCapabilityBuilderService.listMissionControlSnapshots(companyId);
 
-    return [
+    return dedupeModuleSnapshots([
       {
         module: 'jobs',
         status: jobsStats.activeCount > 0 ? 'healthy' : 'warning',
@@ -1696,7 +1725,149 @@ export class EnterpriseMissionControlService {
         metrics: knowledgeContext as unknown as Record<string, unknown>,
       },
       ...capabilitySnapshots,
-    ];
+    ]);
+  }
+
+  private async buildSecurityModuleStats(companyId: string) {
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [riskAlerts, pendingActions, failedLogins] = await Promise.all([
+      this.deps.db.query.securityRiskAlerts.findMany({
+        where: and(eq(securityRiskAlerts.companyId, companyId), eq(securityRiskAlerts.resolved, false)),
+        columns: { id: true },
+      }),
+      this.deps.db.query.securityActions.findMany({
+        where: and(
+          eq(securityActions.companyId, companyId),
+          eq(securityActions.status, 'pending_approval'),
+        ),
+        columns: { id: true },
+      }),
+      this.deps.db.query.securityLoginEvents.findMany({
+        where: and(
+          eq(securityLoginEvents.companyId, companyId),
+          eq(securityLoginEvents.eventType, 'login_failed'),
+          gte(securityLoginEvents.occurredAt, since24h),
+        ),
+        columns: { id: true },
+      }),
+    ]);
+
+    const riskAlertCount = riskAlerts.length;
+    return {
+      summary: `${riskAlertCount} risk alert(s), ${pendingActions.length} pending security action(s).`,
+      securityScore: null,
+      activeSessionCount: 0,
+      riskAlertCount,
+      pendingActionCount: pendingActions.length,
+      failedLoginCount24h: failedLogins.length,
+    };
+  }
+
+  private async buildIntegrationModuleStats(companyId: string) {
+    const connections = await this.deps.db.query.integrationConnections.findMany({
+      where: eq(integrationConnections.companyId, companyId),
+      columns: { id: true, status: true },
+    });
+    const connectedCount = connections.filter((c) => c.status === 'connected').length;
+    const errorCount = connections.filter((c) => c.status === 'error').length;
+
+    const [activeSyncJobCountRow] = await this.deps.db
+      .select({ count: count() })
+      .from(integrationSyncJobs)
+      .where(
+        and(
+          eq(integrationSyncJobs.companyId, companyId),
+          inArray(integrationSyncJobs.status, ['pending', 'running']),
+        ),
+      );
+
+    return {
+      summary: `${connectedCount} connected service(s), ${errorCount} error(s), ${Number(activeSyncJobCountRow?.count ?? 0)} active sync job(s).`,
+      connectedServiceCount: connectedCount,
+      errorServiceCount: errorCount,
+      activeSyncJobCount: Number(activeSyncJobCountRow?.count ?? 0),
+      failedRequestCount24h: 0,
+      pendingActionCount: 0,
+    };
+  }
+
+  private async buildDigitalTwinModuleStats(companyId: string) {
+    const [activeScenarios, recentSimulations, pendingRecommendations] = await Promise.all([
+      this.deps.db.query.digitalTwinScenarios.findMany({
+        where: and(
+          eq(digitalTwinScenarios.companyId, companyId),
+          eq(digitalTwinScenarios.status, 'active'),
+        ),
+        columns: { id: true },
+      }),
+      this.deps.db.query.digitalTwinSimulations.findMany({
+        where: eq(digitalTwinSimulations.companyId, companyId),
+        columns: { id: true, status: true },
+        limit: 20,
+        orderBy: [desc(digitalTwinSimulations.startedAt)],
+      }),
+      this.deps.db.query.digitalTwinRecommendations.findMany({
+        where: and(
+          eq(digitalTwinRecommendations.companyId, companyId),
+          eq(digitalTwinRecommendations.status, 'pending'),
+        ),
+        columns: { id: true },
+      }),
+    ]);
+
+    const completedSimulationCount = recentSimulations.filter((s) => s.status === 'completed').length;
+    const operationalRiskLevel =
+      pendingRecommendations.length > 3 ? 'high' : pendingRecommendations.length > 0 ? 'medium' : 'low';
+
+    return {
+      summary: `${activeScenarios.length} active scenario(s), ${completedSimulationCount} completed simulation(s), ${pendingRecommendations.length} pending recommendation(s).`,
+      healthScore: null,
+      activeScenarioCount: activeScenarios.length,
+      completedSimulationCount,
+      pendingRecommendationCount: pendingRecommendations.length,
+      operationalRiskLevel,
+      pendingActionCount: 0,
+    };
+  }
+
+  private async buildKnowledgeGraphModuleStats(companyId: string) {
+    const countResults = await Promise.all([
+      this.deps.db
+        .select({ value: count() })
+        .from(knowledgeGraphEntities)
+        .where(eq(knowledgeGraphEntities.companyId, companyId)),
+      this.deps.db
+        .select({ value: count() })
+        .from(knowledgeGraphRelationships)
+        .where(eq(knowledgeGraphRelationships.companyId, companyId)),
+      this.deps.db
+        .select({ value: count() })
+        .from(knowledgeSemanticIndex)
+        .where(eq(knowledgeSemanticIndex.companyId, companyId)),
+      this.deps.db.query.knowledgeGraphRecommendations.findMany({
+        where: and(
+          eq(knowledgeGraphRecommendations.companyId, companyId),
+          eq(knowledgeGraphRecommendations.status, 'pending'),
+        ),
+        columns: { id: true },
+      }),
+    ]);
+
+    const [entityCountRow, relationshipCountRow, indexedCountRow, pendingRecommendations] =
+      countResults;
+    const entityCount = Number(entityCountRow[0]?.value ?? 0);
+    const relationshipCount = Number(relationshipCountRow[0]?.value ?? 0);
+    const indexedCount = Number(indexedCountRow[0]?.value ?? 0);
+
+    return {
+      summary: `${entityCount} graph entit${entityCount === 1 ? 'y' : 'ies'}, ${relationshipCount} relationship(s), ${indexedCount} indexed record(s).`,
+      entityCount,
+      relationshipCount,
+      memoryEntryCount: 0,
+      indexedCount,
+      pendingRecommendationCount: pendingRecommendations.length,
+      pendingActionCount: 0,
+    };
   }
 
   private async buildItOperationsModuleStats(companyId: string) {

@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import {
   DEFAULT_TEAM_ROLES,
@@ -858,11 +858,60 @@ export class EnterpriseSaasPlatformService {
       .where(eq(saasTenantProfiles.tenantKind, 'customer'))
       .orderBy(desc(saasTenantProfiles.createdAt));
 
-    const summaries: SaasTenantSummary[] = [];
-    for (const row of rows) {
-      summaries.push(await this.getTenantSummary(row.companyId));
+    if (rows.length === 0) {
+      return [];
     }
-    return summaries;
+
+    const companyIds = rows.map((row) => row.companyId);
+
+    const [userCounts, branchCounts, subscriptions] = await Promise.all([
+      this.deps.db
+        .select({ companyId: users.companyId, value: count() })
+        .from(users)
+        .where(inArray(users.companyId, companyIds))
+        .groupBy(users.companyId),
+      this.deps.db
+        .select({ companyId: saasTenantBranches.companyId, value: count() })
+        .from(saasTenantBranches)
+        .where(inArray(saasTenantBranches.companyId, companyIds))
+        .groupBy(saasTenantBranches.companyId),
+      this.deps.db.query.saasSubscriptions.findMany({
+        where: inArray(saasSubscriptions.companyId, companyIds),
+      }),
+    ]);
+
+    const planIds = [
+      ...new Set(subscriptions.map((subscription) => subscription.planId).filter(Boolean)),
+    ] as string[];
+    const plans =
+      planIds.length > 0
+        ? await this.deps.db.query.saasSubscriptionPlans.findMany({
+            where: inArray(saasSubscriptionPlans.id, planIds),
+          })
+        : [];
+    const planById = new Map(plans.map((plan) => [plan.id, plan]));
+    const subscriptionByCompany = new Map(subscriptions.map((subscription) => [subscription.companyId, subscription]));
+    const userCountByCompany = new Map(userCounts.map((row) => [row.companyId, Number(row.value)]));
+    const branchCountByCompany = new Map(branchCounts.map((row) => [row.companyId, Number(row.value)]));
+
+    return rows.map((row) => {
+      const subscription = subscriptionByCompany.get(row.companyId);
+      const plan = subscription?.planId ? planById.get(subscription.planId) : null;
+
+      return {
+        companyId: row.companyId,
+        companyName: row.companyName ?? 'Unknown',
+        companySlug: row.companySlug ?? '',
+        tenantKind: row.tenantKind ?? 'customer',
+        lifecycleStatus: row.lifecycleStatus ?? 'provisioning',
+        subscriptionStatus: subscription?.status ?? null,
+        planName: plan?.name ?? null,
+        branchCount: branchCountByCompany.get(row.companyId) ?? 0,
+        userCount: userCountByCompany.get(row.companyId) ?? 0,
+        provisionedAt: row.provisionedAt?.toISOString() ?? null,
+        createdAt: row.createdAt.toISOString(),
+      };
+    });
   }
 
   private async getTenantSummary(companyId: string): Promise<SaasTenantSummary> {

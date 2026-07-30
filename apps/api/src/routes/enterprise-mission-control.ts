@@ -99,8 +99,55 @@ export function createEnterpriseMissionControlRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseMissionControlService.getMissionControlDashboard(getAuth(req).companyId);
+      const startedAt = Date.now();
+      const companyId = getAuth(req).companyId;
+      const dashboard = await enterpriseMissionControlService.getMissionControlDashboard(companyId);
+      const durationMs = Date.now() - startedAt;
+      const existingTiming = res.getHeader('Server-Timing');
+      const mcTiming = `mission-control;dur=${durationMs}`;
+      res.setHeader(
+        'Server-Timing',
+        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
+      );
       res.json({ data: { dashboard } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.get('/dashboard/summary', requireRead, async (req, res) => {
+    try {
+      const startedAt = Date.now();
+      const summary = await enterpriseMissionControlService.getMissionControlSummary(
+        getAuth(req).companyId,
+      );
+      const durationMs = Date.now() - startedAt;
+      const existingTiming = res.getHeader('Server-Timing');
+      const mcTiming = `mission-control-summary;dur=${durationMs}`;
+      res.setHeader(
+        'Server-Timing',
+        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
+      );
+      res.json({ data: { summary } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
+
+  router.get('/dashboard/modules', requireRead, async (req, res) => {
+    try {
+      const startedAt = Date.now();
+      const moduleSnapshots = await enterpriseMissionControlService.getMissionControlModuleSnapshots(
+        getAuth(req).companyId,
+      );
+      const durationMs = Date.now() - startedAt;
+      const existingTiming = res.getHeader('Server-Timing');
+      const mcTiming = `mission-control-modules;dur=${durationMs}`;
+      res.setHeader(
+        'Server-Timing',
+        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
+      );
+      res.json({ data: { moduleSnapshots } });
     } catch (error) {
       handleError(error, res);
     }

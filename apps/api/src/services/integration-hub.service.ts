@@ -24,6 +24,16 @@ import {
   whatsappConnections,
 } from '@titan/db';
 import { generateWebhookSecret, hashWebhookSecret } from '../lib/crypto.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+} from './api-read-cache.js';
+
+type IntegrationConnectionBundle = {
+  connections: Array<typeof integrationConnections.$inferSelect>;
+  whatsappConnection: typeof whatsappConnections.$inferSelect | null;
+};
 
 export class IntegrationHubError extends Error {
   constructor(
@@ -61,67 +71,120 @@ export type AuraIntegrationHubContext = {
 export class IntegrationHubService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async getDashboard(companyId: string): Promise<IntegrationHubDashboard> {
-    const [stats, providers, recentSyncJobs, recentWebhookEvents] = await Promise.all([
-      this.getStats(companyId),
-      this.listProviderStatuses(companyId),
+  async getDashboard(
+    companyId: string,
+    options?: { simple?: boolean },
+  ): Promise<IntegrationHubDashboard> {
+    const simple = options?.simple === true;
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'integration-hub/dashboard', simple ? 'simple' : 'full'),
+      () => this.loadDashboard(companyId, simple),
+      CACHE_TTLS.dashboard,
+    );
+  }
+
+  private async loadDashboard(companyId: string, simple: boolean): Promise<IntegrationHubDashboard> {
+    const connectionBundle = await this.loadConnectionBundle(companyId);
+    const baseStats = this.buildStatsFromConnections(connectionBundle);
+
+    if (simple) {
+      return {
+        stats: baseStats,
+        providers: this.mapProviderStatuses(connectionBundle),
+        recentSyncJobs: [],
+        recentWebhookEvents: [],
+      };
+    }
+
+    const [stats, recentSyncJobs, recentWebhookEvents] = await Promise.all([
+      this.enrichStatsCounts(companyId, baseStats),
       this.listSyncJobs(companyId, 5),
       this.listWebhookEvents(companyId, 5),
     ]);
 
     return {
       stats,
-      providers,
+      providers: this.mapProviderStatuses(connectionBundle),
       recentSyncJobs,
       recentWebhookEvents,
     };
   }
 
-  async getStats(companyId: string): Promise<IntegrationHubStats> {
-    const connections = await this.db.query.integrationConnections.findMany({
-      where: eq(integrationConnections.companyId, companyId),
-    });
+  private async loadConnectionBundle(companyId: string): Promise<IntegrationConnectionBundle> {
+    const [connections, whatsappConnection] = await Promise.all([
+      this.db.query.integrationConnections.findMany({
+        where: eq(integrationConnections.companyId, companyId),
+      }),
+      this.db.query.whatsappConnections.findFirst({
+        where: eq(whatsappConnections.companyId, companyId),
+      }),
+    ]);
 
-    const [syncJobCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationSyncJobs)
-      .where(eq(integrationSyncJobs.companyId, companyId));
+    return { connections, whatsappConnection: whatsappConnection ?? null };
+  }
 
-    const [activeSyncJobCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationSyncJobs)
-      .where(
-        and(
-          eq(integrationSyncJobs.companyId, companyId),
-          inArray(integrationSyncJobs.status, ['pending', 'running']),
-        ),
-      );
-
-    const [webhookEndpointCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationWebhookEndpoints)
-      .where(eq(integrationWebhookEndpoints.companyId, companyId));
-
-    const [activeWebhookEndpointCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationWebhookEndpoints)
-      .where(
-        and(
-          eq(integrationWebhookEndpoints.companyId, companyId),
-          eq(integrationWebhookEndpoints.isActive, true),
-        ),
-      );
-
-    const [webhookEventCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(integrationWebhookEvents)
-      .where(eq(integrationWebhookEvents.companyId, companyId));
-
+  private buildStatsFromConnections(bundle: IntegrationConnectionBundle): IntegrationHubStats {
+    const { connections } = bundle;
     return {
       providerCount: INTEGRATION_PROVIDER_REGISTRY.length,
       configuredConnectionCount: connections.length,
       connectedCount: connections.filter((connection) => connection.status === 'connected').length,
       errorCount: connections.filter((connection) => connection.status === 'error').length,
+      syncJobCount: 0,
+      activeSyncJobCount: 0,
+      webhookEndpointCount: 0,
+      activeWebhookEndpointCount: 0,
+      webhookEventCount: 0,
+    };
+  }
+
+  private async enrichStatsCounts(
+    companyId: string,
+    stats: IntegrationHubStats,
+  ): Promise<IntegrationHubStats> {
+    const countResults = await Promise.all([
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(integrationSyncJobs)
+        .where(eq(integrationSyncJobs.companyId, companyId)),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(integrationSyncJobs)
+        .where(
+          and(
+            eq(integrationSyncJobs.companyId, companyId),
+            inArray(integrationSyncJobs.status, ['pending', 'running']),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(integrationWebhookEndpoints)
+        .where(eq(integrationWebhookEndpoints.companyId, companyId)),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(integrationWebhookEndpoints)
+        .where(
+          and(
+            eq(integrationWebhookEndpoints.companyId, companyId),
+            eq(integrationWebhookEndpoints.isActive, true),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(integrationWebhookEvents)
+        .where(eq(integrationWebhookEvents.companyId, companyId)),
+    ]);
+
+    const [
+      syncJobCountRow,
+      activeSyncJobCountRow,
+      webhookEndpointCountRow,
+      activeWebhookEndpointCountRow,
+      webhookEventCountRow,
+    ] = countResults.map((rows) => rows[0]);
+
+    return {
+      ...stats,
       syncJobCount: syncJobCountRow?.count ?? 0,
       activeSyncJobCount: activeSyncJobCountRow?.count ?? 0,
       webhookEndpointCount: webhookEndpointCountRow?.count ?? 0,
@@ -130,15 +193,8 @@ export class IntegrationHubService {
     };
   }
 
-  async listProviderStatuses(companyId: string) {
-    const connections = await this.db.query.integrationConnections.findMany({
-      where: eq(integrationConnections.companyId, companyId),
-    });
-
-    const whatsappConnection = await this.db.query.whatsappConnections.findFirst({
-      where: eq(whatsappConnections.companyId, companyId),
-    });
-
+  private mapProviderStatuses(bundle: IntegrationConnectionBundle) {
+    const { connections, whatsappConnection } = bundle;
     const connectionByProvider = new Map(
       connections.map((connection) => [connection.provider, connection]),
     );
@@ -168,6 +224,17 @@ export class IntegrationHubService {
         connectedAt: connection?.connectedAt?.toISOString() ?? null,
       };
     });
+  }
+
+  async getStats(companyId: string): Promise<IntegrationHubStats> {
+    const bundle = await this.loadConnectionBundle(companyId);
+    const base = this.buildStatsFromConnections(bundle);
+    return this.enrichStatsCounts(companyId, base);
+  }
+
+  async listProviderStatuses(companyId: string) {
+    const bundle = await this.loadConnectionBundle(companyId);
+    return this.mapProviderStatuses(bundle);
   }
 
   async listSyncJobs(companyId: string, limit = 50): Promise<IntegrationSyncJobSummary[]> {
@@ -412,31 +479,23 @@ export class IntegrationHubService {
   }
 
   async buildAuraContext(companyId: string): Promise<AuraIntegrationHubContext> {
-    const stats = await this.getStats(companyId);
-    const providers = await this.listProviderStatuses(companyId);
-    const recentSyncJobs = await this.listSyncJobs(companyId, 5);
-
+    const dashboard = await this.getDashboard(companyId, { simple: true });
     return {
-      providerCount: stats.providerCount,
-      configuredConnectionCount: stats.configuredConnectionCount,
-      connectedCount: stats.connectedCount,
-      errorCount: stats.errorCount,
-      syncJobCount: stats.syncJobCount,
-      webhookEndpointCount: stats.webhookEndpointCount,
-      webhookEventCount: stats.webhookEventCount,
-      providers: providers.map((provider) => ({
+      providerCount: dashboard.stats.providerCount,
+      configuredConnectionCount: dashboard.stats.configuredConnectionCount,
+      connectedCount: dashboard.stats.connectedCount,
+      errorCount: dashboard.stats.errorCount,
+      syncJobCount: dashboard.stats.syncJobCount,
+      webhookEndpointCount: dashboard.stats.webhookEndpointCount,
+      webhookEventCount: dashboard.stats.webhookEventCount,
+      providers: dashboard.providers.map((provider) => ({
         name: provider.name,
         provider: provider.provider,
         connectionStatus: provider.connectionStatus,
         isConfigured: provider.isConfigured,
         lastSyncAt: provider.lastSyncAt,
       })),
-      recentSyncJobs: recentSyncJobs.map((job) => ({
-        provider: job.provider,
-        status: job.status,
-        startedAt: job.startedAt,
-        errorMessage: job.errorMessage,
-      })),
+      recentSyncJobs: [],
     };
   }
 }

@@ -18,7 +18,10 @@ const ENDPOINTS = [
   { name: 'finance-stats', path: '/finance/stats', auth: true },
   { name: 'company-profile', path: '/company/profile', auth: true },
   { name: 'integrations-hub', path: '/integrations/hub/dashboard', auth: true },
+  { name: 'integrations-hub-simple', path: '/integrations/hub/dashboard?simple=true', auth: true },
   { name: 'mission-control', path: '/mission-control/dashboard', auth: true },
+  { name: 'mission-control-summary', path: '/mission-control/dashboard/summary', auth: true },
+  { name: 'mission-control-modules', path: '/mission-control/dashboard/modules', auth: true },
 ];
 
 const SECRET_PATTERNS = [/sk-[A-Za-z0-9]{8,}/, /AURA_OPENAI_API_KEY\s*=\s*\S+/];

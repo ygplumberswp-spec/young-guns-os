@@ -1,7 +1,24 @@
-import type { EnterpriseMissionControlDashboard } from '@titan/shared';
+import type { EnterpriseMissionControlDashboard, MissionControlModuleSnapshot } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as MissionControlApiClientError };
+
+export type MissionControlSummary = Omit<EnterpriseMissionControlDashboard, 'moduleSnapshots'>;
+
+export async function fetchMissionControlSummary(accessToken: string) {
+  const data = await request<{ summary: MissionControlSummary }>('/mission-control/dashboard/summary', {
+    accessToken,
+  });
+  return data.summary;
+}
+
+export async function fetchMissionControlModuleSnapshots(accessToken: string) {
+  const data = await request<{ moduleSnapshots: MissionControlModuleSnapshot[] }>(
+    '/mission-control/dashboard/modules',
+    { accessToken },
+  );
+  return data.moduleSnapshots;
+}
 
 export async function fetchMissionControlDashboard(accessToken: string) {
   const data = await request<{ dashboard: EnterpriseMissionControlDashboard }>('/mission-control/dashboard', {

@@ -12,13 +12,17 @@ import { request } from './api-client';
 
 export async function fetchIntegrationHubDashboard(
   accessToken: string,
-  options?: { signal?: AbortSignal; timeoutMs?: number },
+  options?: { signal?: AbortSignal; timeoutMs?: number; simple?: boolean },
 ): Promise<IntegrationHubDashboard> {
-  const data = await request<{ dashboard: IntegrationHubDashboard }>('/integrations/hub/dashboard', {
-    accessToken,
-    signal: options?.signal,
-    timeoutMs: options?.timeoutMs ?? 20_000,
-  });
+  const query = options?.simple === false ? '' : '?simple=true';
+  const data = await request<{ dashboard: IntegrationHubDashboard }>(
+    `/integrations/hub/dashboard${query}`,
+    {
+      accessToken,
+      signal: options?.signal,
+      timeoutMs: options?.timeoutMs ?? 20_000,
+    },
+  );
   return data.dashboard;
 }
 

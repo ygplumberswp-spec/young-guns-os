@@ -1,68 +1,41 @@
-import { useEffect, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
-import type { MobileTimeEntrySummary } from '@titan/shared';
+import { useState } from 'react';
+import { Button, PageHeader, Panel } from '@titan/ui';
 import {
   MobileApiClientError,
   createMobileTimeEntry,
   fetchMobileTimeEntries,
 } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
 export function MobileTimePage() {
   const { accessToken } = useAuth();
-  const [entries, setEntries] = useState<MobileTimeEntrySummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function loadEntries() {
-    if (!accessToken) return;
-    const data = await fetchMobileTimeEntries(accessToken);
-    setEntries(data);
-  }
+  const entriesQuery = useStaffCachedQuery({
+    queryKey: 'mobile/time-entries',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 20_000,
+    fetcher: async () => fetchMobileTimeEntries(accessToken!),
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchMobileTimeEntries(accessToken);
-        if (!cancelled) setEntries(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof MobileApiClientError ? err.message : 'Unable to load time entries');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  const entries = entriesQuery.data ?? [];
 
   async function handleClock(action: 'clock_in' | 'clock_out') {
     if (!accessToken) return;
     setIsSubmitting(true);
-    setError(null);
+    setActionError(null);
     try {
       await createMobileTimeEntry(accessToken, { entryType: action });
-      await loadEntries();
+      await entriesQuery.refetch();
     } catch (err) {
-      setError(err instanceof MobileApiClientError ? err.message : 'Unable to record time entry');
+      setActionError(err instanceof MobileApiClientError ? err.message : 'Unable to record time entry');
     } finally {
       setIsSubmitting(false);
     }
   }
-
-  if (isLoading) return <p className="page-muted">Loading time entries…</p>;
 
   return (
     <div className="portal-page">
@@ -79,26 +52,35 @@ export function MobileTimePage() {
         </div>
       </Panel>
 
-      {error ? <p className="form-error">{error}</p> : null}
+      {actionError ? <p className="form-error">{actionError}</p> : null}
 
-      <Panel title="Time entries">
-        {entries.length === 0 ? (
-          <EmptyState title="No time entries" description="Clock in to start recording time." />
-        ) : (
-          <ul className="portal-list">
-            {entries.map((entry) => (
-              <li key={entry.id}>
-                <strong>{entry.entryType.replace(/_/g, ' ')}</strong>
-                <span>
-                  {new Date(entry.startedAt).toLocaleString()}
-                  {entry.durationMinutes ? ` · ${entry.durationMinutes} min` : ''}
-                  {entry.jobTitle ? ` · ${entry.jobTitle}` : ''}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+      <AnalyticsTabPanel
+        isLoading={entriesQuery.isLoading}
+        error={entriesQuery.error}
+        hasData={entriesQuery.data !== undefined}
+        isEmpty={entriesQuery.data !== undefined && entries.length === 0}
+        emptyTitle="No time entries"
+        emptyDescription="Clock in to start recording time."
+        loadingLabel="Loading time entries…"
+        onRetry={() => void entriesQuery.refetch()}
+      >
+        {entries.length > 0 ? (
+          <Panel title="Time entries">
+            <ul className="portal-list">
+              {entries.map((entry) => (
+                <li key={entry.id}>
+                  <strong>{entry.entryType.replace(/_/g, ' ')}</strong>
+                  <span>
+                    {new Date(entry.startedAt).toLocaleString()}
+                    {entry.durationMinutes ? ` · ${entry.durationMinutes} min` : ''}
+                    {entry.jobTitle ? ` · ${entry.jobTitle}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        ) : null}
+      </AnalyticsTabPanel>
     </div>
   );
 }

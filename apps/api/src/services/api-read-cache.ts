@@ -69,3 +69,14 @@ export const CACHE_TTLS = {
   stats: STATS_TTL_MS,
   dashboard: DASHBOARD_TTL_MS,
 } as const;
+
+/** Clears integration hub and platform read caches for a tenant. */
+export function invalidateIntegrationReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:integration-hub`);
+  apiReadCache.invalidatePrefix(`${companyId}:integration-platform`);
+}
+
+/** Clears mission control read caches for a tenant. */
+export function invalidateMissionControlReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:mission-control`);
+}

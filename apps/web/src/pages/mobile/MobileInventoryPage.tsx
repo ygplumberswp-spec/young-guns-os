@@ -1,86 +1,80 @@
-import { useEffect, useState } from 'react';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
-import type { MobileWorkforceInventoryCentre } from '@titan/shared';
-import { MobileApiClientError, fetchMobileInventory } from '../../lib/mobile-api-client';
+import { PageHeader, Panel } from '@titan/ui';
+import { fetchMobileInventory } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
 export function MobileInventoryPage() {
   const { accessToken } = useAuth();
-  const [inventory, setInventory] = useState<MobileWorkforceInventoryCentre | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const inventoryQuery = useStaffCachedQuery({
+    queryKey: 'mobile/inventory',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchMobileInventory(accessToken!),
+  });
 
-    async function load() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchMobileInventory(accessToken);
-        if (!cancelled) setInventory(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof MobileApiClientError ? err.message : 'Unable to load inventory');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
-
-  if (isLoading) return <p className="page-muted">Loading inventory…</p>;
-  if (error) return <p className="form-error">{error}</p>;
-  if (!inventory) return <EmptyState title="No inventory data" description="Inventory centre is empty." />;
+  const inventory = inventoryQuery.data;
 
   return (
     <div className="portal-page">
       <PageHeader
         title="Inventory centre"
-        description={`${inventory.alerts.length} alert(s) · ${inventory.pendingUsageCount} pending usage submission(s)`}
+        description="Low-stock alerts and recent usage submissions."
       />
 
-      <Panel title="Low stock alerts">
-        {inventory.alerts.length === 0 ? (
-          <p className="page-muted">No low-stock alerts.</p>
-        ) : (
-          <ul className="portal-list">
-            {inventory.alerts.map((item) => (
-              <li key={item.itemId}>
-                <strong>{item.name}</strong>
-                <span>
-                  {item.sku} · {item.totalQuantityOnHand} on hand (reorder at {item.reorderLevel})
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+      <AnalyticsTabPanel
+        isLoading={inventoryQuery.isLoading}
+        error={inventoryQuery.error}
+        hasData={inventory !== undefined}
+        isEmpty={
+          inventory !== undefined &&
+          inventory.alerts.length === 0 &&
+          inventory.recentUsage.length === 0
+        }
+        emptyTitle="No inventory data"
+        emptyDescription="Inventory centre is empty."
+        loadingLabel="Loading inventory…"
+        onRetry={() => void inventoryQuery.refetch()}
+      >
+        {inventory ? (
+          <>
+            <Panel title="Low stock alerts">
+              {inventory.alerts.length === 0 ? (
+                <p className="page-muted">No low-stock alerts.</p>
+              ) : (
+                <ul className="portal-list">
+                  {inventory.alerts.map((item) => (
+                    <li key={item.itemId}>
+                      <strong>{item.name}</strong>
+                      <span>
+                        {item.sku} · {item.totalQuantityOnHand} on hand (reorder at {item.reorderLevel})
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
 
-      <Panel title="Recent usage submissions">
-        {inventory.recentUsage.length === 0 ? (
-          <p className="page-muted">No inventory usage submitted yet.</p>
-        ) : (
-          <ul className="portal-list">
-            {inventory.recentUsage.map((item) => (
-              <li key={item.id}>
-                <strong>{item.itemName}</strong>
-                <span>
-                  {item.quantity} × {item.itemSku} · {item.status}
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Panel>
+            <Panel title="Recent usage submissions">
+              {inventory.recentUsage.length === 0 ? (
+                <p className="page-muted">No inventory usage submitted yet.</p>
+              ) : (
+                <ul className="portal-list">
+                  {inventory.recentUsage.map((item) => (
+                    <li key={item.id}>
+                      <strong>{item.itemName}</strong>
+                      <span>
+                        {item.quantity} × {item.itemSku} · {item.status}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          </>
+        ) : null}
+      </AnalyticsTabPanel>
     </div>
   );
 }

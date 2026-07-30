@@ -5,7 +5,8 @@ import { ApiClientError } from '../../lib/api-client';
 import {
   acknowledgeMissionControlAlert,
   captureMissionControlOperationsMap,
-  fetchMissionControlDashboard,
+  fetchMissionControlModuleSnapshots,
+  fetchMissionControlSummary,
   refreshMissionControlDepartmentHealth,
   syncMissionControlAlerts,
   syncMissionControlTimeline,
@@ -13,6 +14,7 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 import {
   canAccessMissionControl,
   canManageMissionControl,
@@ -40,15 +42,36 @@ export function MissionControlPage() {
   );
 
   const {
-    data: dashboard,
-    error: loadError,
-    isLoading,
-    refetch,
+    data: summary,
+    error: summaryError,
+    isLoading: summaryLoading,
+    refetch: refetchSummary,
   } = useStaffCachedQuery({
-    queryKey: 'mission-control/dashboard',
+    queryKey: 'mission-control/summary',
     enabled: canView,
-    fetcher: async () => fetchMissionControlDashboard(accessToken!),
+    fetcher: async () => fetchMissionControlSummary(accessToken!),
   });
+
+  const {
+    data: moduleSnapshots,
+    error: modulesError,
+    isLoading: modulesLoading,
+    refetch: refetchModules,
+  } = useStaffCachedQuery({
+    queryKey: 'mission-control/modules',
+    enabled: canView,
+    staleTimeMs: 45_000,
+    fetcher: async () => fetchMissionControlModuleSnapshots(accessToken!),
+  });
+
+  const dashboard = summary
+    ? {
+        ...summary,
+        moduleSnapshots: moduleSnapshots ?? [],
+      }
+    : null;
+  const loadError = summaryError ?? modulesError;
+  const isLoading = summaryLoading && !summary;
 
   useEffect(() => {
     if (loadError) {
@@ -57,7 +80,7 @@ export function MissionControlPage() {
   }, [loadError]);
 
   async function loadDashboard() {
-    await refetch();
+    await Promise.all([refetchSummary(), refetchModules()]);
   }
 
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
@@ -181,7 +204,7 @@ export function MissionControlPage() {
       />
 
       {isLoading ? (
-        <LoadingState label="Loading mission control dashboard…" />
+        <LoadingState label="Loading mission control summary…" />
       ) : !dashboard ? (
         <EmptyState title="No data" description="Mission control dashboard is unavailable." />
       ) : (
@@ -206,35 +229,44 @@ export function MissionControlPage() {
               </Panel>
 
               <Panel title="Systems">
-                {!visibleSnapshots || visibleSnapshots.length === 0 ? (
-                  <EmptyState title="No systems to show" description="No module snapshots available." />
-                ) : (
-                  <div className="data-list">
-                    {visibleSnapshots.map((snapshot) => {
-                      const manageHref =
-                        typeof snapshot.metrics.manageHref === 'string'
-                          ? snapshot.metrics.manageHref
-                          : null;
+                <AnalyticsTabPanel
+                  isLoading={modulesLoading && moduleSnapshots === undefined}
+                  error={modulesError}
+                  hasData={moduleSnapshots !== undefined}
+                  isEmpty={moduleSnapshots !== undefined && (visibleSnapshots?.length ?? 0) === 0}
+                  emptyTitle="No systems to show"
+                  emptyDescription="No module snapshots available."
+                  loadingLabel="Loading module systems…"
+                  onRetry={() => void refetchModules()}
+                >
+                  {visibleSnapshots && visibleSnapshots.length > 0 ? (
+                    <div className="data-list">
+                      {visibleSnapshots.map((snapshot) => {
+                        const manageHref =
+                          typeof snapshot.metrics.manageHref === 'string'
+                            ? snapshot.metrics.manageHref
+                            : null;
 
-                      return (
-                      <div key={snapshot.module} className="data-list-item">
-                        <strong>{formatModuleName(snapshot.module)}</strong>
-                        <span className={`status-pill status-pill--${snapshot.status}`}>
-                          {formatStatus(snapshot.status)}
-                        </span>
-                        <p>{snapshot.summary}</p>
-                        {manageHref ? (
-                          <Link href={manageHref}>
-                            <Button variant="secondary" size="sm">
-                              Manage capability
-                            </Button>
-                          </Link>
-                        ) : null}
-                      </div>
-                    );
-                    })}
-                  </div>
-                )}
+                        return (
+                          <div key={snapshot.module} className="data-list-item">
+                            <strong>{formatModuleName(snapshot.module)}</strong>
+                            <span className={`status-pill status-pill--${snapshot.status}`}>
+                              {formatStatus(snapshot.status)}
+                            </span>
+                            <p>{snapshot.summary}</p>
+                            {manageHref ? (
+                              <Link href={manageHref}>
+                                <Button variant="secondary" size="sm">
+                                  Manage capability
+                                </Button>
+                              </Link>
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
+                </AnalyticsTabPanel>
                 {viewMode === 'simple' ? (
                   <div className="panel-actions">
                     <Button

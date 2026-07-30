@@ -9,6 +9,26 @@ let sharedClient: postgres.Sql | null = null;
 let sharedDb: ReturnType<typeof drizzle<typeof schema>> | null = null;
 let sharedConnectionString: string | null = null;
 
+export type DbQueryLogEvent = {
+  query: string;
+  paramCount: number;
+};
+
+let queryLogHandler: ((event: DbQueryLogEvent) => void) | null = null;
+
+/** Development-only query observer; never log parameter values. */
+export function setDbQueryLogHandler(handler: ((event: DbQueryLogEvent) => void) | null) {
+  queryLogHandler = handler;
+}
+
+function createDbLogger() {
+  return {
+    logQuery(query: string, params: unknown[]) {
+      queryLogHandler?.({ query, paramCount: params.length });
+    },
+  };
+}
+
 export type DatabaseClient = ReturnType<typeof createDb>;
 
 export function createDb(connectionString: string) {
@@ -26,7 +46,10 @@ export function createDb(connectionString: string) {
     idle_timeout: 20,
     connect_timeout: 10,
   });
-  sharedDb = drizzle(sharedClient, { schema });
+  sharedDb = drizzle(sharedClient, {
+    schema,
+    logger: queryLogHandler ? createDbLogger() : undefined,
+  });
   return sharedDb;
 }
 

@@ -1,91 +1,85 @@
-import { useEffect, useState } from 'react';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
-import type { NotificationSummary } from '@titan/shared';
+import { useState } from 'react';
+import { PageHeader, Panel } from '@titan/ui';
 import {
-  MobileApiClientError,
   fetchMobileNotifications,
   markMobileNotificationRead,
 } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
 export function MobileNotificationsPage() {
   const { accessToken } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationSummary[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const notificationsQuery = useStaffCachedQuery({
+    queryKey: 'mobile/notifications',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 20_000,
+    fetcher: async () => fetchMobileNotifications(accessToken!),
+  });
 
-    async function load() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchMobileNotifications(accessToken);
-        if (!cancelled) {
-          setNotifications(data.notifications);
-          setUnreadCount(data.unreadCount);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof MobileApiClientError ? err.message : 'Unable to load notifications');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
+  const payload = notificationsQuery.data;
+  const unreadCount = payload?.unreadCount ?? 0;
 
   async function handleMarkRead(id: string) {
-    if (!accessToken) return;
-    await markMobileNotificationRead(accessToken, id);
-    setNotifications((current) =>
-      current.map((item) => (item.id === id ? { ...item, isRead: true } : item)),
-    );
-    setUnreadCount((count) => Math.max(0, count - 1));
+    if (!accessToken || !payload) return;
+    setActionError(null);
+    try {
+      await markMobileNotificationRead(accessToken, id);
+      await notificationsQuery.refetch();
+    } catch {
+      setActionError('Unable to mark notification as read.');
+    }
   }
-
-  if (isLoading) return <p className="page-muted">Loading notifications…</p>;
-  if (error) return <p className="form-error">{error}</p>;
 
   return (
     <div className="portal-page">
-      <PageHeader title="Notifications" description={`${unreadCount} unread`} />
+      <PageHeader
+        title="Notifications"
+        description={payload ? `${unreadCount} unread` : 'Recent alerts and updates.'}
+      />
 
-      {notifications.length === 0 ? (
-        <EmptyState title="No notifications" description="You are all caught up." />
-      ) : (
-        <Panel title="Recent notifications">
-          <ul className="portal-list">
-            {notifications.map((item) => (
-              <li key={item.id}>
-                <strong>{item.title}</strong>
-                <span>
-                  {item.body} · {new Date(item.createdAt).toLocaleString()}
-                  {!item.isRead ? (
-                    <>
-                      {' '}
-                      ·{' '}
-                      <button type="button" className="link-button" onClick={() => void handleMarkRead(item.id)}>
-                        Mark read
-                      </button>
-                    </>
-                  ) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
+      {actionError ? <p className="form-error">{actionError}</p> : null}
+
+      <AnalyticsTabPanel
+        isLoading={notificationsQuery.isLoading}
+        error={notificationsQuery.error ?? actionError}
+        hasData={payload !== undefined}
+        isEmpty={payload !== undefined && payload.notifications.length === 0}
+        emptyTitle="No notifications"
+        emptyDescription="You are all caught up."
+        loadingLabel="Loading notifications…"
+        onRetry={() => void notificationsQuery.refetch()}
+      >
+        {payload && payload.notifications.length > 0 ? (
+          <Panel title="Recent notifications">
+            <ul className="portal-list">
+              {payload.notifications.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong>
+                  <span>
+                    {item.body} · {new Date(item.createdAt).toLocaleString()}
+                    {!item.isRead ? (
+                      <>
+                        {' '}
+                        ·{' '}
+                        <button
+                          type="button"
+                          className="link-button"
+                          onClick={() => void handleMarkRead(item.id)}
+                        >
+                          Mark read
+                        </button>
+                      </>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+        ) : null}
+      </AnalyticsTabPanel>
     </div>
   );
 }
