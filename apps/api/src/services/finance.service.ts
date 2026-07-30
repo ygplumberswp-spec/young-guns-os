@@ -11,6 +11,7 @@ import type {
 import type { DatabaseClient } from '@titan/db';
 import { customers, companies, invoices, jobs, payments, quotes } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
 const OPEN_QUOTE_STATUSES = ['draft', 'sent'] as const;
 
@@ -309,39 +310,45 @@ export class FinanceService {
   }
 
   async getStats(companyId: string): Promise<FinanceStats> {
-    const [openQuotesRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(quotes)
-      .where(
-        and(eq(quotes.companyId, companyId), inArray(quotes.status, [...OPEN_QUOTE_STATUSES])),
-      );
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'finance/stats'),
+      async () => {
+        const [openQuotesRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(quotes)
+          .where(
+            and(eq(quotes.companyId, companyId), inArray(quotes.status, [...OPEN_QUOTE_STATUSES])),
+          );
 
-    const [invoiceCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(invoices)
-      .where(eq(invoices.companyId, companyId));
+        const [invoiceCountRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(invoices)
+          .where(eq(invoices.companyId, companyId));
 
-    const [paymentCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(payments)
-      .where(eq(payments.companyId, companyId));
+        const [paymentCountRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(payments)
+          .where(eq(payments.companyId, companyId));
 
-    const monthStart = startOfMonth(new Date());
+        const monthStart = startOfMonth(new Date());
 
-    const [revenueRow] = await this.db
-      .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
-      .from(payments)
-      .where(and(eq(payments.companyId, companyId), gte(payments.paidAt, monthStart)));
+        const [revenueRow] = await this.db
+          .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
+          .from(payments)
+          .where(and(eq(payments.companyId, companyId), gte(payments.paidAt, monthStart)));
 
-    const currency = await this.resolveCurrency(companyId);
+        const currency = await this.resolveCurrency(companyId);
 
-    return {
-      openQuoteCount: openQuotesRow?.count ?? 0,
-      revenueMtdCents: revenueRow?.total ?? 0,
-      currency,
-      invoiceCount: invoiceCountRow?.count ?? 0,
-      paymentCount: paymentCountRow?.count ?? 0,
-    };
+        return {
+          openQuoteCount: openQuotesRow?.count ?? 0,
+          revenueMtdCents: revenueRow?.total ?? 0,
+          currency,
+          invoiceCount: invoiceCountRow?.count ?? 0,
+          paymentCount: paymentCountRow?.count ?? 0,
+        };
+      },
+      CACHE_TTLS.stats,
+    );
   }
 
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {

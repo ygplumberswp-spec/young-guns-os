@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect } from 'react';
 import { useLocation } from 'wouter';
+import { LoadingState } from '@titan/ui';
 import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { toStaffIdentity } from '../lib/role-experience';
@@ -20,7 +21,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+      <div style={{ padding: '2rem' }}>
+        <LoadingState label="Opening TITAN…" />
+      </div>
     );
   }
 

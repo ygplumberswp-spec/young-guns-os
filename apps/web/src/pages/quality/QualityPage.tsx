@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
 import {
   formatMoney,
   type QualityActionSummary,
@@ -159,8 +159,6 @@ export function QualityPage() {
     );
   }
 
-  if (isLoading) return <p className="page-muted">Loading quality intelligence…</p>;
-
   const tabs: Array<{ id: QualityTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'comebacks', label: 'Comebacks' },
@@ -192,6 +190,10 @@ export function QualityPage() {
           </Button>
         ))}
       </div>
+
+      {isLoading && !dashboard ? (
+        <LoadingState label="Loading quality intelligence…" />
+      ) : null}
 
       {activeTab === 'dashboard' && dashboard ? (
         <>

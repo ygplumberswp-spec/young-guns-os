@@ -1,70 +1,46 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
-import type { MobileWorkforceJobList } from '@titan/shared';
-import { MobileApiClientError, fetchMobileWorkforceJobs } from '../../lib/mobile-api-client';
+import { PageHeader, Panel } from '@titan/ui';
+import { fetchMobileWorkforceJobs } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
 export function MobileJobsPage() {
   const { accessToken } = useAuth();
-  const [jobs, setJobs] = useState<MobileWorkforceJobList | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const jobsQuery = useStaffCachedQuery({
+    queryKey: 'mobile/workforce-jobs',
+    enabled: Boolean(accessToken),
+    staleTimeMs: 30_000,
+    fetcher: async () => fetchMobileWorkforceJobs(accessToken!),
+  });
 
-    async function load() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const data = await fetchMobileWorkforceJobs(accessToken);
-        if (!cancelled) setJobs(data);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof MobileApiClientError ? err.message : 'Unable to load jobs');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [accessToken]);
-
-  if (isLoading) return <p className="page-muted">Loading jobs…</p>;
-  if (error) return <p className="form-error">{error}</p>;
-  if (!jobs || jobs.jobs.length === 0) {
-    return <EmptyState title="No assigned jobs" description="You have no jobs assigned right now." />;
-  }
+  const jobs = jobsQuery.data;
 
   return (
     <div className="portal-page">
-      <PageHeader
-        title="Assigned jobs"
-        description={`${jobs.activeCount} active · ${jobs.completedCount} completed`}
-      />
-      <Panel title="Job list">
-        <ul className="portal-list">
-          {jobs.jobs.map((job) => (
-            <li key={job.id}>
-              <Link href={`/mobile/jobs/${job.id}`}>
-                <strong>{job.title}</strong>
-              </Link>
-              <span>
-                {job.customerName} · {job.status}
-                {job.scheduledAt ? ` · ${new Date(job.scheduledAt).toLocaleString()}` : ''}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </Panel>
+      <PageHeader title="My jobs" description="Assigned jobs for today and upcoming work." />
+
+      <AnalyticsTabPanel
+        isLoading={jobsQuery.isLoading}
+        error={jobsQuery.error}
+        hasData={jobs !== undefined}
+        isEmpty={jobs !== undefined && jobs.jobs.length === 0}
+        emptyTitle="No assigned jobs"
+        emptyDescription="You have no jobs assigned right now."
+        loadingLabel="Loading jobs…"
+        onRetry={() => void jobsQuery.refetch()}
+      >
+        {jobs && jobs.jobs.length > 0 ? (
+          <div className="portal-grid">
+            {jobs.jobs.map((job) => (
+              <Panel key={job.id} title={job.title} description={job.customerName ?? 'Customer'}>
+                <Link href={`/mobile/jobs/${job.id}`}>Open job</Link>
+              </Panel>
+            ))}
+          </div>
+        ) : null}
+      </AnalyticsTabPanel>
     </div>
   );
 }

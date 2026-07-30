@@ -9,6 +9,7 @@ import type {
 import type { DatabaseClient } from '@titan/db';
 import { customers, jobs, users } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
 const ACTIVE_JOB_STATUSES = ['new', 'scheduled', 'in_progress'] as const;
 
@@ -269,20 +270,26 @@ export class JobsService {
   }
 
   async getStats(companyId: string): Promise<JobsStats> {
-    const [totalRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(jobs)
-      .where(eq(jobs.companyId, companyId));
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'jobs/stats'),
+      async () => {
+        const [totalRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobs)
+          .where(eq(jobs.companyId, companyId));
 
-    const [activeRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(jobs)
-      .where(and(eq(jobs.companyId, companyId), inArray(jobs.status, [...ACTIVE_JOB_STATUSES])));
+        const [activeRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobs)
+          .where(and(eq(jobs.companyId, companyId), inArray(jobs.status, [...ACTIVE_JOB_STATUSES])));
 
-    return {
-      totalCount: totalRow?.count ?? 0,
-      activeCount: activeRow?.count ?? 0,
-    };
+        return {
+          totalCount: totalRow?.count ?? 0,
+          activeCount: activeRow?.count ?? 0,
+        };
+      },
+      CACHE_TTLS.stats,
+    );
   }
 
   async buildAuraContext(companyId: string, jobId?: string): Promise<AuraJobsContext> {

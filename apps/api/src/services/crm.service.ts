@@ -10,6 +10,7 @@ import type {
 import type { DatabaseClient } from '@titan/db';
 import { customerActivities, customers } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
 export class CrmError extends Error {
   constructor(
@@ -250,14 +251,20 @@ export class CrmService {
   }
 
   async getStats(companyId: string): Promise<CrmStats> {
-    const [row] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(customers)
-      .where(eq(customers.companyId, companyId));
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'crm/stats'),
+      async () => {
+        const [row] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(customers)
+          .where(eq(customers.companyId, companyId));
 
-    return {
-      customerCount: row?.count ?? 0,
-    };
+        return {
+          customerCount: row?.count ?? 0,
+        };
+      },
+      CACHE_TTLS.stats,
+    );
   }
 
   async buildAuraContext(companyId: string, customerId?: string): Promise<AuraCrmContext> {

@@ -41,8 +41,8 @@ export function JobListPage() {
       />
 
       <PageLoadState
-        isLoading={isLoading}
-        error={error}
+        isLoading={isLoading && jobs === undefined}
+        error={error && jobs === undefined ? error : null}
         isEmpty={(jobs?.length ?? 0) === 0}
         emptyTitle="No jobs yet"
         emptyDescription="Create a job to track work for your customers."

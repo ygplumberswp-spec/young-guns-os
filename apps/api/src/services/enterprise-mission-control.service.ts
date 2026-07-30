@@ -130,6 +130,7 @@ import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
 import type { TenantCapabilityBuilderService } from './tenant-capability-builder.service.js';
 import type { AiOperationsService } from './ai-operations.service.js';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
 export class EnterpriseMissionControlError extends Error {
   constructor(
@@ -168,6 +169,16 @@ export class EnterpriseMissionControlService {
   constructor(private readonly deps: EnterpriseMissionControlDeps) {}
 
   async getMissionControlDashboard(companyId: string): Promise<EnterpriseMissionControlDashboard> {
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'mission-control/dashboard'),
+      () => this.loadMissionControlDashboard(companyId),
+      CACHE_TTLS.dashboard,
+    );
+  }
+
+  private async loadMissionControlDashboard(
+    companyId: string,
+  ): Promise<EnterpriseMissionControlDashboard> {
     const [
       executiveStats,
       healthSnapshot,
@@ -1344,7 +1355,7 @@ export class EnterpriseMissionControlService {
       salesStats,
       leadStats,
       marketingStats,
-      customers,
+      crmStats,
       automationMonitoring,
       securityContext,
       integrationContext,
@@ -1376,7 +1387,7 @@ export class EnterpriseMissionControlService {
       this.deps.salesService.getStats(companyId),
       this.deps.leadsService.getStats(companyId),
       this.deps.marketingService.getStats(companyId),
-      this.deps.crmService.listCustomers(companyId),
+      this.deps.crmService.getStats(companyId),
       this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
       this.deps.enterpriseSecurityService.buildSecurityAuraContext(companyId),
       this.deps.integrationPlatformService.buildIntegrationAuraContext(companyId),
@@ -1650,9 +1661,9 @@ export class EnterpriseMissionControlService {
       },
       {
         module: 'customers',
-        status: customers.length > 0 ? 'healthy' : 'warning',
-        summary: `${customers.length} customer record(s)`,
-        metrics: { count: customers.length },
+        status: crmStats.customerCount > 0 ? 'healthy' : 'warning',
+        summary: `${crmStats.customerCount} customer record(s)`,
+        metrics: { count: crmStats.customerCount },
       },
       {
         module: 'automation',

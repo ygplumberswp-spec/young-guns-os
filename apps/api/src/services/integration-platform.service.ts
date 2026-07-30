@@ -26,6 +26,7 @@ import {
   integrationSyncJobs,
   integrationSyncSchedules,
 } from '@titan/db';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 import type { ConnectorEngineService } from './connector-engine.service.js';
 import type { IntegrationApiManagementService } from './integration-api-management.service.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
@@ -56,10 +57,28 @@ export class IntegrationPlatformService {
     companyId: string,
     options?: { includeVault?: boolean; refreshConnectors?: boolean },
   ): Promise<IntegrationPlatformExecutiveDashboard> {
-    const startedAt = Date.now();
-    const timings: Record<string, number> = {};
     const includeVault = options?.includeVault === true;
     const refreshConnectors = options?.refreshConnectors === true;
+
+    if (!includeVault && !refreshConnectors) {
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'integration-platform/dashboard'),
+        () => this.loadExecutiveDashboard(companyId, { includeVault: false, refreshConnectors: false }),
+        CACHE_TTLS.dashboard,
+      );
+    }
+
+    return this.loadExecutiveDashboard(companyId, { includeVault, refreshConnectors });
+  }
+
+  private async loadExecutiveDashboard(
+    companyId: string,
+    options: { includeVault: boolean; refreshConnectors: boolean },
+  ): Promise<IntegrationPlatformExecutiveDashboard> {
+    const startedAt = Date.now();
+    const timings: Record<string, number> = {};
+    const includeVault = options.includeVault;
+    const refreshConnectors = options.refreshConnectors;
 
     const connectorsStarted = Date.now();
     const connectors = await this.deps.connectorEngine.listConnectors(companyId, {
@@ -120,18 +139,26 @@ export class IntegrationPlatformService {
   }
 
   async buildIntegrationAuraContext(companyId: string): Promise<IntegrationPlatformAuraContext> {
-    const connectors = await this.deps.connectorEngine.listConnectors(companyId);
-    const monitoring = await this.getMonitoringSummary(companyId, connectors);
-    const pendingActions = await this.listActions(companyId, 'pending_approval', 10);
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'integration-platform/aura-context'),
+      async () => {
+        const connectors = await this.deps.connectorEngine.listConnectors(companyId, {
+          refreshStatus: false,
+        });
+        const monitoring = await this.getMonitoringSummary(companyId, connectors);
+        const pendingActions = await this.listActions(companyId, 'pending_approval', 10);
 
-    return {
-      summary: `${monitoring.connectedServiceCount} connected service(s), ${monitoring.errorServiceCount} error(s), ${monitoring.activeSyncJobCount} active sync job(s).`,
-      connectedServiceCount: monitoring.connectedServiceCount,
-      errorServiceCount: monitoring.errorServiceCount,
-      activeSyncJobCount: monitoring.activeSyncJobCount,
-      failedRequestCount24h: monitoring.failedRequestCount24h,
-      pendingActionCount: pendingActions.length,
-    };
+        return {
+          summary: `${monitoring.connectedServiceCount} connected service(s), ${monitoring.errorServiceCount} error(s), ${monitoring.activeSyncJobCount} active sync job(s).`,
+          connectedServiceCount: monitoring.connectedServiceCount,
+          errorServiceCount: monitoring.errorServiceCount,
+          activeSyncJobCount: monitoring.activeSyncJobCount,
+          failedRequestCount24h: monitoring.failedRequestCount24h,
+          pendingActionCount: pendingActions.length,
+        };
+      },
+      CACHE_TTLS.dashboard,
+    );
   }
 
   async recordGatewayTrace(input: {
