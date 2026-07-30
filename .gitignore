@@ -40,3 +40,8 @@ infra/docker/data/
 storage/company-media/*
 !storage/company-media/.gitkeep
 apps/api/storage/company-media/*
+
+# Local audit and migration artifacts (do not commit)
+audit-output/
+migration-full.txt
+**/_journal.backup.json
