@@ -157,6 +157,8 @@ import { FinanceIntelligenceService } from './services/finance-intelligence.serv
 import { KnowledgeService } from './services/knowledge.service.js';
 import { RecruitingService } from './services/recruiting.service.js';
 import { createAgentsRouter } from './routes/agents.js';
+import { TenantCapabilityBuilderService } from './services/tenant-capability-builder.service.js';
+import { createTenantCapabilitiesRouter } from './routes/tenant-capabilities.js';
 import { createRecruitingRouter } from './routes/recruiting.js';
 import { createWorkforceRouter } from './routes/workforce.js';
 import { createProcurementRouter } from './routes/procurement.js';
@@ -294,6 +296,7 @@ const enterpriseAutomationStudioService = new EnterpriseAutomationStudioService(
   workflowEngineService,
 });
 const agentsService = new AgentsService(db);
+const tenantCapabilityBuilderService = new TenantCapabilityBuilderService(db);
 const recruitingService = new RecruitingService(db);
 const memoryService = new MemoryService(db);
 const intelligenceService = new IntelligenceService({
@@ -972,6 +975,7 @@ const auraService = new AuraService({
   knowledgeService,
   businessIntelligenceService,
   aiProviderResilienceService,
+  tenantCapabilityBuilderService,
 });
 
 const app: Express = express();
@@ -1431,6 +1435,14 @@ app.use(
     enterpriseProductionLaunchService,
     enterpriseReleaseManagementService,
     teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/tenant-capabilities',
+  createTenantCapabilitiesRouter({
+    tenantCapabilityBuilderService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

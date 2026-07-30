@@ -84,6 +84,7 @@ export const IndustryPacksPage = lazyNamed(() => import('../pages/industry-packs
 export const ManagerWorkspacePage = lazyNamed(() => import('../pages/workforce-intelligence/ManagerWorkspacePage'), 'ManagerWorkspacePage');
 export const SelfServicePage = lazyNamed(() => import('../pages/workforce-intelligence/SelfServicePage'), 'SelfServicePage');
 export const AgentDashboardPage = lazyNamed(() => import('../pages/agents/AgentDashboardPage'), 'AgentDashboardPage');
+export const CapabilityBuilderPage = lazyNamed(() => import('../pages/agents/CapabilityBuilderPage'), 'CapabilityBuilderPage');
 export const AgentProfileCreatePage = lazyNamed(() => import('../pages/agents/AgentProfileCreatePage'), 'AgentProfileCreatePage');
 export const AgentProfileDetailPage = lazyNamed(() => import('../pages/agents/AgentProfileDetailPage'), 'AgentProfileDetailPage');
 export const AgentExecutionListPage = lazyNamed(() => import('../pages/agents/AgentExecutionListPage'), 'AgentExecutionListPage');

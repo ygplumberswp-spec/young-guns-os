@@ -121,4 +121,5 @@ export * from './enterprise-release-center';
 export * from './enterprise-production-launch';
 export * from './enterprise-release-management';
 export * from './integration-api-management';
+export * from './tenant-capabilities';
 export * from './relations';

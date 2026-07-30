@@ -178,6 +178,7 @@ export function App() {
                       <Route path="/crm/new" component={OwnerPages.CustomerCreatePage} />
                       <Route path="/crm/:id" component={OwnerPages.CustomerDetailPage} />
                       <Route path="/crm" component={OwnerPages.CustomerListPage} />
+                      <Route path="/aura/capabilities/create" component={OwnerPages.CapabilityBuilderPage} />
                       <Route path="/aura/agents/new" component={OwnerPages.AgentProfileCreatePage} />
                       <Route path="/aura/agents/executions" component={OwnerPages.AgentExecutionListPage} />
                       <Route path="/aura/agents/:id" component={OwnerPages.AgentProfileDetailPage} />

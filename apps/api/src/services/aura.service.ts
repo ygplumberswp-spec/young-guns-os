@@ -9,6 +9,7 @@ import {
   type AuraProvider,
 } from '@titan/aura';
 import { hasAnyPermission } from '@titan/auth';
+import { indicatesCapabilityCreationIntent } from '@titan/shared';
 import type {
   AuraConversation,
   AuraConversationDetail,
@@ -76,6 +77,7 @@ import type { ExecutiveService } from './executive.service.js';
 import type { FinanceIntelligenceService } from './finance-intelligence.service.js';
 import type { KnowledgeService } from './knowledge.service.js';
 import type { BusinessIntelligenceService } from './business-intelligence.service.js';
+import type { TenantCapabilityBuilderService } from './tenant-capability-builder.service.js';
 
 export class AuraError extends Error {
   constructor(
@@ -151,6 +153,7 @@ type AuraServiceDeps = {
   financeIntelligenceService: FinanceIntelligenceService;
   knowledgeService: KnowledgeService;
   businessIntelligenceService: BusinessIntelligenceService;
+  tenantCapabilityBuilderService: TenantCapabilityBuilderService;
 };
 
 export class AuraService {
@@ -212,6 +215,7 @@ export class AuraService {
   private readonly financeIntelligenceService: FinanceIntelligenceService;
   private readonly knowledgeService: KnowledgeService;
   private readonly businessIntelligenceService: BusinessIntelligenceService;
+  private readonly tenantCapabilityBuilderService: TenantCapabilityBuilderService;
 
   constructor({
     db,
@@ -272,6 +276,7 @@ export class AuraService {
     financeIntelligenceService,
     knowledgeService,
     businessIntelligenceService,
+    tenantCapabilityBuilderService,
   }: AuraServiceDeps) {
     this.db = db;
     this.provider = provider;
@@ -331,6 +336,7 @@ export class AuraService {
     this.financeIntelligenceService = financeIntelligenceService;
     this.knowledgeService = knowledgeService;
     this.businessIntelligenceService = businessIntelligenceService;
+    this.tenantCapabilityBuilderService = tenantCapabilityBuilderService;
   }
 
   async listConversations(scope: TenantScope): Promise<AuraConversationSummary[]> {
@@ -472,6 +478,13 @@ export class AuraService {
       pageContext,
     );
 
+    const enrichedContext = await this.enrichTenantCapabilityContext(
+      scope.companyId,
+      trimmed,
+      user.role?.permissions ?? [],
+      context,
+    );
+
     let assistantContent: string;
 
     try {
@@ -479,7 +492,7 @@ export class AuraService {
         scope.companyId,
         {
           messages: [...priorMessages, { role: 'user', content: trimmed }],
-          context,
+          context: enrichedContext,
         },
         {
           operationType: 'conversation',
@@ -571,6 +584,49 @@ export class AuraService {
       .returning();
 
     return Boolean(deleted);
+  }
+
+  private async enrichTenantCapabilityContext(
+    companyId: string,
+    message: string,
+    permissions: string[],
+    context: AuraGenerateContext,
+  ): Promise<AuraGenerateContext> {
+    if (!hasAnyPermission(permissions, ['agents:read', 'agents:write'])) {
+      return context;
+    }
+
+    const capabilities = await this.tenantCapabilityBuilderService.listCapabilities(companyId);
+    const active = capabilities.filter((capability) => capability.status === 'active');
+    const matched = await this.tenantCapabilityBuilderService.matchCapabilityForRequest(
+      companyId,
+      message,
+    );
+    const wantsNewCapability = indicatesCapabilityCreationIntent(message);
+
+    return {
+      ...context,
+      tenantCapabilities: {
+        activeCapabilities: active.map((capability) => ({
+          id: capability.id,
+          name: capability.name,
+          department: capability.department,
+          purpose: capability.purpose,
+          baseAgentKey: capability.baseAgentKey,
+        })),
+        matchedCapability: matched
+          ? {
+              id: matched.id,
+              name: matched.name,
+              department: matched.department,
+              purpose: matched.purpose,
+            }
+          : null,
+        createCapabilityGuidance: wantsNewCapability
+          ? 'The user may want a new capability. Ask only plain-language discovery questions (purpose, department, data access, action mode, users, external provider). Guide them to AURA Capabilities → Create capability at /aura/capabilities/create when ready for a proposal. Do not ask about prompts, tool scopes, or execution engines.'
+          : null,
+      },
+    };
   }
 
   private async buildAuraContext(

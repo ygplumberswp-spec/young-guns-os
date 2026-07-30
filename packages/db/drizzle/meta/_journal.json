@@ -617,6 +617,13 @@
       "when": 1754089200000,
       "tag": "0088_enterprise_release_management_platform",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1754092800000,
+      "tag": "0089_tenant_capability_builder_platform",
+      "breakpoints": true
     }
   ]
 }

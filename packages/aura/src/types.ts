@@ -318,6 +318,22 @@ export type AuraGenerateContext = {
       foundationOnly: boolean;
     } | null;
   };
+  tenantCapabilities?: {
+    activeCapabilities: Array<{
+      id: string;
+      name: string;
+      department: string;
+      purpose: string;
+      baseAgentKey: string | null;
+    }>;
+    matchedCapability: {
+      id: string;
+      name: string;
+      department: string;
+      purpose: string;
+    } | null;
+    createCapabilityGuidance: string | null;
+  };
   portal?: {
     portalUserCount: number;
     activePortalUserCount: number;

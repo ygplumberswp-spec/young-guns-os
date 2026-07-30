@@ -38,6 +38,8 @@ export * from './communications.js';
 export * from './documents.js';
 export * from './automation.js';
 export * from './agents.js';
+export * from './tenant-capabilities.js';
+export * from './tenant-capability-routing.js';
 export * from './portal.js';
 export * from './role-experience.js';
 export * from './xero-sync.js';

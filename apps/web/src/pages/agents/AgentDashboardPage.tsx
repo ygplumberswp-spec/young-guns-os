@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
-import type { AgentProfileSummary, AgentRegistryEntry } from '@titan/shared';
+import type { AgentProfileSummary, AgentRegistryEntry, TenantCapabilitySummary } from '@titan/shared';
 import { hasAnyPermission } from '@titan/auth/browser';
 import {
   fetchAgentProfiles,
@@ -9,6 +9,7 @@ import {
   fetchAgentsStats,
 } from '../../lib/agents-api';
 import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
+import { fetchTenantCapabilities } from '../../lib/tenant-capabilities-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
@@ -57,11 +58,13 @@ function CapabilityGroupCard({
   description,
   status,
   canManage,
+  customCapabilities,
 }: {
   label: string;
   description: string;
   status: CapabilityStatus;
   canManage: boolean;
+  customCapabilities: TenantCapabilitySummary[];
 }) {
   return (
     <article className="capability-group-card">
@@ -70,9 +73,19 @@ function CapabilityGroupCard({
         <span className={`status-pill status-pill--${status}`}>{formatCapabilityStatus(status)}</span>
       </div>
       <p className="page-muted">{description}</p>
+      {customCapabilities.length > 0 ? (
+        <ul className="capability-group-card__custom">
+          {customCapabilities.map((capability) => (
+            <li key={capability.id}>
+              <strong>{capability.name}</strong>
+              <span className={`status-pill status-pill--${capability.status}`}>{capability.status.replace(/_/g, ' ')}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {canManage ? (
         <div className="panel-actions">
-          <Link href="/aura/agents/new">
+          <Link href="/aura/capabilities/create">
             <Button size="sm" variant="secondary">
               Manage capability
             </Button>
@@ -130,7 +143,29 @@ export function AgentDashboardPage() {
     fetcher: async () => fetchAiProviders(accessToken!),
   });
 
-  const [error] = useState<string | null>(null);
+  const { data: tenantCapabilities = [] } = useCachedQuery({
+    queryKey: 'tenant-capabilities/list',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchTenantCapabilities(accessToken!),
+  });
+
+  const activeCustomCount = useMemo(
+    () => tenantCapabilities.filter((capability) => capability.status === 'active').length,
+    [tenantCapabilities],
+  );
+
+  const customByDepartment = useMemo(() => {
+    const map = new Map<string, TenantCapabilitySummary[]>();
+    for (const capability of tenantCapabilities) {
+      if (capability.status === 'archived') continue;
+      const list = map.get(capability.department) ?? [];
+      list.push(capability);
+      map.set(capability.department, list);
+    }
+    return map;
+  }, [tenantCapabilities]);
 
   const configuredKeys = useMemo(
     () => new Set(profiles.map((profile) => profile.agentKey)),
@@ -173,6 +208,11 @@ export function AgentDashboardPage() {
               onChange={setViewMode}
               canAccessAdvanced={canAdvanced}
             />
+            {canManage ? (
+              <Link href="/aura/capabilities/create">
+                <Button size="sm">Create capability</Button>
+              </Link>
+            ) : null}
             <Link href="/aura">
               <Button variant="secondary" size="sm">
                 Open AURA Chat
@@ -183,15 +223,14 @@ export function AgentDashboardPage() {
       />
       <AgentsNav />
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {isLoading && !stats ? <LoadingState label="Loading AURA capabilities…" /> : null}
+      {isLoading ? <LoadingState label="Loading AURA capabilities…" /> : null}
 
       {stats ? (
         <section className="capability-summary">
           <div className="stat-grid">
             <Panel title="AURA status">{aiConfigured ? 'Ready' : 'Provider required'}</Panel>
             <Panel title="AI provider">{aiConfigured ? 'Configured' : 'Not configured'}</Panel>
-            <Panel title="Active capabilities">{activeGroups}</Panel>
+            <Panel title="Active capabilities">{activeGroups + activeCustomCount}</Panel>
             <Panel title="Needs setup">{needsSetupGroups}</Panel>
             <Panel title="Approval mode">Ask before external actions</Panel>
             <Panel title="Configured profiles">{stats.configuredProfileCount}</Panel>
@@ -210,6 +249,7 @@ export function AgentDashboardPage() {
                 description={group.description}
                 status={resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured)}
                 canManage={canManage}
+                customCapabilities={customByDepartment.get(group.id) ?? []}
               />
             ))}
           </div>
@@ -289,6 +329,39 @@ export function AgentDashboardPage() {
                             <td>{formatAgentKey(profile.agentKey)}</td>
                             <td>{formatAgentProfileStatus(profile.status)}</td>
                             <td>{profile.enabledToolCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Panel>
+              ) : null}
+
+              {tenantCapabilities.length > 0 ? (
+                <Panel title="Tenant capabilities">
+                  <p className="page-muted">
+                    Custom capabilities created for this business. Each entry is tenant-scoped with
+                    version history and audit logging.
+                  </p>
+                  <div className="agents-table-wrap">
+                    <table className="agents-table">
+                      <thead>
+                        <tr>
+                          <th>Capability</th>
+                          <th>Department</th>
+                          <th>Status</th>
+                          <th>Version</th>
+                          <th>Risk</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tenantCapabilities.map((capability) => (
+                          <tr key={capability.id}>
+                            <td>{capability.name}</td>
+                            <td>{capability.department}</td>
+                            <td>{capability.status.replace(/_/g, ' ')}</td>
+                            <td>v{capability.version}</td>
+                            <td>{capability.riskLevel}</td>
                           </tr>
                         ))}
                       </tbody>
