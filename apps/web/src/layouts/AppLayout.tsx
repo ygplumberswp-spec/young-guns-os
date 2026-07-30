@@ -53,7 +53,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             >
               Menu
             </button>
-            <div>
+            <div className="app-header__brand">
               <span className="brand">{APP_NAME}</span>
               <span className="brand-sub">powered by {AI_NAME}</span>
             </div>
@@ -64,14 +64,14 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Link
                   href="/settings/company"
                   className="app-header__identity"
-                  title={`${displayCompanyName} — Company profile`}
+                  title={`${user.firstName} ${user.lastName} — ${displayCompanyName} · ${user.roleName}`}
                 >
                   <span className="app-header__identity-mark" aria-hidden="true">
                     {accessToken && logoFileId ? (
                       <CompanyMediaImage
                         accessToken={accessToken}
                         fileId={logoFileId}
-                        alt=""
+                        alt={`${displayCompanyName} logo`}
                         className="app-header__identity-image"
                         fallback={companyInitials(displayCompanyName)}
                       />
@@ -83,7 +83,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <span className="app-header__name">
                       {user.firstName} {user.lastName}
                     </span>
-                    <span className="app-header__role">{user.roleName}</span>
+                    <span className="app-header__tenant">
+                      {displayCompanyName} · {user.roleName}
+                    </span>
                   </span>
                 </Link>
                 {isTechnician ? (
