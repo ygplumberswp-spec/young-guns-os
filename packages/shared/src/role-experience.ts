@@ -26,7 +26,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/documents', label: 'Documents', permissions: ['documents:read', '*'] },
   { href: '/analytics', label: 'Analytics', permissions: ['analytics:read', '*'] },
   { href: '/marketing', label: 'Marketing', permissions: ['marketing:read', '*'] },
-  { href: '/aura/agents', label: 'AI Agents', permissions: ['agents:read', '*'] },
+  { href: '/aura/agents', label: 'AURA Capabilities', permissions: ['agents:read', '*'] },
   { href: '/automation', label: 'Automations', permissions: ['automation:read', '*'] },
   { href: '/mission-control', label: 'Mission Control', permissions: ['executive:read', 'ops:read', '*'] },
   { href: '/integrations', label: 'Integrations', permissions: ['integrations:read', '*'] },

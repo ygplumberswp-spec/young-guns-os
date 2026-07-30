@@ -15,12 +15,31 @@ import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as IntegrationPlatformApiClientError };
 
-export async function fetchIntegrationPlatformDashboard(accessToken: string) {
-  const data = await request<{ dashboard: IntegrationPlatformExecutiveDashboard }>(
-    '/integration-platform/dashboard',
+export async function fetchIntegrationPlatformDashboard(
+  accessToken: string,
+  options?: { includeVault?: boolean; refreshConnectors?: boolean },
+) {
+  const params = new URLSearchParams();
+  if (options?.includeVault) {
+    params.set('includeVault', 'true');
+  }
+  if (options?.refreshConnectors) {
+    params.set('refreshConnectors', 'true');
+  }
+  const query = params.toString();
+  const path = query ? `/integration-platform/dashboard?${query}` : '/integration-platform/dashboard';
+  const data = await request<{ dashboard: IntegrationPlatformExecutiveDashboard }>(path, {
+    accessToken,
+  });
+  return data.dashboard;
+}
+
+export async function fetchIntegrationVault(accessToken: string) {
+  const data = await request<{ vaultEntries: IntegrationPlatformExecutiveDashboard['vaultEntries'] }>(
+    '/integration-platform/vault',
     { accessToken },
   );
-  return data.dashboard;
+  return data.vaultEntries;
 }
 
 export async function fetchIntegrationConnectors(accessToken: string) {

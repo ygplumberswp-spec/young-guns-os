@@ -52,38 +52,55 @@ type IntegrationPlatformDeps = {
 export class IntegrationPlatformService {
   constructor(private readonly deps: IntegrationPlatformDeps) {}
 
-  async getExecutiveDashboard(companyId: string): Promise<IntegrationPlatformExecutiveDashboard> {
+  async getExecutiveDashboard(
+    companyId: string,
+    options?: { includeVault?: boolean; refreshConnectors?: boolean },
+  ): Promise<IntegrationPlatformExecutiveDashboard> {
     const startedAt = Date.now();
     const timings: Record<string, number> = {};
+    const includeVault = options?.includeVault === true;
+    const refreshConnectors = options?.refreshConnectors === true;
 
     const connectorsStarted = Date.now();
-    const connectors = await this.deps.connectorEngine.listConnectors(companyId);
+    const connectors = await this.deps.connectorEngine.listConnectors(companyId, {
+      refreshStatus: refreshConnectors,
+    });
     timings.connectors = Date.now() - connectorsStarted;
 
     const parallelStarted = Date.now();
+    const parallelTasks: [
+      Promise<IntegrationMonitoringSummary>,
+      Promise<IntegrationGatewayTraceSummary[]>,
+      Promise<IntegrationSyncConflictSummary[]>,
+      Promise<IntegrationPlatformActionSummary[]>,
+      Promise<IntegrationCredentialsVaultSummary[]> | Promise<[]>,
+    ] = [
+      this.getMonitoringSummary(companyId, connectors).then((result) => {
+        timings.monitoring = Date.now() - parallelStarted;
+        return result;
+      }),
+      this.listGatewayTraces(companyId, 20).then((result) => {
+        timings.traces = Date.now() - parallelStarted;
+        return result;
+      }),
+      this.listSyncConflicts(companyId, 25).then((result) => {
+        timings.conflicts = Date.now() - parallelStarted;
+        return result;
+      }),
+      this.listActions(companyId, 'pending_approval', 25).then((result) => {
+        timings.actions = Date.now() - parallelStarted;
+        return result;
+      }),
+      includeVault
+        ? this.listCredentialsVault(companyId, false).then((result) => {
+            timings.vault = Date.now() - parallelStarted;
+            return result;
+          })
+        : Promise.resolve([]),
+    ];
+
     const [monitoring, recentTraces, recentConflicts, pendingActions, vaultEntries] =
-      await Promise.all([
-        this.getMonitoringSummary(companyId, connectors).then((result) => {
-          timings.monitoring = Date.now() - parallelStarted;
-          return result;
-        }),
-        this.listGatewayTraces(companyId, 20).then((result) => {
-          timings.traces = Date.now() - parallelStarted;
-          return result;
-        }),
-        this.listSyncConflicts(companyId, 25).then((result) => {
-          timings.conflicts = Date.now() - parallelStarted;
-          return result;
-        }),
-        this.listActions(companyId, 'pending_approval', 25).then((result) => {
-          timings.actions = Date.now() - parallelStarted;
-          return result;
-        }),
-        this.listCredentialsVault(companyId).then((result) => {
-          timings.vault = Date.now() - parallelStarted;
-          return result;
-        }),
-      ]);
+      await Promise.all(parallelTasks);
     timings.parallelBatch = Date.now() - parallelStarted;
 
     const durationMs = Date.now() - startedAt;
@@ -451,8 +468,13 @@ export class IntegrationPlatformService {
     };
   }
 
-  async listCredentialsVault(companyId: string): Promise<IntegrationCredentialsVaultSummary[]> {
-    await this.deps.apiManagementService.syncCredentialMetadata(companyId);
+  async listCredentialsVault(
+    companyId: string,
+    syncMetadata = true,
+  ): Promise<IntegrationCredentialsVaultSummary[]> {
+    if (syncMetadata) {
+      await this.deps.apiManagementService.syncCredentialMetadata(companyId);
+    }
     const rows = await this.deps.db.query.integrationCredentialMetadata.findMany({
       where: eq(integrationCredentialMetadata.companyId, companyId),
     });

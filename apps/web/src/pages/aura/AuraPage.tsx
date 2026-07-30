@@ -28,7 +28,7 @@ export function AuraPage() {
   const jobId = searchParams.get('jobId') ?? undefined;
   const vehicleId = searchParams.get('vehicleId') ?? undefined;
   const schedulingView = searchParams.get('scheduling') === '1';
-  const [conversationMode, setConversationMode] = useState<'aura' | 'agent'>('agent');
+  const [conversationMode, setConversationMode] = useState<'aura' | 'agent'>('aura');
   const [selectedAgentKey, setSelectedAgentKey] = useState<AgentKey>('executive');
   const [registry, setRegistry] = useState(() =>
     accessToken ? (getCachedAgentRegistry(accessToken) ?? AGENT_REGISTRY) : AGENT_REGISTRY,
@@ -124,6 +124,11 @@ export function AuraPage() {
     [user],
   );
 
+  const canManageAgents = useMemo(
+    () => (user ? hasAnyPermission(user.permissions, ['agents:manage', 'platform:admin']) : false),
+    [user],
+  );
+
   const canViewIntelligence = useMemo(
     () =>
       user
@@ -148,42 +153,45 @@ export function AuraPage() {
     <div className="aura-page">
       <header className="aura-page__header">
         <div>
-          <p className="aura-page__eyebrow">{AI_NAME} Intelligence</p>
-          <h1 className="aura-page__title">Business Command Centre</h1>
+          <p className="aura-page__eyebrow">{AI_NAME}</p>
+          <h1 className="aura-page__title">AURA Chat</h1>
           <p className="aura-page__subtitle">
-            {user.companyName} · {user.firstName} {user.lastName}
+            Ask about finance, sales, operations, integrations and more — AURA selects the right
+            specialist automatically.
             {contextLabel ? ` · ${contextLabel}` : ''}
           </p>
         </div>
-        <div className="aura-page__controls">
-          <label className="aura-mode-toggle">
-            <span>Mode</span>
-            <select
-              className="titan-input"
-              value={conversationMode}
-              onChange={(event) => setConversationMode(event.target.value as 'aura' | 'agent')}
-            >
-              <option value="agent">Operational agent</option>
-              <option value="aura">General conversation</option>
-            </select>
-          </label>
-          {conversationMode === 'agent' ? (
+        {canManageAgents ? (
+          <div className="aura-page__controls">
             <label className="aura-mode-toggle">
-              <span>Agent</span>
+              <span>Advanced mode</span>
               <select
                 className="titan-input"
-                value={selectedAgentKey}
-                onChange={(event) => setSelectedAgentKey(event.target.value as AgentKey)}
+                value={conversationMode}
+                onChange={(event) => setConversationMode(event.target.value as 'aura' | 'agent')}
               >
-                {registry.map((entry) => (
-                  <option key={entry.agentKey} value={entry.agentKey}>
-                    {entry.name}
-                  </option>
-                ))}
+                <option value="aura">AURA (automatic routing)</option>
+                <option value="agent">Direct agent</option>
               </select>
             </label>
-          ) : null}
-        </div>
+            {conversationMode === 'agent' ? (
+              <label className="aura-mode-toggle">
+                <span>Agent</span>
+                <select
+                  className="titan-input"
+                  value={selectedAgentKey}
+                  onChange={(event) => setSelectedAgentKey(event.target.value as AgentKey)}
+                >
+                  {registry.map((entry) => (
+                    <option key={entry.agentKey} value={entry.agentKey}>
+                      {entry.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
+        ) : null}
       </header>
 
       {canViewIntelligence && accessToken ? (
@@ -224,8 +232,8 @@ export function AuraPage() {
           {error ? <p className="aura-chat__error">{error}</p> : null}
 
           {isLoading ? (
-            <LoadingState label="Loading AURA conversations" />
-          ) : conversationMode === 'agent' ? (
+            <LoadingState label="Loading conversations…" />
+          ) : conversationMode === 'agent' && canManageAgents ? (
             <>
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {lastRunTools.length > 0 ? (
@@ -256,7 +264,7 @@ export function AuraPage() {
             <AuraMessageList messages={messages} isSending={isSending} />
           )}
 
-          {conversationMode === 'agent' ? (
+          {conversationMode === 'agent' && canManageAgents ? (
             <AuraComposer
               onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
               disabled={isSending || aiProviderConfigured === false}
@@ -273,7 +281,7 @@ export function AuraPage() {
               placeholder={
                 aiProviderConfigured === false
                   ? 'Configure an AI provider to send messages'
-                  : undefined
+                  : 'Ask AURA about your business…'
               }
             />
           )}

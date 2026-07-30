@@ -77,17 +77,23 @@ export function createIntegrationPlatformRouter({
   );
   const requireWrite = requireAnyPermission('integrations:manage');
 
-  router.use(requireAuth);
-  router.use(requireGateway);
-  router.use(async (req, _res, next) => {
+  const ensureRoles = async (req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => {
     await teamService.ensureDefaultRoles(getAuth(req).companyId);
     next();
-  });
+  };
+
+  router.use(requireAuth);
+  router.use(requireGateway);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     const startedAt = Date.now();
     const { companyId } = getAuth(req);
-    const dashboard = await integrationPlatformService.getExecutiveDashboard(companyId);
+    const includeVault = req.query.includeVault === 'true';
+    const refreshConnectors = req.query.refreshConnectors === 'true';
+    const dashboard = await integrationPlatformService.getExecutiveDashboard(companyId, {
+      includeVault,
+      refreshConnectors,
+    });
     const durationMs = Date.now() - startedAt;
     res.setHeader('Server-Timing', `dashboard;dur=${durationMs}`);
     res.json({ data: { dashboard, meta: { durationMs } } });
@@ -99,7 +105,7 @@ export function createIntegrationPlatformRouter({
     res.json({ data: { connectors } });
   });
 
-  router.post('/connectors/sync', requireWrite, async (req, res) => {
+  router.post('/connectors/sync', requireWrite, ensureRoles, async (req, res) => {
     const { companyId } = getAuth(req);
     await connectorEngineService.ensureConnectors(companyId);
     await connectorEngineService.syncConnectorStatuses(companyId);
@@ -131,7 +137,7 @@ export function createIntegrationPlatformRouter({
     res.json({ data: { schedules } });
   });
 
-  router.put('/connectors/:connectorId/schedule', requireWrite, async (req, res) => {
+  router.put('/connectors/:connectorId/schedule', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     const parsed = scheduleSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -159,7 +165,7 @@ export function createIntegrationPlatformRouter({
     res.json({ data: { conflicts } });
   });
 
-  router.post('/conflicts/:conflictId/resolve', requireWrite, async (req, res) => {
+  router.post('/conflicts/:conflictId/resolve', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     try {
       const conflict = await integrationPlatformService.resolveSyncConflict(
@@ -178,7 +184,7 @@ export function createIntegrationPlatformRouter({
     res.json({ data: { actions } });
   });
 
-  router.post('/actions', requireWrite, async (req, res) => {
+  router.post('/actions', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -201,7 +207,7 @@ export function createIntegrationPlatformRouter({
     }
   });
 
-  router.patch('/actions/:actionId/status', requireWrite, async (req, res) => {
+  router.patch('/actions/:actionId/status', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     const parsed = z.object({ status: actionStatusSchema }).safeParse(req.body);
     if (!parsed.success) {
@@ -223,7 +229,7 @@ export function createIntegrationPlatformRouter({
     }
   });
 
-  router.post('/connectors/:connectorId/retry-sync', requireWrite, async (req, res) => {
+  router.post('/connectors/:connectorId/retry-sync', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     try {
       const result = await integrationPlatformService.retryConnectorSync(
@@ -242,7 +248,7 @@ export function createIntegrationPlatformRouter({
     res.json({ data: { diagnostics } });
   });
 
-  router.post('/diagnostics/run', requireWrite, async (req, res) => {
+  router.post('/diagnostics/run', requireWrite, ensureRoles, async (req, res) => {
     const auth = getAuth(req);
     const parsed = diagnosticSchema.safeParse(req.body);
     if (!parsed.success) {

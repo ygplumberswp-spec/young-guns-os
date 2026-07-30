@@ -9,6 +9,7 @@ import {
 } from '../../lib/enterprise-sales-intelligence-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
@@ -22,12 +23,14 @@ import {
 } from '../../features/sales-intelligence/utils';
 import {
   SALES_INTELLIGENCE_TAB_GROUPS,
+  SALES_INTELLIGENCE_ADVANCED_TAB_GROUPS,
   type SalesIntelligenceTab,
 } from '../../features/sales-intelligence/tabs';
 
 export function SalesIntelligencePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<SalesIntelligenceTab>('overview');
+  const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -100,20 +103,32 @@ export function SalesIntelligencePage() {
     );
   }
 
-  const tabs = SALES_INTELLIGENCE_TAB_GROUPS;
+  const tabs =
+    viewMode === 'advanced'
+      ? [...SALES_INTELLIGENCE_TAB_GROUPS, ...SALES_INTELLIGENCE_ADVANCED_TAB_GROUPS]
+      : SALES_INTELLIGENCE_TAB_GROUPS;
 
   return (
-    <div className="automation-page">
+    <div className="automation-page page-shell">
       <PageHeader
         title="Sales Intelligence"
-        description="Revenue operations, pipeline, forecasts, and customer growth intelligence. Real tenant data only — forecasts and recommendations are clearly labelled."
+        description="Pipeline, revenue and customer growth."
         actions={
           <div className="page-header-actions">
-            <Link href="/crm">
-              <Button variant="secondary">CRM</Button>
+            <SimpleAdvancedToggle
+              mode={viewMode}
+              onChange={setViewMode}
+              canAccessAdvanced={canWrite}
+            />
+            <Link href="/leads">
+              <Button variant="secondary" size="sm">
+                Add a lead
+              </Button>
             </Link>
             <Link href="/finance/quotes">
-              <Button variant="secondary">Quotes</Button>
+              <Button variant="secondary" size="sm">
+                Create a quote
+              </Button>
             </Link>
           </div>
         }
@@ -179,7 +194,7 @@ export function SalesIntelligencePage() {
                     )
                   }
                 >
-                  Capture Analytics
+                  Refresh analytics
                 </Button>
                 <Button
                   variant="secondary"
@@ -191,7 +206,7 @@ export function SalesIntelligencePage() {
                     )
                   }
                 >
-                  Sync Alerts
+                  Review sync issues
                 </Button>
               </div>
             ) : null}

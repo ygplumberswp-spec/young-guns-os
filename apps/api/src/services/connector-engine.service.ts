@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type {
   IntegrationConnectorAuthType,
   IntegrationConnectorCategory,
@@ -122,20 +122,18 @@ export class ConnectorEngineService {
 
   async ensureConnectors(companyId: string): Promise<void> {
     const definitions = this.getConnectorDefinitions();
+    const existing = await this.db.query.integrationConnectors.findMany({
+      where: eq(integrationConnectors.companyId, companyId),
+    });
+    const existingKeys = new Set(existing.map((row) => row.connectorKey));
+    const missing = definitions.filter((definition) => !existingKeys.has(definition.connectorKey));
 
-    for (const definition of definitions) {
-      const existing = await this.db.query.integrationConnectors.findFirst({
-        where: and(
-          eq(integrationConnectors.companyId, companyId),
-          eq(integrationConnectors.connectorKey, definition.connectorKey),
-        ),
-      });
+    if (missing.length === 0) {
+      return;
+    }
 
-      if (existing) {
-        continue;
-      }
-
-      await this.db.insert(integrationConnectors).values({
+    await this.db.insert(integrationConnectors).values(
+      missing.map((definition) => ({
         companyId,
         connectorKey: definition.connectorKey,
         provider: definition.provider as IntegrationProvider,
@@ -145,11 +143,9 @@ export class ConnectorEngineService {
         syncMode: definition.syncMode,
         supportsWebhooks: definition.supportsWebhooks,
         supportsScheduledSync: definition.supportsScheduledSync,
-        status: 'disconnected',
-      });
-    }
-
-    await this.syncConnectorStatuses(companyId);
+        status: 'disconnected' as const,
+      })),
+    );
   }
 
   async syncConnectorStatuses(companyId: string): Promise<void> {
@@ -171,62 +167,74 @@ export class ConnectorEngineService {
     const connectionByProvider = new Map(connections.map((row) => [row.provider, row]));
     const whatsappConnection = whatsapp[0];
 
-    for (const connector of connectors) {
-      let status: 'disconnected' | 'pending' | 'connected' | 'error' = 'disconnected';
-      let connectionId: string | null = null;
-      let lastSyncAt = connector.lastSyncAt;
-      let lastError = connector.lastError;
+    await Promise.all(
+      connectors.map(async (connector) => {
+        let status: 'disconnected' | 'pending' | 'connected' | 'error' = 'disconnected';
+        let connectionId: string | null = null;
+        let lastSyncAt = connector.lastSyncAt;
+        let lastError = connector.lastError;
 
-      if (connector.connectorKey === 'whatsapp') {
-        if (whatsappConnection) {
-          status =
-            whatsappConnection.status === 'connected'
-              ? 'connected'
-              : whatsappConnection.status === 'error'
-                ? 'error'
-                : 'pending';
-          lastSyncAt = whatsappConnection.connectedAt ?? whatsappConnection.updatedAt ?? lastSyncAt;
-          lastError = whatsappConnection.lastError ?? lastError;
-        }
-      } else if (connector.connectorKey === 'openai' || connector.connectorKey === 'gemini') {
-        const providerKey = connector.connectorKey === 'gemini' ? 'google_gemini' : 'openai';
-        const aiRow = aiProviderRows.find((row) => row.providerKey === providerKey);
-        if (aiRow) {
-          status = aiRow.status === 'active' ? 'connected' : aiRow.status === 'degraded' ? 'error' : 'disconnected';
-        }
-      } else {
-        const connection = connectionByProvider.get(connector.provider as IntegrationProvider);
-        if (connection) {
-          connectionId = connection.id;
-          status =
-            connection.status === 'connected'
-              ? 'connected'
-              : connection.status === 'error'
-                ? 'error'
-                : connection.status === 'pending'
-                  ? 'pending'
+        if (connector.connectorKey === 'whatsapp') {
+          if (whatsappConnection) {
+            status =
+              whatsappConnection.status === 'connected'
+                ? 'connected'
+                : whatsappConnection.status === 'error'
+                  ? 'error'
+                  : 'pending';
+            lastSyncAt = whatsappConnection.connectedAt ?? whatsappConnection.updatedAt ?? lastSyncAt;
+            lastError = whatsappConnection.lastError ?? lastError;
+          }
+        } else if (connector.connectorKey === 'openai' || connector.connectorKey === 'gemini') {
+          const providerKey = connector.connectorKey === 'gemini' ? 'google_gemini' : 'openai';
+          const aiRow = aiProviderRows.find((row) => row.providerKey === providerKey);
+          if (aiRow) {
+            status =
+              aiRow.status === 'active'
+                ? 'connected'
+                : aiRow.status === 'degraded'
+                  ? 'error'
                   : 'disconnected';
-          lastSyncAt = connection.lastSyncAt ?? lastSyncAt;
-          lastError = connection.lastError ?? lastError;
+          }
+        } else {
+          const connection = connectionByProvider.get(connector.provider as IntegrationProvider);
+          if (connection) {
+            connectionId = connection.id;
+            status =
+              connection.status === 'connected'
+                ? 'connected'
+                : connection.status === 'error'
+                  ? 'error'
+                  : connection.status === 'pending'
+                    ? 'pending'
+                    : 'disconnected';
+            lastSyncAt = connection.lastSyncAt ?? lastSyncAt;
+            lastError = connection.lastError ?? lastError;
+          }
         }
-      }
 
-      await this.db
-        .update(integrationConnectors)
-        .set({
-          status,
-          connectionId,
-          lastSyncAt,
-          lastError,
-          updatedAt: new Date(),
-        })
-        .where(eq(integrationConnectors.id, connector.id));
-    }
+        await this.db
+          .update(integrationConnectors)
+          .set({
+            status,
+            connectionId,
+            lastSyncAt,
+            lastError,
+            updatedAt: new Date(),
+          })
+          .where(eq(integrationConnectors.id, connector.id));
+      }),
+    );
   }
 
-  async listConnectors(companyId: string): Promise<IntegrationConnectorSummary[]> {
+  async listConnectors(
+    companyId: string,
+    options?: { refreshStatus?: boolean },
+  ): Promise<IntegrationConnectorSummary[]> {
     await this.ensureConnectors(companyId);
-    await this.syncConnectorStatuses(companyId);
+    if (options?.refreshStatus !== false) {
+      await this.syncConnectorStatuses(companyId);
+    }
 
     const rows = await this.db.query.integrationConnectors.findMany({
       where: eq(integrationConnectors.companyId, companyId),

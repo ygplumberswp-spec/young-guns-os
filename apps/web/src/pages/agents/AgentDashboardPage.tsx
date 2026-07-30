@@ -1,15 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
-import type { AgentProfileSummary, AgentRegistryEntry, AgentsStats } from '@titan/shared';
-import { ApiClientError } from '../../lib/api-client';
+import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import type { AgentProfileSummary, AgentRegistryEntry } from '@titan/shared';
+import { hasAnyPermission } from '@titan/auth/browser';
 import {
   fetchAgentProfiles,
   fetchAgentRegistry,
   fetchAgentsStats,
 } from '../../lib/agents-api';
+import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
 import { useAuth } from '../../lib/auth-context';
+import { useCachedQuery } from '../../lib/use-cached-query';
+import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { AgentsNav } from '../../features/agents/AgentsNav';
+import {
+  CAPABILITY_GROUPS,
+  formatCapabilityStatus,
+  type CapabilityStatus,
+} from '../../features/agents/capability-groups';
 import {
   canAccessAgents,
   canManageAgents,
@@ -17,173 +25,280 @@ import {
   formatAgentProfileStatus,
 } from '../../features/agents/utils';
 
-function RegistryCard({
-  entry,
-  configured,
-  canWrite,
+function resolveGroupStatus(
+  groupAgentKeys: string[],
+  configuredKeys: Set<string>,
+  registry: AgentRegistryEntry[],
+  aiConfigured: boolean,
+): CapabilityStatus {
+  const entries = registry.filter((entry) => groupAgentKeys.includes(entry.agentKey));
+  if (entries.length === 0) {
+    return 'unavailable';
+  }
+
+  const configuredCount = entries.filter((entry) => configuredKeys.has(entry.agentKey)).length;
+  if (configuredCount === entries.length) {
+    return 'active';
+  }
+
+  if (!aiConfigured) {
+    return 'provider_required';
+  }
+
+  if (configuredCount > 0) {
+    return 'active';
+  }
+
+  return 'needs_setup';
+}
+
+function CapabilityGroupCard({
+  label,
+  description,
+  status,
+  canManage,
 }: {
-  entry: AgentRegistryEntry;
-  configured: boolean;
-  canWrite: boolean;
+  label: string;
+  description: string;
+  status: CapabilityStatus;
+  canManage: boolean;
 }) {
   return (
-    <article className="agents-registry-card">
-      <div className="agents-registry-card__header">
-        <h3>{entry.name}</h3>
-        {entry.foundationOnly ? <span className="agents-badge">Foundation only</span> : null}
+    <article className="capability-group-card">
+      <div className="capability-group-card__header">
+        <h3>{label}</h3>
+        <span className={`status-pill status-pill--${status}`}>{formatCapabilityStatus(status)}</span>
       </div>
-      <p className="agents-registry-card__description">{entry.description}</p>
-      <p className="agents-registry-card__meta">
-        Focus: {entry.focusAreas.join(' · ')}
-      </p>
-      <div className="agents-registry-card__actions">
-        {configured ? (
-          <span className="page-muted">Configured</span>
-        ) : canWrite ? (
-          <Link href={`/aura/agents/new?agentKey=${entry.agentKey}`}>
-            <Button size="sm">Configure profile</Button>
+      <p className="page-muted">{description}</p>
+      {canManage ? (
+        <div className="panel-actions">
+          <Link href="/aura/agents/new">
+            <Button size="sm" variant="secondary">
+              Manage capability
+            </Button>
           </Link>
-        ) : (
-          <span className="page-muted">Not configured</span>
-        )}
-      </div>
+        </div>
+      ) : null}
     </article>
   );
 }
 
 export function AgentDashboardPage() {
   const { accessToken, user } = useAuth();
-  const [stats, setStats] = useState<AgentsStats | null>(null);
-  const [registry, setRegistry] = useState<AgentRegistryEntry[]>([]);
-  const [profiles, setProfiles] = useState<AgentProfileSummary[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const canView = useMemo(() => (user ? canAccessAgents(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageAgents(user.permissions) : false), [user]);
+  const canManage = useMemo(() => (user ? canManageAgents(user.permissions) : false), [user]);
+  const canAdvanced = useMemo(
+    () =>
+      user
+        ? hasAnyPermission(user.permissions, ['agents:manage', 'platform:admin'])
+        : false,
+    [user],
+  );
+
+  const { data: stats, isLoading: statsLoading } = useCachedQuery({
+    queryKey: 'agents/stats',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchAgentsStats(accessToken!),
+  });
+
+  const { data: registry = [], isLoading: registryLoading } = useCachedQuery({
+    queryKey: 'agents/registry',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchAgentRegistry(accessToken!),
+  });
+
+  const { data: profiles = [], isLoading: profilesLoading } = useCachedQuery({
+    queryKey: 'agents/profiles',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchAgentProfiles(accessToken!),
+  });
+
+  const { data: aiProviders = [] } = useCachedQuery({
+    queryKey: 'agents/ai-providers',
+    accessToken,
+    enabled: canView,
+    staleTimeMs: 120_000,
+    fetcher: async () => fetchAiProviders(accessToken!),
+  });
+
+  const [error] = useState<string | null>(null);
 
   const configuredKeys = useMemo(
     () => new Set(profiles.map((profile) => profile.agentKey)),
     [profiles],
   );
 
-  useEffect(() => {
-    let cancelled = false;
+  const aiConfigured = useMemo(
+    () => aiProviders.some((provider) => provider.isConfigured && provider.credentialsConfigured),
+    [aiProviders],
+  );
 
-    async function loadDashboard() {
-      if (!accessToken || !canView) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const [statsData, registryData, profilesData] = await Promise.all([
-          fetchAgentsStats(accessToken),
-          fetchAgentRegistry(accessToken),
-          fetchAgentProfiles(accessToken),
-        ]);
-
-        if (!cancelled) {
-          setStats(statsData);
-          setRegistry(registryData);
-          setProfiles(profilesData);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load agent dashboard');
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
-    }
-
-    void loadDashboard();
-    return () => { cancelled = true; };
-  }, [accessToken, canView]);
+  const isLoading = statsLoading || registryLoading || profilesLoading;
 
   if (!canView) {
     return (
-      <div className="agents-page">
-        <PageHeader title="AURA Agents" description="You do not have permission to view agents." />
+      <div className="agents-page page-shell">
+        <PageHeader title="AURA Capabilities" description="You do not have permission to view AURA capabilities." />
       </div>
     );
   }
 
+  const activeGroups = CAPABILITY_GROUPS.filter(
+    (group) => resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'active',
+  ).length;
+  const needsSetupGroups = CAPABILITY_GROUPS.filter(
+    (group) =>
+      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'needs_setup' ||
+      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'provider_required',
+  ).length;
+
   return (
-    <div className="agents-page">
+    <div className="agents-page page-shell">
       <PageHeader
-        title="AURA Agents"
-        description="Configure specialist agent profiles, permissions, and tool grants for your tenant."
+        title="AURA Capabilities"
+        description="AURA coordinates specialist intelligence across your business."
+        actions={
+          <div className="page-header-actions">
+            <SimpleAdvancedToggle
+              mode={viewMode}
+              onChange={setViewMode}
+              canAccessAdvanced={canAdvanced}
+            />
+            <Link href="/aura">
+              <Button variant="secondary" size="sm">
+                Open AURA Chat
+              </Button>
+            </Link>
+          </div>
+        }
       />
       <AgentsNav />
 
-      {isLoading ? <p className="page-muted">Loading agent dashboard…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
+      {isLoading && !stats ? <LoadingState label="Loading AURA capabilities…" /> : null}
 
-      {!isLoading && !error && stats ? (
-        <>
-          <div className="agents-stats-grid">
-            <Panel title="Available agents">{stats.availableAgentCount}</Panel>
+      {stats ? (
+        <section className="capability-summary">
+          <div className="stat-grid">
+            <Panel title="AURA status">{aiConfigured ? 'Ready' : 'Provider required'}</Panel>
+            <Panel title="AI provider">{aiConfigured ? 'Configured' : 'Not configured'}</Panel>
+            <Panel title="Active capabilities">{activeGroups}</Panel>
+            <Panel title="Needs setup">{needsSetupGroups}</Panel>
+            <Panel title="Approval mode">Ask before external actions</Panel>
             <Panel title="Configured profiles">{stats.configuredProfileCount}</Panel>
-            <Panel title="Active profiles">{stats.activeProfileCount}</Panel>
-            <Panel title="Execution records">{stats.executionCount}</Panel>
           </div>
+        </section>
+      ) : null}
 
-          <Panel title="Agent registry">
-            <div className="agents-registry-grid">
-              {registry.map((entry) => (
-                <RegistryCard
-                  key={entry.agentKey}
-                  entry={entry}
-                  configured={configuredKeys.has(entry.agentKey)}
-                  canWrite={canWrite}
-                />
-              ))}
+      {!isLoading ? (
+        <section className="capability-groups">
+          <h2 className="integrations-section__title">Capability groups</h2>
+          <div className="capability-groups-grid">
+            {CAPABILITY_GROUPS.map((group) => (
+              <CapabilityGroupCard
+                key={group.id}
+                label={group.label}
+                description={group.description}
+                status={resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured)}
+                canManage={canManage}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {!aiConfigured ? (
+        <EmptyState
+          title="AI provider not configured"
+          description="Configure an AI provider before AURA can coordinate specialist capabilities."
+          action={
+            <Link href="/integrations">
+              <Button variant="secondary">Integration settings</Button>
+            </Link>
+          }
+        />
+      ) : null}
+
+      {viewMode === 'advanced' && canAdvanced ? (
+        <section className="integrations-advanced">
+          <button
+            type="button"
+            className="integrations-advanced__toggle"
+            onClick={() => setAdvancedOpen((open) => !open)}
+            aria-expanded={advancedOpen}
+          >
+            {advancedOpen ? 'Hide' : 'Show'} Advanced Administration
+          </button>
+
+          {advancedOpen ? (
+            <div className="integrations-advanced__content">
+              <Panel title="Agent registry">
+                <p className="page-muted">
+                  Individual agent profiles, tool grants and execution rules. AURA maintains safe
+                  defaults — adjust only when required.
+                </p>
+                <div className="panel-actions">
+                  <Link href="/aura/agents/new">
+                    <Button size="sm" variant="secondary">
+                      Review and optimise agent configuration
+                    </Button>
+                  </Link>
+                </div>
+                <div className="agents-registry-grid agents-registry-grid--compact">
+                  {registry.map((entry) => (
+                    <article key={entry.agentKey} className="agents-registry-card">
+                      <h3>{entry.name}</h3>
+                      <p className="page-muted">{entry.description}</p>
+                      <p className="page-muted">
+                        {configuredKeys.has(entry.agentKey) ? 'Configured' : 'Not configured'}
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </Panel>
+
+              {profiles.length > 0 ? (
+                <Panel title="Configured profiles">
+                  <div className="agents-table-wrap">
+                    <table className="agents-table">
+                      <thead>
+                        <tr>
+                          <th>Profile</th>
+                          <th>Agent type</th>
+                          <th>Status</th>
+                          <th>Tools</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {profiles.map((profile: AgentProfileSummary) => (
+                          <tr key={profile.id}>
+                            <td>
+                              <Link href={`/aura/agents/${profile.id}`} className="agents-link">
+                                {profile.name}
+                              </Link>
+                            </td>
+                            <td>{formatAgentKey(profile.agentKey)}</td>
+                            <td>{formatAgentProfileStatus(profile.status)}</td>
+                            <td>{profile.enabledToolCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Panel>
+              ) : null}
             </div>
-          </Panel>
-
-          {profiles.length === 0 ? (
-            <EmptyState
-              title="No agent profiles configured"
-              description="Choose an agent type from the registry and create a profile with permissions and tools."
-            />
-          ) : (
-            <Panel title="Configured profiles">
-              <div className="agents-table-wrap">
-                <table className="agents-table">
-                  <thead>
-                    <tr>
-                      <th>Profile</th>
-                      <th>Agent type</th>
-                      <th>Status</th>
-                      <th>Permissions</th>
-                      <th>Tools</th>
-                      <th>Executions</th>
-                      <th>Updated</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {profiles.map((profile) => (
-                      <tr key={profile.id}>
-                        <td>
-                          <Link href={`/aura/agents/${profile.id}`} className="agents-link">
-                            {profile.name}
-                          </Link>
-                        </td>
-                        <td>{formatAgentKey(profile.agentKey)}</td>
-                        <td>{formatAgentProfileStatus(profile.status)}</td>
-                        <td>{profile.permissionCount}</td>
-                        <td>{profile.enabledToolCount}</td>
-                        <td>{profile.executionCount}</td>
-                        <td>{new Date(profile.updatedAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </Panel>
-          )}
-        </>
+          ) : null}
+        </section>
       ) : null}
     </div>
   );

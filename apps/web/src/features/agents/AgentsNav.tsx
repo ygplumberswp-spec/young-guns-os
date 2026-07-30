@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 const tabs = [
   {
     href: '/aura/agents',
-    label: 'Dashboard',
+    label: 'Capabilities',
     match: (location: string) =>
       location === '/aura/agents' ||
       (location.startsWith('/aura/agents/') &&

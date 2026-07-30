@@ -9,57 +9,54 @@ export const SALES_INTELLIGENCE_TAB_GROUPS: TabGroup[] = [
   {
     id: 'pipeline',
     label: 'Pipeline',
-    tabs: [
-      { id: 'leads', label: 'Leads' },
-      { id: 'opportunities', label: 'Opportunities' },
-      { id: 'pipelines', label: 'Pipelines' },
-      { id: 'activities', label: 'Activities' },
-      { id: 'quotes', label: 'Quotes & Proposals' },
-      { id: 'forecasts', label: 'Forecasts' },
-    ],
+    tabs: [{ id: 'opportunities', label: 'Pipeline' }],
+  },
+  {
+    id: 'leads',
+    label: 'Leads',
+    tabs: [{ id: 'leads', label: 'Leads' }],
+  },
+  {
+    id: 'quotes',
+    label: 'Quotes',
+    tabs: [{ id: 'quotes', label: 'Quotes' }],
   },
   {
     id: 'accounts',
     label: 'Accounts',
-    tabs: [
-      { id: 'accounts', label: 'Accounts' },
-      { id: 'renewals', label: 'Renewals' },
-    ],
+    tabs: [{ id: 'accounts', label: 'Accounts' }],
   },
   {
-    id: 'revenue',
-    label: 'Revenue',
-    tabs: [
-      { id: 'pricing', label: 'Pricing & Discounts' },
-      { id: 'commissions', label: 'Commissions' },
-      { id: 'targets', label: 'Targets' },
-      { id: 'leakage', label: 'Revenue Leakage' },
-    ],
+    id: 'forecast',
+    label: 'Forecast',
+    tabs: [{ id: 'forecasts', label: 'Forecast' }],
   },
   {
-    id: 'growth',
-    label: 'Growth',
-    tabs: [
-      { id: 'growth', label: 'Customer Growth' },
-      { id: 'retention', label: 'Retention' },
-      { id: 'marketing', label: 'Marketing Attribution' },
-      { id: 'partners', label: 'Partners & Referrals' },
-      { id: 'tenders', label: 'Tenders' },
-      { id: 'winloss', label: 'Win/Loss' },
-    ],
+    id: 'recommendations',
+    label: 'Recommendations',
+    tabs: [{ id: 'assistant', label: 'Recommendations' }],
   },
-  {
-    id: 'intelligence',
-    label: 'Intelligence',
-    tabs: [
-      { id: 'alerts', label: 'Alerts' },
-      { id: 'assistant', label: 'AI Assistant' },
-    ],
-  },
+];
+
+export const SALES_INTELLIGENCE_ADVANCED_TAB_GROUPS: TabGroup[] = [
   {
     id: 'administration',
     label: 'Administration',
     tabs: [
+      { id: 'pipelines', label: 'Pipelines' },
+      { id: 'activities', label: 'Activities' },
+      { id: 'renewals', label: 'Renewals' },
+      { id: 'pricing', label: 'Pricing' },
+      { id: 'commissions', label: 'Commissions' },
+      { id: 'targets', label: 'Targets' },
+      { id: 'leakage', label: 'Revenue Leakage' },
+      { id: 'growth', label: 'Customer Growth' },
+      { id: 'retention', label: 'Retention' },
+      { id: 'marketing', label: 'Marketing Attribution' },
+      { id: 'partners', label: 'Partners' },
+      { id: 'tenders', label: 'Tenders' },
+      { id: 'winloss', label: 'Win/Loss' },
+      { id: 'alerts', label: 'Alerts' },
       { id: 'providers', label: 'Providers' },
       { id: 'settings', label: 'Settings' },
     ],

@@ -9,6 +9,7 @@ import {
 } from '../../lib/enterprise-marketing-intelligence-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
@@ -22,12 +23,14 @@ import {
 } from '../../features/marketing-intelligence/utils';
 import {
   MARKETING_INTELLIGENCE_TAB_GROUPS,
+  MARKETING_INTELLIGENCE_ADVANCED_TAB_GROUPS,
   type MarketingIntelligenceTab,
 } from '../../features/marketing-intelligence/tabs';
 
 export function MarketingIntelligencePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<MarketingIntelligenceTab>('overview');
+  const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -100,17 +103,27 @@ export function MarketingIntelligencePage() {
     );
   }
 
-  const tabs = MARKETING_INTELLIGENCE_TAB_GROUPS;
+  const tabs =
+    viewMode === 'advanced'
+      ? [...MARKETING_INTELLIGENCE_TAB_GROUPS, ...MARKETING_INTELLIGENCE_ADVANCED_TAB_GROUPS]
+      : MARKETING_INTELLIGENCE_TAB_GROUPS;
 
   return (
-    <div className="automation-page">
+    <div className="automation-page page-shell">
       <PageHeader
         title="Marketing Intelligence"
-        description="Brand growth, campaign operations, and marketing analytics. Real tenant data only — AI content and recommendations require approval before publication."
+        description="Campaigns, content, audiences and performance."
         actions={
           <div className="page-header-actions">
-            <Link href="/sales-intelligence">
-              <Button variant="secondary">Sales Intelligence</Button>
+            <SimpleAdvancedToggle
+              mode={viewMode}
+              onChange={setViewMode}
+              canAccessAdvanced={canWrite}
+            />
+            <Link href="/aura">
+              <Button variant="secondary" size="sm">
+                Ask AURA
+              </Button>
             </Link>
           </div>
         }
@@ -166,7 +179,7 @@ export function MarketingIntelligencePage() {
                     )
                   }
                 >
-                  Capture Analytics
+                  Refresh analytics
                 </Button>
                 <Button
                   variant="secondary"
@@ -178,7 +191,7 @@ export function MarketingIntelligencePage() {
                     )
                   }
                 >
-                  Sync Alerts
+                  Review sync issues
                 </Button>
               </div>
             ) : null}
