@@ -12,6 +12,9 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   INTEGRATIONS_ENCRYPTION_KEY: z.string().min(32).optional(),
   API_PUBLIC_URL: z.string().url().optional(),
+  XERO_CLIENT_ID: z.string().trim().min(1).optional(),
+  XERO_CLIENT_SECRET: z.string().min(1).optional(),
+  XERO_REDIRECT_URI: z.string().url().optional(),
   SEED_DEV: z
     .enum(['true', 'false'])
     .default('false')
@@ -42,3 +45,32 @@ export function loadAuraEnvConfig() {
 }
 
 export const API_VERSION = '0.2.0';
+
+export type XeroOAuthEnvConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  configured: true;
+};
+
+export function resolveXeroOAuthConfig(
+  env: Env,
+  apiPublicUrl: string,
+): XeroOAuthEnvConfig | { configured: false } {
+  const clientId = env.XERO_CLIENT_ID?.trim();
+  const clientSecret = env.XERO_CLIENT_SECRET;
+  const redirectUri =
+    env.XERO_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/integrations/xero/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    clientId,
+    clientSecret,
+    redirectUri,
+  };
+}

@@ -20,7 +20,7 @@ import {
   xeroQuoteMappings,
   xeroSyncLogs,
 } from '@titan/db';
-import { decryptXeroCredentials } from '../lib/crypto.js';
+import { decryptXeroCredentials, isXeroOAuthCredentials } from '../lib/crypto.js';
 import {
   amountToCents,
   mapXeroInvoiceStatus,
@@ -28,6 +28,7 @@ import {
   XeroError,
 } from '../lib/xero.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
+import type { XeroOAuthService } from './xero-oauth.service.js';
 
 export class XeroSyncError extends Error {
   constructor(
@@ -43,6 +44,7 @@ type XeroSyncServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
   hubService?: IntegrationHubService;
+  xeroOAuthService?: XeroOAuthService;
 };
 
 type SyncContext = {
@@ -57,10 +59,16 @@ export class XeroSyncService {
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly hubService?: IntegrationHubService,
+    private readonly xeroOAuthService?: XeroOAuthService,
   ) {}
 
   static create(deps: XeroSyncServiceDeps): XeroSyncService {
-    return new XeroSyncService(deps.db, deps.encryptionKey, deps.hubService);
+    return new XeroSyncService(
+      deps.db,
+      deps.encryptionKey,
+      deps.hubService,
+      deps.xeroOAuthService,
+    );
   }
 
   async getSyncStatus(companyId: string): Promise<XeroSyncStatusResponse> {
@@ -705,16 +713,26 @@ export class XeroSyncService {
       throw new XeroSyncError('CONFIG_ERROR', 'Xero tenant ID is missing');
     }
 
+    if (!this.xeroOAuthService) {
+      throw new XeroSyncError(
+        'NOT_CONNECTED',
+        'Xero OAuth is not configured. Sign in with Xero before syncing.',
+      );
+    }
+
     const credentials = decryptXeroCredentials(connection.credentialsEncrypted, this.encryptionKey!);
+
+    if (!isXeroOAuthCredentials(credentials)) {
+      throw new XeroSyncError(
+        'RECONNECT_REQUIRED',
+        'Reconnect Xero using Sign in with Xero before syncing.',
+      );
+    }
 
     return {
       companyId,
       connection,
-      client: new XeroClient({
-        clientId: credentials.clientId,
-        clientSecret: credentials.clientSecret,
-        tenantId,
-      }),
+      client: await this.xeroOAuthService.createClient(companyId, connection),
     };
   }
 

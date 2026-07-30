@@ -631,6 +631,13 @@
       "when": 1754100000000,
       "tag": "0091_ai_usage_records_company_recorded_at_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1754103600000,
+      "tag": "0092_integration_oauth_states",
+      "breakpoints": true
     }
   ]
 }

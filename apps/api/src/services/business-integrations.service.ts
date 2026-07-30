@@ -4,7 +4,6 @@ import type {
   EmailSyncResult,
   IntegrationProvider,
   SaveEmailConnectionRequest,
-  SaveXeroConnectionRequest,
   SaveYocoConnectionRequest,
   XeroConnectionSummary,
   XeroSyncResult,
@@ -16,15 +15,14 @@ import { integrationConnections } from '@titan/db';
 import { EmailSmtpClient, EmailSmtpError } from '../lib/email-smtp.client.js';
 import {
   decryptEmailCredentials,
-  decryptXeroCredentials,
   decryptYocoCredentials,
   encryptEmailCredentials,
-  encryptXeroCredentials,
   encryptYocoCredentials,
 } from '../lib/crypto.js';
-import { XeroClient, XeroError } from '../lib/xero.client.js';
+import { XeroError } from '../lib/xero.client.js';
 import { YocoClient, YocoError } from '../lib/yoco.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
+import type { XeroOAuthService } from './xero-oauth.service.js';
 
 export class BusinessIntegrationsError extends Error {
   constructor(
@@ -40,6 +38,7 @@ type BusinessIntegrationsServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
   hubService?: IntegrationHubService;
+  xeroOAuthService?: XeroOAuthService;
 };
 
 export class BusinessIntegrationsService {
@@ -47,99 +46,53 @@ export class BusinessIntegrationsService {
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly hubService?: IntegrationHubService,
+    private readonly xeroOAuthService?: XeroOAuthService,
   ) {}
 
   static create(deps: BusinessIntegrationsServiceDeps): BusinessIntegrationsService {
-    return new BusinessIntegrationsService(deps.db, deps.encryptionKey, deps.hubService);
+    return new BusinessIntegrationsService(
+      deps.db,
+      deps.encryptionKey,
+      deps.hubService,
+      deps.xeroOAuthService,
+    );
   }
 
   async getXeroConnection(companyId: string): Promise<XeroConnectionSummary> {
+    if (this.xeroOAuthService) {
+      return this.xeroOAuthService.getXeroConnection(companyId);
+    }
+
     const connection = await this.getOrCreateConnection(companyId, 'xero');
-    const credentials = this.tryDecryptXeroCredentials(connection.credentialsEncrypted);
 
     return {
       provider: 'xero',
       status: connection.status,
-      clientIdHint: credentials?.clientId ? maskSecret(credentials.clientId) : null,
-      tenantId: connection.config.tenantId ?? null,
+      oauthConfigured: false,
       organisationName: connection.config.organisationName ?? null,
       organisationId: connection.config.organisationId ?? null,
       baseCurrency: connection.config.baseCurrency ?? null,
       hasCredentials: Boolean(connection.credentialsEncrypted),
+      reconnectRequired: Boolean(connection.credentialsEncrypted),
+      lastVerifiedAt: connection.config.lastVerifiedAt ?? null,
       lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
       lastError: connection.lastError,
       connectedAt: connection.connectedAt?.toISOString() ?? null,
     };
   }
 
-  async saveXeroConnection(
-    companyId: string,
-    input: SaveXeroConnectionRequest,
-  ): Promise<XeroConnectionSummary> {
-    this.ensureEncryptionKey();
-
-    const clientId = input.clientId.trim();
-    const clientSecret = input.clientSecret;
-    const tenantId = input.tenantId.trim();
-
-    if (!clientId || !clientSecret || !tenantId) {
-      throw new BusinessIntegrationsError(
-        'VALIDATION_ERROR',
-        'Xero client ID, client secret, and tenant ID are required',
-      );
-    }
-
-    const connection = await this.getOrCreateConnection(companyId, 'xero');
-    const client = new XeroClient({ clientId, clientSecret, tenantId });
-
-    await this.db
-      .update(integrationConnections)
-      .set({
-        status: 'pending',
-        config: { tenantId },
-        lastError: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(integrationConnections.id, connection.id));
-
-    try {
-      const organisation = await client.testConnection();
-
-      await this.db
-        .update(integrationConnections)
-        .set({
-          status: 'connected',
-          credentialsEncrypted: encryptXeroCredentials({ clientId, clientSecret }, this.encryptionKey!),
-          config: {
-            tenantId,
-            organisationName: organisation.name,
-            organisationId: organisation.organisationId,
-            baseCurrency: organisation.baseCurrency ?? undefined,
-          },
-          connectedAt: new Date(),
-          lastError: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(integrationConnections.id, connection.id));
-    } catch (error) {
-      const message = mapXeroError(error);
-
-      await this.db
-        .update(integrationConnections)
-        .set({
-          status: 'error',
-          lastError: message,
-          updatedAt: new Date(),
-        })
-        .where(eq(integrationConnections.id, connection.id));
-
-      throw new BusinessIntegrationsError('CONNECTION_FAILED', message);
-    }
-
-    return this.getXeroConnection(companyId);
+  async saveXeroConnection(_companyId: string): Promise<XeroConnectionSummary> {
+    throw new BusinessIntegrationsError(
+      'DEPRECATED',
+      'Manual Xero credentials are no longer supported. Sign in with Xero instead.',
+    );
   }
 
-  async disconnectXero(companyId: string): Promise<XeroConnectionSummary> {
+  async disconnectXero(companyId: string, userId: string): Promise<XeroConnectionSummary> {
+    if (this.xeroOAuthService) {
+      return this.xeroOAuthService.disconnect(companyId, userId);
+    }
+
     await this.disconnectProvider(companyId, 'xero');
     return this.getXeroConnection(companyId);
   }
@@ -154,19 +107,21 @@ export class BusinessIntegrationsService {
       syncScope: 'organisation',
     });
 
-    const credentials = decryptXeroCredentials(connection.credentialsEncrypted!, this.encryptionKey!);
     const tenantId = connection.config.tenantId;
 
     if (!tenantId) {
       throw new BusinessIntegrationsError('CONFIG_ERROR', 'Xero tenant ID is missing from connection config');
     }
 
+    if (!this.xeroOAuthService) {
+      throw new BusinessIntegrationsError(
+        'NOT_CONNECTED',
+        'Xero OAuth is not configured. Sign in with Xero before verifying the connection.',
+      );
+    }
+
     try {
-      const client = new XeroClient({
-        clientId: credentials.clientId,
-        clientSecret: credentials.clientSecret,
-        tenantId,
-      });
+      const client = await this.xeroOAuthService.createClient(companyId, connection);
       const organisation = await client.fetchOrganisation();
       const syncedAt = new Date();
 
@@ -179,6 +134,7 @@ export class BusinessIntegrationsService {
             organisationName: organisation.name,
             organisationId: organisation.organisationId,
             baseCurrency: organisation.baseCurrency ?? undefined,
+            lastVerifiedAt: syncedAt.toISOString(),
           },
           lastSyncAt: syncedAt,
           lastError: null,
@@ -624,18 +580,6 @@ export class BusinessIntegrationsService {
         'ENCRYPTION_NOT_CONFIGURED',
         'INTEGRATIONS_ENCRYPTION_KEY must be configured before storing integration credentials',
       );
-    }
-  }
-
-  private tryDecryptXeroCredentials(payload: string | null) {
-    if (!payload || !this.encryptionKey) {
-      return null;
-    }
-
-    try {
-      return decryptXeroCredentials(payload, this.encryptionKey);
-    } catch {
-      return null;
     }
   }
 

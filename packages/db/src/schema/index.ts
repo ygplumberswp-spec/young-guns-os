@@ -19,6 +19,7 @@ export * from './inventory-items';
 export * from './inventory-stock-levels';
 export * from './vehicles';
 export * from './integration-connections';
+export * from './integration-oauth-states';
 export * from './integration-vehicle-mappings';
 export * from './gps-positions';
 export * from './message-templates';

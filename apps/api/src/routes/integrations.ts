@@ -12,6 +12,8 @@ import type { IntegrationApiManagementService } from '../services/integration-ap
 import { IntegrationApiManagementError } from '../services/integration-api-management.service.js';
 import type { WhatsappService } from '../services/whatsapp.service.js';
 import { WhatsappServiceError } from '../services/whatsapp.service.js';
+import type { XeroOAuthService } from '../services/xero-oauth.service.js';
+import { XeroOAuthError } from '../services/xero-oauth.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -40,10 +42,8 @@ const updateWebhookEndpointSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-const saveXeroSchema = z.object({
-  clientId: z.string().trim().min(1).max(200),
-  clientSecret: z.string().min(1).max(500),
-  tenantId: z.string().trim().min(1).max(200),
+const startXeroOAuthSchema = z.object({
+  returnPath: z.string().trim().max(500).optional().nullable(),
 });
 
 const saveEmailSchema = z.object({
@@ -121,7 +121,9 @@ type IntegrationsRouterDeps = {
   integrationHubService: IntegrationHubService;
   integrationApiManagementService: IntegrationApiManagementService;
   whatsappService: WhatsappService;
+  xeroOAuthService: XeroOAuthService;
   teamService: TeamService;
+  appUrl: string;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -134,6 +136,18 @@ function getRouteParam(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function normalizeQueryValue(value: unknown): string | string[] | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value) && value.every((entry) => typeof entry === 'string')) {
+    return value as string[];
+  }
+
+  return undefined;
+}
+
 export function createIntegrationsRouter({
   integrationsService,
   businessIntegrationsService,
@@ -141,12 +155,35 @@ export function createIntegrationsRouter({
   integrationHubService,
   integrationApiManagementService,
   whatsappService,
+  xeroOAuthService,
   teamService,
+  appUrl,
   jwtSecret,
   authService,
 }: IntegrationsRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+
+  router.get('/xero/oauth/callback', async (req, res) => {
+    try {
+      const redirectUrl = await xeroOAuthService.handleOAuthCallback({
+        code: normalizeQueryValue(req.query.code),
+        state: normalizeQueryValue(req.query.state),
+        error: normalizeQueryValue(req.query.error),
+        errorDescription: normalizeQueryValue(req.query.error_description),
+      });
+      res.redirect(redirectUrl);
+    } catch (error) {
+      const message =
+        error instanceof XeroOAuthError
+          ? error.message
+          : 'Unable to complete Xero sign-in. Try again from Integrations.';
+      const fallback = new URL('/integrations/xero', appUrl);
+      fallback.searchParams.set('xero', 'error');
+      fallback.searchParams.set('message', message);
+      res.redirect(fallback.toString());
+    }
+  });
 
   router.use(requireAuth);
   router.use(async (req, _res, next) => {
@@ -267,15 +304,15 @@ export function createIntegrationsRouter({
     res.json({ data: { connection } });
   });
 
-  router.put('/xero', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = saveXeroSchema.safeParse(req.body);
+  router.post('/xero/oauth/start', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    const parsed = startXeroOAuthSchema.safeParse(req.body);
 
     if (!parsed.success) {
       res.status(400).json({
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Invalid Xero connection payload',
+          message: 'Invalid Xero OAuth start payload',
           details: parsed.error.flatten(),
         },
       });
@@ -283,17 +320,46 @@ export function createIntegrationsRouter({
     }
 
     try {
-      const connection = await businessIntegrationsService.saveXeroConnection(companyId, parsed.data);
-      res.json({ data: { connection } });
+      const result = await xeroOAuthService.startOAuth({
+        companyId,
+        userId,
+        returnPath: parsed.data.returnPath,
+      });
+      res.json({ data: result });
     } catch (error) {
-      handleBusinessIntegrationsError(res, error);
+      handleXeroOAuthError(res, error);
     }
   });
 
-  router.delete('/xero', requireAnyPermission('integrations:manage'), async (req, res) => {
+  router.post('/xero/test', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
-    const connection = await businessIntegrationsService.disconnectXero(companyId);
-    res.json({ data: { connection } });
+
+    try {
+      const result = await xeroOAuthService.testConnection(companyId);
+      res.json({ data: { result } });
+    } catch (error) {
+      handleXeroOAuthError(res, error);
+    }
+  });
+
+  router.put('/xero', requireAnyPermission('integrations:manage'), async (_req, res) => {
+    res.status(410).json({
+      error: {
+        code: 'DEPRECATED',
+        message: 'Manual Xero credentials are no longer supported. Use Sign in with Xero instead.',
+      },
+    });
+  });
+
+  router.delete('/xero', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+
+    try {
+      const connection = await businessIntegrationsService.disconnectXero(companyId, userId);
+      res.json({ data: { connection } });
+    } catch (error) {
+      handleXeroOAuthError(res, error);
+    }
   });
 
   router.post('/xero/sync', requireAnyPermission('integrations:manage'), async (req, res) => {
@@ -964,6 +1030,35 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
         message: error.message,
       },
     });
+    return;
+  }
+
+  throw error;
+}
+
+function handleXeroOAuthError(res: import('express').Response, error: unknown) {
+  if (error instanceof XeroOAuthError) {
+    const status =
+      error.code === 'NOT_CONNECTED' ||
+      error.code === 'RECONNECT_REQUIRED' ||
+      error.code === 'OAUTH_NOT_CONFIGURED' ||
+      error.code === 'CONFIG_ERROR'
+        ? 400
+        : error.code === 'ENCRYPTION_NOT_CONFIGURED'
+          ? 503
+          : 400;
+
+    res.status(status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  if (error instanceof BusinessIntegrationsError) {
+    handleBusinessIntegrationsError(res, error);
     return;
   }
 

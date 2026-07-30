@@ -50,27 +50,21 @@ export type XeroPaymentRecord = {
 };
 
 type XeroClientOptions = {
-  clientId: string;
-  clientSecret: string;
   tenantId: string;
+  getAccessToken: () => Promise<string>;
 };
 
-const TOKEN_URL = 'https://identity.xero.com/connect/token';
 const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
-const SYNC_SCOPE =
-  'accounting.settings.read accounting.settings accounting.contacts accounting.contacts.read accounting.transactions accounting.transactions.read';
 
 export class XeroClient {
-  private readonly clientId: string;
-  private readonly clientSecret: string;
   private readonly tenantId: string;
+  private readonly getAccessToken: () => Promise<string>;
   private cachedAccessToken: string | null = null;
   private cachedSalesAccountCode: string | null = null;
 
-  constructor({ clientId, clientSecret, tenantId }: XeroClientOptions) {
-    this.clientId = clientId.trim();
-    this.clientSecret = clientSecret;
+  constructor({ tenantId, getAccessToken }: XeroClientOptions) {
     this.tenantId = tenantId.trim();
+    this.getAccessToken = getAccessToken;
   }
 
   async testConnection(): Promise<XeroOrganisationRecord> {
@@ -273,51 +267,9 @@ export class XeroClient {
       return this.cachedAccessToken;
     }
 
-    const authorization = `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`;
-    const body = new URLSearchParams({
-      grant_type: 'client_credentials',
-      scope: SYNC_SCOPE,
-    });
-
-    let response: Response;
-
-    try {
-      response = await fetch(TOKEN_URL, {
-        method: 'POST',
-        headers: {
-          Authorization: authorization,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json',
-        },
-        body,
-      });
-    } catch (error) {
-      throw new XeroError(
-        'NETWORK_ERROR',
-        error instanceof Error ? error.message : 'Unable to reach Xero identity service',
-      );
-    }
-
-    if (response.status === 401 || response.status === 403) {
-      throw new XeroError('AUTH_FAILED', 'Xero rejected the provided client credentials');
-    }
-
-    if (!response.ok) {
-      const text = await response.text();
-      throw new XeroError(
-        'AUTH_FAILED',
-        `Xero token request failed (${response.status})${text ? `: ${text.slice(0, 200)}` : ''}`,
-      );
-    }
-
-    const payload = (await response.json()) as { access_token?: string };
-
-    if (!payload.access_token) {
-      throw new XeroError('AUTH_FAILED', 'Xero token response did not include an access token');
-    }
-
-    this.cachedAccessToken = payload.access_token;
-    return payload.access_token;
+    const accessToken = await this.getAccessToken();
+    this.cachedAccessToken = accessToken;
+    return accessToken;
   }
 
   private async apiRequest(method: 'GET' | 'POST', path: string, body?: unknown): Promise<unknown> {

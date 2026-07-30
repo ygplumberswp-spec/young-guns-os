@@ -5,7 +5,7 @@ import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { createAuraProvider, isAuraProviderConfigured } from '@titan/aura';
 import { closeDb, createDb } from '@titan/db';
-import { loadAuraEnvConfig, loadEnv } from './config.js';
+import { loadAuraEnvConfig, loadEnv, resolveXeroOAuthConfig } from './config.js';
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
@@ -35,6 +35,7 @@ import { IntegrationsService } from './services/integrations.service.js';
 import { IntegrationHubService } from './services/integration-hub.service.js';
 import { IntegrationApiManagementService } from './services/integration-api-management.service.js';
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
+import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
@@ -238,22 +239,31 @@ const financeService = new FinanceService(db);
 const inventoryService = new InventoryService(db);
 const fleetService = new FleetService(db);
 const integrationHubService = new IntegrationHubService(db);
+const apiPublicUrl = env.API_PUBLIC_URL ?? `http://localhost:${env.PORT}`;
+const xeroOAuthConfig = resolveXeroOAuthConfig(env, apiPublicUrl);
+const xeroOAuthService = XeroOAuthService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  oauthConfig: xeroOAuthConfig,
+});
 const businessIntegrationsService = BusinessIntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
+  xeroOAuthService,
 });
 const xeroSyncService = XeroSyncService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
+  xeroOAuthService,
 });
 const integrationsService = IntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
 });
-const apiPublicUrl = env.API_PUBLIC_URL ?? `http://localhost:${env.PORT}`;
 const whatsappService = WhatsappService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -1123,7 +1133,9 @@ app.use(
     integrationHubService,
     integrationApiManagementService,
     whatsappService,
+    xeroOAuthService,
     teamService,
+    appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

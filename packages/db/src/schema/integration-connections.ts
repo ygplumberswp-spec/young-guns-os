@@ -27,6 +27,8 @@ export type IntegrationConnectionConfig = {
   organisationName?: string;
   organisationId?: string;
   baseCurrency?: string;
+  lastVerifiedAt?: string;
+  authMethod?: 'oauth';
   host?: string;
   port?: number;
   secure?: boolean;

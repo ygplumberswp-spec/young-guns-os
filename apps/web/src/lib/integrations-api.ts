@@ -6,10 +6,12 @@ import type {
   IntegrationVehicleMappingSummary,
   SaveCartrackConnectionRequest,
   SaveEmailConnectionRequest,
-  SaveXeroConnectionRequest,
   SaveYocoConnectionRequest,
+  StartXeroOAuthRequest,
+  StartXeroOAuthResponse,
   UpdateIntegrationVehicleMappingRequest,
   XeroConnectionSummary,
+  XeroConnectionTestResult,
   XeroSyncResult,
   XeroEntitySyncResult,
   XeroSyncLogSummary,
@@ -87,16 +89,24 @@ export async function fetchXeroConnection(accessToken: string): Promise<XeroConn
   return data.connection;
 }
 
-export async function saveXeroConnection(
+export async function startXeroOAuth(
   accessToken: string,
-  body: SaveXeroConnectionRequest,
-): Promise<XeroConnectionSummary> {
-  const data = await request<{ connection: XeroConnectionSummary }>('/integrations/xero', {
-    method: 'PUT',
+  body: StartXeroOAuthRequest = {},
+): Promise<StartXeroOAuthResponse> {
+  const data = await request<StartXeroOAuthResponse>('/integrations/xero/oauth/start', {
+    method: 'POST',
     accessToken,
     body,
   });
-  return data.connection;
+  return data;
+}
+
+export async function testXeroConnection(accessToken: string): Promise<XeroConnectionTestResult> {
+  const data = await request<{ result: XeroConnectionTestResult }>('/integrations/xero/test', {
+    method: 'POST',
+    accessToken,
+  });
+  return data.result;
 }
 
 export async function disconnectXero(accessToken: string): Promise<XeroConnectionSummary> {

@@ -332,21 +332,31 @@ export type FleetTrackingContext = {
 export type XeroConnectionSummary = {
   provider: 'xero';
   status: IntegrationConnectionStatus;
-  clientIdHint: string | null;
-  tenantId: string | null;
+  oauthConfigured: boolean;
   organisationName: string | null;
   organisationId: string | null;
   baseCurrency: string | null;
   hasCredentials: boolean;
+  reconnectRequired: boolean;
+  lastVerifiedAt: string | null;
   lastSyncAt: string | null;
   lastError: string | null;
   connectedAt: string | null;
 };
 
-export type SaveXeroConnectionRequest = {
-  clientId: string;
-  clientSecret: string;
-  tenantId: string;
+export type XeroConnectionTestResult = {
+  organisationName: string;
+  organisationId: string;
+  baseCurrency: string | null;
+  verifiedAt: string;
+};
+
+export type StartXeroOAuthRequest = {
+  returnPath?: string | null;
+};
+
+export type StartXeroOAuthResponse = {
+  authorizationUrl: string;
 };
 
 export type XeroSyncResult = {

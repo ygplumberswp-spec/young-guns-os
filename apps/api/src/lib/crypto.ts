@@ -82,10 +82,25 @@ export function generateDeveloperApiKey(): string {
   return `titan_sk_${randomBytes(32).toString('base64url')}`;
 }
 
-export type XeroStoredCredentials = {
+export type XeroOAuthStoredCredentials = {
+  version: 2;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+};
+
+export type XeroLegacyStoredCredentials = {
   clientId: string;
   clientSecret: string;
 };
+
+export type XeroStoredCredentials = XeroOAuthStoredCredentials | XeroLegacyStoredCredentials;
+
+export function isXeroOAuthCredentials(
+  credentials: XeroStoredCredentials,
+): credentials is XeroOAuthStoredCredentials {
+  return 'version' in credentials && credentials.version === 2;
+}
 
 export type EmailStoredCredentials = {
   username: string;
@@ -104,6 +119,13 @@ function decryptJsonCredentials<T extends object>(payload: string, encryptionKey
   return JSON.parse(decryptSecret(payload, encryptionKey)) as T;
 }
 
+export function encryptXeroOAuthCredentials(
+  credentials: XeroOAuthStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
 export function encryptXeroCredentials(
   credentials: XeroStoredCredentials,
   encryptionKey: string,
@@ -116,6 +138,14 @@ export function decryptXeroCredentials(
   encryptionKey: string,
 ): XeroStoredCredentials {
   const parsed = decryptJsonCredentials<XeroStoredCredentials>(payload, encryptionKey);
+
+  if (isXeroOAuthCredentials(parsed)) {
+    if (!parsed.accessToken || !parsed.refreshToken || !parsed.expiresAt) {
+      throw new Error('Invalid stored Xero OAuth credentials');
+    }
+
+    return parsed;
+  }
 
   if (!parsed.clientId || !parsed.clientSecret) {
     throw new Error('Invalid stored Xero credentials');
@@ -186,4 +216,8 @@ export function decryptWhatsappCredentials(
   }
 
   return parsed;
+}
+
+export function hashOAuthState(state: string): string {
+  return createHash('sha256').update(state).digest('hex');
 }
