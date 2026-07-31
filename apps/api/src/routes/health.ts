@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { ApiHealthResponse } from '@titan/shared';
-import { checkDbConnection } from '@titan/db';
+import { probeDbConnection } from '@titan/db';
 import { API_VERSION, type RuntimeControls } from '../config.js';
 import { pingRedisTcp } from '../lib/redis-ping.js';
 
@@ -8,7 +8,27 @@ export type HealthRouterDeps = {
   databaseUrl?: string;
   redisUrl?: string;
   runtime?: RuntimeControls;
+  /** Optional structured logger; falls back to console for readiness failures. */
+  log?: {
+    info: (obj: Record<string, unknown>, msg: string) => void;
+    warn: (obj: Record<string, unknown>, msg: string) => void;
+  };
 };
+
+function readinessLog(
+  deps: HealthRouterDeps,
+  level: 'info' | 'warn',
+  obj: Record<string, unknown>,
+  msg: string,
+): void {
+  if (deps.log) {
+    deps.log[level](obj, msg);
+    return;
+  }
+  const line = `[titan-api] ${msg} ${JSON.stringify(obj)}`;
+  if (level === 'warn') console.warn(line);
+  else console.log(line);
+}
 
 export function createHealthRouter(
   databaseUrlOrDeps?: string | HealthRouterDeps,
@@ -44,6 +64,12 @@ export function createHealthRouter(
 
   router.get('/health/ready', async (_req, res) => {
     if (!deps.databaseUrl) {
+      readinessLog(
+        deps,
+        'warn',
+        { code: 'NOT_CONFIGURED' },
+        'Readiness failed: DATABASE_URL is not configured',
+      );
       res.status(503).json({
         error: {
           code: 'NOT_CONFIGURED',
@@ -53,12 +79,39 @@ export function createHealthRouter(
       return;
     }
 
-    const dbReady = await checkDbConnection(deps.databaseUrl);
-    if (!dbReady) {
+    const dbProbe = await probeDbConnection(deps.databaseUrl);
+    if (!dbProbe.ok) {
+      readinessLog(
+        deps,
+        'warn',
+        {
+          code: 'DB_UNAVAILABLE',
+          dbErrorCode: dbProbe.code,
+          dbErrorMessage: dbProbe.message,
+          dbHost: dbProbe.endpoint.host,
+          dbPort: dbProbe.endpoint.port,
+          dbName: dbProbe.endpoint.database,
+          dbSslmode: dbProbe.endpoint.sslmode,
+          isSupabaseDirect: dbProbe.endpoint.isSupabaseDirect,
+          isSupabasePooler: dbProbe.endpoint.isSupabasePooler,
+          hint: dbProbe.endpoint.isSupabaseDirect
+            ? 'Use the Supabase pooler DATABASE_URL (IPv4). Direct db.*.supabase.co hosts are IPv6-only and unreachable from Railway.'
+            : undefined,
+        },
+        'Readiness failed: database is not reachable',
+      );
       res.status(503).json({
         error: {
           code: 'DB_UNAVAILABLE',
           message: 'Database is not reachable',
+          detail: {
+            reason: dbProbe.code,
+            host: dbProbe.endpoint.host,
+            port: dbProbe.endpoint.port,
+            sslmode: dbProbe.endpoint.sslmode,
+            isSupabaseDirect: dbProbe.endpoint.isSupabaseDirect,
+            isSupabasePooler: dbProbe.endpoint.isSupabasePooler,
+          },
         },
       });
       return;
@@ -71,6 +124,12 @@ export function createHealthRouter(
       const ping = await pingRedisTcp(deps.redisUrl);
       redisStatus = ping.ok ? 'connected' : 'unavailable';
       if (!ping.ok && deps.runtime?.readyRequireRedis) {
+        readinessLog(
+          deps,
+          'warn',
+          { code: 'REDIS_UNAVAILABLE', reason: ping.reason ?? 'unknown' },
+          'Readiness failed: Redis is required but not reachable',
+        );
         res.status(503).json({
           error: {
             code: 'REDIS_UNAVAILABLE',
@@ -80,6 +139,12 @@ export function createHealthRouter(
         return;
       }
     } else if (deps.runtime?.readyRequireRedis) {
+      readinessLog(
+        deps,
+        'warn',
+        { code: 'REDIS_NOT_CONFIGURED' },
+        'Readiness failed: REDIS_URL is required in this environment',
+      );
       res.status(503).json({
         error: {
           code: 'REDIS_NOT_CONFIGURED',
@@ -88,6 +153,19 @@ export function createHealthRouter(
       });
       return;
     }
+
+    readinessLog(
+      deps,
+      'info',
+      {
+        database: 'connected',
+        redis: redisStatus,
+        dbHost: dbProbe.endpoint.host,
+        dbPort: dbProbe.endpoint.port,
+        isSupabasePooler: dbProbe.endpoint.isSupabasePooler,
+      },
+      'Readiness ok',
+    );
 
     res.json({
       data: {

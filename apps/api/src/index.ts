@@ -4,8 +4,15 @@ import express, { type Express } from 'express';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import { createAuraProvider, isAuraProviderConfigured } from '@titan/aura';
-import { closeDb, createDb } from '@titan/db';
+import {
+  closeDb,
+  createDb,
+  preferIpv4DnsOrder,
+  probeDbConnection,
+  summarizeDatabaseUrl,
+} from '@titan/db';
 import { loadAuraEnvConfig, loadEnv, resolveXeroOAuthConfig } from './config.js';
+
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
@@ -265,8 +272,30 @@ if (dbDiagnosticsEnabled) {
   attachDbQueryDiagnostics();
 }
 
+// Railway cannot reach Supabase direct IPv6 endpoints; prefer A records first.
+preferIpv4DnsOrder();
+const databaseEndpoint = summarizeDatabaseUrl(env.DATABASE_URL);
+bootLog('database endpoint', {
+  host: databaseEndpoint.host,
+  port: databaseEndpoint.port,
+  database: databaseEndpoint.database,
+  sslmode: databaseEndpoint.sslmode ?? '(unset)',
+  isSupabaseDirect: databaseEndpoint.isSupabaseDirect,
+  isSupabasePooler: databaseEndpoint.isSupabasePooler,
+  isPrivateHost: databaseEndpoint.isPrivateHost,
+});
+if (databaseEndpoint.isSupabaseDirect) {
+  bootLog(
+    'WARNING: DATABASE_URL points at Supabase direct host (IPv6). Railway readiness will fail — use the pooler connection string instead.',
+    {
+      host: databaseEndpoint.host,
+    },
+  );
+}
+
 const db = createDb(env.DATABASE_URL);
 configureRbacAudit(db);
+
 const authService = new AuthService(db, {
   jwtSecret: env.JWT_SECRET,
 });
@@ -1187,6 +1216,7 @@ app.use(
     databaseUrl: env.DATABASE_URL,
     redisUrl: env.REDIS_URL,
     runtime: env.runtime,
+    log: logger,
   }),
 );
 bootLog('health endpoints registered', {
@@ -1195,6 +1225,27 @@ bootLog('health endpoints registered', {
   health: '/api/v1/health',
   readyRequireRedis: env.runtime.readyRequireRedis,
   redisConfigured: Boolean(env.REDIS_URL),
+});
+
+// Non-blocking startup probe so Railway logs show DB reachability before the first healthcheck.
+void probeDbConnection(env.DATABASE_URL).then((probe) => {
+  if (probe.ok) {
+    bootLog('database probe ok', {
+      host: probe.endpoint.host,
+      port: probe.endpoint.port,
+      isSupabasePooler: probe.endpoint.isSupabasePooler,
+    });
+    return;
+  }
+  bootLog('database probe failed', {
+    code: probe.code,
+    message: probe.message,
+    host: probe.endpoint.host,
+    port: probe.endpoint.port,
+    sslmode: probe.endpoint.sslmode,
+    isSupabaseDirect: probe.endpoint.isSupabaseDirect,
+    isSupabasePooler: probe.endpoint.isSupabasePooler,
+  });
 });
 app.use(
   '/api/v1/auth',
