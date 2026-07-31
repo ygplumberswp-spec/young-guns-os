@@ -11,6 +11,8 @@
   </head>
   <body data-titan-env="%VITE_APP_ENV%">
     <div id="root"></div>
+    <!-- Optional runtime override (Railway nginx may force same-origin API base). -->
+    <script src="/runtime-config.js"></script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -25,8 +25,14 @@ ENV VITE_TITAN_ENV=$VITE_TITAN_ENV
 RUN pnpm --filter @titan/shared --filter @titan/auth --filter @titan/ui --filter @titan/web run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
-COPY infra/docker/nginx.web.conf /etc/nginx/conf.d/default.conf
+COPY infra/docker/nginx.web.noproxy.conf /etc/nginx/noproxy.default.conf
+COPY infra/docker/web-entrypoint.sh /docker-entrypoint.d/39-titan-web.sh
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+# Railway web service variable (runtime, not build-arg):
+#   API_PROXY_UPSTREAM=https://young-guns-os-staging.up.railway.app
+# When set: same-origin /api proxy + runtime-config forces relative /api/v1.
+ENV API_PROXY_UPSTREAM=
+ENV TITAN_NOPROXY_CONF=/etc/nginx/noproxy.default.conf
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1

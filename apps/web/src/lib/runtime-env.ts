@@ -6,17 +6,45 @@ export function isStagingUi(): boolean {
   return appEnv === 'staging' || titanEnv === 'staging';
 }
 
+declare global {
+  interface Window {
+    /** Set by /runtime-config.js (Docker/Railway). Empty string → same-origin `/api/v1`. */
+    __TITAN_API_BASE__?: string;
+  }
+}
+
 /**
- * API origin for non-proxied deploys (Railway/Render separate services).
- * Empty → same-origin `/api/v1` (Vite proxy or reverse proxy).
- * Accepts either `https://api.example.com` or `https://api.example.com/api/v1`.
+ * Resolve API base from optional runtime override, then Vite build env.
+ * - runtime `""` → same-origin `/api/v1` (nginx proxy)
+ * - unset runtime → use `VITE_API_BASE_URL`
+ * - empty Vite → same-origin `/api/v1`
  */
-export function resolveApiBase(): string {
-  let raw = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+export function resolveApiBaseFrom(
+  viteValue: string | undefined,
+  runtimeDefined: boolean,
+  runtimeValue: string | undefined,
+): string {
+  let raw = String(runtimeDefined ? (runtimeValue ?? '') : (viteValue ?? '')).trim();
   if (!raw) return '/api/v1';
   raw = raw.replace(/\/+$/, '');
   raw = raw.replace(/\/api\/v1$/i, '');
   raw = raw.replace(/\/+$/, '');
   if (!raw) return '/api/v1';
   return `${raw}/api/v1`;
+}
+
+/**
+ * API origin for non-proxied deploys (Railway/Render separate services).
+ * Empty → same-origin `/api/v1` (Vite proxy or nginx reverse proxy).
+ */
+export function resolveApiBase(): string {
+  const runtimeDefined =
+    typeof window !== 'undefined' &&
+    Object.prototype.hasOwnProperty.call(window, '__TITAN_API_BASE__');
+  const runtimeValue = runtimeDefined ? window.__TITAN_API_BASE__ : undefined;
+  return resolveApiBaseFrom(
+    String(import.meta.env.VITE_API_BASE_URL || ''),
+    runtimeDefined,
+    runtimeValue,
+  );
 }
