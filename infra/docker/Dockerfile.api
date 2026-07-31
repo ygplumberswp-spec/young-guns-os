@@ -26,8 +26,20 @@ ENV HOST=0.0.0.0
 # Railway injects PORT at runtime — do not hardcode listen port here.
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+# Disposable/local filesystem storage defaults (override with env or mount a volume).
+# Staging can boot without a persistent Railway volume; data is ephemeral until one is attached.
+ENV COMPANY_MEDIA_STORAGE_PATH=/var/lib/titan/storage/company-media
+ENV JOB_EVIDENCE_STORAGE_PATH=/var/lib/titan/storage/job-evidence
 RUN corepack enable && corepack prepare pnpm@10.12.1 --activate \
-  && groupadd --system titan && useradd --system --gid titan --create-home titan
+  && groupadd --system titan && useradd --system --gid titan --create-home titan \
+  && mkdir -p \
+       /var/lib/titan/storage/company-media \
+       /var/lib/titan/storage/job-evidence \
+       /var/titan/company-media \
+       /var/titan/job-evidence \
+       /var/titan/staging/company-media \
+       /var/titan/staging/job-evidence \
+  && chown -R titan:titan /var/lib/titan /var/titan
 WORKDIR /app
 
 COPY --from=build --chown=titan:titan /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./

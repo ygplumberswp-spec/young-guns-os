@@ -288,11 +288,32 @@ if (auraProvider) {
 }
 
 const companyService = new CompanyService(db);
-const companyMediaStoragePath = resolveCompanyMediaStoragePath(
-  process.env.COMPANY_MEDIA_STORAGE_PATH,
+let companyMediaStoragePath: string;
+let jobEvidenceStoragePath: string;
+try {
+  companyMediaStoragePath = resolveCompanyMediaStoragePath(
+    process.env.COMPANY_MEDIA_STORAGE_PATH,
+  );
+  jobEvidenceStoragePath = resolveJobEvidenceStoragePath(process.env.JOB_EVIDENCE_STORAGE_PATH);
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[titan-api] FATAL: storage path initialization failed\n${message}`);
+  process.exit(1);
+}
+bootLog('storage paths ready', {
+  companyMediaStoragePath,
+  jobEvidenceStoragePath,
+  companyMediaEnvSet: Boolean(process.env.COMPANY_MEDIA_STORAGE_PATH?.trim()),
+  jobEvidenceEnvSet: Boolean(process.env.JOB_EVIDENCE_STORAGE_PATH?.trim()),
+});
+logger.info(
+  {
+    companyMediaStoragePath,
+    jobEvidenceStoragePath,
+  },
+  'Filesystem storage roots resolved',
 );
 const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
-const jobEvidenceStoragePath = resolveJobEvidenceStoragePath(process.env.JOB_EVIDENCE_STORAGE_PATH);
 const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStoragePath);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({

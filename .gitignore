@@ -39,7 +39,10 @@ infra/docker/data/
 # Local company media uploads (tenant-isolated files — do not commit)
 storage/company-media/*
 !storage/company-media/.gitkeep
+storage/job-evidence/*
+!storage/job-evidence/.gitkeep
 apps/api/storage/company-media/*
+apps/api/storage/job-evidence/*
 
 # Local audit and migration artifacts (do not commit)
 audit-output/

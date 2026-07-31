@@ -74,8 +74,8 @@ services:
       XERO_SYNC_ENABLED: 'false'
       WHATSAPP_ENABLED: 'false'
       EMAIL_SENDING_ENABLED: 'false'
-      COMPANY_MEDIA_STORAGE_PATH: /var/titan/staging/company-media
-      JOB_EVIDENCE_STORAGE_PATH: /var/titan/staging/job-evidence
+      COMPANY_MEDIA_STORAGE_PATH: /var/lib/titan/storage/company-media
+      JOB_EVIDENCE_STORAGE_PATH: /var/lib/titan/storage/job-evidence
       LOG_LEVEL: info
     ports:
       - '3001:3000'

@@ -1,17 +1,17 @@
-import { mkdirSync } from 'node:fs';
-import { dirname, isAbsolute, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import {
+  LOCAL_COMPANY_MEDIA_STORAGE_PATH,
+  PRODUCTION_COMPANY_MEDIA_STORAGE_PATH,
+  repoRoot,
+  resolveStoragePath,
+} from './storage-paths.js';
 
-const sourceDir = dirname(fileURLToPath(import.meta.url));
-const apiRoot = resolve(sourceDir, '../..');
-/** Monorepo root (`apps/api` → repo root). */
-export const repoRoot = resolve(apiRoot, '../..');
+export { repoRoot };
 
 export function resolveCompanyMediaStoragePath(configuredPath?: string | null): string {
-  const trimmed = configuredPath?.trim();
-  const target = trimmed && trimmed.length > 0 ? trimmed : 'storage/company-media';
-  const resolved = isAbsolute(target) ? target : resolve(repoRoot, target);
-
-  mkdirSync(resolved, { recursive: true });
-  return resolved;
+  return resolveStoragePath({
+    configuredPath,
+    localRelativeDefault: LOCAL_COMPANY_MEDIA_STORAGE_PATH,
+    productionAbsoluteDefault: PRODUCTION_COMPANY_MEDIA_STORAGE_PATH,
+    label: 'company-media',
+  });
 }
