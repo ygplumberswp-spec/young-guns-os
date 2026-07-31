@@ -22,6 +22,8 @@ RUN pnpm --filter @titan/shared --filter @titan/auth --filter @titan/db --filter
 
 FROM node:20-bookworm-slim AS runtime
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
+# Railway injects PORT at runtime — do not hardcode listen port here.
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10.12.1 --activate \
@@ -36,8 +38,9 @@ COPY --from=build --chown=titan:titan /app/node_modules /app/node_modules
 # Runtime uses tsx + TypeScript sources because workspace packages emit
 # extensionless ESM imports (moduleResolution bundler) that Node cannot load from dist.
 USER titan
+# Documentary default; runtime bind uses process.env.PORT from Railway.
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=5 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/v1/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 WORKDIR /app/apps/api
 CMD ["node", "--import", "tsx", "src/index.ts"]

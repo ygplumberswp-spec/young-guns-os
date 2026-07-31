@@ -8,7 +8,12 @@ import { closeDb, createDb } from '@titan/db';
 import { loadAuraEnvConfig, loadEnv, resolveXeroOAuthConfig } from './config.js';
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
+import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
+import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { requestContextMiddleware } from './middleware/request-context.js';
+import { configureRbacAudit } from './middleware/rbac.js';
+import { securityHeadersMiddleware } from './middleware/security-headers.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createAuraRouter } from './routes/aura.js';
 import { createCompanyRouter } from './routes/company.js';
@@ -20,14 +25,17 @@ import { CompanyService } from './services/company.service.js';
 import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
 import { createCrmRouter } from './routes/crm.js';
+import { createMarketingEligibilityRouter } from './routes/marketing-eligibility.js';
 import { createJobsRouter } from './routes/jobs.js';
 import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
+import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { InventoryService } from './services/inventory.service.js';
+import { StockMovementsService } from './services/stock-movements.service.js';
 import { createInventoryRouter } from './routes/inventory.js';
 import { FleetService } from './services/fleet.service.js';
 import { createFleetRouter } from './routes/fleet.js';
@@ -46,6 +54,7 @@ import { createCommunicationsRouter } from './routes/communications.js';
 import { DocumentsService } from './services/documents.service.js';
 import { createDocumentsRouter } from './routes/documents.js';
 import { AutomationService } from './services/automation.service.js';
+import { N8nOrchestrationService } from './services/n8n-orchestration.service.js';
 import { WorkflowEngineService } from './services/workflow-engine.service.js';
 import { MemoryService } from './services/memory.service.js';
 import { IntelligenceService } from './services/intelligence.service.js';
@@ -58,6 +67,7 @@ import { MobileService } from './services/mobile.service.js';
 import { NotificationService } from './services/notification.service.js';
 import { MobileSyncService } from './services/mobile-sync.service.js';
 import { TechnicianWorkflowService } from './services/technician-workflow.service.js';
+import { JobExecutionService } from './services/job-execution.service.js';
 import { WorkflowStudioService } from './services/workflow-studio.service.js';
 import { EnterpriseAutomationStudioService } from './services/enterprise-automation-studio.service.js';
 import { EnterpriseDigitalTwinService } from './services/enterprise-digital-twin.service.js';
@@ -128,6 +138,10 @@ import { AiMemorySyncService } from './services/ai-memory-sync.service.js';
 import { AiComparisonService } from './services/ai-comparison.service.js';
 import { AiUnifiedGatewayService } from './services/ai-unified-gateway.service.js';
 import { createAutomationRouter } from './routes/automation.js';
+import {
+  createN8nCallbackRouter,
+  createN8nOrchestrationRouter,
+} from './routes/n8n-orchestration.js';
 import { createEnterpriseAutomationStudioRouter } from './routes/enterprise-automation-studio.js';
 import { createEnterpriseDigitalTwinRouter } from './routes/enterprise-digital-twin.js';
 import { createEnterpriseKnowledgeGraphRouter } from './routes/enterprise-knowledge-graph.js';
@@ -150,6 +164,7 @@ import { AgentOrchestrationEngineService } from './services/agent-orchestration-
 import { SalesService } from './services/sales.service.js';
 import { MarketingService } from './services/marketing.service.js';
 import { LeadsService } from './services/leads.service.js';
+import { LeadConversionService } from './services/lead-conversion.service.js';
 import { VoiceService } from './services/voice.service.js';
 import { CustomerSupportService } from './services/customer-support.service.js';
 import { WorkforceService } from './services/workforce.service.js';
@@ -196,11 +211,53 @@ import { createIntegrationPlatformRouter } from './routes/integration-platform.j
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
 import { createPortalAuthRouter } from './routes/portal-auth.js';
 import { createPortalRouter } from './routes/portal.js';
+import type { Env } from './config.js';
 
-const env = loadEnv();
+function bootLog(message: string, extra?: Record<string, unknown>): void {
+  const suffix = extra ? ` ${JSON.stringify(extra)}` : '';
+  // console.* survives Railway log drains even when pino has not started (env crash path).
+  console.log(`[titan-api] ${message}${suffix}`);
+}
+
+bootLog('process starting', {
+  NODE_ENV: process.env.NODE_ENV ?? '(unset)',
+  APP_ENV: process.env.APP_ENV ?? '(unset)',
+  TITAN_ENV: process.env.TITAN_ENV ?? '(unset)',
+  PORT: process.env.PORT ?? '(unset→default 3000)',
+  HOST: process.env.HOST ?? '(unset→default 0.0.0.0)',
+  READY_REQUIRE_REDIS: process.env.READY_REQUIRE_REDIS ?? '(unset)',
+  hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+  hasJwtSecret: Boolean(process.env.JWT_SECRET),
+  hasRefreshSecret: Boolean(process.env.JWT_REFRESH_SECRET),
+  hasIntegrationsKey: Boolean(process.env.INTEGRATIONS_ENCRYPTION_KEY),
+  hasAppUrl: Boolean(process.env.APP_URL),
+  hasApiPublicUrl: Boolean(process.env.API_PUBLIC_URL),
+  hasRedisUrl: Boolean(process.env.REDIS_URL),
+});
+
+let env: Env;
+try {
+  env = loadEnv();
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error(`[titan-api] FATAL: environment validation failed\n${message}`);
+  process.exit(1);
+}
+
+bootLog('environment validated', {
+  NODE_ENV: env.NODE_ENV,
+  APP_ENV: env.APP_ENV ?? '(unset)',
+  TITAN_ENV: env.TITAN_ENV ?? '(unset)',
+  PORT: env.PORT,
+  HOST: env.HOST,
+  readyRequireRedis: env.runtime.readyRequireRedis,
+  providersEnabled: env.runtime.providersEnabled,
+  workersEnabled: env.runtime.workersEnabled,
+});
+
 const auraConfig = loadAuraEnvConfig();
 const logger = pino({
-  level: env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: env.LOG_LEVEL ?? (env.NODE_ENV === 'production' ? 'info' : 'debug'),
 });
 
 const dbDiagnosticsEnabled = env.NODE_ENV !== 'production';
@@ -209,36 +266,50 @@ if (dbDiagnosticsEnabled) {
 }
 
 const db = createDb(env.DATABASE_URL);
+configureRbacAudit(db);
 const authService = new AuthService(db, {
   jwtSecret: env.JWT_SECRET,
 });
 
-const auraProvider = isAuraProviderConfigured(auraConfig) ? createAuraProvider(auraConfig) : null;
+const auraProvider =
+  env.runtime.providersEnabled && isAuraProviderConfigured(auraConfig)
+    ? createAuraProvider(auraConfig)
+    : null;
 
 if (auraProvider) {
   logger.info(
     { provider: auraProvider.name, model: auraConfig.openaiModel },
     'AURA provider ready',
   );
+} else if (!env.runtime.providersEnabled) {
+  logger.info('AURA provider gated off — PROVIDERS_ENABLED=false');
 } else {
   logger.warn('AURA provider not configured — set AURA_OPENAI_API_KEY to enable AI responses');
 }
 
 const companyService = new CompanyService(db);
-const companyMediaStoragePath = resolveCompanyMediaStoragePath(process.env.COMPANY_MEDIA_STORAGE_PATH);
+const companyMediaStoragePath = resolveCompanyMediaStoragePath(
+  process.env.COMPANY_MEDIA_STORAGE_PATH,
+);
 const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
+const jobEvidenceStoragePath = resolveJobEvidenceStoragePath(process.env.JOB_EVIDENCE_STORAGE_PATH);
+const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStoragePath);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
   teamService,
 });
 const crmService = new CrmService(db);
+const marketingEligibilityService = new MarketingEligibilityService(db);
 const jobsService = new JobsService(db);
 const schedulingService = new SchedulingService(db);
 const financeService = new FinanceService(db);
 const inventoryService = new InventoryService(db);
+const stockMovementsService = new StockMovementsService(db);
 const fleetService = new FleetService(db);
 const integrationHubService = new IntegrationHubService(db);
+const n8nOrchestrationService = new N8nOrchestrationService(db, env.INTEGRATIONS_ENCRYPTION_KEY);
+integrationHubService.setN8nStatusProvider(n8nOrchestrationService);
 const apiPublicUrl = env.API_PUBLIC_URL ?? `http://localhost:${env.PORT}`;
 const xeroOAuthConfig = resolveXeroOAuthConfig(env, apiPublicUrl);
 const xeroOAuthService = XeroOAuthService.create({
@@ -333,6 +404,7 @@ const workforceService = new WorkforceService({
 const procurementService = new ProcurementService({
   db,
   inventoryService,
+  stockMovementsService,
 });
 const executiveService = new ExecutiveService({
   db,
@@ -385,12 +457,17 @@ const enterpriseAnalyticsService = new EnterpriseAnalyticsService({
   businessIntelligenceService,
 });
 const notificationService = new NotificationService(db);
+const leadConversionService = new LeadConversionService(db, notificationService, (companyId, leadId) =>
+  leadsService.getLead(companyId, leadId),
+);
 const mobileSyncService = new MobileSyncService(db);
+const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const technicianWorkflowService = new TechnicianWorkflowService(
   db,
   jobsService,
   notificationService,
   mobileSyncService,
+  jobExecutionService,
 );
 const mobileService = new MobileService(
   db,
@@ -411,6 +488,9 @@ const mobileWorkforceService = new MobileWorkforceService(
   inventoryService,
   integrationsService,
   notificationService,
+  jobExecutionService,
+  jobEvidenceStorageService,
+  technicianWorkflowService,
 );
 const qualityAssuranceService = new QualityAssuranceService(
   db,
@@ -926,10 +1006,37 @@ bindAutomationEventEmitter(async (event) => {
   await workflowEngineService.emit(event);
   await agentOrchestrationEngineService.emit(event);
 });
-const stopAutomationWorkers = startAutomationWorkers({
-  workflowEngine: workflowEngineService,
-  orchestrationEngine: agentOrchestrationEngineService,
-});
+const runtimeMode = (process.env.TITAN_RUNTIME_MODE || 'api').toLowerCase();
+const isWorkerProcess = runtimeMode === 'worker' || runtimeMode === 'scheduler';
+
+if (isWorkerProcess && !env.runtime.startInProcessAutomationWorkers) {
+  logger.error(
+    { runtimeMode },
+    'Worker/scheduler process refused: enable WORKERS_ENABLED, SCHEDULERS_ENABLED, or AUTOMATIONS_ENABLED',
+  );
+  process.exit(2);
+}
+
+const stopAutomationWorkers =
+  env.runtime.startInProcessAutomationWorkers && (isWorkerProcess || runtimeMode === 'api')
+    ? startAutomationWorkers({
+        workflowEngine: workflowEngineService,
+        orchestrationEngine: agentOrchestrationEngineService,
+      })
+    : () => {
+        /* workers/schedulers/automations disabled by runtime flags */
+      };
+
+if (!env.runtime.startInProcessAutomationWorkers && runtimeMode === 'api') {
+  logger.info(
+    {
+      workersEnabled: env.runtime.workersEnabled,
+      schedulersEnabled: env.runtime.schedulersEnabled,
+      automationsEnabled: env.runtime.automationsEnabled,
+    },
+    'In-process automation workers not started (runtime flags)',
+  );
+}
 const portalAuthService = new PortalAuthService(db, { jwtSecret: env.JWT_SECRET });
 const portalService = new PortalService(db, env.APP_URL);
 
@@ -998,10 +1105,26 @@ const auraService = new AuraService({
 const app: Express = express();
 
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+
+app.use(securityHeadersMiddleware());
+app.use(requestContextMiddleware());
 
 app.use(
   pinoHttp({
     logger,
+    customProps: (req) => ({
+      correlationId: req.correlationId,
+    }),
+    redact: {
+      paths: [
+        'req.headers.authorization',
+        'req.headers.cookie',
+        'req.headers["x-api-key"]',
+        'res.headers["set-cookie"]',
+      ],
+      remove: true,
+    },
   }),
 );
 
@@ -1012,7 +1135,15 @@ app.use(
   }),
 );
 
-app.use(express.json());
+// 15mb accommodates base64-encoded job evidence uploads (documents capped at 10MB binary, ~37% base64 overhead).
+app.use(
+  express.json({
+    limit: '15mb',
+    verify: (req, _res, buf) => {
+      (req as { rawBody?: string }).rawBody = buf.toString('utf8');
+    },
+  }),
+);
 app.use(cookieParser());
 
 if (dbDiagnosticsEnabled) {
@@ -1029,7 +1160,21 @@ app.get('/', (_req, res) => {
   });
 });
 
-app.use('/api/v1', createHealthRouter(env.DATABASE_URL));
+app.use(
+  '/api/v1',
+  createHealthRouter({
+    databaseUrl: env.DATABASE_URL,
+    redisUrl: env.REDIS_URL,
+    runtime: env.runtime,
+  }),
+);
+bootLog('health endpoints registered', {
+  live: '/api/v1/health/live',
+  ready: '/api/v1/health/ready',
+  health: '/api/v1/health',
+  readyRequireRedis: env.runtime.readyRequireRedis,
+  redisConfigured: Boolean(env.REDIS_URL),
+});
 app.use(
   '/api/v1/auth',
   createAuthRouter({
@@ -1077,9 +1222,19 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/marketing-eligibility',
+  createMarketingEligibilityRouter({
+    marketingEligibilityService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/jobs',
   createJobsRouter({
     jobsService,
+    jobExecutionService,
+    mobileWorkforceService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
@@ -1186,6 +1341,21 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/automation/n8n',
+  createN8nOrchestrationRouter({
+    n8nOrchestrationService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+// Public HMAC callbacks — dedicated path outside /automation auth middleware.
+app.use(
+  '/api/v1/n8n-callbacks',
+  createN8nCallbackRouter({
+    n8nOrchestrationService,
+  }),
+);
+app.use(
   '/api/v1/automation-studio',
   createEnterpriseAutomationStudioRouter({
     enterpriseAutomationStudioService,
@@ -1282,6 +1452,7 @@ app.use(
   '/api/v1/leads',
   createLeadsRouter({
     leadsService,
+    leadConversionService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1379,9 +1550,11 @@ app.use(
     mobileSyncService,
     technicianWorkflowService,
     mobileWorkforceService,
+    jobExecutionService,
     recommendationsService,
     teamService,
     portalAuthService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1795,6 +1968,8 @@ app.use(
   createIntegrationPlatformRouter({
     integrationPlatformService,
     connectorEngineService,
+    businessIntegrationsService,
+    xeroSyncService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -1842,16 +2017,61 @@ app.use(
 app.use(notFoundHandler());
 app.use(createErrorHandler(logger));
 
-app.listen(env.PORT, env.HOST, () => {
-  logger.info(
-    { port: env.PORT, host: env.HOST, companyMediaStoragePath },
-    'TITAN API started',
-  );
-});
+type HttpServer = ReturnType<typeof app.listen> | null;
+let server: HttpServer = null;
 
+if (!isWorkerProcess) {
+  bootLog('binding HTTP server', { host: env.HOST, port: env.PORT });
+  server = app.listen(env.PORT, env.HOST, () => {
+    bootLog('Server listening...', {
+      host: env.HOST,
+      port: env.PORT,
+      environment: env.APP_ENV ?? env.TITAN_ENV ?? env.NODE_ENV,
+      healthReady: '/api/v1/health/ready',
+    });
+    logger.info(
+      {
+        port: env.PORT,
+        host: env.HOST,
+        nodeEnv: env.NODE_ENV,
+        appEnv: env.APP_ENV,
+        titanEnv: env.TITAN_ENV,
+        runtimeMode,
+        providersEnabled: env.runtime.providersEnabled,
+        workersEnabled: env.runtime.startInProcessAutomationWorkers,
+        readyRequireRedis: env.runtime.readyRequireRedis,
+        companyMediaStoragePath,
+      },
+      'TITAN API started — Server listening...',
+    );
+  });
+  server.on('error', (error) => {
+    console.error('[titan-api] FATAL: HTTP server error', error);
+    process.exit(1);
+  });
+} else {
+  logger.info(
+    {
+      runtimeMode,
+      providersEnabled: env.runtime.providersEnabled,
+      workersEnabled: env.runtime.startInProcessAutomationWorkers,
+    },
+    'TITAN worker/scheduler started (HTTP disabled)',
+  );
+}
+
+let shuttingDown = false;
 async function shutdown(signal: string) {
-  logger.info({ signal }, 'Shutting down TITAN API');
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info({ signal, runtimeMode }, 'Shutting down TITAN process');
   stopAutomationWorkers();
+  if (server) {
+    await new Promise<void>((resolve) => {
+      server?.close(() => resolve());
+      setTimeout(resolve, 10_000).unref?.();
+    });
+  }
   await closeDb();
   process.exit(0);
 }
