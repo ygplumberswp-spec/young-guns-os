@@ -1,0 +1,79 @@
+# TITAN controlled staging — Render Blueprint (do not apply without owner approval).
+# Resource names intentionally include "staging".
+# Free/trial tiers preferred; do not purchase custom domains in this phase.
+
+services:
+  - type: web
+    name: titan-staging-api
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./infra/docker/Dockerfile.api
+    dockerContext: .
+    healthCheckPath: /api/v1/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: APP_ENV
+        value: staging
+      - key: TITAN_ENV
+        value: staging
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 3000
+      - key: SEED_DEV
+        value: "false"
+      - key: PROVIDERS_ENABLED
+        value: "false"
+      - key: WEBHOOKS_ENABLED
+        value: "false"
+      - key: AUTOMATIONS_ENABLED
+        value: "false"
+      - key: SCHEDULERS_ENABLED
+        value: "false"
+      - key: WORKERS_ENABLED
+        value: "false"
+      - key: OUTBOUND_MESSAGES_ENABLED
+        value: "false"
+      - key: PAYMENT_PROCESSING_ENABLED
+        value: "false"
+      - key: XERO_SYNC_ENABLED
+        value: "false"
+      - key: WHATSAPP_ENABLED
+        value: "false"
+      - key: EMAIL_SENDING_ENABLED
+        value: "false"
+      - key: READY_REQUIRE_REDIS
+        value: "false"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: INTEGRATIONS_ENCRYPTION_KEY
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: API_PUBLIC_URL
+        sync: false
+
+  - type: web
+    name: titan-staging-web
+    runtime: docker
+    plan: starter
+    dockerfilePath: ./infra/docker/Dockerfile.web
+    dockerContext: .
+    healthCheckPath: /healthz
+    envVars:
+      - key: VITE_APP_ENV
+        value: staging
+      - key: VITE_TITAN_ENV
+        value: staging
+      - key: VITE_API_BASE_URL
+        sync: false
+
+# Staging Redis — create only after owner cost approval.
+# Prefer Render Key Value (Redis) named titan-staging-redis.

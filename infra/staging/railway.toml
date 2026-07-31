@@ -1,0 +1,20 @@
+# TITAN staging — Railway project overview (ygplumberswp-spec/young-guns-os)
+# Per-service configs live under infra/staging/railway/<service>/
+#
+# Services (staging environment only):
+#   1. titan-staging-api  → infra/staging/railway/titan-staging-api/
+#   2. titan-staging-web  → infra/staging/railway/titan-staging-web/
+#
+# Hard stops for this phase:
+#   - Do not deploy yet
+#   - Do not enable public networking / generate domains
+#   - Do not create Redis
+#   - Do not connect production database
+#   - Keep all provider/worker/scheduler/webhook gates false
+
+[build]
+builder = "DOCKERFILE"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

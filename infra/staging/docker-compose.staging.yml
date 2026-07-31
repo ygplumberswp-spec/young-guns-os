@@ -1,0 +1,110 @@
+# Local/staging-like stack for controlled validation.
+# Uses disposable local Postgres/Redis only — never production credentials.
+# For cloud staging DB validation, prefer packages/db/scripts/staging-controlled-deploy-validate.mjs
+# against apps/api/.env.staging.local (gitignored).
+#
+# Usage:
+#   docker compose -f infra/staging/docker-compose.staging.yml up --build
+#
+# Requires Docker. Host currently may not have Docker installed.
+
+name: titan-staging-local
+
+services:
+  titan-staging-postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: titan_staging
+      POSTGRES_PASSWORD: titan_staging_local_only
+      POSTGRES_DB: titan_aura_staging
+    ports:
+      - '5434:5432'
+    volumes:
+      - titan_staging_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U titan_staging -d titan_aura_staging']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  titan-staging-redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', 'titan_staging_local_only']
+    ports:
+      - '6381:6379'
+    volumes:
+      - titan_staging_redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', 'titan_staging_local_only', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  titan-staging-api:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.api
+    depends_on:
+      titan-staging-postgres:
+        condition: service_healthy
+      titan-staging-redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      APP_ENV: staging
+      TITAN_ENV: staging
+      HOST: 0.0.0.0
+      PORT: 3000
+      APP_URL: https://staging-web.titan.local
+      API_PUBLIC_URL: https://staging-api.titan.local
+      DATABASE_URL: postgresql://titan_staging:titan_staging_local_only@titan-staging-postgres:5432/titan_aura_staging
+      REDIS_URL: redis://:titan_staging_local_only@titan-staging-redis:6379/0
+      READY_REQUIRE_REDIS: 'true'
+      JWT_SECRET: staging-local-jwt-secret-32chars-min!!
+      JWT_REFRESH_SECRET: staging-local-refresh-secret-32ch!!
+      INTEGRATIONS_ENCRYPTION_KEY: staging-local-integrations-key-32!
+      SEED_DEV: 'false'
+      PROVIDERS_ENABLED: 'false'
+      WEBHOOKS_ENABLED: 'false'
+      AUTOMATIONS_ENABLED: 'false'
+      SCHEDULERS_ENABLED: 'false'
+      WORKERS_ENABLED: 'false'
+      OUTBOUND_MESSAGES_ENABLED: 'false'
+      PAYMENT_PROCESSING_ENABLED: 'false'
+      XERO_SYNC_ENABLED: 'false'
+      WHATSAPP_ENABLED: 'false'
+      EMAIL_SENDING_ENABLED: 'false'
+      COMPANY_MEDIA_STORAGE_PATH: /var/titan/staging/company-media
+      JOB_EVIDENCE_STORAGE_PATH: /var/titan/staging/job-evidence
+      LOG_LEVEL: info
+    ports:
+      - '3001:3000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/v1/health/live').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  titan-staging-web:
+    build:
+      context: ../..
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        VITE_API_BASE_URL: http://127.0.0.1:3001
+        VITE_APP_ENV: staging
+        VITE_TITAN_ENV: staging
+    depends_on:
+      - titan-staging-api
+    ports:
+      - '8081:8080'
+
+volumes:
+  titan_staging_pg:
+  titan_staging_redis:

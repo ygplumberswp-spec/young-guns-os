@@ -1,0 +1,31 @@
+# Service: titan-staging-web
+# Repo: ygplumberswp-spec/young-guns-os
+# Environment: staging only
+# Apply in Railway service settings.
+# DO NOT deploy from this file automatically.
+# DO NOT generate a public domain yet.
+# VITE_API_BASE_URL stays empty until a private/public API URL is approved.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/docker/Dockerfile.web"
+watchPatterns = [
+  "apps/web/**",
+  "packages/shared/**",
+  "packages/auth/**",
+  "packages/ui/**",
+  "infra/docker/Dockerfile.web",
+  "infra/docker/nginx.web.conf",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "package.json",
+]
+
+[deploy]
+# nginx unprivileged serves /healthz (see Dockerfile.web / nginx.web.conf)
+healthcheckPath = "/healthz"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+# Image exposes 8080; Railway maps PORT automatically for nginx-unprivileged when configured.
+# Do not generate a domain in this phase.
