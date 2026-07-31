@@ -23,7 +23,8 @@ import {
   formatDeviceStatus,
 } from '../../features/mobile-platform/utils';
 
-type MobilePlatformTab = 'overview' | 'devices' | 'offline' | 'fleet' | 'intelligence' | 'assistant';
+type MobilePlatformTab =
+  'overview' | 'devices' | 'offline' | 'fleet' | 'intelligence' | 'assistant';
 
 export function MobilePlatformPage() {
   const { accessToken, user } = useAuth();
@@ -34,11 +35,20 @@ export function MobilePlatformPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessMobilePlatform(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageMobilePlatform(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageMobilePlatform(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -57,7 +67,8 @@ export function MobilePlatformPage() {
         const data = await fetchMobilePlatformDashboard(accessToken);
         if (!cancelled) setDashboard(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load mobile platform');
+        if (!cancelled)
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load mobile platform');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -87,7 +98,10 @@ export function MobilePlatformPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Mobile Platform" description="You do not have permission to view the mobile platform." />
+        <PageHeader
+          title="Mobile Platform"
+          description="You do not have permission to view the mobile platform."
+        />
       </div>
     );
   }
@@ -120,7 +134,12 @@ export function MobilePlatformPage() {
                 disabled={isWorking}
                 onClick={() =>
                   void runAction(
-                    () => registerMobileDevice(accessToken!, { deviceKey: `web_${Date.now()}`, platform: 'web', deviceName: 'Web Browser' }),
+                    () =>
+                      registerMobileDevice(accessToken!, {
+                        deviceKey: `web_${Date.now()}`,
+                        platform: 'web',
+                        deviceName: 'Web Browser',
+                      }),
                     'Device registered.',
                   )
                 }
@@ -137,7 +156,12 @@ export function MobilePlatformPage() {
 
       <div className="tab-row">
         {tabs.map((tab) => (
-          <button key={tab.id} type="button" className={activeTab === tab.id ? 'tab-button active' : 'tab-button'} onClick={() => setActiveTab(tab.id)}>
+          <button
+            key={tab.id}
+            type="button"
+            className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
+            onClick={() => setActiveTab(tab.id)}
+          >
             {tab.label}
           </button>
         ))}
@@ -152,7 +176,9 @@ export function MobilePlatformPage() {
           <Panel title="Platform Summary">
             <p>{dashboard.summary}</p>
             {dashboard.isPlatformOwner ? (
-              <span className="status-pill status-healthy">Platform Owner — global mobile visibility</span>
+              <span className="status-pill status-healthy">
+                Platform Owner — global mobile visibility
+              </span>
             ) : null}
           </Panel>
 
@@ -162,17 +188,32 @@ export function MobilePlatformPage() {
               <StatCard label="Pending Sync" value={String(dashboard.pendingSyncQueueCount)} />
               <StatCard label="Sync Conflicts" value={String(dashboard.pendingConflictCount)} />
               <StatCard label="Fleet Providers" value={String(dashboard.fleetProviders.length)} />
-              <StatCard label="Cartrack" value={dashboard.cartrackConnected ? 'Connected' : 'Not connected'} />
-              <StatCard label="Offline Retention" value={`${dashboard.platformConfig.offlineRetentionDays} days`} />
-              <StatCard label="Sync Frequency" value={`${dashboard.platformConfig.syncFrequencyMinutes} min`} />
-              <StatCard label="PWA Enabled" value={dashboard.platformConfig.pwaEnabled ? 'Yes' : 'No'} />
+              <StatCard
+                label="Cartrack"
+                value={dashboard.cartrackConnected ? 'Connected' : 'Not connected'}
+              />
+              <StatCard
+                label="Offline Retention"
+                value={`${dashboard.platformConfig.offlineRetentionDays} days`}
+              />
+              <StatCard
+                label="Sync Frequency"
+                value={`${dashboard.platformConfig.syncFrequencyMinutes} min`}
+              />
+              <StatCard
+                label="PWA Enabled"
+                value={dashboard.platformConfig.pwaEnabled ? 'Yes' : 'No'}
+              />
             </div>
           ) : null}
 
           {activeTab === 'devices' ? (
             <Panel title="Registered Devices">
               {dashboard.devices.length === 0 ? (
-                <EmptyState title="No devices" description="Register a device when a technician or dispatcher signs in from mobile." />
+                <EmptyState
+                  title="No devices"
+                  description="Register a device when a technician or dispatcher signs in from mobile."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.devices.map((device) => (
@@ -180,13 +221,19 @@ export function MobilePlatformPage() {
                       <strong>{device.deviceName ?? device.deviceKey}</strong>
                       <span className="status-pill">{formatDeviceStatus(device.status)}</span>
                       <p>
-                        {formatDevicePlatform(device.platform)} · {device.userName ?? 'Unassigned'} · v{device.appVersion ?? '—'}
+                        {formatDevicePlatform(device.platform)} · {device.userName ?? 'Unassigned'}{' '}
+                        · v{device.appVersion ?? '—'}
                       </p>
                       {canWrite && device.status === 'active' ? (
                         <Button
                           variant="secondary"
                           disabled={isWorking}
-                          onClick={() => void runAction(() => revokeMobileDevice(accessToken!, device.id), 'Device revoked.')}
+                          onClick={() =>
+                            void runAction(
+                              () => revokeMobileDevice(accessToken!, device.id),
+                              'Device revoked.',
+                            )
+                          }
                         >
                           Revoke
                         </Button>
@@ -203,21 +250,31 @@ export function MobilePlatformPage() {
               <Panel title="Offline Operations">
                 <p>Supported offline resources: {dashboard.offlineResourceTypes.join(', ')}</p>
                 {canWrite ? (
-                  <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => processMobileSync(accessToken!), 'Sync processed.')}>
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(() => processMobileSync(accessToken!), 'Sync processed.')
+                    }
+                  >
                     Process Sync Queue
                   </Button>
                 ) : null}
               </Panel>
               <Panel title="Sync History">
                 {dashboard.syncHistory.length === 0 ? (
-                  <EmptyState title="No sync history" description="Sync history appears after manual or background sync runs." />
+                  <EmptyState
+                    title="No sync history"
+                    description="Sync history appears after manual or background sync runs."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.syncHistory.map((entry) => (
                       <div key={entry.id} className="data-list-item">
                         <strong>{entry.status}</strong>
                         <p>
-                          Processed {entry.processedCount}, failed {entry.failedCount}, conflicts {entry.conflictCount} · {entry.startedAt}
+                          Processed {entry.processedCount}, failed {entry.failedCount}, conflicts{' '}
+                          {entry.conflictCount} · {entry.startedAt}
                         </p>
                       </div>
                     ))}
@@ -229,17 +286,26 @@ export function MobilePlatformPage() {
 
           {activeTab === 'fleet' ? (
             <Panel title="Fleet Tracking Providers">
-              <p>All mobile modules consume the standardized internal Fleet API — not provider-specific APIs.</p>
+              <p>
+                All mobile modules consume the standardized internal Fleet API — not
+                provider-specific APIs.
+              </p>
               {dashboard.fleetProviders.length === 0 ? (
-                <EmptyState title="No providers configured" description="Configure a fleet tracking provider for your tenant." />
+                <EmptyState
+                  title="No providers configured"
+                  description="Configure a fleet tracking provider for your tenant."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.fleetProviders.map((provider) => (
                     <div key={provider.id} className="data-list-item">
                       <strong>{provider.name}</strong>
-                      <span className="status-pill">{provider.isActive ? 'active' : 'inactive'}</span>
+                      <span className="status-pill">
+                        {provider.isActive ? 'active' : 'inactive'}
+                      </span>
                       <p>
-                        {provider.providerType.replace(/_/g, ' ')} · {provider.lastTestStatus ?? 'not tested'}
+                        {provider.providerType.replace(/_/g, ' ')} ·{' '}
+                        {provider.lastTestStatus ?? 'not tested'}
                       </p>
                     </div>
                   ))}
@@ -254,21 +320,47 @@ export function MobilePlatformPage() {
                 <Button
                   variant="secondary"
                   disabled={isWorking}
-                  onClick={() => void runAction(() => captureMobileFieldIntelligence(accessToken!), 'Field intelligence captured.')}
+                  onClick={() =>
+                    void runAction(
+                      () => captureMobileFieldIntelligence(accessToken!),
+                      'Field intelligence captured.',
+                    )
+                  }
                 >
                   Capture Snapshot
                 </Button>
               ) : null}
               {!dashboard.fieldIntelligence ? (
-                <EmptyState title="No snapshot" description="Capture field intelligence from real job, sync, and device data." />
+                <EmptyState
+                  title="No snapshot"
+                  description="Capture field intelligence from real job, sync, and device data."
+                />
               ) : (
                 <div className="stat-grid">
-                  <StatCard label="Productivity" value={String(dashboard.fieldIntelligence.technicianProductivityScore ?? '—')} />
-                  <StatCard label="Avg Job Duration" value={String(dashboard.fieldIntelligence.avgJobDurationMinutes ?? '—')} />
-                  <StatCard label="Sync Health" value={String(dashboard.fieldIntelligence.syncHealthScore ?? '—')} />
-                  <StatCard label="Device Health" value={String(dashboard.fieldIntelligence.deviceHealthScore ?? '—')} />
-                  <StatCard label="Fleet Utilization" value={String(dashboard.fieldIntelligence.fleetUtilizationPercent ?? '—')} />
-                  <StatCard label="Safety Compliance" value={String(dashboard.fieldIntelligence.safetyComplianceScore ?? '—')} />
+                  <StatCard
+                    label="Productivity"
+                    value={String(dashboard.fieldIntelligence.technicianProductivityScore ?? '—')}
+                  />
+                  <StatCard
+                    label="Avg Job Duration"
+                    value={String(dashboard.fieldIntelligence.avgJobDurationMinutes ?? '—')}
+                  />
+                  <StatCard
+                    label="Sync Health"
+                    value={String(dashboard.fieldIntelligence.syncHealthScore ?? '—')}
+                  />
+                  <StatCard
+                    label="Device Health"
+                    value={String(dashboard.fieldIntelligence.deviceHealthScore ?? '—')}
+                  />
+                  <StatCard
+                    label="Fleet Utilization"
+                    value={String(dashboard.fieldIntelligence.fleetUtilizationPercent ?? '—')}
+                  />
+                  <StatCard
+                    label="Safety Compliance"
+                    value={String(dashboard.fieldIntelligence.safetyComplianceScore ?? '—')}
+                  />
                 </div>
               )}
             </Panel>
@@ -276,11 +368,19 @@ export function MobilePlatformPage() {
 
           {activeTab === 'assistant' ? (
             <Panel title="AURA Mobile Agent">
-              <p>Ask about jobs, offline sync, fleet tracking, troubleshooting, and field intelligence. Recommendations only.</p>
+              <p>
+                Ask about jobs, offline sync, fleet tracking, troubleshooting, and field
+                intelligence. Recommendations only.
+              </p>
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}

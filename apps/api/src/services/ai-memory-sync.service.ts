@@ -34,7 +34,8 @@ export class AiMemorySyncService {
     await this.deps.memoryService.createMemory(scope, {
       category: mapContextTypeToMemoryCategory(input.contextType),
       information: input.content,
-      importance: input.classification === 'restricted' ? 9 : input.classification === 'confidential' ? 7 : 5,
+      importance:
+        input.classification === 'restricted' ? 9 : input.classification === 'confidential' ? 7 : 5,
     });
 
     await this.deps.enterpriseKnowledgeGraphService.createOrganizationalMemory(scope, {
@@ -96,7 +97,13 @@ export class AiMemorySyncService {
 
 function mapContextTypeToOrganizationalMemoryType(
   contextType: SyncAiMemoryRequest['contextType'],
-): 'business_decision' | 'policy' | 'customer_history' | 'ai_insight' | 'lesson_learned' | 'project_history' {
+):
+  | 'business_decision'
+  | 'policy'
+  | 'customer_history'
+  | 'ai_insight'
+  | 'lesson_learned'
+  | 'project_history' {
   switch (contextType) {
     case 'business':
       return 'business_decision';

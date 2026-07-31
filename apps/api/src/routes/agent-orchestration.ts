@@ -97,7 +97,11 @@ export function createAgentOrchestrationRouter({
 }: OrchestrationRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('orchestration:read', 'orchestration:write', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'orchestration:read',
+    'orchestration:write',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('orchestration:write', 'agents:write');
 
   router.use(requireAuth);
@@ -115,7 +119,9 @@ export function createAgentOrchestrationRouter({
   router.post('/', requireWrite, async (req, res) => {
     const parsed = createOrchestrationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid orchestration payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid orchestration payload' } });
       return;
     }
 
@@ -138,7 +144,9 @@ export function createAgentOrchestrationRouter({
     const { companyId } = getAuth(req);
     const run = await orchestrationService.getRun(companyId, getRouteParam(req.params.runId));
     if (!run) {
-      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Orchestration run not found' } });
+      res
+        .status(404)
+        .json({ error: { code: 'NOT_FOUND', message: 'Orchestration run not found' } });
       return;
     }
     res.json({ data: { run } });
@@ -178,7 +186,10 @@ export function createAgentOrchestrationRouter({
 
   router.get('/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const orchestration = await orchestrationService.getOrchestration(companyId, getRouteParam(req.params.id));
+    const orchestration = await orchestrationService.getOrchestration(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!orchestration) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Orchestration not found' } });
       return;
@@ -189,7 +200,9 @@ export function createAgentOrchestrationRouter({
   router.patch('/:id', requireWrite, async (req, res) => {
     const parsed = updateOrchestrationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid orchestration payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid orchestration payload' } });
       return;
     }
 
@@ -209,7 +222,9 @@ export function createAgentOrchestrationRouter({
   router.post('/:id/steps', requireWrite, async (req, res) => {
     const parsed = createStepSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid step payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid step payload' } });
       return;
     }
 
@@ -229,7 +244,9 @@ export function createAgentOrchestrationRouter({
   router.post('/:id/triggers', requireWrite, async (req, res) => {
     const parsed = createTriggerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid trigger payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid trigger payload' } });
       return;
     }
 
@@ -255,7 +272,11 @@ export function createAgentOrchestrationRouter({
 
     try {
       const auth = getAuth(req);
-      const run = await orchestrationEngine.runManual(auth, getRouteParam(req.params.id), parsed.data.payload ?? {});
+      const run = await orchestrationEngine.runManual(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data.payload ?? {},
+      );
       res.status(201).json({ data: { run } });
     } catch (error) {
       handleEngineError(res, error);

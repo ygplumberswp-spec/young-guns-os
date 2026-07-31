@@ -37,12 +37,18 @@ const MAX_SYNC_RETRIES = 3;
 export class MobileSyncService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async getStaffSyncState(input: StaffSyncScope, deviceId?: string): Promise<MobileSyncStateSummary> {
+  async getStaffSyncState(
+    input: StaffSyncScope,
+    deviceId?: string,
+  ): Promise<MobileSyncStateSummary> {
     const row = await this.findOrCreateStaffState(input, deviceId);
     return toSyncStateSummary(row);
   }
 
-  async getPortalSyncState(input: PortalSyncScope, deviceId?: string): Promise<MobileSyncStateSummary> {
+  async getPortalSyncState(
+    input: PortalSyncScope,
+    deviceId?: string,
+  ): Promise<MobileSyncStateSummary> {
     const row = await this.findOrCreatePortalState(input, deviceId);
     return toSyncStateSummary(row);
   }
@@ -51,18 +57,29 @@ export class MobileSyncService {
     const existing = await this.findOrCreateStaffState(input, deviceId);
     const [updated] = await this.db
       .update(mobileSyncState)
-      .set({ lastSyncedAt: new Date(), updatedAt: new Date(), deviceId: deviceId ?? existing.deviceId })
+      .set({
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+        deviceId: deviceId ?? existing.deviceId,
+      })
       .where(eq(mobileSyncState.id, existing.id))
       .returning();
 
     return toSyncStateSummary(updated!);
   }
 
-  async touchPortalSync(input: PortalSyncScope, deviceId?: string): Promise<MobileSyncStateSummary> {
+  async touchPortalSync(
+    input: PortalSyncScope,
+    deviceId?: string,
+  ): Promise<MobileSyncStateSummary> {
     const existing = await this.findOrCreatePortalState(input, deviceId);
     const [updated] = await this.db
       .update(mobileSyncState)
-      .set({ lastSyncedAt: new Date(), updatedAt: new Date(), deviceId: deviceId ?? existing.deviceId })
+      .set({
+        lastSyncedAt: new Date(),
+        updatedAt: new Date(),
+        deviceId: deviceId ?? existing.deviceId,
+      })
       .where(eq(mobileSyncState.id, existing.id))
       .returning();
 
@@ -109,7 +126,10 @@ export class MobileSyncService {
     return toQueueSummary(created!);
   }
 
-  async listStaffPendingActions(companyId: string, userId: string): Promise<MobilePendingActionSummary[]> {
+  async listStaffPendingActions(
+    companyId: string,
+    userId: string,
+  ): Promise<MobilePendingActionSummary[]> {
     const rows = await this.db.query.mobilePendingActions.findMany({
       where: and(
         eq(mobilePendingActions.companyId, companyId),
@@ -176,6 +196,13 @@ export class MobileSyncService {
       .where(eq(mobilePendingActions.id, actionId));
   }
 
+  /**
+   * Observability-only queue drain: marks queued sync metadata as processed/failed/retried but does
+   * NOT replay payloads against domain services. Clients apply state changes directly against the
+   * job-execution/mobile-workforce APIs (idempotent via `clientActionId`), or batch them through
+   * `MobileWorkforceService.flushOfflineActions` (`POST /technician/workforce/offline/flush`) when
+   * offline. This queue exists so the client can show sync status/conflicts, not as a replay log.
+   */
   async processStaffSyncQueue(companyId: string, userId: string): Promise<MobileSyncProcessResult> {
     const rows = await this.db.query.mobileSyncQueue.findMany({
       where: and(
@@ -324,7 +351,9 @@ function toQueueSummary(row: typeof mobileSyncQueue.$inferSelect): MobileSyncQue
   };
 }
 
-function toPendingActionSummary(row: typeof mobilePendingActions.$inferSelect): MobilePendingActionSummary {
+function toPendingActionSummary(
+  row: typeof mobilePendingActions.$inferSelect,
+): MobilePendingActionSummary {
   return {
     id: row.id,
     actionType: row.actionType,

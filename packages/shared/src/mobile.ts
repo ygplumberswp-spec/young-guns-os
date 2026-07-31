@@ -204,6 +204,8 @@ export type MobileTechnicianCustomerDetails = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  accessInstructions?: string | null;
+  siteContact?: JobDetail['siteContact'];
   job: JobDetail;
 };
 
@@ -229,12 +231,7 @@ export type MobileCustomerCommunications = {
 };
 
 export type TechnicianJobAction =
-  | 'accept_job'
-  | 'start_job'
-  | 'pause_job'
-  | 'complete_job'
-  | 'add_job_note'
-  | 'submit_completion';
+  'accept_job' | 'start_job' | 'pause_job' | 'complete_job' | 'add_job_note' | 'submit_completion';
 
 export type AddJobNoteRequest = {
   note: string;
@@ -294,6 +291,4 @@ export type MobileAuraCustomerContext = {
 };
 
 export type MobileAuraContext =
-  | MobileAuraOwnerContext
-  | MobileAuraTechnicianContext
-  | MobileAuraCustomerContext;
+  MobileAuraOwnerContext | MobileAuraTechnicianContext | MobileAuraCustomerContext;

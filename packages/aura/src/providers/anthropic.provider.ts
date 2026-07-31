@@ -63,7 +63,10 @@ export class AnthropicProvider implements AuraProvider {
 
     const content = payload.content?.find((block) => block.type === 'text')?.text?.trim();
     if (!content) {
-      throw new AuraProviderError('PROVIDER_EMPTY_RESPONSE', 'Anthropic returned an empty response.');
+      throw new AuraProviderError(
+        'PROVIDER_EMPTY_RESPONSE',
+        'Anthropic returned an empty response.',
+      );
     }
 
     return content;

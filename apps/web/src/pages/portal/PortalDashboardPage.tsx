@@ -44,25 +44,34 @@ export function PortalDashboardPage() {
                 title="Active jobs"
                 description={`${dashboard.activeJobCount} active · ${dashboard.completedJobCount} completed`}
               >
-                <Link href="/portal/jobs">View jobs</Link>
+                <Link href="/jobs">View jobs</Link>
               </Panel>
               <Panel title="Quotes" description={`${dashboard.pendingQuoteCount} pending approval`}>
-                <Link href="/portal/quotes">View quotes</Link>
+                <Link href="/quotes">View quotes</Link>
               </Panel>
               <Panel
                 title="Invoices"
                 description={`${dashboard.outstandingInvoiceCount} outstanding · ${formatMoney(dashboard.outstandingBalanceCents, dashboard.currency)}`}
               >
-                <Link href="/portal/finance">Open finance centre</Link>
+                <Link href="/finance">Open finance centre</Link>
               </Panel>
-              <Panel title="Appointments" description={`${dashboard.upcomingAppointmentCount} upcoming`}>
-                <Link href="/portal/appointments">View appointments</Link>
+              <Panel
+                title="Appointments"
+                description={`${dashboard.upcomingAppointmentCount} upcoming`}
+              >
+                <Link href="/appointments">View appointments</Link>
               </Panel>
-              <Panel title="Notifications" description={`${dashboard.unreadNotificationCount} unread`}>
-                <Link href="/portal/notifications">Open notifications</Link>
+              <Panel
+                title="Notifications"
+                description={`${dashboard.unreadNotificationCount} unread`}
+              >
+                <Link href="/notifications">Open notifications</Link>
               </Panel>
-              <Panel title="Help & knowledge" description="Search customer-visible articles and guides">
-                <Link href="/portal/knowledge">Search knowledge</Link>
+              <Panel
+                title="Help & knowledge"
+                description="Search customer-visible articles and guides"
+              >
+                <Link href="/knowledge">Search knowledge</Link>
               </Panel>
             </div>
 

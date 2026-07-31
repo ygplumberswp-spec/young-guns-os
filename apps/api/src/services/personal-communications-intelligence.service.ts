@@ -65,7 +65,15 @@ const MEDIA_PLACEHOLDERS = [
   '[voice message]',
 ];
 
-const EMERGENCY_KEYWORDS = ['emergency', 'burst', 'flooding', 'urgent', 'no water', 'gas leak', 'sewer'];
+const EMERGENCY_KEYWORDS = [
+  'emergency',
+  'burst',
+  'flooding',
+  'urgent',
+  'no water',
+  'gas leak',
+  'sewer',
+];
 const QUOTE_KEYWORDS = ['quote', 'estimate', 'pricing', 'how much', 'cost'];
 const BOOKING_KEYWORDS = ['book', 'appointment', 'schedule', 'when can you'];
 const PAYMENT_KEYWORDS = ['paid', 'payment', 'eft', 'proof of payment'];
@@ -83,28 +91,37 @@ export class PersonalCommunicationsIntelligenceService {
   ) {}
 
   async getExecutiveDashboard(companyId: string): Promise<PersonalCommExecutiveDashboard> {
-    const [conversations, leadSignals, followUps, pendingActions, voiceAnalyses, documentAnalyses, mediaItems] =
-      await Promise.all([
-        this.listBusinessConversations(companyId),
-        this.db.query.personalCommLeadSignals.findMany({
-          where: eq(personalCommLeadSignals.companyId, companyId),
-          orderBy: [desc(personalCommLeadSignals.createdAt)],
-          limit: 100,
-        }),
-        this.listFollowUpQueue(companyId),
-        this.listActions(companyId, 'pending_approval'),
-        this.db.query.personalCommVoiceAnalyses.findMany({
-          where: eq(personalCommVoiceAnalyses.companyId, companyId),
-        }),
-        this.db.query.personalCommDocumentAnalyses.findMany({
-          where: eq(personalCommDocumentAnalyses.companyId, companyId),
-        }),
-        this.db.query.personalCommMediaItems.findMany({
-          where: eq(personalCommMediaItems.companyId, companyId),
-        }),
-      ]);
+    const [
+      conversations,
+      leadSignals,
+      followUps,
+      pendingActions,
+      voiceAnalyses,
+      documentAnalyses,
+      mediaItems,
+    ] = await Promise.all([
+      this.listBusinessConversations(companyId),
+      this.db.query.personalCommLeadSignals.findMany({
+        where: eq(personalCommLeadSignals.companyId, companyId),
+        orderBy: [desc(personalCommLeadSignals.createdAt)],
+        limit: 100,
+      }),
+      this.listFollowUpQueue(companyId),
+      this.listActions(companyId, 'pending_approval'),
+      this.db.query.personalCommVoiceAnalyses.findMany({
+        where: eq(personalCommVoiceAnalyses.companyId, companyId),
+      }),
+      this.db.query.personalCommDocumentAnalyses.findMany({
+        where: eq(personalCommDocumentAnalyses.companyId, companyId),
+      }),
+      this.db.query.personalCommMediaItems.findMany({
+        where: eq(personalCommMediaItems.companyId, companyId),
+      }),
+    ]);
 
-    const businessCount = conversations.filter((row) => !row.excludedFromReports && row.privacyMode === 'business').length;
+    const businessCount = conversations.filter(
+      (row) => !row.excludedFromReports && row.privacyMode === 'business',
+    ).length;
     const personalCount = conversations.filter((row) => row.privacyMode === 'personal').length;
     const whatsappContext = await this.whatsappService.buildAuraContext(companyId);
 
@@ -125,7 +142,9 @@ export class PersonalCommunicationsIntelligenceService {
       totalBusinessConversations: businessCount,
       totalPersonalConversations: personalCount,
       personalVsBusinessRatio:
-        businessCount + personalCount > 0 ? Math.round((personalCount / (businessCount + personalCount)) * 100) / 100 : null,
+        businessCount + personalCount > 0
+          ? Math.round((personalCount / (businessCount + personalCount)) * 100) / 100
+          : null,
       newLeadsDetected: leadSignals.filter((row) => row.signalType === 'new_lead').length,
       averageResponseMinutes: null,
       missedOpportunityCount: awaitingReply,
@@ -172,10 +191,16 @@ export class PersonalCommunicationsIntelligenceService {
     }));
   }
 
-  async createAccount(scope: StaffScope, input: CreatePersonalCommAccountRequest): Promise<PersonalCommAccountSummary> {
+  async createAccount(
+    scope: StaffScope,
+    input: CreatePersonalCommAccountRequest,
+  ): Promise<PersonalCommAccountSummary> {
     const label = input.label.trim();
     if (!label) {
-      throw new PersonalCommunicationsIntelligenceError('VALIDATION_ERROR', 'Account label is required');
+      throw new PersonalCommunicationsIntelligenceError(
+        'VALIDATION_ERROR',
+        'Account label is required',
+      );
     }
 
     if (input.whatsappConnectionId) {
@@ -186,7 +211,10 @@ export class PersonalCommunicationsIntelligenceService {
         ),
       });
       if (!connection) {
-        throw new PersonalCommunicationsIntelligenceError('NOT_FOUND', 'WhatsApp connection not found');
+        throw new PersonalCommunicationsIntelligenceError(
+          'NOT_FOUND',
+          'WhatsApp connection not found',
+        );
       }
     }
 
@@ -380,7 +408,10 @@ export class PersonalCommunicationsIntelligenceService {
     companyId: string,
     input: AnalyzePersonalCommVoiceRequest,
   ): Promise<PersonalCommVoiceAnalysisSummary> {
-    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(companyId, 'speech');
+    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(
+      companyId,
+      'speech',
+    );
     const summarizationRouting = await this.aiOrchestrationService.resolveRoutingForCategory(
       companyId,
       'summarization',
@@ -392,12 +423,18 @@ export class PersonalCommunicationsIntelligenceService {
 
     if (input.whatsappMessageId) {
       const message = await this.db.query.whatsappMessages.findFirst({
-        where: and(eq(whatsappMessages.id, input.whatsappMessageId), eq(whatsappMessages.companyId, companyId)),
+        where: and(
+          eq(whatsappMessages.id, input.whatsappMessageId),
+          eq(whatsappMessages.companyId, companyId),
+        ),
       });
       messageContent = message?.messageContent ?? null;
     } else if (input.mediaItemId) {
       const media = await this.db.query.personalCommMediaItems.findFirst({
-        where: and(eq(personalCommMediaItems.id, input.mediaItemId), eq(personalCommMediaItems.companyId, companyId)),
+        where: and(
+          eq(personalCommMediaItems.id, input.mediaItemId),
+          eq(personalCommMediaItems.companyId, companyId),
+        ),
       });
       mediaItemId = media?.id ?? null;
       whatsappMessageId = media?.whatsappMessageId ?? null;
@@ -445,14 +482,20 @@ export class PersonalCommunicationsIntelligenceService {
     input: AnalyzePersonalCommMediaRequest,
   ): Promise<PersonalCommMediaAnalysisSummary> {
     const media = await this.db.query.personalCommMediaItems.findFirst({
-      where: and(eq(personalCommMediaItems.id, input.mediaItemId), eq(personalCommMediaItems.companyId, companyId)),
+      where: and(
+        eq(personalCommMediaItems.id, input.mediaItemId),
+        eq(personalCommMediaItems.companyId, companyId),
+      ),
     });
 
     if (!media) {
       throw new PersonalCommunicationsIntelligenceError('NOT_FOUND', 'Media item not found');
     }
 
-    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(companyId, 'image_understanding');
+    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(
+      companyId,
+      'image_understanding',
+    );
     let messageContent: string | null = null;
 
     if (media.whatsappMessageId) {
@@ -497,10 +540,16 @@ export class PersonalCommunicationsIntelligenceService {
     });
 
     if (!media) {
-      throw new PersonalCommunicationsIntelligenceError('NOT_FOUND', 'Document media item not found');
+      throw new PersonalCommunicationsIntelligenceError(
+        'NOT_FOUND',
+        'Document media item not found',
+      );
     }
 
-    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(companyId, 'document_analysis');
+    const routing = await this.aiOrchestrationService.resolveRoutingForCategory(
+      companyId,
+      'document_analysis',
+    );
     let messageContent: string | null = null;
 
     if (media.whatsappMessageId) {
@@ -522,7 +571,11 @@ export class PersonalCommunicationsIntelligenceService {
         extractedData,
         routingProviderKey: routing.providerKey,
         routingModelKey: routing.modelKey,
-        status: isPlaceholder ? 'unavailable' : Object.keys(extractedData).length > 0 ? 'completed' : 'pending',
+        status: isPlaceholder
+          ? 'unavailable'
+          : Object.keys(extractedData).length > 0
+            ? 'completed'
+            : 'pending',
         metadata: { routingRuleId: routing.routingRuleId },
       })
       .returning();
@@ -604,7 +657,9 @@ export class PersonalCommunicationsIntelligenceService {
       generated.push(toFollowUpSummary(created!));
     }
 
-    const missedCalls = callHistory.filter((call) => call.outcome === 'missed' || call.callType === 'missed');
+    const missedCalls = callHistory.filter(
+      (call) => call.outcome === 'missed' || call.callType === 'missed',
+    );
     for (const call of missedCalls.slice(0, 10)) {
       const [created] = await this.db
         .insert(personalCommFollowUps)
@@ -740,7 +795,10 @@ export class PersonalCommunicationsIntelligenceService {
   async listActions(companyId: string, status?: string): Promise<PersonalCommActionSummary[]> {
     const rows = await this.db.query.personalCommActions.findMany({
       where: status
-        ? and(eq(personalCommActions.companyId, companyId), eq(personalCommActions.status, status as never))
+        ? and(
+            eq(personalCommActions.companyId, companyId),
+            eq(personalCommActions.status, status as never),
+          )
         : eq(personalCommActions.companyId, companyId),
       orderBy: [desc(personalCommActions.createdAt)],
       limit: 200,
@@ -759,11 +817,17 @@ export class PersonalCommunicationsIntelligenceService {
     }));
   }
 
-  async createAction(scope: StaffScope, input: CreatePersonalCommActionRequest): Promise<PersonalCommActionSummary> {
+  async createAction(
+    scope: StaffScope,
+    input: CreatePersonalCommActionRequest,
+  ): Promise<PersonalCommActionSummary> {
     const subject = input.subject.trim();
     const recommendation = input.recommendation.trim();
     if (!subject || !recommendation) {
-      throw new PersonalCommunicationsIntelligenceError('VALIDATION_ERROR', 'Subject and recommendation are required');
+      throw new PersonalCommunicationsIntelligenceError(
+        'VALIDATION_ERROR',
+        'Subject and recommendation are required',
+      );
     }
 
     const [created] = await this.db
@@ -795,7 +859,9 @@ export class PersonalCommunicationsIntelligenceService {
     return actions.find((item) => item.id === created!.id)!;
   }
 
-  async buildPersonalCommunicationsAuraContext(companyId: string): Promise<PersonalCommAuraContext> {
+  async buildPersonalCommunicationsAuraContext(
+    companyId: string,
+  ): Promise<PersonalCommAuraContext> {
     const dashboard = await this.getExecutiveDashboard(companyId);
     return {
       summary: dashboard.summary,
@@ -807,7 +873,9 @@ export class PersonalCommunicationsIntelligenceService {
     };
   }
 
-  private async ensureDefaultBusinessAccount(companyId: string): Promise<PersonalCommAccountSummary> {
+  private async ensureDefaultBusinessAccount(
+    companyId: string,
+  ): Promise<PersonalCommAccountSummary> {
     const connection = await this.db.query.whatsappConnections.findFirst({
       where: eq(whatsappConnections.companyId, companyId),
     });
@@ -890,7 +958,10 @@ function classifyMessageText(
   if (hasCustomer) {
     return { classification: 'existing_customer', confidence: 80 };
   }
-  if (QUOTE_KEYWORDS.some((keyword) => lower.includes(keyword)) || BOOKING_KEYWORDS.some((keyword) => lower.includes(keyword))) {
+  if (
+    QUOTE_KEYWORDS.some((keyword) => lower.includes(keyword)) ||
+    BOOKING_KEYWORDS.some((keyword) => lower.includes(keyword))
+  ) {
     return { classification: 'new_lead', confidence: 75 };
   }
   if (/family|mom|dad|brother|sister/.test(lower)) {
@@ -938,9 +1009,12 @@ function extractKeyPoints(text: string): string[] {
 function extractActionItems(text: string): string[] {
   const lower = text.toLowerCase();
   const items: string[] = [];
-  if (QUOTE_KEYWORDS.some((keyword) => lower.includes(keyword))) items.push('Prepare quote recommendation for approval');
-  if (BOOKING_KEYWORDS.some((keyword) => lower.includes(keyword))) items.push('Draft booking follow-up for approval');
-  if (EMERGENCY_KEYWORDS.some((keyword) => lower.includes(keyword))) items.push('Review emergency priority and draft dispatch recommendation');
+  if (QUOTE_KEYWORDS.some((keyword) => lower.includes(keyword)))
+    items.push('Prepare quote recommendation for approval');
+  if (BOOKING_KEYWORDS.some((keyword) => lower.includes(keyword)))
+    items.push('Draft booking follow-up for approval');
+  if (EMERGENCY_KEYWORDS.some((keyword) => lower.includes(keyword)))
+    items.push('Review emergency priority and draft dispatch recommendation');
   return items;
 }
 
@@ -1040,7 +1114,8 @@ function detectLeadSignal(
     return {
       signalType: 'emergency_request',
       subject: 'Emergency service request detected',
-      recommendation: 'Draft emergency dispatch recommendation for approval — never dispatch automatically.',
+      recommendation:
+        'Draft emergency dispatch recommendation for approval — never dispatch automatically.',
       draftType: 'draft_job',
       confidence: 90,
     };
@@ -1103,7 +1178,9 @@ function detectLeadSignal(
   return null;
 }
 
-function toVoiceAnalysisSummary(row: typeof personalCommVoiceAnalyses.$inferSelect): PersonalCommVoiceAnalysisSummary {
+function toVoiceAnalysisSummary(
+  row: typeof personalCommVoiceAnalyses.$inferSelect,
+): PersonalCommVoiceAnalysisSummary {
   return {
     id: row.id,
     mediaItemId: row.mediaItemId,
@@ -1122,7 +1199,9 @@ function toVoiceAnalysisSummary(row: typeof personalCommVoiceAnalyses.$inferSele
   };
 }
 
-function toMediaAnalysisSummary(row: typeof personalCommMediaAnalyses.$inferSelect): PersonalCommMediaAnalysisSummary {
+function toMediaAnalysisSummary(
+  row: typeof personalCommMediaAnalyses.$inferSelect,
+): PersonalCommMediaAnalysisSummary {
   return {
     id: row.id,
     mediaItemId: row.mediaItemId,
@@ -1150,7 +1229,9 @@ function toDocumentAnalysisSummary(
   };
 }
 
-function toFollowUpSummary(row: typeof personalCommFollowUps.$inferSelect): PersonalCommFollowUpSummary {
+function toFollowUpSummary(
+  row: typeof personalCommFollowUps.$inferSelect,
+): PersonalCommFollowUpSummary {
   return {
     id: row.id,
     conversationId: row.conversationId,

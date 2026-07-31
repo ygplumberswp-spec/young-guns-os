@@ -53,7 +53,9 @@ export function VehicleCreatePage() {
     }
 
     void loadAssignees();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -106,22 +108,43 @@ export function VehicleCreatePage() {
 
       <form className="fleet-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <Input label="License plate" value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} required />
+        <Input
+          label="License plate"
+          value={licensePlate}
+          onChange={(e) => setLicensePlate(e.target.value)}
+          required
+        />
         <Input label="Make" value={make} onChange={(e) => setMake(e.target.value)} />
         <Input label="Model" value={model} onChange={(e) => setModel(e.target.value)} />
-        <Input label="Year" type="number" min="1900" value={year} onChange={(e) => setYear(e.target.value)} />
+        <Input
+          label="Year"
+          type="number"
+          min="1900"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+        />
         <Input label="VIN" value={vin} onChange={(e) => setVin(e.target.value)} />
         <label className="titan-input-group">
           <span className="titan-input-label">Status</span>
-          <select className="titan-input" value={status} onChange={(e) => setStatus(e.target.value as VehicleStatus)}>
+          <select
+            className="titan-input"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as VehicleStatus)}
+          >
             {VEHICLE_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </label>
         <label className="titan-input-group">
           <span className="titan-input-label">Assigned driver/technician (optional)</span>
-          <select className="titan-input" value={assignedUserId} onChange={(e) => setAssignedUserId(e.target.value)}>
+          <select
+            className="titan-input"
+            value={assignedUserId}
+            onChange={(e) => setAssignedUserId(e.target.value)}
+          >
             <option value="">Unassigned</option>
             {assignees.map((assignee) => (
               <option key={assignee.id} value={assignee.id}>
@@ -132,7 +155,12 @@ export function VehicleCreatePage() {
         </label>
         <label className="titan-input-group">
           <span className="titan-input-label">Notes</span>
-          <textarea className="titan-input fleet-textarea" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <textarea
+            className="titan-input fleet-textarea"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </label>
         <Button type="submit" disabled={isSaving || !name.trim() || !licensePlate.trim()}>
           {isSaving ? 'Creating…' : 'Add vehicle'}

@@ -19,10 +19,7 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import {
-  canAccessIntegrations,
-  canManageIntegrations,
-} from '../../features/integrations/utils';
+import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
 
 export function WhatsappSettingsPage() {
@@ -72,7 +69,9 @@ export function WhatsappSettingsPage() {
         await loadPageData();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load WhatsApp settings');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load WhatsApp settings',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -80,7 +79,9 @@ export function WhatsappSettingsPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
@@ -181,7 +182,9 @@ export function WhatsappSettingsPage() {
 
     try {
       const updated = await updateWhatsappTemplate(accessToken, templateId, { status: 'approved' });
-      setTemplates((current) => current.map((template) => (template.id === templateId ? updated : template)));
+      setTemplates((current) =>
+        current.map((template) => (template.id === templateId ? updated : template)),
+      );
       setSuccess('Template marked as approved.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to update template');
@@ -238,7 +241,9 @@ export function WhatsappSettingsPage() {
               </div>
               <div>
                 <dt>Webhook URL</dt>
-                <dd><code>{connection.webhookUrl}</code></dd>
+                <dd>
+                  <code>{connection.webhookUrl}</code>
+                </dd>
               </div>
               <div>
                 <dt>Verify token</dt>
@@ -260,7 +265,9 @@ export function WhatsappSettingsPage() {
                 type="password"
                 value={accessTokenField}
                 onChange={(event) => setAccessTokenField(event.target.value)}
-                placeholder={connection?.hasCredentials ? 'Leave blank to keep current token' : undefined}
+                placeholder={
+                  connection?.hasCredentials ? 'Leave blank to keep current token' : undefined
+                }
                 required={!connection?.hasCredentials}
               />
               <Input
@@ -283,10 +290,19 @@ export function WhatsappSettingsPage() {
               />
               <div className="integrations-form__actions">
                 <Button type="submit" disabled={isSaving}>
-                  {isSaving ? 'Connecting…' : connection?.status === 'connected' ? 'Update connection' : 'Connect WhatsApp'}
+                  {isSaving
+                    ? 'Connecting…'
+                    : connection?.status === 'connected'
+                      ? 'Update connection'
+                      : 'Connect WhatsApp'}
                 </Button>
                 {connection?.status === 'connected' ? (
-                  <Button type="button" variant="secondary" disabled={isSaving} onClick={() => void handleDisconnect()}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSaving}
+                    onClick={() => void handleDisconnect()}
+                  >
                     Disconnect
                   </Button>
                 ) : null}
@@ -298,12 +314,32 @@ export function WhatsappSettingsPage() {
         <Panel title="Message statistics">
           {stats ? (
             <dl className="integrations-detail-list">
-              <div><dt>Total messages</dt><dd>{stats.totalMessages}</dd></div>
-              <div><dt>Incoming</dt><dd>{stats.incomingCount}</dd></div>
-              <div><dt>Outgoing</dt><dd>{stats.outgoingCount}</dd></div>
-              <div><dt>Drafts awaiting approval</dt><dd>{stats.draftCount}</dd></div>
-              <div><dt>Pending replies</dt><dd>{stats.pendingReplyCount}</dd></div>
-              <div><dt>Templates</dt><dd>{stats.approvedTemplateCount} / {stats.templateCount} approved</dd></div>
+              <div>
+                <dt>Total messages</dt>
+                <dd>{stats.totalMessages}</dd>
+              </div>
+              <div>
+                <dt>Incoming</dt>
+                <dd>{stats.incomingCount}</dd>
+              </div>
+              <div>
+                <dt>Outgoing</dt>
+                <dd>{stats.outgoingCount}</dd>
+              </div>
+              <div>
+                <dt>Drafts awaiting approval</dt>
+                <dd>{stats.draftCount}</dd>
+              </div>
+              <div>
+                <dt>Pending replies</dt>
+                <dd>{stats.pendingReplyCount}</dd>
+              </div>
+              <div>
+                <dt>Templates</dt>
+                <dd>
+                  {stats.approvedTemplateCount} / {stats.templateCount} approved
+                </dd>
+              </div>
             </dl>
           ) : (
             <p className="page-muted">No message activity yet.</p>
@@ -340,17 +376,29 @@ export function WhatsappSettingsPage() {
 
       <Panel title="Template management">
         {canManage ? (
-          <form className="integrations-form integrations-form--compact" onSubmit={(event) => void handleCreateTemplate(event)}>
-            <Input label="Template name" value={templateName} onChange={(event) => setTemplateName(event.target.value)} required />
+          <form
+            className="integrations-form integrations-form--compact"
+            onSubmit={(event) => void handleCreateTemplate(event)}
+          >
+            <Input
+              label="Template name"
+              value={templateName}
+              onChange={(event) => setTemplateName(event.target.value)}
+              required
+            />
             <label className="titan-input-group">
               <span className="titan-input-label">Category</span>
               <select
                 className="titan-input"
                 value={templateCategory}
-                onChange={(event) => setTemplateCategory(event.target.value as WhatsappTemplateCategory)}
+                onChange={(event) =>
+                  setTemplateCategory(event.target.value as WhatsappTemplateCategory)
+                }
               >
                 {WHATSAPP_TEMPLATE_CATEGORY_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -387,11 +435,19 @@ export function WhatsappSettingsPage() {
                 {canManage ? (
                   <div className="integrations-form__actions">
                     {template.status !== 'approved' ? (
-                      <Button type="button" variant="secondary" onClick={() => void handleApproveTemplate(template.id)}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void handleApproveTemplate(template.id)}
+                      >
                         Mark approved
                       </Button>
                     ) : null}
-                    <Button type="button" variant="ghost" onClick={() => void handleDeleteTemplate(template.id)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={() => void handleDeleteTemplate(template.id)}
+                    >
                       Delete
                     </Button>
                   </div>

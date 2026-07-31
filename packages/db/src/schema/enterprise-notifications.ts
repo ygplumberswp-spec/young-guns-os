@@ -88,7 +88,11 @@ export const ncPlatformAlertStatusEnum = pgEnum('nc_platform_alert_status', [
   'resolved',
   'dismissed',
 ]);
-export const ncDeliveryModeEnum = pgEnum('nc_delivery_mode', ['immediate', 'digest', 'quiet_hours']);
+export const ncDeliveryModeEnum = pgEnum('nc_delivery_mode', [
+  'immediate',
+  'digest',
+  'quiet_hours',
+]);
 
 export const ncPlatformConfig = pgTable('nc_platform_config', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -97,9 +101,18 @@ export const ncPlatformConfig = pgTable('nc_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   deliveryPolicy: jsonb('delivery_policy').$type<Record<string, unknown>>().notNull().default({}),
-  escalationPolicy: jsonb('escalation_policy').$type<Record<string, unknown>>().notNull().default({}),
-  quietHoursPolicy: jsonb('quiet_hours_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  escalationPolicy: jsonb('escalation_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  quietHoursPolicy: jsonb('quiet_hours_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -154,7 +167,9 @@ export const ncDeliveryJobs = pgTable('nc_delivery_jobs', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   alertId: uuid('alert_id'),
   notificationId: uuid('notification_id'),
-  templateId: uuid('template_id').references(() => ncNotificationTemplates.id, { onDelete: 'set null' }),
+  templateId: uuid('template_id').references(() => ncNotificationTemplates.id, {
+    onDelete: 'set null',
+  }),
   recipientUserId: uuid('recipient_user_id').references(() => users.id, { onDelete: 'set null' }),
   channel: ncDeliveryChannelEnum('channel').notNull(),
   status: ncDeliveryStatusEnum('status').notNull().default('queued'),
@@ -201,9 +216,13 @@ export const ncAlerts = pgTable('nc_alerts', {
   sourceEntityType: text('source_entity_type'),
   sourceEntityId: uuid('source_entity_id'),
   assignedUserId: uuid('assigned_user_id').references(() => users.id, { onDelete: 'set null' }),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
-  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
@@ -225,9 +244,13 @@ export const ncEscalations = pgTable('nc_escalations', {
   escalateToRef: text('escalate_to_ref'),
   escalateAfterMinutes: integer('escalate_after_minutes').notNull().default(30),
   escalatedAt: timestamp('escalated_at', { withTimezone: true }),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
-  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -279,7 +302,9 @@ export const ncPlatformAlerts = pgTable('nc_platform_alerts', {
   status: ncPlatformAlertStatusEnum('status').notNull().default('open'),
   title: text('title').notNull(),
   description: text('description'),
-  deliveryJobId: uuid('delivery_job_id').references(() => ncDeliveryJobs.id, { onDelete: 'set null' }),
+  deliveryJobId: uuid('delivery_job_id').references(() => ncDeliveryJobs.id, {
+    onDelete: 'set null',
+  }),
   alertId: uuid('alert_id').references(() => ncAlerts.id, { onDelete: 'set null' }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

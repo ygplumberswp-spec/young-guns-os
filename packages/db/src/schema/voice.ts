@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { agentProfiles } from './agent-profiles';
 import { companies } from './companies';
 import { customers } from './customers';
@@ -57,7 +66,9 @@ export const voiceSessions = pgTable('voice_sessions', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
-  agentProfileId: uuid('agent_profile_id').references(() => agentProfiles.id, { onDelete: 'set null' }),
+  agentProfileId: uuid('agent_profile_id').references(() => agentProfiles.id, {
+    onDelete: 'set null',
+  }),
   status: voiceSessionStatusEnum('status').notNull().default('active'),
   channel: voiceChannelEnum('channel').notNull().default('phone'),
   enquiryType: voiceEnquiryTypeEnum('enquiry_type').notNull().default('other'),

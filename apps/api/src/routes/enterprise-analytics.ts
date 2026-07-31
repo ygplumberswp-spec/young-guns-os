@@ -40,7 +40,12 @@ const dashboardTypeSchema = z.enum([
 ]);
 
 const permissionSchema = z.enum(['read', 'write', 'admin']);
-const actionTypeSchema = z.enum(['strategic_report', 'kpi_recommendation', 'forecast_review', 'governance_action']);
+const actionTypeSchema = z.enum([
+  'strategic_report',
+  'kpi_recommendation',
+  'forecast_review',
+  'governance_action',
+]);
 
 const actionSchema = z.object({
   actionType: actionTypeSchema,
@@ -92,7 +97,12 @@ export function createEnterpriseAnalyticsRouter({
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('bi:read', 'bi:write', 'analytics:read', 'intelligence:read');
+  const requireRead = requireAnyPermission(
+    'bi:read',
+    'bi:write',
+    'analytics:read',
+    'intelligence:read',
+  );
   const requireWrite = requireAnyPermission('bi:write', 'analytics:write');
 
   router.use(requireAuth);
@@ -132,13 +142,18 @@ export function createEnterpriseAnalyticsRouter({
   router.post('/aggregate', requireWrite, async (req, res) => {
     const parsed = aggregationSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid aggregation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid aggregation payload' } });
       return;
     }
 
     try {
       const auth = getAuth(req);
-      const snapshots = await enterpriseAnalyticsService.runIncrementalAggregation(auth.companyId, parsed.data);
+      const snapshots = await enterpriseAnalyticsService.runIncrementalAggregation(
+        auth.companyId,
+        parsed.data,
+      );
       await enterpriseAnalyticsService.recordAccessAudit(auth, {
         action: 'run_aggregation',
         resourceType: 'data_warehouse',
@@ -165,13 +180,18 @@ export function createEnterpriseAnalyticsRouter({
   router.post('/governance/dataset-permissions', requireWrite, async (req, res) => {
     const parsed = datasetPermissionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid permission payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid permission payload' } });
       return;
     }
 
     try {
       const auth = getAuth(req);
-      const permission = await enterpriseAnalyticsService.createDatasetPermission(auth.companyId, parsed.data);
+      const permission = await enterpriseAnalyticsService.createDatasetPermission(
+        auth.companyId,
+        parsed.data,
+      );
       res.status(201).json({ data: { permission } });
     } catch (error) {
       handleError(res, error);
@@ -181,7 +201,9 @@ export function createEnterpriseAnalyticsRouter({
   router.post('/governance/retention-policies', requireWrite, async (req, res) => {
     const parsed = retentionPolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid retention policy payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid retention policy payload' } });
       return;
     }
 
@@ -203,7 +225,9 @@ export function createEnterpriseAnalyticsRouter({
   router.post('/layouts', requireWrite, async (req, res) => {
     const parsed = layoutSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid layout payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid layout payload' } });
       return;
     }
 
@@ -225,7 +249,9 @@ export function createEnterpriseAnalyticsRouter({
   router.post('/actions', requireWrite, async (req, res) => {
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
       return;
     }
 

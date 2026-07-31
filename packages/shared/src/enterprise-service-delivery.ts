@@ -503,9 +503,10 @@ export type CreateSdContinuousImprovementInitiativeRequest = {
   config?: Record<string, unknown>;
 };
 
-export type UpdateSdContinuousImprovementInitiativeRequest = Partial<CreateSdContinuousImprovementInitiativeRequest> & {
-  workflowStatus?: string;
-};
+export type UpdateSdContinuousImprovementInitiativeRequest =
+  Partial<CreateSdContinuousImprovementInitiativeRequest> & {
+    workflowStatus?: string;
+  };
 
 export type CreateSdHandoverRecordRequest = {
   jobId: string;

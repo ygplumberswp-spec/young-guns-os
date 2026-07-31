@@ -1,4 +1,14 @@
-import { boolean, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { jobs } from './jobs';
 import { suppliers } from './procurement';
@@ -127,7 +137,9 @@ export const assetEquipment = pgTable('asset_equipment', {
   purchaseDate: timestamp('purchase_date', { withTimezone: true }),
   warrantyExpiresAt: timestamp('warranty_expires_at', { withTimezone: true }),
   depreciationReference: text('depreciation_reference'),
-  assignedTechnicianId: uuid('assigned_technician_id').references(() => users.id, { onDelete: 'set null' }),
+  assignedTechnicianId: uuid('assigned_technician_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   branchKey: text('branch_key'),
   status: assetStatusEnum('status').notNull().default('active'),
   condition: assetConditionEnum('condition').notNull().default('good'),
@@ -192,7 +204,9 @@ export const assetMaintenanceRecords = pgTable('asset_maintenance_records', {
   description: text('description'),
   scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
-  assignedTechnicianId: uuid('assigned_technician_id').references(() => users.id, { onDelete: 'set null' }),
+  assignedTechnicianId: uuid('assigned_technician_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
   labourCostCents: integer('labour_cost_cents').notNull().default(0),
   partsCostCents: integer('parts_cost_cents').notNull().default(0),
@@ -215,7 +229,10 @@ export const assetInspections = pgTable('asset_inspections', {
     .references(() => assetEquipment.id, { onDelete: 'cascade' }),
   inspectionType: assetInspectionTypeEnum('inspection_type').notNull(),
   status: assetInspectionStatusEnum('status').notNull().default('scheduled'),
-  checklist: jsonb('checklist').$type<Array<{ item: string; passed: boolean | null }>>().notNull().default([]),
+  checklist: jsonb('checklist')
+    .$type<Array<{ item: string; passed: boolean | null }>>()
+    .notNull()
+    .default([]),
   findings: text('findings'),
   photoDocumentIds: jsonb('photo_document_ids').$type<string[]>().notNull().default([]),
   documentIds: jsonb('document_ids').$type<string[]>().notNull().default([]),
@@ -237,7 +254,10 @@ export const assetCalibrations = pgTable('asset_calibrations', {
   certificationName: text('certification_name').notNull(),
   calibratedAt: timestamp('calibrated_at', { withTimezone: true }),
   expiresAt: timestamp('expires_at', { withTimezone: true }),
-  testingHistory: jsonb('testing_history').$type<Array<{ testedAt: string; result: string }>>().notNull().default([]),
+  testingHistory: jsonb('testing_history')
+    .$type<Array<{ testedAt: string; result: string }>>()
+    .notNull()
+    .default([]),
   complianceStatus: assetCalibrationStatusEnum('compliance_status').notNull().default('valid'),
   renewalRecommendation: text('renewal_recommendation'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),

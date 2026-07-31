@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { LoadingState } from '@titan/ui';
 import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
+import { toAppAbsoluteHref } from '../lib/nested-routing';
 import { toStaffIdentity } from '../lib/role-experience';
 
 type ProtectedRouteProps = {
@@ -15,7 +16,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setLocation('/auth/login');
+      // Absolute escape: ProtectedRoute also mounts under `/mobile` nest.
+      setLocation(toAppAbsoluteHref('/auth/login?reason=session_expired'));
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
@@ -44,13 +46,15 @@ export function GuestRoute({ children }: GuestRouteProps) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      setLocation(getStaffHomePath(toStaffIdentity(user)));
+      setLocation(toAppAbsoluteHref(getStaffHomePath(toStaffIdentity(user))));
     }
   }, [isAuthenticated, isLoading, setLocation, user]);
 
   if (isLoading) {
     return (
-      <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>
+      <div className="auth-stage">
+        <LoadingState label="Opening TITAN…" />
+      </div>
     );
   }
 

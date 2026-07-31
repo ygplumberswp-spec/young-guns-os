@@ -32,7 +32,10 @@ export const fleetBehaviourEventTypeEnum = pgEnum('fleet_behaviour_event_type', 
   'route_deviation',
 ]);
 
-export const fleetActionTypeEnum = pgEnum('fleet_action_type', ['fleet_action', 'vehicle_replacement']);
+export const fleetActionTypeEnum = pgEnum('fleet_action_type', [
+  'fleet_action',
+  'vehicle_replacement',
+]);
 export const fleetActionStatusEnum = pgEnum('fleet_action_status', [
   'pending_approval',
   'approved',
@@ -55,7 +58,14 @@ export const fleetMonthlyReports = pgTable('fleet_monthly_reports', {
   averageTripDistanceKm: integer('average_trip_distance_km'),
   averageTripDurationMinutes: integer('average_trip_duration_minutes'),
   vehicleSummaries: jsonb('vehicle_summaries')
-    .$type<Array<{ vehicleId: string | null; vehicleName: string | null; kilometres: number; trips: number }>>()
+    .$type<
+      Array<{
+        vehicleId: string | null;
+        vehicleName: string | null;
+        kilometres: number;
+        trips: number;
+      }>
+    >()
     .notNull()
     .default([]),
   exportMetadata: jsonb('export_metadata').$type<Record<string, unknown>>().notNull().default({}),

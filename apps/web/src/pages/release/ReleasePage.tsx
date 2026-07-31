@@ -44,19 +44,36 @@ export function ReleasePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<ReleaseTab>('overview');
   const [dashboard, setDashboard] = useState<EnterpriseReleaseManagementDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchReleaseManagementAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchReleaseManagementAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessReleaseManagement(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageReleaseManagement(user.permissions) : false), [user]);
-  const canManage = useMemo(() => (user ? canAdministerReleaseManagement(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessReleaseManagement(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageReleaseManagement(user.permissions) : false),
+    [user],
+  );
+  const canManage = useMemo(
+    () => (user ? canAdministerReleaseManagement(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: ReleaseTab; label: string }> = [
     { id: 'overview', label: 'Release Overview' },
@@ -90,7 +107,9 @@ export function ReleasePage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load release dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load release dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -140,7 +159,10 @@ export function ReleasePage() {
   if (!canView) {
     return (
       <div className="p-6">
-        <EmptyState title="Access denied" description="You do not have permission to view the release dashboard." />
+        <EmptyState
+          title="Access denied"
+          description="You do not have permission to view the release dashboard."
+        />
       </div>
     );
   }
@@ -148,7 +170,10 @@ export function ReleasePage() {
   if (isLoading || !dashboard) {
     return (
       <div className="p-6">
-        <PageHeader title="TITAN v1.0 Release" description="Loading release management dashboard..." />
+        <PageHeader
+          title="TITAN v1.0 Release"
+          description="Loading release management dashboard..."
+        />
       </div>
     );
   }
@@ -166,7 +191,9 @@ export function ReleasePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncReleaseManagementAlerts(accessToken!), 'Alerts synced.')}
+                onClick={() =>
+                  void runAction(() => syncReleaseManagementAlerts(accessToken!), 'Alerts synced.')
+                }
               >
                 Sync Alerts
               </Button>
@@ -174,7 +201,9 @@ export function ReleasePage() {
                 <Button
                   variant="primary"
                   disabled={isWorking}
-                  onClick={() => void runAction(() => finalizeVersion(accessToken!), 'Version v1.0.0 finalized.')}
+                  onClick={() =>
+                    void runAction(() => finalizeVersion(accessToken!), 'Version v1.0.0 finalized.')
+                  }
                 >
                   Finalize v1.0.0
                 </Button>
@@ -219,13 +248,15 @@ export function ReleasePage() {
             </div>
             {dashboard.productionLaunchSummary ? (
               <p className="mt-4 text-sm text-slate-600">
-                Production launch status: {formatReleaseStatus(String(dashboard.productionLaunchSummary.launchStatus))}
+                Production launch status:{' '}
+                {formatReleaseStatus(String(dashboard.productionLaunchSummary.launchStatus))}
               </p>
             ) : null}
           </Panel>
           {readiness.releaseStatus === 'blocked' || readiness.releaseStatus === 'not_ready' ? (
             <p className="text-sm text-red-700">
-              Release is not ready — complete mobile packaging, app store checklists, and production launch prerequisites.
+              Release is not ready — complete mobile packaging, app store checklists, and production
+              launch prerequisites.
             </p>
           ) : null}
         </div>
@@ -234,26 +265,44 @@ export function ReleasePage() {
       {activeTab === 'mobile' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button disabled={isWorking} onClick={() => void runAction(() => runMobilePackagingReview(accessToken!), 'Mobile packaging review completed.')}>
+            <Button
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => runMobilePackagingReview(accessToken!),
+                  'Mobile packaging review completed.',
+                )
+              }
+            >
               Run Mobile Packaging Review
             </Button>
           ) : null}
           {dashboard.latestMobileReview ? (
-            <Panel title={`Mobile Review — ${formatValidationStatus(dashboard.latestMobileReview.status)}`}>
+            <Panel
+              title={`Mobile Review — ${formatValidationStatus(dashboard.latestMobileReview.status)}`}
+            >
               <p className="mb-2 text-sm text-slate-600">
                 iOS ready: {dashboard.latestMobileReview.iosReady ? 'Yes' : 'No'} · Android ready:{' '}
-                {dashboard.latestMobileReview.androidReady ? 'Yes' : 'No'} · {dashboard.latestMobileReview.warningCount} warning(s)
+                {dashboard.latestMobileReview.androidReady ? 'Yes' : 'No'} ·{' '}
+                {dashboard.latestMobileReview.warningCount} warning(s)
               </p>
               <ul className="space-y-2">
                 {dashboard.latestMobileReview.findings.map((finding, index) => (
-                  <li key={String(finding.key ?? index)} className="rounded border border-slate-200 p-3 text-sm">
-                    <span className="font-medium">{String(finding.key)}</span>: {String(finding.message)}
+                  <li
+                    key={String(finding.key ?? index)}
+                    className="rounded border border-slate-200 p-3 text-sm"
+                  >
+                    <span className="font-medium">{String(finding.key)}</span>:{' '}
+                    {String(finding.message)}
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : (
-            <EmptyState title="No mobile review" description="Run a mobile packaging review to verify iOS/Android production builds." />
+            <EmptyState
+              title="No mobile review"
+              description="Run a mobile packaging review to verify iOS/Android production builds."
+            />
           )}
         </div>
       ) : null}
@@ -261,7 +310,15 @@ export function ReleasePage() {
       {activeTab === 'app-stores' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button disabled={isWorking} onClick={() => void runAction(() => runAppStoreReadinessReviews(accessToken!), 'App store readiness checklists generated.')}>
+            <Button
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => runAppStoreReadinessReviews(accessToken!),
+                  'App store readiness checklists generated.',
+                )
+              }
+            >
               Generate Store Readiness Checklists
             </Button>
           ) : null}
@@ -269,11 +326,14 @@ export function ReleasePage() {
             dashboard.appStoreReadiness.map((store) => (
               <Panel key={store.id} title={formatStorePlatform(store.storePlatform)}>
                 <p className="mb-2 text-sm text-slate-600">
-                  Status: {formatValidationStatus(store.status)} · Checklist: {store.checklistCompleteCount}/{store.checklistTotalCount}
+                  Status: {formatValidationStatus(store.status)} · Checklist:{' '}
+                  {store.checklistCompleteCount}/{store.checklistTotalCount}
                 </p>
                 {Array.isArray((store.storeListing as { checklist?: unknown[] }).checklist) ? (
                   <ul className="space-y-1 text-sm">
-                    {((store.storeListing as { checklist: Array<{ label: string; status: string }> }).checklist).map((item) => (
+                    {(
+                      store.storeListing as { checklist: Array<{ label: string; status: string }> }
+                    ).checklist.map((item) => (
                       <li key={item.label}>
                         {item.label} — {item.status}
                       </li>
@@ -283,7 +343,10 @@ export function ReleasePage() {
               </Panel>
             ))
           ) : (
-            <EmptyState title="No app store readiness" description="Generate Apple App Store and Google Play Store readiness checklists." />
+            <EmptyState
+              title="No app store readiness"
+              description="Generate Apple App Store and Google Play Store readiness checklists."
+            />
           )}
         </div>
       ) : null}
@@ -291,22 +354,35 @@ export function ReleasePage() {
       {activeTab === 'branding' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button disabled={isWorking} onClick={() => void runAction(() => runBrandingReview(accessToken!), 'Branding review completed.')}>
+            <Button
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(() => runBrandingReview(accessToken!), 'Branding review completed.')
+              }
+            >
               Run Branding Review
             </Button>
           ) : null}
           {dashboard.latestBrandingReview ? (
-            <Panel title={`Branding — ${formatValidationStatus(dashboard.latestBrandingReview.status)}`}>
+            <Panel
+              title={`Branding — ${formatValidationStatus(dashboard.latestBrandingReview.status)}`}
+            >
               <ul className="space-y-2">
                 {dashboard.latestBrandingReview.findings.map((finding, index) => (
-                  <li key={String(finding.key ?? index)} className="rounded border border-slate-200 p-3 text-sm">
+                  <li
+                    key={String(finding.key ?? index)}
+                    className="rounded border border-slate-200 p-3 text-sm"
+                  >
                     {String(finding.message)}
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : (
-            <EmptyState title="No branding review" description="Verify logo, icons, splash screen, colors, and white-label branding." />
+            <EmptyState
+              title="No branding review"
+              description="Verify logo, icons, splash screen, colors, and white-label branding."
+            />
           )}
         </div>
       ) : null}
@@ -314,7 +390,15 @@ export function ReleasePage() {
       {activeTab === 'ux-review' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button disabled={isWorking} onClick={() => void runAction(() => runUxReview(accessToken!), 'UX review recommendations generated.')}>
+            <Button
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => runUxReview(accessToken!),
+                  'UX review recommendations generated.',
+                )
+              }
+            >
               Run UX Review
             </Button>
           ) : null}
@@ -322,14 +406,21 @@ export function ReleasePage() {
             <Panel title="UX Improvement Recommendations">
               <ul className="space-y-2">
                 {dashboard.latestUxReview.findings.map((finding, index) => (
-                  <li key={String(finding.key ?? index)} className="rounded border border-slate-200 p-3 text-sm">
-                    <span className="font-medium">{String(finding.category)}</span>: {String(finding.recommendation)}
+                  <li
+                    key={String(finding.key ?? index)}
+                    className="rounded border border-slate-200 p-3 text-sm"
+                  >
+                    <span className="font-medium">{String(finding.category)}</span>:{' '}
+                    {String(finding.recommendation)}
                   </li>
                 ))}
               </ul>
             </Panel>
           ) : (
-            <EmptyState title="No UX review" description="Generate UX improvement recommendations for navigation, accessibility, and responsive layouts." />
+            <EmptyState
+              title="No UX review"
+              description="Generate UX improvement recommendations for navigation, accessibility, and responsive layouts."
+            />
           )}
         </div>
       ) : null}
@@ -337,7 +428,15 @@ export function ReleasePage() {
       {activeTab === 'documentation' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button disabled={isWorking} onClick={() => void runAction(() => refreshDocumentationStatus(accessToken!), 'Documentation status refreshed.')}>
+            <Button
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => refreshDocumentationStatus(accessToken!),
+                  'Documentation status refreshed.',
+                )
+              }
+            >
               Refresh Documentation Status
             </Button>
           ) : null}
@@ -357,7 +456,9 @@ export function ReleasePage() {
         <div className="space-y-4">
           <Panel title={dashboard.versionRecord.versionName}>
             <p className="mb-2">Status: {formatReleaseStatus(dashboard.versionRecord.status)}</p>
-            <p className="mb-4 text-sm text-slate-600">{String((dashboard.versionRecord.releaseNotes as { summary?: string }).summary ?? '')}</p>
+            <p className="mb-4 text-sm text-slate-600">
+              {String((dashboard.versionRecord.releaseNotes as { summary?: string }).summary ?? '')}
+            </p>
             <h4 className="font-medium">Feature Summary</h4>
             <ul className="mb-4 list-disc pl-5 text-sm">
               {dashboard.versionRecord.featureSummary.map((item, i) => (
@@ -382,7 +483,10 @@ export function ReleasePage() {
         <Panel title="Final Launch Checklist">
           <ul className="space-y-2">
             {dashboard.launchChecklist.map((item) => (
-              <li key={item.id} className="flex items-center justify-between rounded border border-slate-200 p-3 text-sm">
+              <li
+                key={item.id}
+                className="flex items-center justify-between rounded border border-slate-200 p-3 text-sm"
+              >
                 <span>{item.itemName}</span>
                 <span className="text-slate-500">
                   {formatChecklistStatus(item.status)} · {item.category}
@@ -402,28 +506,40 @@ export function ReleasePage() {
               {auditLogs.map((log) => (
                 <li key={log.id} className="rounded border border-slate-200 p-3 text-sm">
                   <span className="font-medium">{log.actionType}</span>
-                  {log.entityType ? ` · ${log.entityType}` : ''} · {new Date(log.createdAt).toLocaleString()}
+                  {log.entityType ? ` · ${log.entityType}` : ''} ·{' '}
+                  {new Date(log.createdAt).toLocaleString()}
                 </li>
               ))}
             </ul>
           </Panel>
         ) : (
-          <EmptyState title="No audit logs" description="Release management actions will appear here." />
+          <EmptyState
+            title="No audit logs"
+            description="Release management actions will appear here."
+          />
         )
       ) : null}
 
       {activeTab === 'assistant' ? (
         <Panel title="AURA Release Manager Agent">
           <p className="mb-4 text-sm text-slate-600">
-            Ask about release readiness, mobile packaging, app store checklists, documentation, or request draft release notes and guides.
+            Ask about release readiness, mobile packaging, app store checklists, documentation, or
+            request draft release notes and guides.
           </p>
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'release_manager' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(content, 'release_manager' as import('@titan/shared').AgentKey)
+            }
           />
           {assistantError ? <p className="mt-2 text-sm text-red-600">{assistantError}</p> : null}
         </Panel>

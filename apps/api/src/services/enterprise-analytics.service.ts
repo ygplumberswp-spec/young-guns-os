@@ -75,18 +75,27 @@ export class EnterpriseAnalyticsService {
   constructor(private readonly deps: EnterpriseAnalyticsDeps) {}
 
   async getExecutiveDashboard(companyId: string): Promise<EnterpriseAnalyticsExecutiveDashboard> {
-    const [stats, kpis, insights, forecasts, warehouse, governance, savedLayouts, pendingActions, reports] =
-      await Promise.all([
-        this.deps.businessIntelligenceService.getStats(companyId),
-        this.deps.businessIntelligenceService.listKpis(companyId),
-        this.deps.businessIntelligenceService.listInsights(companyId),
-        this.deps.businessIntelligenceService.listForecasts(companyId),
-        this.getWarehouseSummary(companyId),
-        this.getGovernanceSummary(companyId),
-        this.listSavedLayouts(companyId),
-        this.listActions(companyId, 'pending_approval'),
-        this.deps.businessIntelligenceService.listReports(companyId),
-      ]);
+    const [
+      stats,
+      kpis,
+      insights,
+      forecasts,
+      warehouse,
+      governance,
+      savedLayouts,
+      pendingActions,
+      reports,
+    ] = await Promise.all([
+      this.deps.businessIntelligenceService.getStats(companyId),
+      this.deps.businessIntelligenceService.listKpis(companyId),
+      this.deps.businessIntelligenceService.listInsights(companyId),
+      this.deps.businessIntelligenceService.listForecasts(companyId),
+      this.getWarehouseSummary(companyId),
+      this.getGovernanceSummary(companyId),
+      this.listSavedLayouts(companyId),
+      this.listActions(companyId, 'pending_approval'),
+      this.deps.businessIntelligenceService.listReports(companyId),
+    ]);
 
     return {
       summary: `${stats.activeKpiCount} active KPI(s), ${warehouse.modules.length} data module(s), ${insights.filter((i) => i.status === 'pending').length} pending insight(s).`,
@@ -230,12 +239,13 @@ export class EnterpriseAnalyticsService {
   }
 
   async getGovernanceSummary(companyId: string): Promise<AnalyticsGovernanceSummary> {
-    const [datasetPermissions, reportPermissions, retentionPolicies, recentAudit] = await Promise.all([
-      this.listDatasetPermissions(companyId),
-      this.listReportPermissions(companyId),
-      this.listRetentionPolicies(companyId),
-      this.listAccessAudit(companyId, 30),
-    ]);
+    const [datasetPermissions, reportPermissions, retentionPolicies, recentAudit] =
+      await Promise.all([
+        this.listDatasetPermissions(companyId),
+        this.listReportPermissions(companyId),
+        this.listRetentionPolicies(companyId),
+        this.listAccessAudit(companyId, 30),
+      ]);
 
     return { datasetPermissions, reportPermissions, retentionPolicies, recentAudit };
   }
@@ -301,7 +311,12 @@ export class EnterpriseAnalyticsService {
 
   async recordAccessAudit(
     scope: StaffScope,
-    input: { action: string; resourceType: string; resourceId?: string; metadata?: Record<string, unknown> },
+    input: {
+      action: string;
+      resourceType: string;
+      resourceId?: string;
+      metadata?: Record<string, unknown>;
+    },
   ): Promise<void> {
     await this.deps.db.insert(analyticsAccessAudit).values({
       companyId: scope.companyId,
@@ -417,7 +432,10 @@ export class EnterpriseAnalyticsService {
   ): Promise<AnalyticsPlatformActionSummary[]> {
     const rows = await this.deps.db.query.analyticsPlatformActions.findMany({
       where: status
-        ? and(eq(analyticsPlatformActions.companyId, companyId), eq(analyticsPlatformActions.status, status))
+        ? and(
+            eq(analyticsPlatformActions.companyId, companyId),
+            eq(analyticsPlatformActions.status, status),
+          )
         : eq(analyticsPlatformActions.companyId, companyId),
       orderBy: [desc(analyticsPlatformActions.createdAt)],
       limit: 50,
@@ -515,11 +533,17 @@ export class EnterpriseAnalyticsService {
         const totalRevenue = paymentRows.reduce((sum, row) => sum + row.amountCents, 0);
         return {
           recordCount: invoiceRows.length + paymentRows.length,
-          metrics: { invoiceCount: invoiceRows.length, paymentCount: paymentRows.length, totalRevenueCents: totalRevenue },
+          metrics: {
+            invoiceCount: invoiceRows.length,
+            paymentCount: paymentRows.length,
+            totalRevenueCents: totalRevenue,
+          },
         };
       }
       case 'sales': {
-        const quoteRows = await this.deps.db.query.quotes.findMany({ where: eq(quotes.companyId, companyId) });
+        const quoteRows = await this.deps.db.query.quotes.findMany({
+          where: eq(quotes.companyId, companyId),
+        });
         const accepted = quoteRows.filter((row) => row.status === 'accepted').length;
         return {
           recordCount: quoteRows.length,
@@ -527,7 +551,9 @@ export class EnterpriseAnalyticsService {
         };
       }
       case 'operations': {
-        const jobRows = await this.deps.db.query.jobs.findMany({ where: eq(jobs.companyId, companyId) });
+        const jobRows = await this.deps.db.query.jobs.findMany({
+          where: eq(jobs.companyId, companyId),
+        });
         const completed = jobRows.filter((row) => row.status === 'completed').length;
         return {
           recordCount: jobRows.length,
@@ -535,11 +561,19 @@ export class EnterpriseAnalyticsService {
         };
       }
       case 'customer_success': {
-        const customerRows = await this.deps.db.query.customers.findMany({ where: eq(customers.companyId, companyId) });
-        return { recordCount: customerRows.length, metrics: { customerCount: customerRows.length } };
+        const customerRows = await this.deps.db.query.customers.findMany({
+          where: eq(customers.companyId, companyId),
+        });
+        return {
+          recordCount: customerRows.length,
+          metrics: { customerCount: customerRows.length },
+        };
       }
       default:
-        return { recordCount: 0, metrics: { note: 'Module aggregation uses cross-service summaries when records exist' } };
+        return {
+          recordCount: 0,
+          metrics: { note: 'Module aggregation uses cross-service summaries when records exist' },
+        };
     }
   }
 }

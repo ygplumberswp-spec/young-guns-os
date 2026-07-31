@@ -43,13 +43,18 @@ export function WorkflowListPage() {
     }
 
     void loadWorkflows();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Automation" description="You do not have permission to view automation." />
+        <PageHeader
+          title="Automation"
+          description="You do not have permission to view automation."
+        />
       </div>
     );
   }
@@ -68,6 +73,15 @@ export function WorkflowListPage() {
         }
       />
       <AutomationNav />
+
+      <Panel title="External orchestration (n8n)">
+        <p className="page-muted">
+          Hybrid n8n orchestration is managed under{' '}
+          <Link href="/automation/n8n">Automations → n8n</Link>. Integrations shows capability
+          status and deep-links here — n8n is never Connected without a verified loopback
+          configuration. Native workflows below continue without n8n.
+        </p>
+      </Panel>
 
       {isLoading ? <p className="page-muted">Loading workflows…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}

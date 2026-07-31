@@ -22,7 +22,9 @@ export function createApiGatewayMiddleware({
 
     const traceId = connectorEngine.createTraceId();
     const apiVersion =
-      typeof req.headers['x-titan-api-version'] === 'string' ? req.headers['x-titan-api-version'] : 'v1';
+      typeof req.headers['x-titan-api-version'] === 'string'
+        ? req.headers['x-titan-api-version']
+        : 'v1';
     const startedAt = Date.now();
 
     res.setHeader('X-Titan-Trace-Id', traceId);

@@ -11,7 +11,11 @@ export {
   deriveConversationTitle,
   trimConversationHistory,
 } from './responder.js';
-export { createAuraProvider, createRuntimeAuraProvider, resolveDefaultBaseUrl } from './providers/factory.js';
+export {
+  createAuraProvider,
+  createRuntimeAuraProvider,
+  resolveDefaultBaseUrl,
+} from './providers/factory.js';
 export type { RuntimeProviderConfig } from './providers/runtime.factory.js';
 export { OpenAiProvider } from './providers/openai.provider.js';
 export { OpenAiCompatibleProvider } from './providers/openai-compatible.provider.js';

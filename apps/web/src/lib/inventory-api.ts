@@ -35,7 +35,9 @@ export async function createInventoryLocation(
 }
 
 export async function fetchInventoryItems(accessToken: string): Promise<InventoryItemSummary[]> {
-  const data = await request<{ items: InventoryItemSummary[] }>('/inventory/items', { accessToken });
+  const data = await request<{ items: InventoryItemSummary[] }>('/inventory/items', {
+    accessToken,
+  });
   return data.items;
 }
 

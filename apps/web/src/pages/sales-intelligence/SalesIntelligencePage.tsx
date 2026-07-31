@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, GroupedTabNav, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
+import {
+  Button,
+  EmptyState,
+  GroupedTabNav,
+  LoadingState,
+  PageHeader,
+  Panel,
+  StatCard,
+} from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureSalesAnalytics,
@@ -120,7 +128,7 @@ export function SalesIntelligencePage() {
               onChange={setViewMode}
               canAccessAdvanced={canWrite}
             />
-            <Link href="/leads">
+            <Link href="/leads/new">
               <Button variant="secondary" size="sm">
                 Add a lead
               </Button>

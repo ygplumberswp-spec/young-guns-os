@@ -150,7 +150,11 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseIndustryPackError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -159,7 +163,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requireRead = requireAnyPermission('industry_packs:read', 'industry_packs:manage');
   const requireWrite = requireAnyPermission('industry_packs:write', 'industry_packs:manage');
   const requireManage = requireAnyPermission('industry_packs:manage');
@@ -179,7 +186,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/industry-monitoring', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const industryMonitoring = await deps.enterpriseIndustryPackService.getIndustryMonitoring(auth.companyId);
+      const industryMonitoring = await deps.enterpriseIndustryPackService.getIndustryMonitoring(
+        auth.companyId,
+      );
       res.json({ data: { industryMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -189,7 +198,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseIndustryPackService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseIndustryPackService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -199,11 +210,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
-      const platformConfig = await deps.enterpriseIndustryPackService.updatePlatformConfig(staffScope(req), parsed.data);
+      const platformConfig = await deps.enterpriseIndustryPackService.updatePlatformConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -250,7 +266,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/installed-packs', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const installedPacks = await deps.enterpriseIndustryPackService.listInstalledPacks(auth.companyId);
+      const installedPacks = await deps.enterpriseIndustryPackService.listInstalledPacks(
+        auth.companyId,
+      );
       res.json({ data: { installedPacks } });
     } catch (error) {
       handleError(error, res);
@@ -260,11 +278,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/installed-packs', requireWrite, async (req, res) => {
     const parsed = installPackSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid install request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid install request' } });
       return;
     }
     try {
-      const installation = await deps.enterpriseIndustryPackService.installPack(staffScope(req), parsed.data);
+      const installation = await deps.enterpriseIndustryPackService.installPack(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { installation } });
     } catch (error) {
       handleError(error, res);
@@ -302,7 +325,10 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const pack = await deps.enterpriseIndustryPackService.createCustomPack(staffScope(req), parsed.data);
+      const pack = await deps.enterpriseIndustryPackService.createCustomPack(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { pack } });
     } catch (error) {
       handleError(error, res);
@@ -312,8 +338,12 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/templates', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const templateType = typeof req.query.templateType === 'string' ? req.query.templateType : undefined;
-      const templates = await deps.enterpriseIndustryPackService.listTemplates(auth.companyId, templateType);
+      const templateType =
+        typeof req.query.templateType === 'string' ? req.query.templateType : undefined;
+      const templates = await deps.enterpriseIndustryPackService.listTemplates(
+        auth.companyId,
+        templateType,
+      );
       res.json({ data: { templates } });
     } catch (error) {
       handleError(error, res);
@@ -327,7 +357,10 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const template = await deps.enterpriseIndustryPackService.createTemplate(staffScope(req), parsed.data);
+      const template = await deps.enterpriseIndustryPackService.createTemplate(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { template } });
     } catch (error) {
       handleError(error, res);
@@ -337,7 +370,8 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/compliance-frameworks', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const complianceFrameworks = await deps.enterpriseIndustryPackService.listComplianceFrameworks(auth.companyId);
+      const complianceFrameworks =
+        await deps.enterpriseIndustryPackService.listComplianceFrameworks(auth.companyId);
       res.json({ data: { complianceFrameworks } });
     } catch (error) {
       handleError(error, res);
@@ -347,11 +381,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/compliance-frameworks', requireWrite, async (req, res) => {
     const parsed = complianceFrameworkSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid compliance framework' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid compliance framework' } });
       return;
     }
     try {
-      const framework = await deps.enterpriseIndustryPackService.createComplianceFramework(staffScope(req), parsed.data);
+      const framework = await deps.enterpriseIndustryPackService.createComplianceFramework(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { framework } });
     } catch (error) {
       handleError(error, res);
@@ -361,11 +400,13 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/compliance-requirements', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const frameworkId = typeof req.query.frameworkId === 'string' ? req.query.frameworkId : undefined;
-      const complianceRequirements = await deps.enterpriseIndustryPackService.listComplianceRequirements(
-        auth.companyId,
-        frameworkId,
-      );
+      const frameworkId =
+        typeof req.query.frameworkId === 'string' ? req.query.frameworkId : undefined;
+      const complianceRequirements =
+        await deps.enterpriseIndustryPackService.listComplianceRequirements(
+          auth.companyId,
+          frameworkId,
+        );
       res.json({ data: { complianceRequirements } });
     } catch (error) {
       handleError(error, res);
@@ -375,7 +416,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/compliance-requirements', requireWrite, async (req, res) => {
     const parsed = complianceRequirementSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid compliance requirement' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid compliance requirement' } });
       return;
     }
     try {
@@ -392,7 +435,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/certificates', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const certificates = await deps.enterpriseIndustryPackService.listCertificates(auth.companyId);
+      const certificates = await deps.enterpriseIndustryPackService.listCertificates(
+        auth.companyId,
+      );
       res.json({ data: { certificates } });
     } catch (error) {
       handleError(error, res);
@@ -406,7 +451,10 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const certificate = await deps.enterpriseIndustryPackService.createCertificate(staffScope(req), parsed.data);
+      const certificate = await deps.enterpriseIndustryPackService.createCertificate(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { certificate } });
     } catch (error) {
       handleError(error, res);
@@ -428,7 +476,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/knowledge-articles', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const knowledgeArticles = await deps.enterpriseIndustryPackService.listKnowledgeArticles(auth.companyId);
+      const knowledgeArticles = await deps.enterpriseIndustryPackService.listKnowledgeArticles(
+        auth.companyId,
+      );
       res.json({ data: { knowledgeArticles } });
     } catch (error) {
       handleError(error, res);
@@ -438,11 +488,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/knowledge-articles', requireWrite, async (req, res) => {
     const parsed = knowledgeArticleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid knowledge article' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid knowledge article' } });
       return;
     }
     try {
-      const article = await deps.enterpriseIndustryPackService.createKnowledgeArticle(staffScope(req), parsed.data);
+      const article = await deps.enterpriseIndustryPackService.createKnowledgeArticle(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { article } });
     } catch (error) {
       handleError(error, res);
@@ -452,7 +507,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/equipment-catalog', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const equipmentCatalog = await deps.enterpriseIndustryPackService.listEquipmentCatalog(auth.companyId);
+      const equipmentCatalog = await deps.enterpriseIndustryPackService.listEquipmentCatalog(
+        auth.companyId,
+      );
       res.json({ data: { equipmentCatalog } });
     } catch (error) {
       handleError(error, res);
@@ -462,11 +519,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/equipment-catalog', requireWrite, async (req, res) => {
     const parsed = equipmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid equipment catalog entry' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid equipment catalog entry' } });
       return;
     }
     try {
-      const entry = await deps.enterpriseIndustryPackService.createEquipmentCatalogEntry(staffScope(req), parsed.data);
+      const entry = await deps.enterpriseIndustryPackService.createEquipmentCatalogEntry(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { entry } });
     } catch (error) {
       handleError(error, res);
@@ -476,7 +538,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/material-libraries', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const materialLibraries = await deps.enterpriseIndustryPackService.listMaterialLibraries(auth.companyId);
+      const materialLibraries = await deps.enterpriseIndustryPackService.listMaterialLibraries(
+        auth.companyId,
+      );
       res.json({ data: { materialLibraries } });
     } catch (error) {
       handleError(error, res);
@@ -486,11 +550,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/material-libraries', requireWrite, async (req, res) => {
     const parsed = materialSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid material library entry' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid material library entry' } });
       return;
     }
     try {
-      const entry = await deps.enterpriseIndustryPackService.createMaterialLibraryEntry(staffScope(req), parsed.data);
+      const entry = await deps.enterpriseIndustryPackService.createMaterialLibraryEntry(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { entry } });
     } catch (error) {
       handleError(error, res);
@@ -514,7 +583,10 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const assetType = await deps.enterpriseIndustryPackService.createAssetType(staffScope(req), parsed.data);
+      const assetType = await deps.enterpriseIndustryPackService.createAssetType(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { assetType } });
     } catch (error) {
       handleError(error, res);
@@ -524,8 +596,12 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/pack-extensions', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const packCatalogId = typeof req.query.packCatalogId === 'string' ? req.query.packCatalogId : undefined;
-      const packExtensions = await deps.enterpriseIndustryPackService.listPackExtensions(auth.companyId, packCatalogId);
+      const packCatalogId =
+        typeof req.query.packCatalogId === 'string' ? req.query.packCatalogId : undefined;
+      const packExtensions = await deps.enterpriseIndustryPackService.listPackExtensions(
+        auth.companyId,
+        packCatalogId,
+      );
       res.json({ data: { packExtensions } });
     } catch (error) {
       handleError(error, res);
@@ -535,11 +611,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/pack-extensions', requireWrite, async (req, res) => {
     const parsed = packExtensionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid pack extension' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid pack extension' } });
       return;
     }
     try {
-      const extension = await deps.enterpriseIndustryPackService.createPackExtension(staffScope(req), parsed.data);
+      const extension = await deps.enterpriseIndustryPackService.createPackExtension(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { extension } });
     } catch (error) {
       handleError(error, res);
@@ -549,7 +630,9 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.get('/industry-alerts', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const industryAlerts = await deps.enterpriseIndustryPackService.listIndustryAlerts(auth.companyId);
+      const industryAlerts = await deps.enterpriseIndustryPackService.listIndustryAlerts(
+        auth.companyId,
+      );
       res.json({ data: { industryAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -571,11 +654,16 @@ export function createEnterpriseIndustryPacksRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     const parsed = draftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
       return;
     }
     try {
-      const actionDraft = await deps.enterpriseIndustryPackService.createActionDraft(staffScope(req), parsed.data);
+      const actionDraft = await deps.enterpriseIndustryPackService.createActionDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);

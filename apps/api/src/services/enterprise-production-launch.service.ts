@@ -107,8 +107,14 @@ export class EnterpriseProductionLaunchService {
       databaseUrl: deps.databaseUrl,
       enterpriseProductionReadinessService: deps.enterpriseProductionReadinessService,
     });
-    this.commercialService = new EnterpriseProductionLaunchCommercialService(deps.db, deps.enterpriseSaasManagementService);
-    this.mobileService = new EnterpriseProductionLaunchMobileService(deps.db, deps.enterpriseMobilePlatformService);
+    this.commercialService = new EnterpriseProductionLaunchCommercialService(
+      deps.db,
+      deps.enterpriseSaasManagementService,
+    );
+    this.mobileService = new EnterpriseProductionLaunchMobileService(
+      deps.db,
+      deps.enterpriseMobilePlatformService,
+    );
     this.goLiveWizardService = new EnterpriseProductionLaunchGoLiveWizardService(deps.db);
   }
 
@@ -141,13 +147,15 @@ export class EnterpriseProductionLaunchService {
       this.listPlatformAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const latestLiveIntegrationRun = integrationRuns[0] ?? null;
-    const latestLiveIntegrationResults =
-      latestLiveIntegrationRun
-        ? ((await this.liveIntegrationService.getRunDetail(companyId, latestLiveIntegrationRun.id))?.results ?? [])
-        : [];
+    const latestLiveIntegrationResults = latestLiveIntegrationRun
+      ? ((await this.liveIntegrationService.getRunDetail(companyId, latestLiveIntegrationRun.id))
+          ?.results ?? [])
+      : [];
 
     const productionReadiness = this.buildProductionReadinessSummary({
       latestEnvironmentReview,
@@ -160,7 +168,8 @@ export class EnterpriseProductionLaunchService {
     });
 
     const overallProductionStatus =
-      productionReadiness.launchStatus === 'blocked' || productionReadiness.launchStatus === 'not_ready'
+      productionReadiness.launchStatus === 'blocked' ||
+      productionReadiness.launchStatus === 'not_ready'
         ? 'critical'
         : productionReadiness.launchStatus === 'warning'
           ? 'warning'
@@ -214,7 +223,10 @@ export class EnterpriseProductionLaunchService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdatePlPlatformConfigRequest): Promise<PlPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdatePlPlatformConfigRequest,
+  ): Promise<PlPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(plPlatformConfig)
@@ -233,12 +245,17 @@ export class EnterpriseProductionLaunchService {
   }
 
   runEnvironmentReview = (scope: StaffScope) => this.environmentService.runEnvironmentReview(scope);
-  runDomainSecurityReview = (scope: StaffScope) => this.domainSecurityService.runDomainSecurityReview(scope);
-  runLiveIntegrationVerification = (scope: StaffScope) => this.liveIntegrationService.runLiveIntegrationVerification(scope);
+  runDomainSecurityReview = (scope: StaffScope) =>
+    this.domainSecurityService.runDomainSecurityReview(scope);
+  runLiveIntegrationVerification = (scope: StaffScope) =>
+    this.liveIntegrationService.runLiveIntegrationVerification(scope);
   listLiveIntegrationRuns = (companyId: string) => this.liveIntegrationService.listRuns(companyId);
-  getLiveIntegrationRunDetail = (companyId: string, runId: string) => this.liveIntegrationService.getRunDetail(companyId, runId);
-  runCommercialReadinessReview = (scope: StaffScope) => this.commercialService.runCommercialReadinessReview(scope);
-  runMobileProductionReview = (scope: StaffScope) => this.mobileService.runMobileProductionReview(scope);
+  getLiveIntegrationRunDetail = (companyId: string, runId: string) =>
+    this.liveIntegrationService.getRunDetail(companyId, runId);
+  runCommercialReadinessReview = (scope: StaffScope) =>
+    this.commercialService.runCommercialReadinessReview(scope);
+  runMobileProductionReview = (scope: StaffScope) =>
+    this.mobileService.runMobileProductionReview(scope);
 
   listDeploymentRuns = (companyId: string) => this.deploymentPipelineService.listRuns(companyId);
   createDeploymentRun = (scope: StaffScope, input: CreatePlDeploymentRunRequest) =>
@@ -259,10 +276,17 @@ export class EnterpriseProductionLaunchService {
   listGoLiveWizards = (companyId: string) => this.goLiveWizardService.listWizards(companyId);
   createGoLiveWizard = (scope: StaffScope, input: CreatePlGoLiveWizardRequest) =>
     this.goLiveWizardService.createWizard(scope, input);
-  updateGoLiveWizardStep = (scope: StaffScope, wizardId: string, stepKey: string, input: UpdatePlGoLiveWizardStepRequest) =>
-    this.goLiveWizardService.updateWizardStep(scope, wizardId, stepKey, input);
-  approveGoLiveWizard = (scope: StaffScope, wizardId: string, input: ApprovePlGoLiveWizardRequest) =>
-    this.goLiveWizardService.approveWizard(scope, wizardId, input);
+  updateGoLiveWizardStep = (
+    scope: StaffScope,
+    wizardId: string,
+    stepKey: string,
+    input: UpdatePlGoLiveWizardStepRequest,
+  ) => this.goLiveWizardService.updateWizardStep(scope, wizardId, stepKey, input);
+  approveGoLiveWizard = (
+    scope: StaffScope,
+    wizardId: string,
+    input: ApprovePlGoLiveWizardRequest,
+  ) => this.goLiveWizardService.approveWizard(scope, wizardId, input);
   confirmGoLiveLaunch = (scope: StaffScope, wizardId: string) =>
     this.goLiveWizardService.confirmLaunch(scope, wizardId);
 
@@ -273,10 +297,34 @@ export class EnterpriseProductionLaunchService {
     const readiness = dashboard.productionReadiness;
 
     const defs = [
-      ['missing_config', 'critical', 'Missing production configuration', `${readiness.missingConfigCount} missing config item(s)`, readiness.missingConfigCount > 0],
-      ['provider_failures', 'critical', 'Live provider failures', `${readiness.failedProviderCount} provider failure(s)`, readiness.failedProviderCount > 0],
-      ['pending_approvals', 'warning', 'Pending go-live approvals', `${readiness.pendingApprovalCount} pending approval(s)`, readiness.pendingApprovalCount > 0],
-      ['not_ready', 'critical', 'Not ready for production launch', `Status: ${readiness.launchStatus}`, readiness.launchStatus === 'blocked' || readiness.launchStatus === 'not_ready'],
+      [
+        'missing_config',
+        'critical',
+        'Missing production configuration',
+        `${readiness.missingConfigCount} missing config item(s)`,
+        readiness.missingConfigCount > 0,
+      ],
+      [
+        'provider_failures',
+        'critical',
+        'Live provider failures',
+        `${readiness.failedProviderCount} provider failure(s)`,
+        readiness.failedProviderCount > 0,
+      ],
+      [
+        'pending_approvals',
+        'warning',
+        'Pending go-live approvals',
+        `${readiness.pendingApprovalCount} pending approval(s)`,
+        readiness.pendingApprovalCount > 0,
+      ],
+      [
+        'not_ready',
+        'critical',
+        'Not ready for production launch',
+        `Status: ${readiness.launchStatus}`,
+        readiness.launchStatus === 'blocked' || readiness.launchStatus === 'not_ready',
+      ],
     ] as const;
 
     for (const [alertType, severity, title, description, active] of defs) {
@@ -322,7 +370,10 @@ export class EnterpriseProductionLaunchService {
     return toAnalyticsSummary(created!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreatePlActionDraftRequest): Promise<PlActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreatePlActionDraftRequest,
+  ): Promise<PlActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(plActionDrafts)
       .values({
@@ -350,7 +401,8 @@ export class EnterpriseProductionLaunchService {
   private buildProductionReadinessSummary(input: {
     latestEnvironmentReview: import('@titan/shared').PlEnvironmentReviewSummary | null;
     latestDomainSecurityReview: import('@titan/shared').PlDomainSecurityReviewSummary | null;
-    latestLiveIntegrationRun: import('@titan/shared').PlLiveIntegrationVerificationRunSummary | null;
+    latestLiveIntegrationRun:
+      import('@titan/shared').PlLiveIntegrationVerificationRunSummary | null;
     latestCommercialReview: import('@titan/shared').PlCommercialReadinessReviewSummary | null;
     latestMobileReview: import('@titan/shared').PlMobileProductionReviewSummary | null;
     deploymentHistory: import('@titan/shared').PlDeploymentPipelineRunSummary[];
@@ -358,16 +410,24 @@ export class EnterpriseProductionLaunchService {
   }): PlProductionReadinessSummary {
     const missingConfigCount = input.latestEnvironmentReview?.missingConfigCount ?? 0;
     const failedProviderCount = input.latestLiveIntegrationRun?.failedCount ?? 0;
-    const pendingDeploymentApprovals = input.deploymentHistory.filter((d) => d.status === 'pending_approval').length;
-    const pendingWizardApprovals = input.goLiveWizards.filter((w) => w.status === 'pending_approval').length;
+    const pendingDeploymentApprovals = input.deploymentHistory.filter(
+      (d) => d.status === 'pending_approval',
+    ).length;
+    const pendingWizardApprovals = input.goLiveWizards.filter(
+      (w) => w.status === 'pending_approval',
+    ).length;
     const pendingApprovalCount = pendingDeploymentApprovals + pendingWizardApprovals;
     const wizardLaunched = input.goLiveWizards.some((w) => w.status === 'launched');
     const deploymentApproved = input.deploymentHistory.some((d) => d.ownerApproved);
-    const wizardApproved = input.goLiveWizards.some((w) => w.status === 'approved' || w.status === 'launched');
+    const wizardApproved = input.goLiveWizards.some(
+      (w) => w.status === 'approved' || w.status === 'launched',
+    );
 
     const environmentReady = input.latestEnvironmentReview?.status === 'passed';
     const domainSecurityReady = input.latestDomainSecurityReview?.status === 'passed';
-    const providersConnected = (input.latestLiveIntegrationRun?.failedCount ?? 0) === 0 && (input.latestLiveIntegrationRun?.connectedCount ?? 0) > 0;
+    const providersConnected =
+      (input.latestLiveIntegrationRun?.failedCount ?? 0) === 0 &&
+      (input.latestLiveIntegrationRun?.connectedCount ?? 0) > 0;
     const commercialReady = input.latestCommercialReview?.status === 'passed';
     const mobileReady = input.latestMobileReview?.status === 'passed';
 
@@ -396,7 +456,10 @@ export class EnterpriseProductionLaunchService {
   private async listPlatformAlerts(companyId: string, filters?: { status?: string }) {
     const rows = await this.deps.db.query.plPlatformAlerts.findMany({
       where: filters?.status
-        ? and(eq(plPlatformAlerts.companyId, companyId), eq(plPlatformAlerts.status, filters.status as 'open'))
+        ? and(
+            eq(plPlatformAlerts.companyId, companyId),
+            eq(plPlatformAlerts.status, filters.status as 'open'),
+          )
         : eq(plPlatformAlerts.companyId, companyId),
       orderBy: [desc(plPlatformAlerts.createdAt)],
       limit: 50,
@@ -421,7 +484,13 @@ export class EnterpriseProductionLaunchService {
     return created!;
   }
 
-  private async logAudit(scope: StaffScope, actionType: string, entityType?: string, entityId?: string, metadata?: Record<string, unknown>) {
+  private async logAudit(
+    scope: StaffScope,
+    actionType: string,
+    entityType?: string,
+    entityId?: string,
+    metadata?: Record<string, unknown>,
+  ) {
     await this.deps.db.insert(plAuditLogs).values({
       companyId: scope.companyId,
       userId: scope.userId,
@@ -433,7 +502,9 @@ export class EnterpriseProductionLaunchService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof plPlatformConfig.$inferSelect): PlPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof plPlatformConfig.$inferSelect,
+): PlPlatformConfigSummary {
   return {
     deploymentPolicy: (row.deploymentPolicy ?? {}) as Record<string, unknown>,
     providerPolicy: (row.providerPolicy ?? {}) as Record<string, unknown>,
@@ -456,7 +527,11 @@ function toPlatformAlertSummary(row: typeof plPlatformAlerts.$inferSelect): PlPl
 }
 
 function toAnalyticsSummary(row: typeof plAnalyticsSnapshots.$inferSelect): PlAnalyticsSummary {
-  return { id: row.id, metrics: (row.metrics ?? {}) as Record<string, unknown>, capturedAt: row.capturedAt.toISOString() };
+  return {
+    id: row.id,
+    metrics: (row.metrics ?? {}) as Record<string, unknown>,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
 function toActionDraftSummary(row: typeof plActionDrafts.$inferSelect): PlActionDraftSummary {

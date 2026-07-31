@@ -31,7 +31,9 @@ export const whatsappMessages = pgTable('whatsapp_messages', {
   templateId: uuid('template_id').references(() => whatsappTemplates.id, { onDelete: 'set null' }),
   notificationCategory: whatsappTemplateCategoryEnum('notification_category'),
   isDraft: boolean('is_draft').notNull().default(false),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   sentAt: timestamp('sent_at', { withTimezone: true }),
   deliveredAt: timestamp('delivered_at', { withTimezone: true }),
   readAt: timestamp('read_at', { withTimezone: true }),

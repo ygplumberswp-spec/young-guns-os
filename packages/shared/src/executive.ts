@@ -11,11 +11,7 @@ export type ExecutiveAlertType =
 export type ExecutiveAlertStatus = 'pending' | 'acknowledged' | 'dismissed';
 
 export type ExecutiveRecommendationType =
-  | 'growth'
-  | 'cost_optimization'
-  | 'operational_improvement'
-  | 'customer_retention'
-  | 'strategic';
+  'growth' | 'cost_optimization' | 'operational_improvement' | 'customer_retention' | 'strategic';
 
 export type ExecutiveRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
@@ -105,7 +101,11 @@ export type ExecutiveAuraContext = {
   pendingAlertCount: number;
   pendingRecommendationCount: number;
   topAlerts: Array<{ title: string; alertType: ExecutiveAlertType; priority: string }>;
-  topRecommendations: Array<{ title: string; recommendationType: ExecutiveRecommendationType; priority: string }>;
+  topRecommendations: Array<{
+    title: string;
+    recommendationType: ExecutiveRecommendationType;
+    priority: string;
+  }>;
   businessSummary: BusinessSummary;
   summary: string;
 };

@@ -19,7 +19,8 @@ import {
   formatStatus,
 } from '../../features/evolution/utils';
 
-type EvolutionTab = 'dashboard' | 'learning' | 'patterns' | 'recommendations' | 'optimizations' | 'timeline';
+type EvolutionTab =
+  'dashboard' | 'learning' | 'patterns' | 'recommendations' | 'optimizations' | 'timeline';
 
 export function EvolutionPage() {
   const { accessToken, user } = useAuth();
@@ -52,7 +53,9 @@ export function EvolutionPage() {
         await loadDashboard();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load evolution dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load evolution dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -84,7 +87,10 @@ export function EvolutionPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Evolution" description="You do not have permission to view the evolution platform." />
+        <PageHeader
+          title="Evolution"
+          description="You do not have permission to view the evolution platform."
+        />
       </div>
     );
   }
@@ -110,7 +116,10 @@ export function EvolutionPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => syncEvolutionLearning(accessToken!), 'Learning synced from real module data.')
+                  void runAction(
+                    () => syncEvolutionLearning(accessToken!),
+                    'Learning synced from real module data.',
+                  )
                 }
               >
                 Sync Learning
@@ -157,12 +166,25 @@ export function EvolutionPage() {
           {activeTab === 'dashboard' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Optimization Score" value={String(dashboard.optimizationScore ?? '—')} />
-                <StatCard label="Learning Progress" value={`${dashboard.learningProgressPercent ?? 0}%`} />
-                <StatCard label="AI Confidence" value={String(dashboard.aiConfidenceScore ?? '—')} />
+                <StatCard
+                  label="Optimization Score"
+                  value={String(dashboard.optimizationScore ?? '—')}
+                />
+                <StatCard
+                  label="Learning Progress"
+                  value={`${dashboard.learningProgressPercent ?? 0}%`}
+                />
+                <StatCard
+                  label="AI Confidence"
+                  value={String(dashboard.aiConfidenceScore ?? '—')}
+                />
                 <StatCard
                   label="Acceptance Rate"
-                  value={dashboard.recommendationAcceptanceRate != null ? `${dashboard.recommendationAcceptanceRate}%` : '—'}
+                  value={
+                    dashboard.recommendationAcceptanceRate != null
+                      ? `${dashboard.recommendationAcceptanceRate}%`
+                      : '—'
+                  }
                 />
                 <StatCard label="Learning Events" value={String(dashboard.learningEventCount)} />
                 <StatCard label="Patterns" value={String(dashboard.patternCount)} />
@@ -174,13 +196,18 @@ export function EvolutionPage() {
 
               <Panel title="Model Versions">
                 {dashboard.modelVersions.length === 0 ? (
-                  <EmptyState title="No versions" description="Model versions are created when learning events are approved." />
+                  <EmptyState
+                    title="No versions"
+                    description="Model versions are created when learning events are approved."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.modelVersions.map((version) => (
                       <div key={version.id} className="data-list-item">
                         <strong>{version.versionLabel}</strong>
-                        {version.isActive ? <span className="status-pill status-healthy">Active</span> : null}
+                        {version.isActive ? (
+                          <span className="status-pill status-healthy">Active</span>
+                        ) : null}
                         <p>{version.description}</p>
                         <span>{version.learningEventCount} event(s)</span>
                       </div>
@@ -245,7 +272,10 @@ export function EvolutionPage() {
                 </div>
               ) : null}
               {dashboard.patterns.length === 0 ? (
-                <EmptyState title="No patterns" description="Run pattern detection from live operational data." />
+                <EmptyState
+                  title="No patterns"
+                  description="Run pattern detection from live operational data."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.patterns.map((pattern) => (
@@ -328,7 +358,10 @@ export function EvolutionPage() {
                 </div>
               ) : null}
               {dashboard.timelineEvents.length === 0 ? (
-                <EmptyState title="No timeline events" description="Sync the business evolution timeline from real data." />
+                <EmptyState
+                  title="No timeline events"
+                  description="Sync the business evolution timeline from real data."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.timelineEvents.map((event) => (

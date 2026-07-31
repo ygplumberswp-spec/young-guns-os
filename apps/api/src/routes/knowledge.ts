@@ -146,7 +146,11 @@ export function createKnowledgeRouter({
 }: KnowledgeRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('knowledge:read', 'knowledge:write', 'intelligence:read');
+  const requireRead = requireAnyPermission(
+    'knowledge:read',
+    'knowledge:write',
+    'intelligence:read',
+  );
   const requireWrite = requireAnyPermission('knowledge:write');
 
   router.use(requireAuth);
@@ -170,7 +174,9 @@ export function createKnowledgeRouter({
   router.post('/categories', requireWrite, async (req, res) => {
     const parsed = createCategorySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
       return;
     }
 
@@ -186,7 +192,9 @@ export function createKnowledgeRouter({
   router.patch('/categories/:id', requireWrite, async (req, res) => {
     const parsed = createCategorySchema.partial().safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
       return;
     }
 
@@ -228,7 +236,9 @@ export function createKnowledgeRouter({
   router.post('/articles', requireWrite, async (req, res) => {
     const parsed = createArticleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid article payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid article payload' } });
       return;
     }
 
@@ -247,7 +257,9 @@ export function createKnowledgeRouter({
   router.patch('/articles/:id', requireWrite, async (req, res) => {
     const parsed = updateArticleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid article payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid article payload' } });
       return;
     }
 
@@ -300,7 +312,11 @@ export function createKnowledgeRouter({
 
   router.get('/sops/:id', requireRead, async (req, res) => {
     const auth = getAuth(req);
-    const sop = await knowledgeService.getSop(auth.companyId, getRouteParam(req.params.id), auth.permissions);
+    const sop = await knowledgeService.getSop(
+      auth.companyId,
+      getRouteParam(req.params.id),
+      auth.permissions,
+    );
 
     if (!sop) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'SOP not found' } });
@@ -319,7 +335,10 @@ export function createKnowledgeRouter({
 
     try {
       const auth = getAuth(req);
-      const sop = await knowledgeService.createSop({ companyId: auth.companyId, userId: auth.userId }, parsed.data);
+      const sop = await knowledgeService.createSop(
+        { companyId: auth.companyId, userId: auth.userId },
+        parsed.data,
+      );
       res.status(201).json({ data: { sop } });
     } catch (error) {
       handleKnowledgeError(res, error);
@@ -394,7 +413,9 @@ export function createKnowledgeRouter({
   router.post('/training/courses', requireWrite, async (req, res) => {
     const parsed = createTrainingCourseSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training course payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training course payload' } });
       return;
     }
 
@@ -413,7 +434,9 @@ export function createKnowledgeRouter({
   router.patch('/training/courses/:id', requireWrite, async (req, res) => {
     const parsed = updateTrainingCourseSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training course payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training course payload' } });
       return;
     }
 
@@ -440,7 +463,9 @@ export function createKnowledgeRouter({
   router.post('/training/records', requireWrite, async (req, res) => {
     const parsed = createTrainingRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training record payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training record payload' } });
       return;
     }
 
@@ -459,7 +484,9 @@ export function createKnowledgeRouter({
   router.patch('/training/records/:id', requireWrite, async (req, res) => {
     const parsed = updateTrainingRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training record payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training record payload' } });
       return;
     }
 
@@ -501,7 +528,9 @@ export function createKnowledgeRouter({
   router.post('/policies', requireWrite, async (req, res) => {
     const parsed = createPolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid policy payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid policy payload' } });
       return;
     }
 
@@ -520,7 +549,9 @@ export function createKnowledgeRouter({
   router.patch('/policies/:id', requireWrite, async (req, res) => {
     const parsed = updatePolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid policy payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid policy payload' } });
       return;
     }
 
@@ -582,19 +613,27 @@ export function createKnowledgeRouter({
   router.post('/search', requireRead, async (req, res) => {
     const parsed = searchSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid search payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid search payload' } });
       return;
     }
 
     const auth = getAuth(req);
-    const results = await knowledgeService.searchKnowledge(auth.companyId, parsed.data, auth.permissions);
+    const results = await knowledgeService.searchKnowledge(
+      auth.companyId,
+      parsed.data,
+      auth.permissions,
+    );
     res.json({ data: { results } });
   });
 
   router.post('/documents/index', requireWrite, async (req, res) => {
     const parsed = indexDocumentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid index document payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid index document payload' } });
       return;
     }
 

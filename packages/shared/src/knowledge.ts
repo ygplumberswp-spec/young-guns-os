@@ -192,11 +192,23 @@ export type KnowledgeStats = {
 
 export type KnowledgeAuraContext = {
   stats: KnowledgeStats;
-  recentArticles: Array<{ title: string; articleType: KnowledgeArticleType; status: KnowledgeContentStatus }>;
+  recentArticles: Array<{
+    title: string;
+    articleType: KnowledgeArticleType;
+    status: KnowledgeContentStatus;
+  }>;
   recentSops: Array<{ title: string; department: string | null; status: KnowledgeContentStatus }>;
-  activeTrainingCourses: Array<{ title: string; contentType: TrainingContentType; skillTags: string[] }>;
+  activeTrainingCourses: Array<{
+    title: string;
+    contentType: TrainingContentType;
+    skillTags: string[];
+  }>;
   publishedPolicies: Array<{ title: string; policyType: PolicyType }>;
-  topRecommendations: Array<{ title: string; recommendationType: KnowledgeRecommendationType; priority: string }>;
+  topRecommendations: Array<{
+    title: string;
+    recommendationType: KnowledgeRecommendationType;
+    priority: string;
+  }>;
   summary: string;
 };
 
@@ -221,7 +233,9 @@ export type CreateKnowledgeArticleRequest = {
   status?: KnowledgeContentStatus;
 };
 
-export type UpdateKnowledgeArticleRequest = Partial<Omit<CreateKnowledgeArticleRequest, 'status'>> & {
+export type UpdateKnowledgeArticleRequest = Partial<
+  Omit<CreateKnowledgeArticleRequest, 'status'>
+> & {
   changeSummary?: string | null;
 };
 

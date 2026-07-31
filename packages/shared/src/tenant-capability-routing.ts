@@ -60,7 +60,14 @@ export const CAPABILITY_KEYWORD_ROUTES: CapabilityKeywordRoute[] = [
     registryAgentKey: 'operations',
   },
   {
-    keywords: ['new integration', 'new api', 'new connector', 'new database', 'new schema', 'new ui'],
+    keywords: [
+      'new integration',
+      'new api',
+      'new connector',
+      'new database',
+      'new schema',
+      'new ui',
+    ],
     department: 'technology',
     baseAgentKey: 'app_builder',
     requiresCode: true,

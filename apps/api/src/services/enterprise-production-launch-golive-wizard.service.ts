@@ -37,7 +37,10 @@ export class EnterpriseProductionLaunchGoLiveWizardService {
     return Promise.all(wizards.map((w) => this.toWizardSummary(w)));
   }
 
-  async createWizard(scope: StaffScope, input: CreatePlGoLiveWizardRequest): Promise<PlGoLiveWizardSummary> {
+  async createWizard(
+    scope: StaffScope,
+    input: CreatePlGoLiveWizardRequest,
+  ): Promise<PlGoLiveWizardSummary> {
     const wizardKey = `golive_${Date.now()}`;
     const [wizard] = await this.db
       .insert(plGoLiveWizards)
@@ -108,7 +111,11 @@ export class EnterpriseProductionLaunchGoLiveWizardService {
     return this.toWizardSummary(await this.ensureWizard(scope.companyId, wizardId));
   }
 
-  async approveWizard(scope: StaffScope, wizardId: string, input: ApprovePlGoLiveWizardRequest): Promise<PlGoLiveWizardSummary> {
+  async approveWizard(
+    scope: StaffScope,
+    wizardId: string,
+    input: ApprovePlGoLiveWizardRequest,
+  ): Promise<PlGoLiveWizardSummary> {
     const wizard = await this.ensureWizard(scope.companyId, wizardId);
     if (wizard.status !== 'pending_approval' && wizard.status !== 'in_progress') {
       throw new Error('Wizard is not ready for approval.');
@@ -194,7 +201,9 @@ export class EnterpriseProductionLaunchGoLiveWizardService {
     return wizard;
   }
 
-  private async toWizardSummary(row: typeof plGoLiveWizards.$inferSelect): Promise<PlGoLiveWizardSummary> {
+  private async toWizardSummary(
+    row: typeof plGoLiveWizards.$inferSelect,
+  ): Promise<PlGoLiveWizardSummary> {
     const steps = await this.db.query.plGoLiveWizardSteps.findMany({
       where: eq(plGoLiveWizardSteps.goLiveWizardId, row.id),
       orderBy: (s, { asc }) => [asc(s.stepOrder)],

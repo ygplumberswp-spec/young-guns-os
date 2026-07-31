@@ -1,14 +1,23 @@
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type {
   CreateCustomerActivityRequest,
+  CreateCustomerPropertyRequest,
   CreateCustomerRequest,
   CrmStats,
   CustomerDetail,
+  CustomerPropertySummary,
   CustomerSummary,
+  UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
+import {
+  buildJobAddressDisplay,
+  isValidEmailAddress,
+  isValidSaPhone,
+  normalizeSaPhone,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customerActivities, customers } from '@titan/db';
+import { customerActivities, customers, cxCustomerProperties } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
@@ -95,6 +104,119 @@ export class CrmService {
     };
   }
 
+  async listCustomerProperties(
+    companyId: string,
+    customerId: string,
+  ): Promise<CustomerPropertySummary[]> {
+    await this.ensureCustomer(companyId, customerId);
+
+    const rows = await this.db.query.cxCustomerProperties.findMany({
+      where: and(
+        eq(cxCustomerProperties.companyId, companyId),
+        eq(cxCustomerProperties.customerId, customerId),
+      ),
+      orderBy: [desc(cxCustomerProperties.isPrimary), desc(cxCustomerProperties.updatedAt)],
+    });
+
+    return rows.map(toPropertySummary);
+  }
+
+  async createCustomerProperty(
+    companyId: string,
+    customerId: string,
+    input: CreateCustomerPropertyRequest,
+  ): Promise<CustomerPropertySummary> {
+    await this.ensureCustomer(companyId, customerId);
+
+    const propertyName = input.propertyName.trim();
+    if (!propertyName) {
+      throw new CrmError('VALIDATION_ERROR', 'Property name is required');
+    }
+
+    const [created] = await this.db
+      .insert(cxCustomerProperties)
+      .values({
+        companyId,
+        customerId,
+        propertyName,
+        addressLine1: normalizeOptionalText(input.street),
+        addressLine2: normalizeOptionalText(input.unit),
+        suburb: normalizeOptionalText(input.suburb),
+        city: normalizeOptionalText(input.city),
+        province: normalizeOptionalText(input.province),
+        postalCode: normalizeOptionalText(input.postalCode),
+        unitNumber: normalizeOptionalText(input.unit),
+        isPrimary: input.isPrimary ?? false,
+      })
+      .returning();
+
+    if (!created) {
+      throw new CrmError('CREATE_FAILED', 'Unable to create property');
+    }
+
+    return toPropertySummary(created);
+  }
+
+  async updateCustomerProperty(
+    companyId: string,
+    customerId: string,
+    propertyId: string,
+    input: UpdateCustomerPropertyRequest,
+  ): Promise<CustomerPropertySummary> {
+    await this.ensureCustomer(companyId, customerId);
+
+    const existing = await this.db.query.cxCustomerProperties.findFirst({
+      where: and(
+        eq(cxCustomerProperties.id, propertyId),
+        eq(cxCustomerProperties.companyId, companyId),
+        eq(cxCustomerProperties.customerId, customerId),
+      ),
+    });
+
+    if (!existing) {
+      throw new CrmError('NOT_FOUND', 'Property not found');
+    }
+
+    const updates: Partial<typeof cxCustomerProperties.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+
+    if (input.propertyName !== undefined) {
+      const propertyName = input.propertyName.trim();
+      if (!propertyName) {
+        throw new CrmError('VALIDATION_ERROR', 'Property name is required');
+      }
+      updates.propertyName = propertyName;
+    }
+
+    if (input.street !== undefined) updates.addressLine1 = normalizeOptionalText(input.street);
+    if (input.unit !== undefined) {
+      updates.unitNumber = normalizeOptionalText(input.unit);
+      updates.addressLine2 = normalizeOptionalText(input.unit);
+    }
+    if (input.suburb !== undefined) updates.suburb = normalizeOptionalText(input.suburb);
+    if (input.city !== undefined) updates.city = normalizeOptionalText(input.city);
+    if (input.province !== undefined) updates.province = normalizeOptionalText(input.province);
+    if (input.postalCode !== undefined) {
+      updates.postalCode = normalizeOptionalText(input.postalCode);
+    }
+    if (input.isPrimary !== undefined) updates.isPrimary = input.isPrimary;
+
+    const [updated] = await this.db
+      .update(cxCustomerProperties)
+      .set(updates)
+      .where(
+        and(eq(cxCustomerProperties.id, propertyId), eq(cxCustomerProperties.companyId, companyId)),
+      )
+      .returning();
+
+    if (!updated) {
+      throw new CrmError('UPDATE_FAILED', 'Unable to update property');
+    }
+
+    return toPropertySummary(updated);
+  }
+
   async createCustomer(companyId: string, input: CreateCustomerRequest): Promise<CustomerDetail> {
     const name = input.name.trim();
 
@@ -102,14 +224,25 @@ export class CrmService {
       throw new CrmError('VALIDATION_ERROR', 'Customer name is required');
     }
 
+    const email = normalizeOptionalText(input.email);
+    if (email && !isValidEmailAddress(email)) {
+      throw new CrmError('VALIDATION_ERROR', 'Customer email is invalid');
+    }
+
+    const phone = normalizeCustomerPhone(input.phone);
+    const contactPerson = normalizeOptionalText(input.contactPerson);
+
     const [created] = await this.db
       .insert(customers)
       .values({
         companyId,
         name,
-        email: normalizeOptionalText(input.email),
-        phone: normalizeOptionalText(input.phone),
+        contactPerson,
+        email,
+        phone,
         status: input.status ?? 'active',
+        isSupplierOnly: input.isSupplierOnly ?? false,
+        doNotContact: input.doNotContact ?? false,
         notes: normalizeOptionalText(input.notes),
       })
       .returning();
@@ -166,16 +299,34 @@ export class CrmService {
       updates.name = name;
     }
 
+    if (input.contactPerson !== undefined) {
+      updates.contactPerson = normalizeOptionalText(input.contactPerson);
+    }
+
     if (input.email !== undefined) {
-      updates.email = normalizeOptionalText(input.email);
+      const email = normalizeOptionalText(input.email);
+      if (email && !isValidEmailAddress(email)) {
+        throw new CrmError('VALIDATION_ERROR', 'Customer email is invalid');
+      }
+      // Placeholder company/import emails (e.g. Xero-shared inboxes) are never
+      // treated as a verified customer-owned contact — see marketing eligibility service.
+      updates.email = email;
     }
 
     if (input.phone !== undefined) {
-      updates.phone = normalizeOptionalText(input.phone);
+      updates.phone = normalizeCustomerPhone(input.phone);
     }
 
     if (input.status !== undefined) {
       updates.status = input.status;
+    }
+
+    if (input.isSupplierOnly !== undefined) {
+      updates.isSupplierOnly = input.isSupplierOnly;
+    }
+
+    if (input.doNotContact !== undefined) {
+      updates.doNotContact = input.doNotContact;
     }
 
     if (input.notes !== undefined) {
@@ -267,6 +418,15 @@ export class CrmService {
     );
   }
 
+  private async ensureCustomer(companyId: string, customerId: string): Promise<void> {
+    const customer = await this.db.query.customers.findFirst({
+      where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
+    });
+    if (!customer) {
+      throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+  }
+
   async buildAuraContext(companyId: string, customerId?: string): Promise<AuraCrmContext> {
     const stats = await this.getStats(companyId);
 
@@ -316,9 +476,37 @@ function toCustomerSummary(row: typeof customers.$inferSelect): CustomerSummary 
   return {
     id: row.id,
     name: row.name,
+    contactPerson: row.contactPerson,
     email: row.email,
     phone: row.phone,
     status: row.status,
+    isSupplierOnly: row.isSupplierOnly,
+    doNotContact: row.doNotContact,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
+}
+
+function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): CustomerPropertySummary {
+  return {
+    id: row.id,
+    customerId: row.customerId,
+    propertyName: row.propertyName,
+    street: row.addressLine1,
+    suburb: row.suburb,
+    city: row.city,
+    province: row.province,
+    postalCode: row.postalCode,
+    unit: row.unitNumber ?? row.addressLine2,
+    addressDisplay: buildJobAddressDisplay({
+      street: row.addressLine1,
+      suburb: row.suburb,
+      city: row.city,
+      province: row.province,
+      postalCode: row.postalCode,
+      unit: row.unitNumber ?? row.addressLine2,
+    }),
+    isPrimary: row.isPrimary,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -327,4 +515,16 @@ function toCustomerSummary(row: typeof customers.$inferSelect): CustomerSummary 
 function normalizeOptionalText(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function normalizeCustomerPhone(value: string | null | undefined): string | null {
+  const trimmed = normalizeOptionalText(value);
+  if (!trimmed) return null;
+  if (!isValidSaPhone(trimmed)) {
+    throw new CrmError(
+      'VALIDATION_ERROR',
+      'Customer phone must be a valid South African phone number',
+    );
+  }
+  return normalizeSaPhone(trimmed);
 }

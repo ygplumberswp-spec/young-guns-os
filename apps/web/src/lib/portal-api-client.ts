@@ -9,6 +9,9 @@ import type {
   PortalJobTrackingDetail,
   PortalKnowledgeArticleSummary,
   PortalQuoteDetail,
+  QuoteAcceptanceSummary,
+  AcceptQuoteRequest,
+  DeclineQuoteRequest,
   PortalDashboardResponse,
   NotificationSummary,
   CxCustomerDashboard,
@@ -22,7 +25,9 @@ import type {
 } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 
-const API_BASE = '/api/v1';
+import { resolveApiBase } from './runtime-env';
+
+const API_BASE = resolveApiBase();
 
 type RequestOptions = {
   method?: string;
@@ -175,9 +180,7 @@ export async function acceptPortalInvite(body: {
   });
 }
 
-export async function fetchPortalDashboard(
-  accessToken: string,
-): Promise<PortalDashboardResponse> {
+export async function fetchPortalDashboard(accessToken: string): Promise<PortalDashboardResponse> {
   return portalRequest<PortalDashboardResponse>('/portal/dashboard', { accessToken });
 }
 
@@ -205,20 +208,54 @@ export async function fetchPortalJob(accessToken: string, jobId: string) {
 }
 
 export async function fetchPortalQuotes(accessToken: string) {
-  const data = await portalRequest<{ quotes: PortalQuoteDetail[] }>('/portal/quotes', { accessToken });
+  const data = await portalRequest<{ quotes: PortalQuoteDetail[] }>('/portal/quotes', {
+    accessToken,
+  });
   return data.quotes;
 }
 
+export async function fetchPortalQuote(accessToken: string, quoteId: string) {
+  const data = await portalRequest<{ quote: PortalQuoteDetail }>(`/portal/quotes/${quoteId}`, {
+    accessToken,
+  });
+  return data.quote;
+}
+
+export async function acceptPortalQuote(
+  accessToken: string,
+  quoteId: string,
+  body: AcceptQuoteRequest,
+) {
+  const data = await portalRequest<{ acceptance: QuoteAcceptanceSummary }>(
+    `/portal/quotes/${quoteId}/accept`,
+    { method: 'POST', accessToken, body },
+  );
+  return data.acceptance;
+}
+
+export async function declinePortalQuote(
+  accessToken: string,
+  quoteId: string,
+  body: DeclineQuoteRequest,
+) {
+  const data = await portalRequest<{ acceptance: QuoteAcceptanceSummary }>(
+    `/portal/quotes/${quoteId}/decline`,
+    { method: 'POST', accessToken, body },
+  );
+  return data.acceptance;
+}
+
 export async function fetchPortalFinance(accessToken: string) {
-  const data = await portalRequest<{ finance: PortalFinanceCentre }>('/portal/finance', { accessToken });
+  const data = await portalRequest<{ finance: PortalFinanceCentre }>('/portal/finance', {
+    accessToken,
+  });
   return data.finance;
 }
 
 export async function fetchPortalAppointments(accessToken: string) {
-  const data = await portalRequest<{ appointments: PortalCustomerExperienceDashboard['upcomingAppointments'] }>(
-    '/portal/appointments',
-    { accessToken },
-  );
+  const data = await portalRequest<{
+    appointments: PortalCustomerExperienceDashboard['upcomingAppointments'];
+  }>('/portal/appointments', { accessToken });
   return data.appointments;
 }
 
@@ -239,9 +276,12 @@ export async function searchPortalKnowledge(accessToken: string, query: string) 
 }
 
 export async function fetchPortalNotifications(accessToken: string) {
-  const data = await portalRequest<{ notifications: NotificationSummary[] }>('/portal/notifications', {
-    accessToken,
-  });
+  const data = await portalRequest<{ notifications: NotificationSummary[] }>(
+    '/portal/notifications',
+    {
+      accessToken,
+    },
+  );
   return data.notifications;
 }
 
@@ -253,6 +293,7 @@ export async function createPortalRequest(
     message: string;
     entityType?: string | null;
     entityId?: string | null;
+    clientActionId?: string | null;
   },
 ) {
   const data = await portalRequest<{ request: PortalCustomerRequestSummary }>('/portal/requests', {
@@ -279,7 +320,9 @@ export async function fetchCxPortalDocuments(accessToken: string): Promise<CxDoc
   return data.documentCentre;
 }
 
-export async function fetchCxPortalBookings(accessToken: string): Promise<CxAppointmentBookingSummary[]> {
+export async function fetchCxPortalBookings(
+  accessToken: string,
+): Promise<CxAppointmentBookingSummary[]> {
   const data = await portalRequest<{ bookings: CxAppointmentBookingSummary[] }>(
     '/enterprise-customer-experience/portal/bookings',
     { accessToken },
@@ -305,7 +348,9 @@ export async function createCxPortalBooking(
   return data.booking;
 }
 
-export async function fetchCxPortalProperties(accessToken: string): Promise<CxCustomerPropertySummary[]> {
+export async function fetchCxPortalProperties(
+  accessToken: string,
+): Promise<CxCustomerPropertySummary[]> {
   const data = await portalRequest<{ properties: CxCustomerPropertySummary[] }>(
     '/enterprise-customer-experience/portal/properties',
     { accessToken },
@@ -315,7 +360,17 @@ export async function fetchCxPortalProperties(accessToken: string): Promise<CxCu
 
 export async function createCxPortalProperty(
   accessToken: string,
-  body: { propertyName: string; addressLine1?: string; city?: string; postalCode?: string; isPrimary?: boolean },
+  body: {
+    propertyName: string;
+    addressLine1?: string;
+    addressLine2?: string;
+    suburb?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
+    unitNumber?: string;
+    isPrimary?: boolean;
+  },
 ) {
   const data = await portalRequest<{ property: CxCustomerPropertySummary }>(
     '/enterprise-customer-experience/portal/properties',
@@ -324,7 +379,9 @@ export async function createCxPortalProperty(
   return data.property;
 }
 
-export async function fetchCxPortalReviews(accessToken: string): Promise<CxReviewFeedbackSummary[]> {
+export async function fetchCxPortalReviews(
+  accessToken: string,
+): Promise<CxReviewFeedbackSummary[]> {
   const data = await portalRequest<{ reviews: CxReviewFeedbackSummary[] }>(
     '/enterprise-customer-experience/portal/reviews',
     { accessToken },
@@ -349,7 +406,9 @@ export async function submitCxPortalReview(
   return data.review;
 }
 
-export async function fetchCxPortalReferrals(accessToken: string): Promise<CxLoyaltyReferralSummary[]> {
+export async function fetchCxPortalReferrals(
+  accessToken: string,
+): Promise<CxLoyaltyReferralSummary[]> {
   const data = await portalRequest<{ referrals: CxLoyaltyReferralSummary[] }>(
     '/enterprise-customer-experience/portal/referrals',
     { accessToken },
@@ -365,7 +424,9 @@ export async function createCxPortalReferral(accessToken: string, referredEmail:
   return data.referral;
 }
 
-export async function fetchCxEngagementPreferences(accessToken: string): Promise<CxEngagementPreferencesSummary> {
+export async function fetchCxEngagementPreferences(
+  accessToken: string,
+): Promise<CxEngagementPreferencesSummary> {
   const data = await portalRequest<{ preferences: CxEngagementPreferencesSummary }>(
     '/enterprise-customer-experience/portal/engagement-preferences',
     { accessToken },
@@ -384,7 +445,10 @@ export async function updateCxEngagementPreferences(
   return data.preferences;
 }
 
-export async function fetchCxTechnicianTracking(accessToken: string, jobId: string): Promise<CxTechnicianTrackingSummary> {
+export async function fetchCxTechnicianTracking(
+  accessToken: string,
+  jobId: string,
+): Promise<CxTechnicianTrackingSummary> {
   const data = await portalRequest<{ tracking: CxTechnicianTrackingSummary }>(
     `/enterprise-customer-experience/portal/tracking/${jobId}`,
     { accessToken },

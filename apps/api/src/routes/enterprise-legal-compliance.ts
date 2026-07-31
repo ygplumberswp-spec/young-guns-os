@@ -257,7 +257,11 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseLegalComplianceError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -266,7 +270,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -292,9 +299,8 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/compliance-monitoring', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const complianceMonitoring = await deps.enterpriseLegalComplianceService.getComplianceMonitoring(
-        auth.companyId,
-      );
+      const complianceMonitoring =
+        await deps.enterpriseLegalComplianceService.getComplianceMonitoring(auth.companyId);
       res.json({ data: { complianceMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -316,7 +322,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
 
   router.get('/employee', requireStaffAuth, requireRead, async (req, res) => {
     try {
-      const summary = await deps.enterpriseLegalComplianceService.getEmployeeLegalSummary(staffScope(req));
+      const summary = await deps.enterpriseLegalComplianceService.getEmployeeLegalSummary(
+        staffScope(req),
+      );
       res.json({ data: { summary } });
     } catch (error) {
       handleError(error, res);
@@ -326,7 +334,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseLegalComplianceService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseLegalComplianceService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -336,7 +346,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
@@ -367,7 +379,10 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const category = await deps.enterpriseLegalComplianceService.createCategory(staffScope(req), parsed.data);
+      const category = await deps.enterpriseLegalComplianceService.createCategory(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { category } });
     } catch (error) {
       handleError(error, res);
@@ -377,7 +392,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/jurisdictions', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const jurisdictions = await deps.enterpriseLegalComplianceService.listJurisdictions(auth.companyId);
+      const jurisdictions = await deps.enterpriseLegalComplianceService.listJurisdictions(
+        auth.companyId,
+      );
       res.json({ data: { jurisdictions } });
     } catch (error) {
       handleError(error, res);
@@ -387,7 +404,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/jurisdictions', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = jurisdictionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid jurisdiction' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid jurisdiction' } });
       return;
     }
     try {
@@ -418,53 +437,76 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const contract = await deps.enterpriseLegalComplianceService.createContract(staffScope(req), parsed.data);
+      const contract = await deps.enterpriseLegalComplianceService.createContract(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { contract } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/contracts/:contractId/lifecycle', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = contractLifecycleSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid contract lifecycle' } });
-      return;
-    }
-    try {
-      const contract = await deps.enterpriseLegalComplianceService.advanceContractLifecycle(staffScope(req), {
-        contractId: getRouteParam(req.params.contractId),
-        ...parsed.data,
-      });
-      res.status(201).json({ data: { contract } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/contracts/:contractId/lifecycle',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      const parsed = contractLifecycleSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid contract lifecycle' } });
+        return;
+      }
+      try {
+        const contract = await deps.enterpriseLegalComplianceService.advanceContractLifecycle(
+          staffScope(req),
+          {
+            contractId: getRouteParam(req.params.contractId),
+            ...parsed.data,
+          },
+        );
+        res.status(201).json({ data: { contract } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/contracts/:contractId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const contract = await deps.enterpriseLegalComplianceService.approveContract(
-        staffScope(req),
-        getRouteParam(req.params.contractId),
-      );
-      res.json({ data: { contract } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/contracts/:contractId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const contract = await deps.enterpriseLegalComplianceService.approveContract(
+          staffScope(req),
+          getRouteParam(req.params.contractId),
+        );
+        res.json({ data: { contract } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/contracts/:contractId/execute', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const contract = await deps.enterpriseLegalComplianceService.executeContract(
-        staffScope(req),
-        getRouteParam(req.params.contractId),
-      );
-      res.json({ data: { contract } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/contracts/:contractId/execute',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const contract = await deps.enterpriseLegalComplianceService.executeContract(
+          staffScope(req),
+          getRouteParam(req.params.contractId),
+        );
+        res.json({ data: { contract } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/clauses', requireStaffAuth, requireRead, async (req, res) => {
     try {
@@ -483,7 +525,10 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const clause = await deps.enterpriseLegalComplianceService.createClause(staffScope(req), parsed.data);
+      const clause = await deps.enterpriseLegalComplianceService.createClause(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { clause } });
     } catch (error) {
       handleError(error, res);
@@ -493,7 +538,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/signature/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseLegalComplianceService.listSignatureProviders(auth.companyId);
+      const providers = await deps.enterpriseLegalComplianceService.listSignatureProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -503,7 +550,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/signature/providers', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = signatureProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid signature provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid signature provider' } });
       return;
     }
     try {
@@ -517,41 +566,57 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
     }
   });
 
-  router.post('/signature/providers/:providerId/test', requireStaffAuth, requireManage, async (req, res) => {
-    try {
-      const provider = await deps.enterpriseLegalComplianceService.testSignatureProvider(
-        staffScope(req),
-        getRouteParam(req.params.providerId),
-      );
-      res.json({ data: { provider } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/signature/providers/:providerId/test',
+    requireStaffAuth,
+    requireManage,
+    async (req, res) => {
+      try {
+        const provider = await deps.enterpriseLegalComplianceService.testSignatureProvider(
+          staffScope(req),
+          getRouteParam(req.params.providerId),
+        );
+        res.json({ data: { provider } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/contracts/:contractId/analyses', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = contractAnalysisSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid contract analysis request' } });
-      return;
-    }
-    try {
-      const analysis = await deps.enterpriseLegalComplianceService.requestContractAnalysis(
-        staffScope(req),
-        getRouteParam(req.params.contractId),
-        parsed.data,
-      );
-      res.status(201).json({ data: { analysis } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/contracts/:contractId/analyses',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      const parsed = contractAnalysisSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid contract analysis request' },
+        });
+        return;
+      }
+      try {
+        const analysis = await deps.enterpriseLegalComplianceService.requestContractAnalysis(
+          staffScope(req),
+          getRouteParam(req.params.contractId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { analysis } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/analyses', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const contractId = typeof req.query.contractId === 'string' ? req.query.contractId : undefined;
-      const analyses = await deps.enterpriseLegalComplianceService.listContractAnalyses(auth.companyId, contractId);
+      const contractId =
+        typeof req.query.contractId === 'string' ? req.query.contractId : undefined;
+      const analyses = await deps.enterpriseLegalComplianceService.listContractAnalyses(
+        auth.companyId,
+        contractId,
+      );
       res.json({ data: { analyses } });
     } catch (error) {
       handleError(error, res);
@@ -561,7 +626,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/obligations', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const obligations = await deps.enterpriseLegalComplianceService.listObligations(auth.companyId);
+      const obligations = await deps.enterpriseLegalComplianceService.listObligations(
+        auth.companyId,
+      );
       res.json({ data: { obligations } });
     } catch (error) {
       handleError(error, res);
@@ -575,24 +642,32 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const obligation = await deps.enterpriseLegalComplianceService.createObligation(staffScope(req), parsed.data);
+      const obligation = await deps.enterpriseLegalComplianceService.createObligation(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { obligation } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/obligations/:obligationId/complete', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const obligation = await deps.enterpriseLegalComplianceService.completeObligation(
-        staffScope(req),
-        getRouteParam(req.params.obligationId),
-      );
-      res.json({ data: { obligation } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/obligations/:obligationId/complete',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const obligation = await deps.enterpriseLegalComplianceService.completeObligation(
+          staffScope(req),
+          getRouteParam(req.params.obligationId),
+        );
+        res.json({ data: { obligation } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/risks', requireStaffAuth, requireRead, async (req, res) => {
     try {
@@ -611,7 +686,10 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const risk = await deps.enterpriseLegalComplianceService.createRisk(staffScope(req), parsed.data);
+      const risk = await deps.enterpriseLegalComplianceService.createRisk(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { risk } });
     } catch (error) {
       handleError(error, res);
@@ -635,7 +713,10 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const control = await deps.enterpriseLegalComplianceService.createControl(staffScope(req), parsed.data);
+      const control = await deps.enterpriseLegalComplianceService.createControl(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { control } });
     } catch (error) {
       handleError(error, res);
@@ -659,7 +740,10 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
       return;
     }
     try {
-      const policy = await deps.enterpriseLegalComplianceService.createPolicy(staffScope(req), parsed.data);
+      const policy = await deps.enterpriseLegalComplianceService.createPolicy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { policy } });
     } catch (error) {
       handleError(error, res);
@@ -678,22 +762,29 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
     }
   });
 
-  router.post('/policies/:policyId/acknowledge', requireStaffAuth, requireRead, async (req, res) => {
-    try {
-      await deps.enterpriseLegalComplianceService.acknowledgePolicy(
-        staffScope(req),
-        getRouteParam(req.params.policyId),
-      );
-      res.json({ data: { acknowledged: true } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/policies/:policyId/acknowledge',
+    requireStaffAuth,
+    requireRead,
+    async (req, res) => {
+      try {
+        await deps.enterpriseLegalComplianceService.acknowledgePolicy(
+          staffScope(req),
+          getRouteParam(req.params.policyId),
+        );
+        res.json({ data: { acknowledged: true } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/legal-matters', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const legalMatters = await deps.enterpriseLegalComplianceService.listLegalMatters(auth.companyId);
+      const legalMatters = await deps.enterpriseLegalComplianceService.listLegalMatters(
+        auth.companyId,
+      );
       res.json({ data: { legalMatters } });
     } catch (error) {
       handleError(error, res);
@@ -703,11 +794,16 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/legal-matters', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = legalMatterSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid legal matter' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid legal matter' } });
       return;
     }
     try {
-      const legalMatter = await deps.enterpriseLegalComplianceService.createLegalMatter(staffScope(req), parsed.data);
+      const legalMatter = await deps.enterpriseLegalComplianceService.createLegalMatter(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { legalMatter } });
     } catch (error) {
       handleError(error, res);
@@ -717,7 +813,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/insurance/policies', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const policies = await deps.enterpriseLegalComplianceService.listInsurancePolicies(auth.companyId);
+      const policies = await deps.enterpriseLegalComplianceService.listInsurancePolicies(
+        auth.companyId,
+      );
       res.json({ data: { policies } });
     } catch (error) {
       handleError(error, res);
@@ -727,11 +825,16 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/insurance/policies', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = insurancePolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insurance policy' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insurance policy' } });
       return;
     }
     try {
-      const policy = await deps.enterpriseLegalComplianceService.createInsurancePolicy(staffScope(req), parsed.data);
+      const policy = await deps.enterpriseLegalComplianceService.createInsurancePolicy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { policy } });
     } catch (error) {
       handleError(error, res);
@@ -741,7 +844,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.get('/insurance/claims', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const claims = await deps.enterpriseLegalComplianceService.listInsuranceClaims(auth.companyId);
+      const claims = await deps.enterpriseLegalComplianceService.listInsuranceClaims(
+        auth.companyId,
+      );
       res.json({ data: { claims } });
     } catch (error) {
       handleError(error, res);
@@ -751,11 +856,16 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/insurance/claims', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = insuranceClaimSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insurance claim' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insurance claim' } });
       return;
     }
     try {
-      const claim = await deps.enterpriseLegalComplianceService.createInsuranceClaim(staffScope(req), parsed.data);
+      const claim = await deps.enterpriseLegalComplianceService.createInsuranceClaim(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { claim } });
     } catch (error) {
       handleError(error, res);
@@ -766,11 +876,15 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const customerId = typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
-      const privacyRequests = await deps.enterpriseLegalComplianceService.listPrivacyRequests(auth.companyId, {
-        status,
-        customerId,
-      });
+      const customerId =
+        typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
+      const privacyRequests = await deps.enterpriseLegalComplianceService.listPrivacyRequests(
+        auth.companyId,
+        {
+          status,
+          customerId,
+        },
+      );
       res.json({ data: { privacyRequests } });
     } catch (error) {
       handleError(error, res);
@@ -780,7 +894,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/privacy/requests', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = privacyRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy request' } });
       return;
     }
     try {
@@ -816,7 +932,9 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
 
   router.post('/analytics/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseLegalComplianceService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseLegalComplianceService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -826,11 +944,16 @@ export function createEnterpriseLegalComplianceRouter(deps: RouterDeps): Router 
   router.post('/hr-drafts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = legalDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid legal action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid legal action draft' } });
       return;
     }
     try {
-      const draft = await deps.enterpriseLegalComplianceService.createLegalActionDraft(staffScope(req), parsed.data);
+      const draft = await deps.enterpriseLegalComplianceService.createLegalActionDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { draft } });
     } catch (error) {
       handleError(error, res);

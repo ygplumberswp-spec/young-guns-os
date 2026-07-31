@@ -76,7 +76,9 @@ export class SalesService {
 
     const open = opportunities.filter((row) => row.status === 'open');
     const won = opportunities.filter((row) => row.status === 'won');
-    const quotesSent = quoteRows.filter((row) => row.status === 'sent' || row.status === 'accepted').length;
+    const quotesSent = quoteRows.filter(
+      (row) => row.status === 'sent' || row.status === 'accepted',
+    ).length;
     const quotesAccepted = quoteRows.filter((row) => row.status === 'accepted').length;
 
     return {
@@ -200,7 +202,10 @@ export class SalesService {
     return rows.map(toOpportunitySummary);
   }
 
-  async getOpportunity(companyId: string, opportunityId: string): Promise<SalesOpportunitySummary | null> {
+  async getOpportunity(
+    companyId: string,
+    opportunityId: string,
+  ): Promise<SalesOpportunitySummary | null> {
     const row = await this.db.query.salesOpportunities.findFirst({
       where: and(
         eq(salesOpportunities.id, opportunityId),
@@ -289,11 +294,11 @@ export class SalesService {
         stageId: input.stageId !== undefined ? input.stageId : undefined,
         status: input.status ?? undefined,
         title: input.title?.trim() || undefined,
-        description: input.description !== undefined ? input.description?.trim() || null : undefined,
+        description:
+          input.description !== undefined ? input.description?.trim() || null : undefined,
         estimatedValueCents:
           input.estimatedValueCents !== undefined ? input.estimatedValueCents : undefined,
-        assignedUserId:
-          input.assignedUserId !== undefined ? input.assignedUserId : undefined,
+        assignedUserId: input.assignedUserId !== undefined ? input.assignedUserId : undefined,
         closedAt: closedAt !== undefined ? closedAt : undefined,
         updatedAt: new Date(),
       })
@@ -318,7 +323,10 @@ export class SalesService {
     return rows.map(toActivitySummary);
   }
 
-  async createActivity(scope: TenantScope, input: CreateSalesActivityRequest): Promise<SalesActivitySummary> {
+  async createActivity(
+    scope: TenantScope,
+    input: CreateSalesActivityRequest,
+  ): Promise<SalesActivitySummary> {
     const body = input.body.trim();
     if (!body) {
       throw new SalesError('VALIDATION_ERROR', 'Activity body is required');
@@ -403,13 +411,19 @@ export class SalesService {
     for (const payment of paymentRows) {
       const customerId = payment.invoice?.customerId;
       if (!customerId) continue;
-      revenueByCustomer.set(customerId, (revenueByCustomer.get(customerId) ?? 0) + payment.amountCents);
+      revenueByCustomer.set(
+        customerId,
+        (revenueByCustomer.get(customerId) ?? 0) + payment.amountCents,
+      );
     }
 
     const completedJobsByCustomer = new Map<string, number>();
     for (const job of jobRows) {
       if (job.status !== 'completed') continue;
-      completedJobsByCustomer.set(job.customerId, (completedJobsByCustomer.get(job.customerId) ?? 0) + 1);
+      completedJobsByCustomer.set(
+        job.customerId,
+        (completedJobsByCustomer.get(job.customerId) ?? 0) + 1,
+      );
     }
 
     for (const [customerId, count] of completedJobsByCustomer) {
@@ -451,7 +465,9 @@ export class SalesService {
         reason: {
           quoteNumber: quote.quoteNumber,
           quoteStatus: quote.status,
-          daysSinceUpdate: Math.floor((now.getTime() - quote.updatedAt.getTime()) / (24 * 60 * 60 * 1000)),
+          daysSinceUpdate: Math.floor(
+            (now.getTime() - quote.updatedAt.getTime()) / (24 * 60 * 60 * 1000),
+          ),
         },
       });
     }
@@ -763,7 +779,10 @@ export class SalesService {
     };
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -866,9 +885,7 @@ function toActivitySummary(
     subject: row.subject,
     body: row.body,
     authorUserId: row.authorUserId,
-    authorName: row.author
-      ? `${row.author.firstName} ${row.author.lastName}`.trim()
-      : null,
+    authorName: row.author ? `${row.author.firstName} ${row.author.lastName}`.trim() : null,
     occurredAt: row.occurredAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
@@ -913,7 +930,9 @@ function mapOpportunityTypeToRecommendation(
   }
 }
 
-function dedupeDetectedOpportunities(signals: DetectedSalesOpportunity[]): DetectedSalesOpportunity[] {
+function dedupeDetectedOpportunities(
+  signals: DetectedSalesOpportunity[],
+): DetectedSalesOpportunity[] {
   const seen = new Set<string>();
   const result: DetectedSalesOpportunity[] = [];
 

@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -30,7 +39,12 @@ export const securityLoginEventTypeEnum = pgEnum('security_login_event_type', [
   'suspicious',
 ]);
 
-export const securityRiskLevelEnum = pgEnum('security_risk_level', ['low', 'medium', 'high', 'critical']);
+export const securityRiskLevelEnum = pgEnum('security_risk_level', [
+  'low',
+  'medium',
+  'high',
+  'critical',
+]);
 
 export const securityActionTypeEnum = pgEnum('security_action_type', [
   'security_action',
@@ -232,7 +246,9 @@ export const securityPrivacyRequests = pgTable('security_privacy_requests', {
   status: securityPrivacyRequestStatusEnum('status').notNull().default('pending'),
   subject: text('subject').notNull(),
   notes: text('notes'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -291,7 +307,9 @@ export const securityWorkspaceSettings = pgTable('security_workspace_settings', 
   independentAuditTrail: boolean('independent_audit_trail').notNull().default(true),
   independentAiMemory: boolean('independent_ai_memory').notNull().default(true),
   businessAgentPersonalAccess: boolean('business_agent_personal_access').notNull().default(false),
-  personalAgentBusinessExposure: boolean('personal_agent_business_exposure').notNull().default(false),
+  personalAgentBusinessExposure: boolean('personal_agent_business_exposure')
+    .notNull()
+    .default(false),
   updatedByUserId: uuid('updated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

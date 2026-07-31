@@ -1,4 +1,8 @@
-import type { AssetEquipmentSummary, AssetMaintenanceRecordSummary, AssetMaintenanceScheduleSummary } from './asset-equipment.js';
+import type {
+  AssetEquipmentSummary,
+  AssetMaintenanceRecordSummary,
+  AssetMaintenanceScheduleSummary,
+} from './asset-equipment.js';
 
 export type AlOwnershipType = 'customer_owned' | 'company_owned';
 
@@ -16,7 +20,8 @@ export type AlLifecycleStage =
   | 'decommissioning'
   | 'disposal';
 
-export type AlLifecycleStageStatus = 'draft' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
+export type AlLifecycleStageStatus =
+  'draft' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
 
 export type AlIotProviderType =
   | 'mqtt'
@@ -93,7 +98,8 @@ export const AL_TELEMETRY_FIELDS: AlTelemetryField[] = [
 ];
 
 export type AlAlertSeverity = 'info' | 'warning' | 'critical' | 'emergency';
-export type AlAlertStatus = 'open' | 'acknowledged' | 'assigned' | 'escalated' | 'resolved' | 'closed';
+export type AlAlertStatus =
+  'open' | 'acknowledged' | 'assigned' | 'escalated' | 'resolved' | 'closed';
 export type AlAlertType =
   | 'high_temperature'
   | 'low_pressure'

@@ -72,7 +72,12 @@ export function CustomerCreatePage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       <form className="crm-form" onSubmit={(event) => void handleSubmit(event)}>
-        <Input label="Name" value={name} onChange={(event) => setName(event.target.value)} required />
+        <Input
+          label="Name"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          required
+        />
 
         <Input
           label="Email"

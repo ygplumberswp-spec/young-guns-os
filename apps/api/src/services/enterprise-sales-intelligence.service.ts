@@ -132,7 +132,8 @@ export class EnterpriseSalesIntelligenceService {
   constructor(private readonly deps: SalesIntelligenceDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseSalesIntelligenceDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       salesStats,
@@ -239,7 +240,9 @@ export class EnterpriseSalesIntelligenceService {
     }).length;
 
     const stageSlaByKey = new Map(
-      pipelineStages.filter((row) => row.slaHours != null).map((row) => [row.stageKey.toLowerCase(), row.slaHours!]),
+      pipelineStages
+        .filter((row) => row.slaHours != null)
+        .map((row) => [row.stageKey.toLowerCase(), row.slaHours!]),
     );
     let slaBreachCount = 0;
     for (const opportunity of openOpportunities) {
@@ -263,7 +266,8 @@ export class EnterpriseSalesIntelligenceService {
 
     const alerts: string[] = [];
     if (unassignedLeadCount > 0) alerts.push(`${unassignedLeadCount} unassigned active lead(s)`);
-    if (stalledOpportunityCount > 0) alerts.push(`${stalledOpportunityCount} stalled opportunity(ies)`);
+    if (stalledOpportunityCount > 0)
+      alerts.push(`${stalledOpportunityCount} stalled opportunity(ies)`);
     if (expiringQuoteCount > 0) alerts.push(`${expiringQuoteCount} expired quote(s)`);
     if (slaBreachCount > 0) alerts.push(`${slaBreachCount} pipeline SLA breach(es)`);
     if (crmSyncFailureCount > 0) alerts.push(`${crmSyncFailureCount} CRM provider sync failure(s)`);
@@ -278,7 +282,10 @@ export class EnterpriseSalesIntelligenceService {
     };
   }
 
-  async getPortalSalesSummary(companyId: string, customerId?: string): Promise<SiPortalSalesSummary> {
+  async getPortalSalesSummary(
+    companyId: string,
+    customerId?: string,
+  ): Promise<SiPortalSalesSummary> {
     const [salesStats, leadStats, financeStats, opportunities, quotes] = await Promise.all([
       this.deps.salesService.getStats(companyId),
       this.deps.leadsService.getStats(companyId),
@@ -293,7 +300,9 @@ export class EnterpriseSalesIntelligenceService {
     const filteredQuotes = customerId
       ? quotes.filter((row) => row.customerId === customerId)
       : quotes;
-    const pendingQuoteCount = filteredQuotes.filter((row) => ['draft', 'sent'].includes(row.status)).length;
+    const pendingQuoteCount = filteredQuotes.filter((row) =>
+      ['draft', 'sent'].includes(row.status),
+    ).length;
 
     return {
       openOpportunityCount: filteredOpportunities.length,
@@ -321,7 +330,8 @@ export class EnterpriseSalesIntelligenceService {
       .update(siPlatformConfig)
       .set({
         salesStandards: input.salesStandards ?? existing.salesStandards,
-        providerAdapterTemplates: input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
+        providerAdapterTemplates:
+          input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
         pipelineTemplates: input.pipelineTemplates ?? existing.pipelineTemplates,
         playbookTemplates: input.playbookTemplates ?? existing.playbookTemplates,
         targetTemplates: input.targetTemplates ?? existing.targetTemplates,
@@ -337,7 +347,10 @@ export class EnterpriseSalesIntelligenceService {
     return toPlatformConfigSummary(updated!);
   }
 
-  async createCategory(scope: StaffScope, input: CreateSiSalesCategoryRequest): Promise<SiSalesCategorySummary> {
+  async createCategory(
+    scope: StaffScope,
+    input: CreateSiSalesCategoryRequest,
+  ): Promise<SiSalesCategorySummary> {
     const [created] = await this.deps.db
       .insert(siSalesCategories)
       .values({
@@ -361,7 +374,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toCategorySummary);
   }
 
-  async createTerritory(scope: StaffScope, input: CreateSiTerritoryRequest): Promise<SiTerritorySummary> {
+  async createTerritory(
+    scope: StaffScope,
+    input: CreateSiTerritoryRequest,
+  ): Promise<SiTerritorySummary> {
     const [created] = await this.deps.db
       .insert(siTerritories)
       .values({
@@ -386,7 +402,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toTerritorySummary);
   }
 
-  async createSalesTeam(scope: StaffScope, input: CreateSiSalesTeamRequest): Promise<SiSalesTeamSummary> {
+  async createSalesTeam(
+    scope: StaffScope,
+    input: CreateSiSalesTeamRequest,
+  ): Promise<SiSalesTeamSummary> {
     if (input.territoryId) await this.ensureTerritory(scope.companyId, input.territoryId);
 
     const [created] = await this.deps.db
@@ -413,7 +432,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toSalesTeamSummary);
   }
 
-  async createPipeline(scope: StaffScope, input: CreateSiPipelineRequest): Promise<SiPipelineSummary> {
+  async createPipeline(
+    scope: StaffScope,
+    input: CreateSiPipelineRequest,
+  ): Promise<SiPipelineSummary> {
     const [created] = await this.deps.db
       .insert(siPipelines)
       .values({
@@ -433,7 +455,8 @@ export class EnterpriseSalesIntelligenceService {
           name: stage.name.trim(),
           stageKey: stage.stageKey.trim(),
           sortOrder: stage.sortOrder ?? index,
-          probabilityPercent: stage.probabilityPercent != null ? String(stage.probabilityPercent) : null,
+          probabilityPercent:
+            stage.probabilityPercent != null ? String(stage.probabilityPercent) : null,
           slaHours: stage.slaHours ?? null,
         })),
       );
@@ -457,16 +480,24 @@ export class EnterpriseSalesIntelligenceService {
     return summaries;
   }
 
-  async listPipelineStages(companyId: string, pipelineId: string): Promise<SiPipelineStageSummary[]> {
+  async listPipelineStages(
+    companyId: string,
+    pipelineId: string,
+  ): Promise<SiPipelineStageSummary[]> {
     await this.ensurePipeline(companyId, pipelineId);
     const rows = await this.deps.db.query.siPipelineStages.findMany({
-      where: and(eq(siPipelineStages.companyId, companyId), eq(siPipelineStages.pipelineId, pipelineId)),
+      where: and(
+        eq(siPipelineStages.companyId, companyId),
+        eq(siPipelineStages.pipelineId, pipelineId),
+      ),
       orderBy: [siPipelineStages.sortOrder],
     });
     return rows.map(toPipelineStageSummary);
   }
 
-  async listLeadDeduplicationCandidates(companyId: string): Promise<SiLeadDeduplicationCandidateSummary[]> {
+  async listLeadDeduplicationCandidates(
+    companyId: string,
+  ): Promise<SiLeadDeduplicationCandidateSummary[]> {
     await this.syncLeadDeduplicationCandidates(companyId);
     const rows = await this.deps.db.query.siLeadDeduplicationCandidates.findMany({
       where: eq(siLeadDeduplicationCandidates.companyId, companyId),
@@ -488,10 +519,16 @@ export class EnterpriseSalesIntelligenceService {
       throw new EnterpriseSalesIntelligenceError('NOT_FOUND', 'Deduplication candidate not found');
     }
     if (candidate.status !== 'pending') {
-      throw new EnterpriseSalesIntelligenceError('VALIDATION_ERROR', 'Candidate has already been reviewed');
+      throw new EnterpriseSalesIntelligenceError(
+        'VALIDATION_ERROR',
+        'Candidate has already been reviewed',
+      );
     }
     if (!candidate.primaryLeadId || !candidate.duplicateLeadId) {
-      throw new EnterpriseSalesIntelligenceError('VALIDATION_ERROR', 'Candidate is missing lead references');
+      throw new EnterpriseSalesIntelligenceError(
+        'VALIDATION_ERROR',
+        'Candidate is missing lead references',
+      );
     }
 
     const [primaryLead, duplicateLead] = await Promise.all([
@@ -542,7 +579,10 @@ export class EnterpriseSalesIntelligenceService {
     };
   }
 
-  async createPlaybook(scope: StaffScope, input: CreateSiPlaybookRequest): Promise<SiPlaybookSummary> {
+  async createPlaybook(
+    scope: StaffScope,
+    input: CreateSiPlaybookRequest,
+  ): Promise<SiPlaybookSummary> {
     const [created] = await this.deps.db
       .insert(siPlaybooks)
       .values({
@@ -566,7 +606,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toPlaybookSummary);
   }
 
-  async createForecast(scope: StaffScope, input: CreateSiForecastRequest): Promise<SiForecastSummary> {
+  async createForecast(
+    scope: StaffScope,
+    input: CreateSiForecastRequest,
+  ): Promise<SiForecastSummary> {
     const [salesStats, financeStats, opportunities] = await Promise.all([
       this.deps.salesService.getStats(scope.companyId),
       this.deps.financeService.getStats(scope.companyId),
@@ -651,7 +694,12 @@ export class EnterpriseSalesIntelligenceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'forecast_snapshot_captured', 'si_forecast_snapshot', created!.id);
+    await this.recordAudit(
+      scope,
+      'forecast_snapshot_captured',
+      'si_forecast_snapshot',
+      created!.id,
+    );
     return {
       id: created!.id,
       forecastId: created!.forecastId,
@@ -662,7 +710,10 @@ export class EnterpriseSalesIntelligenceService {
     };
   }
 
-  async createSalesTarget(scope: StaffScope, input: CreateSiSalesTargetRequest): Promise<SiSalesTargetSummary> {
+  async createSalesTarget(
+    scope: StaffScope,
+    input: CreateSiSalesTargetRequest,
+  ): Promise<SiSalesTargetSummary> {
     if (input.teamId) await this.ensureSalesTeam(scope.companyId, input.teamId);
 
     const [created] = await this.deps.db
@@ -725,7 +776,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toAccountSummary);
   }
 
-  async createAccountPlan(scope: StaffScope, input: CreateSiAccountPlanRequest): Promise<SiAccountPlanSummary> {
+  async createAccountPlan(
+    scope: StaffScope,
+    input: CreateSiAccountPlanRequest,
+  ): Promise<SiAccountPlanSummary> {
     await this.ensureAccount(scope.companyId, input.accountId);
 
     const [created] = await this.deps.db
@@ -795,8 +849,12 @@ export class EnterpriseSalesIntelligenceService {
       this.deps.analyticsService.getCustomerAnalytics(scope.companyId).catch(() => null),
     ]);
 
-    const scopedQuotes = customerId ? quotes.filter((row) => row.customerId === customerId) : quotes;
-    const scopedJobs = customerId ? jobRows.filter((row) => row.customerId === customerId) : jobRows;
+    const scopedQuotes = customerId
+      ? quotes.filter((row) => row.customerId === customerId)
+      : quotes;
+    const scopedJobs = customerId
+      ? jobRows.filter((row) => row.customerId === customerId)
+      : jobRows;
     const scopedOpportunities = customerId
       ? opportunities.filter((row) => row.customerId === customerId)
       : opportunities;
@@ -855,7 +913,12 @@ export class EnterpriseSalesIntelligenceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'customer_growth_snapshot_captured', 'si_customer_growth_snapshot', created!.id);
+    await this.recordAudit(
+      scope,
+      'customer_growth_snapshot_captured',
+      'si_customer_growth_snapshot',
+      created!.id,
+    );
     return toCustomerGrowthSnapshotSummary(created!);
   }
 
@@ -875,23 +938,33 @@ export class EnterpriseSalesIntelligenceService {
       this.deps.salesService.listOpportunities(scope.companyId),
     ]);
 
-    const scopedInvoices = customerId ? invoices.filter((row) => row.customerId === customerId) : invoices;
-    const scopedQuotes = customerId ? quotes.filter((row) => row.customerId === customerId) : quotes;
+    const scopedInvoices = customerId
+      ? invoices.filter((row) => row.customerId === customerId)
+      : invoices;
+    const scopedQuotes = customerId
+      ? quotes.filter((row) => row.customerId === customerId)
+      : quotes;
     const scopedOpportunities = customerId
       ? opportunities.filter((row) => row.customerId === customerId)
       : opportunities;
 
     const now = Date.now();
     const overdueInvoices = scopedInvoices.filter(
-      (row) => row.dueDate && new Date(row.dueDate).getTime() < now && !['paid', 'cancelled'].includes(row.status),
+      (row) =>
+        row.dueDate &&
+        new Date(row.dueDate).getTime() < now &&
+        !['paid', 'cancelled'].includes(row.status),
     );
     const lostOpportunities = scopedOpportunities.filter((row) => row.status === 'lost');
     const declinedQuotes = scopedQuotes.filter((row) => row.status === 'declined');
 
     const riskFactors: unknown[] = [];
-    if (overdueInvoices.length > 0) riskFactors.push({ type: 'overdue_invoices', count: overdueInvoices.length });
-    if (lostOpportunities.length > 0) riskFactors.push({ type: 'lost_opportunities', count: lostOpportunities.length });
-    if (declinedQuotes.length > 0) riskFactors.push({ type: 'declined_quotes', count: declinedQuotes.length });
+    if (overdueInvoices.length > 0)
+      riskFactors.push({ type: 'overdue_invoices', count: overdueInvoices.length });
+    if (lostOpportunities.length > 0)
+      riskFactors.push({ type: 'lost_opportunities', count: lostOpportunities.length });
+    if (declinedQuotes.length > 0)
+      riskFactors.push({ type: 'declined_quotes', count: declinedQuotes.length });
 
     let riskLevel = 'low';
     let confidenceScore = '0.4';
@@ -919,11 +992,19 @@ export class EnterpriseSalesIntelligenceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'retention_risk_snapshot_captured', 'si_retention_risk_snapshot', created!.id);
+    await this.recordAudit(
+      scope,
+      'retention_risk_snapshot_captured',
+      'si_retention_risk_snapshot',
+      created!.id,
+    );
     return toRetentionRiskSnapshotSummary(created!);
   }
 
-  async createPricingRule(scope: StaffScope, input: CreateSiPricingRuleRequest): Promise<SiPricingRuleSummary> {
+  async createPricingRule(
+    scope: StaffScope,
+    input: CreateSiPricingRuleRequest,
+  ): Promise<SiPricingRuleSummary> {
     const [created] = await this.deps.db
       .insert(siPricingRules)
       .values({
@@ -957,8 +1038,10 @@ export class EnterpriseSalesIntelligenceService {
         companyId: scope.companyId,
         name: input.name.trim(),
         policyKey: input.policyKey.trim(),
-        maxDiscountPercent: input.maxDiscountPercent != null ? String(input.maxDiscountPercent) : null,
-        marginFloorPercent: input.marginFloorPercent != null ? String(input.marginFloorPercent) : null,
+        maxDiscountPercent:
+          input.maxDiscountPercent != null ? String(input.maxDiscountPercent) : null,
+        marginFloorPercent:
+          input.marginFloorPercent != null ? String(input.marginFloorPercent) : null,
         approvalThresholdPercent:
           input.approvalThresholdPercent != null ? String(input.approvalThresholdPercent) : null,
         config: input.config ?? {},
@@ -990,7 +1073,8 @@ export class EnterpriseSalesIntelligenceService {
         discountPercent: input.discountPercent != null ? String(input.discountPercent) : null,
         discountAmountCents: input.discountAmountCents ?? null,
         reason: input.reason?.trim() ?? null,
-        marginImpactPercent: input.marginImpactPercent != null ? String(input.marginImpactPercent) : null,
+        marginImpactPercent:
+          input.marginImpactPercent != null ? String(input.marginImpactPercent) : null,
         workflowStatus: 'draft',
       })
       .returning();
@@ -999,10 +1083,16 @@ export class EnterpriseSalesIntelligenceService {
     return toDiscountRequestSummary(created!);
   }
 
-  async submitDiscountRequestForReview(scope: StaffScope, requestId: string): Promise<SiDiscountRequestSummary> {
+  async submitDiscountRequestForReview(
+    scope: StaffScope,
+    requestId: string,
+  ): Promise<SiDiscountRequestSummary> {
     const request = await this.ensureDiscountRequest(scope.companyId, requestId);
     if (request.workflowStatus !== 'draft') {
-      throw new EnterpriseSalesIntelligenceError('VALIDATION_ERROR', 'Discount request must be in draft to submit');
+      throw new EnterpriseSalesIntelligenceError(
+        'VALIDATION_ERROR',
+        'Discount request must be in draft to submit',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -1011,11 +1101,19 @@ export class EnterpriseSalesIntelligenceService {
       .where(eq(siDiscountRequests.id, requestId))
       .returning();
 
-    await this.recordAudit(scope, 'discount_request_submitted_for_review', 'si_discount_request', requestId);
+    await this.recordAudit(
+      scope,
+      'discount_request_submitted_for_review',
+      'si_discount_request',
+      requestId,
+    );
     return toDiscountRequestSummary(updated!);
   }
 
-  async submitDiscountRequestForApproval(scope: StaffScope, requestId: string): Promise<SiDiscountRequestSummary> {
+  async submitDiscountRequestForApproval(
+    scope: StaffScope,
+    requestId: string,
+  ): Promise<SiDiscountRequestSummary> {
     const request = await this.ensureDiscountRequest(scope.companyId, requestId);
     if (request.workflowStatus !== 'review') {
       throw new EnterpriseSalesIntelligenceError(
@@ -1030,14 +1128,25 @@ export class EnterpriseSalesIntelligenceService {
       .where(eq(siDiscountRequests.id, requestId))
       .returning();
 
-    await this.recordAudit(scope, 'discount_request_submitted_for_approval', 'si_discount_request', requestId);
+    await this.recordAudit(
+      scope,
+      'discount_request_submitted_for_approval',
+      'si_discount_request',
+      requestId,
+    );
     return toDiscountRequestSummary(updated!);
   }
 
-  async approveDiscountRequest(scope: StaffScope, requestId: string): Promise<SiDiscountRequestSummary> {
+  async approveDiscountRequest(
+    scope: StaffScope,
+    requestId: string,
+  ): Promise<SiDiscountRequestSummary> {
     const request = await this.ensureDiscountRequest(scope.companyId, requestId);
     if (request.workflowStatus !== 'pending_approval') {
-      throw new EnterpriseSalesIntelligenceError('VALIDATION_ERROR', 'Discount request is not pending approval');
+      throw new EnterpriseSalesIntelligenceError(
+        'VALIDATION_ERROR',
+        'Discount request is not pending approval',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -1054,10 +1163,16 @@ export class EnterpriseSalesIntelligenceService {
     return toDiscountRequestSummary(updated!);
   }
 
-  async executeDiscountRequest(scope: StaffScope, requestId: string): Promise<SiDiscountRequestSummary> {
+  async executeDiscountRequest(
+    scope: StaffScope,
+    requestId: string,
+  ): Promise<SiDiscountRequestSummary> {
     const request = await this.ensureDiscountRequest(scope.companyId, requestId);
     if (request.workflowStatus !== 'approved') {
-      throw new EnterpriseSalesIntelligenceError('VALIDATION_ERROR', 'Discount request must be approved before execution');
+      throw new EnterpriseSalesIntelligenceError(
+        'VALIDATION_ERROR',
+        'Discount request must be approved before execution',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -1165,7 +1280,12 @@ export class EnterpriseSalesIntelligenceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'lead_qualification_requested', 'si_qualification_analysis', created!.id);
+    await this.recordAudit(
+      scope,
+      'lead_qualification_requested',
+      'si_qualification_analysis',
+      created!.id,
+    );
     return toQualificationAnalysisSummary(created!);
   }
 
@@ -1219,7 +1339,9 @@ export class EnterpriseSalesIntelligenceService {
 
     const now = Date.now();
     const existingOpen = await this.listRevenueLeakageFindings(scope.companyId);
-    const openByType = new Map(existingOpen.filter((row) => row.status === 'open').map((row) => [row.findingType, row]));
+    const openByType = new Map(
+      existingOpen.filter((row) => row.status === 'open').map((row) => [row.findingType, row]),
+    );
 
     const findings: Array<{
       findingType: string;
@@ -1243,7 +1365,9 @@ export class EnterpriseSalesIntelligenceService {
       });
     }
 
-    const incompleteJobs = jobRows.filter((row) => ['scheduled', 'in_progress'].includes(row.status));
+    const incompleteJobs = jobRows.filter((row) =>
+      ['scheduled', 'in_progress'].includes(row.status),
+    );
     const jobsWithoutInvoice = incompleteJobs.filter((job) => {
       return !invoices.some((invoice) => invoice.jobId === job.id);
     });
@@ -1372,7 +1496,10 @@ export class EnterpriseSalesIntelligenceService {
     return rows.map(toTenderSummary);
   }
 
-  async createCrmProvider(scope: StaffScope, input: CreateSiCrmProviderRequest): Promise<SiCrmProviderSummary> {
+  async createCrmProvider(
+    scope: StaffScope,
+    input: CreateSiCrmProviderRequest,
+  ): Promise<SiCrmProviderSummary> {
     const [created] = await this.deps.db
       .insert(siCrmProviderAdapters)
       .values({
@@ -1418,10 +1545,15 @@ export class EnterpriseSalesIntelligenceService {
     return toCrmProviderSummary(updated!);
   }
 
-  async listSalesAlerts(companyId: string, filters?: { status?: string }): Promise<SiSalesAlertSummary[]> {
+  async listSalesAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<SiSalesAlertSummary[]> {
     const conditions = [eq(siSalesAlerts.companyId, companyId)];
     if (filters?.status) {
-      conditions.push(eq(siSalesAlerts.status, filters.status as typeof siSalesAlerts.$inferSelect.status));
+      conditions.push(
+        eq(siSalesAlerts.status, filters.status as typeof siSalesAlerts.$inferSelect.status),
+      );
     }
 
     const rows = await this.deps.db.query.siSalesAlerts.findMany({
@@ -1656,7 +1788,9 @@ export class EnterpriseSalesIntelligenceService {
     }
   }
 
-  private async buildPipelineSummary(row: typeof siPipelines.$inferSelect): Promise<SiPipelineSummary> {
+  private async buildPipelineSummary(
+    row: typeof siPipelines.$inferSelect,
+  ): Promise<SiPipelineSummary> {
     const stages = await this.deps.db.query.siPipelineStages.findMany({
       where: eq(siPipelineStages.pipelineId, row.id),
     });
@@ -1670,7 +1804,9 @@ export class EnterpriseSalesIntelligenceService {
     };
   }
 
-  private async buildForecastSummary(row: typeof siForecasts.$inferSelect): Promise<SiForecastSummary> {
+  private async buildForecastSummary(
+    row: typeof siForecasts.$inferSelect,
+  ): Promise<SiForecastSummary> {
     const owner = row.ownerUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.ownerUserId) })
       : null;
@@ -1745,15 +1881,20 @@ export class EnterpriseSalesIntelligenceService {
     const request = await this.deps.db.query.siDiscountRequests.findFirst({
       where: and(eq(siDiscountRequests.companyId, companyId), eq(siDiscountRequests.id, requestId)),
     });
-    if (!request) throw new EnterpriseSalesIntelligenceError('NOT_FOUND', 'Discount request not found');
+    if (!request)
+      throw new EnterpriseSalesIntelligenceError('NOT_FOUND', 'Discount request not found');
     return request;
   }
 
   private async ensureCrmProvider(companyId: string, providerId: string) {
     const provider = await this.deps.db.query.siCrmProviderAdapters.findFirst({
-      where: and(eq(siCrmProviderAdapters.companyId, companyId), eq(siCrmProviderAdapters.id, providerId)),
+      where: and(
+        eq(siCrmProviderAdapters.companyId, companyId),
+        eq(siCrmProviderAdapters.id, providerId),
+      ),
     });
-    if (!provider) throw new EnterpriseSalesIntelligenceError('NOT_FOUND', 'CRM provider not found');
+    if (!provider)
+      throw new EnterpriseSalesIntelligenceError('NOT_FOUND', 'CRM provider not found');
     return provider;
   }
 
@@ -1779,7 +1920,9 @@ function normalizePhone(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-function toPlatformConfigSummary(row: typeof siPlatformConfig.$inferSelect): SiPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof siPlatformConfig.$inferSelect,
+): SiPlatformConfigSummary {
   return {
     salesStandards: row.salesStandards,
     providerAdapterTemplates: row.providerAdapterTemplates,
@@ -1944,7 +2087,9 @@ function toPricingRuleSummary(row: typeof siPricingRules.$inferSelect): SiPricin
   };
 }
 
-function toDiscountPolicySummary(row: typeof siDiscountPolicies.$inferSelect): SiDiscountPolicySummary {
+function toDiscountPolicySummary(
+  row: typeof siDiscountPolicies.$inferSelect,
+): SiDiscountPolicySummary {
   return {
     id: row.id,
     name: row.name,
@@ -1957,7 +2102,9 @@ function toDiscountPolicySummary(row: typeof siDiscountPolicies.$inferSelect): S
   };
 }
 
-function toDiscountRequestSummary(row: typeof siDiscountRequests.$inferSelect): SiDiscountRequestSummary {
+function toDiscountRequestSummary(
+  row: typeof siDiscountRequests.$inferSelect,
+): SiDiscountRequestSummary {
   return {
     id: row.id,
     quoteId: row.quoteId,
@@ -1969,7 +2116,9 @@ function toDiscountRequestSummary(row: typeof siDiscountRequests.$inferSelect): 
   };
 }
 
-function toCommissionPlanSummary(row: typeof siCommissionPlans.$inferSelect): SiCommissionPlanSummary {
+function toCommissionPlanSummary(
+  row: typeof siCommissionPlans.$inferSelect,
+): SiCommissionPlanSummary {
   return {
     id: row.id,
     name: row.name,
@@ -1979,7 +2128,9 @@ function toCommissionPlanSummary(row: typeof siCommissionPlans.$inferSelect): Si
   };
 }
 
-function toCommissionEntrySummary(row: typeof siCommissionEntries.$inferSelect): SiCommissionEntrySummary {
+function toCommissionEntrySummary(
+  row: typeof siCommissionEntries.$inferSelect,
+): SiCommissionEntrySummary {
   return {
     id: row.id,
     planId: row.planId,
@@ -2062,7 +2213,9 @@ function toTenderSummary(row: typeof siTenders.$inferSelect): SiTenderSummary {
   };
 }
 
-function toCrmProviderSummary(row: typeof siCrmProviderAdapters.$inferSelect): SiCrmProviderSummary {
+function toCrmProviderSummary(
+  row: typeof siCrmProviderAdapters.$inferSelect,
+): SiCrmProviderSummary {
   return {
     id: row.id,
     name: row.name,

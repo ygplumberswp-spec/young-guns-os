@@ -19,7 +19,9 @@ export class EnterpriseProductionLaunchCommercialService {
     return row ? toSummary(row) : null;
   }
 
-  async runCommercialReadinessReview(scope: StaffScope): Promise<PlCommercialReadinessReviewSummary> {
+  async runCommercialReadinessReview(
+    scope: StaffScope,
+  ): Promise<PlCommercialReadinessReviewSummary> {
     const reviewKey = `commercial_${Date.now()}`;
     const dashboard = await this.saasManagementService.getDashboard(scope.companyId);
 
@@ -56,8 +58,14 @@ export class EnterpriseProductionLaunchCommercialService {
       },
     ];
 
-    const warningCount = findings.filter((f) => f.severity === 'warning' || f.severity === 'high').length;
-    const status: PlValidationStatus = findings.some((f) => f.severity === 'high') ? 'warning' : warningCount > 0 ? 'warning' : 'passed';
+    const warningCount = findings.filter(
+      (f) => f.severity === 'warning' || f.severity === 'high',
+    ).length;
+    const status: PlValidationStatus = findings.some((f) => f.severity === 'high')
+      ? 'warning'
+      : warningCount > 0
+        ? 'warning'
+        : 'passed';
 
     const [created] = await this.db
       .insert(plCommercialReadinessReviews)
@@ -82,7 +90,9 @@ export class EnterpriseProductionLaunchCommercialService {
   }
 }
 
-function toSummary(row: typeof plCommercialReadinessReviews.$inferSelect): PlCommercialReadinessReviewSummary {
+function toSummary(
+  row: typeof plCommercialReadinessReviews.$inferSelect,
+): PlCommercialReadinessReviewSummary {
   return {
     id: row.id,
     reviewKey: row.reviewKey,

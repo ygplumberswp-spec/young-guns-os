@@ -18,10 +18,13 @@ export async function fetchCustomerExperienceDashboard(accessToken: string) {
 }
 
 export async function captureCustomerExperienceAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-customer-experience/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-customer-experience/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 

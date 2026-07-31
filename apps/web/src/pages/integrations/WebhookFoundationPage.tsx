@@ -14,10 +14,7 @@ import {
 } from '../../lib/integration-hub-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import {
-  canAccessIntegrations,
-  canManageIntegrations,
-} from '../../features/integrations/utils';
+import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatWebhookEventStatus } from '../../features/integrations/formatters';
 
 export function WebhookFoundationPage() {
@@ -62,7 +59,9 @@ export function WebhookFoundationPage() {
         await loadPageData();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load webhook foundation');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load webhook foundation',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -96,7 +95,9 @@ export function WebhookFoundationPage() {
       setCreatedSecret(endpoint.secret ?? null);
       setName('');
       setDescription('');
-      setSuccess(`Webhook endpoint "${endpoint.name}" created. Copy the secret now — it will not be shown again.`);
+      setSuccess(
+        `Webhook endpoint "${endpoint.name}" created. Copy the secret now — it will not be shown again.`,
+      );
       await loadPageData();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create webhook endpoint');
@@ -171,7 +172,10 @@ export function WebhookFoundationPage() {
         <>
           {canManage ? (
             <Panel title="Create webhook endpoint">
-              <form className="integrations-form" onSubmit={(event) => void handleCreateEndpoint(event)}>
+              <form
+                className="integrations-form"
+                onSubmit={(event) => void handleCreateEndpoint(event)}
+              >
                 <label>
                   Name
                   <Input value={name} onChange={(event) => setName(event.target.value)} required />

@@ -1,4 +1,9 @@
-import type { AutomationStats, WorkflowRunSummary, WorkflowStudioAuraContext, WorkflowSummary } from './automation.js';
+import type {
+  AutomationStats,
+  WorkflowRunSummary,
+  WorkflowStudioAuraContext,
+  WorkflowSummary,
+} from './automation.js';
 
 export type AutomationStudioNodeType =
   | 'trigger'
@@ -12,9 +17,11 @@ export type AutomationStudioNodeType =
   | 'ai_agent'
   | 'custom';
 
-export type AutomationApprovalType = 'single' | 'multi_level' | 'department' | 'executive' | 'delegated';
+export type AutomationApprovalType =
+  'single' | 'multi_level' | 'department' | 'executive' | 'delegated';
 
-export type AutomationApprovalStatus = 'pending' | 'approved' | 'rejected' | 'delegated' | 'cancelled';
+export type AutomationApprovalStatus =
+  'pending' | 'approved' | 'rejected' | 'delegated' | 'cancelled';
 
 export type AutomationStudioActionType =
   | 'workflow_improvement'
@@ -23,11 +30,7 @@ export type AutomationStudioActionType =
   | 'performance_optimization';
 
 export type AutomationStudioActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type AutomationRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 

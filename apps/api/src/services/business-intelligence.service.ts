@@ -96,9 +96,13 @@ export class BusinessIntelligenceService {
   async getStats(companyId: string): Promise<BusinessIntelligenceStats> {
     const [kpis, dashboards, insights, reports, forecasts] = await Promise.all([
       this.deps.db.query.businessKpis.findMany({ where: eq(businessKpis.companyId, companyId) }),
-      this.deps.db.query.businessDashboards.findMany({ where: eq(businessDashboards.companyId, companyId) }),
+      this.deps.db.query.businessDashboards.findMany({
+        where: eq(businessDashboards.companyId, companyId),
+      }),
       this.listInsights(companyId),
-      this.deps.db.query.businessReports.findMany({ where: eq(businessReports.companyId, companyId) }),
+      this.deps.db.query.businessReports.findMany({
+        where: eq(businessReports.companyId, companyId),
+      }),
       this.listForecasts(companyId),
     ]);
 
@@ -128,11 +132,26 @@ export class BusinessIntelligenceService {
       supportStats,
       automationStats,
     ] = await Promise.all([
-      this.deps.db.query.customers.findMany({ where: eq(customers.companyId, companyId), columns: { id: true, updatedAt: true } }),
-      this.deps.db.query.jobs.findMany({ where: eq(jobs.companyId, companyId), columns: { id: true, updatedAt: true } }),
-      this.deps.db.query.quotes.findMany({ where: eq(quotes.companyId, companyId), columns: { id: true, updatedAt: true } }),
-      this.deps.db.query.invoices.findMany({ where: eq(invoices.companyId, companyId), columns: { id: true, updatedAt: true } }),
-      this.deps.db.query.payments.findMany({ where: eq(payments.companyId, companyId), columns: { id: true, paidAt: true } }),
+      this.deps.db.query.customers.findMany({
+        where: eq(customers.companyId, companyId),
+        columns: { id: true, updatedAt: true },
+      }),
+      this.deps.db.query.jobs.findMany({
+        where: eq(jobs.companyId, companyId),
+        columns: { id: true, updatedAt: true },
+      }),
+      this.deps.db.query.quotes.findMany({
+        where: eq(quotes.companyId, companyId),
+        columns: { id: true, updatedAt: true },
+      }),
+      this.deps.db.query.invoices.findMany({
+        where: eq(invoices.companyId, companyId),
+        columns: { id: true, updatedAt: true },
+      }),
+      this.deps.db.query.payments.findMany({
+        where: eq(payments.companyId, companyId),
+        columns: { id: true, paidAt: true },
+      }),
       this.deps.salesService.getStats(companyId),
       this.deps.marketingService.getStats(companyId),
       this.deps.procurementService.getStats(companyId),
@@ -150,7 +169,11 @@ export class BusinessIntelligenceService {
       moduleSummary('quotes', quoteRows.length, maxDate(quoteRows.map((r) => r.updatedAt))),
       moduleSummary('invoices', invoiceRows.length, maxDate(invoiceRows.map((r) => r.updatedAt))),
       moduleSummary('payments', paymentRows.length, maxDate(paymentRows.map((r) => r.paidAt))),
-      moduleSummary('sales', salesStats.openOpportunityCount + salesStats.wonOpportunityCount, null),
+      moduleSummary(
+        'sales',
+        salesStats.openOpportunityCount + salesStats.wonOpportunityCount,
+        null,
+      ),
       moduleSummary('marketing', marketingStats.activeCampaignCount, null),
       moduleSummary('procurement', procurementStats.purchaseOrderCount, null),
       moduleSummary('workforce', workforceStats.candidateCount, null),
@@ -161,7 +184,9 @@ export class BusinessIntelligenceService {
       moduleSummary('automation', automationStats.workflowCount, null),
     ];
 
-    return modules.filter((row) => row.recordCount > 0 || row.module === 'crm' || row.module === 'jobs');
+    return modules.filter(
+      (row) => row.recordCount > 0 || row.module === 'crm' || row.module === 'jobs',
+    );
   }
 
   async listKpis(companyId: string): Promise<BusinessKpiSummary[]> {
@@ -174,7 +199,10 @@ export class BusinessIntelligenceService {
     for (const row of rows) {
       const currentValue = await this.computeKpiValue(companyId, row.kpiKey);
       const latestSnapshot = await this.deps.db.query.businessKpiSnapshots.findFirst({
-        where: and(eq(businessKpiSnapshots.kpiId, row.id), eq(businessKpiSnapshots.companyId, companyId)),
+        where: and(
+          eq(businessKpiSnapshots.kpiId, row.id),
+          eq(businessKpiSnapshots.companyId, companyId),
+        ),
         orderBy: [desc(businessKpiSnapshots.generatedAt)],
       });
 
@@ -218,7 +246,11 @@ export class BusinessIntelligenceService {
     return kpis.find((row) => row.id === created!.id)!;
   }
 
-  async updateKpi(companyId: string, kpiId: string, input: UpdateBusinessKpiRequest): Promise<BusinessKpiSummary> {
+  async updateKpi(
+    companyId: string,
+    kpiId: string,
+    input: UpdateBusinessKpiRequest,
+  ): Promise<BusinessKpiSummary> {
     await this.ensureKpi(companyId, kpiId);
 
     await this.deps.db
@@ -226,7 +258,8 @@ export class BusinessIntelligenceService {
       .set({
         kpiKey: input.kpiKey,
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         targetValue: input.targetValue,
         unit: input.unit,
         isActive: input.isActive,
@@ -257,7 +290,10 @@ export class BusinessIntelligenceService {
     for (const kpi of kpiRows.filter((row) => row.isActive)) {
       const value = await this.computeKpiValue(companyId, kpi.kpiKey);
       const previous = await this.deps.db.query.businessKpiSnapshots.findFirst({
-        where: and(eq(businessKpiSnapshots.kpiId, kpi.id), eq(businessKpiSnapshots.companyId, companyId)),
+        where: and(
+          eq(businessKpiSnapshots.kpiId, kpi.id),
+          eq(businessKpiSnapshots.companyId, companyId),
+        ),
         orderBy: [desc(businessKpiSnapshots.generatedAt)],
       });
 
@@ -318,9 +354,15 @@ export class BusinessIntelligenceService {
     }));
   }
 
-  async getDashboard(companyId: string, dashboardId: string): Promise<BusinessDashboardDetail | null> {
+  async getDashboard(
+    companyId: string,
+    dashboardId: string,
+  ): Promise<BusinessDashboardDetail | null> {
     const row = await this.deps.db.query.businessDashboards.findFirst({
-      where: and(eq(businessDashboards.id, dashboardId), eq(businessDashboards.companyId, companyId)),
+      where: and(
+        eq(businessDashboards.id, dashboardId),
+        eq(businessDashboards.companyId, companyId),
+      ),
       with: { widgets: true },
     });
 
@@ -353,9 +395,13 @@ export class BusinessIntelligenceService {
     };
   }
 
-  async createDashboard(scope: TenantScope, input: CreateBusinessDashboardRequest): Promise<BusinessDashboardDetail> {
+  async createDashboard(
+    scope: TenantScope,
+    input: CreateBusinessDashboardRequest,
+  ): Promise<BusinessDashboardDetail> {
     const name = input.name.trim();
-    if (!name) throw new BusinessIntelligenceError('VALIDATION_ERROR', 'Dashboard name is required');
+    if (!name)
+      throw new BusinessIntelligenceError('VALIDATION_ERROR', 'Dashboard name is required');
 
     const [created] = await this.deps.db
       .insert(businessDashboards)
@@ -399,12 +445,15 @@ export class BusinessIntelligenceService {
       .set({
         dashboardType: input.dashboardType,
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         isDefault: input.isDefault,
         config: input.config,
         updatedAt: new Date(),
       })
-      .where(and(eq(businessDashboards.id, dashboardId), eq(businessDashboards.companyId, companyId)));
+      .where(
+        and(eq(businessDashboards.id, dashboardId), eq(businessDashboards.companyId, companyId)),
+      );
 
     return (await this.getDashboard(companyId, dashboardId))!;
   }
@@ -429,9 +478,15 @@ export class BusinessIntelligenceService {
     return (await this.getDashboard(companyId, dashboardId))!;
   }
 
-  async getDashboardByType(companyId: string, dashboardType: BusinessDashboardType): Promise<BusinessDashboardDetail | null> {
+  async getDashboardByType(
+    companyId: string,
+    dashboardType: BusinessDashboardType,
+  ): Promise<BusinessDashboardDetail | null> {
     const row = await this.deps.db.query.businessDashboards.findFirst({
-      where: and(eq(businessDashboards.companyId, companyId), eq(businessDashboards.dashboardType, dashboardType)),
+      where: and(
+        eq(businessDashboards.companyId, companyId),
+        eq(businessDashboards.dashboardType, dashboardType),
+      ),
       orderBy: [desc(businessDashboards.isDefault), desc(businessDashboards.updatedAt)],
     });
 
@@ -447,7 +502,10 @@ export class BusinessIntelligenceService {
     return rows.map(toReportTemplateSummary);
   }
 
-  async createReportTemplate(companyId: string, input: CreateBiReportTemplateRequest): Promise<BiReportTemplateSummary> {
+  async createReportTemplate(
+    companyId: string,
+    input: CreateBiReportTemplateRequest,
+  ): Promise<BiReportTemplateSummary> {
     const name = input.name.trim();
     if (!name) throw new BusinessIntelligenceError('VALIDATION_ERROR', 'Template name is required');
 
@@ -479,7 +537,8 @@ export class BusinessIntelligenceService {
       .update(biReportTemplates)
       .set({
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         templateKey: input.templateKey?.trim(),
         modules: input.modules,
         defaultFilters: input.defaultFilters,
@@ -501,7 +560,10 @@ export class BusinessIntelligenceService {
     return rows.map(toReportSummary);
   }
 
-  async createReport(scope: TenantScope, input: CreateBusinessReportRequest): Promise<BusinessReportDetail> {
+  async createReport(
+    scope: TenantScope,
+    input: CreateBusinessReportRequest,
+  ): Promise<BusinessReportDetail> {
     const name = input.name.trim();
     if (!name) throw new BusinessIntelligenceError('VALIDATION_ERROR', 'Report name is required');
 
@@ -534,9 +596,11 @@ export class BusinessIntelligenceService {
       .set({
         templateId: input.templateId !== undefined ? input.templateId : undefined,
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         filters: input.filters,
-        scheduleCron: input.scheduleCron !== undefined ? input.scheduleCron?.trim() || null : undefined,
+        scheduleCron:
+          input.scheduleCron !== undefined ? input.scheduleCron?.trim() || null : undefined,
         updatedAt: new Date(),
       })
       .where(and(eq(businessReports.id, reportId), eq(businessReports.companyId, companyId)));
@@ -600,7 +664,10 @@ export class BusinessIntelligenceService {
   ): Promise<BusinessReportDetail> {
     const report = await this.ensureReport(scope.companyId, reportId);
     if (!['approved', 'scheduled'].includes(report.status)) {
-      throw new BusinessIntelligenceError('VALIDATION_ERROR', 'Report must be approved before generation');
+      throw new BusinessIntelligenceError(
+        'VALIDATION_ERROR',
+        'Report must be approved before generation',
+      );
     }
 
     const [dataLake, dashboard, kpis] = await Promise.all([
@@ -753,7 +820,9 @@ export class BusinessIntelligenceService {
       .set({ status: input.status, updatedAt: new Date() })
       .where(eq(businessInsights.id, insightId));
 
-    const row = await this.deps.db.query.businessInsights.findFirst({ where: eq(businessInsights.id, insightId) });
+    const row = await this.deps.db.query.businessInsights.findFirst({
+      where: eq(businessInsights.id, insightId),
+    });
     return toInsightSummary(row!);
   }
 
@@ -824,19 +893,29 @@ export class BusinessIntelligenceService {
   }
 
   private async computeKpiValue(companyId: string, kpiKey: BusinessKpiKey): Promise<number> {
-    const [dashboard, profitability, cashFlow, techPerformance, customerAnalytics, leadsStats, procurementStats, inventoryStats, automationStats, supportStats] =
-      await Promise.all([
-        this.deps.analyticsService.getDashboard(companyId, { period: 'monthly' }),
-        this.deps.analyticsService.getProfitability(companyId, { period: 'monthly' }),
-        this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId),
-        this.deps.analyticsService.getTechnicianPerformance(companyId, { period: 'monthly' }),
-        this.deps.analyticsService.getCustomerAnalytics(companyId, { period: 'monthly' }),
-        this.deps.leadsService.getStats(companyId),
-        this.deps.procurementService.getStats(companyId),
-        this.deps.inventoryService.getStats(companyId),
-        this.deps.automationService.getStats(companyId),
-        this.deps.customerSupportService.getStats(companyId),
-      ]);
+    const [
+      dashboard,
+      profitability,
+      cashFlow,
+      techPerformance,
+      customerAnalytics,
+      leadsStats,
+      procurementStats,
+      inventoryStats,
+      automationStats,
+      supportStats,
+    ] = await Promise.all([
+      this.deps.analyticsService.getDashboard(companyId, { period: 'monthly' }),
+      this.deps.analyticsService.getProfitability(companyId, { period: 'monthly' }),
+      this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId),
+      this.deps.analyticsService.getTechnicianPerformance(companyId, { period: 'monthly' }),
+      this.deps.analyticsService.getCustomerAnalytics(companyId, { period: 'monthly' }),
+      this.deps.leadsService.getStats(companyId),
+      this.deps.procurementService.getStats(companyId),
+      this.deps.inventoryService.getStats(companyId),
+      this.deps.automationService.getStats(companyId),
+      this.deps.customerSupportService.getStats(companyId),
+    ]);
 
     switch (kpiKey) {
       case 'revenue':
@@ -898,8 +977,15 @@ export class BusinessIntelligenceService {
     forecastType: PredictiveForecastType,
     _horizonStart: Date,
     _horizonEnd: Date,
-  ): Promise<{ value: number; confidencePercent: number; summary: string; context: Record<string, unknown> }> {
-    const dashboard = await this.deps.analyticsService.getDashboard(companyId, { period: 'monthly' });
+  ): Promise<{
+    value: number;
+    confidencePercent: number;
+    summary: string;
+    context: Record<string, unknown>;
+  }> {
+    const dashboard = await this.deps.analyticsService.getDashboard(companyId, {
+      period: 'monthly',
+    });
 
     switch (forecastType) {
       case 'revenue': {
@@ -918,7 +1004,10 @@ export class BusinessIntelligenceService {
           value: jobs,
           confidencePercent: 70,
           summary: `Workload forecast: ${jobs} active/scheduled job(s) in current period.`,
-          context: { activeJobs: dashboard.jobVolume.active, scheduledJobs: dashboard.operationalKpis.scheduledJobs },
+          context: {
+            activeJobs: dashboard.jobVolume.active,
+            scheduledJobs: dashboard.operationalKpis.scheduledJobs,
+          },
         };
       }
       case 'inventory_demand': {
@@ -940,7 +1029,8 @@ export class BusinessIntelligenceService {
         };
       }
       case 'cash_flow': {
-        const cashFlow = await this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId);
+        const cashFlow =
+          await this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId);
         return {
           value: cashFlow.monthlyForecastCents,
           confidencePercent: cashFlow.cashShortageWarning ? 55 : 75,
@@ -949,10 +1039,14 @@ export class BusinessIntelligenceService {
         };
       }
       case 'customer_churn': {
-        const customerAnalytics = await this.deps.analyticsService.getCustomerAnalytics(companyId, { period: 'monthly' });
+        const customerAnalytics = await this.deps.analyticsService.getCustomerAnalytics(companyId, {
+          period: 'monthly',
+        });
         const repeatRate =
           customerAnalytics.totalCustomers > 0
-            ? Math.round((customerAnalytics.repeatCustomers / customerAnalytics.totalCustomers) * 100)
+            ? Math.round(
+                (customerAnalytics.repeatCustomers / customerAnalytics.totalCustomers) * 100,
+              )
             : 0;
         const atRisk = 100 - repeatRate;
         return {
@@ -981,7 +1075,10 @@ export class BusinessIntelligenceService {
           value: score,
           confidencePercent: 58,
           summary: `Lead quality score: ${score}% qualified of ${leadsStats.totalLeadCount} lead(s).`,
-          context: { qualifiedLeadCount: leadsStats.qualifiedLeadCount, totalLeadCount: leadsStats.totalLeadCount },
+          context: {
+            qualifiedLeadCount: leadsStats.qualifiedLeadCount,
+            totalLeadCount: leadsStats.totalLeadCount,
+          },
         };
       }
       case 'risk': {
@@ -996,7 +1093,12 @@ export class BusinessIntelligenceService {
         };
       }
       default:
-        return { value: 0, confidencePercent: 50, summary: 'Insufficient historical data.', context: {} };
+        return {
+          value: 0,
+          confidencePercent: 50,
+          summary: 'Insufficient historical data.',
+          context: {},
+        };
     }
   }
 
@@ -1010,7 +1112,10 @@ export class BusinessIntelligenceService {
 
   private async ensureDashboard(companyId: string, dashboardId: string) {
     const row = await this.deps.db.query.businessDashboards.findFirst({
-      where: and(eq(businessDashboards.id, dashboardId), eq(businessDashboards.companyId, companyId)),
+      where: and(
+        eq(businessDashboards.id, dashboardId),
+        eq(businessDashboards.companyId, companyId),
+      ),
     });
     if (!row) throw new BusinessIntelligenceError('NOT_FOUND', 'Dashboard not found');
     return row;
@@ -1048,12 +1153,24 @@ function normalizeOptionalText(value: string | null | undefined): string | null 
 }
 
 function defaultUnit(kpiKey: BusinessKpiKey): string {
-  if (['revenue', 'gross_profit', 'net_profit', 'cash_flow', 'procurement_costs'].includes(kpiKey)) return 'cents';
-  if (kpiKey.endsWith('_rate') || kpiKey.includes('conversion') || kpiKey.includes('retention') || kpiKey.includes('utilization') || kpiKey === 'marketing_roi') return 'percent';
+  if (['revenue', 'gross_profit', 'net_profit', 'cash_flow', 'procurement_costs'].includes(kpiKey))
+    return 'cents';
+  if (
+    kpiKey.endsWith('_rate') ||
+    kpiKey.includes('conversion') ||
+    kpiKey.includes('retention') ||
+    kpiKey.includes('utilization') ||
+    kpiKey === 'marketing_roi'
+  )
+    return 'percent';
   return 'count';
 }
 
-function moduleSummary(module: string, recordCount: number, lastActivityAt: Date | null): DataLakeModuleSummary {
+function moduleSummary(
+  module: string,
+  recordCount: number,
+  lastActivityAt: Date | null,
+): DataLakeModuleSummary {
   return { module, recordCount, lastActivityAt: lastActivityAt?.toISOString() ?? null };
 }
 
@@ -1062,7 +1179,9 @@ function maxDate(dates: Date[]): Date | null {
   return dates.reduce((latest, date) => (date > latest ? date : latest));
 }
 
-function toKpiSnapshotSummary(row: typeof businessKpiSnapshots.$inferSelect): BusinessKpiSnapshotSummary {
+function toKpiSnapshotSummary(
+  row: typeof businessKpiSnapshots.$inferSelect,
+): BusinessKpiSnapshotSummary {
   return {
     id: row.id,
     kpiId: row.kpiId,
@@ -1077,7 +1196,9 @@ function toKpiSnapshotSummary(row: typeof businessKpiSnapshots.$inferSelect): Bu
   };
 }
 
-function toReportTemplateSummary(row: typeof biReportTemplates.$inferSelect): BiReportTemplateSummary {
+function toReportTemplateSummary(
+  row: typeof biReportTemplates.$inferSelect,
+): BiReportTemplateSummary {
   return {
     id: row.id,
     name: row.name,
@@ -1119,7 +1240,9 @@ function toInsightSummary(row: typeof businessInsights.$inferSelect): BusinessIn
   };
 }
 
-function toForecastSummary(row: typeof predictiveForecasts.$inferSelect): PredictiveForecastSummary {
+function toForecastSummary(
+  row: typeof predictiveForecasts.$inferSelect,
+): PredictiveForecastSummary {
   return {
     id: row.id,
     forecastType: row.forecastType,

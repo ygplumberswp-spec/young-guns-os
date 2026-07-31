@@ -40,7 +40,10 @@ export class EnterpriseLaunchCenterGoLiveService {
     return Promise.all(wizards.map((w) => this.toWizardSummary(w)));
   }
 
-  async createWizard(scope: StaffScope, input: CreateLncGoLiveWizardRequest): Promise<LncGoLiveWizardSummary> {
+  async createWizard(
+    scope: StaffScope,
+    input: CreateLncGoLiveWizardRequest,
+  ): Promise<LncGoLiveWizardSummary> {
     const wizardKey = `golive_${Date.now()}`;
     const [wizard] = await this.db
       .insert(lncGoLiveWizards)
@@ -110,7 +113,8 @@ export class EnterpriseLaunchCenterGoLiveService {
       .update(lncGoLiveWizards)
       .set({
         status: nextStatus,
-        currentStepKey: input.status === 'passed' && nextStep ? nextStep.stepKey : wizard.currentStepKey,
+        currentStepKey:
+          input.status === 'passed' && nextStep ? nextStep.stepKey : wizard.currentStepKey,
         updatedAt: new Date(),
       })
       .where(eq(lncGoLiveWizards.id, wizardId));
@@ -118,7 +122,11 @@ export class EnterpriseLaunchCenterGoLiveService {
     return this.toWizardSummary(await this.ensureWizard(scope.companyId, wizardId));
   }
 
-  async approveWizard(scope: StaffScope, wizardId: string, input: ApproveLncGoLiveWizardRequest): Promise<LncGoLiveWizardSummary> {
+  async approveWizard(
+    scope: StaffScope,
+    wizardId: string,
+    input: ApproveLncGoLiveWizardRequest,
+  ): Promise<LncGoLiveWizardSummary> {
     const wizard = await this.ensureWizard(scope.companyId, wizardId);
     if (wizard.status !== 'pending_approval') {
       throw new Error('Wizard is not pending approval');
@@ -139,8 +147,18 @@ export class EnterpriseLaunchCenterGoLiveService {
 
     await this.db
       .update(lncGoLiveWizardSteps)
-      .set({ status: 'passed', completedByUserId: scope.userId, completedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(lncGoLiveWizardSteps.goLiveWizardId, wizardId), eq(lncGoLiveWizardSteps.stepKey, 'final_approval')));
+      .set({
+        status: 'passed',
+        completedByUserId: scope.userId,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(lncGoLiveWizardSteps.goLiveWizardId, wizardId),
+          eq(lncGoLiveWizardSteps.stepKey, 'final_approval'),
+        ),
+      );
 
     return this.toWizardSummary(updated ?? wizard);
   }
@@ -170,40 +188,76 @@ export class EnterpriseLaunchCenterGoLiveService {
 
     await this.db
       .update(lncGoLiveWizardSteps)
-      .set({ status: 'passed', completedByUserId: scope.userId, completedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(lncGoLiveWizardSteps.goLiveWizardId, wizardId), eq(lncGoLiveWizardSteps.stepKey, 'deployment_confirmation')));
+      .set({
+        status: 'passed',
+        completedByUserId: scope.userId,
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(lncGoLiveWizardSteps.goLiveWizardId, wizardId),
+          eq(lncGoLiveWizardSteps.stepKey, 'deployment_confirmation'),
+        ),
+      );
 
     return this.toWizardSummary(updated ?? wizard);
   }
 
-  async listRollbackPlans(companyId: string, wizardId?: string): Promise<LncRollbackPlanLinkSummary[]> {
+  async listRollbackPlans(
+    companyId: string,
+    wizardId?: string,
+  ): Promise<LncRollbackPlanLinkSummary[]> {
     const rows = await this.db.query.lncRollbackPlanLinks.findMany({
       where: wizardId
-        ? and(eq(lncRollbackPlanLinks.companyId, companyId), eq(lncRollbackPlanLinks.goLiveWizardId, wizardId))
+        ? and(
+            eq(lncRollbackPlanLinks.companyId, companyId),
+            eq(lncRollbackPlanLinks.goLiveWizardId, wizardId),
+          )
         : eq(lncRollbackPlanLinks.companyId, companyId),
       orderBy: (r, { desc }) => [desc(r.createdAt)],
     });
     return rows.map(toRollbackPlanSummary);
   }
 
-  async selectRollbackPlan(scope: StaffScope, wizardId: string, rollbackPlanLinkId: string): Promise<LncRollbackPlanLinkSummary[]> {
+  async selectRollbackPlan(
+    scope: StaffScope,
+    wizardId: string,
+    rollbackPlanLinkId: string,
+  ): Promise<LncRollbackPlanLinkSummary[]> {
     await this.ensureWizard(scope.companyId, wizardId);
     await this.db
       .update(lncRollbackPlanLinks)
       .set({ isSelected: false, updatedAt: new Date() })
-      .where(and(eq(lncRollbackPlanLinks.companyId, scope.companyId), eq(lncRollbackPlanLinks.goLiveWizardId, wizardId)));
+      .where(
+        and(
+          eq(lncRollbackPlanLinks.companyId, scope.companyId),
+          eq(lncRollbackPlanLinks.goLiveWizardId, wizardId),
+        ),
+      );
 
     await this.db
       .update(lncRollbackPlanLinks)
       .set({ isSelected: true, updatedAt: new Date() })
-      .where(and(eq(lncRollbackPlanLinks.id, rollbackPlanLinkId), eq(lncRollbackPlanLinks.companyId, scope.companyId)));
+      .where(
+        and(
+          eq(lncRollbackPlanLinks.id, rollbackPlanLinkId),
+          eq(lncRollbackPlanLinks.companyId, scope.companyId),
+        ),
+      );
 
     return this.listRollbackPlans(scope.companyId, wizardId);
   }
 
-  async validateRollbackPlan(scope: StaffScope, rollbackPlanLinkId: string): Promise<LncRollbackPlanLinkSummary> {
+  async validateRollbackPlan(
+    scope: StaffScope,
+    rollbackPlanLinkId: string,
+  ): Promise<LncRollbackPlanLinkSummary> {
     const link = await this.db.query.lncRollbackPlanLinks.findFirst({
-      where: and(eq(lncRollbackPlanLinks.id, rollbackPlanLinkId), eq(lncRollbackPlanLinks.companyId, scope.companyId)),
+      where: and(
+        eq(lncRollbackPlanLinks.id, rollbackPlanLinkId),
+        eq(lncRollbackPlanLinks.companyId, scope.companyId),
+      ),
     });
     if (!link) throw new Error('Rollback plan link not found');
 
@@ -214,7 +268,8 @@ export class EnterpriseLaunchCenterGoLiveService {
       validatedAt: new Date().toISOString(),
       recoveryPlanFound: passed,
       recoveryPlanName: plan?.name ?? null,
-      recoveryTestCount: bc.recoveryTests.filter((t) => t.recoveryPlanId === link.recoveryPlanId).length,
+      recoveryTestCount: bc.recoveryTests.filter((t) => t.recoveryPlanId === link.recoveryPlanId)
+        .length,
       note: 'Recovery validation only — rollback never initiated automatically.',
     };
 
@@ -261,7 +316,9 @@ export class EnterpriseLaunchCenterGoLiveService {
     return wizard;
   }
 
-  private async toWizardSummary(wizard: typeof lncGoLiveWizards.$inferSelect): Promise<LncGoLiveWizardSummary> {
+  private async toWizardSummary(
+    wizard: typeof lncGoLiveWizards.$inferSelect,
+  ): Promise<LncGoLiveWizardSummary> {
     const steps = await this.db.query.lncGoLiveWizardSteps.findMany({
       where: eq(lncGoLiveWizardSteps.goLiveWizardId, wizard.id),
       orderBy: (s, { asc }) => [asc(s.stepOrder)],
@@ -290,7 +347,9 @@ export class EnterpriseLaunchCenterGoLiveService {
   }
 }
 
-function toRollbackPlanSummary(row: typeof lncRollbackPlanLinks.$inferSelect): LncRollbackPlanLinkSummary {
+function toRollbackPlanSummary(
+  row: typeof lncRollbackPlanLinks.$inferSelect,
+): LncRollbackPlanLinkSummary {
   return {
     id: row.id,
     goLiveWizardId: row.goLiveWizardId,

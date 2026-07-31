@@ -14,11 +14,7 @@ export type CapabilityGroupId =
   | 'technology';
 
 export type CapabilityStatus =
-  | 'active'
-  | 'needs_setup'
-  | 'provider_required'
-  | 'approval_required'
-  | 'unavailable';
+  'active' | 'needs_setup' | 'provider_required' | 'approval_required' | 'unavailable';
 
 export type CapabilityGroupDefinition = {
   id: CapabilityGroupId;
@@ -32,7 +28,12 @@ export const CAPABILITY_GROUPS: CapabilityGroupDefinition[] = [
     id: 'executive',
     label: 'Executive & Strategy',
     description: 'Business overview, planning and decision support.',
-    agentKeys: ['executive', 'executive_operations', 'decision_intelligence', 'business_intelligence'],
+    agentKeys: [
+      'executive',
+      'executive_operations',
+      'decision_intelligence',
+      'business_intelligence',
+    ],
   },
   {
     id: 'finance',
@@ -92,7 +93,15 @@ export const CAPABILITY_GROUPS: CapabilityGroupDefinition[] = [
     id: 'technology',
     label: 'Technology, Security & Integrations',
     description: 'IT operations, security, integrations and platform health.',
-    agentKeys: ['security', 'integration', 'developer', 'saas', 'production_operations', 'knowledge', 'evolution'],
+    agentKeys: [
+      'security',
+      'integration',
+      'developer',
+      'saas',
+      'production_operations',
+      'knowledge',
+      'evolution',
+    ],
   },
 ];
 

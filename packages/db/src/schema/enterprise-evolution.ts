@@ -1,4 +1,14 @@
-import { boolean, doublePrecision, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  doublePrecision,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -87,7 +97,9 @@ export const evolutionLearningEvents = pgTable('evolution_learning_events', {
   sourceEntityId: uuid('source_entity_id'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
   requiresApproval: boolean('requires_approval').notNull().default(true),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   rolledBackAt: timestamp('rolled_back_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -105,7 +117,9 @@ export const evolutionLearningAudit = pgTable('evolution_learning_audit', {
   actionType: text('action_type').notNull(),
   description: text('description').notNull(),
   snapshot: jsonb('snapshot').$type<Record<string, unknown>>().notNull().default({}),
-  performedByUserId: uuid('performed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  performedByUserId: uuid('performed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   performedAt: timestamp('performed_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -172,7 +186,9 @@ export const evolutionOptimizationStudio = pgTable('evolution_optimization_studi
   }),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   deployedAt: timestamp('deployed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

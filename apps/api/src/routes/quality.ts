@@ -142,7 +142,10 @@ export function createQualityRouter({
 
   router.get('/comebacks/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const comeback = await qualityAssuranceService.getComeback(companyId, getRouteParam(req.params.id));
+    const comeback = await qualityAssuranceService.getComeback(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!comeback) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Comeback not found' } });
       return;
@@ -153,7 +156,9 @@ export function createQualityRouter({
   router.post('/comebacks', requireWrite, async (req, res) => {
     const parsed = createComebackSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comeback payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comeback payload' } });
       return;
     }
     try {
@@ -168,7 +173,9 @@ export function createQualityRouter({
   router.patch('/comebacks/:id', requireWrite, async (req, res) => {
     const parsed = updateComebackSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update payload' } });
       return;
     }
     try {
@@ -196,7 +203,9 @@ export function createQualityRouter({
   router.post('/comebacks/:id/root-cause', requireWrite, async (req, res) => {
     const parsed = rootCauseSchemaBody.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid root cause payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid root cause payload' } });
       return;
     }
     try {
@@ -215,7 +224,9 @@ export function createQualityRouter({
   router.post('/comebacks/:id/costs', requireWrite, async (req, res) => {
     const parsed = costEntrySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid cost payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid cost payload' } });
       return;
     }
     try {
@@ -246,7 +257,9 @@ export function createQualityRouter({
   router.post('/warranty', requireWrite, async (req, res) => {
     const parsed = warrantyClaimSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid warranty payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid warranty payload' } });
       return;
     }
     try {
@@ -273,7 +286,9 @@ export function createQualityRouter({
   router.post('/suppliers/defects', requireWrite, async (req, res) => {
     const parsed = supplierDefectSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier defect payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier defect payload' } });
       return;
     }
     try {
@@ -294,7 +309,9 @@ export function createQualityRouter({
   router.post('/actions', requireWrite, async (req, res) => {
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
       return;
     }
     try {
@@ -317,8 +334,7 @@ export function createQualityRouter({
 
 function handleQualityError(res: import('express').Response, error: unknown) {
   if (error instanceof QualityAssuranceError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }

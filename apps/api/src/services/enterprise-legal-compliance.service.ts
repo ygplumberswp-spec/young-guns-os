@@ -97,7 +97,8 @@ export class EnterpriseLegalComplianceService {
   constructor(private readonly deps: LegalComplianceDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseLegalComplianceDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       contracts,
@@ -142,9 +143,13 @@ export class EnterpriseLegalComplianceService {
     const openRisks = risks.filter((r) => !['closed', 'accepted'].includes(r.status));
     const failedControls = controls.filter((c) => c.status === 'failed');
     const publishedPolicies = policies.filter((p) => p.status === 'published');
-    const openMatters = legalMatters.filter((m) => !['closed', 'archived', 'resolved'].includes(m.status));
+    const openMatters = legalMatters.filter(
+      (m) => !['closed', 'archived', 'resolved'].includes(m.status),
+    );
     const openClaims = claims.filter((c) => c.status === 'open');
-    const activeHolds = legalHolds.filter((h) => h.workflowStatus === 'executed' || h.workflowStatus === 'approved');
+    const activeHolds = legalHolds.filter(
+      (h) => h.workflowStatus === 'executed' || h.workflowStatus === 'approved',
+    );
 
     return {
       summary: `${contracts.length} contract(s), ${obligations.length} obligation(s), ${risks.length} risk(s), ${openMatters.length} open legal matter(s).`,
@@ -196,7 +201,9 @@ export class EnterpriseLegalComplianceService {
     ).length;
     const overdueObligations = obligations.filter((o) => o.isOverdue).length;
     const missingSignatures = contracts.filter((c) => c.status === 'signature').length;
-    const unresolvedRisks = risks.filter((r) => !['closed', 'mitigated', 'accepted'].includes(r.status)).length;
+    const unresolvedRisks = risks.filter(
+      (r) => !['closed', 'mitigated', 'accepted'].includes(r.status),
+    ).length;
     const failedControls = controls.filter((c) => c.status === 'failed').length;
     const publishedPolicies = policies.filter((p) => p.status === 'published');
 
@@ -206,11 +213,13 @@ export class EnterpriseLegalComplianceService {
       .where(eq(lcPolicyAcknowledgements.companyId, companyId));
 
     const alerts: string[] = [];
-    if (expiringContracts > 0) alerts.push(`${expiringContracts} contract(s) expiring within 30 days`);
+    if (expiringContracts > 0)
+      alerts.push(`${expiringContracts} contract(s) expiring within 30 days`);
     if (overdueObligations > 0) alerts.push(`${overdueObligations} overdue obligation(s)`);
     if (missingSignatures > 0) alerts.push(`${missingSignatures} contract(s) awaiting signature`);
     if (failedControls > 0) alerts.push(`${failedControls} failed control(s)`);
-    if (privacyRequests.length > 0) alerts.push(`${privacyRequests.length} pending privacy request(s)`);
+    if (privacyRequests.length > 0)
+      alerts.push(`${privacyRequests.length} pending privacy request(s)`);
 
     return {
       expiringContracts,
@@ -225,13 +234,13 @@ export class EnterpriseLegalComplianceService {
     };
   }
 
-  async getPortalLegalSummary(companyId: string, customerId?: string): Promise<LcPortalLegalSummary> {
+  async getPortalLegalSummary(
+    companyId: string,
+    customerId?: string,
+  ): Promise<LcPortalLegalSummary> {
     const [contracts, policies, matters, privacyRequests] = await Promise.all([
       this.deps.db.query.lcContracts.findMany({
-        where: and(
-          eq(lcContracts.companyId, companyId),
-          eq(lcContracts.status, 'active'),
-        ),
+        where: and(eq(lcContracts.companyId, companyId), eq(lcContracts.status, 'active')),
         limit: 20,
       }),
       this.deps.db.query.lcPolicies.findMany({
@@ -245,9 +254,7 @@ export class EnterpriseLegalComplianceService {
         ),
         limit: 20,
       }),
-      customerId
-        ? this.listPrivacyRequests(companyId, { customerId })
-        : Promise.resolve([]),
+      customerId ? this.listPrivacyRequests(companyId, { customerId }) : Promise.resolve([]),
     ]);
 
     return {
@@ -308,7 +315,8 @@ export class EnterpriseLegalComplianceService {
       .update(lcPlatformConfig)
       .set({
         globalPolicies: input.globalPolicies ?? existing.globalPolicies,
-        providerAdapterTemplates: input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
+        providerAdapterTemplates:
+          input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
         jurisdictionTemplates: input.jurisdictionTemplates ?? existing.jurisdictionTemplates,
         riskMethodology: input.riskMethodology ?? existing.riskMethodology,
         retentionTemplates: input.retentionTemplates ?? existing.retentionTemplates,
@@ -324,7 +332,10 @@ export class EnterpriseLegalComplianceService {
     return toPlatformConfigSummary(updated!);
   }
 
-  async createCategory(scope: StaffScope, input: CreateLcLegalCategoryRequest): Promise<LcLegalCategorySummary> {
+  async createCategory(
+    scope: StaffScope,
+    input: CreateLcLegalCategoryRequest,
+  ): Promise<LcLegalCategorySummary> {
     const [created] = await this.deps.db
       .insert(lcLegalCategories)
       .values({
@@ -348,7 +359,10 @@ export class EnterpriseLegalComplianceService {
     return rows.map(toCategorySummary);
   }
 
-  async createJurisdiction(scope: StaffScope, input: CreateLcJurisdictionRequest): Promise<LcJurisdictionSummary> {
+  async createJurisdiction(
+    scope: StaffScope,
+    input: CreateLcJurisdictionRequest,
+  ): Promise<LcJurisdictionSummary> {
     const [created] = await this.deps.db
       .insert(lcJurisdictions)
       .values({
@@ -374,7 +388,10 @@ export class EnterpriseLegalComplianceService {
     return rows.map(toJurisdictionSummary);
   }
 
-  async createContract(scope: StaffScope, input: CreateLcContractRequest): Promise<LcContractSummary> {
+  async createContract(
+    scope: StaffScope,
+    input: CreateLcContractRequest,
+  ): Promise<LcContractSummary> {
     const [created] = await this.deps.db
       .insert(lcContracts)
       .values({
@@ -462,7 +479,10 @@ export class EnterpriseLegalComplianceService {
   async approveContract(scope: StaffScope, contractId: string): Promise<LcContractSummary> {
     const contract = await this.ensureContract(scope.companyId, contractId);
     if (contract.workflowStatus !== 'pending_approval') {
-      throw new EnterpriseLegalComplianceError('VALIDATION_ERROR', 'Contract is not pending approval');
+      throw new EnterpriseLegalComplianceError(
+        'VALIDATION_ERROR',
+        'Contract is not pending approval',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -478,7 +498,10 @@ export class EnterpriseLegalComplianceService {
   async executeContract(scope: StaffScope, contractId: string): Promise<LcContractSummary> {
     const contract = await this.ensureContract(scope.companyId, contractId);
     if (contract.workflowStatus !== 'approved') {
-      throw new EnterpriseLegalComplianceError('VALIDATION_ERROR', 'Contract must be approved before execution');
+      throw new EnterpriseLegalComplianceError(
+        'VALIDATION_ERROR',
+        'Contract must be approved before execution',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -538,7 +561,12 @@ export class EnterpriseLegalComplianceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'signature_provider_created', 'lc_signature_provider', created!.id);
+    await this.recordAudit(
+      scope,
+      'signature_provider_created',
+      'lc_signature_provider',
+      created!.id,
+    );
     return toProviderSummary(created!);
   }
 
@@ -550,9 +578,13 @@ export class EnterpriseLegalComplianceService {
     return rows.map(toProviderSummary);
   }
 
-  async testSignatureProvider(scope: StaffScope, providerId: string): Promise<LcSignatureProviderSummary> {
+  async testSignatureProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<LcSignatureProviderSummary> {
     const provider = await this.ensureSignatureProvider(scope.companyId, providerId);
-    const testStatus = provider.endpointUrl || provider.credentialsVaultKey ? 'success' : 'pending_configuration';
+    const testStatus =
+      provider.endpointUrl || provider.credentialsVaultKey ? 'success' : 'pending_configuration';
     const testMessage =
       testStatus === 'success'
         ? 'Connectivity test completed — configure credentials for live signature requests.'
@@ -592,17 +624,26 @@ export class EnterpriseLegalComplianceService {
           : `Analysis requested for ${input.analysisType}. Upload contract content for detailed extraction.`,
         confidenceScore: null,
         supportingEvidence: { contentProvided: Boolean(input.content) },
-        limitations: 'Preliminary request — full AI analysis requires uploaded contract content and configured AI orchestration.',
+        limitations:
+          'Preliminary request — full AI analysis requires uploaded contract content and configured AI orchestration.',
         requiresHumanReview: true,
         disclaimer: AI_DISCLAIMER,
       })
       .returning();
 
-    await this.recordAudit(scope, 'contract_analysis_requested', 'lc_contract_analysis', created!.id);
+    await this.recordAudit(
+      scope,
+      'contract_analysis_requested',
+      'lc_contract_analysis',
+      created!.id,
+    );
     return toAnalysisSummary(created!);
   }
 
-  async listContractAnalyses(companyId: string, contractId?: string): Promise<LcContractAnalysisSummary[]> {
+  async listContractAnalyses(
+    companyId: string,
+    contractId?: string,
+  ): Promise<LcContractAnalysisSummary[]> {
     const rows = await this.deps.db.query.lcContractIntelligenceAnalyses.findMany({
       where: contractId
         ? and(
@@ -616,7 +657,10 @@ export class EnterpriseLegalComplianceService {
     return rows.map(toAnalysisSummary);
   }
 
-  async createObligation(scope: StaffScope, input: CreateLcObligationRequest): Promise<LcObligationSummary> {
+  async createObligation(
+    scope: StaffScope,
+    input: CreateLcObligationRequest,
+  ): Promise<LcObligationSummary> {
     if (input.contractId) await this.ensureContract(scope.companyId, input.contractId);
 
     const [created] = await this.deps.db
@@ -665,11 +709,11 @@ export class EnterpriseLegalComplianceService {
   }
 
   async createRisk(scope: StaffScope, input: CreateLcRiskRequest): Promise<LcRiskSummary> {
-    const methodology = (await this.ensurePlatformConfig(scope.companyId)).riskMethodology as Record<string, unknown>;
+    const methodology = (await this.ensurePlatformConfig(scope.companyId))
+      .riskMethodology as Record<string, unknown>;
     const likelihood = input.likelihood ?? null;
     const impact = input.impact ?? null;
-    const inherentScore =
-      likelihood != null && impact != null ? String(likelihood * impact) : null;
+    const inherentScore = likelihood != null && impact != null ? String(likelihood * impact) : null;
 
     const [created] = await this.deps.db
       .insert(lcRiskRegister)
@@ -825,7 +869,10 @@ export class EnterpriseLegalComplianceService {
     await this.recordAudit(scope, 'policy_acknowledged', 'lc_policy', policyId);
   }
 
-  async createLegalMatter(scope: StaffScope, input: CreateLcLegalMatterRequest): Promise<LcLegalMatterSummary> {
+  async createLegalMatter(
+    scope: StaffScope,
+    input: CreateLcLegalMatterRequest,
+  ): Promise<LcLegalMatterSummary> {
     const [created] = await this.deps.db
       .insert(lcLegalMatters)
       .values({
@@ -930,7 +977,10 @@ export class EnterpriseLegalComplianceService {
     const activeHolds = await this.deps.db.query.lcLegalHolds.findMany({
       where: and(
         eq(lcLegalHolds.companyId, scope.companyId),
-        or(eq(lcLegalHolds.workflowStatus, 'approved'), eq(lcLegalHolds.workflowStatus, 'executed')),
+        or(
+          eq(lcLegalHolds.workflowStatus, 'approved'),
+          eq(lcLegalHolds.workflowStatus, 'executed'),
+        ),
       ),
     });
 
@@ -959,7 +1009,10 @@ export class EnterpriseLegalComplianceService {
     const conditions = [eq(lcPrivacyRequests.companyId, companyId)];
     if (filters?.status) {
       conditions.push(
-        eq(lcPrivacyRequests.status, filters.status as typeof lcPrivacyRequests.$inferSelect.status),
+        eq(
+          lcPrivacyRequests.status,
+          filters.status as typeof lcPrivacyRequests.$inferSelect.status,
+        ),
       );
     }
     if (filters?.customerId) conditions.push(eq(lcPrivacyRequests.customerId, filters.customerId));
@@ -1067,7 +1120,10 @@ export class EnterpriseLegalComplianceService {
     };
   }
 
-  private async getContractSummary(companyId: string, contractId: string): Promise<LcContractSummary> {
+  private async getContractSummary(
+    companyId: string,
+    contractId: string,
+  ): Promise<LcContractSummary> {
     const row = await this.deps.db.query.lcContracts.findFirst({
       where: and(eq(lcContracts.companyId, companyId), eq(lcContracts.id, contractId)),
     });
@@ -1075,7 +1131,9 @@ export class EnterpriseLegalComplianceService {
     return this.buildContractSummary(row);
   }
 
-  private async buildContractSummary(row: typeof lcContracts.$inferSelect): Promise<LcContractSummary> {
+  private async buildContractSummary(
+    row: typeof lcContracts.$inferSelect,
+  ): Promise<LcContractSummary> {
     const owner = row.ownerUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.ownerUserId) })
       : null;
@@ -1101,12 +1159,16 @@ export class EnterpriseLegalComplianceService {
     };
   }
 
-  private async buildObligationSummary(row: typeof lcObligations.$inferSelect): Promise<LcObligationSummary> {
+  private async buildObligationSummary(
+    row: typeof lcObligations.$inferSelect,
+  ): Promise<LcObligationSummary> {
     const owner = row.ownerUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.ownerUserId) })
       : null;
     const contract = row.contractId
-      ? await this.deps.db.query.lcContracts.findFirst({ where: eq(lcContracts.id, row.contractId) })
+      ? await this.deps.db.query.lcContracts.findFirst({
+          where: eq(lcContracts.id, row.contractId),
+        })
       : null;
     const isOverdue =
       row.dueDate != null &&
@@ -1145,7 +1207,9 @@ export class EnterpriseLegalComplianceService {
     };
   }
 
-  private async buildControlSummary(row: typeof lcControls.$inferSelect): Promise<LcControlSummary> {
+  private async buildControlSummary(
+    row: typeof lcControls.$inferSelect,
+  ): Promise<LcControlSummary> {
     const owner = row.ownerUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.ownerUserId) })
       : null;
@@ -1162,7 +1226,9 @@ export class EnterpriseLegalComplianceService {
     };
   }
 
-  private async buildLegalMatterSummary(row: typeof lcLegalMatters.$inferSelect): Promise<LcLegalMatterSummary> {
+  private async buildLegalMatterSummary(
+    row: typeof lcLegalMatters.$inferSelect,
+  ): Promise<LcLegalMatterSummary> {
     const responsible = row.responsibleUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.responsibleUserId) })
       : null;
@@ -1174,7 +1240,9 @@ export class EnterpriseLegalComplianceService {
       title: row.title,
       status: row.status,
       priority: row.priority,
-      responsibleName: responsible ? `${responsible.firstName} ${responsible.lastName}`.trim() : null,
+      responsibleName: responsible
+        ? `${responsible.firstName} ${responsible.lastName}`.trim()
+        : null,
       deadlineDate: row.deadlineDate,
       costCents: row.costCents,
     };
@@ -1212,15 +1280,20 @@ export class EnterpriseLegalComplianceService {
         eq(lcSignatureProviderAdapters.id, providerId),
       ),
     });
-    if (!provider) throw new EnterpriseLegalComplianceError('NOT_FOUND', 'Signature provider not found');
+    if (!provider)
+      throw new EnterpriseLegalComplianceError('NOT_FOUND', 'Signature provider not found');
     return provider;
   }
 
   private async ensureInsurancePolicy(companyId: string, policyId: string) {
     const policy = await this.deps.db.query.lcInsurancePolicies.findFirst({
-      where: and(eq(lcInsurancePolicies.companyId, companyId), eq(lcInsurancePolicies.id, policyId)),
+      where: and(
+        eq(lcInsurancePolicies.companyId, companyId),
+        eq(lcInsurancePolicies.id, policyId),
+      ),
     });
-    if (!policy) throw new EnterpriseLegalComplianceError('NOT_FOUND', 'Insurance policy not found');
+    if (!policy)
+      throw new EnterpriseLegalComplianceError('NOT_FOUND', 'Insurance policy not found');
     return policy;
   }
 
@@ -1242,7 +1315,9 @@ export class EnterpriseLegalComplianceService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof lcPlatformConfig.$inferSelect): LcPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof lcPlatformConfig.$inferSelect,
+): LcPlatformConfigSummary {
   return {
     globalPolicies: row.globalPolicies,
     providerAdapterTemplates: row.providerAdapterTemplates,
@@ -1288,7 +1363,9 @@ function toClauseSummary(row: typeof lcClauseLibrary.$inferSelect): LcClauseSumm
   };
 }
 
-function toProviderSummary(row: typeof lcSignatureProviderAdapters.$inferSelect): LcSignatureProviderSummary {
+function toProviderSummary(
+  row: typeof lcSignatureProviderAdapters.$inferSelect,
+): LcSignatureProviderSummary {
   return {
     id: row.id,
     providerType: row.providerType,
@@ -1301,7 +1378,9 @@ function toProviderSummary(row: typeof lcSignatureProviderAdapters.$inferSelect)
   };
 }
 
-function toAnalysisSummary(row: typeof lcContractIntelligenceAnalyses.$inferSelect): LcContractAnalysisSummary {
+function toAnalysisSummary(
+  row: typeof lcContractIntelligenceAnalyses.$inferSelect,
+): LcContractAnalysisSummary {
   return {
     id: row.id,
     contractId: row.contractId,
@@ -1328,7 +1407,9 @@ function toPolicySummary(row: typeof lcPolicies.$inferSelect): LcPolicySummary {
   };
 }
 
-function toInsurancePolicySummary(row: typeof lcInsurancePolicies.$inferSelect): LcInsurancePolicySummary {
+function toInsurancePolicySummary(
+  row: typeof lcInsurancePolicies.$inferSelect,
+): LcInsurancePolicySummary {
   return {
     id: row.id,
     policyNumber: row.policyNumber,
@@ -1339,7 +1420,9 @@ function toInsurancePolicySummary(row: typeof lcInsurancePolicies.$inferSelect):
   };
 }
 
-function toInsuranceClaimSummary(row: typeof lcInsuranceClaims.$inferSelect): LcInsuranceClaimSummary {
+function toInsuranceClaimSummary(
+  row: typeof lcInsuranceClaims.$inferSelect,
+): LcInsuranceClaimSummary {
   return {
     id: row.id,
     policyId: row.policyId,
@@ -1350,7 +1433,9 @@ function toInsuranceClaimSummary(row: typeof lcInsuranceClaims.$inferSelect): Lc
   };
 }
 
-function toPrivacyRequestSummary(row: typeof lcPrivacyRequests.$inferSelect): LcPrivacyRequestSummary {
+function toPrivacyRequestSummary(
+  row: typeof lcPrivacyRequests.$inferSelect,
+): LcPrivacyRequestSummary {
   return {
     id: row.id,
     requestType: row.requestType,

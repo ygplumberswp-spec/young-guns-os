@@ -31,7 +31,8 @@ export function verifyAccessToken(token: string, secret: string): AccessTokenPay
     throw new Error('Invalid access token');
   }
 
-  const { sub, companyId, roleId, roleName, sessionId, permissions } = decoded as AccessTokenPayload;
+  const { sub, companyId, roleId, roleName, sessionId, permissions } =
+    decoded as AccessTokenPayload;
 
   if (!sub || !companyId || !roleId || !sessionId || !Array.isArray(permissions)) {
     throw new Error('Invalid access token payload');

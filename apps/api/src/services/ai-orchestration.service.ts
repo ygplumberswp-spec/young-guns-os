@@ -115,8 +115,13 @@ export class AiOrchestrationService {
     return merged;
   }
 
-  async createProvider(scope: StaffScope, input: CreateAiProviderRequest): Promise<AiProviderSummary> {
-    const registryEntry = getProviderRegistry().find((entry) => entry.providerKey === input.providerKey);
+  async createProvider(
+    scope: StaffScope,
+    input: CreateAiProviderRequest,
+  ): Promise<AiProviderSummary> {
+    const registryEntry = getProviderRegistry().find(
+      (entry) => entry.providerKey === input.providerKey,
+    );
     if (!registryEntry) {
       throw new AiOrchestrationError('VALIDATION_ERROR', 'Unsupported provider key');
     }
@@ -133,7 +138,8 @@ export class AiOrchestrationService {
         providerKey: input.providerKey,
         displayName: input.displayName?.trim() || registryEntry.name,
         status: input.isEnabled ? 'active' : 'inactive',
-        healthStatus: encryptedCredentials || input.providerKey === 'ollama' ? 'unknown' : 'unknown',
+        healthStatus:
+          encryptedCredentials || input.providerKey === 'ollama' ? 'unknown' : 'unknown',
         apiVersion: input.apiVersion?.trim() || registryEntry.apiVersion,
         baseUrl: input.baseUrl?.trim() || null,
         encryptedCredentials,
@@ -348,10 +354,16 @@ export class AiOrchestrationService {
     }));
   }
 
-  async listPromptVersions(companyId: string, templateId?: string): Promise<AiPromptVersionSummary[]> {
+  async listPromptVersions(
+    companyId: string,
+    templateId?: string,
+  ): Promise<AiPromptVersionSummary[]> {
     const rows = await this.db.query.aiPromptVersions.findMany({
       where: templateId
-        ? and(eq(aiPromptVersions.companyId, companyId), eq(aiPromptVersions.templateId, templateId))
+        ? and(
+            eq(aiPromptVersions.companyId, companyId),
+            eq(aiPromptVersions.templateId, templateId),
+          )
         : eq(aiPromptVersions.companyId, companyId),
       with: { template: true },
       orderBy: [desc(aiPromptVersions.versionNumber)],
@@ -618,7 +630,10 @@ export class AiOrchestrationService {
     }));
   }
 
-  async createFeedback(scope: StaffScope, input: CreateAiFeedbackRequest): Promise<AiFeedbackSummary> {
+  async createFeedback(
+    scope: StaffScope,
+    input: CreateAiFeedbackRequest,
+  ): Promise<AiFeedbackSummary> {
     const [created] = await this.db
       .insert(aiFeedbackRecords)
       .values({
@@ -713,14 +728,19 @@ export class AiOrchestrationService {
     const routingRules = await this.listRoutingRules(companyId);
     const routingEfficiency =
       routingRules.length > 0
-        ? routingRules.filter((rule) => rule.isEnabled && rule.primaryProviderId).length / routingRules.length
+        ? routingRules.filter((rule) => rule.isEnabled && rule.primaryProviderId).length /
+          routingRules.length
         : null;
 
     const recommendations: string[] = [];
     if (usage.length === 0) {
-      recommendations.push('No token usage recorded yet — cost optimization recommendations will appear once usage data exists.');
+      recommendations.push(
+        'No token usage recorded yet — cost optimization recommendations will appear once usage data exists.',
+      );
     } else if (totalCostCents === 0) {
-      recommendations.push('Usage recorded without cost metadata — configure provider pricing metadata for cost optimization insights.');
+      recommendations.push(
+        'Usage recorded without cost metadata — configure provider pricing metadata for cost optimization insights.',
+      );
     }
 
     return {
@@ -811,20 +831,31 @@ export class AiOrchestrationService {
   }
 
   async getExecutiveDashboard(companyId: string): Promise<AiExecutiveDashboard> {
-    const [providers, costAnalytics, qualityAnalytics, routingStatistics, recentFailovers, pendingActions, pendingPromptVersions] =
-      await Promise.all([
-        this.listProviders(companyId),
-        this.getCostAnalytics(companyId),
-        this.getQualityAnalytics(companyId),
-        this.getRoutingStatistics(companyId),
-        this.listFailoverEvents(companyId),
-        this.listConfigurationActions(companyId, 'pending_approval'),
-        this.listPromptVersions(companyId),
-      ]);
+    const [
+      providers,
+      costAnalytics,
+      qualityAnalytics,
+      routingStatistics,
+      recentFailovers,
+      pendingActions,
+      pendingPromptVersions,
+    ] = await Promise.all([
+      this.listProviders(companyId),
+      this.getCostAnalytics(companyId),
+      this.getQualityAnalytics(companyId),
+      this.getRoutingStatistics(companyId),
+      this.listFailoverEvents(companyId),
+      this.listConfigurationActions(companyId, 'pending_approval'),
+      this.listPromptVersions(companyId),
+    ]);
 
-    const healthyProviderCount = providers.filter((provider) => provider.healthStatus === 'healthy').length;
+    const healthyProviderCount = providers.filter(
+      (provider) => provider.healthStatus === 'healthy',
+    ).length;
     const configuredProviderCount = providers.filter((provider) => provider.isConfigured).length;
-    const pendingPromptCount = pendingPromptVersions.filter((version) => version.status === 'pending_approval').length;
+    const pendingPromptCount = pendingPromptVersions.filter(
+      (version) => version.status === 'pending_approval',
+    ).length;
 
     return {
       summary: `${providers.length} provider(s), ${healthyProviderCount} healthy, ${pendingActions.length} pending action(s), ${costAnalytics.totalTokens} total tokens recorded.`,
@@ -908,7 +939,9 @@ function toProviderSummary(
   },
   source: 'environment' | 'tenant',
 ): AiProviderSummary {
-  const registryEntry = getProviderRegistry().find((entry) => entry.providerKey === row.providerKey);
+  const registryEntry = getProviderRegistry().find(
+    (entry) => entry.providerKey === row.providerKey,
+  );
 
   return {
     id: row.id,

@@ -24,55 +24,64 @@ export class EnterpriseReleaseManagementUxReviewService {
         key: 'navigation',
         category: 'navigation',
         severity: 'info',
-        recommendation: 'Verify primary navigation paths across dashboard, modules, and settings are consistent on mobile and desktop.',
+        recommendation:
+          'Verify primary navigation paths across dashboard, modules, and settings are consistent on mobile and desktop.',
       },
       {
         key: 'responsive_layouts',
         category: 'responsive',
         severity: 'info',
-        recommendation: 'Test responsive breakpoints on common viewport sizes (320px, 768px, 1024px, 1440px).',
+        recommendation:
+          'Test responsive breakpoints on common viewport sizes (320px, 768px, 1024px, 1440px).',
       },
       {
         key: 'tablet_support',
         category: 'tablet',
         severity: 'info',
-        recommendation: 'Verify tablet layouts for sidebar navigation, data tables, and form layouts.',
+        recommendation:
+          'Verify tablet layouts for sidebar navigation, data tables, and form layouts.',
       },
       {
         key: 'mobile_usability',
         category: 'mobile',
         severity: 'info',
-        recommendation: 'Confirm touch targets meet minimum 44px, forms are usable on mobile, and offline states are clear.',
+        recommendation:
+          'Confirm touch targets meet minimum 44px, forms are usable on mobile, and offline states are clear.',
       },
       {
         key: 'desktop_usability',
         category: 'desktop',
         severity: 'info',
-        recommendation: 'Verify keyboard navigation, multi-column layouts, and bulk actions on desktop workflows.',
+        recommendation:
+          'Verify keyboard navigation, multi-column layouts, and bulk actions on desktop workflows.',
       },
       {
         key: 'accessibility',
         category: 'accessibility',
         severity: 'info',
-        recommendation: 'Review color contrast ratios, ARIA labels, focus indicators, and screen reader compatibility.',
+        recommendation:
+          'Review color contrast ratios, ARIA labels, focus indicators, and screen reader compatibility.',
       },
       {
         key: 'loading_states',
         category: 'states',
         severity: 'info',
-        recommendation: 'Ensure loading skeletons or spinners appear for async data fetches across all major modules.',
+        recommendation:
+          'Ensure loading skeletons or spinners appear for async data fetches across all major modules.',
       },
       {
         key: 'empty_states',
         category: 'states',
         severity: 'info',
-        recommendation: 'Verify empty states include actionable guidance (e.g., create first record, configure integration).',
+        recommendation:
+          'Verify empty states include actionable guidance (e.g., create first record, configure integration).',
       },
       {
         key: 'error_handling',
         category: 'errors',
         severity: 'info',
-        recommendation: 'Confirm error messages are user-friendly, recoverable, and logged for support diagnostics.',
+        recommendation:
+          'Confirm error messages are user-friendly, recoverable, and logged for support diagnostics.',
       },
     ];
 

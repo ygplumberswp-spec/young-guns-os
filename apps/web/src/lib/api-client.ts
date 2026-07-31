@@ -1,7 +1,8 @@
 import type { ApiResponse, AuthSession, AuthUser } from '@titan/shared';
 import { isApiError } from '@titan/shared';
+import { resolveApiBase } from './runtime-env';
 
-const API_BASE = '/api/v1';
+const API_BASE = resolveApiBase();
 
 type RequestOptions = {
   method?: string;
@@ -35,7 +36,10 @@ function timeoutSignal(timeoutMs: number): AbortSignal {
   }
 
   const controller = new AbortController();
-  setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs);
+  setTimeout(
+    () => controller.abort(new DOMException('Request timed out', 'TimeoutError')),
+    timeoutMs,
+  );
   return controller.signal;
 }
 
@@ -46,7 +50,11 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok || isApiError(payload)) {
     const message = isApiError(payload) ? payload.error.message : 'Request failed';
-    throw new ApiClientError(message, response.status, isApiError(payload) ? payload.error.code : 'REQUEST_FAILED');
+    throw new ApiClientError(
+      message,
+      response.status,
+      isApiError(payload) ? payload.error.code : 'REQUEST_FAILED',
+    );
   }
 
   return payload.data;

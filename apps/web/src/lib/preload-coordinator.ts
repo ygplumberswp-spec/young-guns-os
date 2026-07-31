@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useLocation } from 'wouter';
 import type { QueryCacheScope } from '@titan/shared';
 import { resolveStaffExperience } from '@titan/auth/browser';
 import { useAuth } from './auth-context';
 import { usePortalAuth } from './portal-auth-context';
+import { useAppPathname } from './nested-routing';
 import {
   resetRoutePrefetchState,
   startIdleRoutePreload,
@@ -64,7 +64,7 @@ export function usePortalPreloadContext(): PortalPreloadContext | null {
 
 export function useStaffIdlePreload(): void {
   const context = useStaffPreloadContext();
-  const [location] = useLocation();
+  const pathname = useAppPathname();
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -78,51 +78,52 @@ export function useStaffIdlePreload(): void {
     });
 
     const home = experience === 'technician' ? '/mobile' : '/';
-    if (location !== home && location !== '/') {
+    if (pathname !== home && pathname !== '/') {
       return;
     }
 
     const timer = window.setTimeout(() => {
       startedRef.current = true;
-      startIdleRoutePreload(context, location);
+      startIdleRoutePreload(context, pathname);
     }, 1_200);
 
     return () => window.clearTimeout(timer);
-  }, [context, location]);
+  }, [context, pathname]);
 }
 
 export function usePortalIdlePreload(): void {
   const context = usePortalPreloadContext();
-  const [location] = useLocation();
+  const pathname = useAppPathname();
   const startedRef = useRef(false);
 
   useEffect(() => {
-    if (!context || startedRef.current || location !== '/portal') {
+    // Nest-relative portal home is `/`; app pathname remains `/portal`.
+    if (!context || startedRef.current || pathname !== '/portal') {
       return;
     }
 
     const timer = window.setTimeout(() => {
       startedRef.current = true;
-      startIdleRoutePreload(context, location);
+      startIdleRoutePreload(context, pathname);
     }, 1_200);
 
     return () => window.clearTimeout(timer);
-  }, [context, location]);
+  }, [context, pathname]);
 }
 
 export function useNavTiming(): void {
-  const [location] = useLocation();
+  const pathname = useAppPathname();
   const previousPath = useRef<string | null>(null);
 
   useEffect(() => {
-    if (previousPath.current === location) {
+    if (previousPath.current === pathname) {
       return;
     }
 
     const kind = previousPath.current === null ? 'cold' : 'warm';
-    recordNavVisit(location, kind);
-    previousPath.current = location;
-  }, [location]);
+    recordNavVisit(pathname, kind);
+    previousPath.current = pathname;
+  }, [pathname]);
 }
 
 export function resetPreloadSession(): void {

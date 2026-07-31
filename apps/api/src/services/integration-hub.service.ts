@@ -4,6 +4,7 @@ import type {
   IntegrationHubDashboard,
   IntegrationHubStats,
   IntegrationProvider,
+  IntegrationProviderStatus,
   IntegrationSyncJobDetail,
   IntegrationSyncJobSummary,
   IntegrationWebhookEndpointDetail,
@@ -12,7 +13,10 @@ import type {
   UpdateIntegrationWebhookEndpointRequest,
 } from '@titan/shared';
 import {
+  deriveIntegrationCapabilityState,
+  formatCapabilityStateLabel,
   getIntegrationProviderRegistryEntry,
+  HONESTY_ONLY_PROVIDERS,
   INTEGRATION_PROVIDER_REGISTRY,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -24,11 +28,7 @@ import {
   whatsappConnections,
 } from '@titan/db';
 import { generateWebhookSecret, hashWebhookSecret } from '../lib/crypto.js';
-import {
-  buildTenantCacheKey,
-  cachedTenantRead,
-  CACHE_TTLS,
-} from './api-read-cache.js';
+import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
 type IntegrationConnectionBundle = {
   connections: Array<typeof integrationConnections.$inferSelect>;
@@ -55,7 +55,7 @@ export type AuraIntegrationHubContext = {
   webhookEventCount: number;
   providers: Array<{
     name: string;
-    provider: IntegrationProvider;
+    provider: IntegrationProviderStatus['provider'];
     connectionStatus: string;
     isConfigured: boolean;
     lastSyncAt: string | null;
@@ -68,8 +68,19 @@ export type AuraIntegrationHubContext = {
   }>;
 };
 
+type N8nStatusProvider = {
+  getIntegrationProviderStatus(companyId: string): Promise<IntegrationProviderStatus>;
+};
+
 export class IntegrationHubService {
+  private n8nStatusProvider: N8nStatusProvider | null = null;
+
   constructor(private readonly db: DatabaseClient) {}
+
+  /** UX-J — bind Automation-owned n8n status without duplicating connector storage. */
+  setN8nStatusProvider(provider: N8nStatusProvider | null) {
+    this.n8nStatusProvider = provider;
+  }
 
   async getDashboard(
     companyId: string,
@@ -83,14 +94,21 @@ export class IntegrationHubService {
     );
   }
 
-  private async loadDashboard(companyId: string, simple: boolean): Promise<IntegrationHubDashboard> {
+  private async loadDashboard(
+    companyId: string,
+    simple: boolean,
+  ): Promise<IntegrationHubDashboard> {
     const connectionBundle = await this.loadConnectionBundle(companyId);
     const baseStats = this.buildStatsFromConnections(connectionBundle);
+    const providers = await this.appendN8nStatus(
+      companyId,
+      this.mapProviderStatuses(connectionBundle),
+    );
 
     if (simple) {
       return {
         stats: baseStats,
-        providers: this.mapProviderStatuses(connectionBundle),
+        providers,
         recentSyncJobs: [],
         recentWebhookEvents: [],
       };
@@ -104,7 +122,7 @@ export class IntegrationHubService {
 
     return {
       stats,
-      providers: this.mapProviderStatuses(connectionBundle),
+      providers,
       recentSyncJobs,
       recentWebhookEvents,
     };
@@ -193,37 +211,120 @@ export class IntegrationHubService {
     };
   }
 
-  private mapProviderStatuses(bundle: IntegrationConnectionBundle) {
+  private mapProviderStatuses(bundle: IntegrationConnectionBundle): IntegrationProviderStatus[] {
     const { connections, whatsappConnection } = bundle;
     const connectionByProvider = new Map(
       connections.map((connection) => [connection.provider, connection]),
     );
 
-    return INTEGRATION_PROVIDER_REGISTRY.map((entry) => {
-      if (entry.provider === 'whatsapp') {
+    const registryStatuses: IntegrationProviderStatus[] = INTEGRATION_PROVIDER_REGISTRY.map(
+      (entry) => {
+        const isWhatsapp = entry.provider === 'whatsapp';
+        const connection = isWhatsapp ? undefined : connectionByProvider.get(entry.provider);
+
+        const connectionStatus = isWhatsapp
+          ? (whatsappConnection?.status ?? 'disconnected')
+          : (connection?.status ?? 'disconnected');
+        const isConfigured = isWhatsapp
+          ? Boolean(whatsappConnection?.credentialsEncrypted)
+          : Boolean(connection);
+        const lastError = isWhatsapp
+          ? (whatsappConnection?.lastError ?? null)
+          : (connection?.lastError ?? null);
+
+        const backendImplemented = entry.availability === 'available';
+        const capabilityState = deriveIntegrationCapabilityState({
+          availability: entry.availability,
+          connectionStatus,
+          isConfigured,
+          backendImplemented,
+          lastError,
+        });
+        const capabilityLabel = formatCapabilityStateLabel(capabilityState);
+        const canConnect =
+          capabilityState !== 'not_implemented' &&
+          entry.availability === 'available' &&
+          Boolean(entry.settingsPath);
+        const canSend =
+          capabilityState === 'connected_usable' &&
+          (entry.provider === 'whatsapp' || entry.provider === 'email');
+
         return {
           ...entry,
-          connectionId: whatsappConnection?.id ?? null,
-          connectionStatus: whatsappConnection?.status ?? 'disconnected',
-          isConfigured: Boolean(whatsappConnection?.credentialsEncrypted),
-          lastSyncAt: null,
-          lastError: whatsappConnection?.lastError ?? null,
-          connectedAt: whatsappConnection?.connectedAt?.toISOString() ?? null,
+          connectionId: isWhatsapp ? (whatsappConnection?.id ?? null) : (connection?.id ?? null),
+          connectionStatus,
+          isConfigured,
+          lastSyncAt: isWhatsapp ? null : (connection?.lastSyncAt?.toISOString() ?? null),
+          lastError,
+          connectedAt: isWhatsapp
+            ? (whatsappConnection?.connectedAt?.toISOString() ?? null)
+            : (connection?.connectedAt?.toISOString() ?? null),
+          capabilityState,
+          capabilityLabel,
+          canConnect,
+          canSend,
         };
-      }
+      },
+    );
 
-      const connection = connectionByProvider.get(entry.provider);
+    const honestyStatuses: IntegrationProviderStatus[] = HONESTY_ONLY_PROVIDERS.map((honesty) => ({
+      provider: honesty.id,
+      name: honesty.name,
+      description: honesty.description,
+      category: honesty.category,
+      availability: 'planned',
+      settingsPath: honesty.deepLinkPath,
+      supportsSync: false,
+      supportsWebhooks: false,
+      connectionId: null,
+      connectionStatus: 'disconnected',
+      isConfigured: false,
+      lastSyncAt: null,
+      lastError: null,
+      connectedAt: null,
+      capabilityState: honesty.capabilityState,
+      capabilityLabel: formatCapabilityStateLabel(honesty.capabilityState),
+      canConnect: false,
+      canSend: false,
+      honestyOnly: true,
+    }));
 
-      return {
-        ...entry,
-        connectionId: connection?.id ?? null,
-        connectionStatus: connection?.status ?? 'disconnected',
-        isConfigured: Boolean(connection),
-        lastSyncAt: connection?.lastSyncAt?.toISOString() ?? null,
-        lastError: connection?.lastError ?? null,
-        connectedAt: connection?.connectedAt?.toISOString() ?? null,
-      };
-    });
+    return [...registryStatuses, ...honestyStatuses];
+  }
+
+  private async appendN8nStatus(
+    companyId: string,
+    statuses: IntegrationProviderStatus[],
+  ): Promise<IntegrationProviderStatus[]> {
+    if (!this.n8nStatusProvider) {
+      return [
+        ...statuses,
+        {
+          provider: 'n8n',
+          name: 'n8n',
+          description:
+            'External orchestration is Automation-owned. Configure under Automations.',
+          category: 'automation',
+          availability: 'available',
+          settingsPath: '/automation/n8n',
+          supportsSync: false,
+          supportsWebhooks: true,
+          connectionId: null,
+          connectionStatus: 'disconnected',
+          isConfigured: false,
+          lastSyncAt: null,
+          lastError: null,
+          connectedAt: null,
+          capabilityState: 'not_configured',
+          capabilityLabel: formatCapabilityStateLabel('not_configured'),
+          canConnect: false,
+          canSend: false,
+          honestyOnly: false,
+        },
+      ];
+    }
+    const n8nStatus = await this.n8nStatusProvider.getIntegrationProviderStatus(companyId);
+    return [...statuses, n8nStatus];
   }
 
   async getStats(companyId: string): Promise<IntegrationHubStats> {
@@ -234,7 +335,8 @@ export class IntegrationHubService {
 
   async listProviderStatuses(companyId: string) {
     const bundle = await this.loadConnectionBundle(companyId);
-    return this.mapProviderStatuses(bundle);
+    const statuses = this.mapProviderStatuses(bundle);
+    return this.appendN8nStatus(companyId, statuses);
   }
 
   async listSyncJobs(companyId: string, limit = 50): Promise<IntegrationSyncJobSummary[]> {
@@ -338,7 +440,10 @@ export class IntegrationHubService {
     });
 
     if (existing) {
-      throw new IntegrationHubError('DUPLICATE_NAME', 'A webhook endpoint with this name already exists');
+      throw new IntegrationHubError(
+        'DUPLICATE_NAME',
+        'A webhook endpoint with this name already exists',
+      );
     }
 
     const secret = generateWebhookSecret();
@@ -500,9 +605,7 @@ export class IntegrationHubService {
   }
 }
 
-function toSyncJobSummary(
-  row: typeof integrationSyncJobs.$inferSelect,
-): IntegrationSyncJobSummary {
+function toSyncJobSummary(row: typeof integrationSyncJobs.$inferSelect): IntegrationSyncJobSummary {
   const registryEntry = getIntegrationProviderRegistryEntry(row.provider);
 
   return {

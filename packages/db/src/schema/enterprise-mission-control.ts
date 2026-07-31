@@ -1,4 +1,13 @@
-import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid, doublePrecision } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  doublePrecision,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -64,20 +73,15 @@ export const missionControlCommandActionTypeEnum = pgEnum('mission_control_comma
   'executive_briefing',
 ]);
 
-export const missionControlCommandActionStatusEnum = pgEnum('mission_control_command_action_status', [
-  'pending_approval',
-  'approved',
-  'rejected',
-  'executed',
-  'cancelled',
-]);
+export const missionControlCommandActionStatusEnum = pgEnum(
+  'mission_control_command_action_status',
+  ['pending_approval', 'approved', 'rejected', 'executed', 'cancelled'],
+);
 
-export const missionControlRecommendationStatusEnum = pgEnum('mission_control_recommendation_status', [
-  'pending',
-  'accepted',
-  'dismissed',
-  'completed',
-]);
+export const missionControlRecommendationStatusEnum = pgEnum(
+  'mission_control_recommendation_status',
+  ['pending', 'accepted', 'dismissed', 'completed'],
+);
 
 export const missionControlAlerts = pgTable('mission_control_alerts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -94,7 +98,9 @@ export const missionControlAlerts = pgTable('mission_control_alerts', {
   sourceEntityType: text('source_entity_type'),
   sourceEntityId: uuid('source_entity_id'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -127,7 +133,10 @@ export const missionControlIncidents = pgTable('mission_control_incidents', {
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   rootCause: text('root_cause'),
   resolutionSummary: text('resolution_summary'),
-  linkedEntities: jsonb('linked_entities').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  linkedEntities: jsonb('linked_entities')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   branchKey: text('branch_key'),
   createdByUserId: uuid('created_by_user_id')
     .notNull()
@@ -224,7 +233,9 @@ export const missionControlCommandActions = pgTable('mission_control_command_act
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
-  incidentId: uuid('incident_id').references(() => missionControlIncidents.id, { onDelete: 'set null' }),
+  incidentId: uuid('incident_id').references(() => missionControlIncidents.id, {
+    onDelete: 'set null',
+  }),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

@@ -151,15 +151,19 @@ export class EnterpriseVoiceReceptionService {
       this.deps.enterpriseUnifiedCommunicationsService.getDashboard(companyId).catch(() => null),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const activeCalls = liveSessions.filter((s) => s.status === 'active');
-    const missedCallCount = callHistory.filter((c) => c.status === 'missed' || c.status === 'abandoned').length;
+    const missedCallCount = callHistory.filter(
+      (c) => c.status === 'missed' || c.status === 'abandoned',
+    ).length;
     const queuedCallCount = callQueues.length > 0 ? 0 : 0;
     const activeProviderCount = telephonyProviders.filter((p) => p.enabled).length;
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
     const overallVoiceHealthStatus =
-      criticalAlertCount > 0 || !aiReceptionist.enabled && activeCalls.length > 5
+      criticalAlertCount > 0 || (!aiReceptionist.enabled && activeCalls.length > 5)
         ? 'critical'
         : alerts.length > 0 || missedCallCount > 10
           ? 'degraded'
@@ -221,7 +225,10 @@ export class EnterpriseVoiceReceptionService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateVrPlatformConfigRequest): Promise<VrPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateVrPlatformConfigRequest,
+  ): Promise<VrPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(vrPlatformConfig)
@@ -262,7 +269,12 @@ export class EnterpriseVoiceReceptionService {
       })
       .where(eq(vrAiReceptionistConfig.companyId, scope.companyId))
       .returning();
-    await this.logAudit(scope, 'update_ai_receptionist_config', 'vr_ai_receptionist_config', updated?.id);
+    await this.logAudit(
+      scope,
+      'update_ai_receptionist_config',
+      'vr_ai_receptionist_config',
+      updated?.id,
+    );
     return toAiReceptionistSummary(updated ?? existing);
   }
 
@@ -288,8 +300,17 @@ export class EnterpriseVoiceReceptionService {
         config: input.config ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create telephony provider');
-    await this.logAudit(scope, 'create_telephony_provider', 'vr_telephony_provider_configs', created.id);
+    if (!created)
+      throw new EnterpriseVoiceReceptionError(
+        'CREATE_FAILED',
+        'Unable to create telephony provider',
+      );
+    await this.logAudit(
+      scope,
+      'create_telephony_provider',
+      'vr_telephony_provider_configs',
+      created.id,
+    );
     return toTelephonyProviderSummary(created);
   }
 
@@ -301,7 +322,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toExtensionSummary);
   }
 
-  async createExtension(scope: StaffScope, input: CreateVrExtensionRequest): Promise<VrExtensionSummary> {
+  async createExtension(
+    scope: StaffScope,
+    input: CreateVrExtensionRequest,
+  ): Promise<VrExtensionSummary> {
     const [created] = await this.deps.db
       .insert(vrExtensions)
       .values({
@@ -313,7 +337,8 @@ export class EnterpriseVoiceReceptionService {
         locationKey: input.locationKey?.trim() ?? null,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create extension');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create extension');
     await this.logAudit(scope, 'create_extension', 'vr_extensions', created.id);
     return toExtensionSummary(created);
   }
@@ -326,7 +351,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toRingGroupSummary);
   }
 
-  async createRingGroup(scope: StaffScope, input: CreateVrRingGroupRequest): Promise<VrRingGroupSummary> {
+  async createRingGroup(
+    scope: StaffScope,
+    input: CreateVrRingGroupRequest,
+  ): Promise<VrRingGroupSummary> {
     const [created] = await this.deps.db
       .insert(vrRingGroups)
       .values({
@@ -337,7 +365,8 @@ export class EnterpriseVoiceReceptionService {
         strategy: input.strategy ?? 'simultaneous',
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create ring group');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create ring group');
     await this.logAudit(scope, 'create_ring_group', 'vr_ring_groups', created.id);
     return toRingGroupSummary(created);
   }
@@ -350,7 +379,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toCallQueueSummary);
   }
 
-  async createCallQueue(scope: StaffScope, input: CreateVrCallQueueRequest): Promise<VrCallQueueSummary> {
+  async createCallQueue(
+    scope: StaffScope,
+    input: CreateVrCallQueueRequest,
+  ): Promise<VrCallQueueSummary> {
     const [created] = await this.deps.db
       .insert(vrCallQueues)
       .values({
@@ -361,7 +393,8 @@ export class EnterpriseVoiceReceptionService {
         overflowDestination: input.overflowDestination?.trim() ?? null,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create call queue');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create call queue');
     await this.logAudit(scope, 'create_call_queue', 'vr_call_queues', created.id);
     return toCallQueueSummary(created);
   }
@@ -374,7 +407,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toRoutingRuleSummary);
   }
 
-  async createRoutingRule(scope: StaffScope, input: CreateVrRoutingRuleRequest): Promise<VrRoutingRuleSummary> {
+  async createRoutingRule(
+    scope: StaffScope,
+    input: CreateVrRoutingRuleRequest,
+  ): Promise<VrRoutingRuleSummary> {
     const [created] = await this.deps.db
       .insert(vrRoutingRules)
       .values({
@@ -387,7 +423,8 @@ export class EnterpriseVoiceReceptionService {
         destinationRef: input.destinationRef?.trim() ?? null,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create routing rule');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create routing rule');
     await this.logAudit(scope, 'create_routing_rule', 'vr_routing_rules', created.id);
     return toRoutingRuleSummary(created);
   }
@@ -400,7 +437,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toBusinessHoursSummary);
   }
 
-  async createBusinessHours(scope: StaffScope, input: CreateVrBusinessHoursRequest): Promise<VrBusinessHoursSummary> {
+  async createBusinessHours(
+    scope: StaffScope,
+    input: CreateVrBusinessHoursRequest,
+  ): Promise<VrBusinessHoursSummary> {
     const [created] = await this.deps.db
       .insert(vrBusinessHours)
       .values({
@@ -413,7 +453,8 @@ export class EnterpriseVoiceReceptionService {
         afterHoursDestination: input.afterHoursDestination?.trim() ?? null,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create business hours');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create business hours');
     await this.logAudit(scope, 'create_business_hours', 'vr_business_hours', created.id);
     return toBusinessHoursSummary(created);
   }
@@ -426,7 +467,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toEmergencyRuleSummary);
   }
 
-  async createEmergencyRule(scope: StaffScope, input: CreateVrEmergencyRuleRequest): Promise<VrEmergencyRuleSummary> {
+  async createEmergencyRule(
+    scope: StaffScope,
+    input: CreateVrEmergencyRuleRequest,
+  ): Promise<VrEmergencyRuleSummary> {
     const [created] = await this.deps.db
       .insert(vrEmergencyRules)
       .values({
@@ -438,7 +482,8 @@ export class EnterpriseVoiceReceptionService {
         priority: input.priority ?? 1,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create emergency rule');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create emergency rule');
     await this.logAudit(scope, 'create_emergency_rule', 'vr_emergency_rules', created.id);
     return toEmergencyRuleSummary(created);
   }
@@ -466,7 +511,8 @@ export class EnterpriseVoiceReceptionService {
         config: input.config ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create voicemail policy');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create voicemail policy');
     await this.logAudit(scope, 'create_voicemail_policy', 'vr_voicemail_policies', created.id);
     return toVoicemailPolicySummary(created);
   }
@@ -493,7 +539,8 @@ export class EnterpriseVoiceReceptionService {
         config: input.config ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create language config');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create language config');
     await this.logAudit(scope, 'create_language_config', 'vr_language_configs', created.id);
     return toLanguageConfigSummary(created);
   }
@@ -520,7 +567,8 @@ export class EnterpriseVoiceReceptionService {
         businessHoursId: input.businessHoursId ?? null,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create location config');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create location config');
     await this.logAudit(scope, 'create_location_config', 'vr_location_configs', created.id);
     return toLocationConfigSummary(created);
   }
@@ -539,7 +587,10 @@ export class EnterpriseVoiceReceptionService {
     input: CreateVrCallIntelligenceRequest,
   ): Promise<VrCallIntelligenceSummary> {
     if (input.voiceSessionId) {
-      const session = await this.deps.voiceService.getSession(scope.companyId, input.voiceSessionId);
+      const session = await this.deps.voiceService.getSession(
+        scope.companyId,
+        input.voiceSessionId,
+      );
       if (!session) {
         throw new EnterpriseVoiceReceptionError('NOT_FOUND', 'Voice session not found');
       }
@@ -563,8 +614,17 @@ export class EnterpriseVoiceReceptionService {
         metrics: input.metrics ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to capture call intelligence');
-    await this.logAudit(scope, 'capture_call_intelligence', 'vr_call_intelligence_records', created.id);
+    if (!created)
+      throw new EnterpriseVoiceReceptionError(
+        'CREATE_FAILED',
+        'Unable to capture call intelligence',
+      );
+    await this.logAudit(
+      scope,
+      'capture_call_intelligence',
+      'vr_call_intelligence_records',
+      created.id,
+    );
     return toCallIntelligenceSummary(created);
   }
 
@@ -592,7 +652,11 @@ export class EnterpriseVoiceReceptionService {
         approvalRequired: input.approvalRequired ?? true,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create conversation draft');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError(
+        'CREATE_FAILED',
+        'Unable to create conversation draft',
+      );
     await this.logAudit(scope, 'create_conversation_draft', 'vr_conversation_drafts', created.id);
     return toConversationDraftSummary(created);
   }
@@ -606,7 +670,10 @@ export class EnterpriseVoiceReceptionService {
     return rows.map(toActionDraftSummary);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateVrActionDraftRequest): Promise<VrActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateVrActionDraftRequest,
+  ): Promise<VrActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(vrActionDrafts)
       .values({
@@ -618,15 +685,22 @@ export class EnterpriseVoiceReceptionService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'vr_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
 
-  async listVoiceAlerts(companyId: string, filters?: { status?: string }): Promise<VrVoiceAlertSummary[]> {
+  async listVoiceAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<VrVoiceAlertSummary[]> {
     const rows = await this.deps.db.query.vrVoiceAlerts.findMany({
       where: filters?.status
-        ? and(eq(vrVoiceAlerts.companyId, companyId), eq(vrVoiceAlerts.status, filters.status as never))
+        ? and(
+            eq(vrVoiceAlerts.companyId, companyId),
+            eq(vrVoiceAlerts.status, filters.status as never),
+          )
         : eq(vrVoiceAlerts.companyId, companyId),
       orderBy: [desc(vrVoiceAlerts.createdAt)],
       limit: 50,
@@ -686,7 +760,9 @@ export class EnterpriseVoiceReceptionService {
       );
     }
 
-    await this.logAudit(scope, 'sync_voice_alerts', 'vr_voice_alerts', undefined, { alertCount: alerts.length });
+    await this.logAudit(scope, 'sync_voice_alerts', 'vr_voice_alerts', undefined, {
+      alertCount: alerts.length,
+    });
     return alerts;
   }
 
@@ -714,7 +790,8 @@ export class EnterpriseVoiceReceptionService {
       .insert(vrAnalyticsSnapshots)
       .values({ companyId: scope.companyId, metrics })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to capture analytics');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to capture analytics');
     await this.logAudit(scope, 'capture_analytics', 'vr_analytics_snapshots', created.id);
     return toAnalyticsSummary(created);
   }
@@ -728,7 +805,9 @@ export class EnterpriseVoiceReceptionService {
 
     const metrics = {
       callQualityScore: completed > 0 ? Math.min(100, Math.round((completed / total) * 100)) : null,
-      responseQualityScore: dashboard.aiReceptionist.enabled ? dashboard.aiReceptionist.confidenceThreshold : null,
+      responseQualityScore: dashboard.aiReceptionist.enabled
+        ? dashboard.aiReceptionist.confidenceThreshold
+        : null,
       transferRate: 0,
       escalationRate: followUps / total,
       bookingSuccessRate: appointments / total,
@@ -740,7 +819,8 @@ export class EnterpriseVoiceReceptionService {
       .insert(vrQualitySnapshots)
       .values({ companyId: scope.companyId, metrics })
       .returning();
-    if (!created) throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to capture quality metrics');
+    if (!created)
+      throw new EnterpriseVoiceReceptionError('CREATE_FAILED', 'Unable to capture quality metrics');
     await this.logAudit(scope, 'capture_quality_metrics', 'vr_quality_snapshots', created.id);
     return toQualitySummary(metrics, created.capturedAt.toISOString());
   }
@@ -775,7 +855,10 @@ export class EnterpriseVoiceReceptionService {
     const [stats] = await Promise.all([this.deps.voiceService.getStats(companyId)]);
     const total = stats.totalSessionCount || 1;
     return {
-      callQualityScore: stats.completedSessionCount > 0 ? Math.round((stats.completedSessionCount / total) * 100) : null,
+      callQualityScore:
+        stats.completedSessionCount > 0
+          ? Math.round((stats.completedSessionCount / total) * 100)
+          : null,
       responseQualityScore: null,
       transferRate: 0,
       escalationRate: stats.followUpRequiredCount / total,
@@ -846,10 +929,7 @@ export class EnterpriseVoiceReceptionService {
     });
     if (existing) return existing;
 
-    const [created] = await this.deps.db
-      .insert(vrPlatformConfig)
-      .values({ companyId })
-      .returning();
+    const [created] = await this.deps.db.insert(vrPlatformConfig).values({ companyId }).returning();
     return created!;
   }
 
@@ -884,7 +964,9 @@ export class EnterpriseVoiceReceptionService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof vrPlatformConfig.$inferSelect): VrPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof vrPlatformConfig.$inferSelect,
+): VrPlatformConfigSummary {
   return {
     telephonyPolicy: row.telephonyPolicy ?? {},
     receptionistPolicy: row.receptionistPolicy ?? {},
@@ -895,7 +977,9 @@ function toPlatformConfigSummary(row: typeof vrPlatformConfig.$inferSelect): VrP
   };
 }
 
-function toAiReceptionistSummary(row: typeof vrAiReceptionistConfig.$inferSelect): VrAiReceptionistConfigSummary {
+function toAiReceptionistSummary(
+  row: typeof vrAiReceptionistConfig.$inferSelect,
+): VrAiReceptionistConfigSummary {
   return {
     enabled: row.enabled,
     welcomeMessage: row.welcomeMessage,
@@ -905,7 +989,9 @@ function toAiReceptionistSummary(row: typeof vrAiReceptionistConfig.$inferSelect
   };
 }
 
-function toTelephonyProviderSummary(row: typeof vrTelephonyProviderConfigs.$inferSelect): VrTelephonyProviderSummary {
+function toTelephonyProviderSummary(
+  row: typeof vrTelephonyProviderConfigs.$inferSelect,
+): VrTelephonyProviderSummary {
   return {
     id: row.id,
     providerKey: row.providerKey,
@@ -984,7 +1070,9 @@ function toEmergencyRuleSummary(row: typeof vrEmergencyRules.$inferSelect): VrEm
   };
 }
 
-function toVoicemailPolicySummary(row: typeof vrVoicemailPolicies.$inferSelect): VrVoicemailPolicySummary {
+function toVoicemailPolicySummary(
+  row: typeof vrVoicemailPolicies.$inferSelect,
+): VrVoicemailPolicySummary {
   return {
     id: row.id,
     policyKey: row.policyKey,
@@ -995,7 +1083,9 @@ function toVoicemailPolicySummary(row: typeof vrVoicemailPolicies.$inferSelect):
   };
 }
 
-function toLanguageConfigSummary(row: typeof vrLanguageConfigs.$inferSelect): VrLanguageConfigSummary {
+function toLanguageConfigSummary(
+  row: typeof vrLanguageConfigs.$inferSelect,
+): VrLanguageConfigSummary {
   return {
     id: row.id,
     languageCode: row.languageCode,
@@ -1004,7 +1094,9 @@ function toLanguageConfigSummary(row: typeof vrLanguageConfigs.$inferSelect): Vr
   };
 }
 
-function toLocationConfigSummary(row: typeof vrLocationConfigs.$inferSelect): VrLocationConfigSummary {
+function toLocationConfigSummary(
+  row: typeof vrLocationConfigs.$inferSelect,
+): VrLocationConfigSummary {
   return {
     id: row.id,
     locationKey: row.locationKey,
@@ -1013,7 +1105,9 @@ function toLocationConfigSummary(row: typeof vrLocationConfigs.$inferSelect): Vr
   };
 }
 
-function toCallIntelligenceSummary(row: typeof vrCallIntelligenceRecords.$inferSelect): VrCallIntelligenceSummary {
+function toCallIntelligenceSummary(
+  row: typeof vrCallIntelligenceRecords.$inferSelect,
+): VrCallIntelligenceSummary {
   return {
     id: row.id,
     voiceSessionId: row.voiceSessionId,
@@ -1031,7 +1125,9 @@ function toCallIntelligenceSummary(row: typeof vrCallIntelligenceRecords.$inferS
   };
 }
 
-function toConversationDraftSummary(row: typeof vrConversationDrafts.$inferSelect): VrConversationDraftSummary {
+function toConversationDraftSummary(
+  row: typeof vrConversationDrafts.$inferSelect,
+): VrConversationDraftSummary {
   return {
     id: row.id,
     voiceSessionId: row.voiceSessionId,
@@ -1088,7 +1184,9 @@ function toAuditLogSummary(row: typeof vrAuditLogs.$inferSelect): VrAuditLogSumm
   };
 }
 
-function toRecordingPolicySummary(row: typeof vrRecordingPolicies.$inferSelect): VrRecordingPolicySummary {
+function toRecordingPolicySummary(
+  row: typeof vrRecordingPolicies.$inferSelect,
+): VrRecordingPolicySummary {
   return {
     id: row.id,
     policyKey: row.policyKey,
@@ -1099,15 +1197,23 @@ function toRecordingPolicySummary(row: typeof vrRecordingPolicies.$inferSelect):
   };
 }
 
-function toQualitySummary(metrics: Record<string, unknown>, capturedAt: string | null): VrQualitySummary {
+function toQualitySummary(
+  metrics: Record<string, unknown>,
+  capturedAt: string | null,
+): VrQualitySummary {
   return {
-    callQualityScore: typeof metrics.callQualityScore === 'number' ? metrics.callQualityScore : null,
-    responseQualityScore: typeof metrics.responseQualityScore === 'number' ? metrics.responseQualityScore : null,
+    callQualityScore:
+      typeof metrics.callQualityScore === 'number' ? metrics.callQualityScore : null,
+    responseQualityScore:
+      typeof metrics.responseQualityScore === 'number' ? metrics.responseQualityScore : null,
     transferRate: typeof metrics.transferRate === 'number' ? metrics.transferRate : 0,
     escalationRate: typeof metrics.escalationRate === 'number' ? metrics.escalationRate : 0,
-    bookingSuccessRate: typeof metrics.bookingSuccessRate === 'number' ? metrics.bookingSuccessRate : 0,
+    bookingSuccessRate:
+      typeof metrics.bookingSuccessRate === 'number' ? metrics.bookingSuccessRate : 0,
     customerSatisfactionScore:
-      typeof metrics.customerSatisfactionScore === 'number' ? metrics.customerSatisfactionScore : null,
+      typeof metrics.customerSatisfactionScore === 'number'
+        ? metrics.customerSatisfactionScore
+        : null,
     resolutionRate: typeof metrics.resolutionRate === 'number' ? metrics.resolutionRate : 0,
     capturedAt,
   };

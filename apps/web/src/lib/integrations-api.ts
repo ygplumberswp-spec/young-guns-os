@@ -21,7 +21,9 @@ import type {
 } from '@titan/shared';
 import { request } from './api-client';
 
-export async function fetchCartrackConnection(accessToken: string): Promise<CartrackConnectionSummary> {
+export async function fetchCartrackConnection(
+  accessToken: string,
+): Promise<CartrackConnectionSummary> {
   const data = await request<{ connection: CartrackConnectionSummary }>('/integrations/cartrack', {
     accessToken,
   });
@@ -140,10 +142,13 @@ export async function fetchXeroSyncLogs(accessToken: string): Promise<XeroSyncLo
 }
 
 export async function syncXeroCustomers(accessToken: string): Promise<XeroEntitySyncResult> {
-  const data = await request<{ result: XeroEntitySyncResult }>('/integrations/xero/sync/customers', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ result: XeroEntitySyncResult }>(
+    '/integrations/xero/sync/customers',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.result;
 }
 

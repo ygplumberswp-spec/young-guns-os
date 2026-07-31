@@ -102,10 +102,13 @@ export async function fetchFinanceAnalytics(
   query: AnalyticsDashboardQuery = {},
   options?: AnalyticsRequestOptions,
 ): Promise<FinanceAnalytics> {
-  const data = await request<{ finance: FinanceAnalytics }>(`/analytics/finance${buildQuery(query)}`, {
-    accessToken,
-    ...requestOptions(options),
-  });
+  const data = await request<{ finance: FinanceAnalytics }>(
+    `/analytics/finance${buildQuery(query)}`,
+    {
+      accessToken,
+      ...requestOptions(options),
+    },
+  );
   return data.finance;
 }
 
@@ -123,7 +126,9 @@ export async function fetchReportCatalog(
 }
 
 export async function fetchReportRun(accessToken: string, runId: string): Promise<ReportRunDetail> {
-  const data = await request<{ run: ReportRunDetail }>(`/analytics/reports/${runId}`, { accessToken });
+  const data = await request<{ run: ReportRunDetail }>(`/analytics/reports/${runId}`, {
+    accessToken,
+  });
   return data.run;
 }
 

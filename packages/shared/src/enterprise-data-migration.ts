@@ -54,7 +54,8 @@ export type DmDuplicateAction = 'merge' | 'skip' | 'replace' | 'create_new' | 'p
 
 export type DmValidationSeverity = 'error' | 'warning' | 'info';
 
-export type DmRollbackStatus = 'available' | 'pending' | 'in_progress' | 'completed' | 'unavailable';
+export type DmRollbackStatus =
+  'available' | 'pending' | 'in_progress' | 'completed' | 'unavailable';
 
 export type DmRecordOutcome = 'imported' | 'failed' | 'skipped' | 'duplicate_pending';
 

@@ -17,10 +17,7 @@ import {
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { CartrackClient, CartrackError } from '../lib/cartrack.client.js';
-import {
-  decryptCartrackCredentials,
-  encryptCartrackCredentials,
-} from '../lib/crypto.js';
+import { decryptCartrackCredentials, encryptCartrackCredentials } from '../lib/crypto.js';
 
 import type { IntegrationHubService } from './integration-hub.service.js';
 
@@ -91,7 +88,10 @@ export class IntegrationsService {
     }
 
     if (!username || !password) {
-      throw new IntegrationsError('VALIDATION_ERROR', 'Cartrack username and password are required');
+      throw new IntegrationsError(
+        'VALIDATION_ERROR',
+        'Cartrack username and password are required',
+      );
     }
 
     const connection = await this.getOrCreateConnection(companyId);
@@ -128,7 +128,10 @@ export class IntegrationsService {
       .update(integrationConnections)
       .set({
         status: 'connected',
-        credentialsEncrypted: encryptCartrackCredentials({ username, password }, this.encryptionKey!),
+        credentialsEncrypted: encryptCartrackCredentials(
+          { username, password },
+          this.encryptionKey!,
+        ),
         config: { baseUrl },
         connectedAt: new Date(),
         lastError: null,
@@ -201,7 +204,7 @@ export class IntegrationsService {
     const [updated] = await this.db
       .update(integrationVehicleMappings)
       .set({
-        vehicleId: input.vehicleId === undefined ? existing.vehicleId : input.vehicleId ?? null,
+        vehicleId: input.vehicleId === undefined ? existing.vehicleId : (input.vehicleId ?? null),
         status: nextStatus,
         updatedAt: new Date(),
       })
@@ -258,9 +261,7 @@ export class IntegrationsService {
 
       if (existing) {
         const shouldAutoMap =
-          !existing.vehicleId &&
-          existing.status === 'unmapped' &&
-          matchedVehicle !== null;
+          !existing.vehicleId && existing.status === 'unmapped' && matchedVehicle !== null;
 
         await this.db
           .update(integrationVehicleMappings)
@@ -511,7 +512,10 @@ export class IntegrationsService {
     const baseUrl = connection.config.baseUrl;
 
     if (!baseUrl) {
-      throw new IntegrationsError('CONFIG_ERROR', 'Cartrack base URL is missing from connection config');
+      throw new IntegrationsError(
+        'CONFIG_ERROR',
+        'Cartrack base URL is missing from connection config',
+      );
     }
 
     return new CartrackClient({

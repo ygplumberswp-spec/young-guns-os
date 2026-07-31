@@ -34,33 +34,71 @@ export function invalidatePortalQueryPrefixes(
 }
 
 const CUSTOMER_MUTATION_PREFIXES = ['crm/customers', 'crm/stats'] as const;
-const JOB_MUTATION_PREFIXES = ['jobs/list', 'jobs/stats', 'mobile/jobs', 'mobile/workforce-dashboard'] as const;
-const QUOTE_MUTATION_PREFIXES = ['finance/quotes', 'finance/stats'] as const;
-const INVOICE_MUTATION_PREFIXES = ['finance/invoices', 'finance/stats'] as const;
-const PAYMENT_MUTATION_PREFIXES = ['finance/payments', 'finance/stats'] as const;
+const JOB_MUTATION_PREFIXES = [
+  'jobs/list',
+  'jobs/stats',
+  'mobile/jobs',
+  'mobile/workforce-dashboard',
+] as const;
+const QUOTE_MUTATION_PREFIXES = [
+  'finance/quotes',
+  'finance/stats',
+  'finance/jobs',
+  'finance/invoices',
+] as const;
+const INVOICE_MUTATION_PREFIXES = [
+  'finance/invoices',
+  'finance/stats',
+  'finance/jobs',
+  'finance/payments',
+] as const;
+const PAYMENT_MUTATION_PREFIXES = [
+  'finance/payments',
+  'finance/stats',
+  'finance/jobs',
+  'finance/invoices',
+] as const;
 const TEAM_MUTATION_PREFIXES = ['team/members', 'team/invites', 'team/roles'] as const;
 
-export function invalidateAfterCustomerMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterCustomerMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...CUSTOMER_MUTATION_PREFIXES]);
 }
 
-export function invalidateAfterJobMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterJobMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...JOB_MUTATION_PREFIXES]);
 }
 
-export function invalidateAfterQuoteMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterQuoteMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...QUOTE_MUTATION_PREFIXES]);
 }
 
-export function invalidateAfterInvoiceMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterInvoiceMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...INVOICE_MUTATION_PREFIXES]);
 }
 
-export function invalidateAfterPaymentMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterPaymentMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...PAYMENT_MUTATION_PREFIXES]);
 }
 
-export function invalidateAfterTeamMutation(scope: QueryCacheScope, accessToken: string | null): void {
+export function invalidateAfterTeamMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...TEAM_MUTATION_PREFIXES]);
 }
 

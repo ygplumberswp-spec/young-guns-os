@@ -19,7 +19,13 @@ const nodeTypeSchema = z.enum([
   'custom',
 ]);
 
-const approvalTypeSchema = z.enum(['single', 'multi_level', 'department', 'executive', 'delegated']);
+const approvalTypeSchema = z.enum([
+  'single',
+  'multi_level',
+  'department',
+  'executive',
+  'delegated',
+]);
 const actionTypeSchema = z.enum([
   'workflow_improvement',
   'automation_recommendation',
@@ -140,14 +146,19 @@ export function createEnterpriseAutomationStudioRouter({
 
   router.get('/workflows/:id/designer', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const designer = await enterpriseAutomationStudioService.getDesigner(companyId, getRouteParam(req.params.id));
+    const designer = await enterpriseAutomationStudioService.getDesigner(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     res.json({ data: { designer } });
   });
 
   router.put('/workflows/:id/designer', requireWrite, async (req, res) => {
     const parsed = designerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid designer payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid designer payload' } });
       return;
     }
 
@@ -166,14 +177,19 @@ export function createEnterpriseAutomationStudioRouter({
 
   router.get('/workflows/:id/versions', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const versions = await enterpriseAutomationStudioService.listVersions(companyId, getRouteParam(req.params.id));
+    const versions = await enterpriseAutomationStudioService.listVersions(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     res.json({ data: { versions } });
   });
 
   router.post('/workflows/:id/versions', requireWrite, async (req, res) => {
     const parsed = versionSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid version payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid version payload' } });
       return;
     }
 
@@ -193,7 +209,9 @@ export function createEnterpriseAutomationStudioRouter({
   router.post('/workflows/:id/test', requireWrite, async (req, res) => {
     const parsed = testRunSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid test payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid test payload' } });
       return;
     }
 
@@ -225,7 +243,9 @@ export function createEnterpriseAutomationStudioRouter({
   router.post('/workflows/:id/approval-chain', requireWrite, async (req, res) => {
     const parsed = approvalChainSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid approval chain payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid approval chain payload' } });
       return;
     }
 
@@ -257,7 +277,8 @@ export function createEnterpriseAutomationStudioRouter({
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     try {
       const { companyId } = getAuth(req);
-      const recommendations = await enterpriseAutomationStudioService.generateRecommendations(companyId);
+      const recommendations =
+        await enterpriseAutomationStudioService.generateRecommendations(companyId);
       res.status(201).json({ data: { recommendations } });
     } catch (error) {
       handleError(res, error);
@@ -273,7 +294,9 @@ export function createEnterpriseAutomationStudioRouter({
   router.post('/actions', requireWrite, async (req, res) => {
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
       return;
     }
 

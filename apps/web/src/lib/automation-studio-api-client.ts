@@ -55,18 +55,24 @@ export async function createAutomationStudioAction(
   accessToken: string,
   body: CreateAutomationStudioActionRequest,
 ) {
-  const data = await request<{ action: AutomationStudioPlatformActionSummary }>('/automation-studio/actions', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+  const data = await request<{ action: AutomationStudioPlatformActionSummary }>(
+    '/automation-studio/actions',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.action;
 }
 
 export async function fetchAutomationTestRuns(accessToken: string) {
-  const data = await request<{ testRuns: AutomationStudioTestRunSummary[] }>('/automation-studio/test-runs', {
-    accessToken,
-  });
+  const data = await request<{ testRuns: AutomationStudioTestRunSummary[] }>(
+    '/automation-studio/test-runs',
+    {
+      accessToken,
+    },
+  );
   return data.testRuns;
 }
 

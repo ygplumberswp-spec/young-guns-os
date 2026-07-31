@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { EnterpriseKnowledgeGraphDashboard, KnowledgeSemanticSearchResult } from '@titan/shared';
+import type {
+  EnterpriseKnowledgeGraphDashboard,
+  KnowledgeSemanticSearchResult,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   fetchKnowledgeGraphDashboard,
@@ -29,7 +32,10 @@ export function KnowledgeGraphPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessKnowledgeGraph(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageKnowledgeGraph(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageKnowledgeGraph(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -71,7 +77,9 @@ export function KnowledgeGraphPage() {
     try {
       const result = await syncKnowledgeGraph(accessToken);
       await loadDashboard();
-      setSuccess(`Graph synced — ${result.entityCount} entities, ${result.relationshipCount} new relationship(s).`);
+      setSuccess(
+        `Graph synced — ${result.entityCount} entities, ${result.relationshipCount} new relationship(s).`,
+      );
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sync knowledge graph');
     } finally {
@@ -114,7 +122,10 @@ export function KnowledgeGraphPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Knowledge Graph" description="You do not have permission to view the knowledge graph." />
+        <PageHeader
+          title="Knowledge Graph"
+          description="You do not have permission to view the knowledge graph."
+        />
       </div>
     );
   }
@@ -146,7 +157,11 @@ export function KnowledgeGraphPage() {
           <button
             key={tab.id}
             type="button"
-            className={activeTab === tab.id ? 'automation-nav__link automation-nav__link--active' : 'automation-nav__link'}
+            className={
+              activeTab === tab.id
+                ? 'automation-nav__link automation-nav__link--active'
+                : 'automation-nav__link'
+            }
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -167,9 +182,16 @@ export function KnowledgeGraphPage() {
             <StatCard label="Indexed records" value={String(dashboard.indexedCount)} />
             <StatCard
               label="Coverage"
-              value={dashboard.coverage.coveragePercent != null ? `${dashboard.coverage.coveragePercent}%` : '—'}
+              value={
+                dashboard.coverage.coveragePercent != null
+                  ? `${dashboard.coverage.coveragePercent}%`
+                  : '—'
+              }
             />
-            <StatCard label="Published articles" value={String(dashboard.knowledgeStats.publishedArticleCount)} />
+            <StatCard
+              label="Published articles"
+              value={String(dashboard.knowledgeStats.publishedArticleCount)}
+            />
             <StatCard label="Search activity" value={String(dashboard.searchActivityCount)} />
             <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
           </section>
@@ -181,13 +203,19 @@ export function KnowledgeGraphPage() {
         <div className="analytics-page__grid">
           <Panel title="Indexed entities">
             {dashboard.recentEntities.length === 0 ? (
-              <EmptyState title="No entities indexed" description="Sync the graph to index real module data." />
+              <EmptyState
+                title="No entities indexed"
+                description="Sync the graph to index real module data."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {dashboard.recentEntities.map((entity) => (
                   <li key={entity.id}>
                     <strong>{entity.label}</strong>
-                    <span className="page-muted"> · {formatEntityType(entity.entityType)} · {entity.classification}</span>
+                    <span className="page-muted">
+                      {' '}
+                      · {formatEntityType(entity.entityType)} · {entity.classification}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -212,7 +240,10 @@ export function KnowledgeGraphPage() {
 
       {activeTab === 'search' ? (
         <>
-          <form className="analytics-page__section-header" onSubmit={(event) => void handleSearch(event)}>
+          <form
+            className="analytics-page__section-header"
+            onSubmit={(event) => void handleSearch(event)}
+          >
             <input
               className="form-input"
               value={searchQuery}
@@ -225,7 +256,10 @@ export function KnowledgeGraphPage() {
           </form>
           <Panel title="Search results">
             {searchResults.length === 0 ? (
-              <EmptyState title="No results yet" description="Run a hybrid semantic search query." />
+              <EmptyState
+                title="No results yet"
+                description="Run a hybrid semantic search query."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {searchResults.map((result) => (
@@ -247,13 +281,19 @@ export function KnowledgeGraphPage() {
       {dashboard && activeTab === 'memory' ? (
         <Panel title="Organizational memory">
           {dashboard.recentMemory.length === 0 ? (
-            <EmptyState title="No memory entries yet" description="Memory entries are created from real business records and user-authored content." />
+            <EmptyState
+              title="No memory entries yet"
+              description="Memory entries are created from real business records and user-authored content."
+            />
           ) : (
             <ul className="analytics-page__run-list">
               {dashboard.recentMemory.map((entry) => (
                 <li key={entry.id}>
                   <strong>{entry.title}</strong>
-                  <span className="page-muted"> · {formatEntityType(entry.memoryType)} · v{entry.versionNumber}</span>
+                  <span className="page-muted">
+                    {' '}
+                    · {formatEntityType(entry.memoryType)} · v{entry.versionNumber}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -265,7 +305,9 @@ export function KnowledgeGraphPage() {
         <>
           {canWrite ? (
             <div className="analytics-page__section-header">
-              <span className="page-muted">Recommendations from real knowledge coverage analysis.</span>
+              <span className="page-muted">
+                Recommendations from real knowledge coverage analysis.
+              </span>
               <Button
                 size="sm"
                 variant="secondary"
@@ -278,12 +320,17 @@ export function KnowledgeGraphPage() {
           ) : null}
           <Panel title="AI knowledge intelligence">
             {dashboard.recommendations.length === 0 ? (
-              <EmptyState title="No recommendations yet" description="Generate recommendations when knowledge data is available." />
+              <EmptyState
+                title="No recommendations yet"
+                description="Generate recommendations when knowledge data is available."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {dashboard.recommendations.map((item) => (
                   <li key={item.id}>
-                    <strong>[{item.priority}] {item.title}</strong>
+                    <strong>
+                      [{item.priority}] {item.title}
+                    </strong>
                     <p className="page-muted">{item.recommendation}</p>
                   </li>
                 ))}

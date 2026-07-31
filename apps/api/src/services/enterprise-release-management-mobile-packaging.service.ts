@@ -27,7 +27,9 @@ export class EnterpriseReleaseManagementMobilePackagingService {
     const iosDevices = dashboard.devices.filter((d) => d.platform === 'ios');
     const androidDevices = dashboard.devices.filter((d) => d.platform === 'android');
     const hasMediaUploads = dashboard.recentMediaAssets.length > 0;
-    const hasGpsCaptures = dashboard.recentMediaAssets.some((a) => a.latitude != null && a.longitude != null);
+    const hasGpsCaptures = dashboard.recentMediaAssets.some(
+      (a) => a.latitude != null && a.longitude != null,
+    );
 
     const findings: Array<Record<string, unknown>> = [
       {
@@ -93,9 +95,11 @@ export class EnterpriseReleaseManagementMobilePackagingService {
     ];
 
     const warningCount = findings.filter((f) => f.severity === 'warning').length;
-    const status: RlmValidationStatus = warningCount > 3 ? 'warning' : warningCount > 0 ? 'warning' : 'passed';
+    const status: RlmValidationStatus =
+      warningCount > 3 ? 'warning' : warningCount > 0 ? 'warning' : 'passed';
     const iosReady = iosDevices.length > 0 && dashboard.platformConfig.pushNotificationsEnabled;
-    const androidReady = androidDevices.length > 0 && dashboard.platformConfig.pushNotificationsEnabled;
+    const androidReady =
+      androidDevices.length > 0 && dashboard.platformConfig.pushNotificationsEnabled;
 
     const [created] = await this.db
       .insert(rlmMobilePackagingReviews)
@@ -116,7 +120,9 @@ export class EnterpriseReleaseManagementMobilePackagingService {
   }
 }
 
-function toSummary(row: typeof rlmMobilePackagingReviews.$inferSelect): RlmMobilePackagingReviewSummary {
+function toSummary(
+  row: typeof rlmMobilePackagingReviews.$inferSelect,
+): RlmMobilePackagingReviewSummary {
   return {
     id: row.id,
     reviewKey: row.reviewKey,

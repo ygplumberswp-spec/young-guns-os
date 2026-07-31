@@ -1,11 +1,18 @@
 import { Link, useLocation } from 'wouter';
 
 const tabs = [
-  { href: '/documents', label: 'Documents', match: (location: string) =>
+  {
+    href: '/documents',
+    label: 'Documents',
+    match: (location: string) =>
       location === '/documents' ||
-      (location.startsWith('/documents/') && !location.startsWith('/documents/categories')) },
-  { href: '/documents/categories', label: 'Categories', match: (location: string) =>
-      location.startsWith('/documents/categories') },
+      (location.startsWith('/documents/') && !location.startsWith('/documents/categories')),
+  },
+  {
+    href: '/documents/categories',
+    label: 'Categories',
+    match: (location: string) => location.startsWith('/documents/categories'),
+  },
 ];
 
 export function DocumentsNav() {

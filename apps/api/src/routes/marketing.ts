@@ -7,9 +7,30 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { requireAnyPermission } from '../middleware/rbac.js';
 
 const campaignStatusSchema = z.enum(['draft', 'active', 'paused', 'completed', 'cancelled']);
-const campaignTypeSchema = z.enum(['retention', 'maintenance', 'seasonal', 'engagement', 'acquisition', 'custom']);
-const segmentTypeSchema = z.enum(['high_value', 'repeat_service', 'dormant', 'new_customer', 'high_engagement', 'custom']);
-const activityTypeSchema = z.enum(['email_draft', 'content', 'outreach', 'social_draft', 'note', 'other']);
+const campaignTypeSchema = z.enum([
+  'retention',
+  'maintenance',
+  'seasonal',
+  'engagement',
+  'acquisition',
+  'custom',
+]);
+const segmentTypeSchema = z.enum([
+  'high_value',
+  'repeat_service',
+  'dormant',
+  'new_customer',
+  'high_engagement',
+  'custom',
+]);
+const activityTypeSchema = z.enum([
+  'email_draft',
+  'content',
+  'outreach',
+  'social_draft',
+  'note',
+  'other',
+]);
 const recommendationStatusSchema = z.enum(['pending', 'accepted', 'dismissed', 'completed']);
 
 const createSegmentSchema = z.object({
@@ -93,7 +114,9 @@ export function createMarketingRouter({
   router.post('/segments', requireWrite, async (req, res) => {
     const parsed = createSegmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid segment payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid segment payload' } });
       return;
     }
 
@@ -109,13 +132,19 @@ export function createMarketingRouter({
   router.patch('/segments/:id', requireWrite, async (req, res) => {
     const parsed = updateSegmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid segment payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid segment payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const segment = await marketingService.updateSegment(companyId, getRouteParam(req.params.id), parsed.data);
+      const segment = await marketingService.updateSegment(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { segment } });
     } catch (error) {
       handleMarketingError(res, error);
@@ -131,7 +160,9 @@ export function createMarketingRouter({
   router.post('/campaigns', requireWrite, async (req, res) => {
     const parsed = createCampaignSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign payload' } });
       return;
     }
 
@@ -147,7 +178,9 @@ export function createMarketingRouter({
   router.patch('/campaigns/:id', requireWrite, async (req, res) => {
     const parsed = updateCampaignSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign payload' } });
       return;
     }
 
@@ -174,7 +207,9 @@ export function createMarketingRouter({
   router.post('/activities', requireWrite, async (req, res) => {
     const parsed = createActivitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
       return;
     }
 
@@ -206,7 +241,9 @@ export function createMarketingRouter({
   router.patch('/recommendations/:id', requireWrite, async (req, res) => {
     const parsed = updateRecommendationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid recommendation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid recommendation payload' } });
       return;
     }
 

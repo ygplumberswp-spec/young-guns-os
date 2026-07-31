@@ -14,6 +14,7 @@ export type BusinessEventType =
   | 'job.scheduled'
   | 'job.status_changed'
   | 'job.completed'
+  | 'job.material_used'
   | 'quote.created'
   | 'invoice.created'
   | 'payment.received'
@@ -26,6 +27,7 @@ export type BusinessEventType =
   | 'quote.accepted'
   | 'lead.created'
   | 'lead.converted'
+  | 'dispatch.handoff'
   | 'procurement.purchase_order_approved'
   | 'voice.call.completed'
   | 'support.escalated'
@@ -39,6 +41,7 @@ export type WorkflowTriggerType =
   | 'job_status_changed'
   | 'job_scheduled'
   | 'job_completed'
+  | 'job_material_used'
   | 'customer_created'
   | 'customer_updated'
   | 'quote_created'
@@ -68,6 +71,7 @@ export const WORKFLOW_TRIGGER_TYPE_OPTIONS: Array<{ value: WorkflowTriggerType; 
   { value: 'job_scheduled', label: 'Job scheduled' },
   { value: 'job_status_changed', label: 'Job status changed' },
   { value: 'job_completed', label: 'Job completed' },
+  { value: 'job_material_used', label: 'Job material used (for future stock decrement)' },
   { value: 'quote_created', label: 'Quote created' },
   { value: 'invoice_created', label: 'Invoice created' },
   { value: 'payment_received', label: 'Payment received' },
@@ -144,13 +148,7 @@ export const WORKFLOW_ACTION_TYPE_OPTIONS: Array<{ value: WorkflowActionType; la
 ];
 
 export type WorkflowConditionOperator =
-  | 'equals'
-  | 'not_equals'
-  | 'exists'
-  | 'not_exists'
-  | 'contains'
-  | 'greater_than'
-  | 'less_than';
+  'equals' | 'not_equals' | 'exists' | 'not_exists' | 'contains' | 'greater_than' | 'less_than';
 
 export const WORKFLOW_CONDITION_OPERATOR_OPTIONS: Array<{
   value: WorkflowConditionOperator;
@@ -174,36 +172,16 @@ export const WORKFLOW_CONDITION_FIELD_OPTIONS: Array<{ value: string; label: str
   { value: 'payment.amountCents', label: 'Payment amount' },
 ];
 
-export type WorkflowExecutionStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped';
+export type WorkflowExecutionStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export type WorkflowRunStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped'
-  | 'awaiting_approval';
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'awaiting_approval';
 
 export type WorkflowStepStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped'
-  | 'awaiting_approval';
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'awaiting_approval';
 
 export type WorkflowStepResultStatus =
-  | 'pending'
-  | 'completed'
-  | 'failed'
-  | 'awaiting_approval'
-  | 'approved'
-  | 'rejected';
+  'pending' | 'completed' | 'failed' | 'awaiting_approval' | 'approved' | 'rejected';
 
 export const WORKFLOW_EXECUTION_STATUS_OPTIONS: Array<{
   value: WorkflowExecutionStatus;
@@ -395,7 +373,8 @@ export type WorkflowTemplateCategory =
   | 'executive_reporting'
   | 'custom';
 
-export type WorkflowScheduleType = 'cron' | 'daily' | 'weekly' | 'monthly' | 'interval' | 'one_time';
+export type WorkflowScheduleType =
+  'cron' | 'daily' | 'weekly' | 'monthly' | 'interval' | 'one_time';
 
 export type WorkflowTemplateSummary = {
   id: string;
@@ -488,7 +467,9 @@ export type CreateWorkflowScheduleRequest = {
   enabled?: boolean;
 };
 
-export type UpdateWorkflowScheduleRequest = Partial<Omit<CreateWorkflowScheduleRequest, 'workflowId'>>;
+export type UpdateWorkflowScheduleRequest = Partial<
+  Omit<CreateWorkflowScheduleRequest, 'workflowId'>
+>;
 
 export type SimulateWorkflowRequest = {
   payload?: Record<string, unknown>;
@@ -515,6 +496,7 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'job.scheduled': 'job_scheduled',
   'job.status_changed': 'job_status_changed',
   'job.completed': 'job_completed',
+  'job.material_used': 'job_material_used',
   'quote.created': 'quote_created',
   'invoice.created': 'invoice_created',
   'payment.received': 'payment_received',
@@ -527,6 +509,7 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'quote.accepted': 'quote_accepted',
   'lead.created': 'lead_created',
   'lead.converted': 'lead_converted',
+  'dispatch.handoff': 'job_scheduled',
   'procurement.purchase_order_approved': 'purchase_order_approved',
   'voice.call.completed': 'voice_call_completed',
   'support.escalated': 'support_escalated',

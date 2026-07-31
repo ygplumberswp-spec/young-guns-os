@@ -1,5 +1,8 @@
 import { request, ApiClientError } from './api-client';
-import type { EnterpriseWorkforceIntelligenceDashboard, UpdateWiPlatformConfigRequest } from '@titan/shared';
+import type {
+  EnterpriseWorkforceIntelligenceDashboard,
+  UpdateWiPlatformConfigRequest,
+} from '@titan/shared';
 
 export { ApiClientError as EnterpriseWorkforceIntelligenceApiClientError };
 
@@ -20,10 +23,13 @@ export async function captureWorkforceAnalytics(accessToken: string) {
 }
 
 export async function captureTechnicianPerformance(accessToken: string) {
-  const data = await request<{ snapshots: unknown[] }>('/enterprise-workforce/performance/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ snapshots: unknown[] }>(
+    '/enterprise-workforce/performance/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.snapshots;
 }
 
@@ -51,7 +57,10 @@ export async function approveLeaveApplication(accessToken: string, applicationId
   return data.application;
 }
 
-export async function updateWorkforcePlatformConfig(accessToken: string, body: UpdateWiPlatformConfigRequest) {
+export async function updateWorkforcePlatformConfig(
+  accessToken: string,
+  body: UpdateWiPlatformConfigRequest,
+) {
   const data = await request<{ platformConfig: unknown }>('/enterprise-workforce/platform-config', {
     method: 'PUT',
     accessToken,
@@ -61,11 +70,15 @@ export async function updateWorkforcePlatformConfig(accessToken: string, body: U
 }
 
 export async function fetchManagerWorkspace(accessToken: string) {
-  const data = await request<{ workspace: unknown }>('/enterprise-workforce/manager', { accessToken });
+  const data = await request<{ workspace: unknown }>('/enterprise-workforce/manager', {
+    accessToken,
+  });
   return data.workspace;
 }
 
 export async function fetchSelfService(accessToken: string) {
-  const data = await request<{ selfService: unknown }>('/enterprise-workforce/self-service', { accessToken });
+  const data = await request<{ selfService: unknown }>('/enterprise-workforce/self-service', {
+    accessToken,
+  });
   return data.selfService;
 }

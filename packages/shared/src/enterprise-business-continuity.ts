@@ -10,11 +10,7 @@ export type BcRecoveryScenario =
   | 'infrastructure_outage';
 
 export type BcRestoreScope =
-  | 'point_in_time'
-  | 'full_tenant'
-  | 'module'
-  | 'document'
-  | 'configuration';
+  'point_in_time' | 'full_tenant' | 'module' | 'document' | 'configuration';
 
 export type BcPlatformConfigSummary = {
   backupPolicy: Record<string, unknown>;
@@ -270,7 +266,14 @@ export type CreateBcRestoreRequestRequest = {
 };
 
 export type UpdateBcRestoreRequestRequest = {
-  status?: 'pending_approval' | 'approved' | 'rejected' | 'in_progress' | 'completed' | 'failed' | 'cancelled';
+  status?:
+    | 'pending_approval'
+    | 'approved'
+    | 'rejected'
+    | 'in_progress'
+    | 'completed'
+    | 'failed'
+    | 'cancelled';
 };
 
 export type CreateBcRecoveryPlanRequest = {

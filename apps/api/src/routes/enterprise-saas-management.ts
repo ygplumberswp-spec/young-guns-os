@@ -139,7 +139,11 @@ function getRouteParam(value: string | string[]) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseSaasManagementError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'FORBIDDEN' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'FORBIDDEN'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -148,7 +152,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requireRead = requireAnyPermission(
     'saas_management:read',
     'saas_management:manage',
@@ -157,8 +164,17 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
     'platform:read',
     'platform:manage',
   );
-  const requireWrite = requireAnyPermission('saas_management:write', 'saas_management:manage', 'saas:manage', 'platform:manage');
-  const requireManage = requireAnyPermission('saas_management:manage', 'saas:manage', 'platform:manage');
+  const requireWrite = requireAnyPermission(
+    'saas_management:write',
+    'saas_management:manage',
+    'saas:manage',
+    'platform:manage',
+  );
+  const requireManage = requireAnyPermission(
+    'saas_management:manage',
+    'saas:manage',
+    'platform:manage',
+  );
 
   router.use(requireStaffAuth);
 
@@ -175,7 +191,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/owner-billing', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const ownerBilling = await deps.enterpriseSaasManagementService.getOwnerBillingSummary(auth.companyId);
+      const ownerBilling = await deps.enterpriseSaasManagementService.getOwnerBillingSummary(
+        auth.companyId,
+      );
       res.json({ data: { ownerBilling } });
     } catch (error) {
       handleError(error, res);
@@ -185,7 +203,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseSaasManagementService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseSaasManagementService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -195,11 +215,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
-      const platformConfig = await deps.enterpriseSaasManagementService.updatePlatformConfig(staffScope(req), parsed.data);
+      const platformConfig = await deps.enterpriseSaasManagementService.updatePlatformConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -232,7 +257,10 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const license = await deps.enterpriseSaasManagementService.createLicense(staffScope(req), parsed.data);
+      const license = await deps.enterpriseSaasManagementService.createLicense(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { license } });
     } catch (error) {
       handleError(error, res);
@@ -279,7 +307,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/payment-providers', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const paymentProviders = await deps.enterpriseSaasManagementService.listPaymentProviders(auth.companyId);
+      const paymentProviders = await deps.enterpriseSaasManagementService.listPaymentProviders(
+        auth.companyId,
+      );
       res.json({ data: { paymentProviders } });
     } catch (error) {
       handleError(error, res);
@@ -289,11 +319,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/payment-providers', requireManage, async (req, res) => {
     const parsed = paymentProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid payment provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid payment provider' } });
       return;
     }
     try {
-      const provider = await deps.enterpriseSaasManagementService.createPaymentProvider(staffScope(req), parsed.data);
+      const provider = await deps.enterpriseSaasManagementService.createPaymentProvider(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
@@ -303,7 +338,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/billing-policies', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const billingPolicies = await deps.enterpriseSaasManagementService.listBillingPolicies(auth.companyId);
+      const billingPolicies = await deps.enterpriseSaasManagementService.listBillingPolicies(
+        auth.companyId,
+      );
       res.json({ data: { billingPolicies } });
     } catch (error) {
       handleError(error, res);
@@ -313,11 +350,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/billing-policies', requireManage, async (req, res) => {
     const parsed = billingPolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid billing policy' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid billing policy' } });
       return;
     }
     try {
-      const policy = await deps.enterpriseSaasManagementService.createBillingPolicy(staffScope(req), parsed.data);
+      const policy = await deps.enterpriseSaasManagementService.createBillingPolicy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { policy } });
     } catch (error) {
       handleError(error, res);
@@ -341,7 +383,10 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const coupon = await deps.enterpriseSaasManagementService.createCoupon(staffScope(req), parsed.data);
+      const coupon = await deps.enterpriseSaasManagementService.createCoupon(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { coupon } });
     } catch (error) {
       handleError(error, res);
@@ -365,7 +410,10 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const addOn = await deps.enterpriseSaasManagementService.createAddOn(staffScope(req), parsed.data);
+      const addOn = await deps.enterpriseSaasManagementService.createAddOn(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { addOn } });
     } catch (error) {
       handleError(error, res);
@@ -389,7 +437,10 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const partner = await deps.enterpriseSaasManagementService.createPartner(staffScope(req), parsed.data);
+      const partner = await deps.enterpriseSaasManagementService.createPartner(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { partner } });
     } catch (error) {
       handleError(error, res);
@@ -399,7 +450,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/partner-commissions', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const commissions = await deps.enterpriseSaasManagementService.listPartnerCommissions(auth.companyId);
+      const commissions = await deps.enterpriseSaasManagementService.listPartnerCommissions(
+        auth.companyId,
+      );
       res.json({ data: { commissions } });
     } catch (error) {
       handleError(error, res);
@@ -409,7 +462,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/usage-thresholds', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const usageThresholds = await deps.enterpriseSaasManagementService.listUsageThresholds(auth.companyId);
+      const usageThresholds = await deps.enterpriseSaasManagementService.listUsageThresholds(
+        auth.companyId,
+      );
       res.json({ data: { usageThresholds } });
     } catch (error) {
       handleError(error, res);
@@ -419,11 +474,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/usage-thresholds', requireManage, async (req, res) => {
     const parsed = usageThresholdSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid usage threshold' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid usage threshold' } });
       return;
     }
     try {
-      const threshold = await deps.enterpriseSaasManagementService.createUsageThreshold(staffScope(req), parsed.data);
+      const threshold = await deps.enterpriseSaasManagementService.createUsageThreshold(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { threshold } });
     } catch (error) {
       handleError(error, res);
@@ -433,7 +493,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/usage-monitoring', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const usageMonitoring = await deps.enterpriseSaasManagementService.getUsageMonitoring(auth.companyId);
+      const usageMonitoring = await deps.enterpriseSaasManagementService.getUsageMonitoring(
+        auth.companyId,
+      );
       res.json({ data: { usageMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -442,8 +504,12 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
 
   router.post('/usage/capture', requireWrite, async (req, res) => {
     try {
-      const targetCompanyId = typeof req.body?.targetCompanyId === 'string' ? req.body.targetCompanyId : undefined;
-      const usageMonitoring = await deps.enterpriseSaasManagementService.captureUsageSnapshot(staffScope(req), targetCompanyId);
+      const targetCompanyId =
+        typeof req.body?.targetCompanyId === 'string' ? req.body.targetCompanyId : undefined;
+      const usageMonitoring = await deps.enterpriseSaasManagementService.captureUsageSnapshot(
+        staffScope(req),
+        targetCompanyId,
+      );
       res.json({ data: { usageMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -453,7 +519,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/feature-access-rules', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const featureAccessRules = await deps.enterpriseSaasManagementService.listFeatureAccessRules(auth.companyId);
+      const featureAccessRules = await deps.enterpriseSaasManagementService.listFeatureAccessRules(
+        auth.companyId,
+      );
       res.json({ data: { featureAccessRules } });
     } catch (error) {
       handleError(error, res);
@@ -463,11 +531,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/feature-access-rules', requireManage, async (req, res) => {
     const parsed = featureAccessSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feature access rule' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feature access rule' } });
       return;
     }
     try {
-      const rule = await deps.enterpriseSaasManagementService.createFeatureAccessRule(staffScope(req), parsed.data);
+      const rule = await deps.enterpriseSaasManagementService.createFeatureAccessRule(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { rule } });
     } catch (error) {
       handleError(error, res);
@@ -477,7 +550,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/notifications', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const notifications = await deps.enterpriseSaasManagementService.listNotifications(auth.companyId);
+      const notifications = await deps.enterpriseSaasManagementService.listNotifications(
+        auth.companyId,
+      );
       res.json({ data: { notifications } });
     } catch (error) {
       handleError(error, res);
@@ -487,7 +562,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/billing-health', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const billingHealth = await deps.enterpriseSaasManagementService.getBillingHealth(auth.companyId);
+      const billingHealth = await deps.enterpriseSaasManagementService.getBillingHealth(
+        auth.companyId,
+      );
       res.json({ data: { billingHealth } });
     } catch (error) {
       handleError(error, res);
@@ -505,7 +582,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseSaasManagementService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseSaasManagementService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -515,7 +594,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.get('/aura-context', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const auraContext = await deps.enterpriseSaasManagementService.buildAuraContext(auth.companyId);
+      const auraContext = await deps.enterpriseSaasManagementService.buildAuraContext(
+        auth.companyId,
+      );
       res.json({ data: { auraContext } });
     } catch (error) {
       handleError(error, res);
@@ -547,11 +628,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/tenants/provision', requireManage, async (req, res) => {
     const parsed = provisionTenantSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid tenant provision request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid tenant provision request' } });
       return;
     }
     try {
-      const tenant = await deps.enterpriseSaasManagementService.provisionTenant(staffScope(req), parsed.data);
+      const tenant = await deps.enterpriseSaasManagementService.provisionTenant(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { tenant } });
     } catch (error) {
       handleError(error, res);
@@ -565,7 +651,10 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const plan = await deps.enterpriseSaasManagementService.createPlan(staffScope(req), parsed.data);
+      const plan = await deps.enterpriseSaasManagementService.createPlan(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { plan } });
     } catch (error) {
       handleError(error, res);
@@ -575,11 +664,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/subscriptions/upgrade', requireWrite, async (req, res) => {
     const parsed = changePlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid upgrade request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid upgrade request' } });
       return;
     }
     try {
-      const subscription = await deps.enterpriseSaasManagementService.upgradePlan(staffScope(req), parsed.data);
+      const subscription = await deps.enterpriseSaasManagementService.upgradePlan(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { subscription } });
     } catch (error) {
       handleError(error, res);
@@ -589,11 +683,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/subscriptions/downgrade', requireWrite, async (req, res) => {
     const parsed = changePlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid downgrade request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid downgrade request' } });
       return;
     }
     try {
-      const subscription = await deps.enterpriseSaasManagementService.downgradePlan(staffScope(req), parsed.data);
+      const subscription = await deps.enterpriseSaasManagementService.downgradePlan(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { subscription } });
     } catch (error) {
       handleError(error, res);
@@ -602,7 +701,9 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
 
   router.post('/subscriptions/cancel', requireWrite, async (req, res) => {
     try {
-      const subscription = await deps.enterpriseSaasManagementService.cancelSubscription(staffScope(req));
+      const subscription = await deps.enterpriseSaasManagementService.cancelSubscription(
+        staffScope(req),
+      );
       res.json({ data: { subscription } });
     } catch (error) {
       handleError(error, res);
@@ -612,11 +713,16 @@ export function createEnterpriseSaasManagementRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     const parsed = draftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
       return;
     }
     try {
-      const actionDraft = await deps.enterpriseSaasManagementService.createActionDraft(staffScope(req), parsed.data);
+      const actionDraft = await deps.enterpriseSaasManagementService.createActionDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);

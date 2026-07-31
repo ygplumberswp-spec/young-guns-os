@@ -28,26 +28,35 @@ export async function syncDeveloperAlerts(accessToken: string) {
 }
 
 export async function capturePublicDeveloperAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-public-developer/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-public-developer/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
 export async function capturePublicApiStatus(accessToken: string) {
-  const data = await request<{ apiStatus: unknown }>('/enterprise-public-developer/api-status/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ apiStatus: unknown }>(
+    '/enterprise-public-developer/api-status/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.apiStatus;
 }
 
 export async function generatePublicOpenApiSpec(accessToken: string) {
-  const data = await request<{ openapiSpec: unknown }>('/enterprise-public-developer/openapi/generate', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ openapiSpec: unknown }>(
+    '/enterprise-public-developer/openapi/generate',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.openapiSpec;
 }
 
@@ -61,9 +70,12 @@ export async function generatePublicSdk(accessToken: string, body: GeneratePdpSd
 }
 
 export async function fetchPublicApiScopes(accessToken: string) {
-  const data = await request<{ apiScopes: PdpApiScopeSummary[] }>('/enterprise-public-developer/api-scopes', {
-    accessToken,
-  });
+  const data = await request<{ apiScopes: PdpApiScopeSummary[] }>(
+    '/enterprise-public-developer/api-scopes',
+    {
+      accessToken,
+    },
+  );
   return data.apiScopes;
 }
 
@@ -76,10 +88,9 @@ export async function fetchPublicWebhookEventTypes(accessToken: string) {
 }
 
 export async function fetchPublicApiKeys(accessToken: string) {
-  const data = await request<{ apiKeys: Array<{ id: string; name: string; keyPrefix: string; status: string }> }>(
-    '/enterprise-public-developer/api-keys',
-    { accessToken },
-  );
+  const data = await request<{
+    apiKeys: Array<{ id: string; name: string; keyPrefix: string; status: string }>;
+  }>('/enterprise-public-developer/api-keys', { accessToken });
   return data.apiKeys;
 }
 
@@ -114,9 +125,12 @@ export async function fetchPublicRateLimitPolicies(accessToken: string) {
 }
 
 export async function fetchPublicDeveloperAuditLogs(accessToken: string) {
-  const data = await request<{ auditLogs: PdpAuditLogSummary[] }>('/enterprise-public-developer/audit-logs', {
-    accessToken,
-  });
+  const data = await request<{ auditLogs: PdpAuditLogSummary[] }>(
+    '/enterprise-public-developer/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }
 

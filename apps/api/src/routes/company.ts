@@ -37,6 +37,31 @@ const preferencesSchema = z
     brandAccentColor: z.string().trim().max(20).optional(),
     logoFileId: z.string().uuid().nullable().optional(),
     profileImageFileId: z.string().uuid().nullable().optional(),
+    /** UX-I / UX-035 — Cape Town service geography + COC defaults (JSON prefs). */
+    serviceGeography: z
+      .object({
+        primaryCity: z.string().trim().min(1).max(120),
+        primaryProvince: z.string().trim().min(1).max(120),
+        serviceSuburbs: z.array(z.string().trim().min(1).max(120)).max(200),
+        outsideAreaPolicy: z.enum(['quote_travel', 'decline', 'manual_review']),
+        notes: z.string().trim().max(2000).nullable().optional(),
+      })
+      .optional(),
+    cocSettings: z
+      .object({
+        defaultApplicability: z.enum([
+          'not_applicable',
+          'may_apply',
+          'required_for_gas_work',
+          'required_for_electrical_work',
+          'pending_classification',
+        ]),
+        gasWorkRequiresCoc: z.boolean(),
+        electricalWorkRequiresCoc: z.boolean(),
+        sansReferenceNote: z.string().trim().max(4000),
+        documentLabel: z.string().trim().min(1).max(200),
+      })
+      .optional(),
   })
   .strict();
 

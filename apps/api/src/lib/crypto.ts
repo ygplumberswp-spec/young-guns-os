@@ -13,9 +13,11 @@ export function encryptSecret(plaintext: string, encryptionKey: string): string 
   const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
 
-  return [iv.toString('base64url'), tag.toString('base64url'), encrypted.toString('base64url')].join(
-    '.',
-  );
+  return [
+    iv.toString('base64url'),
+    tag.toString('base64url'),
+    encrypted.toString('base64url'),
+  ].join('.');
 }
 
 export function decryptSecret(payload: string, encryptionKey: string): string {
@@ -220,4 +222,27 @@ export function decryptWhatsappCredentials(
 
 export function hashOAuthState(state: string): string {
   return createHash('sha256').update(state).digest('hex');
+}
+
+export type N8nStoredCredentials = {
+  apiKey: string;
+  webhookSecret: string;
+};
+
+export function encryptN8nCredentials(
+  credentials: N8nStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptN8nCredentials(
+  payload: string,
+  encryptionKey: string,
+): N8nStoredCredentials {
+  const parsed = decryptJsonCredentials<N8nStoredCredentials>(payload, encryptionKey);
+  if (!parsed.apiKey || !parsed.webhookSecret) {
+    throw new Error('Invalid stored n8n credentials');
+  }
+  return parsed;
 }

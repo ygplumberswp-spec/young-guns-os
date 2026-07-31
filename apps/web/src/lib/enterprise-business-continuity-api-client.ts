@@ -15,7 +15,9 @@ export async function fetchBusinessContinuityDashboard(
   return data.dashboard;
 }
 
-export async function syncContinuityAlerts(accessToken: string): Promise<BcContinuityAlertSummary[]> {
+export async function syncContinuityAlerts(
+  accessToken: string,
+): Promise<BcContinuityAlertSummary[]> {
   const data = await request<{ continuityAlerts: BcContinuityAlertSummary[] }>(
     '/enterprise-business-continuity/continuity-alerts/sync',
     { accessToken, method: 'POST' },
@@ -24,16 +26,24 @@ export async function syncContinuityAlerts(accessToken: string): Promise<BcConti
 }
 
 export async function captureBusinessContinuityAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-business-continuity/analytics/capture', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-business-continuity/analytics/capture',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.analytics;
 }
 
-export async function fetchBusinessContinuityAuditLogs(accessToken: string): Promise<BcAuditLogSummary[]> {
-  const data = await request<{ auditLogs: BcAuditLogSummary[] }>('/enterprise-business-continuity/audit-logs', {
-    accessToken,
-  });
+export async function fetchBusinessContinuityAuditLogs(
+  accessToken: string,
+): Promise<BcAuditLogSummary[]> {
+  const data = await request<{ auditLogs: BcAuditLogSummary[] }>(
+    '/enterprise-business-continuity/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }

@@ -135,7 +135,10 @@ export function CapabilityBuilderPage() {
   if (!canView) {
     return (
       <div className="agents-page page-shell">
-        <PageHeader title="Create capability" description="You do not have permission to create capabilities." />
+        <PageHeader
+          title="Create capability"
+          description="You do not have permission to create capabilities."
+        />
       </div>
     );
   }
@@ -171,7 +174,8 @@ export function CapabilityBuilderPage() {
       {step === 'describe' ? (
         <Panel title="Describe the capability you need">
           <p className="page-muted">
-            Example: Add an agent that follows up unpaid invoices, or monitors tenders for my business.
+            Example: Add an agent that follows up unpaid invoices, or monitors tenders for my
+            business.
           </p>
           <label className="titan-input-group">
             <span className="titan-input-label">What should AURA help with?</span>
@@ -200,8 +204,15 @@ export function CapabilityBuilderPage() {
             : null}
 
           <div className="panel-actions">
-            <Button disabled={isWorking || description.trim().length < 8} onClick={() => void handleDiscover()}>
-              {isWorking ? 'Analysing…' : discovery && !discovery.complete ? 'Continue' : 'Analyse request'}
+            <Button
+              disabled={isWorking || description.trim().length < 8}
+              onClick={() => void handleDiscover()}
+            >
+              {isWorking
+                ? 'Analysing…'
+                : discovery && !discovery.complete
+                  ? 'Continue'
+                  : 'Analyse request'}
             </Button>
           </div>
         </Panel>
@@ -225,7 +236,10 @@ export function CapabilityBuilderPage() {
           <ul className="simple-list">
             <li>Approval mode: Ask before external actions</li>
             <li>Sensitive actions always require human approval</li>
-            <li>Role scope: {((capability.configuration.roleScope as string[]) ?? []).join(', ') || 'Owner'}</li>
+            <li>
+              Role scope:{' '}
+              {((capability.configuration.roleScope as string[]) ?? []).join(', ') || 'Owner'}
+            </li>
           </ul>
           <div className="panel-actions">
             <Button variant="secondary" onClick={() => setStep('proposal')}>
@@ -241,8 +255,8 @@ export function CapabilityBuilderPage() {
       {step === 'test' && capability ? (
         <Panel title="Test capability">
           <p className="page-muted">
-            AURA runs safe tenant-scoped checks. No real customer messages, financial writes or external actions are
-            performed.
+            AURA runs safe tenant-scoped checks. No real customer messages, financial writes or
+            external actions are performed.
           </p>
           {testResult ? (
             <div className={`capability-test-result capability-test-result--${testResult.result}`}>
@@ -270,8 +284,8 @@ export function CapabilityBuilderPage() {
       {step === 'activate' && capability ? (
         <Panel title="Activate capability">
           <p className="page-muted">
-            Once activated, {capability.name} will appear in AURA Capabilities and become available to AURA routing
-            for matching requests.
+            Once activated, {capability.name} will appear in AURA Capabilities and become available
+            to AURA routing for matching requests.
           </p>
           {testResult ? <p className="page-muted">Last test: {testResult.summary}</p> : null}
           {capability.capabilityType === 'code_backed' ? (
@@ -294,7 +308,9 @@ export function CapabilityBuilderPage() {
         </Panel>
       ) : null}
 
-      {isWorking && step === 'describe' ? <LoadingState label="AURA is analysing your request…" /> : null}
+      {isWorking && step === 'describe' ? (
+        <LoadingState label="AURA is analysing your request…" />
+      ) : null}
     </div>
   );
 }
@@ -351,7 +367,11 @@ function ProposalPanel({
             <Button disabled={!canManage || isWorking} onClick={onExtend}>
               Extend existing capability
             </Button>
-            <Button variant="secondary" disabled={!canManage || isWorking} onClick={onCreateSeparate}>
+            <Button
+              variant="secondary"
+              disabled={!canManage || isWorking}
+              onClick={onCreateSeparate}
+            >
               Create separate capability
             </Button>
           </>
@@ -390,7 +410,12 @@ function ProposalSummary({ proposal }: { proposal: CapabilityProposal }) {
       </div>
       <div>
         <dt>May</dt>
-        <dd>{proposal.allowedActions.filter((a) => a.allowed).map((a) => a.label).join(', ')}</dd>
+        <dd>
+          {proposal.allowedActions
+            .filter((a) => a.allowed)
+            .map((a) => a.label)
+            .join(', ')}
+        </dd>
       </div>
       <div>
         <dt>May not</dt>

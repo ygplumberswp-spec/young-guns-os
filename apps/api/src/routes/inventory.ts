@@ -7,11 +7,14 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { requireAnyPermission } from '../middleware/rbac.js';
 
 const itemStatusSchema = z.enum(['active', 'inactive']);
+const locationTypeSchema = z.enum(['warehouse', 'van', 'other']);
 
 const createLocationSchema = z.object({
   name: z.string().trim().min(1).max(200),
   code: z.string().trim().max(50).optional().nullable(),
   address: z.string().trim().max(500).optional().nullable(),
+  locationType: locationTypeSchema.optional(),
+  vehicleId: z.string().uuid().optional().nullable(),
   isDefault: z.boolean().optional(),
 });
 
@@ -21,6 +24,8 @@ const createItemSchema = z.object({
   description: z.string().trim().max(5000).optional().nullable(),
   unit: z.string().trim().min(1).max(50).optional(),
   reorderLevel: z.number().int().min(0).optional(),
+  unitCostCents: z.number().int().min(0).optional(),
+  sellPriceCents: z.number().int().min(0).optional(),
   status: itemStatusSchema.optional(),
 });
 
@@ -57,11 +62,15 @@ export function createInventoryRouter({
     next();
   });
 
-  router.get('/stats', requireAnyPermission('inventory:read', 'inventory:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stats = await inventoryService.getStats(companyId);
-    res.json({ data: stats });
-  });
+  router.get(
+    '/stats',
+    requireAnyPermission('inventory:read', 'inventory:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const stats = await inventoryService.getStats(companyId);
+      res.json({ data: stats });
+    },
+  );
 
   router.get(
     '/locations',
@@ -96,11 +105,19 @@ export function createInventoryRouter({
     }
   });
 
-  router.get('/items', requireAnyPermission('inventory:read', 'inventory:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const items = await inventoryService.listItems(companyId);
-    res.json({ data: { items } });
-  });
+  router.get(
+    '/items',
+    requireAnyPermission('inventory:read', 'inventory:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const includeCost =
+        auth.permissions.includes('*') ||
+        auth.permissions.includes('inventory:write') ||
+        auth.permissions.includes('finance:write');
+      const items = await inventoryService.listItems(auth.companyId, { includeCost });
+      res.json({ data: { items } });
+    },
+  );
 
   router.post('/items', requireAnyPermission('inventory:write'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -125,11 +142,15 @@ export function createInventoryRouter({
     }
   });
 
-  router.get('/stock', requireAnyPermission('inventory:read', 'inventory:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stockLevels = await inventoryService.listStockLevels(companyId);
-    res.json({ data: { stockLevels } });
-  });
+  router.get(
+    '/stock',
+    requireAnyPermission('inventory:read', 'inventory:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const stockLevels = await inventoryService.listStockLevels(companyId);
+      res.json({ data: { stockLevels } });
+    },
+  );
 
   router.post('/stock', requireAnyPermission('inventory:write'), async (req, res) => {
     const { companyId } = getAuth(req);

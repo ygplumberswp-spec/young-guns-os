@@ -1,4 +1,15 @@
-import { bigint, boolean, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  bigint,
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -69,7 +80,13 @@ export const opsBackupRunStatusEnum = pgEnum('ops_backup_run_status', [
   'verified',
 ]);
 
-export const opsLogSeverityEnum = pgEnum('ops_log_severity', ['debug', 'info', 'warn', 'error', 'critical']);
+export const opsLogSeverityEnum = pgEnum('ops_log_severity', [
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'critical',
+]);
 
 export const opsDeploymentStatusEnum = pgEnum('ops_deployment_status', [
   'planned',
@@ -84,7 +101,10 @@ export const opsPlatformConfig = pgTable('ops_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  warningThresholds: jsonb('warning_thresholds').$type<Record<string, unknown>>().notNull().default({}),
+  warningThresholds: jsonb('warning_thresholds')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   hardInfrastructureLimits: jsonb('hard_infrastructure_limits')
     .$type<Record<string, unknown>>()
     .notNull()
@@ -110,7 +130,10 @@ export const opsServiceHealthSnapshots = pgTable('ops_service_health_snapshots',
   latencyMs: integer('latency_ms'),
   errorRatePercent: numeric('error_rate_percent', { precision: 5, scale: 2 }),
   throughputPerMinute: integer('throughput_per_minute'),
-  dependencyHealth: jsonb('dependency_health').$type<Record<string, unknown>>().notNull().default({}),
+  dependencyHealth: jsonb('dependency_health')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   lastSuccessfulOperationAt: timestamp('last_successful_operation_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
@@ -186,7 +209,9 @@ export const opsRecoveryTestRecords = pgTable('ops_recovery_test_records', {
   status: text('status').notNull().default('not_performed'),
   validationNotes: text('validation_notes'),
   performedAt: timestamp('performed_at', { withTimezone: true }),
-  performedByUserId: uuid('performed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  performedByUserId: uuid('performed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -292,7 +317,9 @@ export const opsScalingConfig = pgTable('ops_scaling_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   horizontalApiScalingEnabled: boolean('horizontal_api_scaling_enabled').notNull().default(true),
-  horizontalWorkerScalingEnabled: boolean('horizontal_worker_scaling_enabled').notNull().default(true),
+  horizontalWorkerScalingEnabled: boolean('horizontal_worker_scaling_enabled')
+    .notNull()
+    .default(true),
   queueConcurrencyLimit: integer('queue_concurrency_limit').notNull().default(10),
   queuePartitionCount: integer('queue_partition_count').notNull().default(1),
   dbPoolMaxConnections: integer('db_pool_max_connections').notNull().default(20),

@@ -80,7 +80,8 @@ export class AiComparisonService {
             comparisonRunId: run!.id,
             companyId: scope.companyId,
             providerId: generation.providerId,
-            providerKey: generation.providerKey as typeof aiComparisonResults.$inferInsert.providerKey,
+            providerKey:
+              generation.providerKey as typeof aiComparisonResults.$inferInsert.providerKey,
             modelKey: generation.modelKey,
             responseContent: generation.content,
             promptTokens: generation.promptTokens,

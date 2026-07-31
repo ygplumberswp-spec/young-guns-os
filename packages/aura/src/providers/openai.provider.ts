@@ -36,9 +36,7 @@ export class OpenAiProvider implements AuraProvider {
 
     const timeoutMs = this.config.requestTimeoutMs ?? 60_000;
     const signal =
-      typeof AbortSignal.timeout === 'function'
-        ? AbortSignal.timeout(timeoutMs)
-        : undefined;
+      typeof AbortSignal.timeout === 'function' ? AbortSignal.timeout(timeoutMs) : undefined;
 
     try {
       response = await fetch(`${this.config.baseUrl.replace(/\/$/, '')}/chat/completions`, {
@@ -82,7 +80,10 @@ export class OpenAiProvider implements AuraProvider {
     const content = payload.choices?.[0]?.message?.content?.trim();
 
     if (!content) {
-      throw new AuraProviderError('PROVIDER_EMPTY_RESPONSE', 'The AI provider returned an empty response.');
+      throw new AuraProviderError(
+        'PROVIDER_EMPTY_RESPONSE',
+        'The AI provider returned an empty response.',
+      );
     }
 
     return content;

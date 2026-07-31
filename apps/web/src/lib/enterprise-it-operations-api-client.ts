@@ -36,10 +36,13 @@ export async function fetchItOperationsDashboard(accessToken: string) {
 }
 
 export async function captureItAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-it-operations/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-it-operations/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
@@ -52,32 +55,44 @@ export async function syncItAlerts(accessToken: string) {
 }
 
 export async function syncItBugDetections(accessToken: string) {
-  const data = await request<{ bugDetections: unknown[] }>('/enterprise-it-operations/bug-detections/sync', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ bugDetections: unknown[] }>(
+    '/enterprise-it-operations/bug-detections/sync',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.bugDetections;
 }
 
 export async function captureItHealthSignals(accessToken: string) {
-  const data = await request<{ captured: boolean }>('/enterprise-it-operations/health-signals/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ captured: boolean }>(
+    '/enterprise-it-operations/health-signals/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.captured;
 }
 
 export async function fetchItBuildRecords(accessToken: string) {
-  const data = await request<{ buildrecords: ItoBuildRecordSummary[] }>('/enterprise-it-operations/build-records', {
-    accessToken,
-  });
+  const data = await request<{ buildrecords: ItoBuildRecordSummary[] }>(
+    '/enterprise-it-operations/build-records',
+    {
+      accessToken,
+    },
+  );
   return data.buildrecords;
 }
 
 export async function fetchItTestRuns(accessToken: string) {
-  const data = await request<{ testruns: ItoTestRunSummary[] }>('/enterprise-it-operations/test-runs', {
-    accessToken,
-  });
+  const data = await request<{ testruns: ItoTestRunSummary[] }>(
+    '/enterprise-it-operations/test-runs',
+    {
+      accessToken,
+    },
+  );
   return data.testruns;
 }
 
@@ -154,17 +169,26 @@ export async function fetchItSelfHealingActions(accessToken: string) {
 }
 
 export async function fetchItAuditLogs(accessToken: string) {
-  const data = await request<{ auditLogs: ItoAuditLogEntry[] }>('/enterprise-it-operations/audit-logs', {
-    accessToken,
-  });
+  const data = await request<{ auditLogs: ItoAuditLogEntry[] }>(
+    '/enterprise-it-operations/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }
 
-export async function updateItPlatformConfig(accessToken: string, body: UpdateItoPlatformConfigRequest) {
-  const data = await request<{ platformConfig: unknown }>('/enterprise-it-operations/platform-config', {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+export async function updateItPlatformConfig(
+  accessToken: string,
+  body: UpdateItoPlatformConfigRequest,
+) {
+  const data = await request<{ platformConfig: unknown }>(
+    '/enterprise-it-operations/platform-config',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.platformConfig;
 }

@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { DmEntityType, DmImportJobDetailSummary, DmSourceFormat, EnterpriseDataMigrationDashboard } from '@titan/shared';
+import type {
+  DmEntityType,
+  DmImportJobDetailSummary,
+  DmSourceFormat,
+  EnterpriseDataMigrationDashboard,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   approveImportJob,
@@ -51,7 +56,9 @@ export function DataMigrationPage() {
   const [activeTab, setActiveTab] = useState<DataMigrationTab>('overview');
   const [dashboard, setDashboard] = useState<EnterpriseDataMigrationDashboard | null>(null);
   const [selectedImportJob, setSelectedImportJob] = useState<DmImportJobDetailSummary | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchDataMigrationAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchDataMigrationAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
@@ -62,14 +69,25 @@ export function DataMigrationPage() {
   const [wizardFormat, setWizardFormat] = useState<DmSourceFormat>('csv');
   const [wizardEntity, setWizardEntity] = useState<DmEntityType>('customer');
   const [wizardFileName, setWizardFileName] = useState('customers.csv');
-  const [wizardFileContent, setWizardFileContent] = useState('name,email,phone\nAcme Corp,acme@example.com,555-0100');
+  const [wizardFileContent, setWizardFileContent] = useState(
+    'name,email,phone\nAcme Corp,acme@example.com,555-0100',
+  );
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessDataMigration(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageDataMigration(user.permissions) : false), [user]);
-  const canApprove = useMemo(() => (user ? canApproveDataMigration(user.permissions) : false), [user]);
+  const canApprove = useMemo(
+    () => (user ? canApproveDataMigration(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: DataMigrationTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -110,7 +128,9 @@ export function DataMigrationPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load data migration dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load data migration dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -164,7 +184,10 @@ export function DataMigrationPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Data Migration" description="You do not have permission to view data migration." />
+        <PageHeader
+          title="Data Migration"
+          description="You do not have permission to view data migration."
+        />
       </div>
     );
   }
@@ -180,7 +203,12 @@ export function DataMigrationPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncMigrationAlerts(accessToken!), 'Migration alerts synced.')}
+                onClick={() =>
+                  void runAction(
+                    () => syncMigrationAlerts(accessToken!),
+                    'Migration alerts synced.',
+                  )
+                }
               >
                 Sync Alerts
               </Button>
@@ -188,7 +216,10 @@ export function DataMigrationPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => captureDataMigrationAnalytics(accessToken!), 'Analytics captured.')
+                  void runAction(
+                    () => captureDataMigrationAnalytics(accessToken!),
+                    'Analytics captured.',
+                  )
                 }
               >
                 Capture Analytics
@@ -223,11 +254,26 @@ export function DataMigrationPage() {
           {activeTab === 'overview' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Active Imports" value={String(dashboard.migrationHealth.activeImportCount)} />
-                <StatCard label="Failed Imports" value={String(dashboard.migrationHealth.failedImportCount)} />
-                <StatCard label="Rollback Available" value={String(dashboard.migrationHealth.rollbackAvailableCount)} />
-                <StatCard label="Active Exports" value={String(dashboard.migrationHealth.activeExportCount)} />
-                <StatCard label="Failed Exports" value={String(dashboard.migrationHealth.failedExportCount)} />
+                <StatCard
+                  label="Active Imports"
+                  value={String(dashboard.migrationHealth.activeImportCount)}
+                />
+                <StatCard
+                  label="Failed Imports"
+                  value={String(dashboard.migrationHealth.failedImportCount)}
+                />
+                <StatCard
+                  label="Rollback Available"
+                  value={String(dashboard.migrationHealth.rollbackAvailableCount)}
+                />
+                <StatCard
+                  label="Active Exports"
+                  value={String(dashboard.migrationHealth.activeExportCount)}
+                />
+                <StatCard
+                  label="Failed Exports"
+                  value={String(dashboard.migrationHealth.failedExportCount)}
+                />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
               </div>
               <Panel title="Summary">
@@ -245,7 +291,10 @@ export function DataMigrationPage() {
                 </label>
                 <label>
                   Source format
-                  <select value={wizardFormat} onChange={(e) => setWizardFormat(e.target.value as DmSourceFormat)}>
+                  <select
+                    value={wizardFormat}
+                    onChange={(e) => setWizardFormat(e.target.value as DmSourceFormat)}
+                  >
                     <option value="csv">CSV</option>
                     <option value="excel">Excel (CSV-compatible)</option>
                     <option value="json">JSON</option>
@@ -254,7 +303,10 @@ export function DataMigrationPage() {
                 </label>
                 <label>
                   Entity type
-                  <select value={wizardEntity} onChange={(e) => setWizardEntity(e.target.value as DmEntityType)}>
+                  <select
+                    value={wizardEntity}
+                    onChange={(e) => setWizardEntity(e.target.value as DmEntityType)}
+                  >
                     <option value="customer">Customer</option>
                     <option value="lead">Lead</option>
                     <option value="supplier">Supplier</option>
@@ -263,11 +315,18 @@ export function DataMigrationPage() {
                 </label>
                 <label>
                   File name
-                  <input value={wizardFileName} onChange={(e) => setWizardFileName(e.target.value)} />
+                  <input
+                    value={wizardFileName}
+                    onChange={(e) => setWizardFileName(e.target.value)}
+                  />
                 </label>
                 <label>
                   File content
-                  <textarea rows={6} value={wizardFileContent} onChange={(e) => setWizardFileContent(e.target.value)} />
+                  <textarea
+                    rows={6}
+                    value={wizardFileContent}
+                    onChange={(e) => setWizardFileContent(e.target.value)}
+                  />
                 </label>
                 {canWrite ? (
                   <div className="page-header-actions">
@@ -328,15 +387,22 @@ export function DataMigrationPage() {
           {activeTab === 'mapping' ? (
             <Panel title="Field Mappings">
               {!selectedImportJob || selectedImportJob.fieldMappingDetails.length === 0 ? (
-                <EmptyState title="No mappings" description="Run the import wizard to generate AI-suggested field mappings." />
+                <EmptyState
+                  title="No mappings"
+                  description="Run the import wizard to generate AI-suggested field mappings."
+                />
               ) : (
                 <div className="data-list">
                   {selectedImportJob.fieldMappingDetails.map((mapping) => (
                     <div key={mapping.id} className="data-list-item">
-                      <strong>{mapping.sourceField} → {mapping.targetField}</strong>
+                      <strong>
+                        {mapping.sourceField} → {mapping.targetField}
+                      </strong>
                       <span>
                         {mapping.aiSuggested ? 'AI suggested' : 'Manual'}
-                        {mapping.confidence != null ? ` · ${Math.round(mapping.confidence * 100)}% confidence` : ''}
+                        {mapping.confidence != null
+                          ? ` · ${Math.round(mapping.confidence * 100)}% confidence`
+                          : ''}
                       </span>
                     </div>
                   ))}
@@ -348,13 +414,20 @@ export function DataMigrationPage() {
           {activeTab === 'validation' ? (
             <Panel title="Validation Results">
               {!selectedImportJob || selectedImportJob.validationResults.length === 0 ? (
-                <EmptyState title="No validation issues" description="Validation runs after mapping and before import approval." />
+                <EmptyState
+                  title="No validation issues"
+                  description="Validation runs after mapping and before import approval."
+                />
               ) : (
                 <div className="data-list">
                   {selectedImportJob.validationResults.map((result) => (
                     <div key={result.id} className="data-list-item">
-                      <strong>Row {result.rowNumber}: {result.message}</strong>
-                      <span>{formatSeverity(result.severity)} · {result.errorCode}</span>
+                      <strong>
+                        Row {result.rowNumber}: {result.message}
+                      </strong>
+                      <span>
+                        {formatSeverity(result.severity)} · {result.errorCode}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -365,15 +438,22 @@ export function DataMigrationPage() {
           {activeTab === 'duplicates' ? (
             <Panel title="Duplicate Review">
               {!selectedImportJob || selectedImportJob.duplicateReviews.length === 0 ? (
-                <EmptyState title="No duplicates" description="Duplicate detection runs during validation using configurable rules." />
+                <EmptyState
+                  title="No duplicates"
+                  description="Duplicate detection runs during validation using configurable rules."
+                />
               ) : (
                 <div className="data-list">
                   {selectedImportJob.duplicateReviews.map((review) => (
                     <div key={review.id} className="data-list-item">
-                      <strong>Row {review.rowNumber}: {review.duplicateKey}</strong>
+                      <strong>
+                        Row {review.rowNumber}: {review.duplicateKey}
+                      </strong>
                       <span>
                         Proposed: {formatStatus(review.proposedAction)}
-                        {review.resolvedAction ? ` · Resolved: ${formatStatus(review.resolvedAction)}` : ''}
+                        {review.resolvedAction
+                          ? ` · Resolved: ${formatStatus(review.resolvedAction)}`
+                          : ''}
                       </span>
                     </div>
                   ))}
@@ -385,14 +465,18 @@ export function DataMigrationPage() {
           {activeTab === 'export' ? (
             <Panel title="Export Jobs">
               {dashboard.exportJobs.length === 0 ? (
-                <EmptyState title="No export jobs" description="Create an export job to export real module records." />
+                <EmptyState
+                  title="No export jobs"
+                  description="Create an export job to export real module records."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.exportJobs.map((job) => (
                     <div key={job.id} className="data-list-item">
                       <strong>{job.title}</strong>
                       <span>
-                        {formatStatus(job.status)} · {job.entityType ? formatEntityType(job.entityType) : job.exportScope} ·{' '}
+                        {formatStatus(job.status)} ·{' '}
+                        {job.entityType ? formatEntityType(job.entityType) : job.exportScope} ·{' '}
                         {formatSourceFormat(job.sourceFormat)} · {job.recordCount} record(s)
                       </span>
                     </div>
@@ -422,14 +506,18 @@ export function DataMigrationPage() {
           {activeTab === 'history' ? (
             <Panel title="Migration History">
               {dashboard.migrationHistory.length === 0 ? (
-                <EmptyState title="No history" description="Import and export history appears after approved migration actions." />
+                <EmptyState
+                  title="No history"
+                  description="Import and export history appears after approved migration actions."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.migrationHistory.map((entry) => (
                     <div key={entry.id} className="data-list-item">
                       <strong>{entry.summary}</strong>
                       <span>
-                        {formatStatus(entry.actionType)} · {new Date(entry.occurredAt).toLocaleString()}
+                        {formatStatus(entry.actionType)} ·{' '}
+                        {new Date(entry.occurredAt).toLocaleString()}
                         {entry.rollbackAvailable ? ' · Rollback available' : ''}
                       </span>
                     </div>
@@ -451,7 +539,10 @@ export function DataMigrationPage() {
                   {dashboard.rollbackRequests.map((request) => (
                     <div key={request.id} className="data-list-item">
                       <strong>{formatStatus(request.status)}</strong>
-                      <span>{request.recordsAffected} record(s) · {new Date(request.createdAt).toLocaleString()}</span>
+                      <span>
+                        {request.recordsAffected} record(s) ·{' '}
+                        {new Date(request.createdAt).toLocaleString()}
+                      </span>
                       {request.reason ? <p>{request.reason}</p> : null}
                     </div>
                   ))}
@@ -465,7 +556,10 @@ export function DataMigrationPage() {
               {dashboard.analytics ? (
                 <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
               ) : (
-                <EmptyState title="No analytics" description="Capture analytics to record migration metrics." />
+                <EmptyState
+                  title="No analytics"
+                  description="Capture analytics to record migration metrics."
+                />
               )}
             </Panel>
           ) : null}
@@ -475,13 +569,18 @@ export function DataMigrationPage() {
               {isSupplementaryLoading ? (
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
-                <EmptyState title="No audit entries" description="All migration actions are fully auditable." />
+                <EmptyState
+                  title="No audit entries"
+                  description="All migration actions are fully auditable."
+                />
               ) : (
                 <div className="data-list">
                   {auditLogs.map((log) => (
                     <div key={log.id} className="data-list-item">
                       <strong>{formatStatus(log.actionType)}</strong>
-                      <span>{log.entityType ?? 'system'} · {new Date(log.createdAt).toLocaleString()}</span>
+                      <span>
+                        {log.entityType ?? 'system'} · {new Date(log.createdAt).toLocaleString()}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -509,12 +608,20 @@ export function DataMigrationPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
                 onSend={(content) =>
-                  void sendAgentMessage(content, 'migration_intelligence' as import('@titan/shared').AgentKey)
+                  void sendAgentMessage(
+                    content,
+                    'migration_intelligence' as import('@titan/shared').AgentKey,
+                  )
                 }
                 placeholder="Ask about import mappings, validation errors, migration history, or draft migration reports…"
               />

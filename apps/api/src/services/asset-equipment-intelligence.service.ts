@@ -75,7 +75,10 @@ export class AssetEquipmentIntelligenceService {
     return row ? toAssetSummary(row) : null;
   }
 
-  async createAsset(scope: StaffScope, input: CreateAssetEquipmentRequest): Promise<AssetEquipmentSummary> {
+  async createAsset(
+    scope: StaffScope,
+    input: CreateAssetEquipmentRequest,
+  ): Promise<AssetEquipmentSummary> {
     const name = input.name.trim();
     if (!name) {
       throw new AssetEquipmentIntelligenceError('VALIDATION_ERROR', 'Asset name is required');
@@ -111,7 +114,13 @@ export class AssetEquipmentIntelligenceService {
       })
       .returning();
 
-    await this.recordLifecycleEvent(scope, created!.id, 'acquisition', 'Asset acquired', input.description);
+    await this.recordLifecycleEvent(
+      scope,
+      created!.id,
+      'acquisition',
+      'Asset acquired',
+      input.description,
+    );
 
     return (await this.getAsset(scope.companyId, created!.id))!;
   }
@@ -143,10 +152,16 @@ export class AssetEquipmentIntelligenceService {
     return (await this.getAsset(companyId, assetId))!;
   }
 
-  async listLifecycleHistory(companyId: string, assetId?: string): Promise<AssetLifecycleEventSummary[]> {
+  async listLifecycleHistory(
+    companyId: string,
+    assetId?: string,
+  ): Promise<AssetLifecycleEventSummary[]> {
     const rows = await this.db.query.assetLifecycleEvents.findMany({
       where: assetId
-        ? and(eq(assetLifecycleEvents.companyId, companyId), eq(assetLifecycleEvents.assetId, assetId))
+        ? and(
+            eq(assetLifecycleEvents.companyId, companyId),
+            eq(assetLifecycleEvents.assetId, assetId),
+          )
         : eq(assetLifecycleEvents.companyId, companyId),
       with: { asset: true },
       orderBy: [desc(assetLifecycleEvents.occurredAt)],
@@ -280,7 +295,13 @@ export class AssetEquipmentIntelligenceService {
       })
       .returning();
 
-    await this.recordLifecycleEvent(scope, input.assetId, 'maintenance', input.title, input.description);
+    await this.recordLifecycleEvent(
+      scope,
+      input.assetId,
+      'maintenance',
+      input.title,
+      input.description,
+    );
 
     const records = await this.listMaintenanceRecords(scope.companyId);
     return records.find((row) => row.id === created!.id)!;
@@ -470,7 +491,10 @@ export class AssetEquipmentIntelligenceService {
     const subject = input.subject.trim();
     const recommendation = input.recommendation.trim();
     if (!subject || !recommendation) {
-      throw new AssetEquipmentIntelligenceError('VALIDATION_ERROR', 'Subject and recommendation are required');
+      throw new AssetEquipmentIntelligenceError(
+        'VALIDATION_ERROR',
+        'Subject and recommendation are required',
+      );
     }
 
     if (input.assetId) {
@@ -520,9 +544,13 @@ export class AssetEquipmentIntelligenceService {
     const now = Date.now();
     const ages = assets
       .filter((asset) => asset.purchaseDate)
-      .map((asset) => (now - new Date(asset.purchaseDate!).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+      .map(
+        (asset) => (now - new Date(asset.purchaseDate!).getTime()) / (365.25 * 24 * 60 * 60 * 1000),
+      );
     const averageAssetAgeYears =
-      ages.length > 0 ? Math.round((ages.reduce((sum, age) => sum + age, 0) / ages.length) * 10) / 10 : null;
+      ages.length > 0
+        ? Math.round((ages.reduce((sum, age) => sum + age, 0) / ages.length) * 10) / 10
+        : null;
 
     const maintenanceFrequencyByAsset = assets.map((asset) => ({
       assetId: asset.id,
@@ -530,7 +558,10 @@ export class AssetEquipmentIntelligenceService {
       maintenanceCount: records.filter((record) => record.assetId === asset.id).length,
     }));
 
-    const totalDowntimeHours = records.reduce((sum, record) => sum + (record.downtimeHours ?? 0), 0);
+    const totalDowntimeHours = records.reduce(
+      (sum, record) => sum + (record.downtimeHours ?? 0),
+      0,
+    );
     const totalMaintenanceCostCents = costs.reduce((sum, cost) => sum + cost.amountCents, 0);
     const warrantyRecoveryCents = costs
       .filter((cost) => cost.costType === 'warranty_recovery')
@@ -539,11 +570,17 @@ export class AssetEquipmentIntelligenceService {
     const reliabilityScores = maintenanceFrequencyByAsset.map((row) => ({
       assetId: row.assetId,
       name: row.name,
-      reliabilityScore: row.maintenanceCount === 0 ? 100 : Math.max(0, 100 - row.maintenanceCount * 5),
+      reliabilityScore:
+        row.maintenanceCount === 0 ? 100 : Math.max(0, 100 - row.maintenanceCount * 5),
     }));
 
     const replacementRecommendations = assets
-      .filter((asset) => asset.condition === 'poor' || asset.condition === 'critical' || asset.status === 'maintenance')
+      .filter(
+        (asset) =>
+          asset.condition === 'poor' ||
+          asset.condition === 'critical' ||
+          asset.status === 'maintenance',
+      )
       .map((asset) => ({
         assetId: asset.id,
         name: asset.name,
@@ -561,7 +598,9 @@ export class AssetEquipmentIntelligenceService {
       totalAssets: assets.length,
       activeAssetCount: assets.filter((asset) => asset.status === 'active').length,
       maintenanceAssetCount: assets.filter((asset) => asset.status === 'maintenance').length,
-      retiredAssetCount: assets.filter((asset) => asset.status === 'retired' || asset.status === 'disposed').length,
+      retiredAssetCount: assets.filter(
+        (asset) => asset.status === 'retired' || asset.status === 'disposed',
+      ).length,
       averageAssetAgeYears,
       totalMaintenanceCostCents,
       totalDowntimeHours,
@@ -609,24 +648,26 @@ export class AssetEquipmentIntelligenceService {
   }
 
   async buildAssetAuraContext(companyId: string): Promise<AssetAuraContext> {
-    const [analytics, schedules, inspections, calibrations, pendingActions, pendingRecords] = await Promise.all([
-      this.getPerformanceAnalytics(companyId),
-      this.listMaintenanceSchedules(companyId),
-      this.listInspections(companyId),
-      this.listCalibrations(companyId),
-      this.listActions(companyId, 'pending_approval'),
-      this.db.query.assetMaintenanceRecords.findMany({
-        where: and(
-          eq(assetMaintenanceRecords.companyId, companyId),
-          eq(assetMaintenanceRecords.status, 'pending_approval'),
-        ),
-      }),
-    ]);
+    const [analytics, schedules, inspections, calibrations, pendingActions, pendingRecords] =
+      await Promise.all([
+        this.getPerformanceAnalytics(companyId),
+        this.listMaintenanceSchedules(companyId),
+        this.listInspections(companyId),
+        this.listCalibrations(companyId),
+        this.listActions(companyId, 'pending_approval'),
+        this.db.query.assetMaintenanceRecords.findMany({
+          where: and(
+            eq(assetMaintenanceRecords.companyId, companyId),
+            eq(assetMaintenanceRecords.status, 'pending_approval'),
+          ),
+        }),
+      ]);
 
     const now = Date.now();
     const overdueInspectionCount = inspections.filter((row) => row.status === 'overdue').length;
     const expiringCalibrationCount = calibrations.filter((row) => {
-      if (!row.expiresAt) return row.complianceStatus === 'expiring' || row.complianceStatus === 'expired';
+      if (!row.expiresAt)
+        return row.complianceStatus === 'expiring' || row.complianceStatus === 'expired';
       return new Date(row.expiresAt).getTime() <= now + 30 * 24 * 60 * 60 * 1000;
     }).length;
 
@@ -722,7 +763,8 @@ function buildLifecycleTrends(events: AssetLifecycleEventSummary[]) {
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const entry = buckets.get(key) ?? { acquisitionCount: 0, retirementCount: 0 };
     if (event.eventType === 'acquisition') entry.acquisitionCount += 1;
-    if (event.eventType === 'retirement' || event.eventType === 'disposal') entry.retirementCount += 1;
+    if (event.eventType === 'retirement' || event.eventType === 'disposal')
+      entry.retirementCount += 1;
     buckets.set(key, entry);
   }
   return [...buckets.entries()]

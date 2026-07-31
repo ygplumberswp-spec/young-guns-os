@@ -7,6 +7,7 @@ import {
   hashInviteToken,
   hashPassword,
   hashRefreshToken,
+  COMPANY_OWNER_ROLE_NAME,
   OWNER_ROLE_NAME,
   REFRESH_TOKEN_TTL_MS,
   slugifyCompanyName,
@@ -103,10 +104,12 @@ export class AuthService {
         )
         .returning();
 
-      const ownerRole = createdRoles.find((role) => role.name === OWNER_ROLE_NAME);
+      const ownerRole =
+        createdRoles.find((role) => role.name === COMPANY_OWNER_ROLE_NAME) ??
+        createdRoles.find((role) => role.name === OWNER_ROLE_NAME);
 
       if (!ownerRole) {
-        throw new AuthError('SIGNUP_FAILED', 'Unable to create owner role');
+        throw new AuthError('SIGNUP_FAILED', 'Unable to create company owner role');
       }
 
       const [user] = await tx

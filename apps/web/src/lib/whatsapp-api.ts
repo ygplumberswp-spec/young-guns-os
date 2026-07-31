@@ -17,7 +17,9 @@ export type WhatsappIntegrationResponse = {
   templates: WhatsappTemplateSummary[];
 };
 
-export async function fetchWhatsappIntegration(accessToken: string): Promise<WhatsappIntegrationResponse> {
+export async function fetchWhatsappIntegration(
+  accessToken: string,
+): Promise<WhatsappIntegrationResponse> {
   return request<WhatsappIntegrationResponse>('/integrations/whatsapp', { accessToken });
 }
 
@@ -45,11 +47,14 @@ export async function sendWhatsappTestMessage(
   accessToken: string,
   body: SendWhatsappTestMessageRequest,
 ): Promise<{ externalMessageId: string }> {
-  const data = await request<{ result: { externalMessageId: string } }>('/integrations/whatsapp/test', {
-    method: 'POST',
-    accessToken,
-    body,
-  });
+  const data = await request<{ result: { externalMessageId: string } }>(
+    '/integrations/whatsapp/test',
+    {
+      method: 'POST',
+      accessToken,
+      body,
+    },
+  );
   return data.result;
 }
 
@@ -57,11 +62,14 @@ export async function createWhatsappTemplate(
   accessToken: string,
   body: CreateWhatsappTemplateRequest,
 ): Promise<WhatsappTemplateSummary> {
-  const data = await request<{ template: WhatsappTemplateSummary }>('/integrations/whatsapp/templates', {
-    method: 'POST',
-    accessToken,
-    body,
-  });
+  const data = await request<{ template: WhatsappTemplateSummary }>(
+    '/integrations/whatsapp/templates',
+    {
+      method: 'POST',
+      accessToken,
+      body,
+    },
+  );
   return data.template;
 }
 
@@ -81,7 +89,10 @@ export async function updateWhatsappTemplate(
   return data.template;
 }
 
-export async function deleteWhatsappTemplate(accessToken: string, templateId: string): Promise<void> {
+export async function deleteWhatsappTemplate(
+  accessToken: string,
+  templateId: string,
+): Promise<void> {
   await request(`/integrations/whatsapp/templates/${templateId}`, {
     method: 'DELETE',
     accessToken,
@@ -115,10 +126,13 @@ export async function approveWhatsappDraft(
   accessToken: string,
   messageId: string,
 ): Promise<WhatsappMessageSummary> {
-  const data = await request<{ message: WhatsappMessageSummary }>(`/whatsapp/messages/${messageId}/approve`, {
-    method: 'POST',
-    accessToken,
-    body: {},
-  });
+  const data = await request<{ message: WhatsappMessageSummary }>(
+    `/whatsapp/messages/${messageId}/approve`,
+    {
+      method: 'POST',
+      accessToken,
+      body: {},
+    },
+  );
   return data.message;
 }

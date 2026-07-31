@@ -57,12 +57,7 @@ export class EmailSmtpClient {
   private openSocket(): Promise<Socket | TLSSocket> {
     return new Promise((resolve, reject) => {
       const onError = (error: Error) => {
-        reject(
-          new EmailSmtpError(
-            'NETWORK_ERROR',
-            error.message || 'Unable to reach SMTP server',
-          ),
-        );
+        reject(new EmailSmtpError('NETWORK_ERROR', error.message || 'Unable to reach SMTP server'));
       };
 
       if (this.secure) {
@@ -152,13 +147,17 @@ class SmtpSession {
       );
     }
 
-    const usernameResponse = await this.sendCommand(Buffer.from(username, 'utf8').toString('base64'));
+    const usernameResponse = await this.sendCommand(
+      Buffer.from(username, 'utf8').toString('base64'),
+    );
 
     if (!usernameResponse.startsWith('334')) {
       throw new EmailSmtpError('AUTH_FAILED', `SMTP username rejected: ${usernameResponse}`);
     }
 
-    const passwordResponse = await this.sendCommand(Buffer.from(password, 'utf8').toString('base64'));
+    const passwordResponse = await this.sendCommand(
+      Buffer.from(password, 'utf8').toString('base64'),
+    );
 
     if (!passwordResponse.startsWith('235')) {
       throw new EmailSmtpError('AUTH_FAILED', 'SMTP server rejected the provided credentials');

@@ -18,9 +18,12 @@ export async function fetchRecruitingStats(accessToken: string): Promise<Recruit
 export async function fetchRecruitingCandidates(
   accessToken: string,
 ): Promise<RecruitingCandidateSummary[]> {
-  const data = await request<{ candidates: RecruitingCandidateSummary[] }>('/recruiting/candidates', {
-    accessToken,
-  });
+  const data = await request<{ candidates: RecruitingCandidateSummary[] }>(
+    '/recruiting/candidates',
+    {
+      accessToken,
+    },
+  );
   return data.candidates;
 }
 

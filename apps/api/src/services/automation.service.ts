@@ -111,7 +111,9 @@ export class AutomationService {
         createdBy: true,
         triggers: { orderBy: [asc(workflowTriggers.createdAt)] },
         actions: { orderBy: [asc(workflowActions.sortOrder), asc(workflowActions.createdAt)] },
-        conditions: { orderBy: [asc(workflowConditions.sortOrder), asc(workflowConditions.createdAt)] },
+        conditions: {
+          orderBy: [asc(workflowConditions.sortOrder), asc(workflowConditions.createdAt)],
+        },
       },
     });
 
@@ -139,10 +141,7 @@ export class AutomationService {
     };
   }
 
-  async createWorkflow(
-    scope: TenantScope,
-    input: CreateWorkflowRequest,
-  ): Promise<WorkflowDetail> {
+  async createWorkflow(scope: TenantScope, input: CreateWorkflowRequest): Promise<WorkflowDetail> {
     const name = input.name.trim();
 
     if (!name) {
@@ -387,10 +386,7 @@ export class AutomationService {
     };
   }
 
-  async buildAuraContext(
-    companyId: string,
-    workflowId?: string,
-  ): Promise<AuraAutomationContext> {
+  async buildAuraContext(companyId: string, workflowId?: string): Promise<AuraAutomationContext> {
     const stats = await this.getStats(companyId);
 
     const workflowRows = await this.db.query.workflows.findMany({

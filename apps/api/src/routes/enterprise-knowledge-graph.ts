@@ -110,7 +110,12 @@ export function createEnterpriseKnowledgeGraphRouter({
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('knowledge:read', 'knowledge:write', 'intelligence:read', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'knowledge:read',
+    'knowledge:write',
+    'intelligence:read',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('knowledge:write');
 
   router.use(requireAuth);
@@ -121,7 +126,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseKnowledgeGraphService.getExecutiveDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseKnowledgeGraphService.getExecutiveDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -130,7 +137,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.post('/sync', requireWrite, async (req, res) => {
     try {
-      const result = await enterpriseKnowledgeGraphService.syncGraphFromModules(getAuth(req).companyId);
+      const result = await enterpriseKnowledgeGraphService.syncGraphFromModules(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: result });
     } catch (error) {
       handleError(error, res);
@@ -148,7 +157,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/relationships', requireRead, async (req, res) => {
     try {
-      const relationships = await enterpriseKnowledgeGraphService.listRelationships(getAuth(req).companyId);
+      const relationships = await enterpriseKnowledgeGraphService.listRelationships(
+        getAuth(req).companyId,
+      );
       res.json({ data: { relationships } });
     } catch (error) {
       handleError(error, res);
@@ -158,7 +169,10 @@ export function createEnterpriseKnowledgeGraphRouter({
   router.post('/traverse', requireRead, async (req, res) => {
     try {
       const body = traverseSchema.parse(req.body);
-      const traversal = await enterpriseKnowledgeGraphService.traverseGraph(getAuth(req).companyId, body);
+      const traversal = await enterpriseKnowledgeGraphService.traverseGraph(
+        getAuth(req).companyId,
+        body,
+      );
       res.json({ data: { traversal } });
     } catch (error) {
       handleError(error, res);
@@ -169,7 +183,11 @@ export function createEnterpriseKnowledgeGraphRouter({
     try {
       const auth = getAuth(req);
       const body = searchSchema.parse(req.body);
-      const results = await enterpriseKnowledgeGraphService.semanticSearch(auth, body, auth.permissions);
+      const results = await enterpriseKnowledgeGraphService.semanticSearch(
+        auth,
+        body,
+        auth.permissions,
+      );
       res.json({ data: { results } });
     } catch (error) {
       handleError(error, res);
@@ -178,7 +196,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/memory', requireRead, async (req, res) => {
     try {
-      const memory = await enterpriseKnowledgeGraphService.listOrganizationalMemory(getAuth(req).companyId);
+      const memory = await enterpriseKnowledgeGraphService.listOrganizationalMemory(
+        getAuth(req).companyId,
+      );
       res.json({ data: { memory } });
     } catch (error) {
       handleError(error, res);
@@ -188,7 +208,10 @@ export function createEnterpriseKnowledgeGraphRouter({
   router.post('/memory', requireWrite, async (req, res) => {
     try {
       const body = memorySchema.parse(req.body);
-      const entry = await enterpriseKnowledgeGraphService.createOrganizationalMemory(getAuth(req), body);
+      const entry = await enterpriseKnowledgeGraphService.createOrganizationalMemory(
+        getAuth(req),
+        body,
+      );
       res.status(201).json({ data: { entry } });
     } catch (error) {
       handleError(error, res);
@@ -197,7 +220,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/saved-searches', requireRead, async (req, res) => {
     try {
-      const savedSearches = await enterpriseKnowledgeGraphService.listSavedSearches(getAuth(req).companyId);
+      const savedSearches = await enterpriseKnowledgeGraphService.listSavedSearches(
+        getAuth(req).companyId,
+      );
       res.json({ data: { savedSearches } });
     } catch (error) {
       handleError(error, res);
@@ -207,7 +232,10 @@ export function createEnterpriseKnowledgeGraphRouter({
   router.post('/saved-searches', requireWrite, async (req, res) => {
     try {
       const body = savedSearchSchema.parse(req.body);
-      const savedSearch = await enterpriseKnowledgeGraphService.createSavedSearch(getAuth(req), body);
+      const savedSearch = await enterpriseKnowledgeGraphService.createSavedSearch(
+        getAuth(req),
+        body,
+      );
       res.status(201).json({ data: { savedSearch } });
     } catch (error) {
       handleError(error, res);
@@ -216,7 +244,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/search-activity', requireRead, async (req, res) => {
     try {
-      const activity = await enterpriseKnowledgeGraphService.listSearchActivity(getAuth(req).companyId);
+      const activity = await enterpriseKnowledgeGraphService.listSearchActivity(
+        getAuth(req).companyId,
+      );
       res.json({ data: { activity } });
     } catch (error) {
       handleError(error, res);
@@ -225,7 +255,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/governance', requireRead, async (req, res) => {
     try {
-      const governance = await enterpriseKnowledgeGraphService.getGovernanceSummary(getAuth(req).companyId);
+      const governance = await enterpriseKnowledgeGraphService.getGovernanceSummary(
+        getAuth(req).companyId,
+      );
       res.json({ data: { governance } });
     } catch (error) {
       handleError(error, res);
@@ -234,7 +266,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.get('/recommendations', requireRead, async (req, res) => {
     try {
-      const recommendations = await enterpriseKnowledgeGraphService.listRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseKnowledgeGraphService.listRecommendations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -243,7 +277,9 @@ export function createEnterpriseKnowledgeGraphRouter({
 
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     try {
-      const recommendations = await enterpriseKnowledgeGraphService.generateRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseKnowledgeGraphService.generateRecommendations(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);

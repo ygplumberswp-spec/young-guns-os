@@ -28,11 +28,7 @@ export type PersonalCommSignalType =
 
 export type PersonalCommActionType = 'customer_reply' | 'business_action';
 export type PersonalCommActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type PersonalCommFollowUpType =
   | 'unread_business'

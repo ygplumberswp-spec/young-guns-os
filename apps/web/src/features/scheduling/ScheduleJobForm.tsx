@@ -91,7 +91,12 @@ export function ScheduleJobForm({ accessToken, jobs, onScheduled }: ScheduleJobF
 
       <label className="titan-input-group">
         <span className="titan-input-label">Job</span>
-        <select className="titan-input" value={jobId} onChange={(event) => setJobId(event.target.value)} required>
+        <select
+          className="titan-input"
+          value={jobId}
+          onChange={(event) => setJobId(event.target.value)}
+          required
+        >
           {unscheduledJobs.map((job) => (
             <option key={job.id} value={job.id}>
               {job.title} · {job.customerName}

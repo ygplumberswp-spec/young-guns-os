@@ -2,7 +2,8 @@ export type SaasTenantKind = 'platform_owner' | 'customer';
 
 export type SaasTenantLifecycle = 'provisioning' | 'active' | 'suspended' | 'cancelled';
 
-export type SaasSubscriptionStatus = 'trial' | 'active' | 'grace_period' | 'suspended' | 'cancelled';
+export type SaasSubscriptionStatus =
+  'trial' | 'active' | 'grace_period' | 'suspended' | 'cancelled';
 
 export type SaasPlanTier = 'free_trial' | 'starter' | 'professional' | 'enterprise';
 
@@ -23,11 +24,7 @@ export type SaasPlatformActionType =
   | 'feature_flag_update';
 
 export type SaasPlatformActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type SaasPlanLimits = {
   users?: number;

@@ -81,7 +81,8 @@ export class CustomerSupportService {
             (sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length) * 100,
           ) / 100
         : ratings.length > 0
-          ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) / 10
+          ? Math.round((ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length) * 10) /
+            10
           : null;
 
     return {
@@ -194,7 +195,10 @@ export class CustomerSupportService {
     return (await this.getConversation(companyId, conversationId))!;
   }
 
-  async listMessages(companyId: string, conversationId: string): Promise<CustomerSupportMessageSummary[]> {
+  async listMessages(
+    companyId: string,
+    conversationId: string,
+  ): Promise<CustomerSupportMessageSummary[]> {
     await this.ensureConversationBelongsToCompany(companyId, conversationId);
 
     const rows = await this.db.query.customerSupportMessages.findMany({
@@ -408,7 +412,10 @@ export class CustomerSupportService {
     return toFeedbackSummary(row!);
   }
 
-  async getCustomerJobStatus(companyId: string, customerId: string): Promise<CustomerJobStatusSummary> {
+  async getCustomerJobStatus(
+    companyId: string,
+    customerId: string,
+  ): Promise<CustomerJobStatusSummary> {
     await this.ensureCustomerBelongsToCompany(companyId, customerId);
 
     const [customer, jobRows, invoiceRows, quoteRows] = await Promise.all([
@@ -432,7 +439,9 @@ export class CustomerSupportService {
       throw new CustomerSupportError('NOT_FOUND', 'Customer not found');
     }
 
-    const openInvoices = invoiceRows.filter((row) => ['draft', 'sent', 'overdue'].includes(row.status));
+    const openInvoices = invoiceRows.filter((row) =>
+      ['draft', 'sent', 'overdue'].includes(row.status),
+    );
     const openQuotes = quoteRows.filter((row) => ['draft', 'sent'].includes(row.status));
 
     const activeJobs = jobRows.filter((row) => !['completed', 'cancelled'].includes(row.status));
@@ -495,9 +504,7 @@ export class CustomerSupportService {
       });
     }
 
-    const waiting = openConversations.filter((row) =>
-      ['open', 'in_progress'].includes(row.status),
-    );
+    const waiting = openConversations.filter((row) => ['open', 'in_progress'].includes(row.status));
     if (waiting.length > 0) {
       insights.push({
         insightType: 'open_conversations',
@@ -565,7 +572,10 @@ export class CustomerSupportService {
     }
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -580,7 +590,7 @@ function toConversationSummary(
   row: typeof customerSupportConversations.$inferSelect & {
     customer?: { name: string } | null;
     assignedUser?: { firstName: string; lastName: string } | null;
-    messages?: typeof customerSupportMessages.$inferSelect[];
+    messages?: (typeof customerSupportMessages.$inferSelect)[];
   },
 ): CustomerSupportConversationSummary {
   return {

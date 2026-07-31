@@ -45,7 +45,9 @@ export function LaunchCenterPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<LaunchCenterTab>('overview');
   const [dashboard, setDashboard] = useState<EnterpriseLaunchCenterDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchLaunchCenterAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchLaunchCenterAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
@@ -53,12 +55,21 @@ export function LaunchCenterPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [wizardTitle, setWizardTitle] = useState('Production go-live');
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessLaunchCenter(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageLaunchCenter(user.permissions) : false), [user]);
-  const canManage = useMemo(() => (user ? canAdministerLaunchCenter(user.permissions) : false), [user]);
+  const canManage = useMemo(
+    () => (user ? canAdministerLaunchCenter(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: LaunchCenterTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -93,7 +104,9 @@ export function LaunchCenterPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load launch center dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load launch center dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -143,7 +156,10 @@ export function LaunchCenterPage() {
   if (!canView) {
     return (
       <div className="p-6">
-        <EmptyState title="Access denied" description="You do not have permission to view the launch center." />
+        <EmptyState
+          title="Access denied"
+          description="You do not have permission to view the launch center."
+        />
       </div>
     );
   }
@@ -166,10 +182,22 @@ export function LaunchCenterPage() {
         actions={
           canWrite ? (
             <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runReadinessScan(accessToken!), 'Readiness scan completed.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(() => runReadinessScan(accessToken!), 'Readiness scan completed.')
+                }
+              >
                 Run Readiness Scan
               </Button>
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => syncLaunchCenterAlerts(accessToken!), 'Alerts synced.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(() => syncLaunchCenterAlerts(accessToken!), 'Alerts synced.')
+                }
+              >
                 Sync Alerts
               </Button>
             </div>
@@ -196,15 +224,23 @@ export function LaunchCenterPage() {
       {activeTab === 'overview' ? (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
-            <StatCard label="Readiness Score" value={readiness.overallScore != null ? String(readiness.overallScore) : '—'} />
-            <StatCard label="Status" value={formatReadinessStatus(dashboard.overallLaunchReadinessStatus)} />
+            <StatCard
+              label="Readiness Score"
+              value={readiness.overallScore != null ? String(readiness.overallScore) : '—'}
+            />
+            <StatCard
+              label="Status"
+              value={formatReadinessStatus(dashboard.overallLaunchReadinessStatus)}
+            />
             <StatCard label="Critical Blockers" value={String(readiness.criticalBlockerCount)} />
             <StatCard label="Pending Approvals" value={String(readiness.pendingApprovalCount)} />
           </div>
           <Panel title="Summary">{dashboard.summary}</Panel>
           {readiness.criticalBlockerCount > 0 ? (
             <Panel title="Critical blockers">
-              <p className="text-sm text-red-700">Critical failures detected — production go-live is blocked until resolved.</p>
+              <p className="text-sm text-red-700">
+                Critical failures detected — production go-live is blocked until resolved.
+              </p>
             </Panel>
           ) : null}
         </div>
@@ -213,30 +249,47 @@ export function LaunchCenterPage() {
       {activeTab === 'readiness' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runReadinessScan(accessToken!), 'Readiness scan completed.')}>
+            <Button
+              variant="secondary"
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(() => runReadinessScan(accessToken!), 'Readiness scan completed.')
+              }
+            >
               Run Readiness Scan
             </Button>
           ) : null}
           <Panel title="Latest Scan">
             {dashboard.latestReadinessScan ? (
               <p className="text-sm">
-                {dashboard.latestReadinessScan.scanKey} — {formatCheckStatus(dashboard.latestReadinessScan.status)} ·{' '}
-                {dashboard.latestReadinessScan.passedCount}/{dashboard.latestReadinessScan.checkCount} passed
+                {dashboard.latestReadinessScan.scanKey} —{' '}
+                {formatCheckStatus(dashboard.latestReadinessScan.status)} ·{' '}
+                {dashboard.latestReadinessScan.passedCount}/
+                {dashboard.latestReadinessScan.checkCount} passed
               </p>
             ) : (
-              <EmptyState title="No readiness scans" description="Run an automated readiness scan using real platform data." />
+              <EmptyState
+                title="No readiness scans"
+                description="Run an automated readiness scan using real platform data."
+              />
             )}
           </Panel>
           <Panel title="Check Results">
             {dashboard.latestCheckResults.length === 0 ? (
-              <EmptyState title="No check results" description="Run a readiness scan to evaluate authentication, RBAC, integrations, backup, and monitoring." />
+              <EmptyState
+                title="No check results"
+                description="Run a readiness scan to evaluate authentication, RBAC, integrations, backup, and monitoring."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.latestCheckResults.map((result) => (
                   <li key={result.id} className="py-2 text-sm">
-                    <span className="font-medium">{result.checkName}</span> — {formatCheckStatus(result.status)}
+                    <span className="font-medium">{result.checkName}</span> —{' '}
+                    {formatCheckStatus(result.status)}
                     {result.message ? `: ${result.message}` : ''}
-                    {result.recommendation ? <p className="text-slate-500">{result.recommendation}</p> : null}
+                    {result.recommendation ? (
+                      <p className="text-slate-500">{result.recommendation}</p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -248,7 +301,16 @@ export function LaunchCenterPage() {
       {activeTab === 'acceptance' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runAcceptanceTests(accessToken!), 'Acceptance tests completed.')}>
+            <Button
+              variant="secondary"
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => runAcceptanceTests(accessToken!),
+                  'Acceptance tests completed.',
+                )
+              }
+            >
               Run All Acceptance Tests
             </Button>
           ) : null}
@@ -261,7 +323,16 @@ export function LaunchCenterPage() {
                     <p className="text-sm text-slate-500">{suite.description}</p>
                   </div>
                   {canWrite ? (
-                    <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runAcceptanceTests(accessToken!, suite.id), `${suite.suiteName} tests completed.`)}>
+                    <Button
+                      variant="secondary"
+                      disabled={isWorking}
+                      onClick={() =>
+                        void runAction(
+                          () => runAcceptanceTests(accessToken!, suite.id),
+                          `${suite.suiteName} tests completed.`,
+                        )
+                      }
+                    >
                       Run
                     </Button>
                   ) : null}
@@ -271,12 +342,16 @@ export function LaunchCenterPage() {
           </Panel>
           <Panel title="Recent Runs">
             {dashboard.acceptanceTestRuns.length === 0 ? (
-              <EmptyState title="No acceptance test runs" description="Run configurable acceptance test suites against real tenant data." />
+              <EmptyState
+                title="No acceptance test runs"
+                description="Run configurable acceptance test suites against real tenant data."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.acceptanceTestRuns.map((run) => (
                   <li key={run.id} className="py-2 text-sm">
-                    {run.runKey} — {formatCheckStatus(run.status)} · {run.passedCount}/{run.testCount} passed
+                    {run.runKey} — {formatCheckStatus(run.status)} · {run.passedCount}/
+                    {run.testCount} passed
                   </li>
                 ))}
               </ul>
@@ -288,7 +363,10 @@ export function LaunchCenterPage() {
       {activeTab === 'integrations' ? (
         <Panel title="Integration Readiness">
           {dashboard.integrations.length === 0 ? (
-            <EmptyState title="No integrations" description="Configure integrations via the Universal Connector Platform." />
+            <EmptyState
+              title="No integrations"
+              description="Configure integrations via the Universal Connector Platform."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {dashboard.integrations.map((integration) => (
@@ -316,18 +394,43 @@ export function LaunchCenterPage() {
         <div className="space-y-4">
           {canWrite ? (
             <div className="flex flex-wrap gap-2">
-              <input className="rounded border border-slate-300 px-3 py-2 text-sm" value={wizardTitle} onChange={(e) => setWizardTitle(e.target.value)} />
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => createGoLiveWizard(accessToken!, { title: wizardTitle }), 'Go-live wizard created.')}>
+              <input
+                className="rounded border border-slate-300 px-3 py-2 text-sm"
+                value={wizardTitle}
+                onChange={(e) => setWizardTitle(e.target.value)}
+              />
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(
+                    () => createGoLiveWizard(accessToken!, { title: wizardTitle }),
+                    'Go-live wizard created.',
+                  )
+                }
+              >
                 Create Go-Live Wizard
               </Button>
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runPostDeploymentValidation(accessToken!), 'Post-deployment validation completed.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(
+                    () => runPostDeploymentValidation(accessToken!),
+                    'Post-deployment validation completed.',
+                  )
+                }
+              >
                 Run Post-Deployment Validation
               </Button>
             </div>
           ) : null}
           <Panel title="Go-Live Wizards">
             {dashboard.goLiveWizards.length === 0 ? (
-              <EmptyState title="No go-live wizards" description="Create a guided go-live wizard with explicit owner approval before production." />
+              <EmptyState
+                title="No go-live wizards"
+                description="Create a guided go-live wizard with explicit owner approval before production."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.goLiveWizards.map((wizard) => (
@@ -337,7 +440,16 @@ export function LaunchCenterPage() {
                       {formatWizardStatus(wizard.status)} · step {wizard.currentStepKey ?? '—'}
                     </p>
                     {canManage && wizard.status === 'pending_approval' ? (
-                      <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => approveGoLiveWizard(accessToken!, wizard.id), 'Go-live wizard approved.')}>
+                      <Button
+                        variant="secondary"
+                        disabled={isWorking}
+                        onClick={() =>
+                          void runAction(
+                            () => approveGoLiveWizard(accessToken!, wizard.id),
+                            'Go-live wizard approved.',
+                          )
+                        }
+                      >
                         Approve Go-Live
                       </Button>
                     ) : null}
@@ -348,12 +460,16 @@ export function LaunchCenterPage() {
           </Panel>
           <Panel title="Deployment Validations">
             {dashboard.deploymentValidations.length === 0 ? (
-              <EmptyState title="No validations" description="Run post-deployment validation after go-live confirmation." />
+              <EmptyState
+                title="No validations"
+                description="Run post-deployment validation after go-live confirmation."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.deploymentValidations.map((validation) => (
                   <li key={validation.id} className="py-2 text-sm">
-                    {validation.validationKey} — {validation.status} · {validation.passedCheckCount} passed, {validation.failedCheckCount} failed
+                    {validation.validationKey} — {validation.status} · {validation.passedCheckCount}{' '}
+                    passed, {validation.failedCheckCount} failed
                   </li>
                 ))}
               </ul>
@@ -366,7 +482,10 @@ export function LaunchCenterPage() {
         <div className="space-y-4">
           <Panel title="Rollback Plans">
             {dashboard.rollbackPlanLinks.length === 0 ? (
-              <EmptyState title="No rollback plans" description="Rollback plans are synced from Business Continuity recovery plans." />
+              <EmptyState
+                title="No rollback plans"
+                description="Rollback plans are synced from Business Continuity recovery plans."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.rollbackPlanLinks.map((plan) => (
@@ -376,7 +495,16 @@ export function LaunchCenterPage() {
                       <p className="text-sm text-slate-500">{plan.planDescription}</p>
                     </div>
                     {canWrite ? (
-                      <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => validateRollbackPlan(accessToken!, plan.id), 'Rollback plan validated.')}>
+                      <Button
+                        variant="secondary"
+                        disabled={isWorking}
+                        onClick={() =>
+                          void runAction(
+                            () => validateRollbackPlan(accessToken!, plan.id),
+                            'Rollback plan validated.',
+                          )
+                        }
+                      >
                         Validate
                       </Button>
                     ) : null}
@@ -385,14 +513,25 @@ export function LaunchCenterPage() {
               </ul>
             )}
           </Panel>
-          <p className="text-sm text-slate-500">Rollback is never initiated automatically. Validation reports recovery readiness only.</p>
+          <p className="text-sm text-slate-500">
+            Rollback is never initiated automatically. Validation reports recovery readiness only.
+          </p>
         </div>
       ) : null}
 
       {activeTab === 'reports' ? (
         <div className="space-y-4">
           {canWrite ? (
-            <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => captureLaunchCenterAnalytics(accessToken!), 'Analytics captured.')}>
+            <Button
+              variant="secondary"
+              disabled={isWorking}
+              onClick={() =>
+                void runAction(
+                  () => captureLaunchCenterAnalytics(accessToken!),
+                  'Analytics captured.',
+                )
+              }
+            >
               Capture Analytics
             </Button>
           ) : null}
@@ -400,13 +539,18 @@ export function LaunchCenterPage() {
             {dashboard.latestReadinessScore ? (
               <ul className="space-y-2 text-sm">
                 <li>Score: {dashboard.latestReadinessScore.overallScore ?? '—'}</li>
-                <li>Status: {formatReadinessStatus(dashboard.latestReadinessScore.overallStatus)}</li>
+                <li>
+                  Status: {formatReadinessStatus(dashboard.latestReadinessScore.overallStatus)}
+                </li>
                 <li>Passed: {dashboard.latestReadinessScore.passedCount}</li>
                 <li>Warnings: {dashboard.latestReadinessScore.warningCount}</li>
                 <li>Critical blockers: {dashboard.latestReadinessScore.criticalBlockerCount}</li>
               </ul>
             ) : (
-              <EmptyState title="No readiness score" description="Run a readiness scan to generate a weighted deployment readiness score." />
+              <EmptyState
+                title="No readiness score"
+                description="Run a readiness scan to generate a weighted deployment readiness score."
+              />
             )}
           </Panel>
         </div>
@@ -417,7 +561,10 @@ export function LaunchCenterPage() {
           {isSupplementaryLoading ? (
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
-            <EmptyState title="No audit logs" description="Launch center actions are fully audited." />
+            <EmptyState
+              title="No audit logs"
+              description="Launch center actions are fully audited."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {auditLogs.map((log) => (
@@ -434,8 +581,14 @@ export function LaunchCenterPage() {
         <Panel title="Platform Configuration">
           <ul className="space-y-2 text-sm">
             <li>Audit retention: {dashboard.platformConfig.auditRetentionDays} days</li>
-            <li>Readiness policy configured: {Object.keys(dashboard.platformConfig.readinessPolicy).length > 0 ? 'Yes' : 'Default'}</li>
-            <li>Scoring weights configured: {Object.keys(dashboard.platformConfig.scoringWeights).length > 0 ? 'Yes' : 'Default'}</li>
+            <li>
+              Readiness policy configured:{' '}
+              {Object.keys(dashboard.platformConfig.readinessPolicy).length > 0 ? 'Yes' : 'Default'}
+            </li>
+            <li>
+              Scoring weights configured:{' '}
+              {Object.keys(dashboard.platformConfig.scoringWeights).length > 0 ? 'Yes' : 'Default'}
+            </li>
           </ul>
         </Panel>
       ) : null}
@@ -444,9 +597,19 @@ export function LaunchCenterPage() {
         <Panel title="AURA Launch Readiness Agent">
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
-          <AuraComposer disabled={isSending} onSend={(content) => void sendAgentMessage(content, 'launch_readiness' as import('@titan/shared').AgentKey)} />
+          <AuraComposer
+            disabled={isSending}
+            onSend={(content) =>
+              void sendAgentMessage(content, 'launch_readiness' as import('@titan/shared').AgentKey)
+            }
+          />
           {assistantError ? <p className="mt-2 text-sm text-red-600">{assistantError}</p> : null}
         </Panel>
       ) : null}

@@ -1,5 +1,9 @@
 import { eq } from 'drizzle-orm';
-import type { RlmAppStoreReadinessSummary, RlmStorePlatform, RlmValidationStatus } from '@titan/shared';
+import type {
+  RlmAppStoreReadinessSummary,
+  RlmStorePlatform,
+  RlmValidationStatus,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { rlmAppStoreReadiness } from '@titan/db';
 
@@ -49,7 +53,10 @@ export class EnterpriseReleaseManagementAppStoreReadinessService {
     return Array.from(latestByPlatform.values());
   }
 
-  async runAppStoreReadinessReview(scope: StaffScope, storePlatform: RlmStorePlatform): Promise<RlmAppStoreReadinessSummary> {
+  async runAppStoreReadinessReview(
+    scope: StaffScope,
+    storePlatform: RlmStorePlatform,
+  ): Promise<RlmAppStoreReadinessSummary> {
     const reviewKey = `app_store_${storePlatform}_${Date.now()}`;
     const checklist = storePlatform === 'apple_app_store' ? APPLE_CHECKLIST : GOOGLE_CHECKLIST;
 

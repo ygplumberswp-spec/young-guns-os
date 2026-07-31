@@ -103,12 +103,15 @@ export class FinanceIntelligenceService {
       paymentRows.length > 0
         ? Math.round(
             paymentRows
-              .filter((row) => new Date(row.paidAt) >= new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000))
+              .filter(
+                (row) => new Date(row.paidAt) >= new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000),
+              )
               .reduce((sum, row) => sum + row.amountCents, 0) / 4,
           )
         : weeklyFinance.cashFlow.inflowCents;
 
-    const weeklyForecastCents = avgWeeklyInflow + receivableDueWeek - Math.round(outstandingPayableCents * 0.25);
+    const weeklyForecastCents =
+      avgWeeklyInflow + receivableDueWeek - Math.round(outstandingPayableCents * 0.25);
     const monthlyForecastCents =
       monthlyFinance.cashFlow.inflowCents + receivableDueMonth - outstandingPayableCents;
     const cashShortageWarning = weeklyForecastCents < 0 || monthlyForecastCents < 0;
@@ -152,7 +155,9 @@ export class FinanceIntelligenceService {
 
     const techRevenue = new Map<string, number>();
     for (const job of profitability.jobs) {
-      const match = technicians.technicians.find((tech) => job.jobTitle.includes(tech.name.split(' ')[0] ?? ''));
+      const match = technicians.technicians.find((tech) =>
+        job.jobTitle.includes(tech.name.split(' ')[0] ?? ''),
+      );
       if (match) {
         techRevenue.set(match.name, (techRevenue.get(match.name) ?? 0) + job.revenueCents);
       }
@@ -161,7 +166,9 @@ export class FinanceIntelligenceService {
     const grossMarginPercent = profitability.totals.averageMarginPercent;
     const netMarginPercent =
       profitability.totals.revenueCents > 0 && profitability.totals.estimatedProfitCents !== null
-        ? Math.round((profitability.totals.estimatedProfitCents / profitability.totals.revenueCents) * 100)
+        ? Math.round(
+            (profitability.totals.estimatedProfitCents / profitability.totals.revenueCents) * 100,
+          )
         : grossMarginPercent;
 
     return {
@@ -219,7 +226,9 @@ export class FinanceIntelligenceService {
 
       const daysOverdue =
         invoice.dueDate && new Date(invoice.dueDate) < now
-          ? Math.floor((now.getTime() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000))
+          ? Math.floor(
+              (now.getTime() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000),
+            )
           : 0;
 
       if (daysOverdue > 0) {
@@ -256,7 +265,10 @@ export class FinanceIntelligenceService {
       .sort((a, b) => (b.daysOverdue ?? 0) - (a.daysOverdue ?? 0))
       .slice(0, 15);
 
-    const paymentsByCustomer = new Map<string, { customerId: string; customerName: string; days: number[] }>();
+    const paymentsByCustomer = new Map<
+      string,
+      { customerId: string; customerName: string; days: number[] }
+    >();
     for (const payment of paymentRows) {
       const invoice = invoiceRows.find((row) => row.id === payment.invoiceId);
       if (!invoice) continue;
@@ -269,7 +281,8 @@ export class FinanceIntelligenceService {
         const days = Math.max(
           0,
           Math.floor(
-            (new Date(payment.paidAt).getTime() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000),
+            (new Date(payment.paidAt).getTime() - new Date(invoice.dueDate).getTime()) /
+              (24 * 60 * 60 * 1000),
           ),
         );
         entry.days.push(days);
@@ -280,7 +293,9 @@ export class FinanceIntelligenceService {
     const customerPaymentBehaviour = [...paymentsByCustomer.values()]
       .map((entry) => {
         const averageDaysToPay =
-          entry.days.length > 0 ? Math.round(entry.days.reduce((a, b) => a + b, 0) / entry.days.length) : null;
+          entry.days.length > 0
+            ? Math.round(entry.days.reduce((a, b) => a + b, 0) / entry.days.length)
+            : null;
         return {
           customerId: entry.customerId,
           customerName: entry.customerName,
@@ -344,7 +359,8 @@ export class FinanceIntelligenceService {
       monthlyTrend.push({ period: start.toISOString().slice(0, 7), amountCents });
     }
 
-    const totalOutflowCents = paymentRows.reduce((sum, row) => sum + row.amountCents, 0) + supplierSpendingCents;
+    const totalOutflowCents =
+      paymentRows.reduce((sum, row) => sum + row.amountCents, 0) + supplierSpendingCents;
     const unusualSpendingSignals: ExpenseIntelligence['unusualSpendingSignals'] = [];
 
     if (monthlyTrend.length >= 2) {
@@ -382,7 +398,10 @@ export class FinanceIntelligenceService {
     return rows.map(toBudgetSummary);
   }
 
-  async createBudget(companyId: string, input: CreateFinanceBudgetRequest): Promise<FinanceBudgetSummary> {
+  async createBudget(
+    companyId: string,
+    input: CreateFinanceBudgetRequest,
+  ): Promise<FinanceBudgetSummary> {
     const name = input.name.trim();
     if (!name) {
       throw new FinanceIntelligenceError('VALIDATION_ERROR', 'Budget name is required');
@@ -495,7 +514,10 @@ export class FinanceIntelligenceService {
 
     const actualByMethod = new Map<string, number>();
     for (const payment of paymentRows) {
-      actualByMethod.set(payment.method, (actualByMethod.get(payment.method) ?? 0) + payment.amountCents);
+      actualByMethod.set(
+        payment.method,
+        (actualByMethod.get(payment.method) ?? 0) + payment.amountCents,
+      );
     }
 
     const lines = budget.lines.map((line) => {
@@ -532,7 +554,10 @@ export class FinanceIntelligenceService {
     };
   }
 
-  async getFinanceForecast(companyId: string, forecastType: FinanceForecastType = 'weekly'): Promise<FinanceForecast> {
+  async getFinanceForecast(
+    companyId: string,
+    forecastType: FinanceForecastType = 'weekly',
+  ): Promise<FinanceForecast> {
     const cashFlow = await this.getCashFlowIntelligence(companyId);
     const now = new Date();
     const horizonEnd = new Date(
@@ -818,7 +843,9 @@ export class FinanceIntelligenceService {
 }
 
 function toBudgetSummary(
-  row: typeof financeBudgets.$inferSelect & { lines: Array<typeof financeBudgetLines.$inferSelect> },
+  row: typeof financeBudgets.$inferSelect & {
+    lines: Array<typeof financeBudgetLines.$inferSelect>;
+  },
 ): FinanceBudgetSummary {
   return {
     id: row.id,

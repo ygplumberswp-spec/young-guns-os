@@ -16,7 +16,13 @@ const conversationStatusSchema = z.enum([
 ]);
 const channelSchema = z.enum(['portal', 'email', 'phone', 'chat', 'other']);
 const messageRoleSchema = z.enum(['customer', 'agent', 'system', 'ai_draft']);
-const escalationStatusSchema = z.enum(['pending', 'assigned', 'in_progress', 'resolved', 'dismissed']);
+const escalationStatusSchema = z.enum([
+  'pending',
+  'assigned',
+  'in_progress',
+  'resolved',
+  'dismissed',
+]);
 const escalationPrioritySchema = z.enum(['low', 'medium', 'high', 'urgent']);
 const sentimentSchema = z.enum(['positive', 'neutral', 'negative']);
 
@@ -126,7 +132,9 @@ export function createCustomerSupportRouter({
   router.post('/conversations', requireWrite, async (req, res) => {
     const parsed = createConversationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
       return;
     }
 
@@ -142,7 +150,9 @@ export function createCustomerSupportRouter({
   router.patch('/conversations/:id', requireWrite, async (req, res) => {
     const parsed = updateConversationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
       return;
     }
 
@@ -175,7 +185,9 @@ export function createCustomerSupportRouter({
   router.post('/messages/:conversationId', requireWrite, async (req, res) => {
     const parsed = createMessageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid message payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid message payload' } });
       return;
     }
 
@@ -201,7 +213,9 @@ export function createCustomerSupportRouter({
   router.post('/conversations/:id/escalations', requireWrite, async (req, res) => {
     const parsed = createEscalationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid escalation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid escalation payload' } });
       return;
     }
 
@@ -221,7 +235,9 @@ export function createCustomerSupportRouter({
   router.patch('/escalations/:id', requireWrite, async (req, res) => {
     const parsed = updateEscalationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid escalation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid escalation payload' } });
       return;
     }
 
@@ -247,7 +263,9 @@ export function createCustomerSupportRouter({
   router.post('/conversations/:id/feedback', requireWrite, async (req, res) => {
     const parsed = createFeedbackSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feedback payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feedback payload' } });
       return;
     }
 

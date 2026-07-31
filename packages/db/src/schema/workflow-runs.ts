@@ -30,7 +30,9 @@ export const workflowRuns = pgTable('workflow_runs', {
   completedAt: timestamp('completed_at', { withTimezone: true }),
   durationMs: integer('duration_ms'),
   isSimulation: boolean('is_simulation').notNull().default(false),
-  initiatedByUserId: uuid('initiated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  initiatedByUserId: uuid('initiated_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   errorMessage: text('error_message'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

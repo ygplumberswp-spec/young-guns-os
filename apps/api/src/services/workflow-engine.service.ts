@@ -1028,7 +1028,10 @@ export class WorkflowEngineService {
       case 'send_whatsapp_template':
       case 'create_payment_reminder': {
         const customerId = String(
-          config.customerId ?? storedOutput.customerId ?? getNestedValue(storedOutput, 'customer.id') ?? '',
+          config.customerId ??
+            storedOutput.customerId ??
+            getNestedValue(storedOutput, 'customer.id') ??
+            '',
         );
 
         const draft = await this.deps.whatsappService.createAutomationDraft(scope, {

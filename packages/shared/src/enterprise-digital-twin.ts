@@ -35,11 +35,7 @@ export type DigitalTwinActionType =
   | 'executive_recommendation';
 
 export type DigitalTwinActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type DigitalTwinReplayEventType =
   | 'job_event'

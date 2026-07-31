@@ -29,9 +29,7 @@ export class EnterpriseDataMigrationExportService {
     const rows = await this.fetchRows(companyId, entityType, filters);
     const fileName = `${entityType ?? 'company'}_export.${sourceFormat === 'json' ? 'json' : 'csv'}`;
     const exportContent =
-      sourceFormat === 'json'
-        ? JSON.stringify({ records: rows }, null, 2)
-        : this.toCsv(rows);
+      sourceFormat === 'json' ? JSON.stringify({ records: rows }, null, 2) : this.toCsv(rows);
 
     return { recordCount: rows.length, fileName, exportContent };
   }

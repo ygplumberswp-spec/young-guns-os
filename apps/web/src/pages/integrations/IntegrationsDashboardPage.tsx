@@ -3,6 +3,7 @@ import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
 import type { IntegrationProviderStatus } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
+import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import {
   fetchIntegrationPlatformDashboard,
@@ -11,12 +12,12 @@ import {
   syncIntegrationConnectors,
 } from '../../lib/integration-platform-api-client';
 import { useAuth } from '../../lib/auth-context';
-import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
+import { useStaffCachedQuery, useStaffCacheScope } from '../../lib/use-scoped-cached-query';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import {
-  formatConnectionStatus,
+  capabilityStateToPillModifier,
   formatProviderCategory,
   formatSyncJobStatus,
   formatWebhookEventStatus,
@@ -24,19 +25,23 @@ import {
 
 const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }> = [
   { id: 'accounting', label: 'Accounting', providers: ['xero'] },
-  { id: 'communications', label: 'Communications', providers: ['whatsapp'] },
-  { id: 'google', label: 'Google Workspace', providers: ['google', 'google_workspace', 'gmail'] },
+  { id: 'communications', label: 'Communications', providers: ['whatsapp', 'email', 'gmail'] },
   { id: 'fleet', label: 'Fleet', providers: ['cartrack'] },
   { id: 'payments', label: 'Payments', providers: ['yoco'] },
-  { id: 'social', label: 'Social Media', providers: ['meta', 'facebook', 'instagram'] },
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
 ];
 
+/**
+ * Decision 4 / UX-G — status pill and action are always derived from the
+ * backend-computed capabilityState, never from connectionStatus alone. A
+ * "not_implemented" provider must never render a working Connect button.
+ */
 function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }) {
+  const isNotImplemented = provider.capabilityState === 'not_implemented';
   const actionLabel =
-    provider.connectionStatus === 'connected'
+    provider.capabilityState === 'connected_usable'
       ? 'Configure'
-      : provider.connectionStatus === 'error'
+      : provider.capabilityState === 'failed_degraded'
         ? 'Reconnect'
         : 'Connect';
 
@@ -53,16 +58,30 @@ function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }
         {provider.lastError ? <p className="form-error">{provider.lastError}</p> : null}
       </div>
       <div className="integrations-simple-row__aside">
-        <span className={`status-pill status-pill--${provider.connectionStatus}`}>
-          {formatConnectionStatus(provider.connectionStatus)}
+        <span
+          className={`status-pill status-pill--${capabilityStateToPillModifier(provider.capabilityState)}`}
+        >
+          {provider.capabilityLabel}
         </span>
-        {provider.settingsPath && provider.availability === 'available' ? (
+        {provider.canConnect && provider.settingsPath ? (
           <Link href={provider.settingsPath}>
             <Button size="sm" variant="secondary">
               {actionLabel}
             </Button>
           </Link>
-        ) : null}
+        ) : provider.settingsPath ? (
+          <Link href={provider.settingsPath}>
+            <Button size="sm" variant="secondary">
+              {provider.provider === 'n8n' || isNotImplemented
+                ? 'View in Automation'
+                : actionLabel}
+            </Button>
+          </Link>
+        ) : (
+          <Button size="sm" variant="secondary" disabled>
+            Not implemented
+          </Button>
+        )}
       </div>
     </article>
   );
@@ -70,9 +89,11 @@ function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }
 
 export function IntegrationsDashboardPage() {
   const { accessToken, user } = useAuth();
+  const cacheScope = useStaffCacheScope();
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isSyncingConnectors, setIsSyncingConnectors] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
@@ -87,7 +108,8 @@ export function IntegrationsDashboardPage() {
   } = useStaffCachedQuery({
     queryKey: 'integrations/hub-dashboard',
     enabled: canView,
-    fetcher: (signal) => fetchIntegrationHubDashboard(accessToken!, { signal, simple: viewMode === 'simple' }),
+    fetcher: (signal) =>
+      fetchIntegrationHubDashboard(accessToken!, { signal, simple: viewMode === 'simple' }),
   });
 
   const {
@@ -119,7 +141,8 @@ export function IntegrationsDashboardPage() {
     fetcher: async () => fetchIntegrationTraces(accessToken!),
   });
 
-  const error = hubError ?? platformError ?? actionError;
+  // Prefer sync action errors over stale query errors so Sync now feedback is always visible.
+  const error = actionError ?? hubError ?? platformError;
   const monitoring = platformDashboard?.monitoring;
 
   const groupedProviders = useMemo(() => {
@@ -153,14 +176,68 @@ export function IntegrationsDashboardPage() {
   }, [hubDashboard]);
 
   async function handleRefreshConnectors() {
-    if (!accessToken) return;
-    setIsSyncingConnectors(true);
     setActionError(null);
+    setActionSuccess(null);
+
+    if (!accessToken) {
+      setActionError(
+        'You are not signed in. Refresh the page and sign in again, then retry Sync now.',
+      );
+      return;
+    }
+
+    if (!canManage) {
+      setActionError('You need integrations:manage permission to run Sync now.');
+      return;
+    }
+
+    if (isSyncingConnectors) {
+      return;
+    }
+
+    setIsSyncingConnectors(true);
+
     try {
-      await syncIntegrationConnectors(accessToken);
+      const result = await syncIntegrationConnectors(accessToken);
+
+      if (result.xeroSync) {
+        if (result.xeroSync.success) {
+          setActionSuccess(result.xeroSync.message);
+        } else {
+          const stage = result.xeroSync.failedStage
+            ? ` Failed stage: ${result.xeroSync.failedStage}.`
+            : '';
+          setActionError(`${result.xeroSync.message}${stage}`);
+        }
+      } else {
+        setActionError(
+          'Connectors refreshed, but Xero import did not run. Open Xero settings and confirm the connection status is Connected, then retry Sync now.',
+        );
+      }
+
+      if (cacheScope) {
+        invalidateStaffQueryPrefixes(cacheScope, accessToken, [
+          'integrations/hub-dashboard',
+          'integrations/platform-dashboard',
+        ]);
+      }
+
       await Promise.all([refetchHub(), refetchPlatform()]);
     } catch (err) {
-      setActionError(err instanceof ApiClientError ? err.message : 'Unable to refresh connectors');
+      if (
+        err instanceof DOMException &&
+        (err.name === 'AbortError' || err.name === 'TimeoutError')
+      ) {
+        setActionError('Sync timed out waiting for Xero. Check your connection and try again.');
+      } else if (err instanceof ApiClientError) {
+        setActionError(err.message);
+      } else if (err instanceof TypeError) {
+        setActionError(
+          'Network error while calling the sync API. Confirm the API is running on port 3000.',
+        );
+      } else {
+        setActionError(err instanceof Error ? err.message : 'Unable to sync integrations');
+      }
     } finally {
       setIsSyncingConnectors(false);
     }
@@ -191,19 +268,23 @@ export function IntegrationsDashboardPage() {
             />
             {canManage ? (
               <Button
+                type="button"
                 variant="secondary"
                 size="sm"
                 disabled={isSyncingConnectors}
+                aria-busy={isSyncingConnectors}
                 onClick={() => void handleRefreshConnectors()}
               >
-                {isSyncingConnectors ? 'Refreshing…' : 'Sync now'}
+                {isSyncingConnectors ? 'Syncing…' : 'Sync now'}
               </Button>
             ) : null}
           </div>
         }
       />
 
+      {isSyncingConnectors ? <p className="page-muted">Syncing integrations from Xero…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
+      {actionSuccess ? <p className="form-success">{actionSuccess}</p> : null}
 
       {viewMode === 'advanced' && advancedOpen && monitoring ? (
         <section className="integrations-section">
@@ -279,7 +360,10 @@ export function IntegrationsDashboardPage() {
             <div className="integrations-advanced__content">
               <Panel title="Recent sync jobs">
                 {hubDashboard?.recentSyncJobs.length === 0 ? (
-                  <EmptyState title="No sync jobs yet" description="Sync jobs appear when a provider sync runs." />
+                  <EmptyState
+                    title="No sync jobs yet"
+                    description="Sync jobs appear when a provider sync runs."
+                  />
                 ) : (
                   <ul className="integrations-list">
                     {hubDashboard?.recentSyncJobs.map((job) => (
@@ -300,12 +384,16 @@ export function IntegrationsDashboardPage() {
 
               <Panel title="Recent webhook events">
                 {hubDashboard?.recentWebhookEvents.length === 0 ? (
-                  <EmptyState title="No webhook events yet" description="Events appear when inbound webhooks are received." />
+                  <EmptyState
+                    title="No webhook events yet"
+                    description="Events appear when inbound webhooks are received."
+                  />
                 ) : (
                   <ul className="integrations-list">
                     {hubDashboard?.recentWebhookEvents.map((event) => (
                       <li key={event.id}>
-                        <strong>{event.eventType}</strong> — {formatWebhookEventStatus(event.status)}
+                        <strong>{event.eventType}</strong> —{' '}
+                        {formatWebhookEventStatus(event.status)}
                         <span className="page-muted">
                           {' '}
                           · {new Date(event.receivedAt).toLocaleString()}
@@ -348,7 +436,9 @@ export function IntegrationsDashboardPage() {
                       <li key={entry.id}>
                         <strong>{entry.provider}</strong> — {entry.authType.replace(/_/g, ' ')}
                         {entry.rotationRequired ? (
-                          <span className="status-pill status-pill--warning">Rotation required</span>
+                          <span className="status-pill status-pill--warning">
+                            Rotation required
+                          </span>
                         ) : null}
                       </li>
                     ))}
@@ -361,7 +451,8 @@ export function IntegrationsDashboardPage() {
                   <ul className="integrations-list">
                     {platformDashboard.connectors.map((connector) => (
                       <li key={connector.id}>
-                        <strong>{connector.name}</strong> — {formatProviderCategory(connector.category)}
+                        <strong>{connector.name}</strong> —{' '}
+                        {formatProviderCategory(connector.category)}
                         <span className={`status-pill status-pill--${connector.status}`}>
                           {connector.status.replace(/_/g, ' ')}
                         </span>

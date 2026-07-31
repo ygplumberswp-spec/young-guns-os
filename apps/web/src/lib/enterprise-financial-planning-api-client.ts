@@ -1,5 +1,8 @@
 import { request, ApiClientError } from './api-client';
-import type { EnterpriseFinancialPlanningDashboard, UpdateFpPlatformConfigRequest } from '@titan/shared';
+import type {
+  EnterpriseFinancialPlanningDashboard,
+  UpdateFpPlatformConfigRequest,
+} from '@titan/shared';
 
 export { ApiClientError as EnterpriseFinancialPlanningApiClientError };
 
@@ -12,10 +15,13 @@ export async function fetchFinancialPlanningDashboard(accessToken: string) {
 }
 
 export async function captureFinancialAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-financial-planning/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-financial-planning/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
@@ -44,10 +50,13 @@ export async function activateBudget(accessToken: string, budgetId: string) {
 }
 
 export async function generateCashFlowProjection(accessToken: string) {
-  const data = await request<{ projection: unknown }>('/enterprise-financial-planning/cash-flow/projections', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ projection: unknown }>(
+    '/enterprise-financial-planning/cash-flow/projections',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.projection;
 }
 
@@ -59,11 +68,17 @@ export async function testAccountingProvider(accessToken: string, providerId: st
   return data.provider;
 }
 
-export async function updateFinancialPlatformConfig(accessToken: string, body: UpdateFpPlatformConfigRequest) {
-  const data = await request<{ platformConfig: unknown }>('/enterprise-financial-planning/platform-config', {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+export async function updateFinancialPlatformConfig(
+  accessToken: string,
+  body: UpdateFpPlatformConfigRequest,
+) {
+  const data = await request<{ platformConfig: unknown }>(
+    '/enterprise-financial-planning/platform-config',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.platformConfig;
 }

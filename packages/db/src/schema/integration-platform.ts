@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { integrationConnections } from './integration-connections';
 import { integrationProviderEnum } from './integration-connections';
@@ -89,7 +98,9 @@ export const integrationConnectors = pgTable('integration_connectors', {
   authType: integrationConnectorAuthTypeEnum('auth_type').notNull(),
   syncMode: integrationConnectorSyncModeEnum('sync_mode').notNull().default('manual'),
   status: integrationConnectorStatusEnum('status').notNull().default('disconnected'),
-  connectionId: uuid('connection_id').references(() => integrationConnections.id, { onDelete: 'set null' }),
+  connectionId: uuid('connection_id').references(() => integrationConnections.id, {
+    onDelete: 'set null',
+  }),
   supportsWebhooks: boolean('supports_webhooks').notNull().default(false),
   supportsScheduledSync: boolean('supports_scheduled_sync').notNull().default(true),
   apiVersion: text('api_version').default('v1'),
@@ -171,7 +182,9 @@ export const integrationDeveloperDiagnostics = pgTable('integration_developer_di
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  connectorId: uuid('connector_id').references(() => integrationConnectors.id, { onDelete: 'set null' }),
+  connectorId: uuid('connector_id').references(() => integrationConnectors.id, {
+    onDelete: 'set null',
+  }),
   diagnosticType: text('diagnostic_type').notNull(),
   status: integrationDiagnosticStatusEnum('status').notNull().default('pending'),
   summary: text('summary').notNull().default(''),

@@ -1,4 +1,8 @@
-import { hasAnyPermission, resolveStaffExperience, type StaffExperience } from '@titan/auth/browser';
+import {
+  hasAnyPermission,
+  resolveStaffExperience,
+  type StaffExperience,
+} from '@titan/auth/browser';
 import type { PortalAccessPermission, QueryCacheScope } from '@titan/shared';
 import type { AuthUser, PortalAuthUser } from '@titan/shared';
 import { scheduleBackgroundTask } from './background-scheduler';
@@ -106,18 +110,26 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   },
   {
     path: '/leads',
-    load: () => import('../pages/sales-intelligence/SalesIntelligencePage'),
-    permissions: ['leads:read', '*'],
-    experiences: ['platform_owner', 'staff', 'dispatcher'],
+    load: () => import('../pages/leads/LeadListPage'),
+    permissions: ['leads:read', 'leads:write', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
     priority: 1,
+    dataQueries: ['leads/list', 'leads/stats'],
     safeToPreload: true,
-    expensive: true,
+  },
+  {
+    path: '/leads/new',
+    load: () => import('../pages/leads/LeadCreatePage'),
+    permissions: ['leads:write', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'dispatcher'],
+    priority: 2,
+    safeToPreload: true,
   },
   {
     path: '/communications/messages',
     load: () => import('../pages/communications/MessageListPage'),
     permissions: ['communications:read', '*'],
-    experiences: ['platform_owner', 'staff', 'dispatcher'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
     priority: 2,
     safeToPreload: true,
   },
@@ -125,7 +137,7 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     path: '/aura/agents',
     load: () => import('../pages/agents/AgentDashboardPage'),
     permissions: ['agents:read', '*'],
-    experiences: ['platform_owner', 'staff'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
     priority: 3,
     dataQueries: ['agents/stats', 'tenant-capabilities/list'],
     safeToPreload: true,
@@ -151,7 +163,7 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     path: '/aura',
     load: () => import('../pages/aura/AuraPage'),
     permissions: ['agents:read', 'intelligence:read', '*'],
-    experiences: ['platform_owner', 'staff'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
     priority: 3,
     safeToPreload: true,
   },
@@ -201,7 +213,7 @@ const TECHNICIAN_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
 
 const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   {
-    path: '/portal',
+    path: '/my',
     load: () => import('../pages/portal/PortalDashboardPage'),
     portalPermission: 'portal.dashboard:read',
     priority: 1,
@@ -209,7 +221,7 @@ const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
-    path: '/portal/appointments',
+    path: '/my/appointments',
     load: () => import('../pages/portal/PortalAppointmentsPage'),
     portalPermission: 'portal.appointments:read',
     priority: 1,
@@ -217,7 +229,7 @@ const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
-    path: '/portal/jobs',
+    path: '/my/jobs',
     load: () => import('../pages/portal/PortalJobsPage'),
     portalPermission: 'portal.jobs:read',
     priority: 1,
@@ -225,7 +237,7 @@ const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
-    path: '/portal/quotes',
+    path: '/my/quotes',
     load: () => import('../pages/portal/PortalQuotesPage'),
     portalPermission: 'portal.quotes:read',
     priority: 2,
@@ -233,7 +245,7 @@ const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
-    path: '/portal/finance',
+    path: '/my/finance',
     load: () => import('../pages/portal/PortalFinancePage'),
     portalPermission: 'portal.invoices:read',
     priority: 2,
@@ -241,14 +253,14 @@ const PORTAL_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
-    path: '/portal/documents',
+    path: '/my/documents',
     load: () => import('../pages/portal/PortalDocumentsPage'),
     portalPermission: 'portal.documents:read',
     priority: 3,
     safeToPreload: true,
   },
   {
-    path: '/portal/communications',
+    path: '/my/communications',
     load: () => import('../pages/portal/PortalCommunicationsPage'),
     portalPermission: 'portal.communications:read',
     priority: 2,
@@ -280,7 +292,8 @@ export function canPrefetchStaffRoute(
 ): boolean {
   if (!entry.safeToPreload) return false;
   if (entry.experiences && !entry.experiences.includes(experience)) return false;
-  if (entry.permissions && !hasAnyPermission(context.user.permissions, entry.permissions)) return false;
+  if (entry.permissions && !hasAnyPermission(context.user.permissions, entry.permissions))
+    return false;
 
   if (experience === 'dispatcher') {
     const allowed = new Set([
@@ -302,7 +315,10 @@ export function canPrefetchStaffRoute(
   return true;
 }
 
-export function canPrefetchPortalRoute(entry: RoutePrefetchEntry, context: PortalPreloadContext): boolean {
+export function canPrefetchPortalRoute(
+  entry: RoutePrefetchEntry,
+  context: PortalPreloadContext,
+): boolean {
   if (!entry.safeToPreload) return false;
   if (entry.portalPermission && !context.user.permissions.includes(entry.portalPermission)) {
     return false;
@@ -319,7 +335,9 @@ function registryForContext(context: PreloadContext): RoutePrefetchEntry[] {
 
 function findRouteEntry(path: string, context: PreloadContext): RoutePrefetchEntry | undefined {
   const registry = registryForContext(context);
-  return registry.find((entry) => entry.path === path || (path.startsWith(`${entry.path}/`) && entry.path !== '/'));
+  return registry.find(
+    (entry) => entry.path === path || (path.startsWith(`${entry.path}/`) && entry.path !== '/'),
+  );
 }
 
 export function prefetchNavIntent(path: string, context: PreloadContext | null): void {
@@ -414,7 +432,13 @@ export function scheduleDashboardBackgroundPrep(context: StaffPreloadContext): v
     'background',
     async (signal) => {
       if (signal.aborted) return;
-      const queries = ['crm/customers', 'jobs/list', 'finance/quotes', 'finance/invoices', 'team/members'];
+      const queries = [
+        'crm/customers',
+        'jobs/list',
+        'finance/quotes',
+        'finance/invoices',
+        'team/members',
+      ];
       prefetchDataQueries(queries, context, signal);
     },
   );

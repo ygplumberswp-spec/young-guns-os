@@ -60,21 +60,15 @@ export function CommunicationsIntelligencePage() {
 
   async function loadPage() {
     if (!accessToken) return;
-    const [
-      dashboardData,
-      timelineData,
-      callData,
-      threadData,
-      smsData,
-      draftData,
-    ] = await Promise.all([
-      fetchCommunicationsIntelligenceDashboard(accessToken),
-      fetchCommunicationsTimeline(accessToken),
-      fetchCommunicationsCallHistory(accessToken),
-      fetchCommunicationsEmailThreads(accessToken),
-      fetchCommunicationsSmsRecords(accessToken),
-      fetchCommunicationsDrafts(accessToken),
-    ]);
+    const [dashboardData, timelineData, callData, threadData, smsData, draftData] =
+      await Promise.all([
+        fetchCommunicationsIntelligenceDashboard(accessToken),
+        fetchCommunicationsTimeline(accessToken),
+        fetchCommunicationsCallHistory(accessToken),
+        fetchCommunicationsEmailThreads(accessToken),
+        fetchCommunicationsSmsRecords(accessToken),
+        fetchCommunicationsDrafts(accessToken),
+      ]);
     setDashboard(dashboardData);
     setTimeline(timelineData);
     setCalls(callData);
@@ -191,9 +185,15 @@ export function CommunicationsIntelligencePage() {
             <StatCard label="Total communications" value={String(analytics.totalCommunications)} />
             <StatCard label="Missed calls" value={String(analytics.missedCallCount)} />
             <StatCard label="Pending drafts" value={String(analytics.pendingDraftCount)} />
-            <StatCard label="Open support" value={String(analytics.supportResponsePerformance.openConversationCount)} />
+            <StatCard
+              label="Open support"
+              value={String(analytics.supportResponsePerformance.openConversationCount)}
+            />
             <StatCard label="WhatsApp unread" value={String(analytics.whatsappUnreadCount)} />
-            <StatCard label="Escalations" value={String(analytics.supportResponsePerformance.escalatedCount)} />
+            <StatCard
+              label="Escalations"
+              value={String(analytics.supportResponsePerformance.escalatedCount)}
+            />
           </div>
 
           <div className="portal-grid">
@@ -214,7 +214,10 @@ export function CommunicationsIntelligencePage() {
 
             <Panel title="Recent timeline">
               {dashboard.recentTimeline.length === 0 ? (
-                <EmptyState title="No communications" description="Timeline populates from real channel data." />
+                <EmptyState
+                  title="No communications"
+                  description="Timeline populates from real channel data."
+                />
               ) : (
                 <ul className="portal-list">
                   {dashboard.recentTimeline.slice(0, 8).map((entry) => (
@@ -236,14 +239,18 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'timeline' ? (
         <Panel title="Customer communication timeline">
           {timeline.length === 0 ? (
-            <EmptyState title="No timeline events" description="Events appear from calls, messages, and support records." />
+            <EmptyState
+              title="No timeline events"
+              description="Events appear from calls, messages, and support records."
+            />
           ) : (
             <ul className="portal-list">
               {timeline.map((entry) => (
                 <li key={`${entry.channel}-${entry.id}`}>
                   <strong>{entry.title}</strong>
                   <span>
-                    {entry.channel} · {entry.customerName ?? 'Unknown customer'} · {entry.occurredAt}
+                    {entry.channel} · {entry.customerName ?? 'Unknown customer'} ·{' '}
+                    {entry.occurredAt}
                   </span>
                   <span>{entry.preview}</span>
                 </li>
@@ -256,14 +263,18 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'calls' ? (
         <Panel title="AI call intelligence">
           {calls.length === 0 ? (
-            <EmptyState title="No calls" description="Call history comes from real voice sessions." />
+            <EmptyState
+              title="No calls"
+              description="Call history comes from real voice sessions."
+            />
           ) : (
             <ul className="portal-list">
               {calls.map((call) => (
                 <li key={call.voiceSessionId}>
                   <strong>{call.callerName ?? call.callerPhone ?? 'Unknown caller'}</strong>
                   <span>
-                    {call.callType} · {call.sessionStatus ?? 'unknown'} · {call.durationSeconds ?? 0}s
+                    {call.callType} · {call.sessionStatus ?? 'unknown'} ·{' '}
+                    {call.durationSeconds ?? 0}s
                   </span>
                   <span>{call.sessionSummary ?? call.intent ?? 'No summary'}</span>
                 </li>
@@ -276,14 +287,18 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'email' ? (
         <Panel title="Email threads">
           {emailThreads.length === 0 ? (
-            <EmptyState title="No email threads" description="Threads are grouped from CRM email communications." />
+            <EmptyState
+              title="No email threads"
+              description="Threads are grouped from CRM email communications."
+            />
           ) : (
             <ul className="portal-list">
               {emailThreads.map((thread) => (
                 <li key={thread.id}>
                   <strong>{thread.subject}</strong>
                   <span>
-                    {thread.customerName} · {thread.priority} · {thread.communicationIds.length} message(s)
+                    {thread.customerName} · {thread.priority} · {thread.communicationIds.length}{' '}
+                    message(s)
                   </span>
                   <span>{thread.aiSummary ?? 'No AI summary'}</span>
                 </li>
@@ -296,7 +311,10 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'sms' ? (
         <Panel title="SMS intelligence">
           {smsRecords.length === 0 ? (
-            <EmptyState title="No SMS records" description="SMS records appear when logged against real communications." />
+            <EmptyState
+              title="No SMS records"
+              description="SMS records appear when logged against real communications."
+            />
           ) : (
             <ul className="portal-list">
               {smsRecords.map((record) => (
@@ -317,7 +335,10 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'drafts' ? (
         <>
           {canManage ? (
-            <Panel title="Draft customer reply" description="Draft → Approval → Execution. No automatic sending.">
+            <Panel
+              title="Draft customer reply"
+              description="Draft → Approval → Execution. No automatic sending."
+            >
               <form className="form-grid" onSubmit={(event) => void handleCreateDraft(event)}>
                 <Input
                   label="Subject"
@@ -337,7 +358,10 @@ export function CommunicationsIntelligencePage() {
 
           <Panel title="Pending and historical drafts">
             {drafts.length === 0 ? (
-              <EmptyState title="No drafts" description="Communication drafts require manager approval." />
+              <EmptyState
+                title="No drafts"
+                description="Communication drafts require manager approval."
+              />
             ) : (
               <ul className="portal-list">
                 {drafts.map((draft) => (

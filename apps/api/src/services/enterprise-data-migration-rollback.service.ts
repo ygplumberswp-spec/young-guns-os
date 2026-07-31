@@ -9,7 +9,10 @@ type RollbackDeps = {
 export class EnterpriseDataMigrationRollbackService {
   constructor(private readonly deps: RollbackDeps) {}
 
-  async getRollbackAvailability(importJobId: string, companyId: string): Promise<{
+  async getRollbackAvailability(
+    importJobId: string,
+    companyId: string,
+  ): Promise<{
     available: boolean;
     recordsAffected: number;
   }> {
@@ -21,7 +24,10 @@ export class EnterpriseDataMigrationRollbackService {
     }
 
     const imported = await this.deps.db.query.dmImportRecords.findMany({
-      where: and(eq(dmImportRecords.importJobId, importJobId), eq(dmImportRecords.outcome, 'imported')),
+      where: and(
+        eq(dmImportRecords.importJobId, importJobId),
+        eq(dmImportRecords.outcome, 'imported'),
+      ),
       columns: { id: true },
     });
 
@@ -52,8 +58,7 @@ export class EnterpriseDataMigrationRollbackService {
 
     return {
       recordsAffected: availability.recordsAffected,
-      note:
-        'Rollback recorded in migration history. Production records created via approved import remain intact — manual review required for destructive cleanup.',
+      note: 'Rollback recorded in migration history. Production records created via approved import remain intact — manual review required for destructive cleanup.',
     };
   }
 }

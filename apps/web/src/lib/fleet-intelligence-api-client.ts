@@ -18,54 +18,77 @@ import { request, ApiClientError } from './api-client';
 export { ApiClientError as FleetIntelligenceApiClientError };
 
 export async function fetchFleetDashboard(accessToken: string) {
-  const data = await request<{ dashboard: FleetExecutiveDashboard }>('/fleet-intelligence/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: FleetExecutiveDashboard }>(
+    '/fleet-intelligence/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
 export async function fetchTripHistory(accessToken: string, vehicleId?: string) {
   const query = vehicleId ? `?vehicleId=${encodeURIComponent(vehicleId)}` : '';
-  const data = await request<{ trips: FleetTripSummary[] }>(`/fleet-intelligence/trips${query}`, { accessToken });
+  const data = await request<{ trips: FleetTripSummary[] }>(`/fleet-intelligence/trips${query}`, {
+    accessToken,
+  });
   return data.trips;
 }
 
 export async function fetchMonthlyReports(accessToken: string) {
-  const data = await request<{ reports: FleetMonthlyReportSummary[] }>('/fleet-intelligence/monthly-reports', {
-    accessToken,
-  });
+  const data = await request<{ reports: FleetMonthlyReportSummary[] }>(
+    '/fleet-intelligence/monthly-reports',
+    {
+      accessToken,
+    },
+  );
   return data.reports;
 }
 
-export async function generateMonthlyReport(accessToken: string, body: GenerateFleetMonthlyReportRequest) {
-  const data = await request<{ report: FleetMonthlyReportSummary }>('/fleet-intelligence/monthly-reports/generate', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+export async function generateMonthlyReport(
+  accessToken: string,
+  body: GenerateFleetMonthlyReportRequest,
+) {
+  const data = await request<{ report: FleetMonthlyReportSummary }>(
+    '/fleet-intelligence/monthly-reports/generate',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.report;
 }
 
 export async function fetchDriverBehaviour(accessToken: string) {
-  const data = await request<{ events: FleetDriverBehaviourSummary[] }>('/fleet-intelligence/behaviour', {
-    accessToken,
-  });
+  const data = await request<{ events: FleetDriverBehaviourSummary[] }>(
+    '/fleet-intelligence/behaviour',
+    {
+      accessToken,
+    },
+  );
   return data.events;
 }
 
 export async function analyzeDriverBehaviour(accessToken: string) {
-  const data = await request<{ events: FleetDriverBehaviourSummary[] }>('/fleet-intelligence/behaviour/analyze', {
-    accessToken,
-    method: 'POST',
-    body: {},
-  });
+  const data = await request<{ events: FleetDriverBehaviourSummary[] }>(
+    '/fleet-intelligence/behaviour/analyze',
+    {
+      accessToken,
+      method: 'POST',
+      body: {},
+    },
+  );
   return data.events;
 }
 
 export async function fetchVehicleUtilization(accessToken: string) {
-  const data = await request<{ utilization: FleetVehicleUtilizationSummary[] }>('/fleet-intelligence/utilization', {
-    accessToken,
-  });
+  const data = await request<{ utilization: FleetVehicleUtilizationSummary[] }>(
+    '/fleet-intelligence/utilization',
+    {
+      accessToken,
+    },
+  );
   return data.utilization;
 }
 
@@ -77,7 +100,10 @@ export async function fetchFleetCosts(accessToken: string) {
   return data;
 }
 
-export async function createOperatingCost(accessToken: string, body: CreateFleetOperatingCostRequest) {
+export async function createOperatingCost(
+  accessToken: string,
+  body: CreateFleetOperatingCostRequest,
+) {
   const data = await request<{ cost: FleetOperatingCostSummary }>('/fleet-intelligence/costs', {
     accessToken,
     method: 'POST',
@@ -87,16 +113,22 @@ export async function createOperatingCost(accessToken: string, body: CreateFleet
 }
 
 export async function fetchFleetPerformance(accessToken: string) {
-  const data = await request<{ performance: FleetPerformanceAnalytics }>('/fleet-intelligence/performance', {
-    accessToken,
-  });
+  const data = await request<{ performance: FleetPerformanceAnalytics }>(
+    '/fleet-intelligence/performance',
+    {
+      accessToken,
+    },
+  );
   return data.performance;
 }
 
 export async function fetchFleetRecommendations(accessToken: string) {
-  const data = await request<{ recommendations: FleetRecommendationSummary[] }>('/fleet-intelligence/recommendations', {
-    accessToken,
-  });
+  const data = await request<{ recommendations: FleetRecommendationSummary[] }>(
+    '/fleet-intelligence/recommendations',
+    {
+      accessToken,
+    },
+  );
   return data.recommendations;
 }
 
@@ -109,7 +141,9 @@ export async function generateFleetRecommendations(accessToken: string) {
 }
 
 export async function fetchFleetActions(accessToken: string) {
-  const data = await request<{ actions: FleetActionSummary[] }>('/fleet-intelligence/actions', { accessToken });
+  const data = await request<{ actions: FleetActionSummary[] }>('/fleet-intelligence/actions', {
+    accessToken,
+  });
   return data.actions;
 }
 

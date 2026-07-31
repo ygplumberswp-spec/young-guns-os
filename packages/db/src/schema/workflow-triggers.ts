@@ -8,6 +8,7 @@ export const workflowTriggerTypeEnum = pgEnum('workflow_trigger_type', [
   'job_status_changed',
   'job_scheduled',
   'job_completed',
+  'job_material_used',
   'customer_created',
   'customer_updated',
   'quote_created',

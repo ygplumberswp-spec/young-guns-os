@@ -157,29 +157,30 @@ export class EnterpriseEvolutionService {
     await this.ensureDefaultPolicies(companyId);
     const created: EvolutionLearningEventSummary[] = [];
 
-    const [approvedTasks, rejectedTasks, completedJobs, failedWorkflows, aiQuality] = await Promise.all([
-      this.deps.db.query.agentTasks.findMany({
-        where: and(eq(agentTasks.companyId, companyId), eq(agentTasks.status, 'executed')),
-        orderBy: [desc(agentTasks.updatedAt)],
-        limit: 15,
-      }),
-      this.deps.db.query.agentTasks.findMany({
-        where: and(eq(agentTasks.companyId, companyId), eq(agentTasks.status, 'rejected')),
-        orderBy: [desc(agentTasks.updatedAt)],
-        limit: 10,
-      }),
-      this.deps.db.query.jobs.findMany({
-        where: and(eq(jobs.companyId, companyId), eq(jobs.status, 'completed')),
-        orderBy: [desc(jobs.updatedAt)],
-        limit: 15,
-      }),
-      this.deps.db.query.workflowRuns.findMany({
-        where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'completed')),
-        orderBy: [desc(workflowRuns.completedAt)],
-        limit: 10,
-      }),
-      this.deps.aiOrchestrationService.getQualityAnalytics(companyId),
-    ]);
+    const [approvedTasks, rejectedTasks, completedJobs, failedWorkflows, aiQuality] =
+      await Promise.all([
+        this.deps.db.query.agentTasks.findMany({
+          where: and(eq(agentTasks.companyId, companyId), eq(agentTasks.status, 'executed')),
+          orderBy: [desc(agentTasks.updatedAt)],
+          limit: 15,
+        }),
+        this.deps.db.query.agentTasks.findMany({
+          where: and(eq(agentTasks.companyId, companyId), eq(agentTasks.status, 'rejected')),
+          orderBy: [desc(agentTasks.updatedAt)],
+          limit: 10,
+        }),
+        this.deps.db.query.jobs.findMany({
+          where: and(eq(jobs.companyId, companyId), eq(jobs.status, 'completed')),
+          orderBy: [desc(jobs.updatedAt)],
+          limit: 15,
+        }),
+        this.deps.db.query.workflowRuns.findMany({
+          where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'completed')),
+          orderBy: [desc(workflowRuns.completedAt)],
+          limit: 10,
+        }),
+        this.deps.aiOrchestrationService.getQualityAnalytics(companyId),
+      ]);
 
     for (const task of approvedTasks) {
       const row = await this.upsertLearningEvent(companyId, {
@@ -402,7 +403,8 @@ export class EnterpriseEvolutionService {
         category,
         title: pattern.title,
         recommendation: pattern.description,
-        priority: pattern.confidenceScore != null && pattern.confidenceScore >= 0.85 ? 'high' : 'medium',
+        priority:
+          pattern.confidenceScore != null && pattern.confidenceScore >= 0.85 ? 'high' : 'medium',
         confidenceScore: pattern.confidenceScore ?? 0.7,
         estimatedImpact: 'Operational efficiency improvement based on detected pattern',
         context: { patternId: pattern.id, patternType: pattern.patternType },
@@ -417,7 +419,11 @@ export class EnterpriseEvolutionService {
         priority: rec.priority,
         confidenceScore: rec.priority === 'high' ? 0.85 : 0.7,
         estimatedImpact: rec.actionHint ?? 'Cross-module optimization opportunity',
-        context: { source: 'recommendations_service', entityType: rec.entityType, entityId: rec.entityId },
+        context: {
+          source: 'recommendations_service',
+          entityType: rec.entityType,
+          entityId: rec.entityId,
+        },
       });
     }
 
@@ -488,7 +494,10 @@ export class EnterpriseEvolutionService {
     return rows.map(toLearningSummary);
   }
 
-  async approveLearning(scope: StaffScope, input: ApproveEvolutionLearningRequest): Promise<EvolutionLearningEventSummary> {
+  async approveLearning(
+    scope: StaffScope,
+    input: ApproveEvolutionLearningRequest,
+  ): Promise<EvolutionLearningEventSummary> {
     const event = await this.ensureLearningEvent(scope.companyId, input.learningEventId);
     const [updated] = await this.deps.db
       .update(evolutionLearningEvents)
@@ -512,7 +521,10 @@ export class EnterpriseEvolutionService {
     return toLearningSummary(updated!);
   }
 
-  async rollbackLearning(scope: StaffScope, input: RollbackEvolutionLearningRequest): Promise<EvolutionLearningEventSummary> {
+  async rollbackLearning(
+    scope: StaffScope,
+    input: RollbackEvolutionLearningRequest,
+  ): Promise<EvolutionLearningEventSummary> {
     const event = await this.ensureLearningEvent(scope.companyId, input.learningEventId);
     const [updated] = await this.deps.db
       .update(evolutionLearningEvents)
@@ -640,7 +652,8 @@ export class EnterpriseEvolutionService {
       .update(evolutionOptimizationStudio)
       .set({
         status: input.status,
-        approvedByUserId: input.status === 'approved' || input.status === 'deployed' ? scope.userId : undefined,
+        approvedByUserId:
+          input.status === 'approved' || input.status === 'deployed' ? scope.userId : undefined,
         deployedAt: input.status === 'deployed' ? new Date() : undefined,
         updatedAt: new Date(),
       })
@@ -823,21 +836,25 @@ export class EnterpriseEvolutionService {
   }
 
   private async buildMetrics(companyId: string) {
-    const [learningEvents, recommendations, patterns, aiQuality, executiveStats] = await Promise.all([
-      this.listLearningEvents(companyId),
-      this.listRecommendations(companyId),
-      this.listPatterns(companyId),
-      this.deps.aiOrchestrationService.getQualityAnalytics(companyId),
-      this.deps.executiveService.getStats(companyId),
-    ]);
+    const [learningEvents, recommendations, patterns, aiQuality, executiveStats] =
+      await Promise.all([
+        this.listLearningEvents(companyId),
+        this.listRecommendations(companyId),
+        this.listPatterns(companyId),
+        this.deps.aiOrchestrationService.getQualityAnalytics(companyId),
+        this.deps.executiveService.getStats(companyId),
+      ]);
 
     const approved = learningEvents.filter((event) => event.status === 'approved').length;
-    const accepted = recommendations.filter((rec) => rec.status === 'accepted' || rec.status === 'completed').length;
+    const accepted = recommendations.filter(
+      (rec) => rec.status === 'accepted' || rec.status === 'completed',
+    ).length;
     const decided = recommendations.filter((rec) => rec.status !== 'pending').length;
 
     const learningProgressPercent =
       learningEvents.length > 0 ? Math.round((approved / learningEvents.length) * 100) : 0;
-    const recommendationAcceptanceRate = decided > 0 ? Math.round((accepted / decided) * 100) : null;
+    const recommendationAcceptanceRate =
+      decided > 0 ? Math.round((accepted / decided) * 100) : null;
     const aiConfidenceScore = aiQuality.averageQualityScore ?? null;
     const optimizationScore = computeOptimizationScore({
       executiveHealth: executiveStats.healthScore,
@@ -867,7 +884,10 @@ export class EnterpriseEvolutionService {
       .select({ count: sql<number>`count(*)::int` })
       .from(evolutionLearningEvents)
       .where(
-        and(eq(evolutionLearningEvents.companyId, companyId), eq(evolutionLearningEvents.status, 'approved')),
+        and(
+          eq(evolutionLearningEvents.companyId, companyId),
+          eq(evolutionLearningEvents.status, 'approved'),
+        ),
       );
 
     const count = approvedCount[0]?.count ?? 0;
@@ -964,7 +984,12 @@ export class EnterpriseEvolutionService {
 
   private async recordAudit(
     scope: StaffScope,
-    input: { learningEventId: string; actionType: string; description: string; snapshot: Record<string, unknown> },
+    input: {
+      learningEventId: string;
+      actionType: string;
+      description: string;
+      snapshot: Record<string, unknown>;
+    },
   ) {
     await this.deps.db.insert(evolutionLearningAudit).values({
       companyId: scope.companyId,
@@ -978,7 +1003,10 @@ export class EnterpriseEvolutionService {
 
   private async ensureLearningEvent(companyId: string, eventId: string) {
     const row = await this.deps.db.query.evolutionLearningEvents.findFirst({
-      where: and(eq(evolutionLearningEvents.companyId, companyId), eq(evolutionLearningEvents.id, eventId)),
+      where: and(
+        eq(evolutionLearningEvents.companyId, companyId),
+        eq(evolutionLearningEvents.id, eventId),
+      ),
     });
     if (!row) throw new EnterpriseEvolutionError('NOT_FOUND', 'Learning event not found');
     return row;
@@ -986,7 +1014,10 @@ export class EnterpriseEvolutionService {
 
   private async ensureRecommendation(companyId: string, recommendationId: string) {
     const row = await this.deps.db.query.evolutionRecommendations.findFirst({
-      where: and(eq(evolutionRecommendations.companyId, companyId), eq(evolutionRecommendations.id, recommendationId)),
+      where: and(
+        eq(evolutionRecommendations.companyId, companyId),
+        eq(evolutionRecommendations.id, recommendationId),
+      ),
     });
     if (!row) throw new EnterpriseEvolutionError('NOT_FOUND', 'Recommendation not found');
     return row;
@@ -994,7 +1025,10 @@ export class EnterpriseEvolutionService {
 
   private async ensureOptimization(companyId: string, optimizationId: string) {
     const row = await this.deps.db.query.evolutionOptimizationStudio.findFirst({
-      where: and(eq(evolutionOptimizationStudio.companyId, companyId), eq(evolutionOptimizationStudio.id, optimizationId)),
+      where: and(
+        eq(evolutionOptimizationStudio.companyId, companyId),
+        eq(evolutionOptimizationStudio.id, optimizationId),
+      ),
     });
     if (!row) throw new EnterpriseEvolutionError('NOT_FOUND', 'Optimization not found');
     return row;
@@ -1014,7 +1048,9 @@ function computeOptimizationScore(input: {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
 
-function mapPatternToCategory(patternType: EvolutionPatternSummary['patternType']): EvolutionRecommendationSummary['category'] {
+function mapPatternToCategory(
+  patternType: EvolutionPatternSummary['patternType'],
+): EvolutionRecommendationSummary['category'] {
   switch (patternType) {
     case 'inventory_demand':
       return 'inventory';
@@ -1044,10 +1080,14 @@ function mapLegacyCategory(category: string): EvolutionRecommendationSummary['ca
 }
 
 function formatCents(amountCents: number): string {
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(amountCents / 100);
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(
+    amountCents / 100,
+  );
 }
 
-function toLearningSummary(row: typeof evolutionLearningEvents.$inferSelect): EvolutionLearningEventSummary {
+function toLearningSummary(
+  row: typeof evolutionLearningEvents.$inferSelect,
+): EvolutionLearningEventSummary {
   return {
     id: row.id,
     sourceType: row.sourceType,
@@ -1073,7 +1113,9 @@ function toPatternSummary(row: typeof evolutionPatterns.$inferSelect): Evolution
   };
 }
 
-function toRecommendationSummary(row: typeof evolutionRecommendations.$inferSelect): EvolutionRecommendationSummary {
+function toRecommendationSummary(
+  row: typeof evolutionRecommendations.$inferSelect,
+): EvolutionRecommendationSummary {
   return {
     id: row.id,
     category: row.category,
@@ -1087,7 +1129,9 @@ function toRecommendationSummary(row: typeof evolutionRecommendations.$inferSele
   };
 }
 
-function toOptimizationSummary(row: typeof evolutionOptimizationStudio.$inferSelect): EvolutionOptimizationStudioSummary {
+function toOptimizationSummary(
+  row: typeof evolutionOptimizationStudio.$inferSelect,
+): EvolutionOptimizationStudioSummary {
   return {
     id: row.id,
     title: row.title,
@@ -1103,7 +1147,9 @@ function toOptimizationSummary(row: typeof evolutionOptimizationStudio.$inferSel
   };
 }
 
-function toTimelineSummary(row: typeof evolutionTimelineEvents.$inferSelect): EvolutionTimelineEventSummary {
+function toTimelineSummary(
+  row: typeof evolutionTimelineEvents.$inferSelect,
+): EvolutionTimelineEventSummary {
   return {
     id: row.id,
     eventType: row.eventType,
@@ -1115,7 +1161,9 @@ function toTimelineSummary(row: typeof evolutionTimelineEvents.$inferSelect): Ev
   };
 }
 
-function toModelVersionSummary(row: typeof evolutionModelVersions.$inferSelect): EvolutionModelVersionSummary {
+function toModelVersionSummary(
+  row: typeof evolutionModelVersions.$inferSelect,
+): EvolutionModelVersionSummary {
   return {
     id: row.id,
     versionLabel: row.versionLabel,
@@ -1127,7 +1175,9 @@ function toModelVersionSummary(row: typeof evolutionModelVersions.$inferSelect):
   };
 }
 
-function toPolicySummary(row: typeof evolutionSafeLearningPolicies.$inferSelect): EvolutionSafeLearningPolicySummary {
+function toPolicySummary(
+  row: typeof evolutionSafeLearningPolicies.$inferSelect,
+): EvolutionSafeLearningPolicySummary {
   return {
     id: row.id,
     sourceType: row.sourceType,

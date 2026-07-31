@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
 import type { CxLoyaltyReferralSummary } from '@titan/shared';
-import { PortalApiClientError, createCxPortalReferral, fetchCxPortalReferrals } from '../../lib/portal-api-client';
+import {
+  PortalApiClientError,
+  createCxPortalReferral,
+  fetchCxPortalReferrals,
+} from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 
 export function PortalLoyaltyPage() {
@@ -15,7 +19,9 @@ export function PortalLoyaltyPage() {
     if (!accessToken) return;
     void fetchCxPortalReferrals(accessToken)
       .then(setReferrals)
-      .catch((err) => setError(err instanceof PortalApiClientError ? err.message : 'Unable to load referrals'));
+      .catch((err) =>
+        setError(err instanceof PortalApiClientError ? err.message : 'Unable to load referrals'),
+      );
   }, [accessToken]);
 
   async function inviteReferral() {
@@ -32,7 +38,10 @@ export function PortalLoyaltyPage() {
 
   return (
     <div className="portal-page">
-      <PageHeader title="Loyalty & referrals" description="Invite friends and track referral rewards." />
+      <PageHeader
+        title="Loyalty & referrals"
+        description="Invite friends and track referral rewards."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
@@ -50,7 +59,10 @@ export function PortalLoyaltyPage() {
 
       <Panel title="Your referrals">
         {referrals.length === 0 ? (
-          <EmptyState title="No referrals yet" description="Referral invitations you send will appear here." />
+          <EmptyState
+            title="No referrals yet"
+            description="Referral invitations you send will appear here."
+          />
         ) : (
           <ul className="portal-list">
             {referrals.map((referral) => (

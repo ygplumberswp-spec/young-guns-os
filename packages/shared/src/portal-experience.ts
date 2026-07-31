@@ -16,11 +16,7 @@ export type PortalCustomerRequestType =
   | 'general_request';
 
 export type PortalCustomerRequestStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type PortalCustomerExperienceDashboard = {
   customerName: string;
@@ -72,6 +68,8 @@ export type PortalJobTimelineEntry = {
 export type PortalQuoteDetail = QuoteSummary & {
   canRequestClarification: boolean;
   canRequestApproval: boolean;
+  canAccept: boolean;
+  canDecline: boolean;
 };
 
 export type PortalFinanceCentre = {
@@ -130,8 +128,10 @@ export type PortalCustomerRequestSummary = {
   message: string;
   entityType: string | null;
   entityId: string | null;
+  clientActionId: string | null;
   createdAt: string;
   updatedAt: string;
+  idempotentReplay?: boolean;
 };
 
 export type CreatePortalCustomerRequest = {
@@ -141,6 +141,7 @@ export type CreatePortalCustomerRequest = {
   entityType?: string | null;
   entityId?: string | null;
   payload?: Record<string, unknown>;
+  clientActionId?: string | null;
 };
 
 export type PortalCustomerExperienceAuraContext = {

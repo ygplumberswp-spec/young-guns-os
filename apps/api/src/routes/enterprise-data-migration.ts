@@ -7,9 +7,25 @@ import { requireAnyPermission } from '../middleware/rbac.js';
 
 const sourceFormatSchema = z.enum(['csv', 'excel', 'json', 'xml']);
 const entityTypeSchema = z.enum([
-  'customer', 'lead', 'supplier', 'contact', 'property', 'asset', 'vehicle',
-  'technician', 'job', 'quote', 'invoice', 'payment', 'inventory',
-  'purchase_order', 'document', 'knowledge_article', 'user', 'role', 'settings',
+  'customer',
+  'lead',
+  'supplier',
+  'contact',
+  'property',
+  'asset',
+  'vehicle',
+  'technician',
+  'job',
+  'quote',
+  'invoice',
+  'payment',
+  'inventory',
+  'purchase_order',
+  'document',
+  'knowledge_article',
+  'user',
+  'role',
+  'settings',
 ]);
 const duplicateActionSchema = z.enum(['merge', 'skip', 'replace', 'create_new']);
 
@@ -88,9 +104,11 @@ function getRouteParam(value: string | string[]) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseDataMigrationError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 :
-      error.code === 'VALIDATION_ERROR' || error.code === 'APPROVAL_REQUIRED' ? 400 :
-      500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'APPROVAL_REQUIRED'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -99,16 +117,29 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('data_migration:read', 'data_migration:manage', 'integrations:read');
-  const requireWrite = requireAnyPermission('data_migration:write', 'data_migration:manage', 'integrations:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'data_migration:read',
+    'data_migration:manage',
+    'integrations:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'data_migration:write',
+    'data_migration:manage',
+    'integrations:manage',
+  );
   const requireManage = requireAnyPermission('data_migration:manage', 'integrations:manage');
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterpriseDataMigrationService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterpriseDataMigrationService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -117,7 +148,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseDataMigrationService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseDataMigrationService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -127,7 +160,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseDataMigrationService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseDataMigrationService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -136,7 +172,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/import-jobs', requireRead, async (req, res) => {
     try {
-      const importJobs = await deps.enterpriseDataMigrationService.listImportJobs(getAuth(req).companyId);
+      const importJobs = await deps.enterpriseDataMigrationService.listImportJobs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { importJobs } });
     } catch (error) {
       handleError(error, res);
@@ -146,7 +184,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.post('/import-jobs', requireWrite, async (req, res) => {
     try {
       const input = importJobSchema.parse(req.body);
-      const importJob = await deps.enterpriseDataMigrationService.createImportJob(staffScope(req), input);
+      const importJob = await deps.enterpriseDataMigrationService.createImportJob(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { importJob } });
     } catch (error) {
       handleError(error, res);
@@ -256,7 +297,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.post('/duplicate-reviews/resolve', requireWrite, async (req, res) => {
     try {
       const input = duplicateResolveSchema.parse(req.body);
-      const duplicateReview = await deps.enterpriseDataMigrationService.resolveDuplicate(staffScope(req), input);
+      const duplicateReview = await deps.enterpriseDataMigrationService.resolveDuplicate(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { duplicateReview } });
     } catch (error) {
       handleError(error, res);
@@ -265,7 +309,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/export-jobs', requireRead, async (req, res) => {
     try {
-      const exportJobs = await deps.enterpriseDataMigrationService.listExportJobs(getAuth(req).companyId);
+      const exportJobs = await deps.enterpriseDataMigrationService.listExportJobs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { exportJobs } });
     } catch (error) {
       handleError(error, res);
@@ -275,7 +321,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.post('/export-jobs', requireWrite, async (req, res) => {
     try {
       const input = exportJobSchema.parse(req.body);
-      const exportJob = await deps.enterpriseDataMigrationService.createExportJob(staffScope(req), input);
+      const exportJob = await deps.enterpriseDataMigrationService.createExportJob(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { exportJob } });
     } catch (error) {
       handleError(error, res);
@@ -296,7 +345,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/migration-history', requireRead, async (req, res) => {
     try {
-      const migrationHistory = await deps.enterpriseDataMigrationService.listMigrationHistory(getAuth(req).companyId);
+      const migrationHistory = await deps.enterpriseDataMigrationService.listMigrationHistory(
+        getAuth(req).companyId,
+      );
       res.json({ data: { migrationHistory } });
     } catch (error) {
       handleError(error, res);
@@ -305,7 +356,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/rollback-requests', requireRead, async (req, res) => {
     try {
-      const rollbackRequests = await deps.enterpriseDataMigrationService.listRollbackRequests(getAuth(req).companyId);
+      const rollbackRequests = await deps.enterpriseDataMigrationService.listRollbackRequests(
+        getAuth(req).companyId,
+      );
       res.json({ data: { rollbackRequests } });
     } catch (error) {
       handleError(error, res);
@@ -315,7 +368,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.post('/rollback-requests', requireManage, async (req, res) => {
     try {
       const input = rollbackSchema.parse(req.body);
-      const rollbackRequest = await deps.enterpriseDataMigrationService.createRollbackRequest(staffScope(req), input);
+      const rollbackRequest = await deps.enterpriseDataMigrationService.createRollbackRequest(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { rollbackRequest } });
     } catch (error) {
       handleError(error, res);
@@ -337,9 +393,12 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.get('/migration-alerts', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const migrationAlerts = await deps.enterpriseDataMigrationService.listMigrationAlerts(getAuth(req).companyId, {
-        status,
-      });
+      const migrationAlerts = await deps.enterpriseDataMigrationService.listMigrationAlerts(
+        getAuth(req).companyId,
+        {
+          status,
+        },
+      );
       res.json({ data: { migrationAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -348,7 +407,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.post('/migration-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const migrationAlerts = await deps.enterpriseDataMigrationService.syncMigrationAlerts(staffScope(req));
+      const migrationAlerts = await deps.enterpriseDataMigrationService.syncMigrationAlerts(
+        staffScope(req),
+      );
       res.json({ data: { migrationAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -366,7 +427,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/action-drafts', requireRead, async (req, res) => {
     try {
-      const actionDrafts = await deps.enterpriseDataMigrationService.listActionDrafts(getAuth(req).companyId);
+      const actionDrafts = await deps.enterpriseDataMigrationService.listActionDrafts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actionDrafts } });
     } catch (error) {
       handleError(error, res);
@@ -376,7 +439,10 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const actionDraft = await deps.enterpriseDataMigrationService.createActionDraft(staffScope(req), input);
+      const actionDraft = await deps.enterpriseDataMigrationService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);
@@ -385,7 +451,9 @@ export function createEnterpriseDataMigrationRouter(deps: RouterDeps): Router {
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseDataMigrationService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseDataMigrationService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);

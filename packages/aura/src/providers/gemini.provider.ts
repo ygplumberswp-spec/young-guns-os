@@ -27,10 +27,9 @@ export class GeminiProvider implements AuraProvider {
         parts: [{ text: message.content }],
       }));
 
-    const baseUrl = (this.config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta').replace(
-      /\/$/,
-      '',
-    );
+    const baseUrl = (
+      this.config.baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta'
+    ).replace(/\/$/, '');
     const url = `${baseUrl}/models/${encodeURIComponent(this.config.model)}:generateContent?key=${encodeURIComponent(this.config.apiKey)}`;
 
     let response: Response;

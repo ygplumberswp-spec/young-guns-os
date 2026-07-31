@@ -211,11 +211,15 @@ export function createIntegrationsRouter({
     next();
   });
 
-  router.get('/cartrack', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const connection = await integrationsService.getCartrackConnection(companyId);
-    res.json({ data: { connection } });
-  });
+  router.get(
+    '/cartrack',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const connection = await integrationsService.getCartrackConnection(companyId);
+      res.json({ data: { connection } });
+    },
+  );
 
   router.put('/cartrack', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -298,38 +302,46 @@ export function createIntegrationsRouter({
     }
   });
 
-  router.get('/xero', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const connection = await businessIntegrationsService.getXeroConnection(companyId);
-    res.json({ data: { connection } });
-  });
+  router.get(
+    '/xero',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const connection = await businessIntegrationsService.getXeroConnection(companyId);
+      res.json({ data: { connection } });
+    },
+  );
 
-  router.post('/xero/oauth/start', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId, userId } = getAuth(req);
-    const parsed = startXeroOAuthSchema.safeParse(req.body);
+  router.post(
+    '/xero/oauth/start',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId } = getAuth(req);
+      const parsed = startXeroOAuthSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid Xero OAuth start payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid Xero OAuth start payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const result = await xeroOAuthService.startOAuth({
-        companyId,
-        userId,
-        returnPath: parsed.data.returnPath,
-      });
-      res.json({ data: result });
-    } catch (error) {
-      handleXeroOAuthError(res, error);
-    }
-  });
+      try {
+        const result = await xeroOAuthService.startOAuth({
+          companyId,
+          userId,
+          returnPath: parsed.data.returnPath,
+        });
+        res.json({ data: result });
+      } catch (error) {
+        handleXeroOAuthError(res, error);
+      }
+    },
+  );
 
   router.post('/xero/test', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -373,78 +385,113 @@ export function createIntegrationsRouter({
     }
   });
 
-  router.get('/xero/sync/status', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const status = await xeroSyncService.getSyncStatus(companyId);
-    res.json({ data: { status } });
-  });
+  router.get(
+    '/xero/sync/status',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const status = await xeroSyncService.getSyncStatus(companyId);
+      res.json({ data: { status } });
+    },
+  );
 
-  router.get('/xero/sync/logs', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const logs = await xeroSyncService.listSyncLogs(companyId);
-    res.json({ data: { logs } });
-  });
+  router.get(
+    '/xero/sync/logs',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const logs = await xeroSyncService.listSyncLogs(companyId);
+      res.json({ data: { logs } });
+    },
+  );
 
-  router.post('/xero/sync/customers', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.post(
+    '/xero/sync/customers',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
 
-    try {
-      const result = await xeroSyncService.syncCustomers(companyId);
-      res.json({ data: { result } });
-    } catch (error) {
-      handleXeroSyncError(res, error);
-    }
-  });
+      try {
+        const result = await xeroSyncService.syncCustomers(companyId);
+        res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
 
-  router.post('/xero/sync/quotes', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.post(
+    '/xero/sync/quotes',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
 
-    try {
-      const result = await xeroSyncService.syncQuotes(companyId);
-      res.json({ data: { result } });
-    } catch (error) {
-      handleXeroSyncError(res, error);
-    }
-  });
+      try {
+        const result = await xeroSyncService.syncQuotes(companyId);
+        res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
 
-  router.post('/xero/sync/invoices', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.post(
+    '/xero/sync/invoices',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
 
-    try {
-      const result = await xeroSyncService.syncInvoices(companyId);
-      res.json({ data: { result } });
-    } catch (error) {
-      handleXeroSyncError(res, error);
-    }
-  });
+      try {
+        const result = await xeroSyncService.syncInvoices(companyId);
+        res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
 
-  router.post('/xero/sync/payments', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.post(
+    '/xero/sync/payments',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
 
-    try {
-      const result = await xeroSyncService.syncPayments(companyId);
-      res.json({ data: { result } });
-    } catch (error) {
-      handleXeroSyncError(res, error);
-    }
-  });
+      try {
+        const result = await xeroSyncService.syncPayments(companyId);
+        res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
 
-  router.post('/xero/sync/retry/:syncJobId', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.post(
+    '/xero/sync/retry/:syncJobId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
 
-    try {
-      const result = await xeroSyncService.retrySyncJob(companyId, getRouteParam(req.params.syncJobId));
-      res.json({ data: { result } });
-    } catch (error) {
-      handleXeroSyncError(res, error);
-    }
-  });
+      try {
+        const result = await xeroSyncService.retrySyncJob(
+          companyId,
+          getRouteParam(req.params.syncJobId),
+        );
+        res.json({ data: { result } });
+      } catch (error) {
+        handleXeroSyncError(res, error);
+      }
+    },
+  );
 
-  router.get('/email', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const connection = await businessIntegrationsService.getEmailConnection(companyId);
-    res.json({ data: { connection } });
-  });
+  router.get(
+    '/email',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const connection = await businessIntegrationsService.getEmailConnection(companyId);
+      res.json({ data: { connection } });
+    },
+  );
 
   router.put('/email', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -462,7 +509,10 @@ export function createIntegrationsRouter({
     }
 
     try {
-      const connection = await businessIntegrationsService.saveEmailConnection(companyId, parsed.data);
+      const connection = await businessIntegrationsService.saveEmailConnection(
+        companyId,
+        parsed.data,
+      );
       res.json({ data: { connection } });
     } catch (error) {
       handleBusinessIntegrationsError(res, error);
@@ -486,11 +536,15 @@ export function createIntegrationsRouter({
     }
   });
 
-  router.get('/yoco', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const connection = await businessIntegrationsService.getYocoConnection(companyId);
-    res.json({ data: { connection } });
-  });
+  router.get(
+    '/yoco',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const connection = await businessIntegrationsService.getYocoConnection(companyId);
+      res.json({ data: { connection } });
+    },
+  );
 
   router.put('/yoco', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -508,7 +562,10 @@ export function createIntegrationsRouter({
     }
 
     try {
-      const connection = await businessIntegrationsService.saveYocoConnection(companyId, parsed.data);
+      const connection = await businessIntegrationsService.saveYocoConnection(
+        companyId,
+        parsed.data,
+      );
       res.json({ data: { connection } });
     } catch (error) {
       handleBusinessIntegrationsError(res, error);
@@ -532,15 +589,19 @@ export function createIntegrationsRouter({
     }
   });
 
-  router.get('/whatsapp', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const [connection, stats, templates] = await Promise.all([
-      whatsappService.getConnection(companyId),
-      whatsappService.getStats(companyId),
-      whatsappService.listTemplates(companyId),
-    ]);
-    res.json({ data: { connection, stats, templates } });
-  });
+  router.get(
+    '/whatsapp',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const [connection, stats, templates] = await Promise.all([
+        whatsappService.getConnection(companyId),
+        whatsappService.getStats(companyId),
+        whatsappService.listTemplates(companyId),
+      ]);
+      res.json({ data: { connection, stats, templates } });
+    },
+  );
 
   router.put('/whatsapp', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -599,414 +660,542 @@ export function createIntegrationsRouter({
     }
   });
 
-  router.post('/whatsapp/templates', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = createWhatsappTemplateSchema.safeParse(req.body);
+  router.post(
+    '/whatsapp/templates',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = createWhatsappTemplateSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid WhatsApp template payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid WhatsApp template payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const template = await whatsappService.createTemplate(companyId, parsed.data);
-      res.status(201).json({ data: { template } });
-    } catch (error) {
-      handleWhatsappError(res, error);
-    }
-  });
+      try {
+        const template = await whatsappService.createTemplate(companyId, parsed.data);
+        res.status(201).json({ data: { template } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
 
-  router.patch('/whatsapp/templates/:templateId', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = updateWhatsappTemplateSchema.safeParse(req.body);
+  router.patch(
+    '/whatsapp/templates/:templateId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = updateWhatsappTemplateSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid WhatsApp template payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid WhatsApp template payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const template = await whatsappService.updateTemplate(
-        companyId,
-        getRouteParam(req.params.templateId),
-        parsed.data,
+      try {
+        const template = await whatsappService.updateTemplate(
+          companyId,
+          getRouteParam(req.params.templateId),
+          parsed.data,
+        );
+        res.json({ data: { template } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
+
+  router.delete(
+    '/whatsapp/templates/:templateId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        await whatsappService.deleteTemplate(companyId, getRouteParam(req.params.templateId));
+        res.status(204).send();
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/dashboard',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const startedAt = Date.now();
+      const simple = req.query.simple === 'true' || req.query.view === 'simple';
+      const dashboard = await integrationHubService.getDashboard(companyId, { simple });
+      const durationMs = Date.now() - startedAt;
+      const existingTiming = res.getHeader('Server-Timing');
+      const hubTiming = `hub;dur=${durationMs}`;
+      res.setHeader(
+        'Server-Timing',
+        existingTiming ? `${existingTiming}, ${hubTiming}` : hubTiming,
       );
-      res.json({ data: { template } });
-    } catch (error) {
-      handleWhatsappError(res, error);
-    }
-  });
+      res.json({ data: { dashboard } });
+    },
+  );
 
-  router.delete('/whatsapp/templates/:templateId', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.get(
+    '/hub/providers',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const providers = await integrationHubService.listProviderStatuses(companyId);
+      res.json({ data: { providers } });
+    },
+  );
 
-    try {
-      await whatsappService.deleteTemplate(companyId, getRouteParam(req.params.templateId));
-      res.status(204).send();
-    } catch (error) {
-      handleWhatsappError(res, error);
-    }
-  });
+  router.get(
+    '/hub/sync-jobs',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const syncJobs = await integrationHubService.listSyncJobs(companyId);
+      res.json({ data: { syncJobs } });
+    },
+  );
 
-  router.get('/hub/dashboard', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const startedAt = Date.now();
-    const simple = req.query.simple === 'true' || req.query.view === 'simple';
-    const dashboard = await integrationHubService.getDashboard(companyId, { simple });
-    const durationMs = Date.now() - startedAt;
-    const existingTiming = res.getHeader('Server-Timing');
-    const hubTiming = `hub;dur=${durationMs}`;
-    res.setHeader(
-      'Server-Timing',
-      existingTiming ? `${existingTiming}, ${hubTiming}` : hubTiming,
-    );
-    res.json({ data: { dashboard } });
-  });
-
-  router.get('/hub/providers', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const providers = await integrationHubService.listProviderStatuses(companyId);
-    res.json({ data: { providers } });
-  });
-
-  router.get('/hub/sync-jobs', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const syncJobs = await integrationHubService.listSyncJobs(companyId);
-    res.json({ data: { syncJobs } });
-  });
-
-  router.get('/hub/sync-jobs/:syncJobId', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const syncJob = await integrationHubService.getSyncJob(
-      companyId,
-      getRouteParam(req.params.syncJobId),
-    );
-
-    if (!syncJob) {
-      res.status(404).json({
-        error: {
-          code: 'NOT_FOUND',
-          message: 'Sync job not found',
-        },
-      });
-      return;
-    }
-
-    res.json({ data: { syncJob } });
-  });
-
-  router.get('/hub/webhooks/endpoints', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const endpoints = await integrationHubService.listWebhookEndpoints(companyId);
-    res.json({ data: { endpoints } });
-  });
-
-  router.post('/hub/webhooks/endpoints', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = createWebhookEndpointSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid webhook endpoint payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
-
-    try {
-      const endpoint = await integrationHubService.createWebhookEndpoint(companyId, parsed.data);
-      res.status(201).json({ data: { endpoint } });
-    } catch (error) {
-      handleIntegrationHubError(res, error);
-    }
-  });
-
-  router.patch('/hub/webhooks/endpoints/:endpointId', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = updateWebhookEndpointSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid webhook endpoint payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
-
-    try {
-      const endpoint = await integrationHubService.updateWebhookEndpoint(
-        companyId,
-        getRouteParam(req.params.endpointId),
-        parsed.data,
-      );
-      res.json({ data: { endpoint } });
-    } catch (error) {
-      handleIntegrationHubError(res, error);
-    }
-  });
-
-  router.delete('/hub/webhooks/endpoints/:endpointId', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-
-    try {
-      await integrationHubService.deleteWebhookEndpoint(
-        companyId,
-        getRouteParam(req.params.endpointId),
-      );
-      res.status(204).send();
-    } catch (error) {
-      handleIntegrationHubError(res, error);
-    }
-  });
-
-  router.get('/hub/webhooks/events', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const events = await integrationHubService.listWebhookEvents(companyId);
-    res.json({ data: { events } });
-  });
-
-  router.get('/hub/management/registry', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const registry = await integrationApiManagementService.listRegistry(companyId);
-    res.json({ data: { registry } });
-  });
-
-  router.patch('/hub/management/registry/:provider', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = updateRegistrySettingsSchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid registry settings payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
-
-    try {
-      const entry = await integrationApiManagementService.updateRegistrySettings(
-        companyId,
-        getRouteParam(req.params.provider),
-        parsed.data,
-      );
-      res.json({ data: { entry } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
-
-  router.get('/hub/management/credentials', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const credentials = await integrationApiManagementService.listCredentialMetadata(companyId);
-    res.json({ data: { credentials } });
-  });
-
-  router.post('/hub/management/credentials/:metadataId/rotate', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-
-    try {
-      const credential = await integrationApiManagementService.markCredentialRotationRequired(
-        companyId,
-        getRouteParam(req.params.metadataId),
-      );
-      res.json({ data: { credential } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
-
-  router.get('/hub/management/usage', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const usage = await integrationApiManagementService.listApiUsage(companyId);
-    res.json({ data: { usage } });
-  });
-
-  router.get('/hub/management/health', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const health = await integrationApiManagementService.getApiHealth(companyId);
-    res.json({ data: { health } });
-  });
-
-  router.post('/hub/management/health/recommendations', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-
-    try {
-      const recommendations = await integrationApiManagementService.generateHealthRecommendations(companyId);
-      res.json({ data: { recommendations } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
-
-  router.get('/hub/management/recommendations', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const recommendations = await integrationApiManagementService.listRecommendations(companyId);
-    res.json({ data: { recommendations } });
-  });
-
-  router.get('/hub/management/logs', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const logs = await integrationApiManagementService.listIntegrationLogs(companyId);
-    res.json({ data: { logs } });
-  });
-
-  router.get('/hub/management/webhooks/deliveries', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const deliveries = await integrationApiManagementService.listWebhookDeliveries(companyId);
-    res.json({ data: { deliveries } });
-  });
-
-  router.post('/hub/management/webhooks/deliveries', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const parsed = createOutboundWebhookDeliverySchema.safeParse(req.body);
-
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid webhook delivery payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
-
-    try {
-      const delivery = await integrationApiManagementService.createOutboundWebhookDelivery(companyId, parsed.data);
-      res.status(201).json({ data: { delivery } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
-
-  router.post('/hub/management/webhooks/deliveries/:deliveryId/replay', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-
-    try {
-      const delivery = await integrationApiManagementService.replayWebhookDelivery(
-        companyId,
-        getRouteParam(req.params.deliveryId),
-      );
-      res.json({ data: { delivery } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
-
-  router.get('/hub/management/sync', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const sync = await integrationApiManagementService.getSyncManagerStatus(companyId);
-    res.json({ data: { sync } });
-  });
-
-  router.post('/hub/management/sync-jobs/:syncJobId/retry', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-
-    try {
-      const result = await integrationApiManagementService.retrySyncJob(
+  router.get(
+    '/hub/sync-jobs/:syncJobId',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const syncJob = await integrationHubService.getSyncJob(
         companyId,
         getRouteParam(req.params.syncJobId),
       );
-      res.json({ data: { result } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
 
-  router.post('/hub/management/validate/:provider', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+      if (!syncJob) {
+        res.status(404).json({
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Sync job not found',
+          },
+        });
+        return;
+      }
 
-    try {
-      const validation = await integrationApiManagementService.validateIntegration(
-        companyId,
-        getRouteParam(req.params.provider),
-      );
-      res.json({ data: { validation } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
+      res.json({ data: { syncJob } });
+    },
+  );
 
-  router.get('/hub/management/developer-keys', requireAnyPermission('integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const keys = await integrationApiManagementService.listDeveloperApiKeys(companyId);
-    res.json({ data: { keys } });
-  });
+  router.get(
+    '/hub/webhooks/endpoints',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const endpoints = await integrationHubService.listWebhookEndpoints(companyId);
+      res.json({ data: { endpoints } });
+    },
+  );
 
-  router.post('/hub/management/developer-keys', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const auth = getAuth(req);
-    const parsed = createDeveloperApiKeySchema.safeParse(req.body);
+  router.post(
+    '/hub/webhooks/endpoints',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = createWebhookEndpointSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid developer API key payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid webhook endpoint payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const key = await integrationApiManagementService.createDeveloperApiKey(
-        { companyId: auth.companyId, userId: auth.userId },
-        parsed.data,
-      );
-      res.status(201).json({ data: { key } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
+      try {
+        const endpoint = await integrationHubService.createWebhookEndpoint(companyId, parsed.data);
+        res.status(201).json({ data: { endpoint } });
+      } catch (error) {
+        handleIntegrationHubError(res, error);
+      }
+    },
+  );
 
-  router.post('/hub/management/developer-keys/:keyId/revoke', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.patch(
+    '/hub/webhooks/endpoints/:endpointId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = updateWebhookEndpointSchema.safeParse(req.body);
 
-    try {
-      const key = await integrationApiManagementService.revokeDeveloperApiKey(
-        companyId,
-        getRouteParam(req.params.keyId),
-      );
-      res.json({ data: { key } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid webhook endpoint payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-  router.post('/hub/management/developer-keys/:keyId/rotate', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const auth = getAuth(req);
+      try {
+        const endpoint = await integrationHubService.updateWebhookEndpoint(
+          companyId,
+          getRouteParam(req.params.endpointId),
+          parsed.data,
+        );
+        res.json({ data: { endpoint } });
+      } catch (error) {
+        handleIntegrationHubError(res, error);
+      }
+    },
+  );
 
-    try {
-      const key = await integrationApiManagementService.rotateDeveloperApiKey(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.keyId),
-      );
-      res.json({ data: { key } });
-    } catch (error) {
-      handleIntegrationApiManagementError(res, error);
-    }
-  });
+  router.delete(
+    '/hub/webhooks/endpoints/:endpointId',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        await integrationHubService.deleteWebhookEndpoint(
+          companyId,
+          getRouteParam(req.params.endpointId),
+        );
+        res.status(204).send();
+      } catch (error) {
+        handleIntegrationHubError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/webhooks/events',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const events = await integrationHubService.listWebhookEvents(companyId);
+      res.json({ data: { events } });
+    },
+  );
+
+  router.get(
+    '/hub/management/registry',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const registry = await integrationApiManagementService.listRegistry(companyId);
+      res.json({ data: { registry } });
+    },
+  );
+
+  router.patch(
+    '/hub/management/registry/:provider',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = updateRegistrySettingsSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid registry settings payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const entry = await integrationApiManagementService.updateRegistrySettings(
+          companyId,
+          getRouteParam(req.params.provider),
+          parsed.data,
+        );
+        res.json({ data: { entry } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/management/credentials',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const credentials = await integrationApiManagementService.listCredentialMetadata(companyId);
+      res.json({ data: { credentials } });
+    },
+  );
+
+  router.post(
+    '/hub/management/credentials/:metadataId/rotate',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const credential = await integrationApiManagementService.markCredentialRotationRequired(
+          companyId,
+          getRouteParam(req.params.metadataId),
+        );
+        res.json({ data: { credential } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/management/usage',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const usage = await integrationApiManagementService.listApiUsage(companyId);
+      res.json({ data: { usage } });
+    },
+  );
+
+  router.get(
+    '/hub/management/health',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const health = await integrationApiManagementService.getApiHealth(companyId);
+      res.json({ data: { health } });
+    },
+  );
+
+  router.post(
+    '/hub/management/health/recommendations',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const recommendations =
+          await integrationApiManagementService.generateHealthRecommendations(companyId);
+        res.json({ data: { recommendations } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/management/recommendations',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const recommendations = await integrationApiManagementService.listRecommendations(companyId);
+      res.json({ data: { recommendations } });
+    },
+  );
+
+  router.get(
+    '/hub/management/logs',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const logs = await integrationApiManagementService.listIntegrationLogs(companyId);
+      res.json({ data: { logs } });
+    },
+  );
+
+  router.get(
+    '/hub/management/webhooks/deliveries',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const deliveries = await integrationApiManagementService.listWebhookDeliveries(companyId);
+      res.json({ data: { deliveries } });
+    },
+  );
+
+  router.post(
+    '/hub/management/webhooks/deliveries',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const parsed = createOutboundWebhookDeliverySchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid webhook delivery payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const delivery = await integrationApiManagementService.createOutboundWebhookDelivery(
+          companyId,
+          parsed.data,
+        );
+        res.status(201).json({ data: { delivery } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/hub/management/webhooks/deliveries/:deliveryId/replay',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const delivery = await integrationApiManagementService.replayWebhookDelivery(
+          companyId,
+          getRouteParam(req.params.deliveryId),
+        );
+        res.json({ data: { delivery } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/management/sync',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const sync = await integrationApiManagementService.getSyncManagerStatus(companyId);
+      res.json({ data: { sync } });
+    },
+  );
+
+  router.post(
+    '/hub/management/sync-jobs/:syncJobId/retry',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const result = await integrationApiManagementService.retrySyncJob(
+          companyId,
+          getRouteParam(req.params.syncJobId),
+        );
+        res.json({ data: { result } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/hub/management/validate/:provider',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const validation = await integrationApiManagementService.validateIntegration(
+          companyId,
+          getRouteParam(req.params.provider),
+        );
+        res.json({ data: { validation } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/hub/management/developer-keys',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const keys = await integrationApiManagementService.listDeveloperApiKeys(companyId);
+      res.json({ data: { keys } });
+    },
+  );
+
+  router.post(
+    '/hub/management/developer-keys',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = createDeveloperApiKeySchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid developer API key payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const key = await integrationApiManagementService.createDeveloperApiKey(
+          { companyId: auth.companyId, userId: auth.userId },
+          parsed.data,
+        );
+        res.status(201).json({ data: { key } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/hub/management/developer-keys/:keyId/revoke',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const key = await integrationApiManagementService.revokeDeveloperApiKey(
+          companyId,
+          getRouteParam(req.params.keyId),
+        );
+        res.json({ data: { key } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/hub/management/developer-keys/:keyId/rotate',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+
+      try {
+        const key = await integrationApiManagementService.rotateDeveloperApiKey(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.keyId),
+        );
+        res.json({ data: { key } });
+      } catch (error) {
+        handleIntegrationApiManagementError(res, error);
+      }
+    },
+  );
 
   return router;
 }
@@ -1070,7 +1259,9 @@ function handleXeroSyncError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'NOT_CONNECTED' || error.code === 'INVALID_STATE' || error.code === 'INVALID_SCOPE'
+        : error.code === 'NOT_CONNECTED' ||
+            error.code === 'INVALID_STATE' ||
+            error.code === 'INVALID_SCOPE'
           ? 400
           : error.code === 'ENCRYPTION_NOT_CONFIGURED'
             ? 503
@@ -1091,7 +1282,9 @@ function handleXeroSyncError(res: import('express').Response, error: unknown) {
 function handleBusinessIntegrationsError(res: import('express').Response, error: unknown) {
   if (error instanceof BusinessIntegrationsError) {
     const status =
-      error.code === 'NOT_CONNECTED' || error.code === 'CONNECTION_FAILED' || error.code === 'VALIDATION_ERROR'
+      error.code === 'NOT_CONNECTED' ||
+      error.code === 'CONNECTION_FAILED' ||
+      error.code === 'VALIDATION_ERROR'
         ? 400
         : error.code === 'ENCRYPTION_NOT_CONFIGURED'
           ? 503

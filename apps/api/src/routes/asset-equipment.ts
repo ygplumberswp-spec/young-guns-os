@@ -15,7 +15,14 @@ const assetTypeSchema = z.enum([
   'it_equipment',
   'rented_asset',
 ]);
-const assetStatusSchema = z.enum(['active', 'inactive', 'maintenance', 'retired', 'disposed', 'out_of_service']);
+const assetStatusSchema = z.enum([
+  'active',
+  'inactive',
+  'maintenance',
+  'retired',
+  'disposed',
+  'out_of_service',
+]);
 const assetConditionSchema = z.enum(['excellent', 'good', 'fair', 'poor', 'critical']);
 const scheduleTypeSchema = z.enum([
   'recurring',
@@ -27,7 +34,13 @@ const scheduleTypeSchema = z.enum([
 const maintenanceTypeSchema = z.enum(['planned', 'emergency', 'corrective', 'preventative']);
 const inspectionTypeSchema = z.enum(['safety', 'vehicle', 'equipment', 'toolbox', 'compliance']);
 const calibrationStatusSchema = z.enum(['valid', 'expiring', 'expired', 'not_required']);
-const costTypeSchema = z.enum(['maintenance', 'repair', 'downtime', 'replacement', 'warranty_recovery']);
+const costTypeSchema = z.enum([
+  'maintenance',
+  'repair',
+  'downtime',
+  'replacement',
+  'warranty_recovery',
+]);
 const actionTypeSchema = z.enum(['maintenance_action', 'replacement_recommendation']);
 
 const createAssetSchema = z.object({
@@ -139,7 +152,11 @@ export function createAssetEquipmentRouter({
 }: AssetEquipmentRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('asset_equipment:read', 'asset_equipment:write', 'fleet:read');
+  const requireRead = requireAnyPermission(
+    'asset_equipment:read',
+    'asset_equipment:write',
+    'fleet:read',
+  );
   const requireWrite = requireAnyPermission('asset_equipment:write', 'fleet:write');
 
   router.use(requireAuth);
@@ -168,7 +185,10 @@ export function createAssetEquipmentRouter({
 
   router.get('/assets/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const asset = await assetEquipmentIntelligenceService.getAsset(companyId, getRouteParam(req.params.id));
+    const asset = await assetEquipmentIntelligenceService.getAsset(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!asset) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Asset not found' } });
       return;
@@ -179,7 +199,9 @@ export function createAssetEquipmentRouter({
   router.post('/assets', requireWrite, async (req, res) => {
     const parsed = createAssetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid asset payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid asset payload' } });
       return;
     }
     try {
@@ -193,7 +215,9 @@ export function createAssetEquipmentRouter({
   router.patch('/assets/:id', requireWrite, async (req, res) => {
     const parsed = updateAssetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update payload' } });
       return;
     }
     try {
@@ -211,7 +235,10 @@ export function createAssetEquipmentRouter({
   router.get('/history', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const assetId = typeof req.query.assetId === 'string' ? req.query.assetId : undefined;
-    const history = await assetEquipmentIntelligenceService.listLifecycleHistory(companyId, assetId);
+    const history = await assetEquipmentIntelligenceService.listLifecycleHistory(
+      companyId,
+      assetId,
+    );
     res.json({ data: { history } });
   });
 
@@ -224,11 +251,16 @@ export function createAssetEquipmentRouter({
   router.post('/schedules', requireWrite, async (req, res) => {
     const parsed = scheduleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
       return;
     }
     try {
-      const schedule = await assetEquipmentIntelligenceService.createMaintenanceSchedule(getAuth(req), parsed.data);
+      const schedule = await assetEquipmentIntelligenceService.createMaintenanceSchedule(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { schedule } });
     } catch (error) {
       handleError(res, error);
@@ -244,11 +276,16 @@ export function createAssetEquipmentRouter({
   router.post('/maintenance', requireWrite, async (req, res) => {
     const parsed = maintenanceRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid maintenance payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid maintenance payload' } });
       return;
     }
     try {
-      const record = await assetEquipmentIntelligenceService.createMaintenanceRecord(getAuth(req), parsed.data);
+      const record = await assetEquipmentIntelligenceService.createMaintenanceRecord(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(res, error);
@@ -264,11 +301,16 @@ export function createAssetEquipmentRouter({
   router.post('/inspections', requireWrite, async (req, res) => {
     const parsed = inspectionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid inspection payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid inspection payload' } });
       return;
     }
     try {
-      const inspection = await assetEquipmentIntelligenceService.createInspection(getAuth(req), parsed.data);
+      const inspection = await assetEquipmentIntelligenceService.createInspection(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { inspection } });
     } catch (error) {
       handleError(res, error);
@@ -284,11 +326,16 @@ export function createAssetEquipmentRouter({
   router.post('/calibrations', requireWrite, async (req, res) => {
     const parsed = calibrationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid calibration payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid calibration payload' } });
       return;
     }
     try {
-      const calibration = await assetEquipmentIntelligenceService.createCalibration(getAuth(req), parsed.data);
+      const calibration = await assetEquipmentIntelligenceService.createCalibration(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { calibration } });
     } catch (error) {
       handleError(res, error);
@@ -304,11 +351,16 @@ export function createAssetEquipmentRouter({
   router.post('/costs', requireWrite, async (req, res) => {
     const parsed = costSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid cost payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid cost payload' } });
       return;
     }
     try {
-      const cost = await assetEquipmentIntelligenceService.createMaintenanceCost(getAuth(req), parsed.data);
+      const cost = await assetEquipmentIntelligenceService.createMaintenanceCost(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { cost } });
     } catch (error) {
       handleError(res, error);
@@ -325,11 +377,16 @@ export function createAssetEquipmentRouter({
   router.post('/actions', requireWrite, async (req, res) => {
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
       return;
     }
     try {
-      const action = await assetEquipmentIntelligenceService.createAction(getAuth(req), parsed.data);
+      const action = await assetEquipmentIntelligenceService.createAction(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { action } });
     } catch (error) {
       handleError(res, error);
@@ -347,8 +404,7 @@ export function createAssetEquipmentRouter({
 
 function handleError(res: import('express').Response, error: unknown) {
   if (error instanceof AssetEquipmentIntelligenceError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }

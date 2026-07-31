@@ -1,7 +1,9 @@
 import {
+  INTEGRATION_CAPABILITY_STATE_OPTIONS,
   INTEGRATION_CONNECTION_STATUS_OPTIONS,
   INTEGRATION_SYNC_JOB_STATUS_OPTIONS,
   INTEGRATION_WEBHOOK_EVENT_STATUS_OPTIONS,
+  type IntegrationCapabilityState,
   type IntegrationConnectionStatus,
   type IntegrationConnectorStatus,
   type IntegrationSyncJobStatus,
@@ -32,6 +34,34 @@ export function formatProviderCategory(category: string): string {
     .split('_')
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+/** Decision 4 / UX-G — CSS-safe modifier for the capability-state status pill. */
+export function capabilityStateToPillModifier(state: IntegrationCapabilityState): string {
+  switch (state) {
+    case 'connected_usable':
+      return 'connected';
+    case 'configured_unverified':
+      return 'pending';
+    case 'not_configured':
+      return 'disconnected';
+    case 'disconnected':
+      return 'disconnected';
+    case 'failed_degraded':
+      return 'error';
+    case 'temporarily_unavailable':
+      return 'warning';
+    case 'not_implemented':
+    default:
+      return 'disabled';
+  }
+}
+
+export function formatCapabilityStateDescription(state: IntegrationCapabilityState): string {
+  return (
+    INTEGRATION_CAPABILITY_STATE_OPTIONS.find((option) => option.value === state)?.description ??
+    ''
+  );
 }
 
 export function formatConnectorStatus(status: IntegrationConnectorStatus): string {

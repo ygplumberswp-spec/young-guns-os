@@ -1,9 +1,11 @@
-import { PageHeader, Panel } from '@titan/ui';
+import { PageHeader, Panel, Button } from '@titan/ui';
+import { buildAddressMapsDeepLink } from '@titan/shared';
 import { fetchMobileRoute } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 
+/** UX-043 — route stops with stored site address + Maps deep-link; no fake live ETA. */
 export function MobileRoutePage() {
   const { accessToken } = useAuth();
 
@@ -15,12 +17,13 @@ export function MobileRoutePage() {
   });
 
   const route = routeQuery.data;
+  const nextDeepLink = buildAddressMapsDeepLink(route?.route.nextDestination?.address);
 
   return (
     <div className="portal-page">
       <PageHeader
-        title="Route intelligence"
-        description="Today's stops, next destination and fleet connection status."
+        title="Route"
+        description="Today's stops from assigned jobs and stored site addresses."
       />
 
       <AnalyticsTabPanel
@@ -28,22 +31,63 @@ export function MobileRoutePage() {
         error={routeQuery.error}
         hasData={route !== undefined}
         isEmpty={route !== undefined && route.route.stopCount === 0}
-        emptyTitle="No route data"
-        emptyDescription="Route intelligence is unavailable or you have no active stops."
+        emptyTitle="No route stops"
+        emptyDescription="Assigned jobs that are not completed will appear here with site addresses when available."
         loadingLabel="Loading route…"
         onRetry={() => void routeQuery.refetch()}
       >
         {route ? (
           <>
+            <Panel title="Maps / ETA capability">
+              <p>
+                <span className="status-pill status-pill--disabled">
+                  {route.mapsCapabilityLabel}
+                </span>
+              </p>
+              <p className="page-muted">
+                ETA source:{' '}
+                {route.etaSource === 'schedule_only'
+                  ? 'Planned appointment time only (not live traffic routing)'
+                  : 'None — no scheduled times on active stops'}
+              </p>
+              <p className="page-muted">
+                Live tracking:{' '}
+                {route.liveTrackingAvailable
+                  ? 'Available from connected fleet provider'
+                  : 'Unavailable — Cartrack/Maps provider depth deferred; no fake coordinates'}
+              </p>
+            </Panel>
+
             {route.route.nextDestination ? (
               <Panel title="Next destination">
                 <p>
                   <strong>{route.route.nextDestination.title}</strong> —{' '}
                   {route.route.nextDestination.customerName}
                 </p>
+                <p>
+                  {route.route.nextDestination.address
+                    ? `Site: ${route.route.nextDestination.address}`
+                    : 'Site address missing on job snapshot'}
+                </p>
+                {route.route.nextDestination.scheduledAt ? (
+                  <p>
+                    Planned:{' '}
+                    {new Date(route.route.nextDestination.scheduledAt).toLocaleString()}
+                  </p>
+                ) : null}
                 {route.route.assignedVehicleName ? (
                   <p>
-                    Vehicle: {route.route.assignedVehicleName} ({route.route.assignedVehiclePlate})
+                    Vehicle: {route.route.assignedVehicleName} (
+                    {route.route.assignedVehiclePlate})
+                  </p>
+                ) : (
+                  <p className="page-muted">No vehicle assigned on this technician record.</p>
+                )}
+                {nextDeepLink ? (
+                  <p>
+                    <a href={nextDeepLink} target="_blank" rel="noreferrer">
+                      Open site address in Maps (deep-link — TITAN does not call Google)
+                    </a>
                   </p>
                 ) : null}
               </Panel>
@@ -54,26 +98,45 @@ export function MobileRoutePage() {
                 <p className="page-muted">No active stops on your route.</p>
               ) : (
                 <ul className="portal-list">
-                  {route.route.stops.map((stop) => (
-                    <li key={stop.jobId}>
-                      <strong>
-                        {stop.sequence}. {stop.title}
-                      </strong>
-                      <span>
-                        {stop.customerName} · {stop.status}
-                        {stop.scheduledAt ? ` · ${new Date(stop.scheduledAt).toLocaleString()}` : ''}
-                      </span>
-                    </li>
-                  ))}
+                  {route.route.stops.map((stop) => {
+                    const link = buildAddressMapsDeepLink(stop.address);
+                    return (
+                      <li key={stop.jobId}>
+                        <strong>
+                          {stop.sequence}. {stop.title}
+                        </strong>
+                        <span>
+                          {stop.customerName} · {stop.status.replace(/_/g, ' ')}
+                          {stop.scheduledAt
+                            ? ` · planned ${new Date(stop.scheduledAt).toLocaleString()}`
+                            : ''}
+                        </span>
+                        <span>
+                          {stop.address ? `Site: ${stop.address}` : 'Site address missing'}
+                        </span>
+                        {link ? (
+                          <a href={link} target="_blank" rel="noreferrer">
+                            Maps deep-link
+                          </a>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </Panel>
 
-            <Panel title="Fleet status">
+            <Panel title="Fleet provider status">
               <p>
-                Cartrack {route.cartrackConnected ? 'connected' : 'disconnected'} ·{' '}
-                {route.route.stopCount} stop(s)
+                Cartrack connection record:{' '}
+                {route.cartrackConnected ? 'configured in integrations' : 'not connected'}
               </p>
+              <p className="page-muted">
+                UX-I does not activate Cartrack or invent GPS. Live provider depth is deferred.
+              </p>
+              <Button size="sm" variant="secondary" onClick={() => void routeQuery.refetch()}>
+                Refresh
+              </Button>
             </Panel>
           </>
         ) : null}

@@ -55,11 +55,15 @@ export function createDocumentsRouter({
     next();
   });
 
-  router.get('/stats', requireAnyPermission('documents:read', 'documents:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stats = await documentsService.getStats(companyId);
-    res.json({ data: stats });
-  });
+  router.get(
+    '/stats',
+    requireAnyPermission('documents:read', 'documents:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const stats = await documentsService.getStats(companyId);
+      res.json({ data: stats });
+    },
+  );
 
   router.get(
     '/categories',
@@ -94,11 +98,15 @@ export function createDocumentsRouter({
     }
   });
 
-  router.get('/documents', requireAnyPermission('documents:read', 'documents:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const documents = await documentsService.listDocuments(companyId);
-    res.json({ data: { documents } });
-  });
+  router.get(
+    '/documents',
+    requireAnyPermission('documents:read', 'documents:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const documents = await documentsService.listDocuments(companyId);
+      res.json({ data: { documents } });
+    },
+  );
 
   router.post('/documents', requireAnyPermission('documents:write'), async (req, res) => {
     const { companyId, userId } = getAuth(req);

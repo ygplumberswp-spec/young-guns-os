@@ -7,10 +7,17 @@ import type { TechnicianWorkflowService } from '../services/technician-workflow.
 import { TechnicianWorkflowError } from '../services/technician-workflow.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
+import type { JobExecutionService } from '../services/job-execution.service.js';
+import { JobExecutionError } from '../services/job-execution.service.js';
 import type { RecommendationsService } from '../services/recommendations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { PortalAuthService } from '../services/portal-auth.service.js';
+import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import {
+  createDenyTechnicianFromOwnerModules,
+  createRequireAssignedJob,
+} from '../middleware/authorization-guards.js';
 import {
   createPortalAuthMiddleware,
   requirePortalPermission,
@@ -71,21 +78,53 @@ const submitInventoryUsageSchema = z.object({
   scanCode: z.string().optional(),
   notes: z.string().optional(),
 });
+const documentationTypeSchema = z.enum([
+  'photo',
+  'video',
+  'document',
+  'inspection_form',
+  'safety_checklist',
+  'customer_signature',
+]);
+const evidencePhaseSchema = z.enum(['before', 'during', 'after', 'signature', 'document']);
 const submitDocumentationSchema = z.object({
-  documentationType: z.enum([
-    'photo',
-    'video',
-    'document',
-    'inspection_form',
-    'safety_checklist',
-    'customer_signature',
-  ]),
+  documentationType: documentationTypeSchema,
   title: z.string().trim().min(1),
   fileName: z.string().optional(),
   mimeType: z.string().optional(),
   sizeBytes: z.number().int().nonnegative().optional(),
   content: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
+  evidencePhase: evidencePhaseSchema.optional(),
+});
+const uploadJobEvidenceSchema = z.object({
+  documentationType: documentationTypeSchema,
+  title: z.string().trim().min(1),
+  mimeType: z.string().trim().min(1),
+  dataBase64: z.string().min(1),
+  fileName: z.string().optional(),
+  evidencePhase: evidencePhaseSchema.optional(),
+  metadata: z.record(z.unknown()).optional(),
+  clientActionId: z.string().optional(),
+  signerName: z.string().optional(),
+  signerRole: z.string().optional(),
+  acknowledgement: z.boolean().optional(),
+});
+const offlineActionSchema = z.object({
+  clientActionId: z.string().min(1),
+  actionType: z.enum([
+    'transition',
+    'note',
+    'time_entry',
+    'material_line',
+    'checklist_update',
+    'evidence_upload',
+  ]),
+  jobId: z.string().uuid(),
+  payload: z.record(z.unknown()),
+});
+const flushOfflineActionsSchema = z.object({
+  actions: z.array(offlineActionSchema).min(1).max(50),
 });
 const createWorkforceRequestSchema = z.object({
   requestType: z.enum([
@@ -115,6 +154,62 @@ const resolveConflictSchema = z.object({
   resolution: z.enum(['keep_client', 'keep_server', 'merge']),
   notes: z.string().optional(),
 });
+const jobTransitionSchema = z.object({
+  action: z.enum([
+    'accept',
+    'en_route',
+    'arrive',
+    'start_work',
+    'pause',
+    'resume',
+    'await_customer',
+    'await_parts',
+    'await_approval',
+    'ready_to_complete',
+  ]),
+  reason: z.string().trim().min(1).optional(),
+  clientActionId: z.string().optional(),
+});
+const createVariationSchema = z.object({
+  title: z.string().trim().min(1),
+  siteCondition: z.string().trim().min(1),
+  explanation: z.string().trim().min(1),
+  labourEffect: z.string().optional(),
+  materialEffect: z.string().optional(),
+  proposedScope: z.string().optional(),
+  photoDocIds: z.array(z.string().uuid()).optional(),
+});
+const recordMaterialLineSchema = z.object({
+  description: z.string().trim().min(1),
+  quantity: z.number().positive(),
+  unit: z.string().optional(),
+  materialSource: z.enum(['vehicle_stock', 'warehouse_stock', 'supplier_purchase', 'customer_supplied']),
+  inventoryItemId: z.string().uuid().optional(),
+  locationId: z.string().uuid().optional().nullable(),
+  quotedQuantity: z.number().positive().optional().nullable(),
+  supplierReference: z.string().optional(),
+  notes: z.string().optional(),
+  requestOnly: z.boolean().optional(),
+  clientActionId: z.string().optional(),
+});
+const gatedCompletionSchema = z.object({
+  workPerformedSummary: z.string().trim().min(1),
+  checklist: z.record(z.boolean()),
+  measurements: z.string().optional(),
+  diagnosis: z.string().optional(),
+  recommendation: z.string().optional(),
+  siteCondition: z.string().optional(),
+  outstandingDefects: z.string().optional(),
+  followUpRequired: z.boolean().optional(),
+  customerRepName: z.string().trim().min(1),
+  signatureDocId: z.string().uuid().optional(),
+  signatureUnavailableReason: z.string().optional(),
+  cocRequired: z.enum(['required', 'not_required', 'pending_classification']),
+  technicianDeclaration: z.boolean(),
+  safetyNotes: z.string().optional(),
+  customerVisibleUpdate: z.string().optional(),
+  clientActionId: z.string().optional(),
+});
 
 type MobileRouterDeps = {
   mobileService: MobileService;
@@ -122,9 +217,11 @@ type MobileRouterDeps = {
   mobileSyncService: MobileSyncService;
   technicianWorkflowService: TechnicianWorkflowService;
   mobileWorkforceService: MobileWorkforceService;
+  jobExecutionService: JobExecutionService;
   recommendationsService: RecommendationsService;
   teamService: TeamService;
   portalAuthService: PortalAuthService;
+  db: DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -147,15 +244,21 @@ export function createMobileRouter({
   mobileSyncService,
   technicianWorkflowService,
   mobileWorkforceService,
+  jobExecutionService,
   recommendationsService,
   teamService,
   portalAuthService,
+  db,
   jwtSecret,
   authService,
 }: MobileRouterDeps): Router {
   const router = Router();
   const requireStaffAuth = createAuthMiddleware({ jwtSecret, authService });
   const requirePortalAuth = createPortalAuthMiddleware({ jwtSecret, portalAuthService });
+  const denyTechnician = createDenyTechnicianFromOwnerModules(db);
+  const requireAssignedJob = createRequireAssignedJob(db, (req) =>
+    getRouteParam(req.params.jobId ?? req.params.id),
+  );
   const requireMobileRead = requireAnyPermission('mobile:read', 'mobile:write');
   const requireMobileWrite = requireAnyPermission('mobile:write', 'jobs:write');
   const requireOwnerAccess = requireAnyPermission(
@@ -168,6 +271,7 @@ export function createMobileRouter({
 
   const ownerRouter = Router();
   ownerRouter.use(requireStaffAuth);
+  ownerRouter.use(denyTechnician);
   ownerRouter.use(async (req, _res, next) => {
     await teamService.ensureDefaultRoles(getAuth(req).companyId);
     next();
@@ -185,17 +289,28 @@ export function createMobileRouter({
     res.json({ data: { jobs } });
   });
 
-  ownerRouter.get('/revenue', requireAnyPermission('finance:read', 'mobile:read'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const revenue = await mobileService.getOwnerRevenueSummary(companyId);
-    res.json({ data: { revenue } });
-  });
+  ownerRouter.get(
+    '/revenue',
+    requireAnyPermission('finance:read', 'mobile:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const revenue = await mobileService.getOwnerRevenueSummary(companyId);
+      res.json({ data: { revenue } });
+    },
+  );
 
-  ownerRouter.get('/invoices', requireAnyPermission('finance:read', 'mobile:read'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const dashboard = await mobileService.getOwnerDashboard({ companyId, userId: getAuth(req).userId });
-    res.json({ data: { outstandingInvoices: dashboard.summary.outstandingInvoices } });
-  });
+  ownerRouter.get(
+    '/invoices',
+    requireAnyPermission('finance:read', 'mobile:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const dashboard = await mobileService.getOwnerDashboard({
+        companyId,
+        userId: getAuth(req).userId,
+      });
+      res.json({ data: { outstandingInvoices: dashboard.summary.outstandingInvoices } });
+    },
+  );
 
   ownerRouter.get('/approvals', requireOwnerAccess, async (req, res) => {
     const { companyId } = getAuth(req);
@@ -262,7 +377,9 @@ export function createMobileRouter({
   ownerRouter.post('/sync', requireMobileRead, async (req, res) => {
     const parsed = queueSyncSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
       return;
     }
     const auth = getAuth(req);
@@ -285,6 +402,9 @@ export function createMobileRouter({
     await teamService.ensureDefaultRoles(getAuth(req).companyId);
     next();
   });
+  // Assigned-job scope for technicians (Company/Platform Owner bypass inside the guard).
+  technicianRouter.use('/jobs/:id', requireAssignedJob);
+  technicianRouter.use('/workforce/jobs/:jobId', requireAssignedJob);
 
   technicianRouter.get('/dashboard', requireTechnicianAccess, async (req, res) => {
     const auth = getAuth(req);
@@ -313,7 +433,10 @@ export function createMobileRouter({
   technicianRouter.get('/workforce/jobs/:jobId', requireTechnicianAccess, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const workspace = await mobileWorkforceService.getJobWorkspace(auth, getRouteParam(req.params.jobId));
+      const workspace = await mobileWorkforceService.getJobWorkspace(
+        auth,
+        getRouteParam(req.params.jobId),
+      );
       res.json({ data: { workspace } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -326,11 +449,15 @@ export function createMobileRouter({
     res.json({ data: { route } });
   });
 
-  technicianRouter.get('/workforce/inventory', requireAnyPermission('inventory:read', 'mobile:read'), async (req, res) => {
-    const auth = getAuth(req);
-    const inventory = await mobileWorkforceService.getInventoryCentre(auth);
-    res.json({ data: { inventory } });
-  });
+  technicianRouter.get(
+    '/workforce/inventory',
+    requireAnyPermission('inventory:read', 'mobile:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const inventory = await mobileWorkforceService.getInventoryCentre(auth);
+      res.json({ data: { inventory } });
+    },
+  );
 
   technicianRouter.get('/workforce/time', requireTechnicianAccess, async (req, res) => {
     const auth = getAuth(req);
@@ -341,7 +468,9 @@ export function createMobileRouter({
   technicianRouter.post('/workforce/time', requireMobileWrite, async (req, res) => {
     const parsed = createTimeEntrySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid time entry payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid time entry payload' } });
       return;
     }
     try {
@@ -353,39 +482,118 @@ export function createMobileRouter({
     }
   });
 
-  technicianRouter.post('/workforce/jobs/:jobId/inventory', requireMobileWrite, async (req, res) => {
-    const parsed = submitInventoryUsageSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid inventory usage payload' } });
-      return;
-    }
-    try {
-      const auth = getAuth(req);
-      const usage = await mobileWorkforceService.submitInventoryUsage(
-        auth,
-        getRouteParam(req.params.jobId),
-        parsed.data,
-      );
-      res.status(201).json({ data: { usage } });
-    } catch (error) {
-      handleWorkforceError(res, error);
-    }
-  });
+  technicianRouter.post(
+    '/workforce/jobs/:jobId/inventory',
+    requireMobileWrite,
+    async (req, res) => {
+      const parsed = submitInventoryUsageSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid inventory usage payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const usage = await mobileWorkforceService.submitInventoryUsage(
+          auth,
+          getRouteParam(req.params.jobId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { usage } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
 
-  technicianRouter.post('/workforce/jobs/:jobId/documentation', requireMobileWrite, async (req, res) => {
-    const parsed = submitDocumentationSchema.safeParse(req.body);
+  technicianRouter.post(
+    '/workforce/jobs/:jobId/documentation',
+    requireMobileWrite,
+    async (req, res) => {
+      const parsed = submitDocumentationSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid documentation payload' } });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const documentation = await mobileWorkforceService.submitJobDocumentation(
+          auth,
+          getRouteParam(req.params.jobId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { documentation } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
+
+  technicianRouter.post(
+    '/workforce/jobs/:jobId/documentation/upload',
+    requireMobileWrite,
+    async (req, res) => {
+      const parsed = uploadJobEvidenceSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid evidence upload payload' } });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const documentation = await mobileWorkforceService.uploadJobEvidence(
+          auth,
+          getRouteParam(req.params.jobId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { documentation } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
+
+  technicianRouter.get(
+    '/workforce/jobs/:jobId/documentation/:docId/content',
+    requireTechnicianAccess,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const file = await mobileWorkforceService.getJobEvidenceBinary(
+          auth,
+          getRouteParam(req.params.jobId),
+          getRouteParam(req.params.docId),
+        );
+        res.setHeader('Content-Type', file.mimeType);
+        if (file.fileName) {
+          res.setHeader(
+            'Content-Disposition',
+            `inline; filename="${encodeURIComponent(file.fileName)}"`,
+          );
+        }
+        res.send(file.buffer);
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
+
+  technicianRouter.post('/workforce/offline/flush', requireMobileWrite, async (req, res) => {
+    const parsed = flushOfflineActionsSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid documentation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid offline flush payload' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const documentation = await mobileWorkforceService.submitJobDocumentation(
-        auth,
-        getRouteParam(req.params.jobId),
-        parsed.data,
-      );
-      res.status(201).json({ data: { documentation } });
+      const result = await mobileWorkforceService.flushOfflineActions(auth, parsed.data);
+      res.json({ data: result });
     } catch (error) {
       handleWorkforceError(res, error);
     }
@@ -400,7 +608,9 @@ export function createMobileRouter({
   technicianRouter.post('/workforce/requests', requireMobileWrite, async (req, res) => {
     const parsed = createWorkforceRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid workforce request payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid workforce request payload' },
+      });
       return;
     }
     try {
@@ -428,7 +638,9 @@ export function createMobileRouter({
   technicianRouter.post('/workforce/sync/conflicts', requireMobileWrite, async (req, res) => {
     const parsed = reportConflictSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conflict payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conflict payload' } });
       return;
     }
     try {
@@ -440,24 +652,30 @@ export function createMobileRouter({
     }
   });
 
-  technicianRouter.patch('/workforce/sync/conflicts/:conflictId', requireMobileWrite, async (req, res) => {
-    const parsed = resolveConflictSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conflict resolution payload' } });
-      return;
-    }
-    try {
-      const auth = getAuth(req);
-      const conflict = await mobileWorkforceService.resolveSyncConflict(
-        auth,
-        getRouteParam(req.params.conflictId),
-        parsed.data,
-      );
-      res.json({ data: { conflict } });
-    } catch (error) {
-      handleWorkforceError(res, error);
-    }
-  });
+  technicianRouter.patch(
+    '/workforce/sync/conflicts/:conflictId',
+    requireMobileWrite,
+    async (req, res) => {
+      const parsed = resolveConflictSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid conflict resolution payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const conflict = await mobileWorkforceService.resolveSyncConflict(
+          auth,
+          getRouteParam(req.params.conflictId),
+          parsed.data,
+        );
+        res.json({ data: { conflict } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
 
   technicianRouter.get('/workforce/notifications', requireMobileRead, async (req, res) => {
     const auth = getAuth(req);
@@ -480,7 +698,10 @@ export function createMobileRouter({
 
   technicianRouter.get('/jobs/:id/customer', requireTechnicianAccess, async (req, res) => {
     const auth = getAuth(req);
-    const details = await mobileService.getTechnicianCustomerDetails(auth, getRouteParam(req.params.id));
+    const details = await mobileService.getTechnicianCustomerDetails(
+      auth,
+      getRouteParam(req.params.id),
+    );
     if (!details) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Assigned job not found' } });
       return;
@@ -492,7 +713,8 @@ export function createMobileRouter({
     res.status(403).json({
       error: {
         code: 'FORBIDDEN',
-        message: 'Fleet dashboard access is restricted. Use Navigation for assigned job directions.',
+        message:
+          'Fleet dashboard access is restricted. Use Navigation for assigned job directions.',
       },
     });
   });
@@ -517,7 +739,9 @@ export function createMobileRouter({
   technicianRouter.post('/sync', requireMobileRead, async (req, res) => {
     const parsed = queueSyncSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
       return;
     }
     const auth = getAuth(req);
@@ -601,7 +825,11 @@ export function createMobileRouter({
     try {
       const auth = getAuth(req);
       const reason = typeof req.body?.reason === 'string' ? req.body.reason : undefined;
-      const job = await technicianWorkflowService.rejectDispatch(auth, getRouteParam(req.params.id), reason);
+      const job = await technicianWorkflowService.rejectDispatch(
+        auth,
+        getRouteParam(req.params.id),
+        reason,
+      );
       res.json({ data: { job } });
     } catch (error) {
       handleTechnicianError(res, error);
@@ -611,12 +839,18 @@ export function createMobileRouter({
   technicianRouter.post('/jobs/:id/notes', requireMobileWrite, async (req, res) => {
     const parsed = addJobNoteSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid note payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid note payload' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const job = await technicianWorkflowService.addJobNote(auth, getRouteParam(req.params.id), parsed.data);
+      const job = await technicianWorkflowService.addJobNote(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { job } });
     } catch (error) {
       handleTechnicianError(res, error);
@@ -626,7 +860,9 @@ export function createMobileRouter({
   technicianRouter.post('/jobs/:id/completion', requireMobileWrite, async (req, res) => {
     const parsed = submitCompletionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid completion payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid completion payload' } });
       return;
     }
     try {
@@ -642,19 +878,144 @@ export function createMobileRouter({
     }
   });
 
+  technicianRouter.post('/jobs/:id/transition', requireMobileWrite, async (req, res) => {
+    const parsed = jobTransitionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid transition payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const job = await jobExecutionService.transition(auth, getRouteParam(req.params.id), parsed.data);
+      res.json({ data: { job } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get('/jobs/:id/completion-gate', requireTechnicianAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const gate = await jobExecutionService.getCompletionGate(auth, getRouteParam(req.params.id));
+      res.json({ data: { gate } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/complete-gated', requireMobileWrite, async (req, res) => {
+    const parsed = gatedCompletionSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid completion payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const job = await jobExecutionService.completeGated(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { job } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/variations', requireMobileWrite, async (req, res) => {
+    const parsed = createVariationSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid variation payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const variation = await jobExecutionService.createVariation(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: { variation } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get('/jobs/:id/variations', requireTechnicianAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const variations = await jobExecutionService.listVariations(
+        auth.companyId,
+        getRouteParam(req.params.id),
+      );
+      res.json({ data: { variations } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.post('/jobs/:id/material-lines', requireMobileWrite, async (req, res) => {
+    const parsed = recordMaterialLineSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid material line payload' } });
+      return;
+    }
+    try {
+      const auth = getAuth(req);
+      const materialLine = await jobExecutionService.recordMaterialLine(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: { materialLine } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
+  technicianRouter.get('/jobs/:id/material-lines', requireTechnicianAccess, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const includeCost =
+        auth.permissions.includes('*') ||
+        auth.permissions.includes('inventory:write') ||
+        auth.permissions.includes('finance:write');
+      const materialLines = await jobExecutionService.listMaterialLines(
+        auth.companyId,
+        getRouteParam(req.params.id),
+        includeCost,
+      );
+      res.json({ data: { materialLines } });
+    } catch (error) {
+      handleJobExecutionError(res, error);
+    }
+  });
+
   const customerRouter = Router();
   customerRouter.use(requirePortalAuth);
 
-  customerRouter.get('/dashboard', requirePortalPermission('portal.dashboard:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
-    const dashboard = await mobileService.getCustomerDashboard({
-      companyId: auth.companyId,
-      customerId: auth.customerId,
-      portalUserId: auth.portalUserId,
-      permissions: auth.permissions,
-    });
-    res.json({ data: { dashboard } });
-  });
+  customerRouter.get(
+    '/dashboard',
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
+      const dashboard = await mobileService.getCustomerDashboard({
+        companyId: auth.companyId,
+        customerId: auth.customerId,
+        portalUserId: auth.portalUserId,
+        permissions: auth.permissions,
+      });
+      res.json({ data: { dashboard } });
+    },
+  );
 
   customerRouter.get('/jobs', requirePortalPermission('portal.jobs:read'), async (req, res) => {
     const auth = getPortalAuth(req);
@@ -667,38 +1028,50 @@ export function createMobileRouter({
     res.json({ data: jobs });
   });
 
-  customerRouter.get('/invoices', requirePortalPermission('portal.invoices:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
-    const invoices = await mobileService.getCustomerInvoices({
-      companyId: auth.companyId,
-      customerId: auth.customerId,
-      portalUserId: auth.portalUserId,
-      permissions: auth.permissions,
-    });
-    res.json({ data: invoices });
-  });
+  customerRouter.get(
+    '/invoices',
+    requirePortalPermission('portal.invoices:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
+      const invoices = await mobileService.getCustomerInvoices({
+        companyId: auth.companyId,
+        customerId: auth.customerId,
+        portalUserId: auth.portalUserId,
+        permissions: auth.permissions,
+      });
+      res.json({ data: invoices });
+    },
+  );
 
-  customerRouter.get('/documents', requirePortalPermission('portal.documents:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
-    const documents = await mobileService.getCustomerDocuments({
-      companyId: auth.companyId,
-      customerId: auth.customerId,
-      portalUserId: auth.portalUserId,
-      permissions: auth.permissions,
-    });
-    res.json({ data: documents });
-  });
+  customerRouter.get(
+    '/documents',
+    requirePortalPermission('portal.documents:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
+      const documents = await mobileService.getCustomerDocuments({
+        companyId: auth.companyId,
+        customerId: auth.customerId,
+        portalUserId: auth.portalUserId,
+        permissions: auth.permissions,
+      });
+      res.json({ data: documents });
+    },
+  );
 
-  customerRouter.get('/communications', requirePortalPermission('portal.communications:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
-    const communications = await mobileService.getCustomerCommunications({
-      companyId: auth.companyId,
-      customerId: auth.customerId,
-      portalUserId: auth.portalUserId,
-      permissions: auth.permissions,
-    });
-    res.json({ data: communications });
-  });
+  customerRouter.get(
+    '/communications',
+    requirePortalPermission('portal.communications:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
+      const communications = await mobileService.getCustomerCommunications({
+        companyId: auth.companyId,
+        customerId: auth.customerId,
+        portalUserId: auth.portalUserId,
+        permissions: auth.permissions,
+      });
+      res.json({ data: communications });
+    },
+  );
 
   customerRouter.get('/notifications', async (req, res) => {
     const auth = getPortalAuth(req);
@@ -735,7 +1108,9 @@ export function createMobileRouter({
   customerRouter.post('/sync', async (req, res) => {
     const parsed = queueSyncSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sync payload' } });
       return;
     }
     const auth = getPortalAuth(req);
@@ -752,16 +1127,20 @@ export function createMobileRouter({
     res.status(201).json({ data: { item, syncState } });
   });
 
-  customerRouter.get('/aura/context', requirePortalPermission('portal.dashboard:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
-    const context = await mobileService.buildCustomerAuraContext({
-      companyId: auth.companyId,
-      customerId: auth.customerId,
-      portalUserId: auth.portalUserId,
-      permissions: auth.permissions,
-    });
-    res.json({ data: { context } });
-  });
+  customerRouter.get(
+    '/aura/context',
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
+      const context = await mobileService.buildCustomerAuraContext({
+        companyId: auth.companyId,
+        customerId: auth.customerId,
+        portalUserId: auth.portalUserId,
+        permissions: auth.permissions,
+      });
+      res.json({ data: { context } });
+    },
+  );
 
   router.use('/owner', ownerRouter);
   router.use('/technician', technicianRouter);
@@ -772,8 +1151,7 @@ export function createMobileRouter({
 
 function handleWorkforceError(res: import('express').Response, error: unknown) {
   if (error instanceof MobileWorkforceError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -783,8 +1161,24 @@ function handleWorkforceError(res: import('express').Response, error: unknown) {
 
 function handleTechnicianError(res: import('express').Response, error: unknown) {
   if (error instanceof TechnicianWorkflowError) {
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    res.status(status).json({ error: { code: error.code, message: error.message } });
+    return;
+  }
+
+  throw error;
+}
+
+function handleJobExecutionError(res: import('express').Response, error: unknown) {
+  if (error instanceof JobExecutionError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+      error.code === 'NOT_FOUND' || error.code === 'ITEM_NOT_FOUND' || error.code === 'LOCATION_NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'INVALID_STATUS' || error.code === 'INSUFFICIENT_STOCK'
+            ? 409
+            : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }

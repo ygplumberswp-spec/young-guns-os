@@ -13,9 +13,19 @@ import { users } from './users';
 
 export const gsAlertSeverityEnum = pgEnum('gs_alert_severity', ['info', 'warning', 'critical']);
 
-export const gsAlertStatusEnum = pgEnum('gs_alert_status', ['open', 'acknowledged', 'resolved', 'dismissed']);
+export const gsAlertStatusEnum = pgEnum('gs_alert_status', [
+  'open',
+  'acknowledged',
+  'resolved',
+  'dismissed',
+]);
 
-export const gsSearchModeEnum = pgEnum('gs_search_mode', ['keyword', 'fuzzy', 'natural_language', 'hybrid']);
+export const gsSearchModeEnum = pgEnum('gs_search_mode', [
+  'keyword',
+  'fuzzy',
+  'natural_language',
+  'hybrid',
+]);
 
 export const gsEntityTypeEnum = pgEnum('gs_entity_type', [
   'customer',

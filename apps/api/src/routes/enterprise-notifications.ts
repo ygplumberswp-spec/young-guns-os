@@ -7,13 +7,38 @@ import { requireAnyPermission } from '../middleware/rbac.js';
 
 const alertLevelSchema = z.enum(['info', 'success', 'warning', 'critical', 'emergency']);
 const deliveryChannelSchema = z.enum([
-  'in_app', 'email', 'sms', 'whatsapp', 'push', 'slack', 'microsoft_teams', 'webhook',
+  'in_app',
+  'email',
+  'sms',
+  'whatsapp',
+  'push',
+  'slack',
+  'microsoft_teams',
+  'webhook',
 ]);
 const moduleSourceSchema = z.enum([
-  'crm', 'leads', 'customers', 'jobs', 'quotes', 'scheduling', 'dispatch', 'fleet',
-  'inventory', 'procurement', 'finance', 'documents', 'document_ai', 'communications',
-  'voice_reception', 'ai_agents', 'mission_control', 'security', 'saas_management',
-  'industry_packs', 'business_continuity', 'data_migration',
+  'crm',
+  'leads',
+  'customers',
+  'jobs',
+  'quotes',
+  'scheduling',
+  'dispatch',
+  'fleet',
+  'inventory',
+  'procurement',
+  'finance',
+  'documents',
+  'document_ai',
+  'communications',
+  'voice_reception',
+  'ai_agents',
+  'mission_control',
+  'security',
+  'saas_management',
+  'industry_packs',
+  'business_continuity',
+  'data_migration',
 ]);
 const ruleScopeSchema = z.enum(['user', 'role', 'department', 'company']);
 const deliveryModeSchema = z.enum(['immediate', 'digest', 'quiet_hours']);
@@ -138,9 +163,20 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('notifications:read', 'notifications:manage', 'integrations:read');
-  const requireWrite = requireAnyPermission('notifications:write', 'notifications:manage', 'integrations:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'notifications:read',
+    'notifications:manage',
+    'integrations:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'notifications:write',
+    'notifications:manage',
+    'integrations:manage',
+  );
   const requireManage = requireAnyPermission('notifications:manage', 'integrations:manage');
 
   router.use(requireStaffAuth);
@@ -156,7 +192,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseNotificationsService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseNotificationsService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -166,7 +204,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseNotificationsService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseNotificationsService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -185,7 +226,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.put('/inbox/state', requireWrite, async (req, res) => {
     try {
       const input = inboxStateSchema.parse(req.body);
-      const inboxItems = await deps.enterpriseNotificationsService.updateInboxState(staffScope(req), input);
+      const inboxItems = await deps.enterpriseNotificationsService.updateInboxState(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { inboxItems } });
     } catch (error) {
       handleError(error, res);
@@ -204,7 +248,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.get('/alerts', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const alerts = await deps.enterpriseNotificationsService.listAlerts(getAuth(req).companyId, { status });
+      const alerts = await deps.enterpriseNotificationsService.listAlerts(getAuth(req).companyId, {
+        status,
+      });
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -248,7 +294,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.get('/escalations', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const escalations = await deps.enterpriseNotificationsService.listEscalations(getAuth(req).companyId, { status });
+      const escalations = await deps.enterpriseNotificationsService.listEscalations(
+        getAuth(req).companyId,
+        { status },
+      );
       res.json({ data: { escalations } });
     } catch (error) {
       handleError(error, res);
@@ -281,7 +330,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.get('/templates', requireRead, async (req, res) => {
     try {
-      const templates = await deps.enterpriseNotificationsService.listTemplates(getAuth(req).companyId);
+      const templates = await deps.enterpriseNotificationsService.listTemplates(
+        getAuth(req).companyId,
+      );
       res.json({ data: { templates } });
     } catch (error) {
       handleError(error, res);
@@ -291,7 +342,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.post('/templates', requireWrite, async (req, res) => {
     try {
       const input = templateSchema.parse(req.body);
-      const template = await deps.enterpriseNotificationsService.createTemplate(staffScope(req), input);
+      const template = await deps.enterpriseNotificationsService.createTemplate(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { template } });
     } catch (error) {
       handleError(error, res);
@@ -315,7 +369,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.get('/delivery-jobs', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const deliveryJobs = await deps.enterpriseNotificationsService.listDeliveryJobs(getAuth(req).companyId, { status });
+      const deliveryJobs = await deps.enterpriseNotificationsService.listDeliveryJobs(
+        getAuth(req).companyId,
+        { status },
+      );
       res.json({ data: { deliveryJobs } });
     } catch (error) {
       handleError(error, res);
@@ -337,7 +394,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.post('/dispatch', requireManage, async (req, res) => {
     try {
       const input = dispatchSchema.parse(req.body);
-      const deliveryJobs = await deps.enterpriseNotificationsService.dispatchNotification(staffScope(req), input);
+      const deliveryJobs = await deps.enterpriseNotificationsService.dispatchNotification(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { deliveryJobs } });
     } catch (error) {
       handleError(error, res);
@@ -365,7 +425,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.get('/preferences', requireRead, async (req, res) => {
     try {
-      const userPreferences = await deps.enterpriseNotificationsService.listUserPreferences(staffScope(req));
+      const userPreferences = await deps.enterpriseNotificationsService.listUserPreferences(
+        staffScope(req),
+      );
       res.json({ data: { userPreferences } });
     } catch (error) {
       handleError(error, res);
@@ -375,7 +437,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.put('/preferences', requireWrite, async (req, res) => {
     try {
       const input = userPreferenceSchema.parse(req.body);
-      const userPreferences = await deps.enterpriseNotificationsService.updateUserPreference(staffScope(req), input);
+      const userPreferences = await deps.enterpriseNotificationsService.updateUserPreference(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { userPreferences } });
     } catch (error) {
       handleError(error, res);
@@ -385,9 +450,12 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.get('/platform-alerts', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const platformAlerts = await deps.enterpriseNotificationsService.listPlatformAlerts(getAuth(req).companyId, {
-        status,
-      });
+      const platformAlerts = await deps.enterpriseNotificationsService.listPlatformAlerts(
+        getAuth(req).companyId,
+        {
+          status,
+        },
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -396,7 +464,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.post('/platform-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const platformAlerts = await deps.enterpriseNotificationsService.syncPlatformAlerts(staffScope(req));
+      const platformAlerts = await deps.enterpriseNotificationsService.syncPlatformAlerts(
+        staffScope(req),
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -414,7 +484,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.get('/action-drafts', requireRead, async (req, res) => {
     try {
-      const actionDrafts = await deps.enterpriseNotificationsService.listActionDrafts(getAuth(req).companyId);
+      const actionDrafts = await deps.enterpriseNotificationsService.listActionDrafts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actionDrafts } });
     } catch (error) {
       handleError(error, res);
@@ -424,7 +496,10 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const actionDraft = await deps.enterpriseNotificationsService.createActionDraft(staffScope(req), input);
+      const actionDraft = await deps.enterpriseNotificationsService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);
@@ -433,7 +508,9 @@ export function createEnterpriseNotificationsRouter(deps: RouterDeps): Router {
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseNotificationsService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseNotificationsService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);

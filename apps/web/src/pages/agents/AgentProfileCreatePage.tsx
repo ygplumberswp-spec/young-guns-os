@@ -65,7 +65,9 @@ export function AgentProfileCreatePage() {
     }
 
     void loadRegistry();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, initialAgentKey]);
 
   useEffect(() => {
@@ -144,7 +146,12 @@ export function AgentProfileCreatePage() {
             ))}
           </select>
         </label>
-        <Input label="Profile name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Input
+          label="Profile name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
         <label className="titan-input-group">
           <span className="titan-input-label">Description</span>
           <textarea

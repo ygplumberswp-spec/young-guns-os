@@ -6,9 +6,21 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { requireAnyPermission } from '../middleware/rbac.js';
 
 const classificationKeySchema = z.enum([
-  'customer_document', 'job_document', 'quote', 'invoice', 'purchase_order',
-  'supplier_invoice', 'delivery_note', 'compliance_certificate', 'inspection_report',
-  'asset_record', 'warranty', 'technical_manual', 'employment_document', 'contract', 'other',
+  'customer_document',
+  'job_document',
+  'quote',
+  'invoice',
+  'purchase_order',
+  'supplier_invoice',
+  'delivery_note',
+  'compliance_certificate',
+  'inspection_report',
+  'asset_record',
+  'warranty',
+  'technical_manual',
+  'employment_document',
+  'contract',
+  'other',
 ]);
 
 const platformConfigSchema = z.object({
@@ -148,7 +160,11 @@ function getRouteParam(value: string | string[]) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseDocumentAiError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'FORBIDDEN' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'FORBIDDEN'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -157,14 +173,21 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requireRead = requireAnyPermission(
     'document_ai:read',
     'document_ai:manage',
     'documents:read',
     'knowledge:read',
   );
-  const requireWrite = requireAnyPermission('document_ai:write', 'document_ai:manage', 'documents:write');
+  const requireWrite = requireAnyPermission(
+    'document_ai:write',
+    'document_ai:manage',
+    'documents:write',
+  );
   const requireManage = requireAnyPermission('document_ai:manage');
 
   router.use(requireStaffAuth);
@@ -182,7 +205,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseDocumentAiService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseDocumentAiService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -192,11 +217,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
-      const platformConfig = await deps.enterpriseDocumentAiService.updatePlatformConfig(staffScope(req), parsed.data);
+      const platformConfig = await deps.enterpriseDocumentAiService.updatePlatformConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -216,11 +246,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/ocr-providers', requireWrite, async (req, res) => {
     const parsed = ocrProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid OCR provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid OCR provider' } });
       return;
     }
     try {
-      const ocrProvider = await deps.enterpriseDocumentAiService.createOcrProvider(staffScope(req), parsed.data);
+      const ocrProvider = await deps.enterpriseDocumentAiService.createOcrProvider(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { ocrProvider } });
     } catch (error) {
       handleError(error, res);
@@ -230,7 +265,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/sources', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const sourceConfigs = await deps.enterpriseDocumentAiService.listSourceConfigs(auth.companyId);
+      const sourceConfigs = await deps.enterpriseDocumentAiService.listSourceConfigs(
+        auth.companyId,
+      );
       res.json({ data: { sourceConfigs } });
     } catch (error) {
       handleError(error, res);
@@ -240,11 +277,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/sources', requireWrite, async (req, res) => {
     const parsed = sourceConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid source config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid source config' } });
       return;
     }
     try {
-      const sourceConfig = await deps.enterpriseDocumentAiService.createSourceConfig(staffScope(req), parsed.data);
+      const sourceConfig = await deps.enterpriseDocumentAiService.createSourceConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { sourceConfig } });
     } catch (error) {
       handleError(error, res);
@@ -255,7 +297,10 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const ocrJobs = await deps.enterpriseDocumentAiService.listOcrJobs(auth.companyId, status ? { status } : undefined);
+      const ocrJobs = await deps.enterpriseDocumentAiService.listOcrJobs(
+        auth.companyId,
+        status ? { status } : undefined,
+      );
       res.json({ data: { ocrJobs } });
     } catch (error) {
       handleError(error, res);
@@ -269,7 +314,10 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const ocrJob = await deps.enterpriseDocumentAiService.createOcrJob(staffScope(req), parsed.data);
+      const ocrJob = await deps.enterpriseDocumentAiService.createOcrJob(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { ocrJob } });
     } catch (error) {
       handleError(error, res);
@@ -283,7 +331,10 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
       return;
     }
     try {
-      const ocrResult = await deps.enterpriseDocumentAiService.recordOcrResult(staffScope(req), parsed.data);
+      const ocrResult = await deps.enterpriseDocumentAiService.recordOcrResult(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { ocrResult } });
     } catch (error) {
       handleError(error, res);
@@ -306,11 +357,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/classifications', requireWrite, async (req, res) => {
     const parsed = classificationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid classification' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid classification' } });
       return;
     }
     try {
-      const classification = await deps.enterpriseDocumentAiService.createClassification(staffScope(req), parsed.data);
+      const classification = await deps.enterpriseDocumentAiService.createClassification(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { classification } });
     } catch (error) {
       handleError(error, res);
@@ -320,7 +376,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/extraction-templates', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const extractionTemplates = await deps.enterpriseDocumentAiService.listExtractionTemplates(auth.companyId);
+      const extractionTemplates = await deps.enterpriseDocumentAiService.listExtractionTemplates(
+        auth.companyId,
+      );
       res.json({ data: { extractionTemplates } });
     } catch (error) {
       handleError(error, res);
@@ -330,11 +388,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/extraction-templates', requireWrite, async (req, res) => {
     const parsed = extractionTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid extraction template' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid extraction template' } });
       return;
     }
     try {
-      const extractionTemplate = await deps.enterpriseDocumentAiService.createExtractionTemplate(staffScope(req), parsed.data);
+      const extractionTemplate = await deps.enterpriseDocumentAiService.createExtractionTemplate(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { extractionTemplate } });
     } catch (error) {
       handleError(error, res);
@@ -344,7 +407,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/extractions', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const extractionRecords = await deps.enterpriseDocumentAiService.listExtractionRecords(auth.companyId);
+      const extractionRecords = await deps.enterpriseDocumentAiService.listExtractionRecords(
+        auth.companyId,
+      );
       res.json({ data: { extractionRecords } });
     } catch (error) {
       handleError(error, res);
@@ -354,11 +419,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/extractions', requireWrite, async (req, res) => {
     const parsed = extractionRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid extraction record' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid extraction record' } });
       return;
     }
     try {
-      const extractionRecord = await deps.enterpriseDocumentAiService.createExtractionRecord(staffScope(req), parsed.data);
+      const extractionRecord = await deps.enterpriseDocumentAiService.createExtractionRecord(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { extractionRecord } });
     } catch (error) {
       handleError(error, res);
@@ -368,7 +438,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/matching-records', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const matchingRecords = await deps.enterpriseDocumentAiService.listMatchingRecords(auth.companyId);
+      const matchingRecords = await deps.enterpriseDocumentAiService.listMatchingRecords(
+        auth.companyId,
+      );
       res.json({ data: { matchingRecords } });
     } catch (error) {
       handleError(error, res);
@@ -378,11 +450,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/matching-records', requireWrite, async (req, res) => {
     const parsed = matchingRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid matching record' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid matching record' } });
       return;
     }
     try {
-      const matchingRecord = await deps.enterpriseDocumentAiService.createMatchingRecord(staffScope(req), parsed.data);
+      const matchingRecord = await deps.enterpriseDocumentAiService.createMatchingRecord(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { matchingRecord } });
     } catch (error) {
       handleError(error, res);
@@ -393,7 +470,10 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const reviewQueue = await deps.enterpriseDocumentAiService.listReviewQueue(auth.companyId, status ? { status } : undefined);
+      const reviewQueue = await deps.enterpriseDocumentAiService.listReviewQueue(
+        auth.companyId,
+        status ? { status } : undefined,
+      );
       res.json({ data: { reviewQueue } });
     } catch (error) {
       handleError(error, res);
@@ -403,11 +483,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/review-queue', requireWrite, async (req, res) => {
     const parsed = reviewQueueSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review queue item' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review queue item' } });
       return;
     }
     try {
-      const reviewItem = await deps.enterpriseDocumentAiService.createReviewQueueItem(staffScope(req), parsed.data);
+      const reviewItem = await deps.enterpriseDocumentAiService.createReviewQueueItem(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { reviewItem } });
     } catch (error) {
       handleError(error, res);
@@ -417,7 +502,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.patch('/review-queue/:reviewItemId', requireWrite, async (req, res) => {
     const parsed = reviewUpdateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review update' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review update' } });
       return;
     }
     try {
@@ -435,7 +522,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/intelligence', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const intelligenceRecords = await deps.enterpriseDocumentAiService.listIntelligenceRecords(auth.companyId);
+      const intelligenceRecords = await deps.enterpriseDocumentAiService.listIntelligenceRecords(
+        auth.companyId,
+      );
       res.json({ data: { intelligenceRecords } });
     } catch (error) {
       handleError(error, res);
@@ -445,11 +534,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/intelligence', requireWrite, async (req, res) => {
     const parsed = intelligenceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid intelligence record' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid intelligence record' } });
       return;
     }
     try {
-      const intelligenceRecord = await deps.enterpriseDocumentAiService.createIntelligenceRecord(staffScope(req), parsed.data);
+      const intelligenceRecord = await deps.enterpriseDocumentAiService.createIntelligenceRecord(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { intelligenceRecord } });
     } catch (error) {
       handleError(error, res);
@@ -459,7 +553,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/workflow-drafts', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const workflowDrafts = await deps.enterpriseDocumentAiService.listWorkflowDrafts(auth.companyId);
+      const workflowDrafts = await deps.enterpriseDocumentAiService.listWorkflowDrafts(
+        auth.companyId,
+      );
       res.json({ data: { workflowDrafts } });
     } catch (error) {
       handleError(error, res);
@@ -469,11 +565,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/workflow-drafts', requireWrite, async (req, res) => {
     const parsed = workflowDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid workflow draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid workflow draft' } });
       return;
     }
     try {
-      const workflowDraft = await deps.enterpriseDocumentAiService.createWorkflowDraft(staffScope(req), parsed.data);
+      const workflowDraft = await deps.enterpriseDocumentAiService.createWorkflowDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { workflowDraft } });
     } catch (error) {
       handleError(error, res);
@@ -483,12 +584,17 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/search', requireRead, async (req, res) => {
     const parsed = searchSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid search request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid search request' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const results = await deps.enterpriseDocumentAiService.searchDocuments(auth.companyId, parsed.data);
+      const results = await deps.enterpriseDocumentAiService.searchDocuments(
+        auth.companyId,
+        parsed.data,
+      );
       res.json({ data: { results } });
     } catch (error) {
       handleError(error, res);
@@ -498,7 +604,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.get('/document-alerts', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const documentAlerts = await deps.enterpriseDocumentAiService.listDocumentAlerts(auth.companyId);
+      const documentAlerts = await deps.enterpriseDocumentAiService.listDocumentAlerts(
+        auth.companyId,
+      );
       res.json({ data: { documentAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -507,7 +615,9 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
 
   router.post('/document-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const documentAlerts = await deps.enterpriseDocumentAiService.syncDocumentAlerts(staffScope(req));
+      const documentAlerts = await deps.enterpriseDocumentAiService.syncDocumentAlerts(
+        staffScope(req),
+      );
       res.json({ data: { documentAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -536,11 +646,16 @@ export function createEnterpriseDocumentAiRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     const parsed = actionDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
       return;
     }
     try {
-      const actionDraft = await deps.enterpriseDocumentAiService.createActionDraft(staffScope(req), parsed.data);
+      const actionDraft = await deps.enterpriseDocumentAiService.createActionDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);

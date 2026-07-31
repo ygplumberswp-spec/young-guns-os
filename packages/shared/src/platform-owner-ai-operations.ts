@@ -1,13 +1,7 @@
 import type { AiRoutingCategory } from './ai-orchestration.js';
 
 export type AiOperationType =
-  | 'conversation'
-  | 'agent_run'
-  | 'workflow'
-  | 'report'
-  | 'analysis'
-  | 'search'
-  | 'recommendation';
+  'conversation' | 'agent_run' | 'workflow' | 'report' | 'analysis' | 'search' | 'recommendation';
 
 export type AiProviderResilienceConfigSummary = {
   fallbackOrder: Array<{ providerKey: string; modelKey?: string; providerId?: string }>;

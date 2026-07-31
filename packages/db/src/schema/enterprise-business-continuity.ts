@@ -97,9 +97,15 @@ export const bcPlatformConfig = pgTable('bc_platform_config', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   backupPolicy: jsonb('backup_policy').$type<Record<string, unknown>>().notNull().default({}),
   restorePolicy: jsonb('restore_policy').$type<Record<string, unknown>>().notNull().default({}),
-  verificationPolicy: jsonb('verification_policy').$type<Record<string, unknown>>().notNull().default({}),
+  verificationPolicy: jsonb('verification_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   drPolicy: jsonb('dr_policy').$type<Record<string, unknown>>().notNull().default({}),
-  compliancePolicy: jsonb('compliance_policy').$type<Record<string, unknown>>().notNull().default({}),
+  compliancePolicy: jsonb('compliance_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   encryptionRequired: boolean('encryption_required').notNull().default(true),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -138,7 +144,9 @@ export const bcBackupJobs = pgTable('bc_backup_jobs', {
   verificationStatus: bcVerificationStatusEnum('verification_status'),
   errorMessage: text('error_message'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
   completedAt: timestamp('completed_at', { withTimezone: true }),
 });
@@ -156,8 +164,12 @@ export const bcRestoreRequests = pgTable('bc_restore_requests', {
   requiresOwnerApproval: boolean('requires_owner_approval').notNull().default(true),
   title: text('title').notNull(),
   description: text('description'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -171,10 +183,16 @@ export const bcRecoveryPlans = pgTable('bc_recovery_plans', {
   scenarioKey: bcRecoveryScenarioEnum('scenario_key').notNull(),
   name: text('name').notNull(),
   description: text('description'),
-  recoverySteps: jsonb('recovery_steps').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  recoverySteps: jsonb('recovery_steps')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   estimatedRecoveryTimeMinutes: integer('estimated_recovery_time_minutes'),
   dependencies: jsonb('dependencies').$type<Array<Record<string, unknown>>>().notNull().default([]),
-  validationChecklist: jsonb('validation_checklist').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  validationChecklist: jsonb('validation_checklist')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   workflowStatus: bcWorkflowStatusEnum('workflow_status').notNull().default('published'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -185,7 +203,9 @@ export const bcRecoveryTests = pgTable('bc_recovery_tests', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  recoveryPlanId: uuid('recovery_plan_id').references(() => bcRecoveryPlans.id, { onDelete: 'set null' }),
+  recoveryPlanId: uuid('recovery_plan_id').references(() => bcRecoveryPlans.id, {
+    onDelete: 'set null',
+  }),
   backupJobId: uuid('backup_job_id').references(() => bcBackupJobs.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   status: bcRecoveryTestStatusEnum('status').notNull().default('scheduled'),
@@ -211,7 +231,9 @@ export const bcVerificationRecords = pgTable('bc_verification_records', {
   status: bcVerificationStatusEnum('status').notNull().default('pending'),
   passed: boolean('passed'),
   findings: jsonb('findings').$type<Record<string, unknown>>().notNull().default({}),
-  verifiedByUserId: uuid('verified_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  verifiedByUserId: uuid('verified_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { EnterpriseSaasPlatformDashboard, PlatformOwnerAiOperationsDashboard } from '@titan/shared';
+import type {
+  EnterpriseSaasPlatformDashboard,
+  PlatformOwnerAiOperationsDashboard,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   cancelSubscription,
@@ -70,7 +73,10 @@ export function PlatformPage() {
   } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessPlatform(user.permissions) : false), [user]);
-  const canPlatformWrite = useMemo(() => (user ? canManagePlatform(user.permissions) : false), [user]);
+  const canPlatformWrite = useMemo(
+    () => (user ? canManagePlatform(user.permissions) : false),
+    [user],
+  );
   const canSaasWrite = useMemo(() => (user ? canManageSaas(user.permissions) : false), [user]);
 
   async function loadDashboard() {
@@ -94,7 +100,9 @@ export function PlatformPage() {
         await loadDashboard();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load platform dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load platform dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -122,14 +130,22 @@ export function PlatformPage() {
       setLowCreditWarningCents(String(data.resilience.config.lowCreditWarningCents));
       setHighUsageWarningTokens(String(data.resilience.config.highUsageWarningTokens));
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to load AI operations dashboard');
+      setError(
+        err instanceof ApiClientError ? err.message : 'Unable to load AI operations dashboard',
+      );
     } finally {
       setIsAiOpsLoading(false);
     }
   }
 
   useEffect(() => {
-    if (activeTab === 'ai-operations' && accessToken && canView && !aiOperations && !isAiOpsLoading) {
+    if (
+      activeTab === 'ai-operations' &&
+      accessToken &&
+      canView &&
+      !aiOperations &&
+      !isAiOpsLoading
+    ) {
       void loadAiOperations();
     }
   }, [activeTab, accessToken, canView, aiOperations, isAiOpsLoading]);
@@ -153,7 +169,10 @@ export function PlatformPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Platform" description="You do not have permission to view the SaaS platform." />
+        <PageHeader
+          title="Platform"
+          description="You do not have permission to view the SaaS platform."
+        />
       </div>
     );
   }
@@ -181,7 +200,10 @@ export function PlatformPage() {
               variant="secondary"
               disabled={isWorking}
               onClick={() =>
-                void runAction(() => markPlatformOwner(accessToken!), 'Tenant marked as platform owner.')
+                void runAction(
+                  () => markPlatformOwner(accessToken!),
+                  'Tenant marked as platform owner.',
+                )
               }
             >
               Mark Platform Owner
@@ -192,7 +214,10 @@ export function PlatformPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => capturePlatformUsage(accessToken!), 'Usage snapshot captured.')
+                  void runAction(
+                    () => capturePlatformUsage(accessToken!),
+                    'Usage snapshot captured.',
+                  )
                 }
               >
                 Capture Usage
@@ -227,7 +252,9 @@ export function PlatformPage() {
           <Panel title="Platform Summary">
             <p>{dashboard.summary}</p>
             {dashboard.isPlatformOwner ? (
-              <span className="status-pill status-healthy">Platform Owner — subscription enforcement bypassed</span>
+              <span className="status-pill status-healthy">
+                Platform Owner — subscription enforcement bypassed
+              </span>
             ) : dashboard.subscriptionEnforced ? (
               <span className="status-pill">
                 Subscription enforced — {dashboard.subscription?.status ?? 'none'}
@@ -267,7 +294,9 @@ export function PlatformPage() {
                       <div key={tenant.companyId} className="data-list-item">
                         <strong>{tenant.companyName}</strong>
                         <span className="status-pill">{formatStatus(tenant.lifecycleStatus)}</span>
-                        <span className="status-pill">{tenant.subscriptionStatus ?? 'no subscription'}</span>
+                        <span className="status-pill">
+                          {tenant.subscriptionStatus ?? 'no subscription'}
+                        </span>
                         <p>
                           {tenant.userCount} user(s) · {tenant.branchCount} branch(es)
                           {tenant.planName ? ` · ${tenant.planName}` : ''}
@@ -309,9 +338,15 @@ export function PlatformPage() {
                 )
               ) : (
                 <div className="stat-grid">
-                  <StatCard label="Lifecycle" value={formatStatus(dashboard.tenantProfile?.lifecycleStatus ?? '—')} />
+                  <StatCard
+                    label="Lifecycle"
+                    value={formatStatus(dashboard.tenantProfile?.lifecycleStatus ?? '—')}
+                  />
                   <StatCard label="Branches" value={String(dashboard.branches.length)} />
-                  <StatCard label="Storage (MB)" value={String(dashboard.tenantProfile?.storageAllocationMb ?? '—')} />
+                  <StatCard
+                    label="Storage (MB)"
+                    value={String(dashboard.tenantProfile?.storageAllocationMb ?? '—')}
+                  />
                 </div>
               )}
             </Panel>
@@ -344,7 +379,10 @@ export function PlatformPage() {
               ) : null}
 
               {dashboard.plans.length === 0 ? (
-                <EmptyState title="No plans" description="Platform owner creates subscription plans for customer tenants." />
+                <EmptyState
+                  title="No plans"
+                  description="Platform owner creates subscription plans for customer tenants."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.plans.map((plan) => (
@@ -353,7 +391,8 @@ export function PlatformPage() {
                       <span className="status-pill">{formatStatus(plan.tier)}</span>
                       <p>{plan.description}</p>
                       <span>
-                        {formatCents(plan.priceCents)} / {plan.billingInterval} · {plan.features.length} feature(s)
+                        {formatCents(plan.priceCents)} / {plan.billingInterval} ·{' '}
+                        {plan.features.length} feature(s)
                       </span>
                       {!dashboard.isPlatformOwner && canSaasWrite ? (
                         <Button
@@ -386,14 +425,20 @@ export function PlatformPage() {
                       {dashboard.subscription.plan ? ` — ${dashboard.subscription.plan.name}` : ''}
                     </p>
                     {dashboard.subscription.trialEndsAt ? (
-                      <p>Trial ends: {new Date(dashboard.subscription.trialEndsAt).toLocaleDateString()}</p>
+                      <p>
+                        Trial ends:{' '}
+                        {new Date(dashboard.subscription.trialEndsAt).toLocaleDateString()}
+                      </p>
                     ) : null}
                     {canSaasWrite && !dashboard.isPlatformOwner ? (
                       <Button
                         variant="secondary"
                         disabled={isWorking}
                         onClick={() =>
-                          void runAction(() => cancelSubscription(accessToken!), 'Subscription cancelled with grace period.')
+                          void runAction(
+                            () => cancelSubscription(accessToken!),
+                            'Subscription cancelled with grace period.',
+                          )
                         }
                       >
                         Cancel Subscription
@@ -401,13 +446,19 @@ export function PlatformPage() {
                     ) : null}
                   </>
                 ) : (
-                  <EmptyState title="No subscription" description="Subscription records are created during tenant provisioning." />
+                  <EmptyState
+                    title="No subscription"
+                    description="Subscription records are created during tenant provisioning."
+                  />
                 )}
               </Panel>
 
               <Panel title="Billing History">
                 {dashboard.billingRecords.length === 0 ? (
-                  <EmptyState title="No billing records" description="Billing framework records invoices, payments, renewals, credits, and taxes." />
+                  <EmptyState
+                    title="No billing records"
+                    description="Billing framework records invoices, payments, renewals, credits, and taxes."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.billingRecords.map((record) => (
@@ -469,11 +520,17 @@ export function PlatformPage() {
                   <div className="data-list-item">
                     <strong>{dashboard.branding.companyDisplayName ?? 'Default'}</strong>
                     <span>Primary: {dashboard.branding.primaryColor ?? '—'}</span>
-                    <p>Email, PDF, invoice, portal, login, and mobile branding slots are configured per tenant.</p>
+                    <p>
+                      Email, PDF, invoice, portal, login, and mobile branding slots are configured
+                      per tenant.
+                    </p>
                   </div>
                 </div>
               ) : (
-                <EmptyState title="No branding profile" description="Branding is provisioned automatically for each tenant." />
+                <EmptyState
+                  title="No branding profile"
+                  description="Branding is provisioned automatically for each tenant."
+                />
               )}
             </Panel>
           ) : null}
@@ -487,19 +544,28 @@ export function PlatformPage() {
                 <StatCard label="AI Usage" value={String(dashboard.usage.aiUsageCount)} />
                 <StatCard
                   label="Storage"
-                  value={dashboard.usage.storageBytes > 0 ? `${Math.round(dashboard.usage.storageBytes / 1024 / 1024)} MB` : '—'}
+                  value={
+                    dashboard.usage.storageBytes > 0
+                      ? `${Math.round(dashboard.usage.storageBytes / 1024 / 1024)} MB`
+                      : '—'
+                  }
                 />
               </div>
 
               <Panel title="Feature Entitlements">
                 {dashboard.entitlements.length === 0 ? (
-                  <EmptyState title="No custom entitlements" description="Entitlements derive from subscription plans and custom overrides." />
+                  <EmptyState
+                    title="No custom entitlements"
+                    description="Entitlements derive from subscription plans and custom overrides."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.entitlements.map((entry) => (
                       <div key={entry.id} className="data-list-item">
                         <strong>{entry.featureKey}</strong>
-                        <span className="status-pill">{entry.enabled ? 'enabled' : 'disabled'}</span>
+                        <span className="status-pill">
+                          {entry.enabled ? 'enabled' : 'disabled'}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -512,7 +578,11 @@ export function PlatformPage() {
                   disabled={isWorking}
                   onClick={() =>
                     void runAction(
-                      () => createTenantBranch(accessToken!, { branchKey: `branch_${Date.now()}`, name: 'New Branch' }),
+                      () =>
+                        createTenantBranch(accessToken!, {
+                          branchKey: `branch_${Date.now()}`,
+                          name: 'New Branch',
+                        }),
                       'Branch created.',
                     )
                   }
@@ -546,7 +616,10 @@ export function PlatformPage() {
               ) : null}
 
               {dashboard.featureFlags.length === 0 ? (
-                <EmptyState title="No feature flags" description="Platform owner defines feature flags for tenant rollout." />
+                <EmptyState
+                  title="No feature flags"
+                  description="Platform owner defines feature flags for tenant rollout."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.featureFlags.map((flag) => (
@@ -556,7 +629,9 @@ export function PlatformPage() {
                       <p>{flag.description}</p>
                       <span>
                         Default: {flag.defaultEnabled ? 'on' : 'off'}
-                        {flag.tenantEnabled != null ? ` · Tenant override: ${flag.tenantEnabled ? 'on' : 'off'}` : ''}
+                        {flag.tenantEnabled != null
+                          ? ` · Tenant override: ${flag.tenantEnabled ? 'on' : 'off'}`
+                          : ''}
                       </span>
                     </div>
                   ))}
@@ -569,17 +644,38 @@ export function PlatformPage() {
             dashboard.isPlatformOwner && dashboard.platformAnalytics ? (
               <>
                 <div className="stat-grid">
-                  <StatCard label="Total Tenants" value={String(dashboard.platformAnalytics.totalTenants)} />
-                  <StatCard label="Active Tenants" value={String(dashboard.platformAnalytics.activeTenants)} />
-                  <StatCard label="Suspended" value={String(dashboard.platformAnalytics.suspendedTenants)} />
-                  <StatCard label="Trial" value={String(dashboard.platformAnalytics.trialTenants)} />
-                  <StatCard label="Active Subscriptions" value={String(dashboard.platformAnalytics.activeSubscriptions)} />
-                  <StatCard label="Cancelled" value={String(dashboard.platformAnalytics.cancelledSubscriptions)} />
+                  <StatCard
+                    label="Total Tenants"
+                    value={String(dashboard.platformAnalytics.totalTenants)}
+                  />
+                  <StatCard
+                    label="Active Tenants"
+                    value={String(dashboard.platformAnalytics.activeTenants)}
+                  />
+                  <StatCard
+                    label="Suspended"
+                    value={String(dashboard.platformAnalytics.suspendedTenants)}
+                  />
+                  <StatCard
+                    label="Trial"
+                    value={String(dashboard.platformAnalytics.trialTenants)}
+                  />
+                  <StatCard
+                    label="Active Subscriptions"
+                    value={String(dashboard.platformAnalytics.activeSubscriptions)}
+                  />
+                  <StatCard
+                    label="Cancelled"
+                    value={String(dashboard.platformAnalytics.cancelledSubscriptions)}
+                  />
                 </div>
 
                 <Panel title="Platform Audits">
                   {dashboard.recentAudits.length === 0 ? (
-                    <EmptyState title="No audit events" description="Platform actions are recorded in the audit log." />
+                    <EmptyState
+                      title="No audit events"
+                      description="Platform actions are recorded in the audit log."
+                    />
                   ) : (
                     <div className="data-list">
                       {dashboard.recentAudits.map((audit) => (
@@ -655,7 +751,9 @@ export function PlatformPage() {
                     />
                     <StatCard
                       label="Task Routing"
-                      value={aiOperations.resilience.config.taskRoutingEnabled ? 'Enabled' : 'Disabled'}
+                      value={
+                        aiOperations.resilience.config.taskRoutingEnabled ? 'Enabled' : 'Disabled'
+                      }
                     />
                   </div>
 
@@ -667,10 +765,15 @@ export function PlatformPage() {
                   ) : (
                     <div className="data-list">
                       {aiOperations.resilience.providers.map((provider) => (
-                        <div key={`${provider.providerKey}-${provider.providerId ?? 'env'}`} className="data-list-item">
+                        <div
+                          key={`${provider.providerKey}-${provider.providerId ?? 'env'}`}
+                          className="data-list-item"
+                        >
                           <strong>{provider.displayName}</strong>
                           <span className="status-pill">{provider.healthStatus}</span>
-                          <span className="status-pill">{provider.isEnabled ? 'enabled' : 'disabled'}</span>
+                          <span className="status-pill">
+                            {provider.isEnabled ? 'enabled' : 'disabled'}
+                          </span>
                           {provider.averageLatencyMs != null ? (
                             <p>Average latency: {provider.averageLatencyMs} ms</p>
                           ) : null}
@@ -697,8 +800,8 @@ export function PlatformPage() {
                 {canPlatformWrite && aiOperations.isPlatformOwner ? (
                   <Panel title="Resilience & Spending Controls">
                     <p>
-                      Warnings appear in Mission Control when thresholds are reached. Platform Owner AI is never
-                      blocked unless a hard spending limit is explicitly enabled below.
+                      Warnings appear in Mission Control when thresholds are reached. Platform Owner
+                      AI is never blocked unless a hard spending limit is explicitly enabled below.
                     </p>
                     <label className="form-field">
                       <span>Low credit warning (cents)</span>
@@ -776,12 +879,15 @@ export function PlatformPage() {
           {activeTab === 'assistant' ? (
             <Panel title="AURA SaaS Agent">
               <p>
-                Ask about plans, tenant usage, upgrade recommendations, onboarding guides, and feature availability.
-                Recommendations only — subscriptions and tenants require approval.
+                Ask about plans, tenant usage, upgrade recommendations, onboarding guides, and
+                feature availability. Recommendations only — subscriptions and tenants require
+                approval.
               </p>
 
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
-              {lastRunTools.length > 0 ? <p className="form-hint">Tools used: {lastRunTools.join(', ')}</p> : null}
+              {lastRunTools.length > 0 ? (
+                <p className="form-hint">Tools used: {lastRunTools.join(', ')}</p>
+              ) : null}
 
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (

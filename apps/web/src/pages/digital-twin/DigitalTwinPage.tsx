@@ -17,7 +17,8 @@ import {
   formatSimulationType,
 } from '../../features/digital-twin/utils';
 
-type TwinTab = 'dashboard' | 'scenarios' | 'simulations' | 'heatmaps' | 'recommendations' | 'replay';
+type TwinTab =
+  'dashboard' | 'scenarios' | 'simulations' | 'heatmaps' | 'recommendations' | 'replay';
 
 export function DigitalTwinPage() {
   const { accessToken, user } = useAuth();
@@ -130,7 +131,10 @@ export function DigitalTwinPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Digital Twin" description="You do not have permission to view the digital twin." />
+        <PageHeader
+          title="Digital Twin"
+          description="You do not have permission to view the digital twin."
+        />
       </div>
     );
   }
@@ -166,7 +170,11 @@ export function DigitalTwinPage() {
           <button
             key={tab.id}
             type="button"
-            className={activeTab === tab.id ? 'automation-nav__link automation-nav__link--active' : 'automation-nav__link'}
+            className={
+              activeTab === tab.id
+                ? 'automation-nav__link automation-nav__link--active'
+                : 'automation-nav__link'
+            }
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -183,23 +191,38 @@ export function DigitalTwinPage() {
           <section className="stat-grid">
             <StatCard
               label="Health score"
-              value={dashboard.executiveStats.healthScore != null ? String(dashboard.executiveStats.healthScore) : '—'}
+              value={
+                dashboard.executiveStats.healthScore != null
+                  ? String(dashboard.executiveStats.healthScore)
+                  : '—'
+              }
             />
             <StatCard label="Active scenarios" value={String(dashboard.activeScenarios.length)} />
             <StatCard
               label="Completed simulations"
-              value={String(dashboard.recentSimulations.filter((s) => s.status === 'completed').length)}
+              value={String(
+                dashboard.recentSimulations.filter((s) => s.status === 'completed').length,
+              )}
             />
-            <StatCard label="Operational risk" value={formatRiskLevel(risk?.operationalRiskLevel ?? 'low')} />
+            <StatCard
+              label="Operational risk"
+              value={formatRiskLevel(risk?.operationalRiskLevel ?? 'low')}
+            />
             <StatCard
               label="Technician utilization"
               value={
-                capacity?.technicianUtilizationPercent != null ? `${capacity.technicianUtilizationPercent}%` : '—'
+                capacity?.technicianUtilizationPercent != null
+                  ? `${capacity.technicianUtilizationPercent}%`
+                  : '—'
               }
             />
             <StatCard
               label="Fleet utilization"
-              value={capacity?.fleetUtilizationPercent != null ? `${capacity.fleetUtilizationPercent}%` : '—'}
+              value={
+                capacity?.fleetUtilizationPercent != null
+                  ? `${capacity.fleetUtilizationPercent}%`
+                  : '—'
+              }
             />
             <StatCard label="Bottlenecks" value={String(risk?.bottleneckCount ?? 0)} />
             <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
@@ -209,11 +232,17 @@ export function DigitalTwinPage() {
             <dl className="integrations-stats__grid">
               <div>
                 <dt>Inventory pressure</dt>
-                <dd>{capacity?.inventoryPressureScore != null ? `${capacity.inventoryPressureScore}%` : '—'}</dd>
+                <dd>
+                  {capacity?.inventoryPressureScore != null
+                    ? `${capacity.inventoryPressureScore}%`
+                    : '—'}
+                </dd>
               </div>
               <div>
                 <dt>Cash flow health</dt>
-                <dd>{capacity?.cashFlowHealthScore != null ? `${capacity.cashFlowHealthScore}%` : '—'}</dd>
+                <dd>
+                  {capacity?.cashFlowHealthScore != null ? `${capacity.cashFlowHealthScore}%` : '—'}
+                </dd>
               </div>
               <div>
                 <dt>Overdue jobs</dt>
@@ -264,7 +293,10 @@ export function DigitalTwinPage() {
       {dashboard && activeTab === 'simulations' ? (
         <Panel title="Simulation history">
           {dashboard.recentSimulations.length === 0 ? (
-            <EmptyState title="No simulations yet" description="Run a scenario simulation to see projected outcomes." />
+            <EmptyState
+              title="No simulations yet"
+              description="Run a scenario simulation to see projected outcomes."
+            />
           ) : (
             <ul className="analytics-page__run-list">
               {dashboard.recentSimulations.map((sim) => (
@@ -282,15 +314,25 @@ export function DigitalTwinPage() {
         <>
           {canWrite ? (
             <div className="analytics-page__section-header">
-              <span className="page-muted">Heat maps derived from live jobs, fleet, inventory, and finance data.</span>
-              <Button size="sm" variant="secondary" disabled={isWorking} onClick={() => void handleCaptureHeatMaps()}>
+              <span className="page-muted">
+                Heat maps derived from live jobs, fleet, inventory, and finance data.
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() => void handleCaptureHeatMaps()}
+              >
                 Refresh heat maps
               </Button>
             </div>
           ) : null}
           <Panel title="Operational heat maps">
             {dashboard.heatMaps.length === 0 ? (
-              <EmptyState title="No heat maps yet" description="Capture heat maps when operational data is available." />
+              <EmptyState
+                title="No heat maps yet"
+                description="Capture heat maps when operational data is available."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {dashboard.heatMaps.map((map) => (
@@ -310,7 +352,9 @@ export function DigitalTwinPage() {
         <>
           {canWrite ? (
             <div className="analytics-page__section-header">
-              <span className="page-muted">Recommendations from real operational patterns. No autonomous changes.</span>
+              <span className="page-muted">
+                Recommendations from real operational patterns. No autonomous changes.
+              </span>
               <Button
                 size="sm"
                 variant="secondary"
@@ -323,12 +367,17 @@ export function DigitalTwinPage() {
           ) : null}
           <Panel title="AI decision support">
             {dashboard.recommendations.length === 0 ? (
-              <EmptyState title="No recommendations yet" description="Generate recommendations when operational data exists." />
+              <EmptyState
+                title="No recommendations yet"
+                description="Generate recommendations when operational data exists."
+              />
             ) : (
               <ul className="analytics-page__run-list">
                 {dashboard.recommendations.map((item) => (
                   <li key={item.id}>
-                    <strong>[{item.priority}] {item.title}</strong>
+                    <strong>
+                      [{item.priority}] {item.title}
+                    </strong>
                     <p className="page-muted">{item.recommendation}</p>
                   </li>
                 ))}
@@ -341,7 +390,10 @@ export function DigitalTwinPage() {
       {dashboard && activeTab === 'replay' ? (
         <Panel title="Operational replay">
           {dashboard.recentReplayEvents.length === 0 ? (
-            <EmptyState title="No replay events yet" description="Replay events are synced from real job and operational activity." />
+            <EmptyState
+              title="No replay events yet"
+              description="Replay events are synced from real job and operational activity."
+            />
           ) : (
             <ul className="analytics-page__run-list">
               {dashboard.recentReplayEvents.map((event) => (

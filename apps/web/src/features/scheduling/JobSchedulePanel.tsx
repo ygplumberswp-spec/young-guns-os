@@ -2,11 +2,7 @@ import { FormEvent, useEffect, useState } from 'react';
 import { Button, Input, Panel } from '@titan/ui';
 import type { JobDetail, JobAssignee } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import {
-  fetchAssignees,
-  scheduleJob,
-  updateJobSchedule,
-} from '../../lib/scheduling-api';
+import { fetchAssignees, scheduleJob, updateJobSchedule } from '../../lib/scheduling-api';
 import { toDatetimeLocalValue } from './utils';
 
 type JobSchedulePanelProps = {
@@ -171,7 +167,12 @@ export function JobSchedulePanel({ accessToken, job, canWrite, onUpdated }: JobS
               {isSaving ? 'Saving…' : job.scheduledAt ? 'Update schedule' : 'Schedule job'}
             </Button>
             {job.scheduledAt ? (
-              <Button type="button" variant="ghost" disabled={isSaving} onClick={() => void handleClearSchedule()}>
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={isSaving}
+                onClick={() => void handleClearSchedule()}
+              >
                 Clear schedule
               </Button>
             ) : null}

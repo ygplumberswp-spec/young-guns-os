@@ -7,6 +7,7 @@ import type {
   SchedulingStats,
   UpdateScheduleRequest,
 } from '@titan/shared';
+import { buildJobAddressDisplay } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { jobs, users } from '@titan/db';
 import { JobsError } from './jobs.service.js';
@@ -90,7 +91,11 @@ export class SchedulingService {
     };
   }
 
-  async scheduleJob(companyId: string, jobId: string, input: ScheduleJobRequest): Promise<ScheduledJobEvent> {
+  async scheduleJob(
+    companyId: string,
+    jobId: string,
+    input: ScheduleJobRequest,
+  ): Promise<ScheduledJobEvent> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
     });
@@ -187,7 +192,7 @@ export class SchedulingService {
         scheduledAt,
         scheduledEndAt,
         assignedUserId:
-          input.assignedUserId === undefined ? job.assignedUserId : input.assignedUserId ?? null,
+          input.assignedUserId === undefined ? job.assignedUserId : (input.assignedUserId ?? null),
         status: job.status === 'new' ? 'scheduled' : job.status,
         updatedAt: new Date(),
       })
@@ -215,7 +220,13 @@ export class SchedulingService {
         count: sql<number>`count(*)::int`,
       })
       .from(jobs)
-      .where(and(eq(jobs.companyId, companyId), isNotNull(jobs.scheduledAt), isNotNull(jobs.assignedUserId)))
+      .where(
+        and(
+          eq(jobs.companyId, companyId),
+          isNotNull(jobs.scheduledAt),
+          isNotNull(jobs.assignedUserId),
+        ),
+      )
       .groupBy(jobs.assignedUserId);
 
     const assignees = await this.listAssignees(companyId);
@@ -279,17 +290,40 @@ function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
     throw new JobsError('VALIDATION_ERROR', 'Job is not scheduled');
   }
 
+  const addressDisplay =
+    buildJobAddressDisplay({
+      street: job.snapshotStreet,
+      suburb: job.snapshotSuburb,
+      city: job.snapshotCity,
+      province: job.snapshotProvince,
+      postalCode: job.snapshotPostalCode,
+      unit: job.snapshotUnit,
+    }) ?? null;
+
   return {
     id: job.id,
+    jobNumber: job.jobNumber ?? null,
     title: job.title,
     status: job.status,
+    priority: job.priority ?? 'normal',
+    jobType: job.jobType ?? null,
     customerId: job.customerId,
-    customerName: job.customer?.name ?? 'Unknown',
+    customerName: job.snapshotCustomerName ?? job.customer?.name ?? 'Unknown',
+    suburb: job.snapshotSuburb ?? null,
+    addressDisplay,
+    siteContactName: job.snapshotSiteContactName ?? null,
+    siteContactMobile: job.snapshotSiteContactMobile ?? null,
+    accessWarning: Boolean(job.accessInstructions?.trim()),
+    accessInstructions: job.accessInstructions ?? null,
     scheduledAt: job.scheduledAt.toISOString(),
     scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
     assignedUserId: job.assignedUserId,
     assignedUserName: job.assignedUser
       ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
+      : null,
+    vehicleLabel: null,
+    crewLabel: job.assignedUser
+      ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim()
       : null,
   };
 }

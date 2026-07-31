@@ -71,12 +71,27 @@ export const sdPlatformConfig = pgTable('sd_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  serviceStandards: jsonb('service_standards').$type<Record<string, unknown>>().notNull().default({}),
-  promiseTemplates: jsonb('promise_templates').$type<Record<string, unknown>>().notNull().default({}),
+  serviceStandards: jsonb('service_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  promiseTemplates: jsonb('promise_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   slaTemplates: jsonb('sla_templates').$type<Record<string, unknown>>().notNull().default({}),
-  inspectionTemplates: jsonb('inspection_templates').$type<Record<string, unknown>>().notNull().default({}),
-  qualityStandards: jsonb('quality_standards').$type<Record<string, unknown>>().notNull().default({}),
-  warrantyStandards: jsonb('warranty_standards').$type<Record<string, unknown>>().notNull().default({}),
+  inspectionTemplates: jsonb('inspection_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  qualityStandards: jsonb('quality_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  warrantyStandards: jsonb('warranty_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -171,7 +186,9 @@ export const sdInspections = pgTable('sd_inspections', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
-  templateId: uuid('template_id').references(() => sdInspectionTemplates.id, { onDelete: 'set null' }),
+  templateId: uuid('template_id').references(() => sdInspectionTemplates.id, {
+    onDelete: 'set null',
+  }),
   inspectionStatus: sdInspectionStatusEnum('inspection_status').notNull().default('draft'),
   inspectorUserId: uuid('inspector_user_id').references(() => users.id, { onDelete: 'set null' }),
   findings: jsonb('findings').$type<Record<string, unknown>>().notNull().default({}),
@@ -209,7 +226,9 @@ export const sdDefects = pgTable('sd_defects', {
   severity: sdAlertSeverityEnum('severity').notNull().default('warning'),
   description: text('description').notNull(),
   workflowStatus: sdWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  reportedByUserId: uuid('reported_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reportedByUserId: uuid('reported_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -386,8 +405,12 @@ export const sdHandoverRecords = pgTable('sd_handover_records', {
     .references(() => jobs.id, { onDelete: 'cascade' }),
   handoverType: text('handover_type').notNull(),
   workflowStatus: sdWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  handedOverByUserId: uuid('handed_over_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  receivedByUserId: uuid('received_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  handedOverByUserId: uuid('handed_over_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  receivedByUserId: uuid('received_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   handoverAt: timestamp('handover_at', { withTimezone: true }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -405,7 +428,9 @@ export const sdVariationRecords = pgTable('sd_variation_records', {
   variationType: text('variation_type').notNull(),
   description: text('description').notNull(),
   workflowStatus: sdWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -443,7 +468,9 @@ export const sdServiceAlerts = pgTable('sd_service_alerts', {
   sourceEntityId: uuid('source_entity_id'),
   jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -462,7 +489,9 @@ export const sdServiceActionDrafts = pgTable('sd_service_action_drafts', {
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

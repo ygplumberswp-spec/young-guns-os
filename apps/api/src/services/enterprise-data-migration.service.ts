@@ -131,7 +131,9 @@ export class EnterpriseDataMigrationService {
       this.listMigrationAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const migrationHealth = this.buildMigrationHealth(importJobs, exportJobs);
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
@@ -173,7 +175,10 @@ export class EnterpriseDataMigrationService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateDmPlatformConfigRequest): Promise<DmPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateDmPlatformConfigRequest,
+  ): Promise<DmPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(dmPlatformConfig)
@@ -192,7 +197,10 @@ export class EnterpriseDataMigrationService {
     return toPlatformConfigSummary(updated ?? existing);
   }
 
-  async createImportJob(scope: StaffScope, input: CreateDmImportJobRequest): Promise<DmImportJobSummary> {
+  async createImportJob(
+    scope: StaffScope,
+    input: CreateDmImportJobRequest,
+  ): Promise<DmImportJobSummary> {
     const [created] = await this.deps.db
       .insert(dmImportJobs)
       .values({
@@ -205,7 +213,8 @@ export class EnterpriseDataMigrationService {
         status: 'draft',
       })
       .returning();
-    if (!created) throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create import job');
+    if (!created)
+      throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create import job');
     await this.logAudit(scope, 'create_import_job', 'dm_import_jobs', created.id);
     return toImportJobSummary(created);
   }
@@ -233,7 +242,9 @@ export class EnterpriseDataMigrationService {
       })
       .where(eq(dmImportJobs.id, importJobId))
       .returning();
-    await this.logAudit(scope, 'upload_import_file', 'dm_import_jobs', importJobId, { rowCount: rows.length });
+    await this.logAudit(scope, 'upload_import_file', 'dm_import_jobs', importJobId, {
+      rowCount: rows.length,
+    });
     return toImportJobSummary(updated!);
   }
 
@@ -306,18 +317,26 @@ export class EnterpriseDataMigrationService {
     return toImportJobSummary(updated!);
   }
 
-  async validateImportJob(scope: StaffScope, importJobId: string): Promise<DmImportJobDetailSummary> {
+  async validateImportJob(
+    scope: StaffScope,
+    importJobId: string,
+  ): Promise<DmImportJobDetailSummary> {
     const job = await this.ensureImportJob(scope.companyId, importJobId);
     if (!job.fileContent) {
       throw new EnterpriseDataMigrationError('VALIDATION_ERROR', 'Import file not uploaded');
     }
 
     const parsedRows = this.mappingService.parseFileContent(job.sourceFormat, job.fileContent);
-    const mappedRows = this.mappingService.applyMappings(parsedRows, job.fieldMappings as Record<string, string>);
+    const mappedRows = this.mappingService.applyMappings(
+      parsedRows,
+      job.fieldMappings as Record<string, string>,
+    );
     const existingKeys = await this.buildExistingDuplicateKeys(scope.companyId, job.entityType);
     const issues = this.validationService.validateRows(job.entityType, mappedRows, existingKeys);
 
-    await this.deps.db.delete(dmValidationResults).where(eq(dmValidationResults.importJobId, importJobId));
+    await this.deps.db
+      .delete(dmValidationResults)
+      .where(eq(dmValidationResults.importJobId, importJobId));
     for (const issue of issues) {
       await this.deps.db.insert(dmValidationResults).values({
         companyId: scope.companyId,
@@ -330,7 +349,9 @@ export class EnterpriseDataMigrationService {
       });
     }
 
-    await this.deps.db.delete(dmDuplicateReviews).where(eq(dmDuplicateReviews.importJobId, importJobId));
+    await this.deps.db
+      .delete(dmDuplicateReviews)
+      .where(eq(dmDuplicateReviews.importJobId, importJobId));
     const duplicates = findDuplicates(job.entityType, mappedRows, existingKeys);
     for (const duplicate of duplicates) {
       await this.deps.db.insert(dmDuplicateReviews).values({
@@ -358,14 +379,26 @@ export class EnterpriseDataMigrationService {
       .where(eq(dmImportJobs.id, importJobId))
       .returning();
 
-    await this.logAudit(scope, 'validate_import_job', 'dm_import_jobs', importJobId, validationSummary);
+    await this.logAudit(
+      scope,
+      'validate_import_job',
+      'dm_import_jobs',
+      importJobId,
+      validationSummary,
+    );
     return this.getImportJobDetail(scope.companyId, updated!.id);
   }
 
-  async submitImportForApproval(scope: StaffScope, importJobId: string): Promise<DmImportJobSummary> {
+  async submitImportForApproval(
+    scope: StaffScope,
+    importJobId: string,
+  ): Promise<DmImportJobSummary> {
     await this.ensureImportJob(scope.companyId, importJobId);
     if (this.validationService.hasBlockingErrors(await this.getValidationIssues(importJobId))) {
-      throw new EnterpriseDataMigrationError('VALIDATION_ERROR', 'Import has blocking validation errors');
+      throw new EnterpriseDataMigrationError(
+        'VALIDATION_ERROR',
+        'Import has blocking validation errors',
+      );
     }
     const [updated] = await this.deps.db
       .update(dmImportJobs)
@@ -397,10 +430,16 @@ export class EnterpriseDataMigrationService {
     return toImportJobSummary(updated!);
   }
 
-  async executeImportJob(scope: StaffScope, importJobId: string): Promise<DmImportJobDetailSummary> {
+  async executeImportJob(
+    scope: StaffScope,
+    importJobId: string,
+  ): Promise<DmImportJobDetailSummary> {
     const job = await this.ensureImportJob(scope.companyId, importJobId);
     if (job.status !== 'approved') {
-      throw new EnterpriseDataMigrationError('APPROVAL_REQUIRED', 'Import must be approved before execution');
+      throw new EnterpriseDataMigrationError(
+        'APPROVAL_REQUIRED',
+        'Import must be approved before execution',
+      );
     }
     if (!job.fileContent) {
       throw new EnterpriseDataMigrationError('VALIDATION_ERROR', 'Import file not uploaded');
@@ -412,7 +451,10 @@ export class EnterpriseDataMigrationService {
       .where(eq(dmImportJobs.id, importJobId));
 
     const parsedRows = this.mappingService.parseFileContent(job.sourceFormat, job.fileContent);
-    const mappedRows = this.mappingService.applyMappings(parsedRows, job.fieldMappings as Record<string, string>);
+    const mappedRows = this.mappingService.applyMappings(
+      parsedRows,
+      job.fieldMappings as Record<string, string>,
+    );
     const duplicateReviews = await this.deps.db.query.dmDuplicateReviews.findMany({
       where: eq(dmDuplicateReviews.importJobId, importJobId),
     });
@@ -473,7 +515,9 @@ export class EnterpriseDataMigrationService {
       summary: `Imported ${importedCount}, failed ${failedCount}, skipped ${skippedCount}.`,
       importedCount,
       failedCount,
-      validationErrorCount: Number((job.validationSummary as { errorCount?: number }).errorCount ?? 0),
+      validationErrorCount: Number(
+        (job.validationSummary as { errorCount?: number }).errorCount ?? 0,
+      ),
       rollbackAvailable,
     });
 
@@ -486,7 +530,10 @@ export class EnterpriseDataMigrationService {
     return this.getImportJobDetail(scope.companyId, updated!.id);
   }
 
-  async resolveDuplicate(scope: StaffScope, input: ResolveDmDuplicateRequest): Promise<DmDuplicateReviewSummary> {
+  async resolveDuplicate(
+    scope: StaffScope,
+    input: ResolveDmDuplicateRequest,
+  ): Promise<DmDuplicateReviewSummary> {
     const review = await this.deps.db.query.dmDuplicateReviews.findFirst({
       where: and(
         eq(dmDuplicateReviews.id, input.duplicateReviewId),
@@ -504,13 +551,22 @@ export class EnterpriseDataMigrationService {
       })
       .where(eq(dmDuplicateReviews.id, input.duplicateReviewId))
       .returning();
-    await this.logAudit(scope, 'resolve_duplicate', 'dm_duplicate_reviews', input.duplicateReviewId, {
-      action: input.action,
-    });
+    await this.logAudit(
+      scope,
+      'resolve_duplicate',
+      'dm_duplicate_reviews',
+      input.duplicateReviewId,
+      {
+        action: input.action,
+      },
+    );
     return toDuplicateReviewSummary(updated!);
   }
 
-  async createExportJob(scope: StaffScope, input: CreateDmExportJobRequest): Promise<DmExportJobSummary> {
+  async createExportJob(
+    scope: StaffScope,
+    input: CreateDmExportJobRequest,
+  ): Promise<DmExportJobSummary> {
     const [created] = await this.deps.db
       .insert(dmExportJobs)
       .values({
@@ -525,7 +581,8 @@ export class EnterpriseDataMigrationService {
         isScheduled: input.isScheduled ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create export job');
+    if (!created)
+      throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create export job');
     await this.logAudit(scope, 'create_export_job', 'dm_export_jobs', created.id);
     return toExportJobSummary(created);
   }
@@ -585,10 +642,19 @@ export class EnterpriseDataMigrationService {
     }
   }
 
-  async createRollbackRequest(scope: StaffScope, input: CreateDmRollbackRequest): Promise<DmRollbackRequestSummary> {
-    const availability = await this.rollbackService.getRollbackAvailability(input.importJobId, scope.companyId);
+  async createRollbackRequest(
+    scope: StaffScope,
+    input: CreateDmRollbackRequest,
+  ): Promise<DmRollbackRequestSummary> {
+    const availability = await this.rollbackService.getRollbackAvailability(
+      input.importJobId,
+      scope.companyId,
+    );
     if (!availability.available) {
-      throw new EnterpriseDataMigrationError('VALIDATION_ERROR', 'Rollback is not available for this import');
+      throw new EnterpriseDataMigrationError(
+        'VALIDATION_ERROR',
+        'Rollback is not available for this import',
+      );
     }
 
     const [created] = await this.deps.db
@@ -602,12 +668,16 @@ export class EnterpriseDataMigrationService {
         status: 'pending',
       })
       .returning();
-    if (!created) throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create rollback request');
+    if (!created)
+      throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create rollback request');
     await this.logAudit(scope, 'create_rollback_request', 'dm_rollback_requests', created.id);
     return toRollbackRequestSummary(created);
   }
 
-  async approveRollbackRequest(scope: StaffScope, rollbackRequestId: string): Promise<DmRollbackRequestSummary> {
+  async approveRollbackRequest(
+    scope: StaffScope,
+    rollbackRequestId: string,
+  ): Promise<DmRollbackRequestSummary> {
     const request = await this.deps.db.query.dmRollbackRequests.findFirst({
       where: and(
         eq(dmRollbackRequests.id, rollbackRequestId),
@@ -643,18 +713,35 @@ export class EnterpriseDataMigrationService {
       metadata: { recordsAffected: result.recordsAffected },
     });
 
-    await this.logAudit(scope, 'approve_rollback_request', 'dm_rollback_requests', rollbackRequestId);
+    await this.logAudit(
+      scope,
+      'approve_rollback_request',
+      'dm_rollback_requests',
+      rollbackRequestId,
+    );
     return toRollbackRequestSummary(updated!);
   }
 
-  async getImportJobDetail(companyId: string, importJobId: string): Promise<DmImportJobDetailSummary> {
+  async getImportJobDetail(
+    companyId: string,
+    importJobId: string,
+  ): Promise<DmImportJobDetailSummary> {
     const job = await this.ensureImportJob(companyId, importJobId);
-    const [fieldMappingDetails, validationResults, duplicateReviews, importRecords] = await Promise.all([
-      this.deps.db.query.dmFieldMappings.findMany({ where: eq(dmFieldMappings.importJobId, importJobId) }),
-      this.deps.db.query.dmValidationResults.findMany({ where: eq(dmValidationResults.importJobId, importJobId) }),
-      this.deps.db.query.dmDuplicateReviews.findMany({ where: eq(dmDuplicateReviews.importJobId, importJobId) }),
-      this.deps.db.query.dmImportRecords.findMany({ where: eq(dmImportRecords.importJobId, importJobId) }),
-    ]);
+    const [fieldMappingDetails, validationResults, duplicateReviews, importRecords] =
+      await Promise.all([
+        this.deps.db.query.dmFieldMappings.findMany({
+          where: eq(dmFieldMappings.importJobId, importJobId),
+        }),
+        this.deps.db.query.dmValidationResults.findMany({
+          where: eq(dmValidationResults.importJobId, importJobId),
+        }),
+        this.deps.db.query.dmDuplicateReviews.findMany({
+          where: eq(dmDuplicateReviews.importJobId, importJobId),
+        }),
+        this.deps.db.query.dmImportRecords.findMany({
+          where: eq(dmImportRecords.importJobId, importJobId),
+        }),
+      ]);
 
     return {
       ...toImportJobSummary(job),
@@ -705,10 +792,16 @@ export class EnterpriseDataMigrationService {
     return rows.map(toRollbackRequestSummary);
   }
 
-  async listMigrationAlerts(companyId: string, filters?: { status?: string }): Promise<DmMigrationAlertSummary[]> {
+  async listMigrationAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<DmMigrationAlertSummary[]> {
     const rows = await this.deps.db.query.dmMigrationAlerts.findMany({
       where: filters?.status
-        ? and(eq(dmMigrationAlerts.companyId, companyId), eq(dmMigrationAlerts.status, filters.status as never))
+        ? and(
+            eq(dmMigrationAlerts.companyId, companyId),
+            eq(dmMigrationAlerts.status, filters.status as never),
+          )
         : eq(dmMigrationAlerts.companyId, companyId),
       orderBy: [desc(dmMigrationAlerts.createdAt)],
       limit: 100,
@@ -773,7 +866,10 @@ export class EnterpriseDataMigrationService {
       failedExportCount: exportJobs.filter((j) => j.status === 'failed').length,
       rollbackAvailableCount: importJobs.filter((j) => j.rollbackStatus === 'available').length,
     };
-    const [created] = await this.deps.db.insert(dmAnalyticsSnapshots).values({ companyId: scope.companyId, metrics }).returning();
+    const [created] = await this.deps.db
+      .insert(dmAnalyticsSnapshots)
+      .values({ companyId: scope.companyId, metrics })
+      .returning();
     await this.logAudit(scope, 'capture_analytics', 'dm_analytics_snapshots', created?.id);
     return toAnalyticsSummary(created!);
   }
@@ -787,7 +883,10 @@ export class EnterpriseDataMigrationService {
     return rows.map(toActionDraftSummary);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateDmActionDraftRequest): Promise<DmActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateDmActionDraftRequest,
+  ): Promise<DmActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(dmActionDrafts)
       .values({
@@ -799,7 +898,8 @@ export class EnterpriseDataMigrationService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseDataMigrationError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'dm_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -813,12 +913,17 @@ export class EnterpriseDataMigrationService {
     return rows.map(toAuditLogSummary);
   }
 
-  private async buildExistingDuplicateKeys(companyId: string, entityType: DmImportJobSummary['entityType']) {
+  private async buildExistingDuplicateKeys(
+    companyId: string,
+    entityType: DmImportJobSummary['entityType'],
+  ) {
     const keys = new Set<string>();
     switch (entityType) {
       case 'customer':
         for (const customer of await this.deps.crmService.listCustomers(companyId)) {
-          keys.add(buildDuplicateKey('customer', { name: customer.name, email: customer.email ?? '' }));
+          keys.add(
+            buildDuplicateKey('customer', { name: customer.name, email: customer.email ?? '' }),
+          );
         }
         break;
       case 'lead':
@@ -834,7 +939,9 @@ export class EnterpriseDataMigrationService {
         break;
       case 'supplier':
         for (const supplier of await this.deps.procurementService.listSuppliers(companyId)) {
-          keys.add(buildDuplicateKey('supplier', { name: supplier.name, email: supplier.email ?? '' }));
+          keys.add(
+            buildDuplicateKey('supplier', { name: supplier.name, email: supplier.email ?? '' }),
+          );
         }
         break;
       case 'inventory':
@@ -866,11 +973,16 @@ export class EnterpriseDataMigrationService {
     exportJobs: DmExportJobSummary[],
   ): DmMigrationHealthSummary {
     return {
-      activeImportCount: importJobs.filter((j) => ['importing', 'pending_approval', 'approved'].includes(j.status)).length,
+      activeImportCount: importJobs.filter((j) =>
+        ['importing', 'pending_approval', 'approved'].includes(j.status),
+      ).length,
       failedImportCount: importJobs.filter((j) => j.status === 'failed').length,
-      pendingValidationCount: importJobs.filter((j) => ['validated', 'mapped', 'uploaded'].includes(j.status)).length,
+      pendingValidationCount: importJobs.filter((j) =>
+        ['validated', 'mapped', 'uploaded'].includes(j.status),
+      ).length,
       rollbackAvailableCount: importJobs.filter((j) => j.rollbackStatus === 'available').length,
-      activeExportCount: exportJobs.filter((j) => j.status === 'running' || j.status === 'pending').length,
+      activeExportCount: exportJobs.filter((j) => j.status === 'running' || j.status === 'pending')
+        .length,
       failedExportCount: exportJobs.filter((j) => j.status === 'failed').length,
     };
   }
@@ -893,7 +1005,12 @@ export class EnterpriseDataMigrationService {
 
   private async upsertMigrationAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description?: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description?: string;
+    },
   ): Promise<DmMigrationAlertSummary> {
     const existing = await this.deps.db.query.dmMigrationAlerts.findFirst({
       where: and(
@@ -963,7 +1080,9 @@ export class EnterpriseDataMigrationService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof dmPlatformConfig.$inferSelect): DmPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof dmPlatformConfig.$inferSelect,
+): DmPlatformConfigSummary {
   return {
     importPolicy: row.importPolicy,
     exportPolicy: row.exportPolicy,
@@ -1021,7 +1140,9 @@ function toFieldMappingSummary(row: typeof dmFieldMappings.$inferSelect): DmFiel
   };
 }
 
-function toValidationResultSummary(row: typeof dmValidationResults.$inferSelect): DmValidationResultSummary {
+function toValidationResultSummary(
+  row: typeof dmValidationResults.$inferSelect,
+): DmValidationResultSummary {
   return {
     id: row.id,
     importJobId: row.importJobId,
@@ -1033,7 +1154,9 @@ function toValidationResultSummary(row: typeof dmValidationResults.$inferSelect)
   };
 }
 
-function toDuplicateReviewSummary(row: typeof dmDuplicateReviews.$inferSelect): DmDuplicateReviewSummary {
+function toDuplicateReviewSummary(
+  row: typeof dmDuplicateReviews.$inferSelect,
+): DmDuplicateReviewSummary {
   return {
     id: row.id,
     importJobId: row.importJobId,
@@ -1056,7 +1179,9 @@ function toImportRecordSummary(row: typeof dmImportRecords.$inferSelect): DmImpo
   };
 }
 
-function toMigrationHistorySummary(row: typeof dmMigrationHistory.$inferSelect): DmMigrationHistorySummary {
+function toMigrationHistorySummary(
+  row: typeof dmMigrationHistory.$inferSelect,
+): DmMigrationHistorySummary {
   return {
     id: row.id,
     actionType: row.actionType,
@@ -1071,7 +1196,9 @@ function toMigrationHistorySummary(row: typeof dmMigrationHistory.$inferSelect):
   };
 }
 
-function toRollbackRequestSummary(row: typeof dmRollbackRequests.$inferSelect): DmRollbackRequestSummary {
+function toRollbackRequestSummary(
+  row: typeof dmRollbackRequests.$inferSelect,
+): DmRollbackRequestSummary {
   return {
     id: row.id,
     importJobId: row.importJobId,
@@ -1084,7 +1211,9 @@ function toRollbackRequestSummary(row: typeof dmRollbackRequests.$inferSelect): 
   };
 }
 
-function toMigrationAlertSummary(row: typeof dmMigrationAlerts.$inferSelect): DmMigrationAlertSummary {
+function toMigrationAlertSummary(
+  row: typeof dmMigrationAlerts.$inferSelect,
+): DmMigrationAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,

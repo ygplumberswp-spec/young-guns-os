@@ -75,15 +75,30 @@ export const rcWorkflowCategoryEnum = pgEnum('rc_workflow_category', [
   'customer_portal',
   'mobile',
 ]);
-export const rcInsightSeverityEnum = pgEnum('rc_insight_severity', ['info', 'warning', 'high', 'critical']);
-export const rcPlatformAlertSeverityEnum = pgEnum('rc_platform_alert_severity', ['info', 'warning', 'critical']);
+export const rcInsightSeverityEnum = pgEnum('rc_insight_severity', [
+  'info',
+  'warning',
+  'high',
+  'critical',
+]);
+export const rcPlatformAlertSeverityEnum = pgEnum('rc_platform_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
 export const rcPlatformAlertStatusEnum = pgEnum('rc_platform_alert_status', [
   'open',
   'acknowledged',
   'resolved',
   'dismissed',
 ]);
-export const rcChecklistStatusEnum = pgEnum('rc_checklist_status', ['pending', 'passed', 'failed', 'skipped', 'manual']);
+export const rcChecklistStatusEnum = pgEnum('rc_checklist_status', [
+  'pending',
+  'passed',
+  'failed',
+  'skipped',
+  'manual',
+]);
 
 export const rcPlatformConfig = pgTable('rc_platform_config', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -91,10 +106,19 @@ export const rcPlatformConfig = pgTable('rc_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  validationPolicy: jsonb('validation_policy').$type<Record<string, unknown>>().notNull().default({}),
-  performancePolicy: jsonb('performance_policy').$type<Record<string, unknown>>().notNull().default({}),
+  validationPolicy: jsonb('validation_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  performancePolicy: jsonb('performance_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   releasePolicy: jsonb('release_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -186,7 +210,10 @@ export const rcPerformanceSnapshots = pgTable('rc_performance_snapshots', {
   aiLatencyMs: integer('ai_latency_ms'),
   searchIndexCount: integer('search_index_count').notNull().default(0),
   dashboardLoadMs: integer('dashboard_load_ms'),
-  optimizationOpportunities: jsonb('optimization_opportunities').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  optimizationOpportunities: jsonb('optimization_opportunities')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   metrics: jsonb('metrics').$type<Record<string, unknown>>().notNull().default({}),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });

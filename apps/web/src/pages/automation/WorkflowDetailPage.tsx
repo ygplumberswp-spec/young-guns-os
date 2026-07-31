@@ -316,7 +316,11 @@ export function WorkflowDetailPage() {
             </Link>
             {canWrite ? (
               <>
-                <Button variant="secondary" onClick={() => void handleRunWorkflow()} disabled={isSaving}>
+                <Button
+                  variant="secondary"
+                  onClick={() => void handleRunWorkflow()}
+                  disabled={isSaving}
+                >
                   Run now
                 </Button>
                 <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
@@ -531,7 +535,9 @@ export function WorkflowDetailPage() {
 
       <Panel title="Workflow runs">
         {runs.length === 0 ? (
-          <p className="page-muted">No runs recorded yet. Activate the workflow and wait for matching events.</p>
+          <p className="page-muted">
+            No runs recorded yet. Activate the workflow and wait for matching events.
+          </p>
         ) : (
           <div className="automation-table-wrap">
             <table className="automation-table">
@@ -550,7 +556,11 @@ export function WorkflowDetailPage() {
                     <td>{formatRunStatus(run.status)}</td>
                     <td>{new Date(run.startedAt).toLocaleString()}</td>
                     <td>
-                      <Button type="button" variant="secondary" onClick={() => void handleViewRun(run.id)}>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void handleViewRun(run.id)}
+                      >
                         View
                       </Button>
                     </td>
@@ -571,7 +581,9 @@ export function WorkflowDetailPage() {
                 {step.results.map((result) => (
                   <div key={result.id} className="automation-step-result">
                     {result.preview ? <p className="page-muted">{result.preview}</p> : null}
-                    {result.requiresApproval && result.status === 'awaiting_approval' && canWrite ? (
+                    {result.requiresApproval &&
+                    result.status === 'awaiting_approval' &&
+                    canWrite ? (
                       <div className="automation-inline-form">
                         <Button
                           type="button"

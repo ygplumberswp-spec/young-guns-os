@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
 import type { CxReviewFeedbackSummary } from '@titan/shared';
-import { PortalApiClientError, fetchCxPortalReviews, submitCxPortalReview } from '../../lib/portal-api-client';
+import {
+  PortalApiClientError,
+  fetchCxPortalReviews,
+  submitCxPortalReview,
+} from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 
 export function PortalFeedbackPage() {
@@ -17,7 +21,9 @@ export function PortalFeedbackPage() {
     if (!accessToken) return;
     void fetchCxPortalReviews(accessToken)
       .then(setReviews)
-      .catch((err) => setError(err instanceof PortalApiClientError ? err.message : 'Unable to load feedback'));
+      .catch((err) =>
+        setError(err instanceof PortalApiClientError ? err.message : 'Unable to load feedback'),
+      );
   }, [accessToken]);
 
   async function submitReview() {
@@ -40,17 +46,36 @@ export function PortalFeedbackPage() {
 
   return (
     <div className="portal-page">
-      <PageHeader title="Reviews & feedback" description="Rate your experience and submit feedback." />
+      <PageHeader
+        title="Reviews & feedback"
+        description="Rate your experience and submit feedback."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
       <Panel title="Submit feedback">
         <div className="form-stack">
-          <input type="text" placeholder="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
-          <textarea placeholder="Your feedback" value={feedback} onChange={(e) => setFeedback(e.target.value)} rows={4} />
+          <input
+            type="text"
+            placeholder="Subject"
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+          />
+          <textarea
+            placeholder="Your feedback"
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            rows={4}
+          />
           <label>
             Rating
-            <input type="number" min={1} max={5} value={rating} onChange={(e) => setRating(Number(e.target.value))} />
+            <input
+              type="number"
+              min={1}
+              max={5}
+              value={rating}
+              onChange={(e) => setRating(Number(e.target.value))}
+            />
           </label>
           <Button onClick={() => void submitReview()}>Submit feedback</Button>
         </div>
@@ -58,7 +83,10 @@ export function PortalFeedbackPage() {
 
       <Panel title="Your submissions">
         {reviews.length === 0 ? (
-          <EmptyState title="No feedback yet" description="Your submitted reviews and feedback will appear here." />
+          <EmptyState
+            title="No feedback yet"
+            description="Your submitted reviews and feedback will appear here."
+          />
         ) : (
           <ul className="portal-list">
             {reviews.map((review) => (

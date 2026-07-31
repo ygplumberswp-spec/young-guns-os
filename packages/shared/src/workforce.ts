@@ -1,19 +1,8 @@
 export type CandidateActivityType =
-  | 'note'
-  | 'screening'
-  | 'interview'
-  | 'assessment'
-  | 'communication'
-  | 'status_change'
-  | 'other';
+  'note' | 'screening' | 'interview' | 'assessment' | 'communication' | 'status_change' | 'other';
 
 export type WorkforceRecommendationType =
-  | 'staffing'
-  | 'training'
-  | 'recruitment'
-  | 'capacity'
-  | 'skill_gap'
-  | 'performance';
+  'staffing' | 'training' | 'recruitment' | 'capacity' | 'skill_gap' | 'performance';
 
 export type WorkforceRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
@@ -133,7 +122,11 @@ export type WorkforceAuraContext = {
   pendingRecommendationCount: number;
   skillGapCount: number;
   pipelineStages: CandidatePipelineStage[];
-  topRecommendations: Array<{ title: string; recommendationType: WorkforceRecommendationType; priority: string }>;
+  topRecommendations: Array<{
+    title: string;
+    recommendationType: WorkforceRecommendationType;
+    priority: string;
+  }>;
   staffingInsights: StaffingInsight[];
   summary: string;
 };

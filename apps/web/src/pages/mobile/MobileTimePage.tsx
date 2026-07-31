@@ -31,7 +31,9 @@ export function MobileTimePage() {
       await createMobileTimeEntry(accessToken, { entryType: action });
       await entriesQuery.refetch();
     } catch (err) {
-      setActionError(err instanceof MobileApiClientError ? err.message : 'Unable to record time entry');
+      setActionError(
+        err instanceof MobileApiClientError ? err.message : 'Unable to record time entry',
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -46,7 +48,11 @@ export function MobileTimePage() {
           <Button disabled={isSubmitting} onClick={() => void handleClock('clock_in')}>
             Clock in
           </Button>
-          <Button variant="secondary" disabled={isSubmitting} onClick={() => void handleClock('clock_out')}>
+          <Button
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={() => void handleClock('clock_out')}
+          >
             Clock out
           </Button>
         </div>

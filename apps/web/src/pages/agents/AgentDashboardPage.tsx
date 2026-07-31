@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
-import type { AgentProfileSummary, AgentRegistryEntry, TenantCapabilitySummary } from '@titan/shared';
+import type {
+  AgentProfileSummary,
+  AgentRegistryEntry,
+  TenantCapabilitySummary,
+} from '@titan/shared';
 import { hasAgentManagePermission } from '@titan/auth/browser';
-import {
-  fetchAgentProfiles,
-  fetchAgentRegistry,
-  fetchAgentsStats,
-} from '../../lib/agents-api';
+import { fetchAgentProfiles, fetchAgentRegistry, fetchAgentsStats } from '../../lib/agents-api';
 import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
 import { fetchTenantCapabilities } from '../../lib/tenant-capabilities-api';
 import { useAuth } from '../../lib/auth-context';
@@ -70,7 +70,9 @@ function CapabilityGroupCard({
     <article className="capability-group-card">
       <div className="capability-group-card__header">
         <h3>{label}</h3>
-        <span className={`status-pill status-pill--${status}`}>{formatCapabilityStatus(status)}</span>
+        <span className={`status-pill status-pill--${status}`}>
+          {formatCapabilityStatus(status)}
+        </span>
       </div>
       <p className="page-muted">{description}</p>
       {customCapabilities.length > 0 ? (
@@ -78,7 +80,9 @@ function CapabilityGroupCard({
           {customCapabilities.map((capability) => (
             <li key={capability.id}>
               <strong>{capability.name}</strong>
-              <span className={`status-pill status-pill--${capability.status}`}>{capability.status.replace(/_/g, ' ')}</span>
+              <span className={`status-pill status-pill--${capability.status}`}>
+                {capability.status.replace(/_/g, ' ')}
+              </span>
             </li>
           ))}
         </ul>
@@ -104,10 +108,7 @@ export function AgentDashboardPage() {
   const canView = useMemo(() => (user ? canAccessAgents(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageAgents(user.permissions) : false), [user]);
   const canAdvanced = useMemo(
-    () =>
-      user
-        ? hasAgentManagePermission(user.permissions)
-        : false,
+    () => (user ? hasAgentManagePermission(user.permissions) : false),
     [user],
   );
 
@@ -182,18 +183,24 @@ export function AgentDashboardPage() {
   if (!canView) {
     return (
       <div className="agents-page page-shell">
-        <PageHeader title="AURA Capabilities" description="You do not have permission to view AURA capabilities." />
+        <PageHeader
+          title="AURA Capabilities"
+          description="You do not have permission to view AURA capabilities."
+        />
       </div>
     );
   }
 
   const activeGroups = CAPABILITY_GROUPS.filter(
-    (group) => resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'active',
+    (group) =>
+      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'active',
   ).length;
   const needsSetupGroups = CAPABILITY_GROUPS.filter(
     (group) =>
-      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'needs_setup' ||
-      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) === 'provider_required',
+      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) ===
+        'needs_setup' ||
+      resolveGroupStatus(group.agentKeys, configuredKeys, registry, aiConfigured) ===
+        'provider_required',
   ).length;
 
   return (

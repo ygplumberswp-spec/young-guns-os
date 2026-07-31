@@ -9,11 +9,7 @@ import type {
   SetInventoryStockRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import {
-  inventoryItems,
-  inventoryLocations,
-  inventoryStockLevels,
-} from '@titan/db';
+import { inventoryItems, inventoryLocations, inventoryStockLevels, vehicles } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 
 export class InventoryError extends Error {
@@ -25,6 +21,11 @@ export class InventoryError extends Error {
     this.name = 'InventoryError';
   }
 }
+
+export type ListItemsOptions = {
+  /** When false, cost fields (unitCostCents) are zeroed out for actors without cost visibility. */
+  includeCost?: boolean;
+};
 
 export type AuraInventoryContext = {
   itemCount: number;
@@ -56,12 +57,17 @@ export type AuraInventoryContext = {
   }>;
 };
 
+type LocationRow = typeof inventoryLocations.$inferSelect & {
+  vehicle: typeof vehicles.$inferSelect | null;
+};
+
 export class InventoryService {
   constructor(private readonly db: DatabaseClient) {}
 
   async listLocations(companyId: string): Promise<InventoryLocationSummary[]> {
     const rows = await this.db.query.inventoryLocations.findMany({
       where: eq(inventoryLocations.companyId, companyId),
+      with: { vehicle: true },
       orderBy: [desc(inventoryLocations.isDefault), desc(inventoryLocations.updatedAt)],
     });
 
@@ -78,6 +84,12 @@ export class InventoryService {
       throw new InventoryError('VALIDATION_ERROR', 'Location name is required');
     }
 
+    const locationType = input.locationType ?? 'warehouse';
+
+    if (input.vehicleId) {
+      await this.ensureVehicleBelongsToCompany(companyId, input.vehicleId);
+    }
+
     if (input.isDefault) {
       await this.db
         .update(inventoryLocations)
@@ -92,6 +104,8 @@ export class InventoryService {
         name,
         code: input.code?.trim() || null,
         address: input.address?.trim() || null,
+        locationType,
+        vehicleId: input.vehicleId ?? null,
         isDefault: input.isDefault ?? false,
       })
       .returning();
@@ -100,17 +114,25 @@ export class InventoryService {
       throw new InventoryError('INTERNAL_ERROR', 'Unable to create location');
     }
 
-    return toLocationSummary(created);
+    const row = await this.db.query.inventoryLocations.findFirst({
+      where: eq(inventoryLocations.id, created.id),
+      with: { vehicle: true },
+    });
+
+    return toLocationSummary(row ?? { ...created, vehicle: null });
   }
 
-  async listItems(companyId: string): Promise<InventoryItemSummary[]> {
+  async listItems(
+    companyId: string,
+    options: ListItemsOptions = {},
+  ): Promise<InventoryItemSummary[]> {
     const rows = await this.db.query.inventoryItems.findMany({
       where: eq(inventoryItems.companyId, companyId),
       with: { stockLevels: true },
       orderBy: [desc(inventoryItems.updatedAt)],
     });
 
-    return rows.map(toItemSummary);
+    return rows.map((row) => toItemSummary(row, options.includeCost !== false));
   }
 
   async createItem(
@@ -134,6 +156,13 @@ export class InventoryService {
       throw new InventoryError('VALIDATION_ERROR', 'Reorder level cannot be negative');
     }
 
+    const unitCostCents = input.unitCostCents ?? 0;
+    const sellPriceCents = input.sellPriceCents ?? 0;
+
+    if (unitCostCents < 0 || sellPriceCents < 0) {
+      throw new InventoryError('VALIDATION_ERROR', 'Cost and price cannot be negative');
+    }
+
     const [created] = await this.db
       .insert(inventoryItems)
       .values({
@@ -143,6 +172,8 @@ export class InventoryService {
         description: input.description?.trim() || null,
         unit: input.unit?.trim() || 'each',
         reorderLevel,
+        unitCostCents,
+        sellPriceCents,
         status: input.status ?? 'active',
       })
       .returning();
@@ -151,7 +182,7 @@ export class InventoryService {
       throw new InventoryError('INTERNAL_ERROR', 'Unable to create product');
     }
 
-    return toItemSummary({ ...created, stockLevels: [] });
+    return toItemSummary({ ...created, stockLevels: [] }, true);
   }
 
   async listStockLevels(companyId: string): Promise<InventoryStockLevelSummary[]> {
@@ -280,6 +311,13 @@ export class InventoryService {
       .from(inventoryLocations)
       .where(eq(inventoryLocations.companyId, companyId));
 
+    const [vanLocationCountRow] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(inventoryLocations)
+      .where(
+        and(eq(inventoryLocations.companyId, companyId), eq(inventoryLocations.locationType, 'van')),
+      );
+
     const [totalUnitsRow] = await this.db
       .select({ total: sql<number>`coalesce(sum(${inventoryStockLevels.quantityOnHand}), 0)::int` })
       .from(inventoryStockLevels)
@@ -298,6 +336,7 @@ export class InventoryService {
     return {
       itemCount: itemCountRow?.count ?? 0,
       locationCount: locationCountRow?.count ?? 0,
+      vanLocationCount: vanLocationCountRow?.count ?? 0,
       lowStockCount,
       totalUnitsOnHand: totalUnitsRow?.total ?? 0,
     };
@@ -370,7 +409,7 @@ export class InventoryService {
     };
   }
 
-  private async ensureItemBelongsToCompany(companyId: string, itemId: string) {
+  async ensureItemBelongsToCompany(companyId: string, itemId: string) {
     const item = await this.db.query.inventoryItems.findFirst({
       where: and(eq(inventoryItems.id, itemId), eq(inventoryItems.companyId, companyId)),
     });
@@ -378,9 +417,11 @@ export class InventoryService {
     if (!item) {
       throw new InventoryError('ITEM_NOT_FOUND', 'Product not found');
     }
+
+    return item;
   }
 
-  private async ensureLocationBelongsToCompany(companyId: string, locationId: string) {
+  async ensureLocationBelongsToCompany(companyId: string, locationId: string) {
     const location = await this.db.query.inventoryLocations.findFirst({
       where: and(
         eq(inventoryLocations.id, locationId),
@@ -391,15 +432,34 @@ export class InventoryService {
     if (!location) {
       throw new InventoryError('LOCATION_NOT_FOUND', 'Location not found');
     }
+
+    return location;
+  }
+
+  private async ensureVehicleBelongsToCompany(companyId: string, vehicleId: string) {
+    const vehicle = await this.db.query.vehicles.findFirst({
+      where: and(eq(vehicles.id, vehicleId), eq(vehicles.companyId, companyId)),
+    });
+
+    if (!vehicle) {
+      throw new InventoryError('VEHICLE_NOT_FOUND', 'Vehicle not found');
+    }
+
+    return vehicle;
   }
 }
 
-function toLocationSummary(row: typeof inventoryLocations.$inferSelect): InventoryLocationSummary {
+function toLocationSummary(row: LocationRow): InventoryLocationSummary {
   return {
     id: row.id,
     name: row.name,
     code: row.code,
     address: row.address,
+    locationType: row.locationType,
+    vehicleId: row.vehicleId,
+    vehicleLabel: row.vehicle
+      ? `${row.vehicle.name}${row.vehicle.licensePlate ? ` (${row.vehicle.licensePlate})` : ''}`
+      : null,
     isDefault: row.isDefault,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -410,6 +470,7 @@ function toItemSummary(
   row: typeof inventoryItems.$inferSelect & {
     stockLevels: Array<typeof inventoryStockLevels.$inferSelect>;
   },
+  includeCost: boolean,
 ): InventoryItemSummary {
   const totalQuantityOnHand = row.stockLevels.reduce((sum, level) => sum + level.quantityOnHand, 0);
 
@@ -420,6 +481,8 @@ function toItemSummary(
     description: row.description,
     unit: row.unit,
     reorderLevel: row.reorderLevel,
+    unitCostCents: includeCost ? row.unitCostCents : null,
+    sellPriceCents: includeCost ? row.sellPriceCents : null,
     status: row.status,
     totalQuantityOnHand,
     isLowStock:
@@ -447,11 +510,10 @@ function toStockLevelSummary(
     locationId: row.locationId,
     locationName: row.location?.name ?? 'Unknown',
     locationCode: row.location?.code ?? null,
+    locationType: row.location?.locationType ?? 'warehouse',
     quantityOnHand: row.quantityOnHand,
     isLowStock:
-      row.item?.status === 'active' &&
-      reorderLevel > 0 &&
-      row.quantityOnHand <= reorderLevel,
+      row.item?.status === 'active' && reorderLevel > 0 && row.quantityOnHand <= reorderLevel,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

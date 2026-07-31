@@ -71,16 +71,30 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('launch_center:read', 'launch_center:manage', 'ops:read', 'platform_health:read');
-  const requireWrite = requireAnyPermission('launch_center:write', 'launch_center:manage', 'ops:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'launch_center:read',
+    'launch_center:manage',
+    'ops:read',
+    'platform_health:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'launch_center:write',
+    'launch_center:manage',
+    'ops:manage',
+  );
   const requireManage = requireAnyPermission('launch_center:manage', 'ops:manage');
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterpriseLaunchCenterService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterpriseLaunchCenterService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -89,7 +103,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseLaunchCenterService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseLaunchCenterService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -99,7 +115,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseLaunchCenterService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseLaunchCenterService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -117,7 +136,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/readiness-scans', requireRead, async (req, res) => {
     try {
-      const readinessScans = await deps.enterpriseLaunchCenterService.listReadinessScans(getAuth(req).companyId);
+      const readinessScans = await deps.enterpriseLaunchCenterService.listReadinessScans(
+        getAuth(req).companyId,
+      );
       res.json({ data: { readinessScans } });
     } catch (error) {
       handleError(error, res);
@@ -126,7 +147,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/readiness-scans/:scanId', requireRead, async (req, res) => {
     try {
-      const scan = await deps.enterpriseLaunchCenterService.getReadinessScanDetail(getAuth(req).companyId, getRouteParam(req.params.scanId));
+      const scan = await deps.enterpriseLaunchCenterService.getReadinessScanDetail(
+        getAuth(req).companyId,
+        getRouteParam(req.params.scanId),
+      );
       res.json({ data: { scan } });
     } catch (error) {
       handleError(error, res);
@@ -135,7 +159,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/readiness-scores/latest', requireRead, async (req, res) => {
     try {
-      const readinessScore = await deps.enterpriseLaunchCenterService.getLatestReadinessScore(getAuth(req).companyId);
+      const readinessScore = await deps.enterpriseLaunchCenterService.getLatestReadinessScore(
+        getAuth(req).companyId,
+      );
       res.json({ data: { readinessScore } });
     } catch (error) {
       handleError(error, res);
@@ -144,7 +170,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/acceptance/suites', requireRead, async (req, res) => {
     try {
-      const acceptanceTestSuites = await deps.enterpriseLaunchCenterService.listAcceptanceSuites(getAuth(req).companyId);
+      const acceptanceTestSuites = await deps.enterpriseLaunchCenterService.listAcceptanceSuites(
+        getAuth(req).companyId,
+      );
       res.json({ data: { acceptanceTestSuites } });
     } catch (error) {
       handleError(error, res);
@@ -154,7 +182,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.post('/acceptance/run', requireWrite, async (req, res) => {
     try {
       const suiteId = typeof req.body?.suiteId === 'string' ? req.body.suiteId : undefined;
-      const run = await deps.enterpriseLaunchCenterService.runAcceptanceTests(staffScope(req), suiteId);
+      const run = await deps.enterpriseLaunchCenterService.runAcceptanceTests(
+        staffScope(req),
+        suiteId,
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -163,7 +194,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/acceptance/runs', requireRead, async (req, res) => {
     try {
-      const acceptanceTestRuns = await deps.enterpriseLaunchCenterService.listAcceptanceTestRuns(getAuth(req).companyId);
+      const acceptanceTestRuns = await deps.enterpriseLaunchCenterService.listAcceptanceTestRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { acceptanceTestRuns } });
     } catch (error) {
       handleError(error, res);
@@ -172,7 +205,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/acceptance/runs/:runId', requireRead, async (req, res) => {
     try {
-      const run = await deps.enterpriseLaunchCenterService.getAcceptanceTestRunDetail(getAuth(req).companyId, getRouteParam(req.params.runId));
+      const run = await deps.enterpriseLaunchCenterService.getAcceptanceTestRunDetail(
+        getAuth(req).companyId,
+        getRouteParam(req.params.runId),
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -181,7 +217,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/go-live/wizards', requireRead, async (req, res) => {
     try {
-      const goLiveWizards = await deps.enterpriseLaunchCenterService.listGoLiveWizards(getAuth(req).companyId);
+      const goLiveWizards = await deps.enterpriseLaunchCenterService.listGoLiveWizards(
+        getAuth(req).companyId,
+      );
       res.json({ data: { goLiveWizards } });
     } catch (error) {
       handleError(error, res);
@@ -191,7 +229,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.post('/go-live/wizards', requireWrite, async (req, res) => {
     try {
       const input = goLiveWizardSchema.parse(req.body);
-      const wizard = await deps.enterpriseLaunchCenterService.createGoLiveWizard(staffScope(req), input);
+      const wizard = await deps.enterpriseLaunchCenterService.createGoLiveWizard(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { wizard } });
     } catch (error) {
       handleError(error, res);
@@ -216,7 +257,11 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.post('/go-live/wizards/:wizardId/approve', requireManage, async (req, res) => {
     try {
       const input = approveWizardSchema.parse(req.body ?? {});
-      const wizard = await deps.enterpriseLaunchCenterService.approveGoLiveWizard(staffScope(req), getRouteParam(req.params.wizardId), input);
+      const wizard = await deps.enterpriseLaunchCenterService.approveGoLiveWizard(
+        staffScope(req),
+        getRouteParam(req.params.wizardId),
+        input,
+      );
       res.json({ data: { wizard } });
     } catch (error) {
       handleError(error, res);
@@ -225,7 +270,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.post('/go-live/wizards/:wizardId/confirm-deployment', requireManage, async (req, res) => {
     try {
-      const wizard = await deps.enterpriseLaunchCenterService.confirmDeployment(staffScope(req), getRouteParam(req.params.wizardId));
+      const wizard = await deps.enterpriseLaunchCenterService.confirmDeployment(
+        staffScope(req),
+        getRouteParam(req.params.wizardId),
+      );
       res.json({ data: { wizard } });
     } catch (error) {
       handleError(error, res);
@@ -235,7 +283,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.get('/rollback-plans', requireRead, async (req, res) => {
     try {
       const wizardId = typeof req.query.wizardId === 'string' ? req.query.wizardId : undefined;
-      const rollbackPlanLinks = await deps.enterpriseLaunchCenterService.listRollbackPlans(getAuth(req).companyId, wizardId);
+      const rollbackPlanLinks = await deps.enterpriseLaunchCenterService.listRollbackPlans(
+        getAuth(req).companyId,
+        wizardId,
+      );
       res.json({ data: { rollbackPlanLinks } });
     } catch (error) {
       handleError(error, res);
@@ -244,7 +295,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.post('/rollback-plans/:linkId/validate', requireWrite, async (req, res) => {
     try {
-      const link = await deps.enterpriseLaunchCenterService.validateRollbackPlan(staffScope(req), getRouteParam(req.params.linkId));
+      const link = await deps.enterpriseLaunchCenterService.validateRollbackPlan(
+        staffScope(req),
+        getRouteParam(req.params.linkId),
+      );
       res.json({ data: { link } });
     } catch (error) {
       handleError(error, res);
@@ -255,7 +309,11 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
     try {
       const wizardId = z.string().uuid().parse(req.body.wizardId);
       const rollbackPlanLinkId = z.string().uuid().parse(req.body.rollbackPlanLinkId);
-      const rollbackPlanLinks = await deps.enterpriseLaunchCenterService.selectRollbackPlan(staffScope(req), wizardId, rollbackPlanLinkId);
+      const rollbackPlanLinks = await deps.enterpriseLaunchCenterService.selectRollbackPlan(
+        staffScope(req),
+        wizardId,
+        rollbackPlanLinkId,
+      );
       res.json({ data: { rollbackPlanLinks } });
     } catch (error) {
       handleError(error, res);
@@ -264,7 +322,8 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/deployment-validations', requireRead, async (req, res) => {
     try {
-      const deploymentValidations = await deps.enterpriseLaunchCenterService.listDeploymentValidations(getAuth(req).companyId);
+      const deploymentValidations =
+        await deps.enterpriseLaunchCenterService.listDeploymentValidations(getAuth(req).companyId);
       res.json({ data: { deploymentValidations } });
     } catch (error) {
       handleError(error, res);
@@ -273,8 +332,12 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.post('/deployment-validations/run', requireWrite, async (req, res) => {
     try {
-      const goLiveWizardId = typeof req.body?.goLiveWizardId === 'string' ? req.body.goLiveWizardId : undefined;
-      const validation = await deps.enterpriseLaunchCenterService.runPostDeploymentValidation(staffScope(req), goLiveWizardId);
+      const goLiveWizardId =
+        typeof req.body?.goLiveWizardId === 'string' ? req.body.goLiveWizardId : undefined;
+      const validation = await deps.enterpriseLaunchCenterService.runPostDeploymentValidation(
+        staffScope(req),
+        goLiveWizardId,
+      );
       res.json({ data: { validation } });
     } catch (error) {
       handleError(error, res);
@@ -283,7 +346,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.post('/platform-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const platformAlerts = await deps.enterpriseLaunchCenterService.syncPlatformAlerts(staffScope(req));
+      const platformAlerts = await deps.enterpriseLaunchCenterService.syncPlatformAlerts(
+        staffScope(req),
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -301,7 +366,9 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseLaunchCenterService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseLaunchCenterService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);
@@ -311,7 +378,10 @@ export function createEnterpriseLaunchCenterRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const draft = await deps.enterpriseLaunchCenterService.createActionDraft(staffScope(req), input);
+      const draft = await deps.enterpriseLaunchCenterService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { draft } });
     } catch (error) {
       handleError(error, res);

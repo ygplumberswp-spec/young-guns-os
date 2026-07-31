@@ -228,7 +228,10 @@ export class AgentRuntimeService {
       throw new AgentRuntimeError('VALIDATION_ERROR', 'Agent request is required');
     }
 
-    if (!this.deps.provider && !(await this.deps.aiProviderResilienceService.hasConfiguredProviders(scope.companyId))) {
+    if (
+      !this.deps.provider &&
+      !(await this.deps.aiProviderResilienceService.hasConfiguredProviders(scope.companyId))
+    ) {
       throw new AgentRuntimeError(
         'PROVIDER_NOT_CONFIGURED',
         'No AI providers are configured. Configure tenant providers or set AURA_OPENAI_API_KEY.',
@@ -264,9 +267,19 @@ export class AgentRuntimeService {
       .returning();
 
     try {
-      const toolResults = await this.executeReadTools(scope, resolved, userPermissions, input.pageContext);
+      const toolResults = await this.executeReadTools(
+        scope,
+        resolved,
+        userPermissions,
+        input.pageContext,
+      );
       const toolsUsed = toolResults.map((result) => result.toolKey);
-      const plannedTasks = this.planMutatingTasks(request, resolved, toolResults, input.pageContext);
+      const plannedTasks = this.planMutatingTasks(
+        request,
+        resolved,
+        toolResults,
+        input.pageContext,
+      );
 
       const baseContext = buildAuraCompanyContext(
         {
@@ -426,7 +439,7 @@ export class AgentRuntimeService {
       where: status
         ? and(
             eq(agentTasks.companyId, companyId),
-            eq(agentTasks.status, status as typeof agentTasks.$inferSelect['status']),
+            eq(agentTasks.status, status as (typeof agentTasks.$inferSelect)['status']),
           )
         : eq(agentTasks.companyId, companyId),
       with: { user: true, approvedBy: true, agentProfile: true },
@@ -559,7 +572,9 @@ export class AgentRuntimeService {
       agentKey,
       agentProfileId: profile?.id ?? null,
       agentName: profile?.name ?? registry.name,
-      enabledToolKeys: enabledToolKeys.filter((toolKey) => this.canUseTool(toolKey, userPermissions)),
+      enabledToolKeys: enabledToolKeys.filter((toolKey) =>
+        this.canUseTool(toolKey, userPermissions),
+      ),
       effectivePermissions,
     };
   }
@@ -682,7 +697,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_gps_positions': {
-        const tracking = await this.deps.integrationsService.buildFleetTrackingContext(scope.companyId);
+        const tracking = await this.deps.integrationsService.buildFleetTrackingContext(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -751,7 +768,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_analytics_dashboard': {
-        const dashboard = await this.deps.analyticsService.getDashboard(scope.companyId, { period: 'monthly' });
+        const dashboard = await this.deps.analyticsService.getDashboard(scope.companyId, {
+          period: 'monthly',
+        });
         return {
           toolKey,
           success: true,
@@ -774,9 +793,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_technician_performance': {
-        const technicians = await this.deps.analyticsService.getTechnicianPerformance(scope.companyId, {
-          period: 'monthly',
-        });
+        const technicians = await this.deps.analyticsService.getTechnicianPerformance(
+          scope.companyId,
+          {
+            period: 'monthly',
+          },
+        );
         const overloaded = [...technicians.technicians]
           .sort((a, b) => b.workloadScore - a.workloadScore)
           .slice(0, 10);
@@ -904,7 +926,8 @@ export class AgentRuntimeService {
       case 'score_lead': {
         const leadRows = await this.deps.leadsService.listLeads(scope.companyId);
         const activeLeads = leadRows.filter((row) => !['converted', 'lost'].includes(row.status));
-        let targetLead = activeLeads.find((row) => row.customerId === pageContext?.customerId) ?? null;
+        let targetLead =
+          activeLeads.find((row) => row.customerId === pageContext?.customerId) ?? null;
 
         if (!targetLead && activeLeads.length > 0) {
           targetLead = [...activeLeads].sort((a, b) => b.score - a.score)[0] ?? null;
@@ -919,7 +942,10 @@ export class AgentRuntimeService {
           };
         }
 
-        const result = await this.deps.leadsService.analyzeLeadScore(scope.companyId, targetLead.id);
+        const result = await this.deps.leadsService.analyzeLeadScore(
+          scope.companyId,
+          targetLead.id,
+        );
         return {
           toolKey,
           success: true,
@@ -946,7 +972,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_call_history': {
-        const calls = await this.deps.communicationsIntelligenceService.getCallHistory(scope.companyId);
+        const calls = await this.deps.communicationsIntelligenceService.getCallHistory(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -967,7 +995,10 @@ export class AgentRuntimeService {
           };
         }
 
-        const summary = await this.deps.voiceService.summarizeCall(scope.companyId, targetSession.id);
+        const summary = await this.deps.voiceService.summarizeCall(
+          scope.companyId,
+          targetSession.id,
+        );
         return {
           toolKey,
           success: true,
@@ -985,9 +1016,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_customer_conversation': {
-        const conversations = await this.deps.customerSupportService.listConversations(scope.companyId);
+        const conversations = await this.deps.customerSupportService.listConversations(
+          scope.companyId,
+        );
         const target =
-          conversations.find((row) => row.customerId === pageContext?.customerId) ?? conversations[0];
+          conversations.find((row) => row.customerId === pageContext?.customerId) ??
+          conversations[0];
 
         if (!target) {
           return {
@@ -998,7 +1032,10 @@ export class AgentRuntimeService {
           };
         }
 
-        const messages = await this.deps.customerSupportService.listMessages(scope.companyId, target.id);
+        const messages = await this.deps.customerSupportService.listMessages(
+          scope.companyId,
+          target.id,
+        );
         return {
           toolKey,
           success: true,
@@ -1026,7 +1063,10 @@ export class AgentRuntimeService {
           return { toolKey, success: true, summary: status.summary, data: status };
         }
 
-        const status = await this.deps.customerSupportService.getCustomerJobStatus(scope.companyId, customerId);
+        const status = await this.deps.customerSupportService.getCustomerJobStatus(
+          scope.companyId,
+          customerId,
+        );
         return { toolKey, success: true, summary: status.summary, data: status };
       }
       case 'score_candidates': {
@@ -1082,7 +1122,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_staffing_insights': {
-        const staffingInsights = await this.deps.workforceService.getStaffingInsights(scope.companyId);
+        const staffingInsights = await this.deps.workforceService.getStaffingInsights(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1100,7 +1142,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_stock_intelligence': {
-        const stockIntelligence = await this.deps.procurementService.getStockIntelligence(scope.companyId);
+        const stockIntelligence = await this.deps.procurementService.getStockIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1109,7 +1153,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_supplier_insights': {
-        const supplierInsights = await this.deps.procurementService.getSupplierInsights(scope.companyId);
+        const supplierInsights = await this.deps.procurementService.getSupplierInsights(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1118,7 +1164,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_purchase_orders': {
-        const purchaseOrders = await this.deps.procurementService.listPurchaseOrders(scope.companyId);
+        const purchaseOrders = await this.deps.procurementService.listPurchaseOrders(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1156,7 +1204,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_strategic_recommendations': {
-        const recommendations = await this.deps.executiveService.listRecommendations(scope.companyId);
+        const recommendations = await this.deps.executiveService.listRecommendations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1165,7 +1215,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_cashflow_context': {
-        const cashFlow = await this.deps.financeIntelligenceService.getCashFlowIntelligence(scope.companyId);
+        const cashFlow = await this.deps.financeIntelligenceService.getCashFlowIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1174,7 +1226,8 @@ export class AgentRuntimeService {
         };
       }
       case 'read_profitability_context': {
-        const profitability = await this.deps.financeIntelligenceService.getProfitabilityIntelligence(scope.companyId);
+        const profitability =
+          await this.deps.financeIntelligenceService.getProfitabilityIntelligence(scope.companyId);
         return {
           toolKey,
           success: true,
@@ -1183,7 +1236,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_receivables_context': {
-        const receivables = await this.deps.financeIntelligenceService.getReceivablesIntelligence(scope.companyId);
+        const receivables = await this.deps.financeIntelligenceService.getReceivablesIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1192,7 +1247,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_expense_context': {
-        const expenses = await this.deps.financeIntelligenceService.getExpenseIntelligence(scope.companyId);
+        const expenses = await this.deps.financeIntelligenceService.getExpenseIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1203,13 +1260,14 @@ export class AgentRuntimeService {
       case 'read_budget_context': {
         const [budgets, variances] = await Promise.all([
           this.deps.financeIntelligenceService.listBudgets(scope.companyId),
-          this.deps.financeIntelligenceService
-            .listBudgets(scope.companyId)
-            .then(async (rows) => {
-              const active = rows.find((row) => row.status === 'active') ?? rows[0];
-              if (!active) return null;
-              return this.deps.financeIntelligenceService.getBudgetVariance(scope.companyId, active.id);
-            }),
+          this.deps.financeIntelligenceService.listBudgets(scope.companyId).then(async (rows) => {
+            const active = rows.find((row) => row.status === 'active') ?? rows[0];
+            if (!active) return null;
+            return this.deps.financeIntelligenceService.getBudgetVariance(
+              scope.companyId,
+              active.id,
+            );
+          }),
         ]);
         return {
           toolKey,
@@ -1219,7 +1277,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_finance_forecast': {
-        const forecast = await this.deps.financeIntelligenceService.getFinanceForecast(scope.companyId, 'monthly');
+        const forecast = await this.deps.financeIntelligenceService.getFinanceForecast(
+          scope.companyId,
+          'monthly',
+        );
         return {
           toolKey,
           success: true,
@@ -1229,7 +1290,10 @@ export class AgentRuntimeService {
       }
       case 'read_knowledge_base': {
         const context = await this.deps.knowledgeService.buildAuraContext(scope.companyId);
-        const articles = await this.deps.knowledgeService.listArticles(scope.companyId, userPermissions);
+        const articles = await this.deps.knowledgeService.listArticles(
+          scope.companyId,
+          userPermissions,
+        );
         return {
           toolKey,
           success: true,
@@ -1238,7 +1302,10 @@ export class AgentRuntimeService {
         };
       }
       case 'search_knowledge': {
-        const articles = await this.deps.knowledgeService.listArticles(scope.companyId, userPermissions);
+        const articles = await this.deps.knowledgeService.listArticles(
+          scope.companyId,
+          userPermissions,
+        );
         return {
           toolKey,
           success: true,
@@ -1271,14 +1338,23 @@ export class AgentRuntimeService {
         };
       }
       case 'read_company_policy': {
-        const policies = await this.deps.knowledgeService.listPolicies(scope.companyId, userPermissions);
+        const policies = await this.deps.knowledgeService.listPolicies(
+          scope.companyId,
+          userPermissions,
+        );
         const policy = policies[0]
-          ? await this.deps.knowledgeService.getPolicy(scope.companyId, policies[0].id, userPermissions)
+          ? await this.deps.knowledgeService.getPolicy(
+              scope.companyId,
+              policies[0].id,
+              userPermissions,
+            )
           : null;
         return {
           toolKey,
           success: true,
-          summary: policy ? `Policy loaded: ${policy.title}` : `${policies.length} policy document(s) available.`,
+          summary: policy
+            ? `Policy loaded: ${policy.title}`
+            : `${policies.length} policy document(s) available.`,
           data: { policy, policies: policies.slice(0, 10) },
         };
       }
@@ -1322,7 +1398,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_predictive_forecasts': {
-        const forecasts = await this.deps.businessIntelligenceService.listForecasts(scope.companyId);
+        const forecasts = await this.deps.businessIntelligenceService.listForecasts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1356,7 +1434,10 @@ export class AgentRuntimeService {
         if (!workflowId) {
           throw new AgentRuntimeError('VALIDATION_ERROR', 'workflowId in page context is required');
         }
-        const validation = await this.deps.workflowStudioService.validateWorkflow(scope.companyId, workflowId);
+        const validation = await this.deps.workflowStudioService.validateWorkflow(
+          scope.companyId,
+          workflowId,
+        );
         return {
           toolKey,
           success: validation.valid,
@@ -1369,7 +1450,11 @@ export class AgentRuntimeService {
         if (!workflowId) {
           throw new AgentRuntimeError('VALIDATION_ERROR', 'workflowId in page context is required');
         }
-        const simulation = await this.deps.workflowStudioService.simulateWorkflow(scope, workflowId, {});
+        const simulation = await this.deps.workflowStudioService.simulateWorkflow(
+          scope,
+          workflowId,
+          {},
+        );
         return {
           toolKey,
           success: true,
@@ -1391,7 +1476,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_integrations': {
-        const registry = await this.deps.integrationApiManagementService.listRegistry(scope.companyId);
+        const registry = await this.deps.integrationApiManagementService.listRegistry(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1400,7 +1487,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_api_health': {
-        const health = await this.deps.integrationApiManagementService.getApiHealth(scope.companyId);
+        const health = await this.deps.integrationApiManagementService.getApiHealth(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1409,7 +1498,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sync_status': {
-        const sync = await this.deps.integrationApiManagementService.getSyncManagerStatus(scope.companyId);
+        const sync = await this.deps.integrationApiManagementService.getSyncManagerStatus(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1418,7 +1509,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_webhook_status': {
-        const deliveries = await this.deps.integrationApiManagementService.listWebhookDeliveries(scope.companyId, 20);
+        const deliveries = await this.deps.integrationApiManagementService.listWebhookDeliveries(
+          scope.companyId,
+          20,
+        );
         return {
           toolKey,
           success: true,
@@ -1429,7 +1523,10 @@ export class AgentRuntimeService {
       case 'validate_integration': {
         const provider = pageContext?.integrationProvider;
         if (!provider) {
-          throw new AgentRuntimeError('VALIDATION_ERROR', 'integrationProvider in page context is required');
+          throw new AgentRuntimeError(
+            'VALIDATION_ERROR',
+            'integrationProvider in page context is required',
+          );
         }
         const validation = await this.deps.integrationApiManagementService.validateIntegration(
           scope.companyId,
@@ -1440,7 +1537,10 @@ export class AgentRuntimeService {
           success: validation.valid,
           summary: validation.valid
             ? `Integration ${provider} validation passed`
-            : validation.checks.filter((check) => !check.passed).map((check) => check.message).join('; '),
+            : validation.checks
+                .filter((check) => !check.passed)
+                .map((check) => check.message)
+                .join('; '),
           data: { validation },
         };
       }
@@ -1519,7 +1619,10 @@ export class AgentRuntimeService {
         }
         const query = String(pageContext?.knowledgeQuery ?? '').trim();
         if (!query) {
-          throw new AgentRuntimeError('VALIDATION_ERROR', 'knowledgeQuery in page context is required');
+          throw new AgentRuntimeError(
+            'VALIDATION_ERROR',
+            'knowledgeQuery in page context is required',
+          );
         }
         const results = await this.deps.portalExperienceService.searchKnowledge(
           {
@@ -1592,7 +1695,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_quality_score': {
-        const dashboard = await this.deps.qualityAssuranceService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.qualityAssuranceService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1607,10 +1712,17 @@ export class AgentRuntimeService {
       case 'read_root_cause_analysis': {
         const comebacks = await this.deps.qualityAssuranceService.listComebacks(scope.companyId);
         const comebackId = pageContext?.jobId
-          ? comebacks.find((item) => item.originalJobId === pageContext.jobId || item.comebackJobId === pageContext.jobId)?.id
+          ? comebacks.find(
+              (item) =>
+                item.originalJobId === pageContext.jobId ||
+                item.comebackJobId === pageContext.jobId,
+            )?.id
           : comebacks[0]?.id;
         const analysis = comebackId
-          ? await this.deps.qualityAssuranceService.getRootCauseAnalysis(scope.companyId, comebackId)
+          ? await this.deps.qualityAssuranceService.getRootCauseAnalysis(
+              scope.companyId,
+              comebackId,
+            )
           : null;
         return {
           toolKey,
@@ -1631,7 +1743,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_supplier_quality': {
-        const intelligence = await this.deps.qualityAssuranceService.getSupplierIntelligence(scope.companyId);
+        const intelligence = await this.deps.qualityAssuranceService.getSupplierIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1641,10 +1755,13 @@ export class AgentRuntimeService {
       }
       case 'read_customer_communications': {
         const customerId = pageContext?.customerId;
-        const timeline = await this.deps.communicationsIntelligenceService.buildTimeline(scope.companyId, {
-          customerId,
-          limit: 30,
-        });
+        const timeline = await this.deps.communicationsIntelligenceService.buildTimeline(
+          scope.companyId,
+          {
+            customerId,
+            limit: 30,
+          },
+        );
         return {
           toolKey,
           success: true,
@@ -1653,7 +1770,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_conversation_summary': {
-        const insights = await this.deps.communicationsIntelligenceService.listConversationInsights(scope.companyId);
+        const insights = await this.deps.communicationsIntelligenceService.listConversationInsights(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1674,7 +1793,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_email_threads': {
-        const threads = await this.deps.communicationsIntelligenceService.listEmailThreads(scope.companyId);
+        const threads = await this.deps.communicationsIntelligenceService.listEmailThreads(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1683,7 +1804,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sms_history': {
-        const records = await this.deps.communicationsIntelligenceService.listSmsRecords(scope.companyId);
+        const records = await this.deps.communicationsIntelligenceService.listSmsRecords(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1692,7 +1815,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_register': {
-        const assets = await this.deps.assetEquipmentIntelligenceService.listAssets(scope.companyId);
+        const assets = await this.deps.assetEquipmentIntelligenceService.listAssets(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1701,7 +1826,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_history': {
-        const history = await this.deps.assetEquipmentIntelligenceService.listLifecycleHistory(scope.companyId);
+        const history = await this.deps.assetEquipmentIntelligenceService.listLifecycleHistory(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1710,7 +1837,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_maintenance_schedule': {
-        const schedules = await this.deps.assetEquipmentIntelligenceService.listMaintenanceSchedules(scope.companyId);
+        const schedules =
+          await this.deps.assetEquipmentIntelligenceService.listMaintenanceSchedules(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1719,7 +1849,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_performance': {
-        const analytics = await this.deps.assetEquipmentIntelligenceService.getPerformanceAnalytics(scope.companyId);
+        const analytics = await this.deps.assetEquipmentIntelligenceService.getPerformanceAnalytics(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1728,7 +1860,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_inspection_history': {
-        const inspections = await this.deps.assetEquipmentIntelligenceService.listInspections(scope.companyId);
+        const inspections = await this.deps.assetEquipmentIntelligenceService.listInspections(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1737,7 +1871,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_calibration_status': {
-        const calibrations = await this.deps.assetEquipmentIntelligenceService.listCalibrations(scope.companyId);
+        const calibrations = await this.deps.assetEquipmentIntelligenceService.listCalibrations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1764,7 +1900,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ai_costs': {
-        const costAnalytics = await this.deps.aiOrchestrationService.getCostAnalytics(scope.companyId);
+        const costAnalytics = await this.deps.aiOrchestrationService.getCostAnalytics(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1773,7 +1911,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ai_quality': {
-        const qualityAnalytics = await this.deps.aiOrchestrationService.getQualityAnalytics(scope.companyId);
+        const qualityAnalytics = await this.deps.aiOrchestrationService.getQualityAnalytics(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1803,7 +1943,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dispatch_dashboard': {
-        const dashboard = await this.deps.dispatchIntelligenceService.getOperationsDashboard(scope.companyId);
+        const dashboard = await this.deps.dispatchIntelligenceService.getOperationsDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1812,7 +1954,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_call_queue': {
-        const callQueue = await this.deps.dispatchIntelligenceService.getCallQueueAnalytics(scope.companyId);
+        const callQueue = await this.deps.dispatchIntelligenceService.getCallQueueAnalytics(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1833,7 +1977,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dispatch_recommendations': {
-        const recommendations = await this.deps.dispatchIntelligenceService.listRecommendations(scope.companyId);
+        const recommendations = await this.deps.dispatchIntelligenceService.listRecommendations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1842,7 +1988,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_callback_queue': {
-        const callbacks = await this.deps.dispatchIntelligenceService.listCallbackRequests(scope.companyId);
+        const callbacks = await this.deps.dispatchIntelligenceService.listCallbackRequests(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1851,7 +1999,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_emergency_dispatch': {
-        const assessments = await this.deps.dispatchIntelligenceService.listEmergencyAssessments(scope.companyId);
+        const assessments = await this.deps.dispatchIntelligenceService.listEmergencyAssessments(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1860,7 +2010,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fleet_dashboard': {
-        const dashboard = await this.deps.fleetIntelligenceService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.fleetIntelligenceService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1881,7 +2033,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_monthly_trip_report': {
-        const reports = await this.deps.fleetIntelligenceService.listMonthlyReports(scope.companyId);
+        const reports = await this.deps.fleetIntelligenceService.listMonthlyReports(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1890,7 +2044,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_driver_behaviour': {
-        const events = await this.deps.fleetIntelligenceService.listDriverBehaviourEvents(scope.companyId);
+        const events = await this.deps.fleetIntelligenceService.listDriverBehaviourEvents(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1899,7 +2055,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vehicle_utilization': {
-        const utilization = await this.deps.fleetIntelligenceService.getVehicleUtilization(scope.companyId);
+        const utilization = await this.deps.fleetIntelligenceService.getVehicleUtilization(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1920,9 +2078,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_personal_communications_dashboard': {
-        const dashboard = await this.deps.personalCommunicationsIntelligenceService.getExecutiveDashboard(
-          scope.companyId,
-        );
+        const dashboard =
+          await this.deps.personalCommunicationsIntelligenceService.getExecutiveDashboard(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1932,7 +2091,9 @@ export class AgentRuntimeService {
       }
       case 'read_business_conversations': {
         const conversations =
-          await this.deps.personalCommunicationsIntelligenceService.listBusinessConversations(scope.companyId);
+          await this.deps.personalCommunicationsIntelligenceService.listBusinessConversations(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1941,7 +2102,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_voice_note_summary': {
-        const analyses = await this.deps.personalCommunicationsIntelligenceService.listVoiceAnalyses(scope.companyId);
+        const analyses =
+          await this.deps.personalCommunicationsIntelligenceService.listVoiceAnalyses(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1958,11 +2122,17 @@ export class AgentRuntimeService {
           toolKey,
           success: true,
           summary: `${mediaAnalyses.length} media and ${documentAnalyses.length} document analysis record(s).`,
-          data: { mediaAnalyses: mediaAnalyses.slice(0, 20), documentAnalyses: documentAnalyses.slice(0, 20) },
+          data: {
+            mediaAnalyses: mediaAnalyses.slice(0, 20),
+            documentAnalyses: documentAnalyses.slice(0, 20),
+          },
         };
       }
       case 'read_follow_up_queue': {
-        const followUps = await this.deps.personalCommunicationsIntelligenceService.listFollowUpQueue(scope.companyId);
+        const followUps =
+          await this.deps.personalCommunicationsIntelligenceService.listFollowUpQueue(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1972,7 +2142,9 @@ export class AgentRuntimeService {
       }
       case 'read_communication_classification': {
         const conversations =
-          await this.deps.personalCommunicationsIntelligenceService.listBusinessConversations(scope.companyId);
+          await this.deps.personalCommunicationsIntelligenceService.listBusinessConversations(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -1988,7 +2160,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_security_dashboard': {
-        const dashboard = await this.deps.enterpriseSecurityService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSecurityService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -1997,7 +2171,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_audit_logs': {
-        const auditLogs = await this.deps.enterpriseSecurityService.listAuditLogs(scope.companyId, 50);
+        const auditLogs = await this.deps.enterpriseSecurityService.listAuditLogs(
+          scope.companyId,
+          50,
+        );
         return {
           toolKey,
           success: true,
@@ -2006,7 +2183,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_active_sessions': {
-        const sessions = await this.deps.enterpriseSecurityService.listActiveSessions(scope.companyId);
+        const sessions = await this.deps.enterpriseSecurityService.listActiveSessions(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2015,7 +2194,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_risk_alerts': {
-        const riskAlerts = await this.deps.enterpriseSecurityService.listRiskAlerts(scope.companyId, false);
+        const riskAlerts = await this.deps.enterpriseSecurityService.listRiskAlerts(
+          scope.companyId,
+          false,
+        );
         return {
           toolKey,
           success: true,
@@ -2024,7 +2206,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_login_events': {
-        const loginEvents = await this.deps.enterpriseSecurityService.listLoginEvents(scope.companyId, 50);
+        const loginEvents = await this.deps.enterpriseSecurityService.listLoginEvents(
+          scope.companyId,
+          50,
+        );
         return {
           toolKey,
           success: true,
@@ -2033,7 +2218,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_integration_platform_dashboard': {
-        const dashboard = await this.deps.integrationPlatformService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.integrationPlatformService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2051,7 +2238,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_enterprise_analytics_dashboard': {
-        const dashboard = await this.deps.enterpriseAnalyticsService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAnalyticsService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2060,7 +2249,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_data_warehouse': {
-        const warehouse = await this.deps.enterpriseAnalyticsService.getWarehouseSummary(scope.companyId);
+        const warehouse = await this.deps.enterpriseAnalyticsService.getWarehouseSummary(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2069,7 +2260,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_analytics_governance': {
-        const governance = await this.deps.enterpriseAnalyticsService.getGovernanceSummary(scope.companyId);
+        const governance = await this.deps.enterpriseAnalyticsService.getGovernanceSummary(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2078,7 +2271,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_automation_studio_dashboard': {
-        const dashboard = await this.deps.enterpriseAutomationStudioService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAutomationStudioService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2087,7 +2282,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_automation_monitoring': {
-        const monitoring = await this.deps.enterpriseAutomationStudioService.getMonitoringSummary(scope.companyId);
+        const monitoring = await this.deps.enterpriseAutomationStudioService.getMonitoringSummary(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2096,7 +2293,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_digital_twin_dashboard': {
-        const dashboard = await this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2105,7 +2304,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_operational_state': {
-        const operationalState = await this.deps.enterpriseDigitalTwinService.buildOperationalState(scope.companyId);
+        const operationalState = await this.deps.enterpriseDigitalTwinService.buildOperationalState(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2114,7 +2315,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_scenario_comparisons': {
-        const comparisons = await this.deps.enterpriseDigitalTwinService.listComparisons(scope.companyId);
+        const comparisons = await this.deps.enterpriseDigitalTwinService.listComparisons(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2123,7 +2326,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_knowledge_graph_dashboard': {
-        const dashboard = await this.deps.enterpriseKnowledgeGraphService.getExecutiveDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseKnowledgeGraphService.getExecutiveDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2137,7 +2342,8 @@ export class AgentRuntimeService {
           return {
             toolKey,
             success: true,
-            summary: 'Organizational memory indexed — provide knowledgeQuery in page context for targeted search.',
+            summary:
+              'Organizational memory indexed — provide knowledgeQuery in page context for targeted search.',
             data: { results: [] },
           };
         }
@@ -2154,7 +2360,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_knowledge_relationships': {
-        const relationships = await this.deps.enterpriseKnowledgeGraphService.listRelationships(scope.companyId);
+        const relationships = await this.deps.enterpriseKnowledgeGraphService.listRelationships(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2163,7 +2371,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mission_control_dashboard': {
-        const dashboard = await this.deps.enterpriseMissionControlService.getMissionControlDashboard(scope.companyId);
+        const dashboard =
+          await this.deps.enterpriseMissionControlService.getMissionControlDashboard(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2181,7 +2392,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mission_control_incidents': {
-        const incidents = await this.deps.enterpriseMissionControlService.listIncidents(scope.companyId);
+        const incidents = await this.deps.enterpriseMissionControlService.listIncidents(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2190,7 +2403,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_evolution_dashboard': {
-        const dashboard = await this.deps.enterpriseEvolutionService.getEvolutionDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseEvolutionService.getEvolutionDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2208,7 +2423,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_evolution_recommendations': {
-        const recommendations = await this.deps.enterpriseEvolutionService.listRecommendations(scope.companyId);
+        const recommendations = await this.deps.enterpriseEvolutionService.listRecommendations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2217,7 +2434,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_evolution_learning': {
-        const events = await this.deps.enterpriseEvolutionService.listLearningEvents(scope.companyId);
+        const events = await this.deps.enterpriseEvolutionService.listLearningEvents(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2237,7 +2456,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_saas_platform_dashboard': {
-        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2246,7 +2467,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_saas_tenant_usage': {
-        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2255,7 +2478,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_saas_subscription': {
-        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2266,20 +2491,29 @@ export class AgentRuntimeService {
         };
       }
       case 'read_production_readiness_dashboard': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return { toolKey, success: true, summary: dashboard.summary, data: dashboard };
       }
       case 'read_production_health': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
           summary: `${dashboard.systemHealth.length} module(s), overall ${dashboard.overallHealthStatus}.`,
-          data: { systemHealth: dashboard.systemHealth, overallHealthStatus: dashboard.overallHealthStatus },
+          data: {
+            systemHealth: dashboard.systemHealth,
+            overallHealthStatus: dashboard.overallHealthStatus,
+          },
         };
       }
       case 'read_production_performance': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2290,7 +2524,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_production_ai_providers': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2299,7 +2535,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_production_readiness_checks': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2310,7 +2548,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_production_backups': {
-        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2323,7 +2563,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mobile_platform_dashboard': {
-        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2332,7 +2574,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mobile_devices': {
-        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2341,7 +2585,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mobile_sync_health': {
-        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2354,7 +2600,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mobile_field_intelligence': {
-        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2365,16 +2613,23 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mobile_fleet_providers': {
-        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMobilePlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
           summary: `${dashboard.fleetProviders.length} fleet provider(s), Cartrack ${dashboard.cartrackConnected ? 'connected' : 'not connected'}.`,
-          data: { fleetProviders: dashboard.fleetProviders, cartrackConnected: dashboard.cartrackConnected },
+          data: {
+            fleetProviders: dashboard.fleetProviders,
+            cartrackConnected: dashboard.cartrackConnected,
+          },
         };
       }
       case 'read_unified_communications_dashboard': {
-        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2383,16 +2638,23 @@ export class AgentRuntimeService {
         };
       }
       case 'read_communication_timeline': {
-        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
           summary: `${dashboard.recentTimeline.length} timeline entry/entries.`,
-          data: { timeline: dashboard.recentTimeline, intelligenceTimeline: dashboard.intelligence.recentTimeline },
+          data: {
+            timeline: dashboard.recentTimeline,
+            intelligenceTimeline: dashboard.intelligence.recentTimeline,
+          },
         };
       }
       case 'read_voice_receptionist_status': {
-        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2401,16 +2663,23 @@ export class AgentRuntimeService {
         };
       }
       case 'read_communication_providers': {
-        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseUnifiedCommunicationsService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
           summary: `${dashboard.providerAdapters.length} provider adapter(s), ${dashboard.activeProviderCount} active.`,
-          data: { providerAdapters: dashboard.providerAdapters, whatsappConnected: dashboard.whatsappConnected },
+          data: {
+            providerAdapters: dashboard.providerAdapters,
+            whatsappConnected: dashboard.whatsappConnected,
+          },
         };
       }
       case 'read_customer_experience_dashboard': {
-        const dashboard = await this.deps.enterpriseCustomerExperienceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseCustomerExperienceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2440,7 +2709,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_customer_bookings': {
-        const bookings = await this.deps.enterpriseCustomerExperienceService.listBookings(scope.companyId);
+        const bookings = await this.deps.enterpriseCustomerExperienceService.listBookings(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2449,7 +2720,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_customer_reviews': {
-        const reviews = await this.deps.enterpriseCustomerExperienceService.listReviews(scope.companyId);
+        const reviews = await this.deps.enterpriseCustomerExperienceService.listReviews(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2467,7 +2740,9 @@ export class AgentRuntimeService {
             data: {},
           };
         }
-        const dashboard = await this.deps.enterpriseCustomerExperienceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseCustomerExperienceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2480,7 +2755,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_lifecycle_dashboard': {
-        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2489,7 +2766,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_registry': {
-        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2498,7 +2777,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_iot_telemetry': {
-        const monitoring = await this.deps.enterpriseAssetLifecycleService.getIotMonitoring(scope.companyId);
+        const monitoring = await this.deps.enterpriseAssetLifecycleService.getIotMonitoring(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2507,7 +2788,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_asset_alerts': {
-        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2516,7 +2799,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_maintenance_schedules': {
-        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2525,7 +2810,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_predictive_assessments': {
-        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseAssetLifecycleService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2534,7 +2821,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_dashboard': {
-        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2543,7 +2832,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_registry': {
-        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2552,7 +2843,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_timesheets': {
-        const timesheets = await this.deps.enterpriseWorkforceIntelligenceService.listTimesheets(scope.companyId);
+        const timesheets = await this.deps.enterpriseWorkforceIntelligenceService.listTimesheets(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2561,7 +2854,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_leave': {
-        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseWorkforceIntelligenceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2570,7 +2865,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_skills': {
-        const matrix = await this.deps.enterpriseWorkforceIntelligenceService.getSkillsMatrix(scope.companyId);
+        const matrix = await this.deps.enterpriseWorkforceIntelligenceService.getSkillsMatrix(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2579,9 +2876,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_technician_performance': {
-        const performance = await this.deps.enterpriseWorkforceIntelligenceService.listTechnicianPerformance(
-          scope.companyId,
-        );
+        const performance =
+          await this.deps.enterpriseWorkforceIntelligenceService.listTechnicianPerformance(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2590,7 +2888,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_workforce_capacity': {
-        const capacity = await this.deps.enterpriseWorkforceIntelligenceService.getCapacitySummary(scope.companyId);
+        const capacity = await this.deps.enterpriseWorkforceIntelligenceService.getCapacitySummary(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2599,9 +2899,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_payroll_preparation': {
-        const preparations = await this.deps.enterpriseWorkforceIntelligenceService.listPayrollPreparations(
-          scope.companyId,
-        );
+        const preparations =
+          await this.deps.enterpriseWorkforceIntelligenceService.listPayrollPreparations(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2610,7 +2911,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_compliance_dashboard': {
-        const dashboard = await this.deps.enterpriseLegalComplianceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseLegalComplianceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2619,7 +2922,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_contracts': {
-        const contracts = await this.deps.enterpriseLegalComplianceService.listContracts(scope.companyId);
+        const contracts = await this.deps.enterpriseLegalComplianceService.listContracts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2628,7 +2933,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_obligations': {
-        const obligations = await this.deps.enterpriseLegalComplianceService.listObligations(scope.companyId);
+        const obligations = await this.deps.enterpriseLegalComplianceService.listObligations(
+          scope.companyId,
+        );
         const overdue = obligations.filter((item) => item.isOverdue).length;
         return {
           toolKey,
@@ -2647,7 +2954,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_controls': {
-        const controls = await this.deps.enterpriseLegalComplianceService.listControls(scope.companyId);
+        const controls = await this.deps.enterpriseLegalComplianceService.listControls(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2656,7 +2965,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_policies': {
-        const policies = await this.deps.enterpriseLegalComplianceService.listPolicies(scope.companyId);
+        const policies = await this.deps.enterpriseLegalComplianceService.listPolicies(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2665,7 +2976,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_legal_matters': {
-        const matters = await this.deps.enterpriseLegalComplianceService.listLegalMatters(scope.companyId);
+        const matters = await this.deps.enterpriseLegalComplianceService.listLegalMatters(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2674,7 +2987,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_compliance_monitoring': {
-        const monitoring = await this.deps.enterpriseLegalComplianceService.getComplianceMonitoring(scope.companyId);
+        const monitoring = await this.deps.enterpriseLegalComplianceService.getComplianceMonitoring(
+          scope.companyId,
+        );
         const summary =
           monitoring.alerts.length > 0
             ? monitoring.alerts.join(' · ')
@@ -2687,7 +3002,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_financial_planning_dashboard': {
-        const dashboard = await this.deps.enterpriseFinancialPlanningService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseFinancialPlanningService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2696,7 +3013,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_budgets': {
-        const budgets = await this.deps.enterpriseFinancialPlanningService.listBudgets(scope.companyId);
+        const budgets = await this.deps.enterpriseFinancialPlanningService.listBudgets(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2705,7 +3024,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_forecasts': {
-        const forecasts = await this.deps.enterpriseFinancialPlanningService.listForecasts(scope.companyId);
+        const forecasts = await this.deps.enterpriseFinancialPlanningService.listForecasts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2714,8 +3035,13 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_cash_flow': {
-        const projections = await this.deps.enterpriseFinancialPlanningService.listCashFlowProjections(scope.companyId);
-        const dashboard = await this.deps.enterpriseFinancialPlanningService.getDashboard(scope.companyId);
+        const projections =
+          await this.deps.enterpriseFinancialPlanningService.listCashFlowProjections(
+            scope.companyId,
+          );
+        const dashboard = await this.deps.enterpriseFinancialPlanningService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2724,7 +3050,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_receivables': {
-        const receivables = await this.deps.enterpriseFinancialPlanningService.getReceivablesIntelligence(scope.companyId);
+        const receivables =
+          await this.deps.enterpriseFinancialPlanningService.getReceivablesIntelligence(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2733,7 +3062,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_payables': {
-        const payables = await this.deps.enterpriseFinancialPlanningService.getPayablesIntelligence(scope.companyId);
+        const payables = await this.deps.enterpriseFinancialPlanningService.getPayablesIntelligence(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2742,7 +3073,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_treasury': {
-        const accounts = await this.deps.enterpriseFinancialPlanningService.listTreasuryAccounts(scope.companyId);
+        const accounts = await this.deps.enterpriseFinancialPlanningService.listTreasuryAccounts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2751,7 +3084,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_profitability': {
-        const snapshots = await this.deps.enterpriseFinancialPlanningService.listProfitabilitySnapshots(scope.companyId);
+        const snapshots =
+          await this.deps.enterpriseFinancialPlanningService.listProfitabilitySnapshots(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2760,7 +3096,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_working_capital': {
-        const workingCapital = await this.deps.enterpriseFinancialPlanningService.getWorkingCapitalSummary(scope.companyId);
+        const workingCapital =
+          await this.deps.enterpriseFinancialPlanningService.getWorkingCapitalSummary(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2769,7 +3108,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_scenarios': {
-        const scenarios = await this.deps.enterpriseFinancialPlanningService.listScenarios(scope.companyId);
+        const scenarios = await this.deps.enterpriseFinancialPlanningService.listScenarios(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2778,7 +3119,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_fp_alerts': {
-        const alerts = await this.deps.enterpriseFinancialPlanningService.listFinancialAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseFinancialPlanningService.listFinancialAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -2788,7 +3131,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sales_intelligence_dashboard': {
-        const dashboard = await this.deps.enterpriseSalesIntelligenceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSalesIntelligenceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2815,7 +3160,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_accounts': {
-        const accounts = await this.deps.enterpriseSalesIntelligenceService.listAccounts(scope.companyId);
+        const accounts = await this.deps.enterpriseSalesIntelligenceService.listAccounts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2834,7 +3181,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_forecasts': {
-        const forecasts = await this.deps.enterpriseSalesIntelligenceService.listForecasts(scope.companyId);
+        const forecasts = await this.deps.enterpriseSalesIntelligenceService.listForecasts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2843,7 +3192,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_targets': {
-        const targets = await this.deps.enterpriseSalesIntelligenceService.listSalesTargets(scope.companyId);
+        const targets = await this.deps.enterpriseSalesIntelligenceService.listSalesTargets(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2852,7 +3203,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_renewals': {
-        const renewals = await this.deps.enterpriseSalesIntelligenceService.listRenewals(scope.companyId);
+        const renewals = await this.deps.enterpriseSalesIntelligenceService.listRenewals(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2861,8 +3214,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_customer_growth': {
-        const growth = await this.deps.enterpriseSalesIntelligenceService.listCustomerGrowthSnapshots(scope.companyId);
-        const retention = await this.deps.enterpriseSalesIntelligenceService.listRetentionRiskSnapshots(scope.companyId);
+        const growth =
+          await this.deps.enterpriseSalesIntelligenceService.listCustomerGrowthSnapshots(
+            scope.companyId,
+          );
+        const retention =
+          await this.deps.enterpriseSalesIntelligenceService.listRetentionRiskSnapshots(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2871,7 +3230,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_revenue_leakage': {
-        const findings = await this.deps.enterpriseSalesIntelligenceService.listRevenueLeakageFindings(scope.companyId);
+        const findings =
+          await this.deps.enterpriseSalesIntelligenceService.listRevenueLeakageFindings(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2880,7 +3242,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_si_alerts': {
-        const alerts = await this.deps.enterpriseSalesIntelligenceService.listSalesAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseSalesIntelligenceService.listSalesAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -2890,7 +3254,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_marketing_intelligence_dashboard': {
-        const dashboard = await this.deps.enterpriseMarketingIntelligenceService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseMarketingIntelligenceService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2899,7 +3265,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_strategies': {
-        const strategies = await this.deps.enterpriseMarketingIntelligenceService.listStrategies(scope.companyId);
+        const strategies = await this.deps.enterpriseMarketingIntelligenceService.listStrategies(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2908,8 +3276,13 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_campaigns': {
-        const campaigns = await this.deps.enterpriseMarketingIntelligenceService.listCampaignPlans(scope.companyId);
-        const marketingCampaigns = await this.deps.enterpriseMarketingIntelligenceService.listMarketingCampaigns(scope.companyId);
+        const campaigns = await this.deps.enterpriseMarketingIntelligenceService.listCampaignPlans(
+          scope.companyId,
+        );
+        const marketingCampaigns =
+          await this.deps.enterpriseMarketingIntelligenceService.listMarketingCampaigns(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2918,8 +3291,13 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_audiences': {
-        const audiences = await this.deps.enterpriseMarketingIntelligenceService.listAudiences(scope.companyId);
-        const segments = await this.deps.enterpriseMarketingIntelligenceService.listMarketingSegments(scope.companyId);
+        const audiences = await this.deps.enterpriseMarketingIntelligenceService.listAudiences(
+          scope.companyId,
+        );
+        const segments =
+          await this.deps.enterpriseMarketingIntelligenceService.listMarketingSegments(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2928,8 +3306,11 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_content': {
-        const contentItems = await this.deps.enterpriseMarketingIntelligenceService.listContentItems(scope.companyId);
-        const socialPosts = await this.deps.enterpriseMarketingIntelligenceService.listSocialPosts(scope.companyId);
+        const contentItems =
+          await this.deps.enterpriseMarketingIntelligenceService.listContentItems(scope.companyId);
+        const socialPosts = await this.deps.enterpriseMarketingIntelligenceService.listSocialPosts(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2938,9 +3319,15 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_advertising': {
-        const adAccounts = await this.deps.enterpriseMarketingIntelligenceService.listAdAccounts(scope.companyId);
-        const adCampaigns = await this.deps.enterpriseMarketingIntelligenceService.listAdCampaigns(scope.companyId);
-        const adBudgets = await this.deps.enterpriseMarketingIntelligenceService.listAdBudgets(scope.companyId);
+        const adAccounts = await this.deps.enterpriseMarketingIntelligenceService.listAdAccounts(
+          scope.companyId,
+        );
+        const adCampaigns = await this.deps.enterpriseMarketingIntelligenceService.listAdCampaigns(
+          scope.companyId,
+        );
+        const adBudgets = await this.deps.enterpriseMarketingIntelligenceService.listAdBudgets(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2949,7 +3336,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_attribution': {
-        const attribution = await this.deps.enterpriseMarketingIntelligenceService.listAttributionRecords(scope.companyId);
+        const attribution =
+          await this.deps.enterpriseMarketingIntelligenceService.listAttributionRecords(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -2958,7 +3348,8 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_roi': {
-        const roiSnapshots = await this.deps.enterpriseMarketingIntelligenceService.listRoiSnapshots(scope.companyId);
+        const roiSnapshots =
+          await this.deps.enterpriseMarketingIntelligenceService.listRoiSnapshots(scope.companyId);
         return {
           toolKey,
           success: true,
@@ -2967,7 +3358,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_mi_alerts': {
-        const alerts = await this.deps.enterpriseMarketingIntelligenceService.listMarketingAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseMarketingIntelligenceService.listMarketingAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -2977,7 +3370,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_service_delivery_dashboard': {
-        const dashboard = await this.deps.enterpriseServiceDeliveryService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseServiceDeliveryService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -2995,8 +3390,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_inspections': {
-        const inspections = await this.deps.enterpriseServiceDeliveryService.listInspections(scope.companyId);
-        const qaInspections = await this.deps.enterpriseServiceDeliveryService.listQaInspections(scope.companyId);
+        const inspections = await this.deps.enterpriseServiceDeliveryService.listInspections(
+          scope.companyId,
+        );
+        const qaInspections = await this.deps.enterpriseServiceDeliveryService.listQaInspections(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3005,8 +3404,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_sla': {
-        const frameworks = await this.deps.enterpriseServiceDeliveryService.listSlaFrameworks(scope.companyId);
-        const records = await this.deps.enterpriseServiceDeliveryService.listSlaRecords(scope.companyId);
+        const frameworks = await this.deps.enterpriseServiceDeliveryService.listSlaFrameworks(
+          scope.companyId,
+        );
+        const records = await this.deps.enterpriseServiceDeliveryService.listSlaRecords(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3015,9 +3418,13 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_quality': {
-        const defects = await this.deps.enterpriseServiceDeliveryService.listDefects(scope.companyId);
-        const nonConformances = await this.deps.enterpriseServiceDeliveryService.listNonConformances(scope.companyId);
-        const correctiveActions = await this.deps.enterpriseServiceDeliveryService.listCorrectiveActions(scope.companyId);
+        const defects = await this.deps.enterpriseServiceDeliveryService.listDefects(
+          scope.companyId,
+        );
+        const nonConformances =
+          await this.deps.enterpriseServiceDeliveryService.listNonConformances(scope.companyId);
+        const correctiveActions =
+          await this.deps.enterpriseServiceDeliveryService.listCorrectiveActions(scope.companyId);
         return {
           toolKey,
           success: true,
@@ -3026,9 +3433,16 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_warranty': {
-        const warranties = await this.deps.enterpriseServiceDeliveryService.listWarrantyRecords(scope.companyId);
-        const claims = await this.deps.enterpriseServiceDeliveryService.listWarrantyClaimTrackings(scope.companyId);
-        const qualityClaims = await this.deps.enterpriseServiceDeliveryService.listQualityWarrantyClaims(scope.companyId);
+        const warranties = await this.deps.enterpriseServiceDeliveryService.listWarrantyRecords(
+          scope.companyId,
+        );
+        const claims = await this.deps.enterpriseServiceDeliveryService.listWarrantyClaimTrackings(
+          scope.companyId,
+        );
+        const qualityClaims =
+          await this.deps.enterpriseServiceDeliveryService.listQualityWarrantyClaims(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -3037,8 +3451,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_callbacks': {
-        const callbacks = await this.deps.enterpriseServiceDeliveryService.listCallbackRecords(scope.companyId);
-        const comebacks = await this.deps.enterpriseServiceDeliveryService.listQualityComebacks(scope.companyId);
+        const callbacks = await this.deps.enterpriseServiceDeliveryService.listCallbackRecords(
+          scope.companyId,
+        );
+        const comebacks = await this.deps.enterpriseServiceDeliveryService.listQualityComebacks(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3047,7 +3465,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sd_alerts': {
-        const alerts = await this.deps.enterpriseServiceDeliveryService.listServiceAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseServiceDeliveryService.listServiceAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -3057,7 +3477,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_it_operations_dashboard': {
-        const dashboard = await this.deps.enterpriseItOperationsService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseItOperationsService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3066,7 +3488,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ito_platform_health': {
-        const platformHealth = await this.deps.enterpriseItOperationsService.getPlatformHealthMonitoring(scope.companyId);
+        const platformHealth =
+          await this.deps.enterpriseItOperationsService.getPlatformHealthMonitoring(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -3075,7 +3500,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ito_incidents': {
-        const incidents = await this.deps.enterpriseItOperationsService.listIncidents(scope.companyId);
+        const incidents = await this.deps.enterpriseItOperationsService.listIncidents(
+          scope.companyId,
+        );
         const openIncidents = incidents.filter((incident) => incident.status !== 'resolved');
         return {
           toolKey,
@@ -3085,7 +3512,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ito_bug_detections': {
-        const bugDetections = await this.deps.enterpriseItOperationsService.listBugDetections(scope.companyId);
+        const bugDetections = await this.deps.enterpriseItOperationsService.listBugDetections(
+          scope.companyId,
+        );
         const openBugs = bugDetections.filter((bug) => bug.workflowStatus !== 'resolved');
         return {
           toolKey,
@@ -3105,7 +3534,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_business_evolution_dashboard': {
-        const dashboard = await this.deps.enterpriseBusinessEvolutionService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessEvolutionService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3114,7 +3545,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bev_observations': {
-        const observations = await this.deps.enterpriseBusinessEvolutionService.listObservations(scope.companyId);
+        const observations = await this.deps.enterpriseBusinessEvolutionService.listObservations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3123,7 +3556,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bev_patterns': {
-        const patterns = await this.deps.enterpriseBusinessEvolutionService.listPatterns(scope.companyId);
+        const patterns = await this.deps.enterpriseBusinessEvolutionService.listPatterns(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3132,8 +3567,11 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bev_recommendations': {
-        const recommendations = await this.deps.enterpriseBusinessEvolutionService.listRecommendations(scope.companyId);
-        const pending = recommendations.filter((rec) => ['created', 'viewed', 'accepted', 'approved'].includes(rec.workflowStatus));
+        const recommendations =
+          await this.deps.enterpriseBusinessEvolutionService.listRecommendations(scope.companyId);
+        const pending = recommendations.filter((rec) =>
+          ['created', 'viewed', 'accepted', 'approved'].includes(rec.workflowStatus),
+        );
         return {
           toolKey,
           success: true,
@@ -3142,8 +3580,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bev_experiments': {
-        const experiments = await this.deps.enterpriseBusinessEvolutionService.listExperiments(scope.companyId);
-        const active = experiments.filter((exp) => ['active', 'scheduled', 'approved'].includes(exp.workflowStatus));
+        const experiments = await this.deps.enterpriseBusinessEvolutionService.listExperiments(
+          scope.companyId,
+        );
+        const active = experiments.filter((exp) =>
+          ['active', 'scheduled', 'approved'].includes(exp.workflowStatus),
+        );
         return {
           toolKey,
           success: true,
@@ -3152,7 +3594,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bev_alerts': {
-        const alerts = await this.deps.enterpriseBusinessEvolutionService.listEvolutionAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseBusinessEvolutionService.listEvolutionAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -3171,8 +3615,13 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_feature_requests': {
-        const featureRequests = await this.deps.enterpriseAppBuilderService.listFeatureRequests(scope.companyId);
-        const active = featureRequests.filter((request) => !['deployed', 'rejected', 'rolled_back', 'cancelled'].includes(request.workflowStatus));
+        const featureRequests = await this.deps.enterpriseAppBuilderService.listFeatureRequests(
+          scope.companyId,
+        );
+        const active = featureRequests.filter(
+          (request) =>
+            !['deployed', 'rejected', 'rolled_back', 'cancelled'].includes(request.workflowStatus),
+        );
         return {
           toolKey,
           success: true,
@@ -3181,7 +3630,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_requirements': {
-        const requirements = await this.deps.enterpriseAppBuilderService.listRequirementsAnalyses(scope.companyId);
+        const requirements = await this.deps.enterpriseAppBuilderService.listRequirementsAnalyses(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3190,7 +3641,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_architecture_impacts': {
-        const architectureImpacts = await this.deps.enterpriseAppBuilderService.listArchitectureImpactAnalyses(scope.companyId);
+        const architectureImpacts =
+          await this.deps.enterpriseAppBuilderService.listArchitectureImpactAnalyses(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -3199,7 +3653,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_workspaces': {
-        const workspaces = await this.deps.enterpriseAppBuilderService.listDevelopmentWorkspaces(scope.companyId);
+        const workspaces = await this.deps.enterpriseAppBuilderService.listDevelopmentWorkspaces(
+          scope.companyId,
+        );
         const active = workspaces.filter((workspace) => workspace.status === 'active');
         return {
           toolKey,
@@ -3209,7 +3665,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_approvals': {
-        const approvals = await this.deps.enterpriseAppBuilderService.listApprovalRecords(scope.companyId);
+        const approvals = await this.deps.enterpriseAppBuilderService.listApprovalRecords(
+          scope.companyId,
+        );
         const pending = approvals.filter((approval) => approval.workflowStatus === 'pending');
         return {
           toolKey,
@@ -3219,7 +3677,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ab_alerts': {
-        const alerts = await this.deps.enterpriseAppBuilderService.listAppBuilderAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseAppBuilderService.listAppBuilderAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -3229,7 +3689,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_industry_packs_dashboard': {
-        const dashboard = await this.deps.enterpriseIndustryPackService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseIndustryPackService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3238,7 +3700,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_installed_packs': {
-        const installedPacks = await this.deps.enterpriseIndustryPackService.listInstalledPacks(scope.companyId);
+        const installedPacks = await this.deps.enterpriseIndustryPackService.listInstalledPacks(
+          scope.companyId,
+        );
         const active = installedPacks.filter((pack) => pack.status === 'installed');
         return {
           toolKey,
@@ -3248,7 +3712,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_templates': {
-        const templates = await this.deps.enterpriseIndustryPackService.listTemplates(scope.companyId);
+        const templates = await this.deps.enterpriseIndustryPackService.listTemplates(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3257,7 +3723,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_compliance_frameworks': {
-        const frameworks = await this.deps.enterpriseIndustryPackService.listComplianceFrameworks(scope.companyId);
+        const frameworks = await this.deps.enterpriseIndustryPackService.listComplianceFrameworks(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3266,7 +3734,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_certificates': {
-        const certificates = await this.deps.enterpriseIndustryPackService.listCertificates(scope.companyId);
+        const certificates = await this.deps.enterpriseIndustryPackService.listCertificates(
+          scope.companyId,
+        );
         const issued = certificates.filter((cert) => cert.status === 'issued');
         return {
           toolKey,
@@ -3276,7 +3746,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_equipment_catalog': {
-        const equipmentCatalog = await this.deps.enterpriseIndustryPackService.listEquipmentCatalog(scope.companyId);
+        const equipmentCatalog = await this.deps.enterpriseIndustryPackService.listEquipmentCatalog(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3285,7 +3757,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ip_industry_alerts': {
-        const alerts = await this.deps.enterpriseIndustryPackService.listIndustryAlerts(scope.companyId);
+        const alerts = await this.deps.enterpriseIndustryPackService.listIndustryAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -3295,7 +3769,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_public_developer_dashboard': {
-        const dashboard = await this.deps.enterprisePublicDeveloperPlatformService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterprisePublicDeveloperPlatformService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3313,7 +3789,8 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pdp_webhook_events': {
-        const webhookEventTypes = await this.deps.enterprisePublicDeveloperPlatformService.listWebhookEventTypes();
+        const webhookEventTypes =
+          await this.deps.enterprisePublicDeveloperPlatformService.listWebhookEventTypes();
         return {
           toolKey,
           success: true,
@@ -3322,9 +3799,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pdp_webhook_deliveries': {
-        const webhookDeliveries = await this.deps.enterprisePublicDeveloperPlatformService.listWebhookDeliveryHistory(
-          scope.companyId,
-        );
+        const webhookDeliveries =
+          await this.deps.enterprisePublicDeveloperPlatformService.listWebhookDeliveryHistory(
+            scope.companyId,
+          );
         const failed = webhookDeliveries.filter((delivery) => delivery.status === 'failed');
         return {
           toolKey,
@@ -3335,8 +3813,12 @@ export class AgentRuntimeService {
       }
       case 'read_pdp_sdk_packages': {
         const [sdkPackages, sdkGenerationRecords] = await Promise.all([
-          this.deps.enterprisePublicDeveloperPlatformService.getDashboard(scope.companyId).then((d) => d.sdkPackages),
-          this.deps.enterprisePublicDeveloperPlatformService.listSdkGenerationRecords(scope.companyId),
+          this.deps.enterprisePublicDeveloperPlatformService
+            .getDashboard(scope.companyId)
+            .then((d) => d.sdkPackages),
+          this.deps.enterprisePublicDeveloperPlatformService.listSdkGenerationRecords(
+            scope.companyId,
+          ),
         ]);
         return {
           toolKey,
@@ -3346,7 +3828,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pdp_developer_alerts': {
-        const alerts = await this.deps.enterprisePublicDeveloperPlatformService.listDeveloperAlerts(scope.companyId);
+        const alerts = await this.deps.enterprisePublicDeveloperPlatformService.listDeveloperAlerts(
+          scope.companyId,
+        );
         const openAlerts = alerts.filter((alert) => alert.status === 'open');
         return {
           toolKey,
@@ -3356,7 +3840,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sm_dashboard': {
-        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3365,7 +3851,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sm_plans': {
-        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3374,7 +3862,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sm_subscriptions': {
-        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseSaasManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3395,7 +3885,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sm_usage': {
-        const usageMonitoring = await this.deps.enterpriseSaasManagementService.getUsageMonitoring(scope.companyId);
+        const usageMonitoring = await this.deps.enterpriseSaasManagementService.getUsageMonitoring(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3404,7 +3896,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_sm_licenses': {
-        const licenses = await this.deps.enterpriseSaasManagementService.listLicenses(scope.companyId);
+        const licenses = await this.deps.enterpriseSaasManagementService.listLicenses(
+          scope.companyId,
+        );
         const active = licenses.filter((license) => license.status === 'active');
         return {
           toolKey,
@@ -3414,7 +3908,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vr_dashboard': {
-        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3423,7 +3919,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vr_call_history': {
-        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3432,7 +3930,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vr_live_calls': {
-        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3462,7 +3962,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vr_knowledge': {
-        const knowledge = await this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(scope.companyId);
+        const knowledge =
+          await this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -3471,7 +3974,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_vr_routing': {
-        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseVoiceReceptionService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3546,7 +4051,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_dashboard': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3555,7 +4062,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_backup_status': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3568,7 +4077,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_restore_history': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3577,7 +4088,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_recovery_plans': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3586,7 +4099,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_verification_reports': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3595,7 +4110,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_bc_analytics': {
-        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3608,7 +4125,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_gs_dashboard': {
-        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(scope.companyId, scope.userId);
+        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(
+          scope.companyId,
+          scope.userId,
+        );
         return {
           toolKey,
           success: true,
@@ -3617,7 +4137,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_gs_search_index': {
-        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(scope.companyId, scope.userId);
+        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(
+          scope.companyId,
+          scope.userId,
+        );
         return {
           toolKey,
           success: true,
@@ -3639,7 +4162,10 @@ export class AgentRuntimeService {
             data: { timeline },
           };
         }
-        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(scope.companyId, scope.userId);
+        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(
+          scope.companyId,
+          scope.userId,
+        );
         return {
           toolKey,
           success: true,
@@ -3661,11 +4187,14 @@ export class AgentRuntimeService {
       }
       case 'read_gs_relationships': {
         if (pageContext?.customerId) {
-          const relationships = await this.deps.enterpriseGlobalSearchService.getRelationships(scope, {
-            entityType: 'customer',
-            entityId: pageContext.customerId,
-            limit: 50,
-          });
+          const relationships = await this.deps.enterpriseGlobalSearchService.getRelationships(
+            scope,
+            {
+              entityType: 'customer',
+              entityId: pageContext.customerId,
+              limit: 50,
+            },
+          );
           return {
             toolKey,
             success: true,
@@ -3673,7 +4202,10 @@ export class AgentRuntimeService {
             data: { relationships },
           };
         }
-        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(scope.companyId, scope.userId);
+        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(
+          scope.companyId,
+          scope.userId,
+        );
         return {
           toolKey,
           success: true,
@@ -3682,7 +4214,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_gs_analytics': {
-        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(scope.companyId, scope.userId);
+        const dashboard = await this.deps.enterpriseGlobalSearchService.getDashboard(
+          scope.companyId,
+          scope.userId,
+        );
         return {
           toolKey,
           success: true,
@@ -3693,7 +4228,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_dashboard': {
-        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3702,7 +4239,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_imports': {
-        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3711,10 +4250,15 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_validation': {
-        const importJobs = await this.deps.enterpriseDataMigrationService.listImportJobs(scope.companyId);
+        const importJobs = await this.deps.enterpriseDataMigrationService.listImportJobs(
+          scope.companyId,
+        );
         const latest = importJobs[0];
         const detail = latest
-          ? await this.deps.enterpriseDataMigrationService.getImportJobDetail(scope.companyId, latest.id)
+          ? await this.deps.enterpriseDataMigrationService.getImportJobDetail(
+              scope.companyId,
+              latest.id,
+            )
           : null;
         return {
           toolKey,
@@ -3729,10 +4273,15 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_mappings': {
-        const importJobs = await this.deps.enterpriseDataMigrationService.listImportJobs(scope.companyId);
+        const importJobs = await this.deps.enterpriseDataMigrationService.listImportJobs(
+          scope.companyId,
+        );
         const latest = importJobs[0];
         const detail = latest
-          ? await this.deps.enterpriseDataMigrationService.getImportJobDetail(scope.companyId, latest.id)
+          ? await this.deps.enterpriseDataMigrationService.getImportJobDetail(
+              scope.companyId,
+              latest.id,
+            )
           : null;
         return {
           toolKey,
@@ -3744,7 +4293,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_exports': {
-        const exportJobs = await this.deps.enterpriseDataMigrationService.listExportJobs(scope.companyId);
+        const exportJobs = await this.deps.enterpriseDataMigrationService.listExportJobs(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3753,7 +4304,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_dm_analytics': {
-        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseDataMigrationService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3792,10 +4345,15 @@ export class AgentRuntimeService {
         };
       }
       case 'read_nc_alerts': {
-        const alerts = await this.deps.enterpriseNotificationsService.listAlerts(scope.companyId, { status: 'open' });
-        const platformAlerts = await this.deps.enterpriseNotificationsService.listPlatformAlerts(scope.companyId, {
+        const alerts = await this.deps.enterpriseNotificationsService.listAlerts(scope.companyId, {
           status: 'open',
         });
+        const platformAlerts = await this.deps.enterpriseNotificationsService.listPlatformAlerts(
+          scope.companyId,
+          {
+            status: 'open',
+          },
+        );
         return {
           toolKey,
           success: true,
@@ -3804,9 +4362,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_nc_escalations': {
-        const escalations = await this.deps.enterpriseNotificationsService.listEscalations(scope.companyId, {
-          status: 'pending',
-        });
+        const escalations = await this.deps.enterpriseNotificationsService.listEscalations(
+          scope.companyId,
+          {
+            status: 'pending',
+          },
+        );
         return {
           toolKey,
           success: true,
@@ -3825,11 +4386,16 @@ export class AgentRuntimeService {
           summary: dashboard.analytics
             ? `Latest analytics captured ${dashboard.analytics.capturedAt}.`
             : 'No analytics snapshot captured yet.',
-          data: { analytics: dashboard.analytics, notificationHealth: dashboard.notificationHealth },
+          data: {
+            analytics: dashboard.analytics,
+            notificationHealth: dashboard.notificationHealth,
+          },
         };
       }
       case 'read_ph_dashboard': {
-        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3842,7 +4408,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ph_health_metrics': {
-        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3855,9 +4423,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ph_diagnostics': {
-        const diagnosticRuns = await this.deps.enterprisePlatformHealthService.listDiagnosticRuns(scope.companyId);
+        const diagnosticRuns = await this.deps.enterprisePlatformHealthService.listDiagnosticRuns(
+          scope.companyId,
+        );
         const latest = diagnosticRuns[0]
-          ? await this.deps.enterprisePlatformHealthService.getDiagnosticRunDetail(scope.companyId, diagnosticRuns[0].id)
+          ? await this.deps.enterprisePlatformHealthService.getDiagnosticRunDetail(
+              scope.companyId,
+              diagnosticRuns[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -3867,7 +4440,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ph_incidents': {
-        const incidents = await this.deps.enterprisePlatformHealthService.listIncidents(scope.companyId);
+        const incidents = await this.deps.enterprisePlatformHealthService.listIncidents(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3876,7 +4451,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_ph_analytics': {
-        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3887,7 +4464,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_dashboard': {
-        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3900,9 +4479,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_readiness': {
-        const scans = await this.deps.enterpriseLaunchCenterService.listReadinessScans(scope.companyId);
+        const scans = await this.deps.enterpriseLaunchCenterService.listReadinessScans(
+          scope.companyId,
+        );
         const latest = scans[0]
-          ? await this.deps.enterpriseLaunchCenterService.getReadinessScanDetail(scope.companyId, scans[0].id)
+          ? await this.deps.enterpriseLaunchCenterService.getReadinessScanDetail(
+              scope.companyId,
+              scans[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -3912,9 +4496,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_acceptance_tests': {
-        const runs = await this.deps.enterpriseLaunchCenterService.listAcceptanceTestRuns(scope.companyId);
+        const runs = await this.deps.enterpriseLaunchCenterService.listAcceptanceTestRuns(
+          scope.companyId,
+        );
         const latest = runs[0]
-          ? await this.deps.enterpriseLaunchCenterService.getAcceptanceTestRunDetail(scope.companyId, runs[0].id)
+          ? await this.deps.enterpriseLaunchCenterService.getAcceptanceTestRunDetail(
+              scope.companyId,
+              runs[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -3924,8 +4513,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_deployment_reports': {
-        const wizards = await this.deps.enterpriseLaunchCenterService.listGoLiveWizards(scope.companyId);
-        const validations = await this.deps.enterpriseLaunchCenterService.listDeploymentValidations(scope.companyId);
+        const wizards = await this.deps.enterpriseLaunchCenterService.listGoLiveWizards(
+          scope.companyId,
+        );
+        const validations = await this.deps.enterpriseLaunchCenterService.listDeploymentValidations(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3934,7 +4527,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_integrations': {
-        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3943,7 +4538,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_lnc_analytics': {
-        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseLaunchCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3954,7 +4551,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_dashboard': {
-        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -3967,9 +4566,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_integration_validation': {
-        const runs = await this.deps.enterpriseReleaseCenterService.listIntegrationRuns(scope.companyId);
+        const runs = await this.deps.enterpriseReleaseCenterService.listIntegrationRuns(
+          scope.companyId,
+        );
         const latest = runs[0]
-          ? await this.deps.enterpriseReleaseCenterService.getIntegrationRunDetail(scope.companyId, runs[0].id)
+          ? await this.deps.enterpriseReleaseCenterService.getIntegrationRunDetail(
+              scope.companyId,
+              runs[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -3979,9 +4583,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_workflow_validation': {
-        const runs = await this.deps.enterpriseReleaseCenterService.listWorkflowRuns(scope.companyId);
+        const runs = await this.deps.enterpriseReleaseCenterService.listWorkflowRuns(
+          scope.companyId,
+        );
         const latest = runs[0]
-          ? await this.deps.enterpriseReleaseCenterService.getWorkflowRunDetail(scope.companyId, runs[0].id)
+          ? await this.deps.enterpriseReleaseCenterService.getWorkflowRunDetail(
+              scope.companyId,
+              runs[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -3991,7 +4600,10 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_performance': {
-        const snapshot = await this.deps.enterpriseReleaseCenterService.getLatestPerformanceSnapshot(scope.companyId);
+        const snapshot =
+          await this.deps.enterpriseReleaseCenterService.getLatestPerformanceSnapshot(
+            scope.companyId,
+          );
         return {
           toolKey,
           success: true,
@@ -4002,7 +4614,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_security': {
-        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4013,7 +4627,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_configuration': {
-        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseCenterService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4024,8 +4640,12 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rc_release_report': {
-        const report = await this.deps.enterpriseReleaseCenterService.getLatestReleaseReport(scope.companyId);
-        const checklist = await this.deps.enterpriseReleaseCenterService.listReleaseChecklist(scope.companyId);
+        const report = await this.deps.enterpriseReleaseCenterService.getLatestReleaseReport(
+          scope.companyId,
+        );
+        const checklist = await this.deps.enterpriseReleaseCenterService.listReleaseChecklist(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4036,7 +4656,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_dashboard': {
-        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4049,7 +4671,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_environment': {
-        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4063,9 +4687,14 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_providers': {
-        const runs = await this.deps.enterpriseProductionLaunchService.listLiveIntegrationRuns(scope.companyId);
+        const runs = await this.deps.enterpriseProductionLaunchService.listLiveIntegrationRuns(
+          scope.companyId,
+        );
         const latest = runs[0]
-          ? await this.deps.enterpriseProductionLaunchService.getLiveIntegrationRunDetail(scope.companyId, runs[0].id)
+          ? await this.deps.enterpriseProductionLaunchService.getLiveIntegrationRunDetail(
+              scope.companyId,
+              runs[0].id,
+            )
           : null;
         return {
           toolKey,
@@ -4075,7 +4704,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_deployment': {
-        const runs = await this.deps.enterpriseProductionLaunchService.listDeploymentRuns(scope.companyId);
+        const runs = await this.deps.enterpriseProductionLaunchService.listDeploymentRuns(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4084,7 +4715,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_golive_wizard': {
-        const wizards = await this.deps.enterpriseProductionLaunchService.listGoLiveWizards(scope.companyId);
+        const wizards = await this.deps.enterpriseProductionLaunchService.listGoLiveWizards(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4093,7 +4726,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_pl_commercial': {
-        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseProductionLaunchService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4107,7 +4742,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rlm_dashboard': {
-        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4120,7 +4757,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rlm_mobile_readiness': {
-        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4134,7 +4773,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rlm_documentation': {
-        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4143,7 +4784,9 @@ export class AgentRuntimeService {
         };
       }
       case 'read_rlm_launch_checklist': {
-        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(scope.companyId);
+        const dashboard = await this.deps.enterpriseReleaseManagementService.getDashboard(
+          scope.companyId,
+        );
         return {
           toolKey,
           success: true,
@@ -4169,9 +4812,13 @@ export class AgentRuntimeService {
     const lower = request.toLowerCase();
     const enabled = new Set(resolved.enabledToolKeys);
 
-    if (enabled.has('send_whatsapp_draft') && /whatsapp|message|send.*(customer|update)/i.test(request)) {
+    if (
+      enabled.has('send_whatsapp_draft') &&
+      /whatsapp|message|send.*(customer|update)/i.test(request)
+    ) {
       const customerData = toolResults.find((result) => result.toolKey === 'read_customers')?.data;
-      const customers = (customerData?.customers as Array<{ id: string; name: string }> | undefined) ?? [];
+      const customers =
+        (customerData?.customers as Array<{ id: string; name: string }> | undefined) ?? [];
       const matchedCustomer =
         customers.find((customer) => lower.includes(customer.name.toLowerCase())) ??
         (pageContext?.customerId
@@ -4216,7 +4863,10 @@ export class AgentRuntimeService {
       }
     }
 
-    if (enabled.has('create_candidate') && /create candidate|add candidate|new applicant/i.test(request)) {
+    if (
+      enabled.has('create_candidate') &&
+      /create candidate|add candidate|new applicant/i.test(request)
+    ) {
       tasks.push({
         taskType: 'create_candidate',
         preview: 'Create recruiting candidate profile',
@@ -4237,12 +4887,18 @@ export class AgentRuntimeService {
         tasks.push({
           taskType: 'update_candidate_status',
           preview: `Update candidate status to ${statusMatch[1]}`,
-          payload: { status: statusMatch[1]!.toLowerCase(), candidateName: extractNameFromRequest(request) },
+          payload: {
+            status: statusMatch[1]!.toLowerCase(),
+            candidateName: extractNameFromRequest(request),
+          },
         });
       }
     }
 
-    if (enabled.has('draft_job_ad') && /draft.*(job ad|advert|posting)|write.*job ad/i.test(request)) {
+    if (
+      enabled.has('draft_job_ad') &&
+      /draft.*(job ad|advert|posting)|write.*job ad/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_job_ad',
         preview: 'Draft job advert for review',
@@ -4253,7 +4909,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_interview_questions') && /interview question|questions for/i.test(request)) {
+    if (
+      enabled.has('draft_interview_questions') &&
+      /interview question|questions for/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_interview_questions',
         preview: 'Draft interview questions for review',
@@ -4264,7 +4923,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('store_memory') && /remember|save.*rule|business rule|always create/i.test(request)) {
+    if (
+      enabled.has('store_memory') &&
+      /remember|save.*rule|business rule|always create/i.test(request)
+    ) {
       tasks.push({
         taskType: 'store_memory',
         preview: 'Save business rule to company memory',
@@ -4353,7 +5015,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_executive_action') &&
-      /executive action|strategic action|business decision|approve plan|leadership action/i.test(request)
+      /executive action|strategic action|business decision|approve plan|leadership action/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_executive_action',
@@ -4364,7 +5028,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_finance_action') &&
-      /finance action|budget adjustment|collection plan|pricing change|expense reduction|cash flow plan|finance recommendation/i.test(request)
+      /finance action|budget adjustment|collection plan|pricing change|expense reduction|cash flow plan|finance recommendation/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_finance_action',
@@ -4386,7 +5052,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_integration_action') &&
-      /integration action|sync integration|rotate credential|webhook replay|developer api key|integration hub/i.test(request)
+      /integration action|sync integration|rotate credential|webhook replay|developer api key|integration hub/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_integration_action',
@@ -4400,7 +5068,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_customer_request') &&
-      /customer request|reschedule appointment|cancel appointment|quote clarification|approve quote|portal request/i.test(request)
+      /customer request|reschedule appointment|cancel appointment|quote clarification|approve quote|portal request/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_customer_request',
@@ -4414,7 +5084,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_mobile_request') &&
-      /mobile request|inventory request|overtime request|schedule change|workforce request|stock request|field request/i.test(request)
+      /mobile request|inventory request|overtime request|schedule change|workforce request|stock request|field request/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_mobile_request',
@@ -4428,7 +5100,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_quality_action') &&
-      /quality action|coaching recommendation|retraining recommendation|warning recommendation|labour recovery|material recovery/i.test(request)
+      /quality action|coaching recommendation|retraining recommendation|warning recommendation|labour recovery|material recovery/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_quality_action',
@@ -4461,7 +5135,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_customer_reply') &&
-      /draft reply|customer reply|suggested reply|respond to customer|reply to customer/i.test(request)
+      /draft reply|customer reply|suggested reply|respond to customer|reply to customer/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_customer_reply',
@@ -4475,7 +5151,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_follow_up') &&
-      /draft follow.?up|follow.?up recommendation|schedule follow.?up|customer follow.?up/i.test(request) &&
+      /draft follow.?up|follow.?up recommendation|schedule follow.?up|customer follow.?up/i.test(
+        request,
+      ) &&
       !/call follow.?up|from the call/i.test(request)
     ) {
       tasks.push({
@@ -4490,7 +5168,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_maintenance_action') &&
-      /maintenance action|maintenance work order|service schedule|preventative maintenance/i.test(request)
+      /maintenance action|maintenance work order|service schedule|preventative maintenance/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_maintenance_action',
@@ -4523,7 +5203,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_provider_configuration') &&
-      /provider configuration|configure provider|switch provider|model routing|ai provider/i.test(request)
+      /provider configuration|configure provider|switch provider|model routing|ai provider/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_provider_configuration',
@@ -4534,7 +5216,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_dispatch_action') &&
-      /dispatch action|reassign technician|dispatch recommendation|emergency dispatch|assign job/i.test(request)
+      /dispatch action|reassign technician|dispatch recommendation|emergency dispatch|assign job/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_dispatch_action',
@@ -4545,7 +5229,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_callback_action') &&
-      /callback action|schedule callback|customer callback|return call|missed call callback/i.test(request)
+      /callback action|schedule callback|customer callback|return call|missed call callback/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_callback_action',
@@ -4556,7 +5242,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_fleet_action') &&
-      /fleet action|fleet recommendation|maintenance planning|route optimization|fleet balancing|technician allocation/i.test(request)
+      /fleet action|fleet recommendation|maintenance planning|route optimization|fleet balancing|technician allocation/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_fleet_action',
@@ -4578,7 +5266,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_business_action') &&
-      /business action|communication action|whatsapp action|follow-up action|draft reply workflow/i.test(request)
+      /business action|communication action|whatsapp action|follow-up action|draft reply workflow/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_business_action',
@@ -4608,7 +5298,8 @@ export class AgentRuntimeService {
     ) {
       tasks.push({
         taskType: 'draft_integration_repair',
-        preview: 'Draft integration repair for approval (no automatic reconnect or credential change)',
+        preview:
+          'Draft integration repair for approval (no automatic reconnect or credential change)',
         payload: { content: request },
       });
     }
@@ -4647,7 +5338,8 @@ export class AgentRuntimeService {
     ) {
       tasks.push({
         taskType: 'draft_decision_report',
-        preview: 'Draft decision intelligence report for approval (no automatic operational changes)',
+        preview:
+          'Draft decision intelligence report for approval (no automatic operational changes)',
         payload: { content: request },
       });
     }
@@ -4660,7 +5352,8 @@ export class AgentRuntimeService {
     ) {
       tasks.push({
         taskType: 'draft_knowledge_report',
-        preview: 'Draft knowledge intelligence report for approval (no automatic knowledge modification)',
+        preview:
+          'Draft knowledge intelligence report for approval (no automatic knowledge modification)',
         payload: { content: request },
       });
     }
@@ -4673,7 +5366,8 @@ export class AgentRuntimeService {
     ) {
       tasks.push({
         taskType: 'draft_executive_briefing',
-        preview: 'Draft executive operations briefing for approval (no automatic operational changes)',
+        preview:
+          'Draft executive operations briefing for approval (no automatic operational changes)',
         payload: { content: request },
       });
     }
@@ -4712,7 +5406,8 @@ export class AgentRuntimeService {
     ) {
       tasks.push({
         taskType: 'draft_developer_guide',
-        preview: 'Draft developer guide for approval (no automatic credential or extension changes)',
+        preview:
+          'Draft developer guide for approval (no automatic credential or extension changes)',
         payload: { content: request },
       });
     }
@@ -4732,7 +5427,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_saas_onboarding_guide') &&
-      /onboarding guide|tenant onboarding|saas onboarding|getting started guide|setup guide/i.test(request)
+      /onboarding guide|tenant onboarding|saas onboarding|getting started guide|setup guide/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_saas_onboarding_guide',
@@ -4765,7 +5462,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_recovery_plan') && /recovery plan|disaster recovery|restore plan|backup recovery/i.test(request)) {
+    if (
+      enabled.has('draft_recovery_plan') &&
+      /recovery plan|disaster recovery|restore plan|backup recovery/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_recovery_plan',
         preview: 'Draft recovery plan for approval (no automatic backup restore)',
@@ -4773,7 +5473,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_maintenance_plan') && /maintenance plan|planned downtime|maintenance window/i.test(request)) {
+    if (
+      enabled.has('draft_maintenance_plan') &&
+      /maintenance plan|planned downtime|maintenance window/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_maintenance_plan',
         preview: 'Draft maintenance plan for approval (no automatic execution)',
@@ -4781,7 +5484,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_operational_report') && /operational report|ops report|production report|status report/i.test(request)) {
+    if (
+      enabled.has('draft_operational_report') &&
+      /operational report|ops report|production report|status report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_operational_report',
         preview: 'Draft operational report for review',
@@ -4789,7 +5495,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_incident_summary') && /incident summary|explain incident|postmortem|root cause summary/i.test(request)) {
+    if (
+      enabled.has('draft_incident_summary') &&
+      /incident summary|explain incident|postmortem|root cause summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_incident_summary',
         preview: 'Draft incident summary for review',
@@ -4797,7 +5506,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_scaling_recommendation') && /scaling recommendation|scale up|scale out|horizontal scaling|queue scaling/i.test(request)) {
+    if (
+      enabled.has('draft_scaling_recommendation') &&
+      /scaling recommendation|scale up|scale out|horizontal scaling|queue scaling/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_scaling_recommendation',
         preview: 'Draft scaling recommendation for approval (no automatic infrastructure changes)',
@@ -4805,7 +5517,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mobile_report') && /mobile report|field report|technician report|site report/i.test(request)) {
+    if (
+      enabled.has('draft_mobile_report') &&
+      /mobile report|field report|technician report|site report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mobile_report',
         preview: 'Draft mobile field report for approval',
@@ -4813,7 +5528,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mobile_quotation') && /mobile quot|field quot|draft quot/i.test(request)) {
+    if (
+      enabled.has('draft_mobile_quotation') &&
+      /mobile quot|field quot|draft quot/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mobile_quotation',
         preview: 'Draft mobile quotation for approval',
@@ -4821,7 +5539,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mobile_maintenance_note') && /maintenance note|service note|repair note/i.test(request)) {
+    if (
+      enabled.has('draft_mobile_maintenance_note') &&
+      /maintenance note|service note|repair note/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mobile_maintenance_note',
         preview: 'Draft mobile maintenance note for approval',
@@ -4829,7 +5550,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mobile_troubleshooting_guide') && /troubleshoot|troubleshooting|diagnose|fix guide/i.test(request)) {
+    if (
+      enabled.has('draft_mobile_troubleshooting_guide') &&
+      /troubleshoot|troubleshooting|diagnose|fix guide/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mobile_troubleshooting_guide',
         preview: 'Draft troubleshooting guide for approval',
@@ -4837,7 +5561,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_communications_reply') && /draft reply|reply to customer|respond to/i.test(request)) {
+    if (
+      enabled.has('draft_communications_reply') &&
+      /draft reply|reply to customer|respond to/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_communications_reply',
         preview: 'Draft communications reply for approval (no automatic send)',
@@ -4845,7 +5572,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_communications_sms') && /draft sms|send sms|text message/i.test(request)) {
+    if (
+      enabled.has('draft_communications_sms') &&
+      /draft sms|send sms|text message/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_communications_sms',
         preview: 'Draft SMS message for approval (no automatic send)',
@@ -4853,7 +5583,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_communications_whatsapp') && /draft whatsapp|whatsapp message/i.test(request)) {
+    if (
+      enabled.has('draft_communications_whatsapp') &&
+      /draft whatsapp|whatsapp message/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_communications_whatsapp',
         preview: 'Draft WhatsApp message for approval (no automatic send)',
@@ -4869,7 +5602,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_cx_support_request') && /support request|help request|complaint|escalate/i.test(request)) {
+    if (
+      enabled.has('draft_cx_support_request') &&
+      /support request|help request|complaint|escalate/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_cx_support_request',
         preview: 'Draft customer support request for approval',
@@ -4877,7 +5613,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_cx_appointment_request') && /book appointment|schedule appointment|reschedule|emergency call/i.test(request)) {
+    if (
+      enabled.has('draft_cx_appointment_request') &&
+      /book appointment|schedule appointment|reschedule|emergency call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_cx_appointment_request',
         preview: 'Draft appointment booking request for approval',
@@ -4885,7 +5624,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_cx_document_request') && /document request|upload document|download invoice|certificate|warranty/i.test(request)) {
+    if (
+      enabled.has('draft_cx_document_request') &&
+      /document request|upload document|download invoice|certificate|warranty/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_cx_document_request',
         preview: 'Draft document request for approval',
@@ -4893,7 +5635,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_asset_maintenance_plan') && /maintenance plan|preventive maintenance|service schedule/i.test(request)) {
+    if (
+      enabled.has('draft_asset_maintenance_plan') &&
+      /maintenance plan|preventive maintenance|service schedule/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_asset_maintenance_plan',
         preview: 'Draft asset maintenance plan for approval',
@@ -4901,7 +5646,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_asset_report') && /asset report|lifecycle report|analytics report/i.test(request)) {
+    if (
+      enabled.has('draft_asset_report') &&
+      /asset report|lifecycle report|analytics report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_asset_report',
         preview: 'Draft asset report for approval',
@@ -4909,7 +5657,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_asset_work_order') && /work order|inspection request|maintenance job|emergency job/i.test(request)) {
+    if (
+      enabled.has('draft_asset_work_order') &&
+      /work order|inspection request|maintenance job|emergency job/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_asset_work_order',
         preview: 'Draft asset work order for approval',
@@ -4917,7 +5668,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_onboarding_plan') && /onboarding plan|onboard new|new hire checklist/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_onboarding_plan') &&
+      /onboarding plan|onboard new|new hire checklist/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_onboarding_plan',
         preview: 'Draft workforce onboarding plan for approval',
@@ -4925,7 +5679,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_development_plan') && /development plan|career development|growth plan/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_development_plan') &&
+      /development plan|career development|growth plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_development_plan',
         preview: 'Draft workforce development plan for approval',
@@ -4933,7 +5690,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_performance_report') && /performance report|technician performance|team performance/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_performance_report') &&
+      /performance report|technician performance|team performance/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_performance_report',
         preview: 'Draft workforce performance report for approval',
@@ -4941,7 +5701,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_hr_communication') && /hr communication|employee communication|hr letter/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_hr_communication') &&
+      /hr communication|employee communication|hr letter/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_hr_communication',
         preview: 'Draft HR communication for approval',
@@ -4949,7 +5712,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_payroll_exception_summary') && /payroll exception|payroll error|payroll issue/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_payroll_exception_summary') &&
+      /payroll exception|payroll error|payroll issue/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_payroll_exception_summary',
         preview: 'Draft payroll exception summary for approval',
@@ -4957,7 +5723,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_offboarding_checklist') && /offboarding|exit checklist|termination checklist/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_offboarding_checklist') &&
+      /offboarding|exit checklist|termination checklist/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_offboarding_checklist',
         preview: 'Draft offboarding checklist for approval',
@@ -4965,7 +5734,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_training_recommendation') && /training recommendation|skill gap|training plan/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_training_recommendation') &&
+      /training recommendation|skill gap|training plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_training_recommendation',
         preview: 'Draft training recommendation for approval',
@@ -4973,7 +5745,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_workforce_technician_match') && /technician match|assign technician|recommend technician|best technician/i.test(request)) {
+    if (
+      enabled.has('draft_workforce_technician_match') &&
+      /technician match|assign technician|recommend technician|best technician/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_workforce_technician_match',
         preview: 'Draft technician-job match recommendation for approval',
@@ -4981,7 +5756,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_contract_summary') && /contract summary|summarize contract|summarise contract/i.test(request)) {
+    if (
+      enabled.has('draft_legal_contract_summary') &&
+      /contract summary|summarize contract|summarise contract/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_contract_summary',
         preview: 'Draft contract summary for human review (not legal advice)',
@@ -4989,7 +5767,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_policy_document') && /policy document|draft policy|write policy/i.test(request)) {
+    if (
+      enabled.has('draft_legal_policy_document') &&
+      /policy document|draft policy|write policy/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_policy_document',
         preview: 'Draft policy document for approval (not legal advice)',
@@ -4997,7 +5778,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_compliance_report') && /compliance report|compliance summary|compliance gap/i.test(request)) {
+    if (
+      enabled.has('draft_legal_compliance_report') &&
+      /compliance report|compliance summary|compliance gap/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_compliance_report',
         preview: 'Draft compliance report for approval',
@@ -5005,7 +5789,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_risk_report') && /risk report|risk summary|risk assessment report/i.test(request)) {
+    if (
+      enabled.has('draft_legal_risk_report') &&
+      /risk report|risk summary|risk assessment report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_risk_report',
         preview: 'Draft risk report for approval',
@@ -5013,7 +5800,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_matter_summary') && /legal matter summary|matter summary|dispute summary|claim summary/i.test(request)) {
+    if (
+      enabled.has('draft_legal_matter_summary') &&
+      /legal matter summary|matter summary|dispute summary|claim summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_matter_summary',
         preview: 'Draft legal matter summary for approval',
@@ -5021,7 +5811,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_customer_notice') && /customer notice|notice to customer|customer legal notice/i.test(request)) {
+    if (
+      enabled.has('draft_legal_customer_notice') &&
+      /customer notice|notice to customer|customer legal notice/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_customer_notice',
         preview: 'Draft customer legal notice for approval (never sends automatically)',
@@ -5029,7 +5822,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_supplier_notice') && /supplier notice|notice to supplier|supplier legal notice/i.test(request)) {
+    if (
+      enabled.has('draft_legal_supplier_notice') &&
+      /supplier notice|notice to supplier|supplier legal notice/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_supplier_notice',
         preview: 'Draft supplier legal notice for approval (never sends automatically)',
@@ -5037,7 +5833,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_legal_internal_communication') && /internal legal|legal communication|legal memo|legal briefing/i.test(request)) {
+    if (
+      enabled.has('draft_legal_internal_communication') &&
+      /internal legal|legal communication|legal memo|legal briefing/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_legal_internal_communication',
         preview: 'Draft internal legal communication for approval',
@@ -5045,7 +5844,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_cash_flow_report') && /cash flow report|cash-flow report|cash position report/i.test(request)) {
+    if (
+      enabled.has('draft_fp_cash_flow_report') &&
+      /cash flow report|cash-flow report|cash position report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_cash_flow_report',
         preview: 'Draft cash-flow report for approval',
@@ -5053,7 +5855,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_budget_commentary') && /budget commentary|budget variance|budget analysis/i.test(request)) {
+    if (
+      enabled.has('draft_fp_budget_commentary') &&
+      /budget commentary|budget variance|budget analysis/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_budget_commentary',
         preview: 'Draft budget commentary for approval',
@@ -5061,7 +5866,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_forecast_commentary') && /forecast commentary|forecast analysis|rolling forecast/i.test(request)) {
+    if (
+      enabled.has('draft_fp_forecast_commentary') &&
+      /forecast commentary|forecast analysis|rolling forecast/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_forecast_commentary',
         preview: 'Draft forecast commentary for approval',
@@ -5069,7 +5877,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_profitability_report') && /profitability report|margin report|profit analysis/i.test(request)) {
+    if (
+      enabled.has('draft_fp_profitability_report') &&
+      /profitability report|margin report|profit analysis/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_profitability_report',
         preview: 'Draft profitability report for approval',
@@ -5077,7 +5888,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_payment_plan_proposal') && /payment plan|installment plan|payment arrangement/i.test(request)) {
+    if (
+      enabled.has('draft_fp_payment_plan_proposal') &&
+      /payment plan|installment plan|payment arrangement/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_payment_plan_proposal',
         preview: 'Draft payment-plan proposal for approval',
@@ -5085,7 +5899,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_supplier_payment_recommendation') && /supplier payment|pay supplier|payment priorit/i.test(request)) {
+    if (
+      enabled.has('draft_fp_supplier_payment_recommendation') &&
+      /supplier payment|pay supplier|payment priorit/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_supplier_payment_recommendation',
         preview: 'Draft supplier payment recommendation for approval',
@@ -5093,7 +5910,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_executive_financial_summary') && /executive financial|financial summary|financial briefing/i.test(request)) {
+    if (
+      enabled.has('draft_fp_executive_financial_summary') &&
+      /executive financial|financial summary|financial briefing/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_executive_financial_summary',
         preview: 'Draft executive financial summary for approval',
@@ -5101,7 +5921,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_fp_variance_analysis') && /variance analysis|budget vs actual|forecast variance/i.test(request)) {
+    if (
+      enabled.has('draft_fp_variance_analysis') &&
+      /variance analysis|budget vs actual|forecast variance/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_fp_variance_analysis',
         preview: 'Draft variance analysis for approval',
@@ -5109,7 +5932,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_lead_reply') && /lead reply|reply to lead|respond to lead/i.test(request)) {
+    if (
+      enabled.has('draft_si_lead_reply') &&
+      /lead reply|reply to lead|respond to lead/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_lead_reply',
         preview: 'Draft lead reply for approval (never sends automatically)',
@@ -5117,7 +5943,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_follow_up') && /follow.?up|follow up with|sales follow/i.test(request)) {
+    if (
+      enabled.has('draft_si_follow_up') &&
+      /follow.?up|follow up with|sales follow/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_follow_up',
         preview: 'Draft sales follow-up for approval',
@@ -5125,7 +5954,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_proposal') && /sales proposal|draft proposal|write proposal/i.test(request)) {
+    if (
+      enabled.has('draft_si_proposal') &&
+      /sales proposal|draft proposal|write proposal/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_proposal',
         preview: 'Draft sales proposal for approval',
@@ -5133,7 +5965,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_quote_commentary') && /quote commentary|quote summary|quote analysis/i.test(request)) {
+    if (
+      enabled.has('draft_si_quote_commentary') &&
+      /quote commentary|quote summary|quote analysis/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_quote_commentary',
         preview: 'Draft quote commentary for approval',
@@ -5141,7 +5976,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_renewal_message') && /renewal message|renewal notice|contract renewal/i.test(request)) {
+    if (
+      enabled.has('draft_si_renewal_message') &&
+      /renewal message|renewal notice|contract renewal/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_renewal_message',
         preview: 'Draft renewal message for approval (never sends automatically)',
@@ -5149,7 +5987,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_account_plan') && /account plan|strategic account|account strategy/i.test(request)) {
+    if (
+      enabled.has('draft_si_account_plan') &&
+      /account plan|strategic account|account strategy/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_account_plan',
         preview: 'Draft account plan for approval',
@@ -5157,7 +5998,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_sales_report') && /sales report|pipeline report|revenue report/i.test(request)) {
+    if (
+      enabled.has('draft_si_sales_report') &&
+      /sales report|pipeline report|revenue report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_sales_report',
         preview: 'Draft sales report for approval',
@@ -5165,7 +6009,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_tender_response') && /tender response|bid response|tender submission/i.test(request)) {
+    if (
+      enabled.has('draft_si_tender_response') &&
+      /tender response|bid response|tender submission/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_tender_response',
         preview: 'Draft tender response for approval (never submits automatically)',
@@ -5173,7 +6020,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_si_executive_revenue_summary') && /executive revenue|revenue summary|revenue briefing/i.test(request)) {
+    if (
+      enabled.has('draft_si_executive_revenue_summary') &&
+      /executive revenue|revenue summary|revenue briefing/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_si_executive_revenue_summary',
         preview: 'Draft executive revenue summary for approval',
@@ -5181,7 +6031,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_strategy') && /marketing strategy|brand strategy|channel strategy/i.test(request)) {
+    if (
+      enabled.has('draft_mi_strategy') &&
+      /marketing strategy|brand strategy|channel strategy/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_strategy',
         preview: 'Draft marketing strategy for approval',
@@ -5189,7 +6042,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_campaign_plan') && /campaign plan|marketing campaign plan|plan campaign/i.test(request)) {
+    if (
+      enabled.has('draft_mi_campaign_plan') &&
+      /campaign plan|marketing campaign plan|plan campaign/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_campaign_plan',
         preview: 'Draft campaign plan for approval (never publishes automatically)',
@@ -5197,7 +6053,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_social_post') && /social post|draft post|instagram post|facebook post|linkedin post/i.test(request)) {
+    if (
+      enabled.has('draft_mi_social_post') &&
+      /social post|draft post|instagram post|facebook post|linkedin post/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_social_post',
         preview: 'Draft social post for approval (never publishes automatically)',
@@ -5205,7 +6064,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_email_campaign') && /email campaign|newsletter|marketing email/i.test(request)) {
+    if (
+      enabled.has('draft_mi_email_campaign') &&
+      /email campaign|newsletter|marketing email/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_email_campaign',
         preview: 'Draft email campaign for approval (never sends automatically)',
@@ -5213,7 +6075,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_sms_campaign') && /sms campaign|text message campaign/i.test(request)) {
+    if (
+      enabled.has('draft_mi_sms_campaign') &&
+      /sms campaign|text message campaign/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_sms_campaign',
         preview: 'Draft SMS campaign for approval (never sends automatically)',
@@ -5221,7 +6086,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_whatsapp_campaign') && /whatsapp campaign|whatsapp marketing/i.test(request)) {
+    if (
+      enabled.has('draft_mi_whatsapp_campaign') &&
+      /whatsapp campaign|whatsapp marketing/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_whatsapp_campaign',
         preview: 'Draft WhatsApp campaign for approval (never sends automatically)',
@@ -5229,7 +6097,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_ad_copy') && /ad copy|advertising copy|google ad|meta ad|paid ad/i.test(request)) {
+    if (
+      enabled.has('draft_mi_ad_copy') &&
+      /ad copy|advertising copy|google ad|meta ad|paid ad/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_ad_copy',
         preview: 'Draft ad copy for approval (never activates ads automatically)',
@@ -5237,7 +6108,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_video_script') && /video script|short.?form video|reel script/i.test(request)) {
+    if (
+      enabled.has('draft_mi_video_script') &&
+      /video script|short.?form video|reel script/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_video_script',
         preview: 'Draft video script for approval',
@@ -5253,7 +6127,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_blog_content') && /blog (post|article|content)|write blog/i.test(request)) {
+    if (
+      enabled.has('draft_mi_blog_content') &&
+      /blog (post|article|content)|write blog/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_blog_content',
         preview: 'Draft blog content for approval',
@@ -5261,7 +6138,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_review_response') && /review response|respond to review|reply to review/i.test(request)) {
+    if (
+      enabled.has('draft_mi_review_response') &&
+      /review response|respond to review|reply to review/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_review_response',
         preview: 'Draft review response for approval (never posts publicly without approval)',
@@ -5269,7 +6149,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_campaign_report') && /campaign report|marketing report|channel report/i.test(request)) {
+    if (
+      enabled.has('draft_mi_campaign_report') &&
+      /campaign report|marketing report|channel report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_campaign_report',
         preview: 'Draft campaign report for approval',
@@ -5277,7 +6160,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_mi_executive_marketing_summary') && /executive marketing|marketing summary|marketing briefing/i.test(request)) {
+    if (
+      enabled.has('draft_mi_executive_marketing_summary') &&
+      /executive marketing|marketing summary|marketing briefing/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_mi_executive_marketing_summary',
         preview: 'Draft executive marketing summary for approval',
@@ -5285,7 +6171,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_quality_report') && /quality report|qa report|quality assurance report/i.test(request)) {
+    if (
+      enabled.has('draft_sd_quality_report') &&
+      /quality report|qa report|quality assurance report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_quality_report',
         preview: 'Draft quality report for approval',
@@ -5293,7 +6182,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_corrective_action') && /corrective action|corrective plan|capa/i.test(request)) {
+    if (
+      enabled.has('draft_sd_corrective_action') &&
+      /corrective action|corrective plan|capa/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_corrective_action',
         preview: 'Draft corrective action for approval',
@@ -5301,15 +6193,25 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_customer_summary') && /customer summary|service summary for customer/i.test(request)) {
+    if (
+      enabled.has('draft_sd_customer_summary') &&
+      /customer summary|service summary for customer/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_customer_summary',
         preview: 'Draft customer service summary for approval',
-        payload: { content: request, customerId: pageContext?.customerId, jobId: pageContext?.jobId },
+        payload: {
+          content: request,
+          customerId: pageContext?.customerId,
+          jobId: pageContext?.jobId,
+        },
       });
     }
 
-    if (enabled.has('draft_sd_sla_report') && /sla report|sla compliance|sla breach/i.test(request)) {
+    if (
+      enabled.has('draft_sd_sla_report') &&
+      /sla report|sla compliance|sla breach/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_sla_report',
         preview: 'Draft SLA report for approval',
@@ -5317,7 +6219,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_inspection_summary') && /inspection summary|inspection report/i.test(request)) {
+    if (
+      enabled.has('draft_sd_inspection_summary') &&
+      /inspection summary|inspection report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_inspection_summary',
         preview: 'Draft inspection summary for approval',
@@ -5325,7 +6230,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_warranty_report') && /warranty report|warranty analysis/i.test(request)) {
+    if (
+      enabled.has('draft_sd_warranty_report') &&
+      /warranty report|warranty analysis/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_warranty_report',
         preview: 'Draft warranty report for approval',
@@ -5333,7 +6241,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_callback_analysis') && /callback analysis|rework analysis|repeat visit/i.test(request)) {
+    if (
+      enabled.has('draft_sd_callback_analysis') &&
+      /callback analysis|rework analysis|repeat visit/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_callback_analysis',
         preview: 'Draft callback analysis for approval',
@@ -5341,7 +6252,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_continuous_improvement_plan') && /continuous improvement|improvement plan|ci plan/i.test(request)) {
+    if (
+      enabled.has('draft_sd_continuous_improvement_plan') &&
+      /continuous improvement|improvement plan|ci plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_continuous_improvement_plan',
         preview: 'Draft continuous improvement plan for approval',
@@ -5349,7 +6263,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sd_executive_service_summary') && /executive service|service delivery summary|operations summary/i.test(request)) {
+    if (
+      enabled.has('draft_sd_executive_service_summary') &&
+      /executive service|service delivery summary|operations summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sd_executive_service_summary',
         preview: 'Draft executive service summary for approval',
@@ -5357,7 +6274,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ito_incident_report') && /incident report|incident update|update incident/i.test(request)) {
+    if (
+      enabled.has('draft_ito_incident_report') &&
+      /incident report|incident update|update incident/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ito_incident_report',
         preview: 'Draft IT incident report for approval',
@@ -5373,7 +6293,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ito_fix') && /fix plan|repair plan|safe repair|remediation plan/i.test(request)) {
+    if (
+      enabled.has('draft_ito_fix') &&
+      /fix plan|repair plan|safe repair|remediation plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ito_fix',
         preview: 'Draft IT fix plan for approval',
@@ -5381,7 +6304,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ito_health_summary') && /health summary|platform health report/i.test(request)) {
+    if (
+      enabled.has('draft_ito_health_summary') &&
+      /health summary|platform health report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ito_health_summary',
         preview: 'Draft platform health summary for approval',
@@ -5397,7 +6323,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bev_experiment_plan') && /experiment plan|controlled experiment|test plan/i.test(request)) {
+    if (
+      enabled.has('draft_bev_experiment_plan') &&
+      /experiment plan|controlled experiment|test plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bev_experiment_plan',
         preview: 'Draft controlled experiment plan for approval',
@@ -5405,7 +6334,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bev_improvement_plan') && /improvement plan|optimization plan|process improvement/i.test(request)) {
+    if (
+      enabled.has('draft_bev_improvement_plan') &&
+      /improvement plan|optimization plan|process improvement/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bev_improvement_plan',
         preview: 'Draft business improvement plan for approval',
@@ -5413,7 +6345,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bev_executive_summary') && /executive evolution|evolution summary|business evolution summary/i.test(request)) {
+    if (
+      enabled.has('draft_bev_executive_summary') &&
+      /executive evolution|evolution summary|business evolution summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bev_executive_summary',
         preview: 'Draft executive evolution summary for approval',
@@ -5421,7 +6356,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bev_lessons_learned') && /lessons learned|validated lesson/i.test(request)) {
+    if (
+      enabled.has('draft_bev_lessons_learned') &&
+      /lessons learned|validated lesson/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bev_lessons_learned',
         preview: 'Draft lessons learned report for approval',
@@ -5437,7 +6375,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_implementation_plan') && /implementation plan|build plan|feature plan/i.test(request)) {
+    if (
+      enabled.has('draft_ab_implementation_plan') &&
+      /implementation plan|build plan|feature plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_implementation_plan',
         preview: 'Draft feature implementation plan for approval',
@@ -5445,7 +6386,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_requirements_spec') && /requirements spec|requirements specification|functional requirements/i.test(request)) {
+    if (
+      enabled.has('draft_ab_requirements_spec') &&
+      /requirements spec|requirements specification|functional requirements/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_requirements_spec',
         preview: 'Draft requirements specification for approval',
@@ -5453,7 +6397,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_architecture_impact_report') && /architecture impact|impact analysis|architecture review/i.test(request)) {
+    if (
+      enabled.has('draft_ab_architecture_impact_report') &&
+      /architecture impact|impact analysis|architecture review/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_architecture_impact_report',
         preview: 'Draft architecture impact report for approval',
@@ -5461,7 +6408,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_code_generation_plan') && /code generation plan|code plan|generation plan/i.test(request)) {
+    if (
+      enabled.has('draft_ab_code_generation_plan') &&
+      /code generation plan|code plan|generation plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_code_generation_plan',
         preview: 'Draft code generation plan for approval',
@@ -5477,7 +6427,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_deployment_plan') && /deployment plan|release plan|deploy plan/i.test(request)) {
+    if (
+      enabled.has('draft_ab_deployment_plan') &&
+      /deployment plan|release plan|deploy plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_deployment_plan',
         preview: 'Draft deployment plan for approval',
@@ -5485,7 +6438,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_documentation_update') && /documentation update|update docs|api documentation/i.test(request)) {
+    if (
+      enabled.has('draft_ab_documentation_update') &&
+      /documentation update|update docs|api documentation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_documentation_update',
         preview: 'Draft documentation update for approval',
@@ -5493,7 +6449,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_feature_changelog') && /feature changelog|changelog entry|release notes/i.test(request)) {
+    if (
+      enabled.has('draft_ab_feature_changelog') &&
+      /feature changelog|changelog entry|release notes/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_feature_changelog',
         preview: 'Draft feature changelog for approval',
@@ -5501,7 +6460,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ab_rollback_plan') && /rollback plan|roll back|revert plan/i.test(request)) {
+    if (
+      enabled.has('draft_ab_rollback_plan') &&
+      /rollback plan|roll back|revert plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ab_rollback_plan',
         preview: 'Draft rollback plan for approval',
@@ -5509,7 +6471,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_job_template') && /job template|installation template|maintenance template/i.test(request)) {
+    if (
+      enabled.has('draft_ip_job_template') &&
+      /job template|installation template|maintenance template/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_job_template',
         preview: 'Draft industry job template for approval',
@@ -5517,7 +6482,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_compliance_document') && /compliance document|compliance report|regulatory document/i.test(request)) {
+    if (
+      enabled.has('draft_ip_compliance_document') &&
+      /compliance document|compliance report|regulatory document/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_compliance_document',
         preview: 'Draft compliance document for approval',
@@ -5525,7 +6493,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_industry_report') && /industry report|trade report|kpi report/i.test(request)) {
+    if (
+      enabled.has('draft_ip_industry_report') &&
+      /industry report|trade report|kpi report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_industry_report',
         preview: 'Draft industry report for approval',
@@ -5533,7 +6504,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_workflow') && /industry workflow|trade workflow|pack workflow/i.test(request)) {
+    if (
+      enabled.has('draft_ip_workflow') &&
+      /industry workflow|trade workflow|pack workflow/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_workflow',
         preview: 'Draft industry workflow for approval',
@@ -5541,7 +6515,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_checklist') && /checklist|inspection checklist|safety checklist/i.test(request)) {
+    if (
+      enabled.has('draft_ip_checklist') &&
+      /checklist|inspection checklist|safety checklist/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_checklist',
         preview: 'Draft industry checklist for approval',
@@ -5549,7 +6526,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_certificate_template') && /certificate template|compliance certificate/i.test(request)) {
+    if (
+      enabled.has('draft_ip_certificate_template') &&
+      /certificate template|compliance certificate/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_certificate_template',
         preview: 'Draft certificate template for approval',
@@ -5557,7 +6537,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_quote_template') && /quote template|industry quote|pricing template/i.test(request)) {
+    if (
+      enabled.has('draft_ip_quote_template') &&
+      /quote template|industry quote|pricing template/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_quote_template',
         preview: 'Draft quote template for approval',
@@ -5565,7 +6548,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_knowledge_article') && /knowledge article|trade standard|best practice|procedure/i.test(request)) {
+    if (
+      enabled.has('draft_ip_knowledge_article') &&
+      /knowledge article|trade standard|best practice|procedure/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_knowledge_article',
         preview: 'Draft trade knowledge article for approval',
@@ -5573,7 +6559,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ip_improvement_plan') && /improvement plan|industry improvement|pack improvement/i.test(request)) {
+    if (
+      enabled.has('draft_ip_improvement_plan') &&
+      /improvement plan|industry improvement|pack improvement/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ip_improvement_plan',
         preview: 'Draft industry improvement plan for approval',
@@ -5581,7 +6570,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pdp_integration_guide') && /integration guide|public api guide|developer guide/i.test(request)) {
+    if (
+      enabled.has('draft_pdp_integration_guide') &&
+      /integration guide|public api guide|developer guide/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pdp_integration_guide',
         preview: 'Draft public API integration guide for approval',
@@ -5589,7 +6581,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pdp_webhook_config') && /webhook config|webhook subscription|webhook setup/i.test(request)) {
+    if (
+      enabled.has('draft_pdp_webhook_config') &&
+      /webhook config|webhook subscription|webhook setup/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pdp_webhook_config',
         preview: 'Draft webhook configuration for approval',
@@ -5597,7 +6592,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pdp_api_example') && /api example|request example|curl example|rest example/i.test(request)) {
+    if (
+      enabled.has('draft_pdp_api_example') &&
+      /api example|request example|curl example|rest example/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pdp_api_example',
         preview: 'Draft API example for approval',
@@ -5605,7 +6603,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pdp_sdk_example') && /sdk example|typescript example|python example|client example/i.test(request)) {
+    if (
+      enabled.has('draft_pdp_sdk_example') &&
+      /sdk example|typescript example|python example|client example/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pdp_sdk_example',
         preview: 'Draft SDK example for approval',
@@ -5613,7 +6614,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pdp_diagnostic_report') && /diagnostic|integration issue|webhook failure|api error|troubleshoot/i.test(request)) {
+    if (
+      enabled.has('draft_pdp_diagnostic_report') &&
+      /diagnostic|integration issue|webhook failure|api error|troubleshoot/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pdp_diagnostic_report',
         preview: 'Draft integration diagnostic report for approval',
@@ -5621,7 +6625,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sm_subscription_report') && /subscription report|tenant report|saas report/i.test(request)) {
+    if (
+      enabled.has('draft_sm_subscription_report') &&
+      /subscription report|tenant report|saas report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sm_subscription_report',
         preview: 'Draft subscription report for approval',
@@ -5629,7 +6636,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sm_billing_summary') && /billing summary|payment summary|invoice summary/i.test(request)) {
+    if (
+      enabled.has('draft_sm_billing_summary') &&
+      /billing summary|payment summary|invoice summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sm_billing_summary',
         preview: 'Draft billing summary for approval',
@@ -5637,7 +6647,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sm_usage_report') && /usage report|usage summary|limit report/i.test(request)) {
+    if (
+      enabled.has('draft_sm_usage_report') &&
+      /usage report|usage summary|limit report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sm_usage_report',
         preview: 'Draft usage report for approval',
@@ -5645,7 +6658,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sm_renewal_forecast') && /renewal forecast|renewal due|upcoming renewal/i.test(request)) {
+    if (
+      enabled.has('draft_sm_renewal_forecast') &&
+      /renewal forecast|renewal due|upcoming renewal/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sm_renewal_forecast',
         preview: 'Draft renewal forecast for approval',
@@ -5653,7 +6669,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sm_plan_recommendation') && /plan recommendation|upgrade plan|downgrade plan|change plan/i.test(request)) {
+    if (
+      enabled.has('draft_sm_plan_recommendation') &&
+      /plan recommendation|upgrade plan|downgrade plan|change plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sm_plan_recommendation',
         preview: 'Draft plan recommendation for approval',
@@ -5661,7 +6680,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_call_summary') && /call summary|summarize call|summarise call/i.test(request)) {
+    if (
+      enabled.has('draft_vr_call_summary') &&
+      /call summary|summarize call|summarise call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_call_summary',
         preview: 'Draft call summary for approval',
@@ -5669,7 +6691,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_follow_up_tasks') && /follow.?up task|follow up task|action items/i.test(request)) {
+    if (
+      enabled.has('draft_vr_follow_up_tasks') &&
+      /follow.?up task|follow up task|action items/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_follow_up_tasks',
         preview: 'Draft follow-up tasks for approval',
@@ -5677,7 +6702,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_crm_note') && /crm note|customer note|note for customer/i.test(request)) {
+    if (
+      enabled.has('draft_vr_crm_note') &&
+      /crm note|customer note|note for customer/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_crm_note',
         preview: 'Draft CRM note for approval',
@@ -5693,7 +6721,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_callback_request') && /callback request|call back|return call/i.test(request)) {
+    if (
+      enabled.has('draft_vr_callback_request') &&
+      /callback request|call back|return call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_callback_request',
         preview: 'Draft callback request for approval',
@@ -5701,7 +6732,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_lead_creation') && /create lead|new lead|lead from call/i.test(request)) {
+    if (
+      enabled.has('draft_vr_lead_creation') &&
+      /create lead|new lead|lead from call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_lead_creation',
         preview: 'Draft lead creation for approval',
@@ -5709,7 +6743,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_appointment_booking') && /book appointment|schedule appointment|appointment booking/i.test(request)) {
+    if (
+      enabled.has('draft_vr_appointment_booking') &&
+      /book appointment|schedule appointment|appointment booking/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_appointment_booking',
         preview: 'Draft appointment booking for approval',
@@ -5717,7 +6754,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_vr_routing_recommendation') && /routing recommendation|route call|transfer recommendation/i.test(request)) {
+    if (
+      enabled.has('draft_vr_routing_recommendation') &&
+      /routing recommendation|route call|transfer recommendation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_vr_routing_recommendation',
         preview: 'Draft routing recommendation for approval',
@@ -5725,7 +6765,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dip_extraction_correction') && /extraction correction|correct extraction|fix extraction/i.test(request)) {
+    if (
+      enabled.has('draft_dip_extraction_correction') &&
+      /extraction correction|correct extraction|fix extraction/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dip_extraction_correction',
         preview: 'Draft extraction correction for approval',
@@ -5733,7 +6776,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dip_document_summary') && /document summary|summarize document|summarise document/i.test(request)) {
+    if (
+      enabled.has('draft_dip_document_summary') &&
+      /document summary|summarize document|summarise document/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dip_document_summary',
         preview: 'Draft document summary for approval',
@@ -5741,7 +6787,12 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dip_workflow_action') && /workflow action|draft supplier invoice|draft inventory receipt|draft asset update|draft warranty/i.test(request)) {
+    if (
+      enabled.has('draft_dip_workflow_action') &&
+      /workflow action|draft supplier invoice|draft inventory receipt|draft asset update|draft warranty/i.test(
+        request,
+      )
+    ) {
       tasks.push({
         taskType: 'draft_dip_workflow_action',
         preview: 'Draft workflow action for approval',
@@ -5749,7 +6800,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dip_compliance_suggestion') && /compliance suggestion|compliance recommendation|expiry alert|renewal reminder/i.test(request)) {
+    if (
+      enabled.has('draft_dip_compliance_suggestion') &&
+      /compliance suggestion|compliance recommendation|expiry alert|renewal reminder/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dip_compliance_suggestion',
         preview: 'Draft compliance suggestion for approval',
@@ -5757,7 +6811,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bc_recovery_plan') && /recovery plan|disaster recovery|dr plan/i.test(request)) {
+    if (
+      enabled.has('draft_bc_recovery_plan') &&
+      /recovery plan|disaster recovery|dr plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bc_recovery_plan',
         preview: 'Draft recovery plan for approval',
@@ -5765,7 +6822,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bc_verification_report') && /verification report|backup verification|verify backup/i.test(request)) {
+    if (
+      enabled.has('draft_bc_verification_report') &&
+      /verification report|backup verification|verify backup/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bc_verification_report',
         preview: 'Draft verification report for approval',
@@ -5773,7 +6833,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bc_continuity_improvement') && /continuity improvement|business continuity improvement|improve backup/i.test(request)) {
+    if (
+      enabled.has('draft_bc_continuity_improvement') &&
+      /continuity improvement|business continuity improvement|improve backup/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bc_continuity_improvement',
         preview: 'Draft continuity improvement for approval',
@@ -5781,7 +6844,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bc_recovery_test_schedule') && /recovery test|recovery drill|drill schedule|disaster recovery test/i.test(request)) {
+    if (
+      enabled.has('draft_bc_recovery_test_schedule') &&
+      /recovery test|recovery drill|drill schedule|disaster recovery test/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bc_recovery_test_schedule',
         preview: 'Draft recovery test schedule for approval',
@@ -5789,7 +6855,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_bc_restore_request') && /restore request|point.in.time restore|tenant restore|module restore/i.test(request)) {
+    if (
+      enabled.has('draft_bc_restore_request') &&
+      /restore request|point.in.time restore|tenant restore|module restore/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_bc_restore_request',
         preview: 'Draft restore request for owner approval',
@@ -5797,7 +6866,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_gs_search_report') && /search report|global search report|search intelligence report/i.test(request)) {
+    if (
+      enabled.has('draft_gs_search_report') &&
+      /search report|global search report|search intelligence report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_gs_search_report',
         preview: 'Draft search report for approval',
@@ -5805,7 +6877,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_gs_activity_summary') && /activity summary|activity feed summary|summarize activity/i.test(request)) {
+    if (
+      enabled.has('draft_gs_activity_summary') &&
+      /activity summary|activity feed summary|summarize activity/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_gs_activity_summary',
         preview: 'Draft activity summary for approval',
@@ -5813,7 +6888,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_gs_related_record_recommendation') && /related record|linked record|relationship recommendation/i.test(request)) {
+    if (
+      enabled.has('draft_gs_related_record_recommendation') &&
+      /related record|linked record|relationship recommendation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_gs_related_record_recommendation',
         preview: 'Draft related record recommendation for approval',
@@ -5821,7 +6899,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dm_mapping_suggestion') && /mapping suggestion|field mapping|map fields|auto.?map/i.test(request)) {
+    if (
+      enabled.has('draft_dm_mapping_suggestion') &&
+      /mapping suggestion|field mapping|map fields|auto.?map/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dm_mapping_suggestion',
         preview: 'Draft mapping suggestion for approval',
@@ -5829,7 +6910,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dm_validation_correction') && /validation correction|fix validation|correct validation/i.test(request)) {
+    if (
+      enabled.has('draft_dm_validation_correction') &&
+      /validation correction|fix validation|correct validation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dm_validation_correction',
         preview: 'Draft validation correction for approval',
@@ -5837,7 +6921,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dm_migration_report') && /migration report|import report|export report/i.test(request)) {
+    if (
+      enabled.has('draft_dm_migration_report') &&
+      /migration report|import report|export report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dm_migration_report',
         preview: 'Draft migration report for approval',
@@ -5845,7 +6932,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_dm_cleanup_recommendation') && /cleanup recommendation|post.?migration cleanup|data cleanup/i.test(request)) {
+    if (
+      enabled.has('draft_dm_cleanup_recommendation') &&
+      /cleanup recommendation|post.?migration cleanup|data cleanup/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_dm_cleanup_recommendation',
         preview: 'Draft cleanup recommendation for approval',
@@ -5853,7 +6943,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_nc_template') && /notification template|draft template|message template/i.test(request)) {
+    if (
+      enabled.has('draft_nc_template') &&
+      /notification template|draft template|message template/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_nc_template',
         preview: 'Draft notification template for approval',
@@ -5861,7 +6954,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_nc_escalation_rule') && /escalation rule|escalation policy|escalate to/i.test(request)) {
+    if (
+      enabled.has('draft_nc_escalation_rule') &&
+      /escalation rule|escalation policy|escalate to/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_nc_escalation_rule',
         preview: 'Draft escalation rule for approval',
@@ -5869,7 +6965,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_nc_delivery_report') && /delivery report|notification report|delivery summary/i.test(request)) {
+    if (
+      enabled.has('draft_nc_delivery_report') &&
+      /delivery report|notification report|delivery summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_nc_delivery_report',
         preview: 'Draft delivery report for approval',
@@ -5877,7 +6976,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_nc_improvement_recommendation') && /improvement recommendation|notification improvement|optimize notifications/i.test(request)) {
+    if (
+      enabled.has('draft_nc_improvement_recommendation') &&
+      /improvement recommendation|notification improvement|optimize notifications/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_nc_improvement_recommendation',
         preview: 'Draft improvement recommendation for approval',
@@ -5885,7 +6987,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ph_incident_report') && /incident report|post.?incident|incident summary/i.test(request)) {
+    if (
+      enabled.has('draft_ph_incident_report') &&
+      /incident report|post.?incident|incident summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ph_incident_report',
         preview: 'Draft incident report for approval',
@@ -5893,7 +6998,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ph_optimization_recommendation') && /optimization|performance recommendation|slow api|optimize platform/i.test(request)) {
+    if (
+      enabled.has('draft_ph_optimization_recommendation') &&
+      /optimization|performance recommendation|slow api|optimize platform/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ph_optimization_recommendation',
         preview: 'Draft optimization recommendation for approval',
@@ -5901,7 +7009,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ph_capacity_forecast') && /capacity forecast|capacity planning|usage forecast/i.test(request)) {
+    if (
+      enabled.has('draft_ph_capacity_forecast') &&
+      /capacity forecast|capacity planning|usage forecast/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ph_capacity_forecast',
         preview: 'Draft capacity forecast for approval',
@@ -5909,7 +7020,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_ph_diagnostic_summary') && /diagnostic summary|diagnostics report|health check summary/i.test(request)) {
+    if (
+      enabled.has('draft_ph_diagnostic_summary') &&
+      /diagnostic summary|diagnostics report|health check summary/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_ph_diagnostic_summary',
         preview: 'Draft diagnostic summary for approval',
@@ -5917,7 +7031,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lnc_readiness_report') && /readiness report|launch readiness|go-live readiness/i.test(request)) {
+    if (
+      enabled.has('draft_lnc_readiness_report') &&
+      /readiness report|launch readiness|go-live readiness/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lnc_readiness_report',
         preview: 'Draft launch readiness report for approval',
@@ -5925,7 +7042,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lnc_deployment_plan') && /deployment plan|go-live plan|production deployment plan/i.test(request)) {
+    if (
+      enabled.has('draft_lnc_deployment_plan') &&
+      /deployment plan|go-live plan|production deployment plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lnc_deployment_plan',
         preview: 'Draft deployment plan for approval',
@@ -5933,7 +7053,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lnc_rollout_checklist') && /rollout checklist|launch checklist|go-live checklist/i.test(request)) {
+    if (
+      enabled.has('draft_lnc_rollout_checklist') &&
+      /rollout checklist|launch checklist|go-live checklist/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lnc_rollout_checklist',
         preview: 'Draft rollout checklist for approval',
@@ -5941,7 +7064,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lnc_rollback_recommendation') && /rollback recommendation|rollback plan|recovery recommendation/i.test(request)) {
+    if (
+      enabled.has('draft_lnc_rollback_recommendation') &&
+      /rollback recommendation|rollback plan|recovery recommendation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lnc_rollback_recommendation',
         preview: 'Draft rollback recommendation for approval',
@@ -5949,7 +7075,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rc_release_notes') && /release notes|changelog|what.?s new/i.test(request)) {
+    if (
+      enabled.has('draft_rc_release_notes') &&
+      /release notes|changelog|what.?s new/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rc_release_notes',
         preview: 'Draft release notes for approval',
@@ -5957,7 +7086,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rc_optimization_plan') && /optimization plan|performance plan|optimize/i.test(request)) {
+    if (
+      enabled.has('draft_rc_optimization_plan') &&
+      /optimization plan|performance plan|optimize/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rc_optimization_plan',
         preview: 'Draft optimization plan for approval',
@@ -5965,7 +7097,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rc_deployment_recommendation') && /deployment recommendation|release recommendation|go-live recommendation/i.test(request)) {
+    if (
+      enabled.has('draft_rc_deployment_recommendation') &&
+      /deployment recommendation|release recommendation|go-live recommendation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rc_deployment_recommendation',
         preview: 'Draft deployment recommendation for approval',
@@ -5973,7 +7108,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pl_deployment_plan') && /deployment plan|production deployment plan|go-live plan/i.test(request)) {
+    if (
+      enabled.has('draft_pl_deployment_plan') &&
+      /deployment plan|production deployment plan|go-live plan/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pl_deployment_plan',
         preview: 'Draft production deployment plan for approval',
@@ -5981,7 +7119,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pl_launch_report') && /launch report|production launch report|go-live report/i.test(request)) {
+    if (
+      enabled.has('draft_pl_launch_report') &&
+      /launch report|production launch report|go-live report/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pl_launch_report',
         preview: 'Draft production launch report for approval',
@@ -5989,7 +7130,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_pl_post_launch_checklist') && /post-launch checklist|post launch checklist|after launch checklist/i.test(request)) {
+    if (
+      enabled.has('draft_pl_post_launch_checklist') &&
+      /post-launch checklist|post launch checklist|after launch checklist/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_pl_post_launch_checklist',
         preview: 'Draft post-launch checklist for approval',
@@ -5997,7 +7141,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rlm_release_notes') && /release notes|v1\.0\.0 notes|version notes/i.test(request)) {
+    if (
+      enabled.has('draft_rlm_release_notes') &&
+      /release notes|v1\.0\.0 notes|version notes/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rlm_release_notes',
         preview: 'Draft TITAN v1.0.0 release notes for approval',
@@ -6005,7 +7152,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rlm_user_documentation') && /user guide|user documentation|end user documentation/i.test(request)) {
+    if (
+      enabled.has('draft_rlm_user_documentation') &&
+      /user guide|user documentation|end user documentation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rlm_user_documentation',
         preview: 'Draft user documentation for approval',
@@ -6013,7 +7163,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rlm_admin_documentation') && /administrator guide|admin documentation|administrator documentation/i.test(request)) {
+    if (
+      enabled.has('draft_rlm_admin_documentation') &&
+      /administrator guide|admin documentation|administrator documentation/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_rlm_admin_documentation',
         preview: 'Draft administrator documentation for approval',
@@ -6021,7 +7174,12 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_rlm_post_launch_recommendations') && /post-launch recommendations|post launch recommendations|after launch recommendations/i.test(request)) {
+    if (
+      enabled.has('draft_rlm_post_launch_recommendations') &&
+      /post-launch recommendations|post launch recommendations|after launch recommendations/i.test(
+        request,
+      )
+    ) {
       tasks.push({
         taskType: 'draft_rlm_post_launch_recommendations',
         preview: 'Draft post-launch recommendations for approval',
@@ -6029,7 +7187,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_call_summary') && /call summary|summarize call|summarise call/i.test(request)) {
+    if (
+      enabled.has('draft_call_summary') &&
+      /call summary|summarize call|summarise call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_call_summary',
         preview: 'Draft call summary for review',
@@ -6045,7 +7206,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_appointment_confirmation') && /appointment confirmation|confirm appointment/i.test(request)) {
+    if (
+      enabled.has('draft_appointment_confirmation') &&
+      /appointment confirmation|confirm appointment/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_appointment_confirmation',
         preview: 'Draft appointment confirmation for approval',
@@ -6053,7 +7217,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_customer_update') && /customer update|status update|update customer/i.test(request)) {
+    if (
+      enabled.has('draft_customer_update') &&
+      /customer update|status update|update customer/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_customer_update',
         preview: 'Draft customer update for approval',
@@ -6063,7 +7230,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_knowledge_article') &&
-      /knowledge article|document article|write sop|create documentation|knowledge base article|publish article/i.test(request)
+      /knowledge article|document article|write sop|create documentation|knowledge base article|publish article/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_knowledge_article',
@@ -6074,7 +7243,9 @@ export class AgentRuntimeService {
 
     if (
       enabled.has('draft_business_report') &&
-      /business report|bi report|executive report|cross-module report|analytics report|dashboard report/i.test(request)
+      /business report|bi report|executive report|cross-module report|analytics report|dashboard report/i.test(
+        request,
+      )
     ) {
       tasks.push({
         taskType: 'draft_business_report',
@@ -6083,7 +7254,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_sales_follow_up') && /follow.?up|contact customer|reach out|sales follow/i.test(request)) {
+    if (
+      enabled.has('draft_sales_follow_up') &&
+      /follow.?up|contact customer|reach out|sales follow/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_sales_follow_up',
         preview: 'Draft sales follow-up for review',
@@ -6108,7 +7282,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_marketing_campaign') && /marketing campaign|campaign idea|launch campaign/i.test(request)) {
+    if (
+      enabled.has('draft_marketing_campaign') &&
+      /marketing campaign|campaign idea|launch campaign/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_marketing_campaign',
         preview: 'Draft marketing campaign for review',
@@ -6130,7 +7307,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lead_follow_up') && /lead follow.?up|follow up lead|contact lead|lead reminder/i.test(request)) {
+    if (
+      enabled.has('draft_lead_follow_up') &&
+      /lead follow.?up|follow up lead|contact lead|lead reminder/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lead_follow_up',
         preview: 'Draft lead follow-up for review',
@@ -6155,7 +7335,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_follow_up_from_call') && /follow.?up.*call|call follow.?up|after the call|from the call/i.test(request)) {
+    if (
+      enabled.has('draft_follow_up_from_call') &&
+      /follow.?up.*call|call follow.?up|after the call|from the call/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_follow_up_from_call',
         preview: 'Draft follow-up from voice call for review',
@@ -6180,7 +7363,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_lead_from_call') && /lead.*call|new caller|new enquiry|caller.*lead/i.test(request)) {
+    if (
+      enabled.has('draft_lead_from_call') &&
+      /lead.*call|new caller|new enquiry|caller.*lead/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_lead_from_call',
         preview: 'Draft lead from voice call for review',
@@ -6205,7 +7391,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_customer_response') && /customer response|reply to customer|support response|answer customer/i.test(request)) {
+    if (
+      enabled.has('draft_customer_response') &&
+      /customer response|reply to customer|support response|answer customer/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_customer_response',
         preview: 'Draft customer support response for review',
@@ -6216,7 +7405,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_appointment_update') && /appointment update|schedule update|booking update|reschedule/i.test(request)) {
+    if (
+      enabled.has('draft_appointment_update') &&
+      /appointment update|schedule update|booking update|reschedule/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_appointment_update',
         preview: 'Draft appointment update for customer review',
@@ -6227,7 +7419,10 @@ export class AgentRuntimeService {
       });
     }
 
-    if (enabled.has('draft_invoice_explanation') && /invoice explanation|explain invoice|payment question|bill question/i.test(request)) {
+    if (
+      enabled.has('draft_invoice_explanation') &&
+      /invoice explanation|explain invoice|payment question|bill question/i.test(request)
+    ) {
       tasks.push({
         taskType: 'draft_invoice_explanation',
         preview: 'Draft invoice explanation for customer review',
@@ -6271,11 +7466,7 @@ export class AgentRuntimeService {
       case 'update_job_status': {
         const jobId = String(payload.jobId ?? '');
         const status = String(payload.status ?? '') as
-          | 'new'
-          | 'scheduled'
-          | 'in_progress'
-          | 'completed'
-          | 'cancelled';
+          'new' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
         const job = await this.deps.jobsService.updateJob(scope.companyId, jobId, { status });
         return { jobId: job.id, status: job.status };
       }
@@ -6299,15 +7490,20 @@ export class AgentRuntimeService {
         const candidates = await this.deps.recruitingService.listCandidates(scope.companyId);
         const candidateName = String(payload.candidateName ?? '').toLowerCase();
         const candidate =
-          candidates.find((entry) => entry.name.toLowerCase().includes(candidateName)) ?? candidates[0];
+          candidates.find((entry) => entry.name.toLowerCase().includes(candidateName)) ??
+          candidates[0];
 
         if (!candidate) {
           throw new AgentRuntimeError('NOT_FOUND', 'No candidate found to update');
         }
 
-        const updated = await this.deps.recruitingService.updateCandidate(scope.companyId, candidate.id, {
-          status: payload.status as 'new' | 'screening' | 'interview' | 'offered' | 'rejected',
-        });
+        const updated = await this.deps.recruitingService.updateCandidate(
+          scope.companyId,
+          candidate.id,
+          {
+            status: payload.status as 'new' | 'screening' | 'interview' | 'offered' | 'rejected',
+          },
+        );
         return { candidateId: updated.id, status: updated.status };
       }
       case 'draft_job_ad':
@@ -6560,13 +7756,20 @@ export class AgentRuntimeService {
   ): Promise<AuraGenerateContext> {
     let context = baseContext;
 
-    const load = async (permissions: string[], loader: () => Promise<Partial<AuraGenerateContext>>) => {
+    const load = async (
+      permissions: string[],
+      loader: () => Promise<Partial<AuraGenerateContext>>,
+    ) => {
       if (hasAnyPermission(userPermissions, permissions)) {
         context = { ...context, ...(await loader()) };
       }
     };
 
-    if (resolved.agentKey === 'executive' || resolved.agentKey === 'operations' || resolved.agentKey === 'finance') {
+    if (
+      resolved.agentKey === 'executive' ||
+      resolved.agentKey === 'operations' ||
+      resolved.agentKey === 'finance'
+    ) {
       await load(['customers:read', 'customers:write'], async () => ({
         crm: await this.deps.crmService.buildAuraContext(companyId, pageContext?.customerId),
       }));
@@ -6601,12 +7804,18 @@ export class AgentRuntimeService {
         fleet: await this.deps.fleetService.buildAuraContext(companyId, pageContext?.vehicleId),
       }));
       await load(['fleet_intelligence:read', 'fleet:read', 'integrations:read'], async () => ({
-        fleetIntelligence: await this.deps.fleetIntelligenceService.buildFleetIntelligenceAuraContext(companyId),
+        fleetIntelligence:
+          await this.deps.fleetIntelligenceService.buildFleetIntelligenceAuraContext(companyId),
       }));
-      await load(['personal_communications:read', 'communications_intelligence:read', 'communications:read'], async () => ({
-        personalCommunications:
-          await this.deps.personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(companyId),
-      }));
+      await load(
+        ['personal_communications:read', 'communications_intelligence:read', 'communications:read'],
+        async () => ({
+          personalCommunications:
+            await this.deps.personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(
+              companyId,
+            ),
+        }),
+      );
       await load(['security:read', 'settings:manage'], async () => ({
         security: await this.deps.enterpriseSecurityService.buildSecurityAuraContext(companyId),
       }));
@@ -6632,13 +7841,16 @@ export class AgentRuntimeService {
         procurement: await this.deps.procurementService.buildAuraContext(companyId),
       }));
       await load(['bi:read', 'bi:write', 'intelligence:read'], async () => ({
-        businessIntelligence: await this.deps.businessIntelligenceService.buildAuraContext(companyId),
+        businessIntelligence:
+          await this.deps.businessIntelligenceService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'finance') {
       await load(['analytics:read'], async () => ({
-        analytics: await this.deps.analyticsService.buildAuraContext(companyId, { period: 'monthly' }),
+        analytics: await this.deps.analyticsService.buildAuraContext(companyId, {
+          period: 'monthly',
+        }),
       }));
       await load(['procurement:read', 'procurement:write'], async () => ({
         procurement: await this.deps.procurementService.buildAuraContext(companyId),
@@ -6663,7 +7875,9 @@ export class AgentRuntimeService {
         workforce: await this.deps.workforceService.buildAuraContext(companyId),
       }));
       await load(['analytics:read'], async () => ({
-        analytics: await this.deps.analyticsService.buildAuraContext(companyId, { period: 'monthly' }),
+        analytics: await this.deps.analyticsService.buildAuraContext(companyId, {
+          period: 'monthly',
+        }),
       }));
       await load(['dispatch:read', 'dispatch:write'], async () => ({
         scheduling: await this.deps.schedulingService.buildAuraContext(companyId),
@@ -6768,7 +7982,8 @@ export class AgentRuntimeService {
 
     if (resolved.agentKey === 'business_continuity') {
       await load(['business_continuity:read', 'ops:read'], async () => ({
-        businessContinuity: await this.deps.enterpriseBusinessContinuityService.buildAuraContext(companyId),
+        businessContinuity:
+          await this.deps.enterpriseBusinessContinuityService.buildAuraContext(companyId),
       }));
       await load(['security:read'], async () => ({
         security: await this.deps.enterpriseSecurityService.buildSecurityAuraContext(companyId),
@@ -6777,19 +7992,22 @@ export class AgentRuntimeService {
 
     if (resolved.agentKey === 'search_intelligence') {
       await load(['search:read', 'intelligence:read'], async () => ({
-        searchIntelligence: await this.deps.enterpriseGlobalSearchService.buildAuraContext(companyId),
+        searchIntelligence:
+          await this.deps.enterpriseGlobalSearchService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'migration_intelligence') {
       await load(['data_migration:read', 'integrations:read'], async () => ({
-        migrationIntelligence: await this.deps.enterpriseDataMigrationService.buildAuraContext(companyId),
+        migrationIntelligence:
+          await this.deps.enterpriseDataMigrationService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'notification_intelligence') {
       await load(['notifications:read', 'integrations:read'], async () => ({
-        notificationIntelligence: await this.deps.enterpriseNotificationsService.buildAuraContext(companyId),
+        notificationIntelligence:
+          await this.deps.enterpriseNotificationsService.buildAuraContext(companyId),
       }));
     }
 
@@ -6807,19 +8025,22 @@ export class AgentRuntimeService {
 
     if (resolved.agentKey === 'release_candidate') {
       await load(['release_center:read', 'ops:read'], async () => ({
-        releaseCandidate: await this.deps.enterpriseReleaseCenterService.buildAuraContext(companyId),
+        releaseCandidate:
+          await this.deps.enterpriseReleaseCenterService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'production_launch') {
       await load(['production_launch:read', 'ops:read'], async () => ({
-        productionLaunch: await this.deps.enterpriseProductionLaunchService.buildAuraContext(companyId),
+        productionLaunch:
+          await this.deps.enterpriseProductionLaunchService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'release_manager') {
       await load(['release_manager:read', 'ops:read'], async () => ({
-        releaseManagement: await this.deps.enterpriseReleaseManagementService.buildAuraContext(companyId),
+        releaseManagement:
+          await this.deps.enterpriseReleaseManagementService.buildAuraContext(companyId),
       }));
     }
 
@@ -6837,14 +8058,17 @@ export class AgentRuntimeService {
 
     if (resolved.agentKey === 'integration') {
       await load(['integrations:read', 'integrations:manage'], async () => ({
-        integrationPlatform: await this.deps.integrationPlatformService.buildIntegrationAuraContext(companyId),
+        integrationPlatform:
+          await this.deps.integrationPlatformService.buildIntegrationAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'business_intelligence') {
       await load(['bi:read', 'analytics:read', 'intelligence:read'], async () => ({
-        enterpriseAnalytics: await this.deps.enterpriseAnalyticsService.buildAnalyticsAuraContext(companyId),
-        businessIntelligence: await this.deps.businessIntelligenceService.buildAuraContext(companyId),
+        enterpriseAnalytics:
+          await this.deps.enterpriseAnalyticsService.buildAnalyticsAuraContext(companyId),
+        businessIntelligence:
+          await this.deps.businessIntelligenceService.buildAuraContext(companyId),
       }));
     }
 
@@ -6882,7 +8106,8 @@ export class AgentRuntimeService {
 
     if (resolved.agentKey === 'evolution') {
       await load(['intelligence:read', 'executive:read', 'ai_orchestration:read'], async () => ({
-        enterpriseEvolution: await this.deps.enterpriseEvolutionService.buildEvolutionAuraContext(companyId),
+        enterpriseEvolution:
+          await this.deps.enterpriseEvolutionService.buildEvolutionAuraContext(companyId),
         executive: await this.deps.executiveService.buildAuraContext(companyId),
       }));
     }
@@ -6891,13 +8116,15 @@ export class AgentRuntimeService {
       await load(['integrations:read', 'integrations:manage'], async () => ({
         enterpriseDeveloperPlatform:
           await this.deps.enterpriseDeveloperPlatformService.buildDeveloperAuraContext(companyId),
-        integrationApiManagement: await this.deps.integrationApiManagementService.buildAuraContext(companyId),
+        integrationApiManagement:
+          await this.deps.integrationApiManagementService.buildAuraContext(companyId),
       }));
     }
 
     if (resolved.agentKey === 'saas') {
       await load(['saas:read', 'saas:manage', 'platform:read'], async () => ({
-        enterpriseSaasPlatform: await this.deps.enterpriseSaasPlatformService.buildSaasAuraContext(companyId),
+        enterpriseSaasPlatform:
+          await this.deps.enterpriseSaasPlatformService.buildSaasAuraContext(companyId),
       }));
     }
 
@@ -6906,7 +8133,8 @@ export class AgentRuntimeService {
         security: await this.deps.enterpriseSecurityService.buildSecurityAuraContext(companyId),
       }));
       await load(['integrations:read', 'integrations:manage'], async () => ({
-        integrationApiManagement: await this.deps.integrationApiManagementService.buildAuraContext(companyId),
+        integrationApiManagement:
+          await this.deps.integrationApiManagementService.buildAuraContext(companyId),
       }));
       await load(['orchestration:read'], async () => ({
         orchestration: await this.deps.orchestrationService.buildAuraContext(companyId),
@@ -6933,7 +8161,10 @@ export class AgentRuntimeService {
 
     if (resolved.enabledToolKeys.includes('send_whatsapp_draft')) {
       await load(['communications:write', 'integrations:manage'], async () => ({
-        whatsapp: await this.deps.whatsappService.buildAuraContext(companyId, pageContext?.customerId),
+        whatsapp: await this.deps.whatsappService.buildAuraContext(
+          companyId,
+          pageContext?.customerId,
+        ),
       }));
     }
 
@@ -6946,14 +8177,20 @@ export class AgentRuntimeService {
     }));
 
     await load(['analytics:read', 'analytics:write'], async () => ({
-      analytics: await this.deps.analyticsService.buildAuraContext(companyId, { period: 'monthly' }),
+      analytics: await this.deps.analyticsService.buildAuraContext(companyId, {
+        period: 'monthly',
+      }),
     }));
 
     await load(['orchestration:read', 'orchestration:write', 'agents:read'], async () => ({
       orchestration: await this.deps.orchestrationService.buildAuraContext(companyId),
     }));
 
-    if (resolved.agentKey === 'executive' || resolved.agentKey === 'finance' || resolved.agentKey === 'operations') {
+    if (
+      resolved.agentKey === 'executive' ||
+      resolved.agentKey === 'finance' ||
+      resolved.agentKey === 'operations'
+    ) {
       const recommendations = await this.deps.recommendationsService.getRecommendations(companyId);
       context = {
         ...context,
@@ -6978,7 +8215,9 @@ export class AgentRuntimeService {
     plannedTasks: PlannedTask[],
   ): string {
     const registry = getAgentRegistryEntry(resolved.agentKey);
-    const toolLines = toolResults.map((result) => `- ${result.toolKey}: ${result.summary}`).join('\n');
+    const toolLines = toolResults
+      .map((result) => `- ${result.toolKey}: ${result.summary}`)
+      .join('\n');
     const taskLines = plannedTasks.map((task) => `- ${task.taskType}: ${task.preview}`).join('\n');
 
     const agentGuidance: Record<AgentKey, string> = {
@@ -7020,8 +8259,7 @@ export class AgentRuntimeService {
         'Analyze business evolution, detect patterns, explain optimization opportunities, monitor learning quality, and draft evolution reports from real tenant learning data. Never autonomously deploy optimizations, apply learning, or modify business records without approval.',
       developer:
         'Explain APIs, generate SDK examples, draft integration guides, analyze API usage, recommend extension architecture, and generate webhook examples from real tenant developer platform data. Never autonomously publish extensions, create credentials, or modify API access without approval.',
-      saas:
-        'Explain subscription plans, analyze tenant usage, recommend upgrades, draft onboarding guides and tenant reports, and explain feature availability from real SaaS platform data. Never autonomously provision tenants, modify subscriptions, or change billing without approval.',
+      saas: 'Explain subscription plans, analyze tenant usage, recommend upgrades, draft onboarding guides and tenant reports, and explain feature availability from real SaaS platform data. Never autonomously provision tenants, modify subscriptions, or change billing without approval.',
       production_operations:
         'Monitor platform health, analyze performance, explain operational incidents, analyze AI provider resilience, identify readiness risks, and draft recovery, maintenance, and scaling plans from real production readiness data. Never autonomously restart services, restore backups, execute migrations, or modify production infrastructure without approval.',
       mobile_field:
@@ -7112,7 +8350,7 @@ export class AgentRuntimeService {
     row: typeof agentRuns.$inferSelect & {
       user?: typeof users.$inferSelect;
       agentProfile?: typeof agentProfiles.$inferSelect | null;
-      tasks?: typeof agentTasks.$inferSelect[];
+      tasks?: (typeof agentTasks.$inferSelect)[];
     },
   ): Promise<AgentRunSummary> {
     const registry = getAgentRegistryEntry(row.agentKey);
@@ -7181,7 +8419,11 @@ function detectAgentKey(request: string): AgentKey {
     return 'operations';
   }
 
-  if (/candidate|interview|hire|recruit|job ad|applicant|screening|workforce|staffing|skill gap|training plan|technician capacity|need another technician/.test(lower)) {
+  if (
+    /candidate|interview|hire|recruit|job ad|applicant|screening|workforce|staffing|skill gap|training plan|technician capacity|need another technician/.test(
+      lower,
+    )
+  ) {
     return 'recruiting';
   }
 
@@ -7193,23 +8435,43 @@ function detectAgentKey(request: string): AgentKey {
     return 'marketing';
   }
 
-  if (/lead generation|acquisition|qualify lead|lead score|lead pipeline|prospect|new lead/.test(lower)) {
+  if (
+    /lead generation|acquisition|qualify lead|lead score|lead pipeline|prospect|new lead/.test(
+      lower,
+    )
+  ) {
     return 'lead_generation';
   }
 
-  if (/voice|receptionist|phone call|caller|incoming call|call summary|call history|enquiry/.test(lower)) {
+  if (
+    /voice|receptionist|phone call|caller|incoming call|call summary|call history|enquiry/.test(
+      lower,
+    )
+  ) {
     return 'voice_receptionist';
   }
 
-  if (/customer support|support ticket|customer question|unresolved issue|help this customer|customer needs/.test(lower)) {
+  if (
+    /customer support|support ticket|customer question|unresolved issue|help this customer|customer needs/.test(
+      lower,
+    )
+  ) {
     return 'customer_support';
   }
 
-  if (/how is my business|business health|executive summary|strategic recommendation|what needs my attention|losing money|business performing/.test(lower)) {
+  if (
+    /how is my business|business health|executive summary|strategic recommendation|what needs my attention|losing money|business performing/.test(
+      lower,
+    )
+  ) {
     return 'executive';
   }
 
-  if (/procurement|purchase order|reorder|low stock|supplier|inventory risk|stock level|what should we purchase/.test(lower)) {
+  if (
+    /procurement|purchase order|reorder|low stock|supplier|inventory risk|stock level|what should we purchase/.test(
+      lower,
+    )
+  ) {
     return 'procurement';
   }
 

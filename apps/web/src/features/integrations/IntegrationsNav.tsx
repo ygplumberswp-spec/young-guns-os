@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 const providerLinks = [
   { href: '/integrations/xero', label: 'Xero' },
   { href: '/integrations/whatsapp', label: 'WhatsApp' },
-  { href: '/integrations/email', label: 'Google / Email' },
+  { href: '/integrations/email', label: 'Email (SMTP)' },
   { href: '/integrations/cartrack', label: 'Cartrack' },
   { href: '/integrations/yoco', label: 'Yoco' },
 ];

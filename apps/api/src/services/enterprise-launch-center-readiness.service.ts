@@ -72,7 +72,10 @@ export class EnterpriseLaunchCenterReadinessService {
     return rows.map(toReadinessScanSummary);
   }
 
-  async getReadinessScanDetail(companyId: string, scanId: string): Promise<LncReadinessScanDetailSummary | null> {
+  async getReadinessScanDetail(
+    companyId: string,
+    scanId: string,
+  ): Promise<LncReadinessScanDetailSummary | null> {
     const scan = await this.deps.db.query.lncReadinessScans.findFirst({
       where: and(eq(lncReadinessScans.companyId, companyId), eq(lncReadinessScans.id, scanId)),
     });
@@ -111,7 +114,8 @@ export class EnterpriseLaunchCenterReadinessService {
         if (outcome.status === 'passed') passedCount += 1;
         else if (outcome.status === 'failed') failedCount += 1;
         else if (outcome.status === 'warning') warningCount += 1;
-        if (outcome.severity === 'critical' && outcome.status !== 'passed') criticalBlockerCount += 1;
+        if (outcome.severity === 'critical' && outcome.status !== 'passed')
+          criticalBlockerCount += 1;
 
         const [result] = await this.deps.db
           .insert(lncReadinessCheckResults)
@@ -151,8 +155,20 @@ export class EnterpriseLaunchCenterReadinessService {
       }
     }
 
-    const overallStatus = resolveOverallReadinessStatus(criticalBlockerCount, failedCount, warningCount, passedCount);
-    const finalStatus: LncCheckStatus = criticalBlockerCount > 0 ? 'failed' : failedCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
+    const overallStatus = resolveOverallReadinessStatus(
+      criticalBlockerCount,
+      failedCount,
+      warningCount,
+      passedCount,
+    );
+    const finalStatus: LncCheckStatus =
+      criticalBlockerCount > 0
+        ? 'failed'
+        : failedCount > 0
+          ? 'failed'
+          : warningCount > 0
+            ? 'warning'
+            : 'passed';
 
     const [updated] = await this.deps.db
       .update(lncReadinessScans)
@@ -174,14 +190,19 @@ export class EnterpriseLaunchCenterReadinessService {
 
   private async buildReadinessChecks(scope: StaffScope): Promise<ReadinessCheck[]> {
     const companyId = scope.companyId;
-    const opsRun = await this.deps.enterpriseProductionReadinessService.runReadinessChecks(companyId);
+    const opsRun =
+      await this.deps.enterpriseProductionReadinessService.runReadinessChecks(companyId);
     const opsChecks: ReadinessCheck[] = (opsRun.checks ?? []).map((r) => ({
       checkKey: `ops_${r.checkKey}`,
       checkName: r.title,
       category: mapOpsCategory(r.category),
       run: async () => ({
         status: mapOpsStatus(r.status),
-        severity: (r.status === 'critical' ? 'critical' : r.status === 'warning' ? 'warning' : 'info') as LncIssueSeverity,
+        severity: (r.status === 'critical'
+          ? 'critical'
+          : r.status === 'warning'
+            ? 'warning'
+            : 'info') as LncIssueSeverity,
         message: r.description,
         details: {},
       }),
@@ -195,7 +216,9 @@ export class EnterpriseLaunchCenterReadinessService {
         run: async () => ({
           status: this.deps.jwtSecret ? 'passed' : 'failed',
           severity: this.deps.jwtSecret ? 'info' : 'critical',
-          message: this.deps.jwtSecret ? 'JWT authentication is configured.' : 'JWT secret is not configured.',
+          message: this.deps.jwtSecret
+            ? 'JWT authentication is configured.'
+            : 'JWT secret is not configured.',
           recommendation: this.deps.jwtSecret ? undefined : 'Configure JWT_SECRET before go-live.',
         }),
       },
@@ -217,13 +240,17 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'RBAC roles configured',
         category: 'rbac',
         run: async () => {
-          const [roleCount] = await this.deps.db.select({ value: count() }).from(roles).where(eq(roles.companyId, companyId));
+          const [roleCount] = await this.deps.db
+            .select({ value: count() })
+            .from(roles)
+            .where(eq(roles.companyId, companyId));
           const countVal = Number(roleCount?.value ?? 0);
           return {
             status: countVal >= 2 ? 'passed' : countVal === 1 ? 'warning' : 'failed',
             severity: countVal >= 2 ? 'info' : countVal === 1 ? 'warning' : 'high',
             message: `${countVal} role(s) configured for tenant.`,
-            recommendation: countVal < 2 ? 'Configure Owner, Admin, and Member roles before go-live.' : undefined,
+            recommendation:
+              countVal < 2 ? 'Configure Owner, Admin, and Member roles before go-live.' : undefined,
           };
         },
       },
@@ -232,7 +259,10 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'Tenant user accounts',
         category: 'tenant',
         run: async () => {
-          const [userCount] = await this.deps.db.select({ value: count() }).from(users).where(eq(users.companyId, companyId));
+          const [userCount] = await this.deps.db
+            .select({ value: count() })
+            .from(users)
+            .where(eq(users.companyId, companyId));
           const activeUsers = await this.deps.db.query.users.findMany({
             where: and(eq(users.companyId, companyId), eq(users.isActive, true)),
             columns: { id: true },
@@ -268,12 +298,16 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'API health',
         category: 'api',
         run: async () => {
-          const dashboard = await this.deps.enterpriseProductionReadinessService.getDashboard(companyId);
+          const dashboard =
+            await this.deps.enterpriseProductionReadinessService.getDashboard(companyId);
           const unhealthy = dashboard.systemHealth.filter((m) => m.status === 'unhealthy').length;
           return {
             status: unhealthy === 0 ? 'passed' : 'failed',
             severity: unhealthy === 0 ? 'info' : 'critical',
-            message: unhealthy === 0 ? 'All monitored API modules healthy.' : `${unhealthy} unhealthy module(s).`,
+            message:
+              unhealthy === 0
+                ? 'All monitored API modules healthy.'
+                : `${unhealthy} unhealthy module(s).`,
           };
         },
       },
@@ -300,11 +334,13 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'AI providers',
         category: 'ai',
         run: async () => {
-          const hasProviders = await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
+          const hasProviders =
+            await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
           const status = await this.deps.aiProviderResilienceService.getResilienceStatus(companyId);
           const unhealthy = status.providers.filter((p) => p.healthStatus !== 'healthy').length;
           return {
-            status: hasProviders && unhealthy === 0 ? 'passed' : hasProviders ? 'warning' : 'failed',
+            status:
+              hasProviders && unhealthy === 0 ? 'passed' : hasProviders ? 'warning' : 'failed',
             severity: !hasProviders ? 'critical' : unhealthy > 0 ? 'warning' : 'info',
             message: hasProviders
               ? `${status.providers.length} provider(s), ${unhealthy} unhealthy.`
@@ -317,7 +353,8 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'Universal Connector Platform',
         category: 'connectors',
         run: async () => {
-          const monitoring = await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
+          const monitoring =
+            await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
           return {
             status: monitoring.errorServiceCount === 0 ? 'passed' : 'failed',
             severity: monitoring.errorServiceCount === 0 ? 'info' : 'high',
@@ -334,14 +371,22 @@ export class EnterpriseLaunchCenterReadinessService {
             where: eq(integrationConnections.companyId, companyId),
           });
           const payments = connections.filter((c) =>
-            ['stripe', 'paypal', 'square', 'payment'].some((p) => c.provider?.toLowerCase().includes(p)),
+            ['stripe', 'paypal', 'square', 'payment'].some((p) =>
+              c.provider?.toLowerCase().includes(p),
+            ),
           );
           const active = payments.filter((c) => c.status === 'connected').length;
           return {
             status: active > 0 ? 'passed' : payments.length > 0 ? 'warning' : 'warning',
             severity: active > 0 ? 'info' : 'warning',
-            message: active > 0 ? `${active} active payment integration(s).` : 'No active payment integrations configured.',
-            recommendation: active === 0 ? 'Configure payment integration before accepting payments in production.' : undefined,
+            message:
+              active > 0
+                ? `${active} active payment integration(s).`
+                : 'No active payment integrations configured.',
+            recommendation:
+              active === 0
+                ? 'Configure payment integration before accepting payments in production.'
+                : undefined,
           };
         },
       },
@@ -377,11 +422,18 @@ export class EnterpriseLaunchCenterReadinessService {
           const connections = await this.deps.db.query.integrationConnections.findMany({
             where: eq(integrationConnections.companyId, companyId),
           });
-          const fleet = connections.filter((c) => c.provider?.toLowerCase().includes('fleet') || c.provider?.toLowerCase().includes('vehicle'));
+          const fleet = connections.filter(
+            (c) =>
+              c.provider?.toLowerCase().includes('fleet') ||
+              c.provider?.toLowerCase().includes('vehicle'),
+          );
           return {
             status: fleet.every((c) => c.status !== 'error') ? 'passed' : 'warning',
             severity: fleet.some((c) => c.status === 'error') ? 'warning' : 'info',
-            message: fleet.length === 0 ? 'No fleet integrations configured.' : `${fleet.length} fleet integration(s).`,
+            message:
+              fleet.length === 0
+                ? 'No fleet integrations configured.'
+                : `${fleet.length} fleet integration(s).`,
           };
         },
       },
@@ -394,7 +446,9 @@ export class EnterpriseLaunchCenterReadinessService {
             where: eq(ucProviderAdapters.companyId, companyId),
             columns: { channel: true, status: true },
           });
-          const commChannels = adapters.filter((a) => ['email', 'sms', 'whatsapp'].includes(a.channel));
+          const commChannels = adapters.filter((a) =>
+            ['email', 'sms', 'whatsapp'].includes(a.channel),
+          );
           const active = commChannels.filter((a) => a.status === 'active').length;
           return {
             status: active > 0 ? 'passed' : 'warning',
@@ -438,7 +492,9 @@ export class EnterpriseLaunchCenterReadinessService {
         run: async () => {
           const bc = await this.deps.enterpriseBusinessContinuityService.getDashboard(companyId);
           const enabled = bc.backupPolicies.filter((p) => p.isEnabled).length;
-          const recentSuccess = bc.backupJobs.some((j) => j.status === 'completed' || j.status === 'verified');
+          const recentSuccess = bc.backupJobs.some(
+            (j) => j.status === 'completed' || j.status === 'verified',
+          );
           return {
             status: enabled > 0 && recentSuccess ? 'passed' : enabled > 0 ? 'warning' : 'failed',
             severity: enabled === 0 ? 'critical' : !recentSuccess ? 'high' : 'info',
@@ -468,8 +524,18 @@ export class EnterpriseLaunchCenterReadinessService {
         run: async () => {
           const dashboard = await this.deps.enterprisePlatformHealthService.getDashboard(companyId);
           return {
-            status: dashboard.overallPlatformHealthStatus === 'critical' ? 'failed' : dashboard.overallPlatformHealthStatus === 'degraded' ? 'warning' : 'passed',
-            severity: dashboard.overallPlatformHealthStatus === 'critical' ? 'critical' : dashboard.overallPlatformHealthStatus === 'degraded' ? 'warning' : 'info',
+            status:
+              dashboard.overallPlatformHealthStatus === 'critical'
+                ? 'failed'
+                : dashboard.overallPlatformHealthStatus === 'degraded'
+                  ? 'warning'
+                  : 'passed',
+            severity:
+              dashboard.overallPlatformHealthStatus === 'critical'
+                ? 'critical'
+                : dashboard.overallPlatformHealthStatus === 'degraded'
+                  ? 'warning'
+                  : 'info',
             message: `Platform health: ${dashboard.overallPlatformHealthStatus}.`,
           };
         },
@@ -483,7 +549,12 @@ export class EnterpriseLaunchCenterReadinessService {
           const [auditCount] = await this.deps.db
             .select({ value: count() })
             .from(securityAuditLogs)
-            .where(and(eq(securityAuditLogs.companyId, companyId), gte(securityAuditLogs.occurredAt, since30d)));
+            .where(
+              and(
+                eq(securityAuditLogs.companyId, companyId),
+                gte(securityAuditLogs.occurredAt, since30d),
+              ),
+            );
           const countVal = Number(auditCount?.value ?? 0);
           return {
             status: countVal > 0 ? 'passed' : 'warning',
@@ -497,7 +568,8 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'Security readiness',
         category: 'security',
         run: async () => {
-          const security = await this.deps.enterpriseSecurityService.getExecutiveDashboard(companyId);
+          const security =
+            await this.deps.enterpriseSecurityService.getExecutiveDashboard(companyId);
           return {
             status: security.riskAlertCount === 0 ? 'passed' : 'warning',
             severity: security.riskAlertCount > 0 ? 'high' : 'info',
@@ -510,12 +582,19 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'Mobile readiness',
         category: 'mobile',
         run: async () => {
-          const saas = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
-          const mobileFlag = saas.featureFlags.some((f) => f.flagKey.toLowerCase().includes('mobile') && (f.tenantEnabled ?? f.defaultEnabled));
+          const saas =
+            await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
+          const mobileFlag = saas.featureFlags.some(
+            (f) =>
+              f.flagKey.toLowerCase().includes('mobile') && (f.tenantEnabled ?? f.defaultEnabled),
+          );
           return {
-            status: mobileFlag || saas.tenantProfile?.lifecycleStatus === 'active' ? 'passed' : 'warning',
+            status:
+              mobileFlag || saas.tenantProfile?.lifecycleStatus === 'active' ? 'passed' : 'warning',
             severity: mobileFlag ? 'info' : 'warning',
-            message: mobileFlag ? 'Mobile feature flag enabled.' : 'Mobile readiness not fully configured.',
+            message: mobileFlag
+              ? 'Mobile feature flag enabled.'
+              : 'Mobile readiness not fully configured.',
           };
         },
       },
@@ -524,12 +603,16 @@ export class EnterpriseLaunchCenterReadinessService {
         checkName: 'SaaS readiness',
         category: 'saas',
         run: async () => {
-          const saas = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
+          const saas =
+            await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
           const subscription = saas.subscription;
           return {
-            status: subscription?.status === 'active' ? 'passed' : subscription ? 'warning' : 'warning',
+            status:
+              subscription?.status === 'active' ? 'passed' : subscription ? 'warning' : 'warning',
             severity: subscription?.status === 'active' ? 'info' : 'warning',
-            message: subscription ? `Subscription: ${subscription.status}.` : 'No subscription configured.',
+            message: subscription
+              ? `Subscription: ${subscription.status}.`
+              : 'No subscription configured.',
           };
         },
       },
@@ -571,7 +654,9 @@ function resolveOverallReadinessStatus(
   return 'unknown';
 }
 
-function toReadinessScanSummary(row: typeof lncReadinessScans.$inferSelect): LncReadinessScanSummary {
+function toReadinessScanSummary(
+  row: typeof lncReadinessScans.$inferSelect,
+): LncReadinessScanSummary {
   return {
     id: row.id,
     scanKey: row.scanKey,
@@ -588,7 +673,9 @@ function toReadinessScanSummary(row: typeof lncReadinessScans.$inferSelect): Lnc
   };
 }
 
-function toCheckResultSummary(row: typeof lncReadinessCheckResults.$inferSelect): LncReadinessCheckResultSummary {
+function toCheckResultSummary(
+  row: typeof lncReadinessCheckResults.$inferSelect,
+): LncReadinessCheckResultSummary {
   return {
     id: row.id,
     readinessScanId: row.readinessScanId,

@@ -9,16 +9,22 @@ import type {
 export { ApiClientError as EnterpriseMobileApiClientError };
 
 export async function fetchMobilePlatformDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseMobilePlatformDashboard }>('/enterprise-mobile/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseMobilePlatformDashboard }>(
+    '/enterprise-mobile/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
 export async function fetchMobileDispatcherWorkspace(accessToken: string) {
-  const data = await request<{ workspace: MobileDispatcherWorkspace }>('/enterprise-mobile/dispatcher', {
-    accessToken,
-  });
+  const data = await request<{ workspace: MobileDispatcherWorkspace }>(
+    '/enterprise-mobile/dispatcher',
+    {
+      accessToken,
+    },
+  );
   return data.workspace;
 }
 
@@ -43,14 +49,20 @@ export async function processMobileSync(accessToken: string, deviceId?: string) 
 }
 
 export async function captureMobileFieldIntelligence(accessToken: string) {
-  const data = await request<{ snapshot: unknown }>('/enterprise-mobile/field-intelligence/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ snapshot: unknown }>(
+    '/enterprise-mobile/field-intelligence/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.snapshot;
 }
 
-export async function updateMobilePlatformConfig(accessToken: string, body: UpdateMobilePlatformConfigRequest) {
+export async function updateMobilePlatformConfig(
+  accessToken: string,
+  body: UpdateMobilePlatformConfigRequest,
+) {
   const data = await request<{ config: MobilePlatformConfigSummary }>('/enterprise-mobile/config', {
     method: 'PATCH',
     accessToken,

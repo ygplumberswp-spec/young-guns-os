@@ -18,18 +18,24 @@ export async function fetchAssetLifecycleDashboard(accessToken: string) {
 }
 
 export async function captureAssetAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-asset-lifecycle/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-asset-lifecycle/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
 export async function generateMaintenanceDue(accessToken: string) {
-  const data = await request<{ dueRecords: unknown[] }>('/enterprise-asset-lifecycle/maintenance/generate-due', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ dueRecords: unknown[] }>(
+    '/enterprise-asset-lifecycle/maintenance/generate-due',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.dueRecords;
 }
 
@@ -68,7 +74,11 @@ export async function acknowledgeAssetAlert(accessToken: string, alertId: string
   return data.alert;
 }
 
-export async function resolveAssetAlert(accessToken: string, alertId: string, resolutionNotes?: string) {
+export async function resolveAssetAlert(
+  accessToken: string,
+  alertId: string,
+  resolutionNotes?: string,
+) {
   const data = await request<{ alert: AlAssetAlertSummary }>(
     `/enterprise-asset-lifecycle/alerts/${alertId}/resolve`,
     { method: 'POST', accessToken, body: { resolutionNotes } },
@@ -76,11 +86,17 @@ export async function resolveAssetAlert(accessToken: string, alertId: string, re
   return data.alert;
 }
 
-export async function updateAssetLifecyclePlatformConfig(accessToken: string, body: UpdateAlPlatformConfigRequest) {
-  const data = await request<{ platformConfig: unknown }>('/enterprise-asset-lifecycle/platform-config', {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+export async function updateAssetLifecyclePlatformConfig(
+  accessToken: string,
+  body: UpdateAlPlatformConfigRequest,
+) {
+  const data = await request<{ platformConfig: unknown }>(
+    '/enterprise-asset-lifecycle/platform-config',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.platformConfig;
 }

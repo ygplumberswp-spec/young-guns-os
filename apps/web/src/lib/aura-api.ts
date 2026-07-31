@@ -40,7 +40,12 @@ export async function sendAuraMessage(
   accessToken: string,
   conversationId: string,
   content: string,
-  pageContext?: { customerId?: string; jobId?: string; vehicleId?: string; schedulingView?: boolean },
+  pageContext?: {
+    customerId?: string;
+    jobId?: string;
+    vehicleId?: string;
+    schedulingView?: boolean;
+  },
   options?: { signal?: AbortSignal; timeoutMs?: number },
 ): Promise<SendAuraMessageResponse> {
   return request<SendAuraMessageResponse>(`/aura/conversations/${conversationId}/messages`, {

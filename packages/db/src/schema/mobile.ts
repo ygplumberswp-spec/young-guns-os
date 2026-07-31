@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { portalUsers } from './portal-users';
 import { users } from './users';
@@ -30,7 +39,10 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'security_alert',
 ]);
 
-export const notificationRecipientTypeEnum = pgEnum('notification_recipient_type', ['staff', 'portal']);
+export const notificationRecipientTypeEnum = pgEnum('notification_recipient_type', [
+  'staff',
+  'portal',
+]);
 
 export const mobileSyncScopeEnum = pgEnum('mobile_sync_scope', ['owner', 'technician', 'customer']);
 
@@ -101,6 +113,7 @@ export const mobileSyncQueue = pgTable('mobile_sync_queue', {
   retryCount: integer('retry_count').notNull().default(0),
   errorMessage: text('error_message'),
   clientVersion: text('client_version'),
+  clientActionId: text('client_action_id'),
   queuedAt: timestamp('queued_at', { withTimezone: true }).notNull().defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
 });
@@ -119,6 +132,7 @@ export const mobilePendingActions = pgTable('mobile_pending_actions', {
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
   status: mobileQueueStatusEnum('status').notNull().default('pending'),
   errorMessage: text('error_message'),
+  clientActionId: text('client_action_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   processedAt: timestamp('processed_at', { withTimezone: true }),
 });

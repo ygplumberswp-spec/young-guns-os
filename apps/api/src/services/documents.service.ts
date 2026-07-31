@@ -9,13 +9,7 @@ import type {
   UpdateDocumentRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import {
-  customers,
-  documentCategories,
-  documents,
-  jobs,
-  users,
-} from '@titan/db';
+import { customers, documentCategories, documents, jobs, users } from '@titan/db';
 
 export class DocumentsError extends Error {
   constructor(
@@ -138,10 +132,7 @@ export class DocumentsService {
     return row ? toDocumentSummary(row) : null;
   }
 
-  async createDocument(
-    scope: TenantScope,
-    input: CreateDocumentRequest,
-  ): Promise<DocumentDetail> {
+  async createDocument(scope: TenantScope, input: CreateDocumentRequest): Promise<DocumentDetail> {
     const title = input.title.trim();
     const fileName = input.fileName.trim();
 
@@ -204,8 +195,7 @@ export class DocumentsService {
       throw new DocumentsError('DOCUMENT_NOT_FOUND', 'Document not found');
     }
 
-    const nextCustomerId =
-      input.customerId !== undefined ? input.customerId : existing.customerId;
+    const nextCustomerId = input.customerId !== undefined ? input.customerId : existing.customerId;
     const nextJobId = input.jobId !== undefined ? input.jobId : existing.jobId;
 
     await this.validateDocumentLinks(companyId, nextCustomerId, nextJobId);

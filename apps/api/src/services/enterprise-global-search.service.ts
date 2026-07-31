@@ -86,7 +86,11 @@ type GlobalSearchDeps = {
   enterpriseMissionControlService: EnterpriseMissionControlService;
 };
 
-function scoreMatch(query: string, mode: GsSearchMode, ...fields: Array<string | null | undefined>): number {
+function scoreMatch(
+  query: string,
+  mode: GsSearchMode,
+  ...fields: Array<string | null | undefined>
+): number {
   const q = query.toLowerCase().trim();
   if (!q) return 0;
   const haystack = fields.filter(Boolean).join(' ').toLowerCase();
@@ -134,9 +138,16 @@ export class EnterpriseGlobalSearchService {
       this.listSearchAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
-    const searchHealth = this.buildSearchHealth(indexStats, timelinePreview.length, activityFeedPreview.length, relationshipPreview.length);
+    const searchHealth = this.buildSearchHealth(
+      indexStats,
+      timelinePreview.length,
+      activityFeedPreview.length,
+      relationshipPreview.length,
+    );
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
     const overallSearchHealthStatus =
       criticalAlertCount > 0 || searchHealth.failedIndexCount > 10
@@ -196,7 +207,14 @@ export class EnterpriseGlobalSearchService {
     if (canAccess(userPermissions, 'customers:read')) {
       const customers = await this.deps.crmService.listCustomers(scope.companyId);
       for (const customer of customers) {
-        const score = scoreMatch(query, mode, customer.name, customer.email, customer.phone, customer.status);
+        const score = scoreMatch(
+          query,
+          mode,
+          customer.name,
+          customer.email,
+          customer.phone,
+          customer.status,
+        );
         addResult(
           {
             entityType: 'customer',
@@ -261,7 +279,14 @@ export class EnterpriseGlobalSearchService {
       ]);
 
       for (const quote of quotes) {
-        const score = scoreMatch(query, mode, quote.quoteNumber, quote.title, quote.customerName, quote.status);
+        const score = scoreMatch(
+          query,
+          mode,
+          quote.quoteNumber,
+          quote.title,
+          quote.customerName,
+          quote.status,
+        );
         addResult(
           {
             entityType: 'quote',
@@ -278,7 +303,14 @@ export class EnterpriseGlobalSearchService {
       }
 
       for (const invoice of invoices) {
-        const score = scoreMatch(query, mode, invoice.invoiceNumber, invoice.title, invoice.customerName, invoice.status);
+        const score = scoreMatch(
+          query,
+          mode,
+          invoice.invoiceNumber,
+          invoice.title,
+          invoice.customerName,
+          invoice.status,
+        );
         addResult(
           {
             entityType: 'invoice',
@@ -335,7 +367,14 @@ export class EnterpriseGlobalSearchService {
     if (canAccess(userPermissions, 'fleet:read')) {
       const vehicles = await this.deps.fleetService.listVehicles(scope.companyId);
       for (const vehicle of vehicles) {
-        const score = scoreMatch(query, mode, vehicle.name, vehicle.licensePlate, vehicle.make, vehicle.model);
+        const score = scoreMatch(
+          query,
+          mode,
+          vehicle.name,
+          vehicle.licensePlate,
+          vehicle.make,
+          vehicle.model,
+        );
         addResult(
           {
             entityType: 'vehicle',
@@ -375,7 +414,15 @@ export class EnterpriseGlobalSearchService {
     if (canAccess(userPermissions, 'documents:read')) {
       const documents = await this.deps.documentsService.listDocuments(scope.companyId);
       for (const doc of documents) {
-        const score = scoreMatch(query, mode, doc.title, doc.fileName, doc.categoryName, doc.customerName, doc.jobTitle);
+        const score = scoreMatch(
+          query,
+          mode,
+          doc.title,
+          doc.fileName,
+          doc.categoryName,
+          doc.customerName,
+          doc.jobTitle,
+        );
         addResult(
           {
             entityType: 'document',
@@ -392,10 +439,13 @@ export class EnterpriseGlobalSearchService {
       }
 
       if (canAccess(userPermissions, 'document_ai:read')) {
-        const ocrResults = await this.deps.enterpriseDocumentAiService.searchDocuments(scope.companyId, {
-          query,
-          limit,
-        });
+        const ocrResults = await this.deps.enterpriseDocumentAiService.searchDocuments(
+          scope.companyId,
+          {
+            query,
+            limit,
+          },
+        );
         for (const ocr of ocrResults) {
           addResult(
             {
@@ -444,7 +494,14 @@ export class EnterpriseGlobalSearchService {
     for (const row of indexRows) {
       const required = (row.requiredPermissions as string[]) ?? [];
       const tagFields = Array.isArray(row.tags) ? row.tags.map(String) : [];
-      const score = scoreMatch(query, mode, row.title, row.summary, row.searchableText, ...tagFields);
+      const score = scoreMatch(
+        query,
+        mode,
+        row.title,
+        row.summary,
+        row.searchableText,
+        ...tagFields,
+      );
       addResult(
         {
           entityType: row.entityType as GsEntityType,
@@ -469,12 +526,19 @@ export class EnterpriseGlobalSearchService {
       searchMode: mode,
       resultCount: sorted.length,
     });
-    await this.logAudit(scope, 'global_search', 'search', undefined, { query, resultCount: sorted.length, mode });
+    await this.logAudit(scope, 'global_search', 'search', undefined, {
+      query,
+      resultCount: sorted.length,
+      mode,
+    });
 
     return sorted;
   }
 
-  async getTimeline(scope: StaffScope, input: GsTimelineQueryRequest): Promise<GsTimelineEntrySummary[]> {
+  async getTimeline(
+    scope: StaffScope,
+    input: GsTimelineQueryRequest,
+  ): Promise<GsTimelineEntrySummary[]> {
     const limit = Math.min(input.limit ?? 100, 200);
     const entries: GsTimelineEntrySummary[] = [];
 
@@ -507,7 +571,9 @@ export class EnterpriseGlobalSearchService {
         }
       }
 
-      const jobs = (await this.deps.jobsService.listJobs(scope.companyId)).filter((j) => j.customerId === input.entityId);
+      const jobs = (await this.deps.jobsService.listJobs(scope.companyId)).filter(
+        (j) => j.customerId === input.entityId,
+      );
       for (const job of jobs) {
         entries.push({
           id: job.id,
@@ -523,7 +589,10 @@ export class EnterpriseGlobalSearchService {
       }
 
       const ucTimeline = await this.deps.db.query.ucTimelineIndex.findMany({
-        where: and(eq(ucTimelineIndex.companyId, scope.companyId), eq(ucTimelineIndex.customerId, input.entityId)),
+        where: and(
+          eq(ucTimelineIndex.companyId, scope.companyId),
+          eq(ucTimelineIndex.customerId, input.entityId),
+        ),
         orderBy: [desc(ucTimelineIndex.occurredAt)],
         limit: 50,
       });
@@ -547,7 +616,10 @@ export class EnterpriseGlobalSearchService {
       .slice(0, limit);
   }
 
-  async getRelationships(scope: StaffScope, input: GsRelationshipQueryRequest): Promise<GsRelationshipLinkSummary[]> {
+  async getRelationships(
+    scope: StaffScope,
+    input: GsRelationshipQueryRequest,
+  ): Promise<GsRelationshipLinkSummary[]> {
     const limit = Math.min(input.limit ?? 50, 100);
     const links: GsRelationshipLinkSummary[] = [];
 
@@ -563,7 +635,9 @@ export class EnterpriseGlobalSearchService {
     links.push(...stored.map(toRelationshipLinkSummary));
 
     if (input.entityType === 'customer') {
-      const jobs = (await this.deps.jobsService.listJobs(scope.companyId)).filter((j) => j.customerId === input.entityId);
+      const jobs = (await this.deps.jobsService.listJobs(scope.companyId)).filter(
+        (j) => j.customerId === input.entityId,
+      );
       for (const job of jobs) {
         links.push({
           id: job.id,
@@ -629,7 +703,10 @@ export class EnterpriseGlobalSearchService {
     return links.slice(0, limit);
   }
 
-  async getActivityFeed(scope: StaffScope, input: GsActivityFeedQueryRequest): Promise<GsActivityFeedItemSummary[]> {
+  async getActivityFeed(
+    scope: StaffScope,
+    input: GsActivityFeedQueryRequest,
+  ): Promise<GsActivityFeedItemSummary[]> {
     const limit = Math.min(input.limit ?? 50, 100);
     const conditions = [eq(gsActivityFeedItems.companyId, scope.companyId)];
 
@@ -659,7 +736,10 @@ export class EnterpriseGlobalSearchService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateGsPlatformConfigRequest): Promise<GsPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateGsPlatformConfigRequest,
+  ): Promise<GsPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(gsPlatformConfig)
@@ -683,10 +763,15 @@ export class EnterpriseGlobalSearchService {
       orderBy: [desc(gsSavedSearches.createdAt)],
       limit: 50,
     });
-    return rows.filter((r) => !userId || r.userId === userId || r.userId === null).map(toSavedSearchSummary);
+    return rows
+      .filter((r) => !userId || r.userId === userId || r.userId === null)
+      .map(toSavedSearchSummary);
   }
 
-  async createSavedSearch(scope: StaffScope, input: CreateGsSavedSearchRequest): Promise<GsSavedSearchSummary> {
+  async createSavedSearch(
+    scope: StaffScope,
+    input: CreateGsSavedSearchRequest,
+  ): Promise<GsSavedSearchSummary> {
     const [created] = await this.deps.db
       .insert(gsSavedSearches)
       .values({
@@ -699,7 +784,8 @@ export class EnterpriseGlobalSearchService {
         entityTypes: input.entityTypes ?? [],
       })
       .returning();
-    if (!created) throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create saved search');
+    if (!created)
+      throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create saved search');
     await this.logAudit(scope, 'create_saved_search', 'gs_saved_searches', created.id);
     return toSavedSearchSummary(created);
   }
@@ -736,14 +822,21 @@ export class EnterpriseGlobalSearchService {
         metadata: input.metadata ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create search suggestion');
+    if (!created)
+      throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create search suggestion');
     return toSearchSuggestionSummary(created);
   }
 
-  async listSearchAlerts(companyId: string, filters?: { status?: string }): Promise<GsSearchAlertSummary[]> {
+  async listSearchAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<GsSearchAlertSummary[]> {
     const rows = await this.deps.db.query.gsSearchAlerts.findMany({
       where: filters?.status
-        ? and(eq(gsSearchAlerts.companyId, companyId), eq(gsSearchAlerts.status, filters.status as never))
+        ? and(
+            eq(gsSearchAlerts.companyId, companyId),
+            eq(gsSearchAlerts.status, filters.status as never),
+          )
         : eq(gsSearchAlerts.companyId, companyId),
       orderBy: [desc(gsSearchAlerts.createdAt)],
       limit: 100,
@@ -790,17 +883,25 @@ export class EnterpriseGlobalSearchService {
       failedIndexCount: stats.failed,
       recentSearchCount: recent.length,
     };
-    const [created] = await this.deps.db.insert(gsAnalyticsSnapshots).values({ companyId: scope.companyId, metrics }).returning();
+    const [created] = await this.deps.db
+      .insert(gsAnalyticsSnapshots)
+      .values({ companyId: scope.companyId, metrics })
+      .returning();
     await this.logAudit(scope, 'capture_analytics', 'gs_analytics_snapshots', created?.id);
     return toAnalyticsSummary(created!);
   }
 
-  async listActivityFeedConfigs(companyId: string, userId?: string): Promise<GsActivityFeedConfigSummary[]> {
+  async listActivityFeedConfigs(
+    companyId: string,
+    userId?: string,
+  ): Promise<GsActivityFeedConfigSummary[]> {
     const rows = await this.deps.db.query.gsActivityFeedConfigs.findMany({
       where: eq(gsActivityFeedConfigs.companyId, companyId),
       orderBy: [desc(gsActivityFeedConfigs.createdAt)],
     });
-    return rows.filter((r) => !userId || r.userId === userId || r.userId === null).map(toActivityFeedConfigSummary);
+    return rows
+      .filter((r) => !userId || r.userId === userId || r.userId === null)
+      .map(toActivityFeedConfigSummary);
   }
 
   async createActivityFeedConfig(
@@ -818,7 +919,8 @@ export class EnterpriseGlobalSearchService {
         enabled: input.enabled ?? true,
       })
       .returning();
-    if (!created) throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create feed config');
+    if (!created)
+      throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create feed config');
     await this.logAudit(scope, 'create_feed_config', 'gs_activity_feed_configs', created.id);
     return toActivityFeedConfigSummary(created);
   }
@@ -832,7 +934,10 @@ export class EnterpriseGlobalSearchService {
     return rows.map(toActionDraftSummary);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateGsActionDraftRequest): Promise<GsActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateGsActionDraftRequest,
+  ): Promise<GsActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(gsActionDrafts)
       .values({
@@ -844,7 +949,8 @@ export class EnterpriseGlobalSearchService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseGlobalSearchError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'gs_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -868,12 +974,16 @@ export class EnterpriseGlobalSearchService {
         sourceEntityId: customer.id,
         title: customer.name,
         summary: customer.email,
-        searchableText: [customer.name, customer.email, customer.phone, customer.status].filter(Boolean).join(' '),
+        searchableText: [customer.name, customer.email, customer.phone, customer.status]
+          .filter(Boolean)
+          .join(' '),
         requiredPermissions: ['customers:read'],
       });
       count++;
     }
-    await this.logAudit(scope, 'refresh_search_index', 'gs_search_index_entries', undefined, { indexedCount: count });
+    await this.logAudit(scope, 'refresh_search_index', 'gs_search_index_entries', undefined, {
+      indexedCount: count,
+    });
     return { indexedCount: count };
   }
 
@@ -886,7 +996,10 @@ export class EnterpriseGlobalSearchService {
     return rows.map(toTimelineEntrySummary);
   }
 
-  private async listActivityFeedItems(companyId: string, opts: { feedScope?: string; limit?: number }) {
+  private async listActivityFeedItems(
+    companyId: string,
+    opts: { feedScope?: string; limit?: number },
+  ) {
     const rows = await this.deps.db.query.gsActivityFeedItems.findMany({
       where: eq(gsActivityFeedItems.companyId, companyId),
       orderBy: [desc(gsActivityFeedItems.occurredAt)],
@@ -984,7 +1097,12 @@ export class EnterpriseGlobalSearchService {
 
   private async upsertSearchAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description?: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description?: string;
+    },
   ): Promise<GsSearchAlertSummary> {
     const existing = await this.deps.db.query.gsSearchAlerts.findFirst({
       where: and(
@@ -1061,7 +1179,9 @@ function mapUcTimelineEvent(entryType: string): GsTimelineEventType {
   return 'communication';
 }
 
-function toPlatformConfigSummary(row: typeof gsPlatformConfig.$inferSelect): GsPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof gsPlatformConfig.$inferSelect,
+): GsPlatformConfigSummary {
   return {
     searchPolicy: row.searchPolicy,
     timelinePolicy: row.timelinePolicy,
@@ -1093,7 +1213,9 @@ function toRecentSearchSummary(row: typeof gsRecentSearches.$inferSelect): GsRec
   };
 }
 
-function toSearchSuggestionSummary(row: typeof gsSearchSuggestions.$inferSelect): GsSearchSuggestionSummary {
+function toSearchSuggestionSummary(
+  row: typeof gsSearchSuggestions.$inferSelect,
+): GsSearchSuggestionSummary {
   return {
     id: row.id,
     suggestionText: row.suggestionText,
@@ -1103,7 +1225,9 @@ function toSearchSuggestionSummary(row: typeof gsSearchSuggestions.$inferSelect)
   };
 }
 
-function toTimelineEntrySummary(row: typeof gsTimelineEntries.$inferSelect): GsTimelineEntrySummary {
+function toTimelineEntrySummary(
+  row: typeof gsTimelineEntries.$inferSelect,
+): GsTimelineEntrySummary {
   return {
     id: row.id,
     entityType: row.entityType,
@@ -1117,7 +1241,9 @@ function toTimelineEntrySummary(row: typeof gsTimelineEntries.$inferSelect): GsT
   };
 }
 
-function toRelationshipLinkSummary(row: typeof gsRelationshipLinks.$inferSelect): GsRelationshipLinkSummary {
+function toRelationshipLinkSummary(
+  row: typeof gsRelationshipLinks.$inferSelect,
+): GsRelationshipLinkSummary {
   return {
     id: row.id,
     fromEntityType: row.fromEntityType,
@@ -1130,7 +1256,9 @@ function toRelationshipLinkSummary(row: typeof gsRelationshipLinks.$inferSelect)
   };
 }
 
-function toActivityFeedItemSummary(row: typeof gsActivityFeedItems.$inferSelect): GsActivityFeedItemSummary {
+function toActivityFeedItemSummary(
+  row: typeof gsActivityFeedItems.$inferSelect,
+): GsActivityFeedItemSummary {
   return {
     id: row.id,
     feedScope: row.feedScope,
@@ -1144,7 +1272,9 @@ function toActivityFeedItemSummary(row: typeof gsActivityFeedItems.$inferSelect)
   };
 }
 
-function toActivityFeedConfigSummary(row: typeof gsActivityFeedConfigs.$inferSelect): GsActivityFeedConfigSummary {
+function toActivityFeedConfigSummary(
+  row: typeof gsActivityFeedConfigs.$inferSelect,
+): GsActivityFeedConfigSummary {
   return {
     id: row.id,
     feedScope: row.feedScope,

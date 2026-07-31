@@ -144,7 +144,13 @@ const timesheetSchema = z.object({
 });
 
 const correctionSchema = z.object({
-  fieldName: z.enum(['standardHours', 'overtimeHours', 'travelHours', 'standbyHours', 'breakHours']),
+  fieldName: z.enum([
+    'standardHours',
+    'overtimeHours',
+    'travelHours',
+    'standbyHours',
+    'breakHours',
+  ]),
   correctedValue: z.string().trim().min(1),
   reason: z.string().trim().min(1).max(2000),
 });
@@ -218,7 +224,11 @@ function getRouteParam(value: string | string[]): string {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseWorkforceIntelligenceError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -227,7 +237,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -247,7 +260,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/dashboard', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const dashboard = await deps.enterpriseWorkforceIntelligenceService.getDashboard(auth.companyId);
+      const dashboard = await deps.enterpriseWorkforceIntelligenceService.getDashboard(
+        auth.companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -277,7 +292,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/skills-matrix', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const matrix = await deps.enterpriseWorkforceIntelligenceService.getSkillsMatrix(auth.companyId);
+      const matrix = await deps.enterpriseWorkforceIntelligenceService.getSkillsMatrix(
+        auth.companyId,
+      );
       res.json({ data: { matrix } });
     } catch (error) {
       handleError(error, res);
@@ -287,7 +304,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/capacity', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const capacity = await deps.enterpriseWorkforceIntelligenceService.getCapacitySummary(auth.companyId);
+      const capacity = await deps.enterpriseWorkforceIntelligenceService.getCapacitySummary(
+        auth.companyId,
+      );
       res.json({ data: { capacity } });
     } catch (error) {
       handleError(error, res);
@@ -297,7 +316,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseWorkforceIntelligenceService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseWorkforceIntelligenceService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -307,7 +328,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
@@ -325,7 +348,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/categories', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const categories = await deps.enterpriseWorkforceIntelligenceService.listCategories(auth.companyId);
+      const categories = await deps.enterpriseWorkforceIntelligenceService.listCategories(
+        auth.companyId,
+      );
       res.json({ data: { categories } });
     } catch (error) {
       handleError(error, res);
@@ -340,7 +365,10 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     }
     try {
       const auth = getAuth(req);
-      const category = await deps.enterpriseWorkforceIntelligenceService.createCategory(auth, parsed.data);
+      const category = await deps.enterpriseWorkforceIntelligenceService.createCategory(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { category } });
     } catch (error) {
       handleError(error, res);
@@ -350,7 +378,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/profiles', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const profiles = await deps.enterpriseWorkforceIntelligenceService.listProfiles(auth.companyId);
+      const profiles = await deps.enterpriseWorkforceIntelligenceService.listProfiles(
+        auth.companyId,
+      );
       res.json({ data: { profiles } });
     } catch (error) {
       handleError(error, res);
@@ -365,7 +395,10 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     }
     try {
       const auth = getAuth(req);
-      const profile = await deps.enterpriseWorkforceIntelligenceService.createProfile(auth, parsed.data);
+      const profile = await deps.enterpriseWorkforceIntelligenceService.createProfile(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { profile } });
     } catch (error) {
       handleError(error, res);
@@ -375,7 +408,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseWorkforceIntelligenceService.listProviders(auth.companyId);
+      const providers = await deps.enterpriseWorkforceIntelligenceService.listProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -385,12 +420,17 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.post('/providers', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = providerSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider adapter' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider adapter' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const provider = await deps.enterpriseWorkforceIntelligenceService.createProvider(auth, parsed.data);
+      const provider = await deps.enterpriseWorkforceIntelligenceService.createProvider(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
@@ -413,12 +453,17 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.post('/lifecycle', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = lifecycleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lifecycle stage' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lifecycle stage' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const stage = await deps.enterpriseWorkforceIntelligenceService.createLifecycleStage(auth, parsed.data);
+      const stage = await deps.enterpriseWorkforceIntelligenceService.createLifecycleStage(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { stage } });
     } catch (error) {
       handleError(error, res);
@@ -444,10 +489,13 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
       const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
-      const timesheets = await deps.enterpriseWorkforceIntelligenceService.listTimesheets(auth.companyId, {
-        status,
-        userId,
-      });
+      const timesheets = await deps.enterpriseWorkforceIntelligenceService.listTimesheets(
+        auth.companyId,
+        {
+          status,
+          userId,
+        },
+      );
       res.json({ data: { timesheets } });
     } catch (error) {
       handleError(error, res);
@@ -462,49 +510,66 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     }
     try {
       const auth = getAuth(req);
-      const timesheet = await deps.enterpriseWorkforceIntelligenceService.createTimesheet(auth, parsed.data);
+      const timesheet = await deps.enterpriseWorkforceIntelligenceService.createTimesheet(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { timesheet } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/timesheets/:timesheetId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const timesheet = await deps.enterpriseWorkforceIntelligenceService.approveTimesheet(
-        auth,
-        getRouteParam(req.params.timesheetId),
-      );
-      res.json({ data: { timesheet } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/timesheets/:timesheetId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const timesheet = await deps.enterpriseWorkforceIntelligenceService.approveTimesheet(
+          auth,
+          getRouteParam(req.params.timesheetId),
+        );
+        res.json({ data: { timesheet } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/timesheets/:timesheetId/correct', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = correctionSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid correction' } });
-      return;
-    }
-    try {
-      const auth = getAuth(req);
-      const result = await deps.enterpriseWorkforceIntelligenceService.correctTimesheet(
-        auth,
-        getRouteParam(req.params.timesheetId),
-        parsed.data,
-      );
-      res.json({ data: result });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/timesheets/:timesheetId/correct',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      const parsed = correctionSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid correction' } });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const result = await deps.enterpriseWorkforceIntelligenceService.correctTimesheet(
+          auth,
+          getRouteParam(req.params.timesheetId),
+          parsed.data,
+        );
+        res.json({ data: result });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/leave/categories', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const categories = await deps.enterpriseWorkforceIntelligenceService.listLeaveCategories(auth.companyId);
+      const categories = await deps.enterpriseWorkforceIntelligenceService.listLeaveCategories(
+        auth.companyId,
+      );
       res.json({ data: { categories } });
     } catch (error) {
       handleError(error, res);
@@ -514,12 +579,17 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.post('/leave/categories', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = leaveCategorySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid leave category' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid leave category' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const category = await deps.enterpriseWorkforceIntelligenceService.createLeaveCategory(auth, parsed.data);
+      const category = await deps.enterpriseWorkforceIntelligenceService.createLeaveCategory(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { category } });
     } catch (error) {
       handleError(error, res);
@@ -544,7 +614,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.post('/leave/applications', requireStaffAuth, requireRead, async (req, res) => {
     const parsed = leaveApplicationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid leave application' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid leave application' } });
       return;
     }
     try {
@@ -559,66 +631,86 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     }
   });
 
-  router.post('/leave/applications/:applicationId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const application = await deps.enterpriseWorkforceIntelligenceService.approveLeaveApplication(
-        auth,
-        getRouteParam(req.params.applicationId),
-      );
-      res.json({ data: { application } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/leave/applications/:applicationId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const application =
+          await deps.enterpriseWorkforceIntelligenceService.approveLeaveApplication(
+            auth,
+            getRouteParam(req.params.applicationId),
+          );
+        res.json({ data: { application } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/payroll/periods', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = payrollPeriodSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid payroll period' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid payroll period' } });
       return;
     }
     try {
       const auth = getAuth(req);
-      const period = await deps.enterpriseWorkforceIntelligenceService.createPayrollPeriod(auth, parsed.data);
+      const period = await deps.enterpriseWorkforceIntelligenceService.createPayrollPeriod(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { period } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/payroll/periods/:periodId/prepare', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const batch = await deps.enterpriseWorkforceIntelligenceService.preparePayroll(
-        auth,
-        getRouteParam(req.params.periodId),
-      );
-      res.status(201).json({ data: { batch } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/payroll/periods/:periodId/prepare',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const batch = await deps.enterpriseWorkforceIntelligenceService.preparePayroll(
+          auth,
+          getRouteParam(req.params.periodId),
+        );
+        res.status(201).json({ data: { batch } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/payroll/batches/:batchId/approve', requireStaffAuth, requireManage, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const batch = await deps.enterpriseWorkforceIntelligenceService.approvePayrollBatch(
-        auth,
-        getRouteParam(req.params.batchId),
-      );
-      res.json({ data: { batch } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/payroll/batches/:batchId/approve',
+    requireStaffAuth,
+    requireManage,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const batch = await deps.enterpriseWorkforceIntelligenceService.approvePayrollBatch(
+          auth,
+          getRouteParam(req.params.batchId),
+        );
+        res.json({ data: { batch } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/payroll/preparations', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const preparations = await deps.enterpriseWorkforceIntelligenceService.listPayrollPreparations(
-        auth.companyId,
-      );
+      const preparations =
+        await deps.enterpriseWorkforceIntelligenceService.listPayrollPreparations(auth.companyId);
       res.json({ data: { preparations } });
     } catch (error) {
       handleError(error, res);
@@ -628,7 +720,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/training/courses', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const courses = await deps.enterpriseWorkforceIntelligenceService.listTrainingCourses(auth.companyId);
+      const courses = await deps.enterpriseWorkforceIntelligenceService.listTrainingCourses(
+        auth.companyId,
+      );
       res.json({ data: { courses } });
     } catch (error) {
       handleError(error, res);
@@ -638,7 +732,8 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.post('/performance/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const snapshots = await deps.enterpriseWorkforceIntelligenceService.captureTechnicianPerformance(auth);
+      const snapshots =
+        await deps.enterpriseWorkforceIntelligenceService.captureTechnicianPerformance(auth);
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -648,9 +743,8 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/performance', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const performance = await deps.enterpriseWorkforceIntelligenceService.listTechnicianPerformance(
-        auth.companyId,
-      );
+      const performance =
+        await deps.enterpriseWorkforceIntelligenceService.listTechnicianPerformance(auth.companyId);
       res.json({ data: { performance } });
     } catch (error) {
       handleError(error, res);
@@ -660,7 +754,9 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/hr-drafts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const drafts = await deps.enterpriseWorkforceIntelligenceService.listHrActionDrafts(auth.companyId);
+      const drafts = await deps.enterpriseWorkforceIntelligenceService.listHrActionDrafts(
+        auth.companyId,
+      );
       res.json({ data: { drafts } });
     } catch (error) {
       handleError(error, res);
@@ -675,7 +771,10 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     }
     try {
       const auth = getAuth(req);
-      const draft = await deps.enterpriseWorkforceIntelligenceService.createHrActionDraft(auth, parsed.data);
+      const draft = await deps.enterpriseWorkforceIntelligenceService.createHrActionDraft(
+        auth,
+        parsed.data,
+      );
       res.status(201).json({ data: { draft } });
     } catch (error) {
       handleError(error, res);
@@ -695,10 +794,11 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
   router.get('/portal/technician/:userId', requirePortalAuth, async (req, res) => {
     try {
       const portalAuth = getPortalAuth(req);
-      const profile = await deps.enterpriseWorkforceIntelligenceService.getCustomerTechnicianProfile(
-        portalAuth.companyId,
-        getRouteParam(req.params.userId),
-      );
+      const profile =
+        await deps.enterpriseWorkforceIntelligenceService.getCustomerTechnicianProfile(
+          portalAuth.companyId,
+          getRouteParam(req.params.userId),
+        );
       res.json({ data: { profile } });
     } catch (error) {
       handleError(error, res);

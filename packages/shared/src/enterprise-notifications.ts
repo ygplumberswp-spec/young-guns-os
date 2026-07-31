@@ -3,24 +3,10 @@ export type NcAlertLevel = 'info' | 'success' | 'warning' | 'critical' | 'emerge
 export type NcAlertStatus = 'open' | 'acknowledged' | 'resolved' | 'escalated' | 'expired';
 
 export type NcDeliveryChannel =
-  | 'in_app'
-  | 'email'
-  | 'sms'
-  | 'whatsapp'
-  | 'push'
-  | 'slack'
-  | 'microsoft_teams'
-  | 'webhook';
+  'in_app' | 'email' | 'sms' | 'whatsapp' | 'push' | 'slack' | 'microsoft_teams' | 'webhook';
 
 export type NcDeliveryStatus =
-  | 'queued'
-  | 'sent'
-  | 'delivered'
-  | 'failed'
-  | 'read'
-  | 'acknowledged'
-  | 'dismissed'
-  | 'escalated';
+  'queued' | 'sent' | 'delivered' | 'failed' | 'read' | 'acknowledged' | 'dismissed' | 'escalated';
 
 export type NcEscalationStatus = 'pending' | 'acknowledged' | 'resolved' | 'escalated' | 'expired';
 

@@ -1,5 +1,7 @@
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import type {
+  AcceptQuoteRequest,
+  DeclineQuoteRequest,
   CreatePortalCustomerRequest,
   PortalAppointmentSummary,
   PortalCustomerCommunicationsCentre,
@@ -24,11 +26,16 @@ import {
   payments,
   portalCustomerRequests,
   portalUsers,
+  quoteAcceptances,
   quotes,
   sopDocuments,
   voiceSessions,
 } from '@titan/db';
-import { buildCustomerTrackingProgress, getActiveEnRouteTracking } from '../lib/tracking-privacy.js';
+import { emitBusinessEvent } from '../lib/automation-events.js';
+import {
+  buildCustomerTrackingProgress,
+  getActiveEnRouteTracking,
+} from '../lib/tracking-privacy.js';
 import type { MobileService } from './mobile.service.js';
 import type { NotificationService } from './notification.service.js';
 
@@ -65,7 +72,9 @@ export class PortalExperienceService {
     private readonly notificationService: NotificationService,
   ) {}
 
-  async getExperienceDashboard(scope: PortalCustomerScope): Promise<PortalCustomerExperienceDashboard> {
+  async getExperienceDashboard(
+    scope: PortalCustomerScope,
+  ): Promise<PortalCustomerExperienceDashboard> {
     const customer = await this.getCustomer(scope.companyId, scope.customerId);
     const permissionSet = new Set(scope.permissions);
 
@@ -92,7 +101,10 @@ export class PortalExperienceService {
         : Promise.resolve([] as PortalQuoteRows),
       permissionSet.has('portal.invoices:read')
         ? this.db.query.invoices.findMany({
-            where: and(eq(invoices.companyId, scope.companyId), eq(invoices.customerId, scope.customerId)),
+            where: and(
+              eq(invoices.companyId, scope.companyId),
+              eq(invoices.customerId, scope.customerId),
+            ),
             with: { customer: true, job: true },
             orderBy: [desc(invoices.updatedAt)],
             limit: 25,
@@ -180,7 +192,10 @@ export class PortalExperienceService {
     return this.mobileService.getCustomerJobs(scope);
   }
 
-  async getJobTracking(scope: PortalCustomerScope, jobId: string): Promise<PortalJobTrackingDetail | null> {
+  async getJobTracking(
+    scope: PortalCustomerScope,
+    jobId: string,
+  ): Promise<PortalJobTrackingDetail | null> {
     if (!scope.permissions.includes('portal.jobs:read')) {
       throw new PortalExperienceError('FORBIDDEN', 'Job access not permitted');
     }
@@ -198,28 +213,28 @@ export class PortalExperienceService {
       return null;
     }
 
-    const documentRows =
-      scope.permissions.includes('portal.documents:read')
-        ? await this.db.query.documents.findMany({
-            where: and(
-              eq(documents.companyId, scope.companyId),
-              eq(documents.customerId, scope.customerId),
-              eq(documents.jobId, jobId),
-            ),
-            with: { category: true, customer: true, job: true, uploadedBy: true },
-            orderBy: [desc(documents.updatedAt)],
-          })
-        : [];
+    const documentRows = scope.permissions.includes('portal.documents:read')
+      ? await this.db.query.documents.findMany({
+          where: and(
+            eq(documents.companyId, scope.companyId),
+            eq(documents.customerId, scope.customerId),
+            eq(documents.jobId, jobId),
+          ),
+          with: { category: true, customer: true, job: true, uploadedBy: true },
+          orderBy: [desc(documents.updatedAt)],
+        })
+      : [];
 
     const timeline = buildJobTimeline(job);
     const completedWorkSummary =
       job.status === 'completed' ? job.description?.trim() || job.title : null;
 
-    const etaAt = job.scheduledEndAt?.toISOString() ?? job.scheduledAt?.toISOString() ?? null;
+    const scheduledEta =
+      job.scheduledEndAt?.toISOString() ?? job.scheduledAt?.toISOString() ?? null;
     let liveTracking: PortalJobTrackingDetail['liveTracking'] = null;
 
     const trackingEligible =
-      job.assignedUserId &&
+      Boolean(job.assignedUserId) &&
       job.status !== 'cancelled' &&
       job.status !== 'completed' &&
       (job.status === 'scheduled' || job.status === 'in_progress' || job.status === 'new');
@@ -228,20 +243,25 @@ export class PortalExperienceService {
       const activeTracking = await getActiveEnRouteTracking(this.db, scope.companyId, jobId);
       if (activeTracking && job.assignedUser) {
         liveTracking = {
-          technicianDisplayName: `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim(),
+          technicianDisplayName:
+            `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim(),
           status: 'en_route',
-          etaAt,
-          progressPercent: buildCustomerTrackingProgress(activeTracking.startedAt, etaAt),
+          etaAt: scheduledEta,
+          progressPercent: buildCustomerTrackingProgress(activeTracking.startedAt, scheduledEta),
           startedAt: activeTracking.startedAt.toISOString(),
         };
       }
     }
 
+    // Customer-visible ETA: live en-route estimate when tracking is active;
+    // otherwise scheduled appointment window when the job is still open (OPS-016 / POR-003).
+    const etaAt = liveTracking?.etaAt ?? (trackingEligible ? scheduledEta : null);
+
     return {
       job: {
         ...toJobSummary(job),
         description: job.description,
-        etaAt: liveTracking ? liveTracking.etaAt : null,
+        etaAt,
         completedWorkSummary,
       },
       timeline,
@@ -266,11 +286,17 @@ export class PortalExperienceService {
       limit: 50,
     });
 
-    return rows.map((row) => ({
-      ...toQuoteSummary(row),
-      canRequestClarification: row.status === 'sent',
-      canRequestApproval: row.status === 'sent',
-    }));
+    return rows.map((row) => {
+      const actionable = canRespondToQuote(row);
+      return {
+        ...toQuoteSummary(row),
+        canRequestClarification: ['sent', 'viewed'].includes(row.status),
+        // Request-only approval is replaced by controlled acceptance of the issued version.
+        canRequestApproval: false,
+        canAccept: actionable,
+        canDecline: actionable,
+      };
+    });
   }
 
   async getQuote(scope: PortalCustomerScope, quoteId: string): Promise<PortalQuoteDetail | null> {
@@ -292,11 +318,26 @@ export class PortalExperienceService {
       return null;
     }
 
+    const actionable = canRespondToQuote(row);
     return {
       ...toQuoteSummary(row),
-      canRequestClarification: row.status === 'sent',
-      canRequestApproval: row.status === 'sent',
+      canRequestClarification: ['sent', 'viewed'].includes(row.status),
+      canRequestApproval: false,
+      canAccept: actionable,
+      canDecline: actionable,
     };
+  }
+
+  async acceptQuote(scope: PortalCustomerScope, quoteId: string, input: AcceptQuoteRequest, meta: { ipAddress?: string | null; userAgent?: string | null } = {}) {
+    if (!scope.permissions.includes('portal.quotes:read')) throw new PortalExperienceError('FORBIDDEN', 'Quote access not permitted');
+    if (!input.acknowledgeScope || !input.acknowledgeExclusions || !input.acknowledgePrice || !input.acknowledgeVat || !input.acknowledgePaymentTerms || !input.acknowledgeValidity) throw new PortalExperienceError('VALIDATION_ERROR', 'All quote acknowledgements are required');
+    return this.recordQuoteDecision(scope, quoteId, input.clientActionId, 'accepted', { accepterName: input.accepterName, acknowledgementJson: { scope: true, exclusions: true, price: true, vat: true, paymentTerms: true, validity: true, typedSignature: input.typedSignature ?? null } }, meta);
+  }
+
+  async declineQuote(scope: PortalCustomerScope, quoteId: string, input: DeclineQuoteRequest, meta: { ipAddress?: string | null; userAgent?: string | null } = {}) {
+    if (!scope.permissions.includes('portal.quotes:read')) throw new PortalExperienceError('FORBIDDEN', 'Quote access not permitted');
+    if (!input.reason.trim()) throw new PortalExperienceError('VALIDATION_ERROR', 'A decline reason is required');
+    return this.recordQuoteDecision(scope, quoteId, input.clientActionId, input.decision, { declineReason: input.decision === 'declined' ? input.reason.trim() : null, changeRequestMessage: input.decision === 'change_requested' ? (input.message?.trim() || input.reason.trim()) : null }, meta);
   }
 
   async getFinanceCentre(scope: PortalCustomerScope): Promise<PortalFinanceCentre> {
@@ -305,21 +346,23 @@ export class PortalExperienceService {
     }
 
     const invoiceRows = await this.db.query.invoices.findMany({
-      where: and(eq(invoices.companyId, scope.companyId), eq(invoices.customerId, scope.customerId)),
+      where: and(
+        eq(invoices.companyId, scope.companyId),
+        eq(invoices.customerId, scope.customerId),
+      ),
       with: { customer: true, job: true },
       orderBy: [desc(invoices.updatedAt)],
       limit: 50,
     });
 
-    const paymentRows =
-      scope.permissions.includes('portal.payments:read')
-        ? await this.db.query.payments.findMany({
-            where: eq(payments.companyId, scope.companyId),
-            with: { invoice: { with: { customer: true } } },
-            orderBy: [desc(payments.paidAt)],
-            limit: 50,
-          })
-        : [];
+    const paymentRows = scope.permissions.includes('portal.payments:read')
+      ? await this.db.query.payments.findMany({
+          where: eq(payments.companyId, scope.companyId),
+          with: { invoice: { with: { customer: true } } },
+          orderBy: [desc(payments.paidAt)],
+          limit: 50,
+        })
+      : [];
 
     const customerPayments = paymentRows.filter(
       (payment) => payment.invoice?.customerId === scope.customerId,
@@ -498,6 +541,21 @@ export class PortalExperienceService {
       throw new PortalExperienceError('VALIDATION_ERROR', 'Subject and message are required');
     }
 
+    const clientActionId = input.clientActionId?.trim() || null;
+
+    if (clientActionId) {
+      const existing = await this.db.query.portalCustomerRequests.findFirst({
+        where: and(
+          eq(portalCustomerRequests.companyId, scope.companyId),
+          eq(portalCustomerRequests.clientActionId, clientActionId),
+        ),
+      });
+
+      if (existing) {
+        return toRequestSummary(existing, { idempotentReplay: true });
+      }
+    }
+
     await this.validateRequestEntity(scope, input);
 
     const [created] = await this.db
@@ -512,9 +570,14 @@ export class PortalExperienceService {
         entityType: input.entityType ?? null,
         entityId: input.entityId ?? null,
         payload: input.payload ?? {},
+        clientActionId,
         status: 'pending_approval',
       })
       .returning();
+
+    if (!created) {
+      throw new PortalExperienceError('CREATE_FAILED', 'Unable to create customer request');
+    }
 
     return toRequestSummary(created);
   }
@@ -529,10 +592,12 @@ export class PortalExperienceService {
       limit: 50,
     });
 
-    return rows.map(toRequestSummary);
+    return rows.map((row) => toRequestSummary(row));
   }
 
-  async buildPortalAuraContext(scope: PortalCustomerScope): Promise<PortalCustomerExperienceAuraContext> {
+  async buildPortalAuraContext(
+    scope: PortalCustomerScope,
+  ): Promise<PortalCustomerExperienceAuraContext> {
     const dashboard = await this.getExperienceDashboard(scope);
     const requests = await this.listCustomerRequests(scope);
 
@@ -592,7 +657,130 @@ export class PortalExperienceService {
     return customer;
   }
 
-  private async validateRequestEntity(scope: PortalCustomerScope, input: CreatePortalCustomerRequest) {
+  private async recordQuoteDecision(
+    scope: PortalCustomerScope,
+    quoteId: string,
+    clientActionId: string,
+    decision: 'accepted' | 'declined' | 'change_requested',
+    detail: Record<string, unknown>,
+    meta: { ipAddress?: string | null; userAgent?: string | null },
+  ) {
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(
+        eq(quotes.id, quoteId),
+        eq(quotes.companyId, scope.companyId),
+        eq(quotes.customerId, scope.customerId),
+      ),
+    });
+    if (!quote) throw new PortalExperienceError('NOT_FOUND', 'Quote not found');
+
+    // Idempotent replay must win before open-quote gates (accepted quotes are no longer actionable).
+    const replay = await this.db.query.quoteAcceptances.findFirst({
+      where: and(
+        eq(quoteAcceptances.companyId, scope.companyId),
+        eq(quoteAcceptances.clientActionId, clientActionId),
+        eq(quoteAcceptances.quoteId, quote.id),
+      ),
+    });
+    if (replay) {
+      return { ...toAcceptanceSummary(replay), idempotentReplay: true };
+    }
+
+    if (!canRespondToQuote(quote)) {
+      throw new PortalExperienceError(
+        'VALIDATION_ERROR',
+        'This quote version is expired, superseded, or no longer open for acceptance',
+      );
+    }
+
+    if (decision === 'accepted') {
+      const priorAccept = await this.db.query.quoteAcceptances.findFirst({
+        where: and(
+          eq(quoteAcceptances.quoteId, quote.id),
+          eq(quoteAcceptances.decision, 'accepted'),
+        ),
+      });
+      if (priorAccept) {
+        throw new PortalExperienceError(
+          'VALIDATION_ERROR',
+          'This quote version has already been accepted',
+        );
+      }
+    }
+
+    const [created] = await this.db.transaction(async (tx) => {
+      const inserted = await tx
+        .insert(quoteAcceptances)
+        .values({
+          companyId: scope.companyId,
+          quoteId: quote.id,
+          customerId: scope.customerId,
+          portalUserId: scope.portalUserId,
+          clientActionId,
+          decision,
+          acceptedVersionNumber: quote.versionNumber,
+          accepterName: (detail.accepterName as string | undefined) ?? null,
+          declineReason:
+            (detail.declineReason as string | null | undefined) ?? null,
+          changeRequestMessage:
+            (detail.changeRequestMessage as string | null | undefined) ?? null,
+          acknowledgementJson:
+            (detail.acknowledgementJson as Record<string, unknown> | undefined) ?? {},
+          evidencePayload: {
+            portalUserId: scope.portalUserId,
+            quoteVersionNumber: quote.versionNumber,
+            quoteNumber: quote.quoteNumber,
+            ...detail,
+          },
+          ipAddress: meta.ipAddress ?? null,
+          userAgent: meta.userAgent ?? null,
+        })
+        .returning();
+
+      const nextStatus =
+        decision === 'accepted'
+          ? 'accepted'
+          : decision === 'declined'
+            ? 'declined'
+            : quote.status;
+      await tx
+        .update(quotes)
+        .set({
+          status: nextStatus,
+          acceptedAt: decision === 'accepted' ? new Date() : quote.acceptedAt,
+          declinedAt: decision === 'declined' ? new Date() : quote.declinedAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(quotes.id, quote.id));
+      return inserted;
+    });
+
+    if (decision === 'accepted') {
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'quote.accepted',
+        entityType: 'quote',
+        entityId: quote.id,
+        payload: {
+          customerId: scope.customerId,
+          quote: {
+            id: quote.id,
+            status: 'accepted',
+            customerId: scope.customerId,
+            amountCents: quote.amountCents,
+            versionNumber: quote.versionNumber,
+          },
+        },
+      });
+    }
+
+    return toAcceptanceSummary(created!);
+  }
+
+  private async validateRequestEntity(
+    scope: PortalCustomerScope,
+    input: CreatePortalCustomerRequest,
+  ) {
     if (!input.entityId || !input.entityType) {
       return;
     }
@@ -676,16 +864,58 @@ function scoreKnowledgeMatch(query: string, title: string, content: string, keyw
   return haystack.includes(query) ? 1 : 0;
 }
 
-function toJobSummary(row: typeof jobs.$inferSelect & {
-  customer?: { name: string } | null;
-  assignedUser?: { firstName: string; lastName: string } | null;
-}) {
+function canRespondToQuote(row: typeof quotes.$inferSelect) {
+  if (!['sent', 'viewed'].includes(row.status)) return false;
+  if (row.status === 'superseded' || row.status === 'expired') return false;
+  if (row.validUntil && row.validUntil.getTime() < Date.now()) return false;
+  // Issued versions are immutable; drafts are never portal-actionable.
+  if (row.isImmutable === false && row.issuedAt == null) return false;
+  return true;
+}
+
+function toAcceptanceSummary(row: typeof quoteAcceptances.$inferSelect) {
   return {
     id: row.id,
+    decision: row.decision as 'accepted' | 'declined' | 'change_requested',
+    acceptedVersionNumber: row.acceptedVersionNumber,
+    accepterName: row.accepterName,
+    accepterEmail: row.accepterEmail,
+    declineReason: row.declineReason,
+    changeRequestMessage: row.changeRequestMessage,
+    createdAt: row.createdAt.toISOString(),
+  };
+}
+
+function toJobSummary(
+  row: typeof jobs.$inferSelect & {
+    customer?: { name: string } | null;
+    assignedUser?: { firstName: string; lastName: string } | null;
+  },
+) {
+  const addressDisplay =
+    [
+      row.snapshotUnit ? `Unit ${row.snapshotUnit}` : null,
+      row.snapshotStreet,
+      row.snapshotSuburb,
+      row.snapshotCity,
+      row.snapshotProvince,
+      row.snapshotPostalCode,
+    ]
+      .filter(Boolean)
+      .join(', ') || null;
+
+  return {
+    id: row.id,
+    jobNumber: row.jobNumber ?? null,
     customerId: row.customerId,
-    customerName: row.customer?.name ?? 'Customer',
+    customerName: row.snapshotCustomerName ?? row.customer?.name ?? 'Customer',
+    propertyId: row.propertyId ?? null,
     title: row.title,
+    jobType: row.jobType ?? null,
+    priority: row.priority ?? 'normal',
     status: row.status,
+    addressDisplay,
+    siteContactMobile: row.snapshotSiteContactMobile ?? null,
     scheduledAt: row.scheduledAt?.toISOString() ?? null,
     scheduledEndAt: row.scheduledEndAt?.toISOString() ?? null,
     assignedUserId: row.assignedUserId,
@@ -697,42 +927,82 @@ function toJobSummary(row: typeof jobs.$inferSelect & {
   };
 }
 
-function toQuoteSummary(row: typeof quotes.$inferSelect & {
-  customer?: { name: string } | null;
-  job?: { title: string } | null;
-}) {
+function toQuoteSummary(
+  row: typeof quotes.$inferSelect & {
+    customer?: { name: string } | null;
+    job?: { title: string; jobNumber?: string | null } | null;
+  },
+) {
   return {
     id: row.id,
     quoteNumber: row.quoteNumber,
     title: row.title,
     status: row.status,
+    versionNumber: row.versionNumber ?? 1,
+    isImmutable: row.isImmutable ?? false,
     customerId: row.customerId,
     customerName: row.customer?.name ?? 'Customer',
     jobId: row.jobId,
     jobTitle: row.job?.title ?? null,
+    jobNumber: row.job?.jobNumber ?? null,
+    propertyId: row.propertyId ?? null,
+    leadId: row.leadId ?? null,
+    estimatorUserId: row.estimatorUserId ?? null,
     amountCents: row.amountCents,
+    subtotalCents: row.subtotalCents ?? row.amountCents,
+    vatCents: row.vatCents ?? 0,
+    totalCents: row.totalCents ?? row.amountCents,
     currency: row.currency,
     validUntil: row.validUntil?.toISOString() ?? null,
+    issuedAt: row.issuedAt?.toISOString() ?? null,
+    acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
-function toInvoiceSummary(row: typeof invoices.$inferSelect & {
-  customer?: { name: string } | null;
-  job?: { title: string } | null;
-}) {
+function toInvoiceSummary(
+  row: typeof invoices.$inferSelect & {
+    customer?: { name: string } | null;
+    job?: { title: string; jobNumber?: string | null } | null;
+  },
+) {
+  const totalCents = row.totalCents ?? row.amountCents;
+  const outstandingCents = Math.max(0, totalCents - row.amountPaidCents);
+  const internalNumber = row.internalNumber ?? row.invoiceNumber;
+  const displayInvoiceNumber = row.xeroInvoiceNumber?.trim()
+    ? row.xeroInvoiceNumber.trim()
+    : `Pending Xero sync (${internalNumber})`;
   return {
     id: row.id,
     invoiceNumber: row.invoiceNumber,
+    internalNumber,
+    displayInvoiceNumber,
+    xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
+    xeroReference: row.xeroReference ?? null,
+    numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
+      | 'internal_pending_xero'
+      | 'xero',
     title: row.title,
     status: row.status,
+    stage: row.stage ?? 'standard',
     customerId: row.customerId,
     customerName: row.customer?.name ?? 'Customer',
     jobId: row.jobId,
     jobTitle: row.job?.title ?? null,
+    jobNumber: row.job?.jobNumber ?? null,
+    quoteId: row.quoteId ?? null,
+    quoteNumber: null,
+    quoteVersionNumber: row.quoteVersionNumber ?? null,
     amountCents: row.amountCents,
+    totalCents,
     amountPaidCents: row.amountPaidCents,
+    outstandingCents,
+    isOverdue: Boolean(
+      row.dueDate &&
+        row.dueDate < new Date() &&
+        ['sent', 'partial', 'overdue'].includes(row.status),
+    ),
     currency: row.currency,
     dueDate: row.dueDate?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -740,9 +1010,11 @@ function toInvoiceSummary(row: typeof invoices.$inferSelect & {
   };
 }
 
-function toPaymentSummary(row: typeof payments.$inferSelect & {
-  invoice?: { invoiceNumber: string; title: string; customer?: { name: string } | null } | null;
-}) {
+function toPaymentSummary(
+  row: typeof payments.$inferSelect & {
+    invoice?: { invoiceNumber: string; title: string; customer?: { name: string } | null } | null;
+  },
+) {
   return {
     id: row.id,
     invoiceId: row.invoiceId,
@@ -753,17 +1025,21 @@ function toPaymentSummary(row: typeof payments.$inferSelect & {
     currency: row.currency,
     method: row.method,
     reference: row.reference,
+    xeroPaymentId: row.xeroPaymentId ?? null,
+    receiptNumber: null,
     paidAt: row.paidAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
 }
 
-function toDocumentSummary(row: typeof documents.$inferSelect & {
-  category?: { name: string } | null;
-  customer?: { name: string } | null;
-  job?: { title: string } | null;
-  uploadedBy?: { firstName: string; lastName: string } | null;
-}) {
+function toDocumentSummary(
+  row: typeof documents.$inferSelect & {
+    category?: { name: string } | null;
+    customer?: { name: string } | null;
+    job?: { title: string } | null;
+    uploadedBy?: { firstName: string; lastName: string } | null;
+  },
+) {
   return {
     id: row.id,
     title: row.title,
@@ -786,7 +1062,10 @@ function toDocumentSummary(row: typeof documents.$inferSelect & {
   };
 }
 
-function toRequestSummary(row: typeof portalCustomerRequests.$inferSelect): PortalCustomerRequestSummary {
+function toRequestSummary(
+  row: typeof portalCustomerRequests.$inferSelect,
+  options?: { idempotentReplay?: boolean },
+): PortalCustomerRequestSummary {
   return {
     id: row.id,
     requestType: row.requestType,
@@ -795,7 +1074,9 @@ function toRequestSummary(row: typeof portalCustomerRequests.$inferSelect): Port
     message: row.message,
     entityType: row.entityType,
     entityId: row.entityId,
+    clientActionId: row.clientActionId,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    ...(options?.idempotentReplay ? { idempotentReplay: true } : {}),
   };
 }

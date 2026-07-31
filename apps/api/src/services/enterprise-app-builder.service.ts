@@ -266,7 +266,9 @@ export class EnterpriseAppBuilderService {
     void this.getBusinessEvolutionDashboard(companyId).catch(() => null);
     void this.getProductionReadinessDashboard(companyId).catch(() => null);
 
-    const pendingApprovalCount = featureRequests.filter((r) => r.workflowStatus === 'pending_approval').length;
+    const pendingApprovalCount = featureRequests.filter(
+      (r) => r.workflowStatus === 'pending_approval',
+    ).length;
     const activeWorkspaceCount = workspaces.filter((w) => w.status === 'active').length;
     const failedTestCount = testRuns.filter((t) => t.workflowStatus === 'failed').length;
     const failedDeploymentCount = deployments.filter((d) => d.workflowStatus === 'failed').length;
@@ -324,9 +326,13 @@ export class EnterpriseAppBuilderService {
     const activeFeatureRequestCount = featureRequests.filter((r) =>
       ['analyzing', 'planned', 'in_development', 'testing', 'preview'].includes(r.workflowStatus),
     ).length;
-    const pendingApprovalCount = featureRequests.filter((r) => r.workflowStatus === 'pending_approval').length;
+    const pendingApprovalCount = featureRequests.filter(
+      (r) => r.workflowStatus === 'pending_approval',
+    ).length;
     const failedTestCount = testRuns.filter((t) => t.workflowStatus === 'failed').length;
-    const failedBuildCount = deployments.filter((d) => ['failed', 'rolled_back'].includes(d.workflowStatus)).length;
+    const failedBuildCount = deployments.filter((d) =>
+      ['failed', 'rolled_back'].includes(d.workflowStatus),
+    ).length;
     const pendingDeploymentCount = deployments.filter((d) =>
       ['planned', 'building', 'deploying'].includes(d.workflowStatus),
     ).length;
@@ -339,7 +345,8 @@ export class EnterpriseAppBuilderService {
         `${pendingSchemaPlans.filter((p) => p.requiresOwnerApproval).length} pending schema approval(s)`,
       );
     }
-    if (pendingApprovalCount > 0) alertMessages.push(`${pendingApprovalCount} feature(s) pending approval`);
+    if (pendingApprovalCount > 0)
+      alertMessages.push(`${pendingApprovalCount} feature(s) pending approval`);
     if (alerts.length > 0) alertMessages.push(`${alerts.length} open app builder alert(s)`);
 
     return {
@@ -374,7 +381,10 @@ export class EnterpriseAppBuilderService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateAbPlatformConfigRequest): Promise<AbPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateAbPlatformConfigRequest,
+  ): Promise<AbPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(abPlatformConfig)
@@ -384,7 +394,8 @@ export class EnterpriseAppBuilderService {
         testingRequirements: input.testingRequirements ?? existing.testingRequirements,
         documentationPolicy: input.documentationPolicy ?? existing.documentationPolicy,
         rollbackPolicy: input.rollbackPolicy ?? existing.rollbackPolicy,
-        ownerApprovalRequiredAreas: input.ownerApprovalRequiredAreas ?? existing.ownerApprovalRequiredAreas,
+        ownerApprovalRequiredAreas:
+          input.ownerApprovalRequiredAreas ?? existing.ownerApprovalRequiredAreas,
         auditRetentionDays: input.auditRetentionDays ?? existing.auditRetentionDays,
         updatedAt: new Date(),
       })
@@ -396,15 +407,21 @@ export class EnterpriseAppBuilderService {
 
   // --- Workflow operations ---
 
-  async analyzeRequirements(scope: StaffScope, featureRequestId: string): Promise<AbRequirementsAnalysisSummary> {
+  async analyzeRequirements(
+    scope: StaffScope,
+    featureRequestId: string,
+  ): Promise<AbRequirementsAnalysisSummary> {
     const request = await this.ensureFeatureRequest(scope.companyId, featureRequestId);
     const now = new Date();
 
     const functionalRequirements: Record<string, unknown> = {
       title: request.title,
       requestType: request.requestType,
-      ...(request.naturalLanguageRequest ? { naturalLanguageRequest: request.naturalLanguageRequest } : {}),
-      ...(request.config?.functionalRequirements && typeof request.config.functionalRequirements === 'object'
+      ...(request.naturalLanguageRequest
+        ? { naturalLanguageRequest: request.naturalLanguageRequest }
+        : {}),
+      ...(request.config?.functionalRequirements &&
+      typeof request.config.functionalRequirements === 'object'
         ? (request.config.functionalRequirements as Record<string, unknown>)
         : {}),
     };
@@ -412,13 +429,15 @@ export class EnterpriseAppBuilderService {
     const technicalRequirements: Record<string, unknown> = {
       requestType: request.requestType,
       riskLevel: request.riskLevel,
-      ...(request.config?.technicalRequirements && typeof request.config.technicalRequirements === 'object'
+      ...(request.config?.technicalRequirements &&
+      typeof request.config.technicalRequirements === 'object'
         ? (request.config.technicalRequirements as Record<string, unknown>)
         : {}),
     };
 
     const acceptanceCriteria: Record<string, unknown> = {
-      ...(request.config?.acceptanceCriteria && typeof request.config.acceptanceCriteria === 'object'
+      ...(request.config?.acceptanceCriteria &&
+      typeof request.config.acceptanceCriteria === 'object'
         ? (request.config.acceptanceCriteria as Record<string, unknown>)
         : {}),
       ...(request.naturalLanguageRequest
@@ -472,7 +491,10 @@ export class EnterpriseAppBuilderService {
     return toRequirementsAnalysisSummary(created!);
   }
 
-  async analyzeArchitectureImpact(scope: StaffScope, featureRequestId: string): Promise<AbArchitectureImpactSummary> {
+  async analyzeArchitectureImpact(
+    scope: StaffScope,
+    featureRequestId: string,
+  ): Promise<AbArchitectureImpactSummary> {
     const request = await this.ensureFeatureRequest(scope.companyId, featureRequestId);
     const registry = await this.listFeatureRegistryEntries(scope.companyId);
     const impact = deriveArchitectureImpact(request, registry);
@@ -493,9 +515,15 @@ export class EnterpriseAppBuilderService {
       .set({ workflowStatus: 'planned', updatedAt: new Date() })
       .where(eq(abFeatureRequests.id, featureRequestId));
 
-    await this.recordAudit(scope, 'architecture_impact_analyzed', 'ab_feature_request', featureRequestId, {
-      architectureImpactId: created!.id,
-    });
+    await this.recordAudit(
+      scope,
+      'architecture_impact_analyzed',
+      'ab_feature_request',
+      featureRequestId,
+      {
+        architectureImpactId: created!.id,
+      },
+    );
     return toArchitectureImpactSummary(created!);
   }
 
@@ -527,46 +555,61 @@ export class EnterpriseAppBuilderService {
       .set({ workflowStatus: 'in_development', updatedAt: new Date() })
       .where(eq(abFeatureRequests.id, featureRequestId));
 
-    await this.recordAudit(scope, 'development_workspace_created', 'ab_development_workspace', created!.id, {
-      featureRequestId,
-      isolationMode: 'isolated_sandbox',
-      productionUntouched: true,
-    });
+    await this.recordAudit(
+      scope,
+      'development_workspace_created',
+      'ab_development_workspace',
+      created!.id,
+      {
+        featureRequestId,
+        isolationMode: 'isolated_sandbox',
+        productionUntouched: true,
+      },
+    );
     return toDevelopmentWorkspaceSummary(created!);
   }
 
   async syncAppBuilderAlerts(scope: StaffScope): Promise<AbAppBuilderAlertSummary[]> {
     const companyId = scope.companyId;
     const syncedAt = new Date().toISOString();
-    const [failedTests, failedDeployments, pendingSchemaPlans, existingOpenRows] = await Promise.all([
-      this.deps.db.query.abTestRuns.findMany({
-        where: and(eq(abTestRuns.companyId, companyId), eq(abTestRuns.workflowStatus, 'failed')),
-        orderBy: [desc(abTestRuns.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.abDeployments.findMany({
-        where: and(eq(abDeployments.companyId, companyId), eq(abDeployments.workflowStatus, 'failed')),
-        orderBy: [desc(abDeployments.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.abDatabaseChangePlans.findMany({
-        where: and(
-          eq(abDatabaseChangePlans.companyId, companyId),
-          eq(abDatabaseChangePlans.requiresOwnerApproval, true),
-          inArray(abDatabaseChangePlans.workflowStatus, ['draft', 'review', 'pending_approval']),
-        ),
-        orderBy: [desc(abDatabaseChangePlans.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.abAppBuilderAlerts.findMany({
-        where: and(eq(abAppBuilderAlerts.companyId, companyId), eq(abAppBuilderAlerts.status, 'open')),
-        limit: 100,
-      }),
-    ]);
+    const [failedTests, failedDeployments, pendingSchemaPlans, existingOpenRows] =
+      await Promise.all([
+        this.deps.db.query.abTestRuns.findMany({
+          where: and(eq(abTestRuns.companyId, companyId), eq(abTestRuns.workflowStatus, 'failed')),
+          orderBy: [desc(abTestRuns.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.abDeployments.findMany({
+          where: and(
+            eq(abDeployments.companyId, companyId),
+            eq(abDeployments.workflowStatus, 'failed'),
+          ),
+          orderBy: [desc(abDeployments.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.abDatabaseChangePlans.findMany({
+          where: and(
+            eq(abDatabaseChangePlans.companyId, companyId),
+            eq(abDatabaseChangePlans.requiresOwnerApproval, true),
+            inArray(abDatabaseChangePlans.workflowStatus, ['draft', 'review', 'pending_approval']),
+          ),
+          orderBy: [desc(abDatabaseChangePlans.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.abAppBuilderAlerts.findMany({
+          where: and(
+            eq(abAppBuilderAlerts.companyId, companyId),
+            eq(abAppBuilderAlerts.status, 'open'),
+          ),
+          limit: 100,
+        }),
+      ]);
 
     for (const test of failedTests) {
       const alertKey = `test_failed:${test.id}`;
-      if (!existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)) {
+      if (
+        !existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)
+      ) {
         await this.createAppBuilderAlert(scope, {
           alertType: 'test_failed',
           severity: 'warning',
@@ -581,7 +624,9 @@ export class EnterpriseAppBuilderService {
 
     for (const deployment of failedDeployments) {
       const alertKey = `deployment_failed:${deployment.id}`;
-      if (!existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)) {
+      if (
+        !existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)
+      ) {
         await this.createAppBuilderAlert(scope, {
           alertType: 'deployment_failed',
           severity: 'critical',
@@ -596,7 +641,9 @@ export class EnterpriseAppBuilderService {
 
     for (const plan of pendingSchemaPlans) {
       const alertKey = `schema_approval_pending:${plan.id}`;
-      if (!existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)) {
+      if (
+        !existingOpenRows.some((a) => (a.context as Record<string, unknown>)?.alertKey === alertKey)
+      ) {
         await this.createAppBuilderAlert(scope, {
           alertType: 'schema_approval_pending',
           severity: 'warning',
@@ -648,7 +695,9 @@ export class EnterpriseAppBuilderService {
     const runKey = `test-${randomUUID().slice(0, 8)}`;
     const now = new Date();
 
-    const buildRecords = await this.deps.enterpriseItOperationsService.listBuildRecords(scope.companyId);
+    const buildRecords = await this.deps.enterpriseItOperationsService.listBuildRecords(
+      scope.companyId,
+    );
     const relatedBuild = buildRecords.find(
       (b) => b.workflowStatus === 'running' || b.workflowStatus === 'completed',
     );
@@ -682,7 +731,10 @@ export class EnterpriseAppBuilderService {
     return toTestRunSummary(created!);
   }
 
-  async createPreview(scope: StaffScope, featureRequestId: string): Promise<AbPreviewRecordSummary> {
+  async createPreview(
+    scope: StaffScope,
+    featureRequestId: string,
+  ): Promise<AbPreviewRecordSummary> {
     const request = await this.ensureFeatureRequest(scope.companyId, featureRequestId);
     const workspace = await this.deps.db.query.abDevelopmentWorkspaces.findFirst({
       where: and(
@@ -730,11 +782,16 @@ export class EnterpriseAppBuilderService {
       .set({ workflowStatus: 'preview', updatedAt: new Date() })
       .where(eq(abFeatureRequests.id, featureRequestId));
 
-    await this.recordAudit(scope, 'preview_created', 'ab_preview_record', created!.id, { featureRequestId });
+    await this.recordAudit(scope, 'preview_created', 'ab_preview_record', created!.id, {
+      featureRequestId,
+    });
     return toPreviewRecordSummary(created!);
   }
 
-  async submitForApproval(scope: StaffScope, featureRequestId: string): Promise<AbApprovalRecordSummary> {
+  async submitForApproval(
+    scope: StaffScope,
+    featureRequestId: string,
+  ): Promise<AbApprovalRecordSummary> {
     const request = await this.ensureFeatureRequest(scope.companyId, featureRequestId);
     const [architectureImpact, dbPlans] = await Promise.all([
       this.deps.db.query.abArchitectureImpactAnalyses.findFirst({
@@ -771,14 +828,23 @@ export class EnterpriseAppBuilderService {
       .set({ workflowStatus: 'pending_approval', updatedAt: new Date() })
       .where(eq(abFeatureRequests.id, featureRequestId));
 
-    await this.recordAudit(scope, 'feature_submitted_for_approval', 'ab_approval_record', created!.id, {
-      featureRequestId,
-      requiredAreas,
-    });
+    await this.recordAudit(
+      scope,
+      'feature_submitted_for_approval',
+      'ab_approval_record',
+      created!.id,
+      {
+        featureRequestId,
+        requiredAreas,
+      },
+    );
     return toApprovalRecordSummary(created!);
   }
 
-  async approveFeature(scope: StaffScope, featureRequestId: string): Promise<AbApprovalRecordSummary> {
+  async approveFeature(
+    scope: StaffScope,
+    featureRequestId: string,
+  ): Promise<AbApprovalRecordSummary> {
     const approval = await this.ensurePendingApproval(scope.companyId, featureRequestId);
     const now = new Date();
     const [updated] = await this.deps.db
@@ -824,7 +890,9 @@ export class EnterpriseAppBuilderService {
       .set({ workflowStatus: 'rejected', updatedAt: now })
       .where(eq(abFeatureRequests.id, featureRequestId));
 
-    await this.recordAudit(scope, 'feature_rejected', 'ab_feature_request', featureRequestId, { reason });
+    await this.recordAudit(scope, 'feature_rejected', 'ab_feature_request', featureRequestId, {
+      reason,
+    });
     return toApprovalRecordSummary(updated!);
   }
 
@@ -835,7 +903,10 @@ export class EnterpriseAppBuilderService {
   ): Promise<AbDeploymentSummary> {
     const request = await this.ensureFeatureRequest(scope.companyId, featureRequestId);
     if (request.workflowStatus !== 'approved') {
-      throw new EnterpriseAppBuilderError('VALIDATION_ERROR', 'Feature must be approved before deployment');
+      throw new EnterpriseAppBuilderError(
+        'VALIDATION_ERROR',
+        'Feature must be approved before deployment',
+      );
     }
 
     const approval = await this.deps.db.query.abApprovalRecords.findFirst({
@@ -851,7 +922,8 @@ export class EnterpriseAppBuilderService {
     }
 
     const now = new Date();
-    const deploymentKey = input?.deploymentKey ?? `deploy-${request.requestKey}-${randomUUID().slice(0, 8)}`;
+    const deploymentKey =
+      input?.deploymentKey ?? `deploy-${request.requestKey}-${randomUUID().slice(0, 8)}`;
     const verificationFailed = input?.verificationFailed === true;
 
     const [created] = await this.deps.db
@@ -943,8 +1015,13 @@ export class EnterpriseAppBuilderService {
     scope: StaffScope,
     input: ExecuteAbSafeBuildActionRequest,
   ): Promise<ExecuteSafeBuildActionResult> {
-    if (!SAFE_BUILD_ACTION_KEYS.includes(input.actionKey as (typeof SAFE_BUILD_ACTION_KEYS)[number])) {
-      throw new EnterpriseAppBuilderError('VALIDATION_ERROR', 'Only configured low-risk build actions are allowed');
+    if (
+      !SAFE_BUILD_ACTION_KEYS.includes(input.actionKey as (typeof SAFE_BUILD_ACTION_KEYS)[number])
+    ) {
+      throw new EnterpriseAppBuilderError(
+        'VALIDATION_ERROR',
+        'Only configured low-risk build actions are allowed',
+      );
     }
 
     let output: Record<string, unknown> = {};
@@ -962,7 +1039,10 @@ export class EnterpriseAppBuilderService {
     } else if (input.actionKey === 'preview_refresh') {
       const featureRequestId = String(input.input?.featureRequestId ?? '');
       if (!featureRequestId) {
-        throw new EnterpriseAppBuilderError('VALIDATION_ERROR', 'featureRequestId is required for preview_refresh');
+        throw new EnterpriseAppBuilderError(
+          'VALIDATION_ERROR',
+          'featureRequestId is required for preview_refresh',
+        );
       }
       const preview = await this.createPreview(scope, featureRequestId);
       output = { previewId: preview.id, previewKey: preview.previewKey };
@@ -970,10 +1050,17 @@ export class EnterpriseAppBuilderService {
     } else if (input.actionKey === 'test_queue') {
       const featureRequestId = String(input.input?.featureRequestId ?? '');
       if (!featureRequestId) {
-        throw new EnterpriseAppBuilderError('VALIDATION_ERROR', 'featureRequestId is required for test_queue');
+        throw new EnterpriseAppBuilderError(
+          'VALIDATION_ERROR',
+          'featureRequestId is required for test_queue',
+        );
       }
       const testRun = await this.runTestValidation(scope, featureRequestId);
-      output = { testRunId: testRun.id, runKey: testRun.runKey, workflowStatus: testRun.workflowStatus };
+      output = {
+        testRunId: testRun.id,
+        runKey: testRun.runKey,
+        workflowStatus: testRun.workflowStatus,
+      };
       verified = testRun.workflowStatus === 'pending';
       workflowStatus = testRun.workflowStatus;
     }
@@ -987,20 +1074,31 @@ export class EnterpriseAppBuilderService {
     return { actionKey: input.actionKey, verified, workflowStatus, output };
   }
 
-  async acknowledgeAppBuilderAlert(scope: StaffScope, alertId: string): Promise<AbAppBuilderAlertSummary> {
+  async acknowledgeAppBuilderAlert(
+    scope: StaffScope,
+    alertId: string,
+  ): Promise<AbAppBuilderAlertSummary> {
     await this.ensureAppBuilderAlert(scope.companyId, alertId);
     const [updated] = await this.deps.db
       .update(abAppBuilderAlerts)
       .set({ status: 'acknowledged', updatedAt: new Date() })
       .where(eq(abAppBuilderAlerts.id, alertId))
       .returning();
-    await this.recordAudit(scope, 'app_builder_alert_acknowledged', 'ab_app_builder_alert', alertId);
+    await this.recordAudit(
+      scope,
+      'app_builder_alert_acknowledged',
+      'ab_app_builder_alert',
+      alertId,
+    );
     return toAppBuilderAlertSummary(updated!);
   }
 
   // --- Feature requests CRUD ---
 
-  async createFeatureRequest(scope: StaffScope, input: CreateAbFeatureRequestRequest): Promise<AbFeatureRequestSummary> {
+  async createFeatureRequest(
+    scope: StaffScope,
+    input: CreateAbFeatureRequestRequest,
+  ): Promise<AbFeatureRequestSummary> {
     const [created] = await this.deps.db
       .insert(abFeatureRequests)
       .values({
@@ -1056,7 +1154,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateRequirementsAnalysisInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'requirements_analysis_created', 'ab_requirements_analysis', created!.id);
+    await this.recordAudit(
+      scope,
+      'requirements_analysis_created',
+      'ab_requirements_analysis',
+      created!.id,
+    );
     return toRequirementsAnalysisSummary(created!);
   }
 
@@ -1069,9 +1172,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toRequirementsAnalysisSummary);
   }
 
-  async getRequirementsAnalysis(companyId: string, id: string): Promise<AbRequirementsAnalysisSummary | null> {
+  async getRequirementsAnalysis(
+    companyId: string,
+    id: string,
+  ): Promise<AbRequirementsAnalysisSummary | null> {
     const row = await this.deps.db.query.abRequirementsAnalyses.findFirst({
-      where: and(eq(abRequirementsAnalyses.companyId, companyId), eq(abRequirementsAnalyses.id, id)),
+      where: and(
+        eq(abRequirementsAnalyses.companyId, companyId),
+        eq(abRequirementsAnalyses.id, id),
+      ),
     });
     return row ? toRequirementsAnalysisSummary(row) : null;
   }
@@ -1085,7 +1194,12 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abRequirementsAnalyses)
       .set({ ...mapUpdateRequirementsAnalysisInput(input), updatedAt: new Date() })
-      .where(and(eq(abRequirementsAnalyses.companyId, scope.companyId), eq(abRequirementsAnalyses.id, id)))
+      .where(
+        and(
+          eq(abRequirementsAnalyses.companyId, scope.companyId),
+          eq(abRequirementsAnalyses.id, id),
+        ),
+      )
       .returning();
     await this.recordAudit(scope, 'requirements_analysis_updated', 'ab_requirements_analysis', id);
     return toRequirementsAnalysisSummary(updated!);
@@ -1104,7 +1218,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateArchitectureImpactInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'architecture_impact_created', 'ab_architecture_impact_analysis', created!.id);
+    await this.recordAudit(
+      scope,
+      'architecture_impact_created',
+      'ab_architecture_impact_analysis',
+      created!.id,
+    );
     return toArchitectureImpactSummary(created!);
   }
 
@@ -1117,9 +1236,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toArchitectureImpactSummary);
   }
 
-  async getArchitectureImpactAnalysis(companyId: string, id: string): Promise<AbArchitectureImpactSummary | null> {
+  async getArchitectureImpactAnalysis(
+    companyId: string,
+    id: string,
+  ): Promise<AbArchitectureImpactSummary | null> {
     const row = await this.deps.db.query.abArchitectureImpactAnalyses.findFirst({
-      where: and(eq(abArchitectureImpactAnalyses.companyId, companyId), eq(abArchitectureImpactAnalyses.id, id)),
+      where: and(
+        eq(abArchitectureImpactAnalyses.companyId, companyId),
+        eq(abArchitectureImpactAnalyses.id, id),
+      ),
     });
     return row ? toArchitectureImpactSummary(row) : null;
   }
@@ -1133,9 +1258,19 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abArchitectureImpactAnalyses)
       .set({ ...mapUpdateArchitectureImpactInput(input), updatedAt: new Date() })
-      .where(and(eq(abArchitectureImpactAnalyses.companyId, scope.companyId), eq(abArchitectureImpactAnalyses.id, id)))
+      .where(
+        and(
+          eq(abArchitectureImpactAnalyses.companyId, scope.companyId),
+          eq(abArchitectureImpactAnalyses.id, id),
+        ),
+      )
       .returning();
-    await this.recordAudit(scope, 'architecture_impact_updated', 'ab_architecture_impact_analysis', id);
+    await this.recordAudit(
+      scope,
+      'architecture_impact_updated',
+      'ab_architecture_impact_analysis',
+      id,
+    );
     return toArchitectureImpactSummary(updated!);
   }
 
@@ -1152,7 +1287,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateDevelopmentWorkspaceInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'development_workspace_record_created', 'ab_development_workspace', created!.id);
+    await this.recordAudit(
+      scope,
+      'development_workspace_record_created',
+      'ab_development_workspace',
+      created!.id,
+    );
     return toDevelopmentWorkspaceSummary(created!);
   }
 
@@ -1165,9 +1305,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toDevelopmentWorkspaceSummary);
   }
 
-  async getDevelopmentWorkspace(companyId: string, id: string): Promise<AbDevelopmentWorkspaceSummary | null> {
+  async getDevelopmentWorkspace(
+    companyId: string,
+    id: string,
+  ): Promise<AbDevelopmentWorkspaceSummary | null> {
     const row = await this.deps.db.query.abDevelopmentWorkspaces.findFirst({
-      where: and(eq(abDevelopmentWorkspaces.companyId, companyId), eq(abDevelopmentWorkspaces.id, id)),
+      where: and(
+        eq(abDevelopmentWorkspaces.companyId, companyId),
+        eq(abDevelopmentWorkspaces.id, id),
+      ),
     });
     return row ? toDevelopmentWorkspaceSummary(row) : null;
   }
@@ -1181,7 +1327,12 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abDevelopmentWorkspaces)
       .set({ ...mapUpdateDevelopmentWorkspaceInput(input), updatedAt: new Date() })
-      .where(and(eq(abDevelopmentWorkspaces.companyId, scope.companyId), eq(abDevelopmentWorkspaces.id, id)))
+      .where(
+        and(
+          eq(abDevelopmentWorkspaces.companyId, scope.companyId),
+          eq(abDevelopmentWorkspaces.id, id),
+        ),
+      )
       .returning();
     await this.recordAudit(scope, 'development_workspace_updated', 'ab_development_workspace', id);
     return toDevelopmentWorkspaceSummary(updated!);
@@ -1206,7 +1357,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateCodeGenerationRecordInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'code_generation_record_created', 'ab_code_generation_record', created!.id);
+    await this.recordAudit(
+      scope,
+      'code_generation_record_created',
+      'ab_code_generation_record',
+      created!.id,
+    );
     return toCodeGenerationRecordSummary(created!);
   }
 
@@ -1219,9 +1375,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toCodeGenerationRecordSummary);
   }
 
-  async getCodeGenerationRecord(companyId: string, id: string): Promise<AbCodeGenerationRecordSummary | null> {
+  async getCodeGenerationRecord(
+    companyId: string,
+    id: string,
+  ): Promise<AbCodeGenerationRecordSummary | null> {
     const row = await this.deps.db.query.abCodeGenerationRecords.findFirst({
-      where: and(eq(abCodeGenerationRecords.companyId, companyId), eq(abCodeGenerationRecords.id, id)),
+      where: and(
+        eq(abCodeGenerationRecords.companyId, companyId),
+        eq(abCodeGenerationRecords.id, id),
+      ),
     });
     return row ? toCodeGenerationRecordSummary(row) : null;
   }
@@ -1235,9 +1397,19 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abCodeGenerationRecords)
       .set({ ...mapUpdateCodeGenerationRecordInput(input), updatedAt: new Date() })
-      .where(and(eq(abCodeGenerationRecords.companyId, scope.companyId), eq(abCodeGenerationRecords.id, id)))
+      .where(
+        and(
+          eq(abCodeGenerationRecords.companyId, scope.companyId),
+          eq(abCodeGenerationRecords.id, id),
+        ),
+      )
       .returning();
-    await this.recordAudit(scope, 'code_generation_record_updated', 'ab_code_generation_record', id);
+    await this.recordAudit(
+      scope,
+      'code_generation_record_updated',
+      'ab_code_generation_record',
+      id,
+    );
     return toCodeGenerationRecordSummary(updated!);
   }
 
@@ -1255,7 +1427,12 @@ export class EnterpriseAppBuilderService {
         requiresOwnerApproval: true,
       })
       .returning();
-    await this.recordAudit(scope, 'database_change_plan_created', 'ab_database_change_plan', created!.id);
+    await this.recordAudit(
+      scope,
+      'database_change_plan_created',
+      'ab_database_change_plan',
+      created!.id,
+    );
     return toDatabaseChangePlanSummary(created!);
   }
 
@@ -1268,7 +1445,10 @@ export class EnterpriseAppBuilderService {
     return rows.map(toDatabaseChangePlanSummary);
   }
 
-  async getDatabaseChangePlan(companyId: string, id: string): Promise<AbDatabaseChangePlanSummary | null> {
+  async getDatabaseChangePlan(
+    companyId: string,
+    id: string,
+  ): Promise<AbDatabaseChangePlanSummary | null> {
     const row = await this.deps.db.query.abDatabaseChangePlans.findFirst({
       where: and(eq(abDatabaseChangePlans.companyId, companyId), eq(abDatabaseChangePlans.id, id)),
     });
@@ -1288,7 +1468,9 @@ export class EnterpriseAppBuilderService {
         requiresOwnerApproval: true,
         updatedAt: new Date(),
       })
-      .where(and(eq(abDatabaseChangePlans.companyId, scope.companyId), eq(abDatabaseChangePlans.id, id)))
+      .where(
+        and(eq(abDatabaseChangePlans.companyId, scope.companyId), eq(abDatabaseChangePlans.id, id)),
+      )
       .returning();
     await this.recordAudit(scope, 'database_change_plan_updated', 'ab_database_change_plan', id);
     return toDatabaseChangePlanSummary(updated!);
@@ -1324,7 +1506,11 @@ export class EnterpriseAppBuilderService {
     return row ? toTestRunSummary(row) : null;
   }
 
-  async updateTestRun(scope: StaffScope, id: string, input: UpdateAbTestRunRequest): Promise<AbTestRunSummary> {
+  async updateTestRun(
+    scope: StaffScope,
+    id: string,
+    input: UpdateAbTestRunRequest,
+  ): Promise<AbTestRunSummary> {
     await this.ensureTestRun(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(abTestRuns)
@@ -1337,7 +1523,10 @@ export class EnterpriseAppBuilderService {
 
   // --- Preview records CRUD ---
 
-  async createPreviewRecord(scope: StaffScope, input: CreateAbPreviewRecordRequest): Promise<AbPreviewRecordSummary> {
+  async createPreviewRecord(
+    scope: StaffScope,
+    input: CreateAbPreviewRecordRequest,
+  ): Promise<AbPreviewRecordSummary> {
     const [created] = await this.deps.db
       .insert(abPreviewRecords)
       .values({
@@ -1430,7 +1619,10 @@ export class EnterpriseAppBuilderService {
 
   // --- Deployments CRUD ---
 
-  async createDeployment(scope: StaffScope, input: CreateAbDeploymentRequest): Promise<AbDeploymentSummary> {
+  async createDeployment(
+    scope: StaffScope,
+    input: CreateAbDeploymentRequest,
+  ): Promise<AbDeploymentSummary> {
     const [created] = await this.deps.db
       .insert(abDeployments)
       .values({
@@ -1475,7 +1667,10 @@ export class EnterpriseAppBuilderService {
 
   // --- Rollbacks CRUD ---
 
-  async createRollback(scope: StaffScope, input: CreateAbRollbackRequest): Promise<AbRollbackSummary> {
+  async createRollback(
+    scope: StaffScope,
+    input: CreateAbRollbackRequest,
+  ): Promise<AbRollbackSummary> {
     const [created] = await this.deps.db
       .insert(abRollbacks)
       .values({
@@ -1503,7 +1698,11 @@ export class EnterpriseAppBuilderService {
     return row ? toRollbackSummary(row) : null;
   }
 
-  async updateRollback(scope: StaffScope, id: string, input: UpdateAbRollbackRequest): Promise<AbRollbackSummary> {
+  async updateRollback(
+    scope: StaffScope,
+    id: string,
+    input: UpdateAbRollbackRequest,
+  ): Promise<AbRollbackSummary> {
     await this.ensureRollback(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(abRollbacks)
@@ -1527,7 +1726,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateDocumentationUpdateInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'documentation_update_created', 'ab_documentation_update', created!.id);
+    await this.recordAudit(
+      scope,
+      'documentation_update_created',
+      'ab_documentation_update',
+      created!.id,
+    );
     return toDocumentationUpdateSummary(created!);
   }
 
@@ -1540,9 +1744,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toDocumentationUpdateSummary);
   }
 
-  async getDocumentationUpdate(companyId: string, id: string): Promise<AbDocumentationUpdateSummary | null> {
+  async getDocumentationUpdate(
+    companyId: string,
+    id: string,
+  ): Promise<AbDocumentationUpdateSummary | null> {
     const row = await this.deps.db.query.abDocumentationUpdates.findFirst({
-      where: and(eq(abDocumentationUpdates.companyId, companyId), eq(abDocumentationUpdates.id, id)),
+      where: and(
+        eq(abDocumentationUpdates.companyId, companyId),
+        eq(abDocumentationUpdates.id, id),
+      ),
     });
     return row ? toDocumentationUpdateSummary(row) : null;
   }
@@ -1556,7 +1766,12 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abDocumentationUpdates)
       .set({ ...mapUpdateDocumentationUpdateInput(input), updatedAt: new Date() })
-      .where(and(eq(abDocumentationUpdates.companyId, scope.companyId), eq(abDocumentationUpdates.id, id)))
+      .where(
+        and(
+          eq(abDocumentationUpdates.companyId, scope.companyId),
+          eq(abDocumentationUpdates.id, id),
+        ),
+      )
       .returning();
     await this.recordAudit(scope, 'documentation_update_updated', 'ab_documentation_update', id);
     return toDocumentationUpdateSummary(updated!);
@@ -1575,7 +1790,12 @@ export class EnterpriseAppBuilderService {
         ...mapCreateFeatureRegistryEntryInput(input),
       })
       .returning();
-    await this.recordAudit(scope, 'feature_registry_entry_created', 'ab_feature_registry_entry', created!.id);
+    await this.recordAudit(
+      scope,
+      'feature_registry_entry_created',
+      'ab_feature_registry_entry',
+      created!.id,
+    );
     return toFeatureRegistryEntrySummary(created!);
   }
 
@@ -1588,9 +1808,15 @@ export class EnterpriseAppBuilderService {
     return rows.map(toFeatureRegistryEntrySummary);
   }
 
-  async getFeatureRegistryEntry(companyId: string, id: string): Promise<AbFeatureRegistryEntrySummary | null> {
+  async getFeatureRegistryEntry(
+    companyId: string,
+    id: string,
+  ): Promise<AbFeatureRegistryEntrySummary | null> {
     const row = await this.deps.db.query.abFeatureRegistryEntries.findFirst({
-      where: and(eq(abFeatureRegistryEntries.companyId, companyId), eq(abFeatureRegistryEntries.id, id)),
+      where: and(
+        eq(abFeatureRegistryEntries.companyId, companyId),
+        eq(abFeatureRegistryEntries.id, id),
+      ),
     });
     return row ? toFeatureRegistryEntrySummary(row) : null;
   }
@@ -1604,9 +1830,19 @@ export class EnterpriseAppBuilderService {
     const [updated] = await this.deps.db
       .update(abFeatureRegistryEntries)
       .set({ ...mapUpdateFeatureRegistryEntryInput(input), updatedAt: new Date() })
-      .where(and(eq(abFeatureRegistryEntries.companyId, scope.companyId), eq(abFeatureRegistryEntries.id, id)))
+      .where(
+        and(
+          eq(abFeatureRegistryEntries.companyId, scope.companyId),
+          eq(abFeatureRegistryEntries.id, id),
+        ),
+      )
       .returning();
-    await this.recordAudit(scope, 'feature_registry_entry_updated', 'ab_feature_registry_entry', id);
+    await this.recordAudit(
+      scope,
+      'feature_registry_entry_updated',
+      'ab_feature_registry_entry',
+      id,
+    );
     return toFeatureRegistryEntrySummary(updated!);
   }
 
@@ -1649,7 +1885,10 @@ export class EnterpriseAppBuilderService {
       where: filters?.status
         ? and(
             eq(abAppBuilderAlerts.companyId, companyId),
-            eq(abAppBuilderAlerts.status, filters.status as typeof abAppBuilderAlerts.$inferSelect.status),
+            eq(
+              abAppBuilderAlerts.status,
+              filters.status as typeof abAppBuilderAlerts.$inferSelect.status,
+            ),
           )
         : eq(abAppBuilderAlerts.companyId, companyId),
       orderBy: [desc(abAppBuilderAlerts.createdAt)],
@@ -1658,7 +1897,10 @@ export class EnterpriseAppBuilderService {
     return rows.map(toAppBuilderAlertSummary);
   }
 
-  async getAppBuilderAlert(companyId: string, id: string): Promise<AbAppBuilderAlertSummary | null> {
+  async getAppBuilderAlert(
+    companyId: string,
+    id: string,
+  ): Promise<AbAppBuilderAlertSummary | null> {
     const row = await this.deps.db.query.abAppBuilderAlerts.findFirst({
       where: and(eq(abAppBuilderAlerts.companyId, companyId), eq(abAppBuilderAlerts.id, id)),
     });
@@ -1803,7 +2045,10 @@ export class EnterpriseAppBuilderService {
 
   private async ensureRequirementsAnalysis(companyId: string, id: string) {
     const row = await this.deps.db.query.abRequirementsAnalyses.findFirst({
-      where: and(eq(abRequirementsAnalyses.companyId, companyId), eq(abRequirementsAnalyses.id, id)),
+      where: and(
+        eq(abRequirementsAnalyses.companyId, companyId),
+        eq(abRequirementsAnalyses.id, id),
+      ),
     });
     if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Requirements analysis not found');
     return row;
@@ -1811,15 +2056,22 @@ export class EnterpriseAppBuilderService {
 
   private async ensureArchitectureImpactAnalysis(companyId: string, id: string) {
     const row = await this.deps.db.query.abArchitectureImpactAnalyses.findFirst({
-      where: and(eq(abArchitectureImpactAnalyses.companyId, companyId), eq(abArchitectureImpactAnalyses.id, id)),
+      where: and(
+        eq(abArchitectureImpactAnalyses.companyId, companyId),
+        eq(abArchitectureImpactAnalyses.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Architecture impact analysis not found');
+    if (!row)
+      throw new EnterpriseAppBuilderError('NOT_FOUND', 'Architecture impact analysis not found');
     return row;
   }
 
   private async ensureDevelopmentWorkspace(companyId: string, id: string) {
     const row = await this.deps.db.query.abDevelopmentWorkspaces.findFirst({
-      where: and(eq(abDevelopmentWorkspaces.companyId, companyId), eq(abDevelopmentWorkspaces.id, id)),
+      where: and(
+        eq(abDevelopmentWorkspaces.companyId, companyId),
+        eq(abDevelopmentWorkspaces.id, id),
+      ),
     });
     if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Development workspace not found');
     return row;
@@ -1827,7 +2079,10 @@ export class EnterpriseAppBuilderService {
 
   private async ensureCodeGenerationRecord(companyId: string, id: string) {
     const row = await this.deps.db.query.abCodeGenerationRecords.findFirst({
-      where: and(eq(abCodeGenerationRecords.companyId, companyId), eq(abCodeGenerationRecords.id, id)),
+      where: and(
+        eq(abCodeGenerationRecords.companyId, companyId),
+        eq(abCodeGenerationRecords.id, id),
+      ),
     });
     if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Code generation record not found');
     return row;
@@ -1883,7 +2138,10 @@ export class EnterpriseAppBuilderService {
 
   private async ensureDocumentationUpdate(companyId: string, id: string) {
     const row = await this.deps.db.query.abDocumentationUpdates.findFirst({
-      where: and(eq(abDocumentationUpdates.companyId, companyId), eq(abDocumentationUpdates.id, id)),
+      where: and(
+        eq(abDocumentationUpdates.companyId, companyId),
+        eq(abDocumentationUpdates.id, id),
+      ),
     });
     if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Documentation update not found');
     return row;
@@ -1891,7 +2149,10 @@ export class EnterpriseAppBuilderService {
 
   private async ensureFeatureRegistryEntry(companyId: string, id: string) {
     const row = await this.deps.db.query.abFeatureRegistryEntries.findFirst({
-      where: and(eq(abFeatureRegistryEntries.companyId, companyId), eq(abFeatureRegistryEntries.id, id)),
+      where: and(
+        eq(abFeatureRegistryEntries.companyId, companyId),
+        eq(abFeatureRegistryEntries.id, id),
+      ),
     });
     if (!row) throw new EnterpriseAppBuilderError('NOT_FOUND', 'Feature registry entry not found');
     return row;
@@ -1922,7 +2183,11 @@ function parseOptionalDate(value?: string | null): Date | null {
 
 function jsonArray(value: Record<string, unknown> | unknown, key = 'items'): string[] {
   if (Array.isArray(value)) return value.map(String);
-  if (value && typeof value === 'object' && Array.isArray((value as Record<string, unknown>)[key])) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    Array.isArray((value as Record<string, unknown>)[key])
+  ) {
     return ((value as Record<string, unknown>)[key] as unknown[]).map(String);
   }
   return [];
@@ -1954,7 +2219,11 @@ function deriveArchitectureImpact(
 
   const affectedModules: Record<string, unknown> = {
     requestType: request.requestType,
-    registryMatches: matchingRegistry.map((e) => ({ id: e.id, registryKey: e.registryKey, moduleKey: e.moduleKey })),
+    registryMatches: matchingRegistry.map((e) => ({
+      id: e.id,
+      registryKey: e.registryKey,
+      moduleKey: e.moduleKey,
+    })),
   };
 
   const impacts: Record<string, string | null> = {
@@ -2024,7 +2293,8 @@ function resolveRequiredApprovalAreas(
     if (requestType.includes('auth')) areas.add('authentication');
   }
   if (['billing', 'invoice', 'payment'].some((k) => requestType.includes(k))) areas.add('billing');
-  if (['finance', 'ledger', 'accounting'].some((k) => requestType.includes(k))) areas.add('finance');
+  if (['finance', 'ledger', 'accounting'].some((k) => requestType.includes(k)))
+    areas.add('finance');
   if (requestType.includes('payroll')) areas.add('payroll');
   if (['legal', 'contract', 'terms'].some((k) => requestType.includes(k))) areas.add('legal');
   if (['compliance', 'audit', 'gdpr'].some((k) => requestType.includes(k))) areas.add('compliance');
@@ -2039,7 +2309,10 @@ function resolveRequiredApprovalAreas(
 
   for (const area of OWNER_APPROVAL_REQUIRED_AREAS) {
     if (areas.has(area)) continue;
-    if (request.config?.requiredApprovalAreas && Array.isArray(request.config.requiredApprovalAreas)) {
+    if (
+      request.config?.requiredApprovalAreas &&
+      Array.isArray(request.config.requiredApprovalAreas)
+    ) {
       if ((request.config.requiredApprovalAreas as string[]).includes(area)) areas.add(area);
     }
   }
@@ -2047,7 +2320,9 @@ function resolveRequiredApprovalAreas(
   return [...areas];
 }
 
-function toPlatformConfigSummary(row: typeof abPlatformConfig.$inferSelect): AbPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof abPlatformConfig.$inferSelect,
+): AbPlatformConfigSummary {
   return {
     autoApproveRules: row.autoApproveRules,
     deploymentStandards: row.deploymentStandards,
@@ -2074,7 +2349,9 @@ function toAnalyticsSummary(row: typeof abAnalyticsSnapshots.$inferSelect): AbAn
   };
 }
 
-function toFeatureRequestSummary(row: typeof abFeatureRequests.$inferSelect): AbFeatureRequestSummary {
+function toFeatureRequestSummary(
+  row: typeof abFeatureRequests.$inferSelect,
+): AbFeatureRequestSummary {
   return {
     id: row.id,
     requestKey: row.requestKey,
@@ -2095,7 +2372,8 @@ function mapCreateFeatureRequestInput(input: CreateAbFeatureRequestRequest, scop
     title: input.title.trim(),
     naturalLanguageRequest: input.naturalLanguageRequest ?? null,
     requestType: input.requestType.trim(),
-    workflowStatus: (input.workflowStatus ?? 'submitted') as typeof abFeatureRequests.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'submitted') as typeof abFeatureRequests.$inferInsert.workflowStatus,
     riskLevel: (input.riskLevel ?? 'medium') as typeof abFeatureRequests.$inferInsert.riskLevel,
     requestedByUserId: input.requestedByUserId ?? scope.userId,
     config: input.config ?? {},
@@ -2106,18 +2384,29 @@ function mapUpdateFeatureRequestInput(input: UpdateAbFeatureRequestRequest) {
   return {
     ...(input.requestKey !== undefined ? { requestKey: input.requestKey.trim() } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-    ...(input.naturalLanguageRequest !== undefined ? { naturalLanguageRequest: input.naturalLanguageRequest ?? null } : {}),
+    ...(input.naturalLanguageRequest !== undefined
+      ? { naturalLanguageRequest: input.naturalLanguageRequest ?? null }
+      : {}),
     ...(input.requestType !== undefined ? { requestType: input.requestType.trim() } : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abFeatureRequests.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof abFeatureRequests.$inferInsert.workflowStatus,
+        }
       : {}),
-    ...(input.riskLevel !== undefined ? { riskLevel: input.riskLevel as typeof abFeatureRequests.$inferInsert.riskLevel } : {}),
-    ...(input.requestedByUserId !== undefined ? { requestedByUserId: input.requestedByUserId ?? null } : {}),
+    ...(input.riskLevel !== undefined
+      ? { riskLevel: input.riskLevel as typeof abFeatureRequests.$inferInsert.riskLevel }
+      : {}),
+    ...(input.requestedByUserId !== undefined
+      ? { requestedByUserId: input.requestedByUserId ?? null }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
-function toRequirementsAnalysisSummary(row: typeof abRequirementsAnalyses.$inferSelect): AbRequirementsAnalysisSummary {
+function toRequirementsAnalysisSummary(
+  row: typeof abRequirementsAnalyses.$inferSelect,
+): AbRequirementsAnalysisSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2137,7 +2426,8 @@ function mapCreateRequirementsAnalysisInput(input: CreateAbRequirementsAnalysisR
     acceptanceCriteria: input.acceptanceCriteria ?? {},
     dependencies: input.dependencies ?? {},
     estimatedComplexity: input.estimatedComplexity ?? null,
-    riskLevel: (input.riskLevel ?? 'medium') as typeof abRequirementsAnalyses.$inferInsert.riskLevel,
+    riskLevel: (input.riskLevel ??
+      'medium') as typeof abRequirementsAnalyses.$inferInsert.riskLevel,
     implementationPlan: input.implementationPlan ?? null,
     analyzedAt: parseOptionalDate(input.analyzedAt),
   };
@@ -2146,20 +2436,32 @@ function mapCreateRequirementsAnalysisInput(input: CreateAbRequirementsAnalysisR
 function mapUpdateRequirementsAnalysisInput(input: UpdateAbRequirementsAnalysisRequest) {
   return {
     ...(input.featureRequestId !== undefined ? { featureRequestId: input.featureRequestId } : {}),
-    ...(input.functionalRequirements !== undefined ? { functionalRequirements: input.functionalRequirements } : {}),
-    ...(input.technicalRequirements !== undefined ? { technicalRequirements: input.technicalRequirements } : {}),
-    ...(input.acceptanceCriteria !== undefined ? { acceptanceCriteria: input.acceptanceCriteria } : {}),
+    ...(input.functionalRequirements !== undefined
+      ? { functionalRequirements: input.functionalRequirements }
+      : {}),
+    ...(input.technicalRequirements !== undefined
+      ? { technicalRequirements: input.technicalRequirements }
+      : {}),
+    ...(input.acceptanceCriteria !== undefined
+      ? { acceptanceCriteria: input.acceptanceCriteria }
+      : {}),
     ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
-    ...(input.estimatedComplexity !== undefined ? { estimatedComplexity: input.estimatedComplexity ?? null } : {}),
+    ...(input.estimatedComplexity !== undefined
+      ? { estimatedComplexity: input.estimatedComplexity ?? null }
+      : {}),
     ...(input.riskLevel !== undefined
       ? { riskLevel: input.riskLevel as typeof abRequirementsAnalyses.$inferInsert.riskLevel }
       : {}),
-    ...(input.implementationPlan !== undefined ? { implementationPlan: input.implementationPlan ?? null } : {}),
+    ...(input.implementationPlan !== undefined
+      ? { implementationPlan: input.implementationPlan ?? null }
+      : {}),
     ...(input.analyzedAt !== undefined ? { analyzedAt: parseOptionalDate(input.analyzedAt) } : {}),
   };
 }
 
-function toArchitectureImpactSummary(row: typeof abArchitectureImpactAnalyses.$inferSelect): AbArchitectureImpactSummary {
+function toArchitectureImpactSummary(
+  row: typeof abArchitectureImpactAnalyses.$inferSelect,
+): AbArchitectureImpactSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2202,18 +2504,26 @@ function mapUpdateArchitectureImpactInput(input: UpdateAbArchitectureImpactReque
     ...(input.backendImpact !== undefined ? { backendImpact: input.backendImpact ?? null } : {}),
     ...(input.databaseImpact !== undefined ? { databaseImpact: input.databaseImpact ?? null } : {}),
     ...(input.apiImpact !== undefined ? { apiImpact: input.apiImpact ?? null } : {}),
-    ...(input.sharedTypesImpact !== undefined ? { sharedTypesImpact: input.sharedTypesImpact ?? null } : {}),
+    ...(input.sharedTypesImpact !== undefined
+      ? { sharedTypesImpact: input.sharedTypesImpact ?? null }
+      : {}),
     ...(input.rbacImpact !== undefined ? { rbacImpact: input.rbacImpact ?? null } : {}),
     ...(input.securityImpact !== undefined ? { securityImpact: input.securityImpact ?? null } : {}),
-    ...(input.tenantIsolationImpact !== undefined ? { tenantIsolationImpact: input.tenantIsolationImpact ?? null } : {}),
+    ...(input.tenantIsolationImpact !== undefined
+      ? { tenantIsolationImpact: input.tenantIsolationImpact ?? null }
+      : {}),
     ...(input.affectedModules !== undefined ? { affectedModules: input.affectedModules } : {}),
-    ...(input.breakingChangeRisk !== undefined ? { breakingChangeRisk: input.breakingChangeRisk ?? null } : {}),
+    ...(input.breakingChangeRisk !== undefined
+      ? { breakingChangeRisk: input.breakingChangeRisk ?? null }
+      : {}),
     ...(input.analysis !== undefined ? { analysis: input.analysis } : {}),
     ...(input.analyzedAt !== undefined ? { analyzedAt: parseOptionalDate(input.analyzedAt) } : {}),
   };
 }
 
-function toDevelopmentWorkspaceSummary(row: typeof abDevelopmentWorkspaces.$inferSelect): AbDevelopmentWorkspaceSummary {
+function toDevelopmentWorkspaceSummary(
+  row: typeof abDevelopmentWorkspaces.$inferSelect,
+): AbDevelopmentWorkspaceSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2248,11 +2558,15 @@ function mapUpdateDevelopmentWorkspaceInput(input: UpdateAbDevelopmentWorkspaceR
     ...(input.status !== undefined ? { status: input.status } : {}),
     ...(input.filesChanged !== undefined ? { filesChanged: input.filesChanged } : {}),
     ...(input.startedAt !== undefined ? { startedAt: parseOptionalDate(input.startedAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
   };
 }
 
-function toCodeGenerationRecordSummary(row: typeof abCodeGenerationRecords.$inferSelect): AbCodeGenerationRecordSummary {
+function toCodeGenerationRecordSummary(
+  row: typeof abCodeGenerationRecords.$inferSelect,
+): AbCodeGenerationRecordSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2275,7 +2589,8 @@ function mapCreateCodeGenerationRecordInput(input: CreateAbCodeGenerationRecordR
     artifactType: input.artifactType.trim(),
     artifactPath: input.artifactPath ?? null,
     language: input.language ?? null,
-    workflowStatus: (input.workflowStatus ?? 'draft') as typeof abCodeGenerationRecords.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'draft') as typeof abCodeGenerationRecords.$inferInsert.workflowStatus,
     generatedAt: parseOptionalDate(input.generatedAt),
     metadata: input.metadata ?? {},
   };
@@ -2290,14 +2605,21 @@ function mapUpdateCodeGenerationRecordInput(input: UpdateAbCodeGenerationRecordR
     ...(input.artifactPath !== undefined ? { artifactPath: input.artifactPath ?? null } : {}),
     ...(input.language !== undefined ? { language: input.language ?? null } : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abCodeGenerationRecords.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof abCodeGenerationRecords.$inferInsert.workflowStatus,
+        }
       : {}),
-    ...(input.generatedAt !== undefined ? { generatedAt: parseOptionalDate(input.generatedAt) } : {}),
+    ...(input.generatedAt !== undefined
+      ? { generatedAt: parseOptionalDate(input.generatedAt) }
+      : {}),
     ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
   };
 }
 
-function toDatabaseChangePlanSummary(row: typeof abDatabaseChangePlans.$inferSelect): AbDatabaseChangePlanSummary {
+function toDatabaseChangePlanSummary(
+  row: typeof abDatabaseChangePlans.$inferSelect,
+): AbDatabaseChangePlanSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2320,7 +2642,8 @@ function mapCreateDatabaseChangePlanInput(input: CreateAbDatabaseChangePlanReque
     breakingChanges: input.breakingChanges ?? {},
     estimatedDurationMinutes: input.estimatedDurationMinutes ?? null,
     requiresOwnerApproval: true,
-    workflowStatus: (input.workflowStatus ?? 'draft') as typeof abDatabaseChangePlans.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'draft') as typeof abDatabaseChangePlans.$inferInsert.workflowStatus,
   };
 }
 
@@ -2330,13 +2653,18 @@ function mapUpdateDatabaseChangePlanInput(input: UpdateAbDatabaseChangePlanReque
     ...(input.migrationKey !== undefined ? { migrationKey: input.migrationKey.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
     ...(input.impactAnalysis !== undefined ? { impactAnalysis: input.impactAnalysis } : {}),
-    ...(input.conflictDetection !== undefined ? { conflictDetection: input.conflictDetection } : {}),
+    ...(input.conflictDetection !== undefined
+      ? { conflictDetection: input.conflictDetection }
+      : {}),
     ...(input.breakingChanges !== undefined ? { breakingChanges: input.breakingChanges } : {}),
     ...(input.estimatedDurationMinutes !== undefined
       ? { estimatedDurationMinutes: input.estimatedDurationMinutes ?? null }
       : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abDatabaseChangePlans.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof abDatabaseChangePlans.$inferInsert.workflowStatus,
+        }
       : {}),
   };
 }
@@ -2362,7 +2690,8 @@ function mapCreateTestRunInput(input: CreateAbTestRunRequest) {
     featureRequestId: input.featureRequestId,
     runKey: input.runKey.trim(),
     testSuite: input.testSuite.trim(),
-    workflowStatus: (input.workflowStatus ?? 'pending') as typeof abTestRuns.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'pending') as typeof abTestRuns.$inferInsert.workflowStatus,
     passedCount: input.passedCount ?? 0,
     failedCount: input.failedCount ?? 0,
     skippedCount: input.skippedCount ?? 0,
@@ -2384,7 +2713,9 @@ function mapUpdateTestRunInput(input: UpdateAbTestRunRequest) {
     ...(input.failedCount !== undefined ? { failedCount: input.failedCount } : {}),
     ...(input.skippedCount !== undefined ? { skippedCount: input.skippedCount } : {}),
     ...(input.startedAt !== undefined ? { startedAt: parseOptionalDate(input.startedAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
     ...(input.results !== undefined ? { results: input.results } : {}),
   };
 }
@@ -2429,13 +2760,19 @@ function mapUpdatePreviewRecordInput(input: UpdateAbPreviewRecordRequest) {
     ...(input.filesModified !== undefined ? { filesModified: input.filesModified } : {}),
     ...(input.databaseImpact !== undefined ? { databaseImpact: input.databaseImpact ?? null } : {}),
     ...(input.apiImpact !== undefined ? { apiImpact: input.apiImpact ?? null } : {}),
-    ...(input.performanceImpact !== undefined ? { performanceImpact: input.performanceImpact ?? null } : {}),
+    ...(input.performanceImpact !== undefined
+      ? { performanceImpact: input.performanceImpact ?? null }
+      : {}),
     ...(input.securityImpact !== undefined ? { securityImpact: input.securityImpact ?? null } : {}),
-    ...(input.capturedAt !== undefined ? { capturedAt: parseOptionalDate(input.capturedAt) ?? new Date() } : {}),
+    ...(input.capturedAt !== undefined
+      ? { capturedAt: parseOptionalDate(input.capturedAt) ?? new Date() }
+      : {}),
   };
 }
 
-function toApprovalRecordSummary(row: typeof abApprovalRecords.$inferSelect): AbApprovalRecordSummary {
+function toApprovalRecordSummary(
+  row: typeof abApprovalRecords.$inferSelect,
+): AbApprovalRecordSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2452,7 +2789,8 @@ function mapCreateApprovalRecordInput(input: CreateAbApprovalRecordRequest) {
   return {
     featureRequestId: input.featureRequestId,
     approvalType: input.approvalType.trim(),
-    workflowStatus: (input.workflowStatus ?? 'pending') as typeof abApprovalRecords.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'pending') as typeof abApprovalRecords.$inferInsert.workflowStatus,
     requiredAreas: input.requiredAreas ?? {},
     approvedByUserId: input.approvedByUserId ?? null,
     rejectedReason: input.rejectedReason ?? null,
@@ -2465,10 +2803,15 @@ function mapUpdateApprovalRecordInput(input: UpdateAbApprovalRecordRequest) {
     ...(input.featureRequestId !== undefined ? { featureRequestId: input.featureRequestId } : {}),
     ...(input.approvalType !== undefined ? { approvalType: input.approvalType } : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abApprovalRecords.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof abApprovalRecords.$inferInsert.workflowStatus,
+        }
       : {}),
     ...(input.requiredAreas !== undefined ? { requiredAreas: input.requiredAreas } : {}),
-    ...(input.approvedByUserId !== undefined ? { approvedByUserId: input.approvedByUserId ?? null } : {}),
+    ...(input.approvedByUserId !== undefined
+      ? { approvedByUserId: input.approvedByUserId ?? null }
+      : {}),
     ...(input.rejectedReason !== undefined ? { rejectedReason: input.rejectedReason ?? null } : {}),
     ...(input.approvedAt !== undefined ? { approvedAt: parseOptionalDate(input.approvedAt) } : {}),
   };
@@ -2495,7 +2838,8 @@ function mapCreateDeploymentInput(input: CreateAbDeploymentRequest, scope: Staff
     featureRequestId: input.featureRequestId,
     deploymentKey: input.deploymentKey.trim(),
     environment: input.environment.trim(),
-    workflowStatus: (input.workflowStatus ?? 'planned') as typeof abDeployments.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'planned') as typeof abDeployments.$inferInsert.workflowStatus,
     version: input.version ?? null,
     deployedByUserId: input.deployedByUserId ?? scope.userId,
     startedAt: parseOptionalDate(input.startedAt),
@@ -2513,10 +2857,16 @@ function mapUpdateDeploymentInput(input: UpdateAbDeploymentRequest) {
       ? { workflowStatus: input.workflowStatus as typeof abDeployments.$inferInsert.workflowStatus }
       : {}),
     ...(input.version !== undefined ? { version: input.version ?? null } : {}),
-    ...(input.deployedByUserId !== undefined ? { deployedByUserId: input.deployedByUserId ?? null } : {}),
+    ...(input.deployedByUserId !== undefined
+      ? { deployedByUserId: input.deployedByUserId ?? null }
+      : {}),
     ...(input.startedAt !== undefined ? { startedAt: parseOptionalDate(input.startedAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
-    ...(input.verificationStatus !== undefined ? { verificationStatus: input.verificationStatus ?? null } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
+    ...(input.verificationStatus !== undefined
+      ? { verificationStatus: input.verificationStatus ?? null }
+      : {}),
   };
 }
 
@@ -2539,7 +2889,8 @@ function mapCreateRollbackInput(input: CreateAbRollbackRequest, scope: StaffScop
     deploymentId: input.deploymentId,
     rollbackKey: input.rollbackKey.trim(),
     reason: input.reason ?? null,
-    workflowStatus: (input.workflowStatus ?? 'draft') as typeof abRollbacks.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'draft') as typeof abRollbacks.$inferInsert.workflowStatus,
     executedByUserId: input.executedByUserId ?? scope.userId,
     executedAt: parseOptionalDate(input.executedAt),
     verified: input.verified ?? false,
@@ -2554,13 +2905,17 @@ function mapUpdateRollbackInput(input: UpdateAbRollbackRequest, scope: StaffScop
     ...(input.workflowStatus !== undefined
       ? { workflowStatus: input.workflowStatus as typeof abRollbacks.$inferInsert.workflowStatus }
       : {}),
-    ...(input.executedByUserId !== undefined ? { executedByUserId: input.executedByUserId ?? scope.userId } : {}),
+    ...(input.executedByUserId !== undefined
+      ? { executedByUserId: input.executedByUserId ?? scope.userId }
+      : {}),
     ...(input.executedAt !== undefined ? { executedAt: parseOptionalDate(input.executedAt) } : {}),
     ...(input.verified !== undefined ? { verified: input.verified } : {}),
   };
 }
 
-function toDocumentationUpdateSummary(row: typeof abDocumentationUpdates.$inferSelect): AbDocumentationUpdateSummary {
+function toDocumentationUpdateSummary(
+  row: typeof abDocumentationUpdates.$inferSelect,
+): AbDocumentationUpdateSummary {
   return {
     id: row.id,
     featureRequestId: row.featureRequestId,
@@ -2579,7 +2934,8 @@ function mapCreateDocumentationUpdateInput(input: CreateAbDocumentationUpdateReq
     docType: input.docType.trim(),
     docPath: input.docPath ?? null,
     changeSummary: input.changeSummary ?? null,
-    workflowStatus: (input.workflowStatus ?? 'draft') as typeof abDocumentationUpdates.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'draft') as typeof abDocumentationUpdates.$inferInsert.workflowStatus,
     updatedAt: parseOptionalDate(input.updatedAt) ?? new Date(),
   };
 }
@@ -2591,13 +2947,20 @@ function mapUpdateDocumentationUpdateInput(input: UpdateAbDocumentationUpdateReq
     ...(input.docPath !== undefined ? { docPath: input.docPath ?? null } : {}),
     ...(input.changeSummary !== undefined ? { changeSummary: input.changeSummary ?? null } : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abDocumentationUpdates.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof abDocumentationUpdates.$inferInsert.workflowStatus,
+        }
       : {}),
-    ...(input.updatedAt !== undefined ? { updatedAt: parseOptionalDate(input.updatedAt) ?? new Date() } : {}),
+    ...(input.updatedAt !== undefined
+      ? { updatedAt: parseOptionalDate(input.updatedAt) ?? new Date() }
+      : {}),
   };
 }
 
-function toFeatureRegistryEntrySummary(row: typeof abFeatureRegistryEntries.$inferSelect): AbFeatureRegistryEntrySummary {
+function toFeatureRegistryEntrySummary(
+  row: typeof abFeatureRegistryEntries.$inferSelect,
+): AbFeatureRegistryEntrySummary {
   return {
     id: row.id,
     registryKey: row.registryKey,
@@ -2646,7 +3009,9 @@ function mapUpdateFeatureRegistryEntryInput(input: UpdateAbFeatureRegistryEntryR
   };
 }
 
-function toAppBuilderAlertSummary(row: typeof abAppBuilderAlerts.$inferSelect): AbAppBuilderAlertSummary {
+function toAppBuilderAlertSummary(
+  row: typeof abAppBuilderAlerts.$inferSelect,
+): AbAppBuilderAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,
@@ -2666,10 +3031,14 @@ function mapUpdateAppBuilderAlertInput(input: UpdateAbAppBuilderAlertRequest) {
     ...(input.severity !== undefined
       ? { severity: input.severity as typeof abAppBuilderAlerts.$inferInsert.severity }
       : {}),
-    ...(input.status !== undefined ? { status: input.status as typeof abAppBuilderAlerts.$inferInsert.status } : {}),
+    ...(input.status !== undefined
+      ? { status: input.status as typeof abAppBuilderAlerts.$inferInsert.status }
+      : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
-    ...(input.featureRequestId !== undefined ? { featureRequestId: input.featureRequestId ?? null } : {}),
+    ...(input.featureRequestId !== undefined
+      ? { featureRequestId: input.featureRequestId ?? null }
+      : {}),
     ...(input.sourceModule !== undefined ? { sourceModule: input.sourceModule ?? null } : {}),
     ...(input.context !== undefined ? { context: input.context } : {}),
   };
@@ -2696,7 +3065,8 @@ function mapCreateActionDraftInput(input: CreateAbAppBuilderActionDraftRequest) 
     featureRequestId: input.featureRequestId ?? null,
     sourceRecords: input.sourceRecords ?? {},
     aiGenerated: input.aiGenerated ?? false,
-    workflowStatus: (input.workflowStatus ?? 'draft') as typeof abActionDrafts.$inferInsert.workflowStatus,
+    workflowStatus: (input.workflowStatus ??
+      'draft') as typeof abActionDrafts.$inferInsert.workflowStatus,
   };
 }
 
@@ -2705,11 +3075,15 @@ function mapUpdateActionDraftInput(input: UpdateAbActionDraftRequest) {
     ...(input.draftType !== undefined ? { draftType: input.draftType.trim() } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.content !== undefined ? { content: input.content } : {}),
-    ...(input.featureRequestId !== undefined ? { featureRequestId: input.featureRequestId ?? null } : {}),
+    ...(input.featureRequestId !== undefined
+      ? { featureRequestId: input.featureRequestId ?? null }
+      : {}),
     ...(input.sourceRecords !== undefined ? { sourceRecords: input.sourceRecords } : {}),
     ...(input.aiGenerated !== undefined ? { aiGenerated: input.aiGenerated } : {}),
     ...(input.workflowStatus !== undefined
-      ? { workflowStatus: input.workflowStatus as typeof abActionDrafts.$inferInsert.workflowStatus }
+      ? {
+          workflowStatus: input.workflowStatus as typeof abActionDrafts.$inferInsert.workflowStatus,
+        }
       : {}),
   };
 }

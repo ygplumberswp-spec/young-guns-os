@@ -64,16 +64,35 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('platform_health:read', 'platform_health:manage', 'integrations:read', 'it_operations:read');
-  const requireWrite = requireAnyPermission('platform_health:write', 'platform_health:manage', 'integrations:manage', 'it_operations:write');
-  const requireManage = requireAnyPermission('platform_health:manage', 'integrations:manage', 'it_operations:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'platform_health:read',
+    'platform_health:manage',
+    'integrations:read',
+    'it_operations:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'platform_health:write',
+    'platform_health:manage',
+    'integrations:manage',
+    'it_operations:write',
+  );
+  const requireManage = requireAnyPermission(
+    'platform_health:manage',
+    'integrations:manage',
+    'it_operations:manage',
+  );
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterprisePlatformHealthService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterprisePlatformHealthService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -82,7 +101,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterprisePlatformHealthService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterprisePlatformHealthService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -92,7 +113,10 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterprisePlatformHealthService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterprisePlatformHealthService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -101,7 +125,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/health-snapshots/capture', requireWrite, async (req, res) => {
     try {
-      const healthSnapshot = await deps.enterprisePlatformHealthService.captureHealthSnapshot(staffScope(req));
+      const healthSnapshot = await deps.enterprisePlatformHealthService.captureHealthSnapshot(
+        staffScope(req),
+      );
       res.json({ data: { healthSnapshot } });
     } catch (error) {
       handleError(error, res);
@@ -110,7 +136,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/diagnostics/runs', requireRead, async (req, res) => {
     try {
-      const diagnosticRuns = await deps.enterprisePlatformHealthService.listDiagnosticRuns(getAuth(req).companyId);
+      const diagnosticRuns = await deps.enterprisePlatformHealthService.listDiagnosticRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { diagnosticRuns } });
     } catch (error) {
       handleError(error, res);
@@ -119,7 +147,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/diagnostics/run', requireWrite, async (req, res) => {
     try {
-      const diagnosticRun = await deps.enterprisePlatformHealthService.runDiagnostics(staffScope(req));
+      const diagnosticRun = await deps.enterprisePlatformHealthService.runDiagnostics(
+        staffScope(req),
+      );
       res.status(201).json({ data: { diagnosticRun } });
     } catch (error) {
       handleError(error, res);
@@ -140,7 +170,8 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/performance/insights', requireRead, async (req, res) => {
     try {
-      const performanceInsights = await deps.enterprisePlatformHealthService.listPerformanceInsights(getAuth(req).companyId);
+      const performanceInsights =
+        await deps.enterprisePlatformHealthService.listPerformanceInsights(getAuth(req).companyId);
       res.json({ data: { performanceInsights } });
     } catch (error) {
       handleError(error, res);
@@ -149,7 +180,10 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/performance/insights/generate', requireWrite, async (req, res) => {
     try {
-      const performanceInsights = await deps.enterprisePlatformHealthService.generatePerformanceInsights(getAuth(req).companyId);
+      const performanceInsights =
+        await deps.enterprisePlatformHealthService.generatePerformanceInsights(
+          getAuth(req).companyId,
+        );
       res.json({ data: { performanceInsights } });
     } catch (error) {
       handleError(error, res);
@@ -158,7 +192,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/capacity/capture', requireWrite, async (req, res) => {
     try {
-      const capacitySnapshot = await deps.enterprisePlatformHealthService.captureCapacitySnapshot(getAuth(req).companyId);
+      const capacitySnapshot = await deps.enterprisePlatformHealthService.captureCapacitySnapshot(
+        getAuth(req).companyId,
+      );
       res.json({ data: { capacitySnapshot } });
     } catch (error) {
       handleError(error, res);
@@ -167,7 +203,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/incidents', requireRead, async (req, res) => {
     try {
-      const incidents = await deps.enterprisePlatformHealthService.listIncidents(getAuth(req).companyId);
+      const incidents = await deps.enterprisePlatformHealthService.listIncidents(
+        getAuth(req).companyId,
+      );
       res.json({ data: { incidents } });
     } catch (error) {
       handleError(error, res);
@@ -177,7 +215,10 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
   router.post('/incidents', requireWrite, async (req, res) => {
     try {
       const input = incidentSchema.parse(req.body);
-      const incident = await deps.enterprisePlatformHealthService.createIncident(staffScope(req), input);
+      const incident = await deps.enterprisePlatformHealthService.createIncident(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { incident } });
     } catch (error) {
       handleError(error, res);
@@ -201,7 +242,10 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
   router.get('/platform-alerts', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const platformAlerts = await deps.enterprisePlatformHealthService.listPlatformAlerts(getAuth(req).companyId, { status });
+      const platformAlerts = await deps.enterprisePlatformHealthService.listPlatformAlerts(
+        getAuth(req).companyId,
+        { status },
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -210,7 +254,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/platform-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const platformAlerts = await deps.enterprisePlatformHealthService.syncPlatformAlerts(staffScope(req));
+      const platformAlerts = await deps.enterprisePlatformHealthService.syncPlatformAlerts(
+        staffScope(req),
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -219,7 +265,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterprisePlatformHealthService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterprisePlatformHealthService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -228,7 +276,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/action-drafts', requireRead, async (req, res) => {
     try {
-      const actionDrafts = await deps.enterprisePlatformHealthService.listActionDrafts(getAuth(req).companyId);
+      const actionDrafts = await deps.enterprisePlatformHealthService.listActionDrafts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actionDrafts } });
     } catch (error) {
       handleError(error, res);
@@ -238,7 +288,10 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const actionDraft = await deps.enterprisePlatformHealthService.createActionDraft(staffScope(req), input);
+      const actionDraft = await deps.enterprisePlatformHealthService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);
@@ -247,7 +300,9 @@ export function createEnterprisePlatformHealthRouter(deps: RouterDeps): Router {
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterprisePlatformHealthService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterprisePlatformHealthService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);

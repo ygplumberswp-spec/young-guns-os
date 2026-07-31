@@ -335,10 +335,14 @@ export function createAgentsRouter({
     res.json({ data: stats });
   });
 
-  router.get('/registry', requireAnyPermission('agents:read', 'agents:write'), async (_req, res) => {
-    const registry = agentsService.getRegistry();
-    res.json({ data: { registry } });
-  });
+  router.get(
+    '/registry',
+    requireAnyPermission('agents:read', 'agents:write'),
+    async (_req, res) => {
+      const registry = agentsService.getRegistry();
+      res.json({ data: { registry } });
+    },
+  );
 
   router.get('/tools', requireAnyPermission('agents:read', 'agents:write'), async (_req, res) => {
     const tools = agentsService.getToolCatalog();
@@ -437,14 +441,21 @@ export function createAgentsRouter({
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('knowledge');
-      const context = await enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
+      const context =
+        await enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
       res.json({ data: { registry, context } });
     },
   );
 
   router.get(
     '/business-intelligence',
-    requireAnyPermission('agents:read', 'bi:read', 'bi:write', 'intelligence:read', 'analytics:read'),
+    requireAnyPermission(
+      'agents:read',
+      'bi:read',
+      'bi:write',
+      'intelligence:read',
+      'analytics:read',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('business_intelligence');
@@ -481,14 +492,20 @@ export function createAgentsRouter({
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('executive_operations');
-      const context = await enterpriseMissionControlService.buildMissionControlAuraContext(companyId);
+      const context =
+        await enterpriseMissionControlService.buildMissionControlAuraContext(companyId);
       res.json({ data: { registry, context } });
     },
   );
 
   router.get(
     '/evolution',
-    requireAnyPermission('agents:read', 'intelligence:read', 'executive:read', 'ai_orchestration:read'),
+    requireAnyPermission(
+      'agents:read',
+      'intelligence:read',
+      'executive:read',
+      'ai_orchestration:read',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('evolution');
@@ -521,7 +538,13 @@ export function createAgentsRouter({
 
   router.get(
     '/production-operations',
-    requireAnyPermission('agents:read', 'ops:read', 'ops:manage', 'platform:read', 'platform:manage'),
+    requireAnyPermission(
+      'agents:read',
+      'ops:read',
+      'ops:manage',
+      'platform:read',
+      'platform:manage',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('production_operations');
@@ -546,7 +569,12 @@ export function createAgentsRouter({
 
   router.get(
     '/communications',
-    requireAnyPermission('agents:read', 'communications:read', 'communications:write', 'communications:manage'),
+    requireAnyPermission(
+      'agents:read',
+      'communications:read',
+      'communications:write',
+      'communications:manage',
+    ),
     async (req, res) => {
       const auth = getAuth(req);
       const registry = getAgentRegistryEntry('communications');
@@ -777,7 +805,9 @@ export function createAgentsRouter({
     async (req, res) => {
       const auth = getAuth(req);
       const registry = getAgentRegistryEntry('developer_platform');
-      const context = await enterprisePublicDeveloperPlatformService.buildAuraContext(auth.companyId);
+      const context = await enterprisePublicDeveloperPlatformService.buildAuraContext(
+        auth.companyId,
+      );
       res.json({ data: { registry, context } });
     },
   );
@@ -997,7 +1027,12 @@ export function createAgentsRouter({
 
   router.get(
     '/integrations',
-    requireAnyPermission('agents:read', 'integrations:read', 'integrations:manage', 'intelligence:read'),
+    requireAnyPermission(
+      'agents:read',
+      'integrations:read',
+      'integrations:manage',
+      'intelligence:read',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('finance');
@@ -1008,11 +1043,17 @@ export function createAgentsRouter({
 
   router.get(
     '/portal',
-    requireAnyPermission('agents:read', 'portal:read', 'customer_support:read', 'intelligence:read'),
+    requireAnyPermission(
+      'agents:read',
+      'portal:read',
+      'customer_support:read',
+      'intelligence:read',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('customer_support');
-      const customerId = typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
+      const customerId =
+        typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
       const context = customerId
         ? await portalExperienceService.buildStaffCustomerAuraContext({ companyId, customerId })
         : null;
@@ -1055,14 +1096,21 @@ export function createAgentsRouter({
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('customer_support');
       const context =
-        await communicationsIntelligenceService.buildCommunicationsIntelligenceAuraContext(companyId);
+        await communicationsIntelligenceService.buildCommunicationsIntelligenceAuraContext(
+          companyId,
+        );
       res.json({ data: { registry, context } });
     },
   );
 
   router.get(
     '/asset-equipment',
-    requireAnyPermission('agents:read', 'asset_equipment:read', 'asset_equipment:write', 'fleet:read'),
+    requireAnyPermission(
+      'agents:read',
+      'asset_equipment:read',
+      'asset_equipment:write',
+      'fleet:read',
+    ),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('operations');
@@ -1134,7 +1182,9 @@ export function createAgentsRouter({
       const { companyId } = getAuth(req);
       const registry = getAgentRegistryEntry('voice_receptionist');
       const context =
-        await personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(companyId);
+        await personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(
+          companyId,
+        );
       res.json({ data: { registry, context } });
     },
   );
@@ -1356,17 +1406,21 @@ export function createAgentsRouter({
     res.json({ data: { runs } });
   });
 
-  router.get('/runs/:runId', requireAnyPermission('agents:read', 'agents:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const run = await agentRuntimeService.getRun(companyId, getRouteParam(req.params.runId));
+  router.get(
+    '/runs/:runId',
+    requireAnyPermission('agents:read', 'agents:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const run = await agentRuntimeService.getRun(companyId, getRouteParam(req.params.runId));
 
-    if (!run) {
-      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Agent run not found' } });
-      return;
-    }
+      if (!run) {
+        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Agent run not found' } });
+        return;
+      }
 
-    res.json({ data: { run } });
-  });
+      res.json({ data: { run } });
+    },
+  );
 
   router.get('/tasks', requireAnyPermission('agents:read', 'agents:write'), async (req, res) => {
     const { companyId } = getAuth(req);

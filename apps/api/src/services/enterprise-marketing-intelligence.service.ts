@@ -124,7 +124,8 @@ export class EnterpriseMarketingIntelligenceService {
   constructor(private readonly deps: MarketingIntelligenceDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseMarketingIntelligenceDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       marketingStats,
@@ -198,28 +199,39 @@ export class EnterpriseMarketingIntelligenceService {
       roiSnapshots,
       legacyCampaigns,
     ] = await Promise.all([
-      this.deps.db.query.miCampaignPlans.findMany({ where: eq(miCampaignPlans.companyId, companyId) }),
-      this.deps.db.query.miContentItems.findMany({ where: eq(miContentItems.companyId, companyId) }),
+      this.deps.db.query.miCampaignPlans.findMany({
+        where: eq(miCampaignPlans.companyId, companyId),
+      }),
+      this.deps.db.query.miContentItems.findMany({
+        where: eq(miContentItems.companyId, companyId),
+      }),
       this.deps.db.query.miSocialPosts.findMany({ where: eq(miSocialPosts.companyId, companyId) }),
-      this.deps.db.query.miEmailCampaigns.findMany({ where: eq(miEmailCampaigns.companyId, companyId) }),
+      this.deps.db.query.miEmailCampaigns.findMany({
+        where: eq(miEmailCampaigns.companyId, companyId),
+      }),
       this.listProviders(companyId),
-      this.deps.db.query.miRoiSnapshots.findMany({ where: eq(miRoiSnapshots.companyId, companyId) }),
+      this.deps.db.query.miRoiSnapshots.findMany({
+        where: eq(miRoiSnapshots.companyId, companyId),
+      }),
       this.deps.marketingService.listCampaigns(companyId),
     ]);
 
     const now = Date.now();
     const pendingReviewCount =
-      campaignPlans.filter((row) => ['review', 'pending_approval'].includes(row.workflowStatus)).length +
+      campaignPlans.filter((row) => ['review', 'pending_approval'].includes(row.workflowStatus))
+        .length +
       contentItems.filter((row) => row.contentStatus === 'review').length +
       socialPosts.filter((row) => row.contentStatus === 'review').length +
       emailCampaigns.filter((row) => row.contentStatus === 'review').length;
 
-    const overdueContentCount = [...contentItems, ...socialPosts, ...emailCampaigns].filter((row) => {
-      const scheduledAt = 'scheduledAt' in row ? row.scheduledAt : null;
-      if (!scheduledAt) return false;
-      const status = 'contentStatus' in row ? row.contentStatus : null;
-      return new Date(scheduledAt).getTime() < now && status !== 'published';
-    }).length;
+    const overdueContentCount = [...contentItems, ...socialPosts, ...emailCampaigns].filter(
+      (row) => {
+        const scheduledAt = 'scheduledAt' in row ? row.scheduledAt : null;
+        if (!scheduledAt) return false;
+        const status = 'contentStatus' in row ? row.contentStatus : null;
+        return new Date(scheduledAt).getTime() < now && status !== 'published';
+      },
+    ).length;
 
     const spendByPlan = new Map<string, number>();
     for (const snapshot of roiSnapshots) {
@@ -237,7 +249,9 @@ export class EnterpriseMarketingIntelligenceService {
       if (spend >= plan.budgetCents * BUDGET_OVERSPEND_THRESHOLD) budgetOverspendCount += 1;
     }
 
-    const adapterSyncFailureCount = providers.filter((provider) => provider.status === 'error').length;
+    const adapterSyncFailureCount = providers.filter(
+      (provider) => provider.status === 'error',
+    ).length;
 
     const unscheduledCampaignCount = campaignPlans.filter(
       (plan) =>
@@ -245,17 +259,26 @@ export class EnterpriseMarketingIntelligenceService {
         !['active', 'scheduled', 'completed'].includes(plan.lifecycleStatus),
     ).length;
 
-    const pendingApprovalCount = campaignPlans.filter((row) => row.workflowStatus === 'pending_approval').length;
+    const pendingApprovalCount = campaignPlans.filter(
+      (row) => row.workflowStatus === 'pending_approval',
+    ).length;
 
     const alerts: string[] = [];
     if (pendingReviewCount > 0) alerts.push(`${pendingReviewCount} item(s) pending review`);
-    if (pendingApprovalCount > 0) alerts.push(`${pendingApprovalCount} campaign plan(s) pending approval`);
-    if (overdueContentCount > 0) alerts.push(`${overdueContentCount} overdue scheduled content item(s)`);
-    if (budgetOverspendCount > 0) alerts.push(`${budgetOverspendCount} campaign plan(s) near or over budget`);
-    if (adapterSyncFailureCount > 0) alerts.push(`${adapterSyncFailureCount} marketing provider sync failure(s)`);
-    if (unscheduledCampaignCount > 0) alerts.push(`${unscheduledCampaignCount} approved campaign plan(s) not scheduled`);
+    if (pendingApprovalCount > 0)
+      alerts.push(`${pendingApprovalCount} campaign plan(s) pending approval`);
+    if (overdueContentCount > 0)
+      alerts.push(`${overdueContentCount} overdue scheduled content item(s)`);
+    if (budgetOverspendCount > 0)
+      alerts.push(`${budgetOverspendCount} campaign plan(s) near or over budget`);
+    if (adapterSyncFailureCount > 0)
+      alerts.push(`${adapterSyncFailureCount} marketing provider sync failure(s)`);
+    if (unscheduledCampaignCount > 0)
+      alerts.push(`${unscheduledCampaignCount} approved campaign plan(s) not scheduled`);
     if (legacyCampaigns.filter((row) => row.status === 'draft').length > 0) {
-      alerts.push(`${legacyCampaigns.filter((row) => row.status === 'draft').length} legacy marketing campaign draft(s)`);
+      alerts.push(
+        `${legacyCampaigns.filter((row) => row.status === 'draft').length} legacy marketing campaign draft(s)`,
+      );
     }
 
     return {
@@ -309,7 +332,8 @@ export class EnterpriseMarketingIntelligenceService {
       .update(miPlatformConfig)
       .set({
         marketingStandards: input.marketingStandards ?? existing.marketingStandards,
-        providerAdapterTemplates: input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
+        providerAdapterTemplates:
+          input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
         brandTemplates: input.brandTemplates ?? existing.brandTemplates,
         campaignTemplates: input.campaignTemplates ?? existing.campaignTemplates,
         contentTemplates: input.contentTemplates ?? existing.contentTemplates,
@@ -324,14 +348,22 @@ export class EnterpriseMarketingIntelligenceService {
     return toPlatformConfigSummary(updated!);
   }
 
-
-  async createStrategy(scope: StaffScope, input: CreateMiMarketingStrategyRequest): Promise<MiMarketingStrategySummary> {
-
+  async createStrategy(
+    scope: StaffScope,
+    input: CreateMiMarketingStrategyRequest,
+  ): Promise<MiMarketingStrategySummary> {
     const [created] = await this.deps.db
       .insert(miMarketingStrategies)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), strategyKey: input.strategyKey.trim(), ownerUserId: scope.userId, periodStart: input.periodStart ?? null, periodEnd: input.periodEnd ?? null, goals: input.goals ?? {}, config: input.config ?? {}, workflowStatus: 'draft',
+        name: input.name.trim(),
+        strategyKey: input.strategyKey.trim(),
+        ownerUserId: scope.userId,
+        periodStart: input.periodStart ?? null,
+        periodEnd: input.periodEnd ?? null,
+        goals: input.goals ?? {},
+        config: input.config ?? {},
+        workflowStatus: 'draft',
       })
       .returning();
 
@@ -349,12 +381,14 @@ export class EnterpriseMarketingIntelligenceService {
   }
 
   async createBrand(scope: StaffScope, input: CreateMiBrandRequest): Promise<MiBrandSummary> {
-
     const [created] = await this.deps.db
       .insert(miBrands)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), brandKey: input.brandKey.trim(), description: input.description?.trim() ?? null, config: input.config ?? {},
+        name: input.name.trim(),
+        brandKey: input.brandKey.trim(),
+        description: input.description?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -371,13 +405,28 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toBrandSummary);
   }
 
-  async createBrandAsset(scope: StaffScope, input: { brandId: string; assetType: string; name: string; assetKey: string; fileUrl?: string; config?: Record<string, unknown> }): Promise<MiBrandAssetSummary> {
+  async createBrandAsset(
+    scope: StaffScope,
+    input: {
+      brandId: string;
+      assetType: string;
+      name: string;
+      assetKey: string;
+      fileUrl?: string;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiBrandAssetSummary> {
     if (input.brandId) await this.ensureBrand(scope.companyId, input.brandId);
     const [created] = await this.deps.db
       .insert(miBrandAssets)
       .values({
         companyId: scope.companyId,
-        brandId: input.brandId, assetType: input.assetType.trim(), name: input.name.trim(), assetKey: input.assetKey.trim(), fileUrl: input.fileUrl?.trim() ?? null, config: input.config ?? {},
+        brandId: input.brandId,
+        assetType: input.assetType.trim(),
+        name: input.name.trim(),
+        assetKey: input.assetKey.trim(),
+        fileUrl: input.fileUrl?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -394,13 +443,19 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toBrandAssetSummary);
   }
 
-  async createAudience(scope: StaffScope, input: CreateMiAudienceRequest): Promise<MiAudienceSummary> {
-
+  async createAudience(
+    scope: StaffScope,
+    input: CreateMiAudienceRequest,
+  ): Promise<MiAudienceSummary> {
     const [created] = await this.deps.db
       .insert(miAudiences)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), audienceKey: input.audienceKey.trim(), audienceType: input.audienceType?.trim() ?? null, criteria: input.criteria ?? {}, config: input.config ?? {},
+        name: input.name.trim(),
+        audienceKey: input.audienceKey.trim(),
+        audienceType: input.audienceType?.trim() ?? null,
+        criteria: input.criteria ?? {},
+        config: input.config ?? {},
       })
       .returning();
 
@@ -417,13 +472,18 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toAudienceSummary);
   }
 
-  async createSuppressionList(scope: StaffScope, input: { name: string; listKey: string; listType?: string; config?: Record<string, unknown> }): Promise<MiSuppressionListSummary> {
-
+  async createSuppressionList(
+    scope: StaffScope,
+    input: { name: string; listKey: string; listType?: string; config?: Record<string, unknown> },
+  ): Promise<MiSuppressionListSummary> {
     const [created] = await this.deps.db
       .insert(miSuppressionLists)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), listKey: input.listKey.trim(), listType: input.listType?.trim() ?? null, config: input.config ?? {},
+        name: input.name.trim(),
+        listKey: input.listKey.trim(),
+        listType: input.listType?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -440,7 +500,10 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toSuppressionListSummary);
   }
 
-  async createCampaignPlan(scope: StaffScope, input: CreateMiCampaignPlanRequest): Promise<MiCampaignPlanSummary> {
+  async createCampaignPlan(
+    scope: StaffScope,
+    input: CreateMiCampaignPlanRequest,
+  ): Promise<MiCampaignPlanSummary> {
     if (input.strategyId) await this.ensureStrategy(scope.companyId, input.strategyId);
     if (input.brandId) await this.ensureBrand(scope.companyId, input.brandId);
     if (input.audienceId) await this.ensureAudience(scope.companyId, input.audienceId);
@@ -448,7 +511,18 @@ export class EnterpriseMarketingIntelligenceService {
       .insert(miCampaignPlans)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), planKey: input.planKey.trim(), strategyId: input.strategyId ?? null, brandId: input.brandId ?? null, audienceId: input.audienceId ?? null, ownerUserId: scope.userId, budgetCents: input.budgetCents ?? null, periodStart: input.periodStart ?? null, periodEnd: input.periodEnd ?? null, config: input.config ?? {}, lifecycleStatus: 'draft', workflowStatus: 'draft',
+        name: input.name.trim(),
+        planKey: input.planKey.trim(),
+        strategyId: input.strategyId ?? null,
+        brandId: input.brandId ?? null,
+        audienceId: input.audienceId ?? null,
+        ownerUserId: scope.userId,
+        budgetCents: input.budgetCents ?? null,
+        periodStart: input.periodStart ?? null,
+        periodEnd: input.periodEnd ?? null,
+        config: input.config ?? {},
+        lifecycleStatus: 'draft',
+        workflowStatus: 'draft',
       })
       .returning();
 
@@ -465,13 +539,22 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toCampaignPlanSummary);
   }
 
-  async createContentItem(scope: StaffScope, input: CreateMiContentItemRequest): Promise<MiContentItemSummary> {
+  async createContentItem(
+    scope: StaffScope,
+    input: CreateMiContentItemRequest,
+  ): Promise<MiContentItemSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miContentItems)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, title: input.title.trim(), contentType: input.contentType.trim(), body: input.body?.trim() ?? null, ownerUserId: scope.userId, config: input.config ?? {}, contentStatus: 'draft',
+        campaignPlanId: input.campaignPlanId ?? null,
+        title: input.title.trim(),
+        contentType: input.contentType.trim(),
+        body: input.body?.trim() ?? null,
+        ownerUserId: scope.userId,
+        config: input.config ?? {},
+        contentStatus: 'draft',
       })
       .returning();
 
@@ -488,13 +571,22 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toContentItemSummary);
   }
 
-  async createCreativeRequest(scope: StaffScope, input: CreateMiCreativeRequestRequest): Promise<MiCreativeRequestSummary> {
+  async createCreativeRequest(
+    scope: StaffScope,
+    input: CreateMiCreativeRequestRequest,
+  ): Promise<MiCreativeRequestSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miCreativeRequests)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, title: input.title.trim(), requestType: input.requestType.trim(), brief: input.brief?.trim() ?? null, requestedByUserId: scope.userId, config: input.config ?? {}, workflowStatus: 'draft',
+        campaignPlanId: input.campaignPlanId ?? null,
+        title: input.title.trim(),
+        requestType: input.requestType.trim(),
+        brief: input.brief?.trim() ?? null,
+        requestedByUserId: scope.userId,
+        config: input.config ?? {},
+        workflowStatus: 'draft',
       })
       .returning();
 
@@ -511,13 +603,21 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toCreativeRequestSummary);
   }
 
-  async createSocialAccount(scope: StaffScope, input: CreateMiSocialAccountRequest): Promise<MiSocialAccountSummary> {
+  async createSocialAccount(
+    scope: StaffScope,
+    input: CreateMiSocialAccountRequest,
+  ): Promise<MiSocialAccountSummary> {
     if (input.brandId) await this.ensureBrand(scope.companyId, input.brandId);
     const [created] = await this.deps.db
       .insert(miSocialAccounts)
       .values({
         companyId: scope.companyId,
-        brandId: input.brandId ?? null, providerType: input.providerType as typeof miSocialAccounts.$inferInsert.providerType, accountName: input.accountName.trim(), accountHandle: input.accountHandle?.trim() ?? null, externalId: input.externalId?.trim() ?? null, config: input.config ?? {},
+        brandId: input.brandId ?? null,
+        providerType: input.providerType as typeof miSocialAccounts.$inferInsert.providerType,
+        accountName: input.accountName.trim(),
+        accountHandle: input.accountHandle?.trim() ?? null,
+        externalId: input.externalId?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -534,14 +634,24 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toSocialAccountSummary);
   }
 
-  async createSocialPost(scope: StaffScope, input: CreateMiSocialPostRequest): Promise<MiSocialPostSummary> {
-    if (input.socialAccountId) await this.ensureSocialAccount(scope.companyId, input.socialAccountId);
+  async createSocialPost(
+    scope: StaffScope,
+    input: CreateMiSocialPostRequest,
+  ): Promise<MiSocialPostSummary> {
+    if (input.socialAccountId)
+      await this.ensureSocialAccount(scope.companyId, input.socialAccountId);
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miSocialPosts)
       .values({
         companyId: scope.companyId,
-        socialAccountId: input.socialAccountId ?? null, campaignPlanId: input.campaignPlanId ?? null, title: input.title?.trim() ?? null, body: input.body.trim(), scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null, config: input.config ?? {}, contentStatus: 'draft',
+        socialAccountId: input.socialAccountId ?? null,
+        campaignPlanId: input.campaignPlanId ?? null,
+        title: input.title?.trim() ?? null,
+        body: input.body.trim(),
+        scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+        config: input.config ?? {},
+        contentStatus: 'draft',
       })
       .returning();
 
@@ -558,13 +668,26 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toSocialPostSummary);
   }
 
-  async createReview(scope: StaffScope, input: { platform: string; rating?: number; reviewText?: string; author?: string; reviewedAt?: string }): Promise<MiReviewSummary> {
-
+  async createReview(
+    scope: StaffScope,
+    input: {
+      platform: string;
+      rating?: number;
+      reviewText?: string;
+      author?: string;
+      reviewedAt?: string;
+    },
+  ): Promise<MiReviewSummary> {
     const [created] = await this.deps.db
       .insert(miReviews)
       .values({
         companyId: scope.companyId,
-        platform: input.platform.trim(), rating: input.rating != null ? String(input.rating) : null, reviewText: input.reviewText?.trim() ?? null, author: input.author?.trim() ?? null, reviewedAt: input.reviewedAt ? new Date(input.reviewedAt) : null, workflowStatus: 'draft',
+        platform: input.platform.trim(),
+        rating: input.rating != null ? String(input.rating) : null,
+        reviewText: input.reviewText?.trim() ?? null,
+        author: input.author?.trim() ?? null,
+        reviewedAt: input.reviewedAt ? new Date(input.reviewedAt) : null,
+        workflowStatus: 'draft',
       })
       .returning();
 
@@ -581,13 +704,18 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toReviewSummary);
   }
 
-  async createAdAccount(scope: StaffScope, input: CreateMiAdAccountRequest): Promise<MiAdAccountSummary> {
-
+  async createAdAccount(
+    scope: StaffScope,
+    input: CreateMiAdAccountRequest,
+  ): Promise<MiAdAccountSummary> {
     const [created] = await this.deps.db
       .insert(miAdAccounts)
       .values({
         companyId: scope.companyId,
-        providerType: input.providerType as typeof miAdAccounts.$inferInsert.providerType, name: input.name.trim(), externalAccountId: input.externalAccountId?.trim() ?? null, config: input.config ?? {},
+        providerType: input.providerType as typeof miAdAccounts.$inferInsert.providerType,
+        name: input.name.trim(),
+        externalAccountId: input.externalAccountId?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -604,14 +732,22 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toAdAccountSummary);
   }
 
-  async createAdCampaign(scope: StaffScope, input: CreateMiAdCampaignRequest): Promise<MiAdCampaignSummary> {
+  async createAdCampaign(
+    scope: StaffScope,
+    input: CreateMiAdCampaignRequest,
+  ): Promise<MiAdCampaignSummary> {
     if (input.adAccountId) await this.ensureAdAccount(scope.companyId, input.adAccountId);
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miAdCampaigns)
       .values({
         companyId: scope.companyId,
-        adAccountId: input.adAccountId ?? null, campaignPlanId: input.campaignPlanId ?? null, name: input.name.trim(), budgetCents: input.budgetCents ?? null, config: input.config ?? {}, lifecycleStatus: 'draft',
+        adAccountId: input.adAccountId ?? null,
+        campaignPlanId: input.campaignPlanId ?? null,
+        name: input.name.trim(),
+        budgetCents: input.budgetCents ?? null,
+        config: input.config ?? {},
+        lifecycleStatus: 'draft',
       })
       .returning();
 
@@ -628,13 +764,28 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toAdCampaignSummary);
   }
 
-  async createAdBudget(scope: StaffScope, input: { adCampaignId: string; budgetType: string; amountCents?: number; periodStart?: string; periodEnd?: string; config?: Record<string, unknown> }): Promise<MiAdBudgetSummary> {
+  async createAdBudget(
+    scope: StaffScope,
+    input: {
+      adCampaignId: string;
+      budgetType: string;
+      amountCents?: number;
+      periodStart?: string;
+      periodEnd?: string;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiAdBudgetSummary> {
     if (input.adCampaignId) await this.ensureAdCampaign(scope.companyId, input.adCampaignId);
     const [created] = await this.deps.db
       .insert(miAdBudgets)
       .values({
         companyId: scope.companyId,
-        adCampaignId: input.adCampaignId, budgetType: input.budgetType.trim(), amountCents: input.amountCents ?? 0, periodStart: input.periodStart ?? null, periodEnd: input.periodEnd ?? null, config: input.config ?? {},
+        adCampaignId: input.adCampaignId,
+        budgetType: input.budgetType.trim(),
+        amountCents: input.amountCents ?? 0,
+        periodStart: input.periodStart ?? null,
+        periodEnd: input.periodEnd ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -651,13 +802,27 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toAdBudgetSummary);
   }
 
-  async createSeoKeyword(scope: StaffScope, input: { keyword: string; searchVolume?: number; difficulty?: number; currentRank?: number; targetUrl?: string; config?: Record<string, unknown> }): Promise<MiSeoKeywordSummary> {
-
+  async createSeoKeyword(
+    scope: StaffScope,
+    input: {
+      keyword: string;
+      searchVolume?: number;
+      difficulty?: number;
+      currentRank?: number;
+      targetUrl?: string;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiSeoKeywordSummary> {
     const [created] = await this.deps.db
       .insert(miSeoKeywords)
       .values({
         companyId: scope.companyId,
-        keyword: input.keyword.trim(), searchVolume: input.searchVolume ?? null, difficulty: input.difficulty != null ? String(input.difficulty) : null, currentRank: input.currentRank ?? null, targetUrl: input.targetUrl?.trim() ?? null, config: input.config ?? {},
+        keyword: input.keyword.trim(),
+        searchVolume: input.searchVolume ?? null,
+        difficulty: input.difficulty != null ? String(input.difficulty) : null,
+        currentRank: input.currentRank ?? null,
+        targetUrl: input.targetUrl?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -674,17 +839,32 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toSeoKeywordSummary);
   }
 
-  async createLocalPresenceProfile(scope: StaffScope, input: { name: string; locationKey: string; address?: string; config?: Record<string, unknown> }): Promise<MiLocalPresenceProfileSummary> {
-
+  async createLocalPresenceProfile(
+    scope: StaffScope,
+    input: {
+      name: string;
+      locationKey: string;
+      address?: string;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiLocalPresenceProfileSummary> {
     const [created] = await this.deps.db
       .insert(miLocalPresenceProfiles)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), locationKey: input.locationKey.trim(), address: input.address?.trim() ?? null, config: input.config ?? {},
+        name: input.name.trim(),
+        locationKey: input.locationKey.trim(),
+        address: input.address?.trim() ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
-    await this.recordAudit(scope, 'local_presence_created', 'mi_local_presence_profile', created!.id);
+    await this.recordAudit(
+      scope,
+      'local_presence_created',
+      'mi_local_presence_profile',
+      created!.id,
+    );
     return toLocalPresenceProfileSummary(created!);
   }
 
@@ -697,13 +877,17 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toLocalPresenceProfileSummary);
   }
 
-  async createWebsite(scope: StaffScope, input: { name: string; domain: string; config?: Record<string, unknown> }): Promise<MiWebsiteSummary> {
-
+  async createWebsite(
+    scope: StaffScope,
+    input: { name: string; domain: string; config?: Record<string, unknown> },
+  ): Promise<MiWebsiteSummary> {
     const [created] = await this.deps.db
       .insert(miWebsites)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), domain: input.domain.trim(), config: input.config ?? {},
+        name: input.name.trim(),
+        domain: input.domain.trim(),
+        config: input.config ?? {},
       })
       .returning();
 
@@ -720,14 +904,22 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toWebsiteSummary);
   }
 
-  async createLandingPage(scope: StaffScope, input: CreateMiLandingPageRequest): Promise<MiLandingPageSummary> {
+  async createLandingPage(
+    scope: StaffScope,
+    input: CreateMiLandingPageRequest,
+  ): Promise<MiLandingPageSummary> {
     if (input.websiteId) await this.ensureWebsite(scope.companyId, input.websiteId);
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miLandingPages)
       .values({
         companyId: scope.companyId,
-        websiteId: input.websiteId ?? null, campaignPlanId: input.campaignPlanId ?? null, title: input.title.trim(), slug: input.slug.trim(), config: input.config ?? {}, contentStatus: 'draft',
+        websiteId: input.websiteId ?? null,
+        campaignPlanId: input.campaignPlanId ?? null,
+        title: input.title.trim(),
+        slug: input.slug.trim(),
+        config: input.config ?? {},
+        contentStatus: 'draft',
       })
       .returning();
 
@@ -744,13 +936,21 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toLandingPageSummary);
   }
 
-  async createEmailCampaign(scope: StaffScope, input: CreateMiEmailCampaignRequest): Promise<MiEmailCampaignSummary> {
+  async createEmailCampaign(
+    scope: StaffScope,
+    input: CreateMiEmailCampaignRequest,
+  ): Promise<MiEmailCampaignSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miEmailCampaigns)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, name: input.name.trim(), subject: input.subject?.trim() ?? null, scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null, config: input.config ?? {}, contentStatus: 'draft',
+        campaignPlanId: input.campaignPlanId ?? null,
+        name: input.name.trim(),
+        subject: input.subject?.trim() ?? null,
+        scheduledAt: input.scheduledAt ? new Date(input.scheduledAt) : null,
+        config: input.config ?? {},
+        contentStatus: 'draft',
       })
       .returning();
 
@@ -767,17 +967,29 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toEmailCampaignSummary);
   }
 
-  async createMessagingCampaign(scope: StaffScope, input: CreateMiMessagingCampaignRequest): Promise<MiMessagingCampaignSummary> {
+  async createMessagingCampaign(
+    scope: StaffScope,
+    input: CreateMiMessagingCampaignRequest,
+  ): Promise<MiMessagingCampaignSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miMessagingCampaigns)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, name: input.name.trim(), channel: input.channel.trim(), config: input.config ?? {}, contentStatus: 'draft',
+        campaignPlanId: input.campaignPlanId ?? null,
+        name: input.name.trim(),
+        channel: input.channel.trim(),
+        config: input.config ?? {},
+        contentStatus: 'draft',
       })
       .returning();
 
-    await this.recordAudit(scope, 'messaging_campaign_created', 'mi_messaging_campaign', created!.id);
+    await this.recordAudit(
+      scope,
+      'messaging_campaign_created',
+      'mi_messaging_campaign',
+      created!.id,
+    );
     return toMessagingCampaignSummary(created!);
   }
 
@@ -790,13 +1002,17 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toMessagingCampaignSummary);
   }
 
-  async createCustomerJourney(scope: StaffScope, input: { name: string; journeyKey: string; config?: Record<string, unknown> }): Promise<MiCustomerJourneySummary> {
-
+  async createCustomerJourney(
+    scope: StaffScope,
+    input: { name: string; journeyKey: string; config?: Record<string, unknown> },
+  ): Promise<MiCustomerJourneySummary> {
     const [created] = await this.deps.db
       .insert(miCustomerJourneys)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), journeyKey: input.journeyKey.trim(), config: input.config ?? {},
+        name: input.name.trim(),
+        journeyKey: input.journeyKey.trim(),
+        config: input.config ?? {},
       })
       .returning();
 
@@ -813,17 +1029,35 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toCustomerJourneySummary);
   }
 
-  async createAttributionRecord(scope: StaffScope, input: { campaignPlanId?: string; channel: string; touchpointType?: string; attributedValueCents?: number; config?: Record<string, unknown> }): Promise<MiAttributionRecordSummary> {
+  async createAttributionRecord(
+    scope: StaffScope,
+    input: {
+      campaignPlanId?: string;
+      channel: string;
+      touchpointType?: string;
+      attributedValueCents?: number;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiAttributionRecordSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miAttributionRecords)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, channel: input.channel.trim(), touchpointType: input.touchpointType?.trim() ?? null, attributedValueCents: input.attributedValueCents ?? null, config: input.config ?? {},
+        campaignPlanId: input.campaignPlanId ?? null,
+        channel: input.channel.trim(),
+        touchpointType: input.touchpointType?.trim() ?? null,
+        attributedValueCents: input.attributedValueCents ?? null,
+        config: input.config ?? {},
       })
       .returning();
 
-    await this.recordAudit(scope, 'attribution_record_created', 'mi_attribution_record', created!.id);
+    await this.recordAudit(
+      scope,
+      'attribution_record_created',
+      'mi_attribution_record',
+      created!.id,
+    );
     return toAttributionRecordSummary(created!);
   }
 
@@ -836,13 +1070,18 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toAttributionRecordSummary);
   }
 
-  async createReferralCampaign(scope: StaffScope, input: { name: string; campaignKey: string; config?: Record<string, unknown> }): Promise<MiReferralCampaignSummary> {
-
+  async createReferralCampaign(
+    scope: StaffScope,
+    input: { name: string; campaignKey: string; config?: Record<string, unknown> },
+  ): Promise<MiReferralCampaignSummary> {
     const [created] = await this.deps.db
       .insert(miReferralCampaigns)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), campaignKey: input.campaignKey.trim(), config: input.config ?? {}, lifecycleStatus: 'draft',
+        name: input.name.trim(),
+        campaignKey: input.campaignKey.trim(),
+        config: input.config ?? {},
+        lifecycleStatus: 'draft',
       })
       .returning();
 
@@ -859,13 +1098,28 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toReferralCampaignSummary);
   }
 
-  async createCalendarEvent(scope: StaffScope, input: { campaignPlanId?: string; title: string; eventType?: string; startsAt: string; endsAt?: string; config?: Record<string, unknown> }): Promise<MiCalendarEventSummary> {
+  async createCalendarEvent(
+    scope: StaffScope,
+    input: {
+      campaignPlanId?: string;
+      title: string;
+      eventType?: string;
+      startsAt: string;
+      endsAt?: string;
+      config?: Record<string, unknown>;
+    },
+  ): Promise<MiCalendarEventSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
       .insert(miCalendarEvents)
       .values({
         companyId: scope.companyId,
-        campaignPlanId: input.campaignPlanId ?? null, title: input.title.trim(), eventType: input.eventType?.trim() ?? null, startsAt: new Date(input.startsAt), endsAt: input.endsAt ? new Date(input.endsAt) : null, config: input.config ?? {},
+        campaignPlanId: input.campaignPlanId ?? null,
+        title: input.title.trim(),
+        eventType: input.eventType?.trim() ?? null,
+        startsAt: new Date(input.startsAt),
+        endsAt: input.endsAt ? new Date(input.endsAt) : null,
+        config: input.config ?? {},
       })
       .returning();
 
@@ -882,13 +1136,19 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toCalendarEventSummary);
   }
 
-  async createExperiment(scope: StaffScope, input: CreateMiExperimentRequest): Promise<MiExperimentSummary> {
-
+  async createExperiment(
+    scope: StaffScope,
+    input: CreateMiExperimentRequest,
+  ): Promise<MiExperimentSummary> {
     const [created] = await this.deps.db
       .insert(miExperiments)
       .values({
         companyId: scope.companyId,
-        name: input.name.trim(), experimentKey: input.experimentKey.trim(), experimentType: input.experimentType?.trim() ?? null, config: input.config ?? {}, workflowStatus: 'draft',
+        name: input.name.trim(),
+        experimentKey: input.experimentKey.trim(),
+        experimentType: input.experimentType?.trim() ?? null,
+        config: input.config ?? {},
+        workflowStatus: 'draft',
       })
       .returning();
 
@@ -905,21 +1165,40 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toExperimentSummary);
   }
 
-  async createMarketIntelligenceRecord(scope: StaffScope, input: { recordType: string; title: string; source?: string; confidenceScore?: number; data?: Record<string, unknown> }): Promise<MiMarketIntelligenceRecordSummary> {
-
+  async createMarketIntelligenceRecord(
+    scope: StaffScope,
+    input: {
+      recordType: string;
+      title: string;
+      source?: string;
+      confidenceScore?: number;
+      data?: Record<string, unknown>;
+    },
+  ): Promise<MiMarketIntelligenceRecordSummary> {
     const [created] = await this.deps.db
       .insert(miMarketIntelligenceRecords)
       .values({
         companyId: scope.companyId,
-        recordType: input.recordType.trim(), title: input.title.trim(), source: input.source?.trim() ?? null, confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null, data: input.data ?? {},
+        recordType: input.recordType.trim(),
+        title: input.title.trim(),
+        source: input.source?.trim() ?? null,
+        confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null,
+        data: input.data ?? {},
       })
       .returning();
 
-    await this.recordAudit(scope, 'market_intelligence_record_created', 'mi_market_intelligence_record', created!.id);
+    await this.recordAudit(
+      scope,
+      'market_intelligence_record_created',
+      'mi_market_intelligence_record',
+      created!.id,
+    );
     return toMarketIntelligenceRecordSummary(created!);
   }
 
-  async listMarketIntelligenceRecords(companyId: string): Promise<MiMarketIntelligenceRecordSummary[]> {
+  async listMarketIntelligenceRecords(
+    companyId: string,
+  ): Promise<MiMarketIntelligenceRecordSummary[]> {
     const rows = await this.deps.db.query.miMarketIntelligenceRecords.findMany({
       where: eq(miMarketIntelligenceRecords.companyId, companyId),
       orderBy: [desc(miMarketIntelligenceRecords.capturedAt)],
@@ -928,13 +1207,17 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toMarketIntelligenceRecordSummary);
   }
 
-  async createProvider(scope: StaffScope, input: CreateMiMarketingProviderRequest): Promise<MiMarketingProviderSummary> {
+  async createProvider(
+    scope: StaffScope,
+    input: CreateMiMarketingProviderRequest,
+  ): Promise<MiMarketingProviderSummary> {
     const [created] = await this.deps.db
       .insert(miMarketingProviderAdapters)
       .values({
         companyId: scope.companyId,
         name: input.name.trim(),
-        providerType: input.providerType as typeof miMarketingProviderAdapters.$inferInsert.providerType,
+        providerType:
+          input.providerType as typeof miMarketingProviderAdapters.$inferInsert.providerType,
         syncDirection: input.syncDirection?.trim() ?? 'bidirectional',
         syncFrequency: input.syncFrequency?.trim() ?? null,
         fieldMappings: input.fieldMappings ?? {},
@@ -955,7 +1238,10 @@ export class EnterpriseMarketingIntelligenceService {
     return rows.map(toProviderSummary);
   }
 
-  async testMarketingProvider(scope: StaffScope, providerId: string): Promise<MiMarketingProviderSummary> {
+  async testMarketingProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<MiMarketingProviderSummary> {
     const provider = await this.ensureProvider(scope.companyId, providerId);
     const hasConfig = Object.keys(provider.config ?? {}).length > 0;
     const nextStatus = hasConfig ? 'testing' : provider.status;
@@ -981,7 +1267,12 @@ export class EnterpriseMarketingIntelligenceService {
 
   async createRoiSnapshot(
     scope: StaffScope,
-    input: { campaignPlanId?: string; spendCents?: number; revenueCents?: number; config?: Record<string, unknown> },
+    input: {
+      campaignPlanId?: string;
+      spendCents?: number;
+      revenueCents?: number;
+      config?: Record<string, unknown>;
+    },
   ): Promise<MiRoiSnapshotSummary> {
     if (input.campaignPlanId) await this.ensureCampaignPlan(scope.companyId, input.campaignPlanId);
     const [created] = await this.deps.db
@@ -1002,12 +1293,16 @@ export class EnterpriseMarketingIntelligenceService {
     return toRoiSnapshotSummary(created!);
   }
 
-
-
-  async submitCampaignPlanForReview(scope: StaffScope, planId: string): Promise<MiCampaignPlanSummary> {
+  async submitCampaignPlanForReview(
+    scope: StaffScope,
+    planId: string,
+  ): Promise<MiCampaignPlanSummary> {
     const plan = await this.ensureCampaignPlan(scope.companyId, planId);
     if (plan.workflowStatus !== 'draft') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Campaign plan must be in draft to submit');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Campaign plan must be in draft to submit',
+      );
     }
     const [updated] = await this.deps.db
       .update(miCampaignPlans)
@@ -1018,24 +1313,38 @@ export class EnterpriseMarketingIntelligenceService {
     return toCampaignPlanSummary(updated!);
   }
 
-  async submitCampaignPlanForApproval(scope: StaffScope, planId: string): Promise<MiCampaignPlanSummary> {
+  async submitCampaignPlanForApproval(
+    scope: StaffScope,
+    planId: string,
+  ): Promise<MiCampaignPlanSummary> {
     const plan = await this.ensureCampaignPlan(scope.companyId, planId);
     if (plan.workflowStatus !== 'review') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Campaign plan must be in review to submit for approval');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Campaign plan must be in review to submit for approval',
+      );
     }
     const [updated] = await this.deps.db
       .update(miCampaignPlans)
       .set({ workflowStatus: 'pending_approval', updatedAt: new Date() })
       .where(eq(miCampaignPlans.id, planId))
       .returning();
-    await this.recordAudit(scope, 'campaign_plan_submitted_for_approval', 'mi_campaign_plan', planId);
+    await this.recordAudit(
+      scope,
+      'campaign_plan_submitted_for_approval',
+      'mi_campaign_plan',
+      planId,
+    );
     return toCampaignPlanSummary(updated!);
   }
 
   async approveCampaignPlan(scope: StaffScope, planId: string): Promise<MiCampaignPlanSummary> {
     const plan = await this.ensureCampaignPlan(scope.companyId, planId);
     if (plan.workflowStatus !== 'pending_approval') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Campaign plan is not pending approval');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Campaign plan is not pending approval',
+      );
     }
     const [updated] = await this.deps.db
       .update(miCampaignPlans)
@@ -1046,38 +1355,51 @@ export class EnterpriseMarketingIntelligenceService {
     return toCampaignPlanSummary(updated!);
   }
 
+  /**
+   * UX-H (UX-026): live provider send/execution is out of scope. Approval remains the
+   * final authorized state here — sending happens only via the marketing-eligibility
+   * audience request approval flow (still never provider-delivered in this scope).
+   */
   async executeCampaignPlan(scope: StaffScope, planId: string): Promise<MiCampaignPlanSummary> {
-    const plan = await this.ensureCampaignPlan(scope.companyId, planId);
-    if (plan.workflowStatus !== 'approved') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Campaign plan must be approved before execution');
-    }
-    const [updated] = await this.deps.db
-      .update(miCampaignPlans)
-      .set({ workflowStatus: 'executed', lifecycleStatus: 'active', updatedAt: new Date() })
-      .where(eq(miCampaignPlans.id, planId))
-      .returning();
-    await this.recordAudit(scope, 'campaign_plan_executed', 'mi_campaign_plan', planId);
-    return toCampaignPlanSummary(updated!);
+    await this.ensureCampaignPlan(scope.companyId, planId);
+    throw new EnterpriseMarketingIntelligenceError(
+      'SEND_PATH_NOT_IMPLEMENTED',
+      'UX-H blocks live provider send for campaign execution. The campaign plan remains approved — use marketing-eligibility audience request approval instead.',
+    );
   }
 
-  async submitContentItemForReview(scope: StaffScope, contentId: string): Promise<MiContentItemSummary> {
+  async submitContentItemForReview(
+    scope: StaffScope,
+    contentId: string,
+  ): Promise<MiContentItemSummary> {
     const item = await this.ensureContentItem(scope.companyId, contentId);
     if (item.contentStatus !== 'draft') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Content item must be in draft to submit');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Content item must be in draft to submit',
+      );
     }
     const [updated] = await this.deps.db
       .update(miContentItems)
       .set({ contentStatus: 'review', updatedAt: new Date() })
       .where(eq(miContentItems.id, contentId))
       .returning();
-    await this.recordAudit(scope, 'content_item_submitted_for_review', 'mi_content_item', contentId);
+    await this.recordAudit(
+      scope,
+      'content_item_submitted_for_review',
+      'mi_content_item',
+      contentId,
+    );
     return toContentItemSummary(updated!);
   }
 
   async approveContentItem(scope: StaffScope, contentId: string): Promise<MiContentItemSummary> {
     const item = await this.ensureContentItem(scope.companyId, contentId);
     if (item.contentStatus !== 'review') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Content item is not in review');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Content item is not in review',
+      );
     }
     const [updated] = await this.deps.db
       .update(miContentItems)
@@ -1091,7 +1413,10 @@ export class EnterpriseMarketingIntelligenceService {
   async submitSocialPostForReview(scope: StaffScope, postId: string): Promise<MiSocialPostSummary> {
     const post = await this.ensureSocialPost(scope.companyId, postId);
     if (post.contentStatus !== 'draft') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Social post must be in draft to submit');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Social post must be in draft to submit',
+      );
     }
     const [updated] = await this.deps.db
       .update(miSocialPosts)
@@ -1105,7 +1430,10 @@ export class EnterpriseMarketingIntelligenceService {
   async approveSocialPost(scope: StaffScope, postId: string): Promise<MiSocialPostSummary> {
     const post = await this.ensureSocialPost(scope.companyId, postId);
     if (post.contentStatus !== 'review') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Social post is not in review');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Social post is not in review',
+      );
     }
     const [updated] = await this.deps.db
       .update(miSocialPosts)
@@ -1116,38 +1444,50 @@ export class EnterpriseMarketingIntelligenceService {
     return toSocialPostSummary(updated!);
   }
 
+  /** UX-H (UX-026): no live publish path. Post remains approved, never fake-published. */
   async executeSocialPost(scope: StaffScope, postId: string): Promise<MiSocialPostSummary> {
-    const post = await this.ensureSocialPost(scope.companyId, postId);
-    if (post.contentStatus !== 'approved' && post.contentStatus !== 'scheduled') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Social post must be approved before publishing');
-    }
-    const [updated] = await this.deps.db
-      .update(miSocialPosts)
-      .set({ contentStatus: 'published', publishedAt: new Date(), updatedAt: new Date() })
-      .where(eq(miSocialPosts.id, postId))
-      .returning();
-    await this.recordAudit(scope, 'social_post_published', 'mi_social_post', postId);
-    return toSocialPostSummary(updated!);
+    await this.ensureSocialPost(scope.companyId, postId);
+    throw new EnterpriseMarketingIntelligenceError(
+      'SEND_PATH_NOT_IMPLEMENTED',
+      'UX-H blocks live provider send for social post publishing. The post remains approved — use marketing-eligibility audience request approval instead.',
+    );
   }
 
-  async submitEmailCampaignForReview(scope: StaffScope, campaignId: string): Promise<MiEmailCampaignSummary> {
+  async submitEmailCampaignForReview(
+    scope: StaffScope,
+    campaignId: string,
+  ): Promise<MiEmailCampaignSummary> {
     const campaign = await this.ensureEmailCampaign(scope.companyId, campaignId);
     if (campaign.contentStatus !== 'draft') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Email campaign must be in draft to submit');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Email campaign must be in draft to submit',
+      );
     }
     const [updated] = await this.deps.db
       .update(miEmailCampaigns)
       .set({ contentStatus: 'review', updatedAt: new Date() })
       .where(eq(miEmailCampaigns.id, campaignId))
       .returning();
-    await this.recordAudit(scope, 'email_campaign_submitted_for_review', 'mi_email_campaign', campaignId);
+    await this.recordAudit(
+      scope,
+      'email_campaign_submitted_for_review',
+      'mi_email_campaign',
+      campaignId,
+    );
     return toEmailCampaignSummary(updated!);
   }
 
-  async approveEmailCampaign(scope: StaffScope, campaignId: string): Promise<MiEmailCampaignSummary> {
+  async approveEmailCampaign(
+    scope: StaffScope,
+    campaignId: string,
+  ): Promise<MiEmailCampaignSummary> {
     const campaign = await this.ensureEmailCampaign(scope.companyId, campaignId);
     if (campaign.contentStatus !== 'review') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Email campaign is not in review');
+      throw new EnterpriseMarketingIntelligenceError(
+        'VALIDATION_ERROR',
+        'Email campaign is not in review',
+      );
     }
     const [updated] = await this.deps.db
       .update(miEmailCampaigns)
@@ -1158,21 +1498,22 @@ export class EnterpriseMarketingIntelligenceService {
     return toEmailCampaignSummary(updated!);
   }
 
-  async executeEmailCampaign(scope: StaffScope, campaignId: string): Promise<MiEmailCampaignSummary> {
-    const campaign = await this.ensureEmailCampaign(scope.companyId, campaignId);
-    if (campaign.contentStatus !== 'approved' && campaign.contentStatus !== 'scheduled') {
-      throw new EnterpriseMarketingIntelligenceError('VALIDATION_ERROR', 'Email campaign must be approved before sending');
-    }
-    const [updated] = await this.deps.db
-      .update(miEmailCampaigns)
-      .set({ contentStatus: 'published', updatedAt: new Date() })
-      .where(eq(miEmailCampaigns.id, campaignId))
-      .returning();
-    await this.recordAudit(scope, 'email_campaign_executed', 'mi_email_campaign', campaignId);
-    return toEmailCampaignSummary(updated!);
+  /** UX-H (UX-026): no live send path. Campaign remains approved, never fake-sent. */
+  async executeEmailCampaign(
+    scope: StaffScope,
+    campaignId: string,
+  ): Promise<MiEmailCampaignSummary> {
+    await this.ensureEmailCampaign(scope.companyId, campaignId);
+    throw new EnterpriseMarketingIntelligenceError(
+      'SEND_PATH_NOT_IMPLEMENTED',
+      'UX-H blocks live provider send for email campaigns. The campaign remains approved — use marketing-eligibility audience request approval instead.',
+    );
   }
 
-  async submitReviewResponse(scope: StaffScope, input: CreateMiReviewResponseRequest): Promise<MiReviewSummary> {
+  async submitReviewResponse(
+    scope: StaffScope,
+    input: CreateMiReviewResponseRequest,
+  ): Promise<MiReviewSummary> {
     const review = await this.ensureReview(scope.companyId, input.reviewId);
     const [updated] = await this.deps.db
       .update(miReviews)
@@ -1187,10 +1528,18 @@ export class EnterpriseMarketingIntelligenceService {
     return toReviewSummary(updated!);
   }
 
-  async listMarketingAlerts(companyId: string, filters?: { status?: string }): Promise<MiMarketingAlertSummary[]> {
+  async listMarketingAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<MiMarketingAlertSummary[]> {
     const conditions = [eq(miMarketingAlerts.companyId, companyId)];
     if (filters?.status) {
-      conditions.push(eq(miMarketingAlerts.status, filters.status as typeof miMarketingAlerts.$inferSelect.status));
+      conditions.push(
+        eq(
+          miMarketingAlerts.status,
+          filters.status as typeof miMarketingAlerts.$inferSelect.status,
+        ),
+      );
     }
     const rows = await this.deps.db.query.miMarketingAlerts.findMany({
       where: and(...conditions),
@@ -1206,11 +1555,41 @@ export class EnterpriseMarketingIntelligenceService {
     const syncedAt = new Date();
 
     const alertDefinitions = [
-      { alertType: 'pending_review', severity: 'warning', title: 'Pending review items', description: `${monitoring.pendingReviewCount} marketing item(s) awaiting review.`, active: monitoring.pendingReviewCount > 0 },
-      { alertType: 'overdue_content', severity: 'warning', title: 'Overdue scheduled content', description: `${monitoring.overdueContentCount} scheduled content item(s) are overdue.`, active: monitoring.overdueContentCount > 0 },
-      { alertType: 'budget_overspend', severity: 'critical', title: 'Budget threshold exceeded', description: `${monitoring.budgetOverspendCount} campaign plan(s) near or over budget.`, active: monitoring.budgetOverspendCount > 0 },
-      { alertType: 'provider_sync_failure', severity: 'critical', title: 'Marketing provider sync failure', description: `${monitoring.adapterSyncFailureCount} marketing provider(s) in error state.`, active: monitoring.adapterSyncFailureCount > 0 },
-      { alertType: 'unscheduled_campaign', severity: 'warning', title: 'Unscheduled approved campaigns', description: `${monitoring.unscheduledCampaignCount} approved campaign plan(s) not scheduled.`, active: monitoring.unscheduledCampaignCount > 0 },
+      {
+        alertType: 'pending_review',
+        severity: 'warning',
+        title: 'Pending review items',
+        description: `${monitoring.pendingReviewCount} marketing item(s) awaiting review.`,
+        active: monitoring.pendingReviewCount > 0,
+      },
+      {
+        alertType: 'overdue_content',
+        severity: 'warning',
+        title: 'Overdue scheduled content',
+        description: `${monitoring.overdueContentCount} scheduled content item(s) are overdue.`,
+        active: monitoring.overdueContentCount > 0,
+      },
+      {
+        alertType: 'budget_overspend',
+        severity: 'critical',
+        title: 'Budget threshold exceeded',
+        description: `${monitoring.budgetOverspendCount} campaign plan(s) near or over budget.`,
+        active: monitoring.budgetOverspendCount > 0,
+      },
+      {
+        alertType: 'provider_sync_failure',
+        severity: 'critical',
+        title: 'Marketing provider sync failure',
+        description: `${monitoring.adapterSyncFailureCount} marketing provider(s) in error state.`,
+        active: monitoring.adapterSyncFailureCount > 0,
+      },
+      {
+        alertType: 'unscheduled_campaign',
+        severity: 'warning',
+        title: 'Unscheduled approved campaigns',
+        description: `${monitoring.unscheduledCampaignCount} approved campaign plan(s) not scheduled.`,
+        active: monitoring.unscheduledCampaignCount > 0,
+      },
     ] as const;
 
     for (const definition of alertDefinitions) {
@@ -1257,7 +1636,12 @@ export class EnterpriseMarketingIntelligenceService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'marketing_draft_created', 'mi_marketing_action_draft', created!.id);
+    await this.recordAudit(
+      scope,
+      'marketing_draft_created',
+      'mi_marketing_action_draft',
+      created!.id,
+    );
     return {
       id: created!.id,
       title: created!.title,
@@ -1267,18 +1651,23 @@ export class EnterpriseMarketingIntelligenceService {
   }
 
   async captureAnalytics(scope: StaffScope): Promise<MiAnalyticsSummary> {
-    const [dashboard, monitoring, legacyCampaigns, socialPosts, emailCampaigns, roiSnapshots] = await Promise.all([
-      this.getDashboard(scope.companyId),
-      this.getCampaignMonitoring(scope.companyId),
-      this.deps.marketingService.listCampaigns(scope.companyId),
-      this.listSocialPosts(scope.companyId),
-      this.listEmailCampaigns(scope.companyId),
-      this.listRoiSnapshots(scope.companyId),
-    ]);
+    const [dashboard, monitoring, legacyCampaigns, socialPosts, emailCampaigns, roiSnapshots] =
+      await Promise.all([
+        this.getDashboard(scope.companyId),
+        this.getCampaignMonitoring(scope.companyId),
+        this.deps.marketingService.listCampaigns(scope.companyId),
+        this.listSocialPosts(scope.companyId),
+        this.listEmailCampaigns(scope.companyId),
+        this.listRoiSnapshots(scope.companyId),
+      ]);
 
     const scheduledContentCount =
-      socialPosts.filter((row) => row.contentStatus === 'scheduled' || row.contentStatus === 'approved').length +
-      emailCampaigns.filter((row) => row.contentStatus === 'scheduled' || row.contentStatus === 'approved').length;
+      socialPosts.filter(
+        (row) => row.contentStatus === 'scheduled' || row.contentStatus === 'approved',
+      ).length +
+      emailCampaigns.filter(
+        (row) => row.contentStatus === 'scheduled' || row.contentStatus === 'approved',
+      ).length;
 
     const totalSpendCents = roiSnapshots.reduce((sum, row) => sum + row.spendCents, 0);
     const attributedRevenueCents = roiSnapshots.reduce((sum, row) => sum + row.revenueCents, 0);
@@ -1287,7 +1676,9 @@ export class EnterpriseMarketingIntelligenceService {
       .insert(miAnalyticsSnapshots)
       .values({
         companyId: scope.companyId,
-        activeCampaignCount: dashboard.activeCampaignPlanCount + legacyCampaigns.filter((row) => row.status === 'active').length,
+        activeCampaignCount:
+          dashboard.activeCampaignPlanCount +
+          legacyCampaigns.filter((row) => row.status === 'active').length,
         scheduledContentCount,
         openAlertCount: dashboard.openAlertCount,
         totalSpendCents,
@@ -1316,8 +1707,12 @@ export class EnterpriseMarketingIntelligenceService {
     const totalSpendCents = roiSnapshots.reduce((sum, row) => sum + row.spendCents, 0);
     const attributedRevenueCents = roiSnapshots.reduce((sum, row) => sum + row.revenueCents, 0);
     const scheduledContentCount =
-      dashboard.recentSocialPosts.filter((row) => ['scheduled', 'approved'].includes(row.contentStatus)).length +
-      dashboard.recentEmailCampaigns.filter((row) => ['scheduled', 'approved'].includes(row.contentStatus)).length;
+      dashboard.recentSocialPosts.filter((row) =>
+        ['scheduled', 'approved'].includes(row.contentStatus),
+      ).length +
+      dashboard.recentEmailCampaigns.filter((row) =>
+        ['scheduled', 'approved'].includes(row.contentStatus),
+      ).length;
 
     return {
       activeCampaignCount: dashboard.activeCampaignPlanCount,
@@ -1328,8 +1723,6 @@ export class EnterpriseMarketingIntelligenceService {
       summary: dashboard.summary,
     };
   }
-
-
 
   private async ensurePlatformConfig(companyId: string) {
     const existing = await this.deps.db.query.miPlatformConfig.findFirst({
@@ -1342,7 +1735,10 @@ export class EnterpriseMarketingIntelligenceService {
 
   private async ensureStrategy(companyId: string, strategyId: string) {
     const row = await this.deps.db.query.miMarketingStrategies.findFirst({
-      where: and(eq(miMarketingStrategies.companyId, companyId), eq(miMarketingStrategies.id, strategyId)),
+      where: and(
+        eq(miMarketingStrategies.companyId, companyId),
+        eq(miMarketingStrategies.id, strategyId),
+      ),
     });
     if (!row) throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Strategy not found');
     return row;
@@ -1368,7 +1764,8 @@ export class EnterpriseMarketingIntelligenceService {
     const row = await this.deps.db.query.miCampaignPlans.findFirst({
       where: and(eq(miCampaignPlans.companyId, companyId), eq(miCampaignPlans.id, planId)),
     });
-    if (!row) throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Campaign plan not found');
+    if (!row)
+      throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Campaign plan not found');
     return row;
   }
 
@@ -1384,7 +1781,8 @@ export class EnterpriseMarketingIntelligenceService {
     const row = await this.deps.db.query.miSocialAccounts.findFirst({
       where: and(eq(miSocialAccounts.companyId, companyId), eq(miSocialAccounts.id, accountId)),
     });
-    if (!row) throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Social account not found');
+    if (!row)
+      throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Social account not found');
     return row;
   }
 
@@ -1424,7 +1822,8 @@ export class EnterpriseMarketingIntelligenceService {
     const row = await this.deps.db.query.miEmailCampaigns.findFirst({
       where: and(eq(miEmailCampaigns.companyId, companyId), eq(miEmailCampaigns.id, campaignId)),
     });
-    if (!row) throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Email campaign not found');
+    if (!row)
+      throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Email campaign not found');
     return row;
   }
 
@@ -1438,9 +1837,13 @@ export class EnterpriseMarketingIntelligenceService {
 
   private async ensureProvider(companyId: string, providerId: string) {
     const row = await this.deps.db.query.miMarketingProviderAdapters.findFirst({
-      where: and(eq(miMarketingProviderAdapters.companyId, companyId), eq(miMarketingProviderAdapters.id, providerId)),
+      where: and(
+        eq(miMarketingProviderAdapters.companyId, companyId),
+        eq(miMarketingProviderAdapters.id, providerId),
+      ),
     });
-    if (!row) throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Marketing provider not found');
+    if (!row)
+      throw new EnterpriseMarketingIntelligenceError('NOT_FOUND', 'Marketing provider not found');
     return row;
   }
 
@@ -1462,7 +1865,9 @@ export class EnterpriseMarketingIntelligenceService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof miPlatformConfig.$inferSelect): MiPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof miPlatformConfig.$inferSelect,
+): MiPlatformConfigSummary {
   return {
     marketingStandards: row.marketingStandards,
     providerAdapterTemplates: row.providerAdapterTemplates,
@@ -1474,7 +1879,9 @@ function toPlatformConfigSummary(row: typeof miPlatformConfig.$inferSelect): MiP
   };
 }
 
-function toProviderSummary(row: typeof miMarketingProviderAdapters.$inferSelect): MiMarketingProviderSummary {
+function toProviderSummary(
+  row: typeof miMarketingProviderAdapters.$inferSelect,
+): MiMarketingProviderSummary {
   return {
     id: row.id,
     name: row.name,
@@ -1486,7 +1893,9 @@ function toProviderSummary(row: typeof miMarketingProviderAdapters.$inferSelect)
   };
 }
 
-function toStrategySummary(row: typeof miMarketingStrategies.$inferSelect): MiMarketingStrategySummary {
+function toStrategySummary(
+  row: typeof miMarketingStrategies.$inferSelect,
+): MiMarketingStrategySummary {
   return {
     id: row.id,
     name: row.name,
@@ -1500,19 +1909,46 @@ function toStrategySummary(row: typeof miMarketingStrategies.$inferSelect): MiMa
 }
 
 function toBrandSummary(row: typeof miBrands.$inferSelect): MiBrandSummary {
-  return { id: row.id, name: row.name, brandKey: row.brandKey, description: row.description, isActive: row.isActive };
+  return {
+    id: row.id,
+    name: row.name,
+    brandKey: row.brandKey,
+    description: row.description,
+    isActive: row.isActive,
+  };
 }
 
 function toBrandAssetSummary(row: typeof miBrandAssets.$inferSelect): MiBrandAssetSummary {
-  return { id: row.id, brandId: row.brandId, assetType: row.assetType, name: row.name, assetKey: row.assetKey, fileUrl: row.fileUrl };
+  return {
+    id: row.id,
+    brandId: row.brandId,
+    assetType: row.assetType,
+    name: row.name,
+    assetKey: row.assetKey,
+    fileUrl: row.fileUrl,
+  };
 }
 
 function toAudienceSummary(row: typeof miAudiences.$inferSelect): MiAudienceSummary {
-  return { id: row.id, name: row.name, audienceKey: row.audienceKey, audienceType: row.audienceType, isActive: row.isActive };
+  return {
+    id: row.id,
+    name: row.name,
+    audienceKey: row.audienceKey,
+    audienceType: row.audienceType,
+    isActive: row.isActive,
+  };
 }
 
-function toSuppressionListSummary(row: typeof miSuppressionLists.$inferSelect): MiSuppressionListSummary {
-  return { id: row.id, name: row.name, listKey: row.listKey, listType: row.listType, isActive: row.isActive };
+function toSuppressionListSummary(
+  row: typeof miSuppressionLists.$inferSelect,
+): MiSuppressionListSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    listKey: row.listKey,
+    listType: row.listType,
+    isActive: row.isActive,
+  };
 }
 
 function toCampaignPlanSummary(row: typeof miCampaignPlans.$inferSelect): MiCampaignPlanSummary {
@@ -1533,43 +1969,116 @@ function toCampaignPlanSummary(row: typeof miCampaignPlans.$inferSelect): MiCamp
 }
 
 function toContentItemSummary(row: typeof miContentItems.$inferSelect): MiContentItemSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, title: row.title, contentType: row.contentType, contentStatus: row.contentStatus, ownerUserId: row.ownerUserId };
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    title: row.title,
+    contentType: row.contentType,
+    contentStatus: row.contentStatus,
+    ownerUserId: row.ownerUserId,
+  };
 }
 
-function toCreativeRequestSummary(row: typeof miCreativeRequests.$inferSelect): MiCreativeRequestSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, title: row.title, requestType: row.requestType, workflowStatus: row.workflowStatus, requestedByUserId: row.requestedByUserId };
+function toCreativeRequestSummary(
+  row: typeof miCreativeRequests.$inferSelect,
+): MiCreativeRequestSummary {
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    title: row.title,
+    requestType: row.requestType,
+    workflowStatus: row.workflowStatus,
+    requestedByUserId: row.requestedByUserId,
+  };
 }
 
 function toSocialAccountSummary(row: typeof miSocialAccounts.$inferSelect): MiSocialAccountSummary {
-  return { id: row.id, brandId: row.brandId, providerType: row.providerType, accountName: row.accountName, accountHandle: row.accountHandle, isActive: row.isActive };
+  return {
+    id: row.id,
+    brandId: row.brandId,
+    providerType: row.providerType,
+    accountName: row.accountName,
+    accountHandle: row.accountHandle,
+    isActive: row.isActive,
+  };
 }
 
 function toSocialPostSummary(row: typeof miSocialPosts.$inferSelect): MiSocialPostSummary {
-  return { id: row.id, socialAccountId: row.socialAccountId, campaignPlanId: row.campaignPlanId, title: row.title, contentStatus: row.contentStatus, scheduledAt: row.scheduledAt?.toISOString() ?? null, publishedAt: row.publishedAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    socialAccountId: row.socialAccountId,
+    campaignPlanId: row.campaignPlanId,
+    title: row.title,
+    contentStatus: row.contentStatus,
+    scheduledAt: row.scheduledAt?.toISOString() ?? null,
+    publishedAt: row.publishedAt?.toISOString() ?? null,
+  };
 }
 
 function toReviewSummary(row: typeof miReviews.$inferSelect): MiReviewSummary {
-  return { id: row.id, platform: row.platform, rating: row.rating != null ? String(row.rating) : null, author: row.author, workflowStatus: row.workflowStatus, reviewedAt: row.reviewedAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    platform: row.platform,
+    rating: row.rating != null ? String(row.rating) : null,
+    author: row.author,
+    workflowStatus: row.workflowStatus,
+    reviewedAt: row.reviewedAt?.toISOString() ?? null,
+  };
 }
 
 function toAdAccountSummary(row: typeof miAdAccounts.$inferSelect): MiAdAccountSummary {
-  return { id: row.id, providerType: row.providerType, name: row.name, externalAccountId: row.externalAccountId, isActive: row.isActive };
+  return {
+    id: row.id,
+    providerType: row.providerType,
+    name: row.name,
+    externalAccountId: row.externalAccountId,
+    isActive: row.isActive,
+  };
 }
 
 function toAdCampaignSummary(row: typeof miAdCampaigns.$inferSelect): MiAdCampaignSummary {
-  return { id: row.id, adAccountId: row.adAccountId, campaignPlanId: row.campaignPlanId, name: row.name, lifecycleStatus: row.lifecycleStatus, budgetCents: row.budgetCents };
+  return {
+    id: row.id,
+    adAccountId: row.adAccountId,
+    campaignPlanId: row.campaignPlanId,
+    name: row.name,
+    lifecycleStatus: row.lifecycleStatus,
+    budgetCents: row.budgetCents,
+  };
 }
 
 function toAdBudgetSummary(row: typeof miAdBudgets.$inferSelect): MiAdBudgetSummary {
-  return { id: row.id, adCampaignId: row.adCampaignId, budgetType: row.budgetType, amountCents: row.amountCents, periodStart: row.periodStart, periodEnd: row.periodEnd };
+  return {
+    id: row.id,
+    adCampaignId: row.adCampaignId,
+    budgetType: row.budgetType,
+    amountCents: row.amountCents,
+    periodStart: row.periodStart,
+    periodEnd: row.periodEnd,
+  };
 }
 
 function toSeoKeywordSummary(row: typeof miSeoKeywords.$inferSelect): MiSeoKeywordSummary {
-  return { id: row.id, keyword: row.keyword, searchVolume: row.searchVolume, difficulty: row.difficulty != null ? String(row.difficulty) : null, currentRank: row.currentRank, targetUrl: row.targetUrl };
+  return {
+    id: row.id,
+    keyword: row.keyword,
+    searchVolume: row.searchVolume,
+    difficulty: row.difficulty != null ? String(row.difficulty) : null,
+    currentRank: row.currentRank,
+    targetUrl: row.targetUrl,
+  };
 }
 
-function toLocalPresenceProfileSummary(row: typeof miLocalPresenceProfiles.$inferSelect): MiLocalPresenceProfileSummary {
-  return { id: row.id, name: row.name, locationKey: row.locationKey, address: row.address, isActive: row.isActive };
+function toLocalPresenceProfileSummary(
+  row: typeof miLocalPresenceProfiles.$inferSelect,
+): MiLocalPresenceProfileSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    locationKey: row.locationKey,
+    address: row.address,
+    isActive: row.isActive,
+  };
 }
 
 function toWebsiteSummary(row: typeof miWebsites.$inferSelect): MiWebsiteSummary {
@@ -1577,47 +2086,129 @@ function toWebsiteSummary(row: typeof miWebsites.$inferSelect): MiWebsiteSummary
 }
 
 function toLandingPageSummary(row: typeof miLandingPages.$inferSelect): MiLandingPageSummary {
-  return { id: row.id, websiteId: row.websiteId, campaignPlanId: row.campaignPlanId, title: row.title, slug: row.slug, contentStatus: row.contentStatus };
+  return {
+    id: row.id,
+    websiteId: row.websiteId,
+    campaignPlanId: row.campaignPlanId,
+    title: row.title,
+    slug: row.slug,
+    contentStatus: row.contentStatus,
+  };
 }
 
 function toEmailCampaignSummary(row: typeof miEmailCampaigns.$inferSelect): MiEmailCampaignSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, name: row.name, subject: row.subject, contentStatus: row.contentStatus, scheduledAt: row.scheduledAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    name: row.name,
+    subject: row.subject,
+    contentStatus: row.contentStatus,
+    scheduledAt: row.scheduledAt?.toISOString() ?? null,
+  };
 }
 
-function toMessagingCampaignSummary(row: typeof miMessagingCampaigns.$inferSelect): MiMessagingCampaignSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, name: row.name, channel: row.channel, contentStatus: row.contentStatus };
+function toMessagingCampaignSummary(
+  row: typeof miMessagingCampaigns.$inferSelect,
+): MiMessagingCampaignSummary {
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    name: row.name,
+    channel: row.channel,
+    contentStatus: row.contentStatus,
+  };
 }
 
-function toCustomerJourneySummary(row: typeof miCustomerJourneys.$inferSelect): MiCustomerJourneySummary {
+function toCustomerJourneySummary(
+  row: typeof miCustomerJourneys.$inferSelect,
+): MiCustomerJourneySummary {
   return { id: row.id, name: row.name, journeyKey: row.journeyKey, isActive: row.isActive };
 }
 
-function toAttributionRecordSummary(row: typeof miAttributionRecords.$inferSelect): MiAttributionRecordSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, channel: row.channel, touchpointType: row.touchpointType, attributedValueCents: row.attributedValueCents, capturedAt: row.capturedAt.toISOString() };
+function toAttributionRecordSummary(
+  row: typeof miAttributionRecords.$inferSelect,
+): MiAttributionRecordSummary {
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    channel: row.channel,
+    touchpointType: row.touchpointType,
+    attributedValueCents: row.attributedValueCents,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
-function toReferralCampaignSummary(row: typeof miReferralCampaigns.$inferSelect): MiReferralCampaignSummary {
-  return { id: row.id, name: row.name, campaignKey: row.campaignKey, lifecycleStatus: row.lifecycleStatus, isActive: row.isActive };
+function toReferralCampaignSummary(
+  row: typeof miReferralCampaigns.$inferSelect,
+): MiReferralCampaignSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    campaignKey: row.campaignKey,
+    lifecycleStatus: row.lifecycleStatus,
+    isActive: row.isActive,
+  };
 }
 
 function toCalendarEventSummary(row: typeof miCalendarEvents.$inferSelect): MiCalendarEventSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, title: row.title, eventType: row.eventType, startsAt: row.startsAt.toISOString(), endsAt: row.endsAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    title: row.title,
+    eventType: row.eventType,
+    startsAt: row.startsAt.toISOString(),
+    endsAt: row.endsAt?.toISOString() ?? null,
+  };
 }
 
 function toExperimentSummary(row: typeof miExperiments.$inferSelect): MiExperimentSummary {
-  return { id: row.id, name: row.name, experimentKey: row.experimentKey, experimentType: row.experimentType, workflowStatus: row.workflowStatus, isActive: row.isActive };
+  return {
+    id: row.id,
+    name: row.name,
+    experimentKey: row.experimentKey,
+    experimentType: row.experimentType,
+    workflowStatus: row.workflowStatus,
+    isActive: row.isActive,
+  };
 }
 
-function toMarketIntelligenceRecordSummary(row: typeof miMarketIntelligenceRecords.$inferSelect): MiMarketIntelligenceRecordSummary {
-  return { id: row.id, recordType: row.recordType, title: row.title, source: row.source, confidenceScore: row.confidenceScore != null ? String(row.confidenceScore) : null, capturedAt: row.capturedAt.toISOString() };
+function toMarketIntelligenceRecordSummary(
+  row: typeof miMarketIntelligenceRecords.$inferSelect,
+): MiMarketIntelligenceRecordSummary {
+  return {
+    id: row.id,
+    recordType: row.recordType,
+    title: row.title,
+    source: row.source,
+    confidenceScore: row.confidenceScore != null ? String(row.confidenceScore) : null,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
-function toMarketingAlertSummary(row: typeof miMarketingAlerts.$inferSelect): MiMarketingAlertSummary {
-  return { id: row.id, alertType: row.alertType, severity: row.severity, status: row.status, title: row.title, description: row.description, sourceModule: row.sourceModule, createdAt: row.createdAt.toISOString() };
+function toMarketingAlertSummary(
+  row: typeof miMarketingAlerts.$inferSelect,
+): MiMarketingAlertSummary {
+  return {
+    id: row.id,
+    alertType: row.alertType,
+    severity: row.severity,
+    status: row.status,
+    title: row.title,
+    description: row.description,
+    sourceModule: row.sourceModule,
+    createdAt: row.createdAt.toISOString(),
+  };
 }
 
 function toRoiSnapshotSummary(row: typeof miRoiSnapshots.$inferSelect): MiRoiSnapshotSummary {
-  return { id: row.id, campaignPlanId: row.campaignPlanId, spendCents: row.spendCents, revenueCents: row.revenueCents, roiPercent: row.roiPercent != null ? String(row.roiPercent) : null, capturedAt: row.capturedAt.toISOString() };
+  return {
+    id: row.id,
+    campaignPlanId: row.campaignPlanId,
+    spendCents: row.spendCents,
+    revenueCents: row.revenueCents,
+    roiPercent: row.roiPercent != null ? String(row.roiPercent) : null,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
 function toAnalyticsSummary(row: typeof miAnalyticsSnapshots.$inferSelect): MiAnalyticsSummary {
@@ -1633,4 +2224,3 @@ function toAnalyticsSummary(row: typeof miAnalyticsSnapshots.$inferSelect): MiAn
     capturedAt: row.capturedAt.toISOString(),
   };
 }
-

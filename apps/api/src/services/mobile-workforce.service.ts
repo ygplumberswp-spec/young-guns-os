@@ -1,12 +1,18 @@
-import { and, desc, eq, gte, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, ne, or, sql } from 'drizzle-orm';
 import type {
   CreateMobileTimeEntryRequest,
   CreateMobileWorkforceRequest,
+  FlushOfflineActionsRequest,
+  FlushOfflineActionsResponse,
+  JobExecutionException,
+  JobExecutionPhase,
+  JobWorkflowAction,
   MobileCompanyAnnouncementSummary,
   MobileInventoryAlert,
   MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
   MobileJobInventoryUsageSummary,
+  MobileJobWorkspacePropertyHistoryEntry,
   MobileOfflineBundle,
   MobileRouteIntelligence,
   MobileRouteStop,
@@ -19,15 +25,20 @@ import type {
   MobileWorkforceJobList,
   MobileWorkforceNotificationCentre,
   MobileWorkforceRequestSummary,
+  OfflineActionInput,
+  RecordJobMaterialLineRequest,
   ReportMobileSyncConflictRequest,
   ResolveMobileSyncConflictRequest,
   SubmitMobileInventoryUsageRequest,
   SubmitMobileJobDocumentationRequest,
+  UploadJobEvidenceRequest,
 } from '@titan/shared';
+import { formatMapsEtaCapabilityLabel } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
   inventoryItems,
+  jobs,
   mobileActionLogs,
   mobileCompanyAnnouncements,
   mobileJobDocumentation,
@@ -44,6 +55,14 @@ import type { JobsService } from './jobs.service.js';
 import type { MobileService } from './mobile.service.js';
 import type { MobileSyncService } from './mobile-sync.service.js';
 import type { NotificationService } from './notification.service.js';
+import type { TechnicianWorkflowService } from './technician-workflow.service.js';
+import { availableActionsForPhase, JobExecutionService, userHasJobAccess } from './job-execution.service.js';
+import {
+  decodeBase64Payload,
+  JobEvidenceStorageError,
+  type JobEvidenceKind,
+  type JobEvidenceStorageService,
+} from './job-evidence-storage.service.js';
 
 export class MobileWorkforceError extends Error {
   constructor(
@@ -60,6 +79,13 @@ type TechnicianScope = {
   userId: string;
 };
 
+/** Maps the legacy documentation-type taxonomy onto the narrower binary storage kinds. */
+function documentationTypeToEvidenceKind(documentationType: string): JobEvidenceKind {
+  if (documentationType === 'photo') return 'photo';
+  if (documentationType === 'customer_signature') return 'signature';
+  return 'document';
+}
+
 export class MobileWorkforceService {
   constructor(
     private readonly db: DatabaseClient,
@@ -69,29 +95,41 @@ export class MobileWorkforceService {
     private readonly inventoryService: InventoryService,
     private readonly integrationsService: IntegrationsService,
     private readonly notificationService: NotificationService,
+    private readonly jobExecutionService: JobExecutionService,
+    private readonly jobEvidenceStorageService: JobEvidenceStorageService,
+    private readonly technicianWorkflowService: TechnicianWorkflowService,
   ) {}
 
   async getWorkforceDashboard(scope: TechnicianScope): Promise<MobileWorkforceDashboard> {
-    const [baseDashboard, route, inventoryAlerts, announcements, pendingRequests, pendingActions, todaySchedule] =
-      await Promise.all([
-        this.mobileService.getTechnicianDashboard(scope),
-        this.getRouteSummary(scope),
-        this.getInventoryAlerts(scope.companyId),
-        this.listActiveAnnouncements(scope.companyId),
-        this.listRequests(scope),
-        this.db.query.mobilePendingActions.findMany({
-          where: and(
-            eq(mobilePendingActions.companyId, scope.companyId),
-            eq(mobilePendingActions.userId, scope.userId),
-            eq(mobilePendingActions.status, 'pending'),
-          ),
-        }),
-        this.mobileService.getTechnicianSchedule(scope),
-      ]);
+    const [
+      baseDashboard,
+      route,
+      inventoryAlerts,
+      announcements,
+      pendingRequests,
+      pendingActions,
+      todaySchedule,
+    ] = await Promise.all([
+      this.mobileService.getTechnicianDashboard(scope),
+      this.getRouteSummary(scope),
+      this.getInventoryAlerts(scope.companyId),
+      this.listActiveAnnouncements(scope.companyId),
+      this.listRequests(scope),
+      this.db.query.mobilePendingActions.findMany({
+        where: and(
+          eq(mobilePendingActions.companyId, scope.companyId),
+          eq(mobilePendingActions.userId, scope.userId),
+          eq(mobilePendingActions.status, 'pending'),
+        ),
+      }),
+      this.mobileService.getTechnicianSchedule(scope),
+    ]);
 
     const safetyNotices = announcements.filter((item) => item.announcementType === 'safety');
     const companyAnnouncements = announcements.filter((item) => item.announcementType !== 'safety');
-    const unreadNotificationCount = baseDashboard.notifications.filter((item) => !item.isRead).length;
+    const unreadNotificationCount = baseDashboard.notifications.filter(
+      (item) => !item.isRead,
+    ).length;
 
     return {
       greeting: baseDashboard.greeting,
@@ -100,7 +138,8 @@ export class MobileWorkforceService {
       upcomingSchedule: baseDashboard.upcomingSchedule.items,
       routeSummary: route,
       outstandingTaskCount: pendingActions.length,
-      pendingRequestCount: pendingRequests.filter((item) => item.status === 'pending_approval').length,
+      pendingRequestCount: pendingRequests.filter((item) => item.status === 'pending_approval')
+        .length,
       inventoryAlerts,
       safetyNotices,
       companyAnnouncements,
@@ -120,23 +159,45 @@ export class MobileWorkforceService {
     return { jobs: jobsList, activeCount, completedCount };
   }
 
-  async getJobWorkspace(scope: TechnicianScope, jobId: string): Promise<MobileJobExecutionWorkspace> {
+  async getJobWorkspace(
+    scope: TechnicianScope,
+    jobId: string,
+  ): Promise<MobileJobExecutionWorkspace> {
     const job = await this.requireAssignedJob(scope, jobId);
-    const customer = await this.db.query.customers.findFirst({
-      where: and(eq(customers.id, job.customerId), eq(customers.companyId, scope.companyId)),
-    });
+    const [customer, rawJob] = await Promise.all([
+      this.db.query.customers.findFirst({
+        where: and(eq(customers.id, job.customerId), eq(customers.companyId, scope.companyId)),
+      }),
+      this.db.query.jobs.findFirst({
+        where: and(eq(jobs.id, jobId), eq(jobs.companyId, scope.companyId)),
+        columns: { executionPhase: true },
+      }),
+    ]);
 
     if (!customer) {
       throw new MobileWorkforceError('NOT_FOUND', 'Customer not found');
     }
+    if (!rawJob) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Job not found');
+    }
 
-    const [timeEntries, inventoryUsage, documentation, pendingCompletion] = await Promise.all([
+    const executionPhase = rawJob.executionPhase;
+
+    const [
+      timeEntries,
+      inventoryUsage,
+      documentation,
+      pendingCompletion,
+      crew,
+      vehicle,
+      pendingVariations,
+      materialLines,
+      completionGate,
+      propertyHistoryRows,
+    ] = await Promise.all([
       this.db.query.mobileTimeEntries.findMany({
-        where: and(
-          eq(mobileTimeEntries.companyId, scope.companyId),
-          eq(mobileTimeEntries.userId, scope.userId),
-          eq(mobileTimeEntries.jobId, jobId),
-        ),
+        where: and(eq(mobileTimeEntries.companyId, scope.companyId), eq(mobileTimeEntries.jobId, jobId)),
+        with: { user: true },
         orderBy: [desc(mobileTimeEntries.startedAt)],
       }),
       this.db.query.mobileJobInventoryUsage.findMany({
@@ -164,6 +225,30 @@ export class MobileWorkforceService {
         ),
         orderBy: [desc(mobilePendingActions.createdAt)],
       }),
+      this.jobExecutionService.getCrew(scope.companyId, jobId),
+      this.jobExecutionService.getActiveVehicle(scope.companyId, jobId),
+      this.jobExecutionService.listVariations(scope.companyId, jobId, 'pending'),
+      this.jobExecutionService.listMaterialLines(scope.companyId, jobId),
+      this.jobExecutionService.getCompletionGate(scope, jobId),
+      job.propertyId
+        ? this.db.query.jobs.findMany({
+            where: and(
+              eq(jobs.companyId, scope.companyId),
+              eq(jobs.propertyId, job.propertyId),
+              ne(jobs.id, jobId),
+            ),
+            orderBy: [desc(jobs.updatedAt)],
+            limit: 5,
+            columns: {
+              id: true,
+              jobNumber: true,
+              title: true,
+              status: true,
+              executionPhase: true,
+              executionPhaseUpdatedAt: true,
+            },
+          })
+        : Promise.resolve([]),
     ]);
 
     const checklist =
@@ -175,10 +260,29 @@ export class MobileWorkforceService {
         ? pendingCompletion.payload.summary
         : null;
 
+    const exceptions = buildExceptionHints({
+      executionPhase,
+      scheduledAt: job.scheduledAt,
+      pendingVariationCount: pendingVariations.length,
+      gateMissing: completionGate.missing,
+    });
+
+    const propertyHistory: MobileJobWorkspacePropertyHistoryEntry[] = propertyHistoryRows.map((row) => ({
+      id: row.id,
+      jobNumber: row.jobNumber ?? null,
+      title: row.title,
+      status: row.status,
+      completedAt: row.executionPhase === 'completed' ? row.executionPhaseUpdatedAt?.toISOString() ?? null : null,
+    }));
+
     return {
       jobId: job.id,
+      jobNumber: job.jobNumber,
+      jobType: job.jobType,
+      priority: job.priority,
       title: job.title,
       status: job.status,
+      executionPhase,
       scheduledAt: job.scheduledAt,
       scheduledEndAt: job.scheduledEndAt,
       workInstructions: job.description,
@@ -188,6 +292,26 @@ export class MobileWorkforceService {
         email: customer.email,
         phone: customer.phone,
       },
+      address: job.address,
+      accessInstructions: job.accessInstructions,
+      siteContact: {
+        name: job.siteContact.name,
+        mobile: job.siteContact.mobile,
+        email: job.siteContact.email,
+      },
+      internalNotes: job.notes,
+      customerVisibleNotes: job.customerVisibleNotes,
+      navigationUrl: job.addressDisplay
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.addressDisplay)}`
+        : null,
+      crew,
+      vehicle,
+      variations: pendingVariations,
+      materialLines,
+      exceptions,
+      availableActions: availableActionsForPhase(executionPhase),
+      completionGate,
+      propertyHistory,
       checklist,
       laborTimeEntries: timeEntries.map(toTimeEntrySummary),
       materialsUsed: inventoryUsage.map(toInventoryUsageSummary),
@@ -204,11 +328,19 @@ export class MobileWorkforceService {
       this.mobileService.getTechnicianFleetInfo(scope),
     ]);
 
+    // UX-I: never expose coordinates as live tracking unless Cartrack is truly connected.
+    const liveTrackingAvailable = Boolean(tracking.cartrackConnected);
     const assignedVehicleId = fleetInfo.assignedVehicle?.id ?? null;
     const latestGps =
-      assignedVehicleId != null
+      liveTrackingAvailable && assignedVehicleId != null
         ? (tracking.latestPositions.find((pos) => pos.vehicleId === assignedVehicleId) ?? null)
-        : (tracking.latestPositions[0] ?? null);
+        : liveTrackingAvailable
+          ? (tracking.latestPositions[0] ?? null)
+          : null;
+
+    const hasSchedule = route.stops.some((stop) => Boolean(stop.scheduledAt));
+    const mapsCapabilityState = 'not_implemented' as const;
+    const etaSource = hasSchedule ? ('schedule_only' as const) : ('none' as const);
 
     return {
       route,
@@ -222,6 +354,10 @@ export class MobileWorkforceService {
           }
         : null,
       cartrackConnected: tracking.cartrackConnected,
+      mapsCapabilityState,
+      mapsCapabilityLabel: formatMapsEtaCapabilityLabel(mapsCapabilityState),
+      etaSource,
+      liveTrackingAvailable: liveTrackingAvailable && Boolean(latestGps),
     };
   }
 
@@ -260,7 +396,7 @@ export class MobileWorkforceService {
         eq(mobileTimeEntries.companyId, scope.companyId),
         eq(mobileTimeEntries.userId, scope.userId),
       ),
-      with: { job: true },
+      with: { job: true, user: true },
       orderBy: [desc(mobileTimeEntries.startedAt)],
       limit: 100,
     });
@@ -303,7 +439,7 @@ export class MobileWorkforceService {
 
     const row = await this.db.query.mobileTimeEntries.findFirst({
       where: eq(mobileTimeEntries.id, created!.id),
-      with: { job: true },
+      with: { job: true, user: true },
     });
 
     return toTimeEntrySummary(row!);
@@ -378,6 +514,11 @@ export class MobileWorkforceService {
     return toInventoryUsageSummary(row!);
   }
 
+  /**
+   * Legacy metadata-only documentation path. Photo/signature evidence carrying an `evidencePhase`
+   * must go through {@link uploadJobEvidence} with the actual binary — a phase without binary
+   * would silently satisfy the completion gate with nothing to show for it.
+   */
   async submitJobDocumentation(
     scope: TechnicianScope,
     jobId: string,
@@ -388,6 +529,16 @@ export class MobileWorkforceService {
     const title = input.title.trim();
     if (!title) {
       throw new MobileWorkforceError('VALIDATION_ERROR', 'Title is required');
+    }
+
+    const requiresBinaryEvidence =
+      Boolean(input.evidencePhase) &&
+      (input.documentationType === 'photo' || input.documentationType === 'customer_signature');
+    if (requiresBinaryEvidence) {
+      throw new MobileWorkforceError(
+        'BINARY_REQUIRED',
+        'Phase-gated photo and signature evidence must include the file contents — use the evidence upload endpoint',
+      );
     }
 
     const [created] = await this.db
@@ -402,6 +553,7 @@ export class MobileWorkforceService {
         mimeType: input.mimeType?.trim() || null,
         sizeBytes: input.sizeBytes ?? null,
         content: input.content?.trim() || null,
+        evidencePhase: input.evidencePhase ?? null,
         metadata: input.metadata ?? {},
       })
       .returning();
@@ -430,6 +582,295 @@ export class MobileWorkforceService {
     });
 
     return toDocumentationSummary(created!);
+  }
+
+  /**
+   * Binary evidence upload path: decodes and validates the payload, stores it via
+   * {@link JobEvidenceStorageService}, and records only the storage key + checksum — never the
+   * raw base64 — on the documentation row. Idempotent on `clientActionId`.
+   */
+  async uploadJobEvidence(
+    scope: TechnicianScope,
+    jobId: string,
+    input: UploadJobEvidenceRequest,
+  ): Promise<MobileJobDocumentationSummary> {
+    await this.requireAssignedJob(scope, jobId);
+
+    if (input.clientActionId) {
+      const existing = await this.db.query.mobileJobDocumentation.findFirst({
+        where: and(
+          eq(mobileJobDocumentation.companyId, scope.companyId),
+          eq(mobileJobDocumentation.clientActionId, input.clientActionId),
+        ),
+      });
+      if (existing) {
+        return toDocumentationSummary(existing);
+      }
+    }
+
+    const title = input.title.trim();
+    if (!title) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'Title is required');
+    }
+    if (!input.dataBase64?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'File contents are required');
+    }
+    if (!input.mimeType?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'A MIME type is required');
+    }
+
+    const buffer = decodeBase64Payload(input.dataBase64);
+    const kind = documentationTypeToEvidenceKind(input.documentationType);
+
+    let stored: Awaited<ReturnType<JobEvidenceStorageService['store']>>;
+    try {
+      stored = await this.jobEvidenceStorageService.store({
+        companyId: scope.companyId,
+        jobId,
+        kind,
+        mimeType: input.mimeType.trim(),
+        buffer,
+        originalFileName: input.fileName ?? null,
+      });
+    } catch (error) {
+      if (error instanceof JobEvidenceStorageError) {
+        throw new MobileWorkforceError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    const metadata: Record<string, unknown> = { ...(input.metadata ?? {}) };
+    if (input.signerName?.trim()) metadata.signerName = input.signerName.trim();
+    if (input.signerRole?.trim()) metadata.signerRole = input.signerRole.trim();
+    if (input.acknowledgement !== undefined) metadata.acknowledgement = input.acknowledgement;
+
+    const [created] = await this.db
+      .insert(mobileJobDocumentation)
+      .values({
+        companyId: scope.companyId,
+        userId: scope.userId,
+        jobId,
+        documentationType: input.documentationType,
+        title,
+        fileName: input.fileName?.trim() || null,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
+        // Never store the raw base64 payload — the binary lives at storageKey.
+        content: null,
+        storageKey: stored.storageKey,
+        checksumSha256: stored.checksumSha256,
+        clientActionId: input.clientActionId ?? null,
+        evidencePhase: input.evidencePhase ?? null,
+        metadata,
+      })
+      .returning();
+
+    if (!created) {
+      throw new MobileWorkforceError('CREATE_FAILED', 'Unable to store evidence');
+    }
+
+    await this.logAction(scope, 'upload_job_evidence', 'job', jobId, {
+      documentationId: created.id,
+      documentationType: input.documentationType,
+      evidencePhase: input.evidencePhase ?? null,
+      sizeBytes: stored.sizeBytes,
+    });
+
+    return toDocumentationSummary(created);
+  }
+
+  /** Technician-facing binary retrieval: requires assigned-job access. */
+  async getJobEvidenceBinary(
+    scope: TechnicianScope,
+    jobId: string,
+    documentationId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string; fileName: string | null }> {
+    await this.requireAssignedJob(scope, jobId);
+    return this.readEvidenceBinary(scope.companyId, jobId, documentationId);
+  }
+
+  /** Office-facing binary retrieval: caller has already been authorized via jobs:read RBAC. */
+  async getJobEvidenceBinaryForOffice(
+    companyId: string,
+    jobId: string,
+    documentationId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string; fileName: string | null }> {
+    const job = await this.jobsService.getJob(companyId, jobId);
+    if (!job) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Job not found');
+    }
+    return this.readEvidenceBinary(companyId, jobId, documentationId);
+  }
+
+  private async readEvidenceBinary(
+    companyId: string,
+    jobId: string,
+    documentationId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string; fileName: string | null }> {
+    const doc = await this.db.query.mobileJobDocumentation.findFirst({
+      where: and(
+        eq(mobileJobDocumentation.id, documentationId),
+        eq(mobileJobDocumentation.companyId, companyId),
+        eq(mobileJobDocumentation.jobId, jobId),
+      ),
+    });
+
+    if (!doc) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Documentation record not found');
+    }
+    if (!doc.storageKey) {
+      throw new MobileWorkforceError('NOT_FOUND', 'No binary evidence is stored for this record');
+    }
+
+    try {
+      const { buffer } = await this.jobEvidenceStorageService.read({
+        companyId,
+        jobId,
+        storageKey: doc.storageKey,
+      });
+      return { buffer, mimeType: doc.mimeType ?? 'application/octet-stream', fileName: doc.fileName };
+    } catch (error) {
+      if (error instanceof JobEvidenceStorageError) {
+        throw new MobileWorkforceError(error.code, error.message);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Applies a batch of offline-queued actions with per-action idempotency and error isolation.
+   * Each action is deduplicated on `clientActionId` via the mobile action log before being applied.
+   */
+  async flushOfflineActions(
+    scope: TechnicianScope,
+    request: FlushOfflineActionsRequest,
+  ): Promise<FlushOfflineActionsResponse> {
+    const results: FlushOfflineActionsResponse['results'] = [];
+
+    for (const action of request.actions) {
+      try {
+        const existing = await this.db.query.mobileActionLogs.findFirst({
+          where: and(
+            eq(mobileActionLogs.companyId, scope.companyId),
+            eq(mobileActionLogs.actionType, 'offline_action_flush'),
+            sql`${mobileActionLogs.metadata}->>'clientActionId' = ${action.clientActionId}`,
+          ),
+          columns: { id: true },
+        });
+
+        if (existing) {
+          results.push({
+            clientActionId: action.clientActionId,
+            actionType: action.actionType,
+            status: 'duplicate',
+          });
+          continue;
+        }
+
+        const resultId = await this.applyOfflineAction(scope, action);
+
+        await this.logAction(scope, 'offline_action_flush', 'job', action.jobId, {
+          clientActionId: action.clientActionId,
+          actionType: action.actionType,
+          resultId: resultId ?? null,
+        });
+
+        results.push({
+          clientActionId: action.clientActionId,
+          actionType: action.actionType,
+          status: 'synced',
+          resultId,
+        });
+      } catch (error) {
+        results.push({
+          clientActionId: action.clientActionId,
+          actionType: action.actionType,
+          status: 'failed',
+          error: error instanceof Error ? error.message : 'Unknown error while applying offline action',
+        });
+      }
+    }
+
+    return { results };
+  }
+
+  private async applyOfflineAction(
+    scope: TechnicianScope,
+    action: OfflineActionInput,
+  ): Promise<string | undefined> {
+    await this.requireAssignedJob(scope, action.jobId);
+
+    switch (action.actionType) {
+      case 'transition': {
+        const payload = action.payload as { action?: JobWorkflowAction; reason?: string | null };
+        if (!payload?.action) {
+          throw new MobileWorkforceError('VALIDATION_ERROR', 'A transition action is required');
+        }
+        const job = await this.jobExecutionService.transition(scope, action.jobId, {
+          action: payload.action,
+          reason: payload.reason ?? null,
+          clientActionId: action.clientActionId,
+        });
+        return job.id;
+      }
+      case 'note': {
+        const payload = action.payload as { note?: string };
+        if (!payload?.note?.trim()) {
+          throw new MobileWorkforceError('VALIDATION_ERROR', 'Note text is required');
+        }
+        const job = await this.technicianWorkflowService.addJobNote(scope, action.jobId, {
+          note: payload.note,
+        });
+        return job.id;
+      }
+      case 'time_entry': {
+        const payload = action.payload as CreateMobileTimeEntryRequest;
+        if (!payload?.entryType) {
+          throw new MobileWorkforceError('VALIDATION_ERROR', 'entryType is required');
+        }
+        const entry = await this.createTimeEntry(scope, { ...payload, jobId: payload.jobId ?? action.jobId });
+        return entry.id;
+      }
+      case 'material_line': {
+        const payload = action.payload as RecordJobMaterialLineRequest;
+        if (!payload?.description?.trim() || !payload?.materialSource) {
+          throw new MobileWorkforceError('VALIDATION_ERROR', 'A material line description and source are required');
+        }
+        const line = await this.jobExecutionService.recordMaterialLine(scope, action.jobId, {
+          ...payload,
+          clientActionId: action.clientActionId,
+        });
+        return line.id;
+      }
+      case 'checklist_update': {
+        const payload = action.payload as { checklist?: Record<string, boolean>; summary?: string | null };
+        const pendingAction = await this.mobileSyncService.createPendingAction({
+          companyId: scope.companyId,
+          userId: scope.userId,
+          actionType: 'submit_completion',
+          entityType: 'job',
+          entityId: action.jobId,
+          payload: { checklist: payload?.checklist ?? {}, summary: payload?.summary ?? null },
+        });
+        return pendingAction.id;
+      }
+      case 'evidence_upload': {
+        const payload = action.payload as UploadJobEvidenceRequest;
+        if (!payload?.dataBase64 || !payload?.mimeType || !payload?.title) {
+          throw new MobileWorkforceError('VALIDATION_ERROR', 'Evidence upload payload is invalid');
+        }
+        const documentation = await this.uploadJobEvidence(scope, action.jobId, {
+          ...payload,
+          clientActionId: action.clientActionId,
+        });
+        return documentation.id;
+      }
+      default:
+        throw new MobileWorkforceError(
+          'VALIDATION_ERROR',
+          `Unsupported offline action type: ${String(action.actionType)}`,
+        );
+    }
   }
 
   async listRequests(scope: TechnicianScope): Promise<MobileWorkforceRequestSummary[]> {
@@ -633,14 +1074,15 @@ export class MobileWorkforceService {
       customerName: job.customerName,
       status: job.status,
       scheduledAt: job.scheduledAt,
-      address: null,
+      address: job.addressDisplay ?? null,
       sequence: index + 1,
     }));
 
     return {
       stopCount: stops.length,
       nextDestination: stops[0] ?? null,
-      estimatedTravelMinutes: stops.length > 1 ? (stops.length - 1) * 20 : null,
+      // UX-I: no fabricated travel minutes — live routing is not implemented.
+      estimatedTravelMinutes: null,
       assignedVehicleName: fleetInfo.assignedVehicle?.name ?? null,
       assignedVehiclePlate: fleetInfo.assignedVehicle?.licensePlate ?? null,
       stops,
@@ -663,7 +1105,10 @@ export class MobileWorkforceService {
       where: and(
         eq(mobileActionLogs.companyId, scope.companyId),
         eq(mobileActionLogs.userId, scope.userId),
-        or(eq(mobileActionLogs.actionType, 'start_job'), eq(mobileActionLogs.actionType, 'complete_job')),
+        or(
+          eq(mobileActionLogs.actionType, 'start_job'),
+          eq(mobileActionLogs.actionType, 'complete_job'),
+        ),
       ),
       orderBy: [desc(mobileActionLogs.createdAt)],
       limit: 20,
@@ -708,7 +1153,9 @@ export class MobileWorkforceService {
       }));
   }
 
-  private async listActiveAnnouncements(companyId: string): Promise<MobileCompanyAnnouncementSummary[]> {
+  private async listActiveAnnouncements(
+    companyId: string,
+  ): Promise<MobileCompanyAnnouncementSummary[]> {
     const now = new Date();
     const rows = await this.db.query.mobileCompanyAnnouncements.findMany({
       where: and(
@@ -727,7 +1174,7 @@ export class MobileWorkforceService {
       id: row.id,
       title: row.title,
       body: row.body,
-       announcementType: row.announcementType,
+      announcementType: row.announcementType,
       publishedAt: row.publishedAt.toISOString(),
       expiresAt: row.expiresAt?.toISOString() ?? null,
     }));
@@ -740,7 +1187,8 @@ export class MobileWorkforceService {
       throw new MobileWorkforceError('NOT_FOUND', 'Job not found');
     }
 
-    if (job.assignedUserId !== scope.userId) {
+    const hasAccess = await userHasJobAccess(this.db, scope.companyId, jobId, scope.userId);
+    if (!hasAccess) {
       throw new MobileWorkforceError('FORBIDDEN', 'Job is not assigned to you');
     }
 
@@ -765,7 +1213,9 @@ export class MobileWorkforceService {
   }
 }
 
-function toRequestSummary(row: typeof mobileWorkforceRequests.$inferSelect): MobileWorkforceRequestSummary {
+function toRequestSummary(
+  row: typeof mobileWorkforceRequests.$inferSelect,
+): MobileWorkforceRequestSummary {
   return {
     id: row.id,
     requestType: row.requestType,
@@ -780,19 +1230,55 @@ function toRequestSummary(row: typeof mobileWorkforceRequests.$inferSelect): Mob
 }
 
 function toTimeEntrySummary(
-  row: typeof mobileTimeEntries.$inferSelect & { job?: { title: string } | null },
+  row: typeof mobileTimeEntries.$inferSelect & {
+    job?: { title: string } | null;
+    user?: { firstName: string; lastName: string } | null;
+  },
 ): MobileTimeEntrySummary {
   return {
     id: row.id,
     entryType: row.entryType,
     jobId: row.jobId,
     jobTitle: row.job?.title ?? null,
+    userId: row.userId,
+    userName: row.user ? `${row.user.firstName} ${row.user.lastName}`.trim() : 'Unknown',
     startedAt: row.startedAt.toISOString(),
     endedAt: row.endedAt?.toISOString() ?? null,
     durationMinutes: row.durationMinutes,
     notes: row.notes,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function buildExceptionHints(input: {
+  executionPhase: JobExecutionPhase;
+  scheduledAt: string | null;
+  pendingVariationCount: number;
+  gateMissing: string[];
+}): JobExecutionException[] {
+  const exceptions: JobExecutionException[] = [];
+
+  if (input.pendingVariationCount > 0) {
+    exceptions.push('pending_variation');
+  }
+  if (input.gateMissing.includes('before_photo') || input.gateMissing.includes('after_photo')) {
+    exceptions.push('missing_evidence');
+  }
+  if (input.executionPhase === 'awaiting_parts') {
+    exceptions.push('awaiting_parts');
+  }
+  if (input.gateMissing.includes('coc_classification')) {
+    exceptions.push('incomplete_compliance');
+  }
+  if (
+    input.scheduledAt &&
+    new Date(input.scheduledAt).getTime() < Date.now() &&
+    (input.executionPhase === 'assigned' || input.executionPhase === 'accepted')
+  ) {
+    exceptions.push('late_arrival');
+  }
+
+  return exceptions;
 }
 
 function toInventoryUsageSummary(
@@ -817,6 +1303,7 @@ function toInventoryUsageSummary(
 function toDocumentationSummary(
   row: typeof mobileJobDocumentation.$inferSelect,
 ): MobileJobDocumentationSummary {
+  const hasBinary = Boolean(row.storageKey);
   return {
     id: row.id,
     jobId: row.jobId,
@@ -826,6 +1313,13 @@ function toDocumentationSummary(
     mimeType: row.mimeType,
     sizeBytes: row.sizeBytes,
     content: row.content,
+    storageKey: row.storageKey,
+    checksumSha256: row.checksumSha256,
+    evidencePhase: (row.evidencePhase as MobileJobDocumentationSummary['evidencePhase']) ?? null,
+    hasBinary,
+    downloadPath: hasBinary
+      ? `/api/v1/mobile/technician/workforce/jobs/${row.jobId}/documentation/${row.id}/content`
+      : null,
     createdAt: row.createdAt.toISOString(),
   };
 }

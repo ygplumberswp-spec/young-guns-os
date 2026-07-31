@@ -43,18 +43,32 @@ export function BusinessContinuityPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<BusinessContinuityTab>('overview');
   const [dashboard, setDashboard] = useState<EnterpriseBusinessContinuityDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchBusinessContinuityAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchBusinessContinuityAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessBusinessContinuity(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageBusinessContinuity(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessBusinessContinuity(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageBusinessContinuity(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: BusinessContinuityTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -92,7 +106,11 @@ export function BusinessContinuityPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load business continuity dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load business continuity dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -142,7 +160,10 @@ export function BusinessContinuityPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Business Continuity" description="You do not have permission to view business continuity." />
+        <PageHeader
+          title="Business Continuity"
+          description="You do not have permission to view business continuity."
+        />
       </div>
     );
   }
@@ -158,7 +179,12 @@ export function BusinessContinuityPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncContinuityAlerts(accessToken!), 'Continuity alerts synced.')}
+                onClick={() =>
+                  void runAction(
+                    () => syncContinuityAlerts(accessToken!),
+                    'Continuity alerts synced.',
+                  )
+                }
               >
                 Sync Alerts
               </Button>
@@ -166,7 +192,10 @@ export function BusinessContinuityPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => captureBusinessContinuityAnalytics(accessToken!), 'Analytics captured.')
+                  void runAction(
+                    () => captureBusinessContinuityAnalytics(accessToken!),
+                    'Analytics captured.',
+                  )
                 }
               >
                 Capture Analytics
@@ -202,10 +231,22 @@ export function BusinessContinuityPage() {
             <>
               <div className="stat-grid">
                 <StatCard label="Enabled Policies" value={String(dashboard.enabledPolicyCount)} />
-                <StatCard label="Failed Backups" value={String(dashboard.continuityHealth.failedBackupCount)} />
-                <StatCard label="Backup Success" value={formatPercent(dashboard.continuityHealth.backupSuccessRatePercent)} />
-                <StatCard label="Restore Readiness" value={formatStatus(dashboard.continuityHealth.restoreReadinessStatus)} />
-                <StatCard label="Recovery Readiness" value={formatStatus(dashboard.continuityHealth.recoveryReadinessStatus)} />
+                <StatCard
+                  label="Failed Backups"
+                  value={String(dashboard.continuityHealth.failedBackupCount)}
+                />
+                <StatCard
+                  label="Backup Success"
+                  value={formatPercent(dashboard.continuityHealth.backupSuccessRatePercent)}
+                />
+                <StatCard
+                  label="Restore Readiness"
+                  value={formatStatus(dashboard.continuityHealth.restoreReadinessStatus)}
+                />
+                <StatCard
+                  label="Recovery Readiness"
+                  value={formatStatus(dashboard.continuityHealth.recoveryReadinessStatus)}
+                />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
               </div>
               <Panel title="Summary">
@@ -217,7 +258,9 @@ export function BusinessContinuityPage() {
                     {dashboard.recentAlerts.map((alert) => (
                       <div key={alert.id} className="data-list-item">
                         <strong>{alert.title}</strong>
-                        <span>{formatSeverity(alert.severity)} · {formatStatus(alert.status)}</span>
+                        <span>
+                          {formatSeverity(alert.severity)} · {formatStatus(alert.status)}
+                        </span>
                         {alert.description ? <p>{alert.description}</p> : null}
                       </div>
                     ))}
@@ -230,13 +273,19 @@ export function BusinessContinuityPage() {
           {activeTab === 'policies' ? (
             <Panel title="Backup Policies">
               {dashboard.backupPolicies.length === 0 ? (
-                <EmptyState title="No policies" description="Configure backup policies with hourly, daily, weekly, monthly, or manual schedules." />
+                <EmptyState
+                  title="No policies"
+                  description="Configure backup policies with hourly, daily, weekly, monthly, or manual schedules."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.backupPolicies.map((policy) => (
                     <div key={policy.id} className="data-list-item">
                       <strong>{policy.name}</strong>
-                      <span>{formatScheduleType(policy.scheduleType)} · {policy.retentionDays} day retention · {policy.isEnabled ? 'Enabled' : 'Disabled'}</span>
+                      <span>
+                        {formatScheduleType(policy.scheduleType)} · {policy.retentionDays} day
+                        retention · {policy.isEnabled ? 'Enabled' : 'Disabled'}
+                      </span>
                       {policy.description ? <p>{policy.description}</p> : null}
                     </div>
                   ))}
@@ -248,13 +297,19 @@ export function BusinessContinuityPage() {
           {activeTab === 'jobs' ? (
             <Panel title="Backup Jobs">
               {dashboard.backupJobs.length === 0 ? (
-                <EmptyState title="No backup jobs" description="Backup jobs appear when policies run or manual backups are initiated." />
+                <EmptyState
+                  title="No backup jobs"
+                  description="Backup jobs appear when policies run or manual backups are initiated."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.backupJobs.map((job) => (
                     <div key={job.id} className="data-list-item">
                       <strong>{job.policyName ?? 'Manual backup'}</strong>
-                      <span>{formatStatus(job.status)} · {formatBytes(job.sizeBytes)} · {job.encrypted ? 'Encrypted' : 'Unencrypted'}</span>
+                      <span>
+                        {formatStatus(job.status)} · {formatBytes(job.sizeBytes)} ·{' '}
+                        {job.encrypted ? 'Encrypted' : 'Unencrypted'}
+                      </span>
                       {job.errorMessage ? <p>{job.errorMessage}</p> : null}
                     </div>
                   ))}
@@ -266,13 +321,18 @@ export function BusinessContinuityPage() {
           {activeTab === 'restore' ? (
             <Panel title="Restore Center">
               {dashboard.restoreRequests.length === 0 ? (
-                <EmptyState title="No restore requests" description="Restore requests require explicit owner approval before modifying production data." />
+                <EmptyState
+                  title="No restore requests"
+                  description="Restore requests require explicit owner approval before modifying production data."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.restoreRequests.map((request) => (
                     <div key={request.id} className="data-list-item">
                       <strong>{request.title}</strong>
-                      <span>{formatStatus(request.restoreScope)} · {formatStatus(request.status)}</span>
+                      <span>
+                        {formatStatus(request.restoreScope)} · {formatStatus(request.status)}
+                      </span>
                       {request.requiresOwnerApproval ? <span>Owner approval required</span> : null}
                       {request.description ? <p>{request.description}</p> : null}
                     </div>
@@ -285,13 +345,19 @@ export function BusinessContinuityPage() {
           {activeTab === 'plans' ? (
             <Panel title="Recovery Plans">
               {dashboard.recoveryPlans.length === 0 ? (
-                <EmptyState title="No recovery plans" description="Disaster recovery plans are seeded for standard failure scenarios." />
+                <EmptyState
+                  title="No recovery plans"
+                  description="Disaster recovery plans are seeded for standard failure scenarios."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recoveryPlans.map((plan) => (
                     <div key={plan.id} className="data-list-item">
                       <strong>{plan.name}</strong>
-                      <span>{formatScenarioKey(plan.scenarioKey)} · {plan.estimatedRecoveryTimeMinutes ?? '—'} min RTO</span>
+                      <span>
+                        {formatScenarioKey(plan.scenarioKey)} ·{' '}
+                        {plan.estimatedRecoveryTimeMinutes ?? '—'} min RTO
+                      </span>
                       {plan.description ? <p>{plan.description}</p> : null}
                     </div>
                   ))}
@@ -303,13 +369,19 @@ export function BusinessContinuityPage() {
           {activeTab === 'tests' ? (
             <Panel title="Recovery Tests">
               {dashboard.recoveryTests.length === 0 ? (
-                <EmptyState title="No recovery tests" description="Schedule recovery drills that never affect production data." />
+                <EmptyState
+                  title="No recovery tests"
+                  description="Schedule recovery drills that never affect production data."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recoveryTests.map((test) => (
                     <div key={test.id} className="data-list-item">
                       <strong>{test.title}</strong>
-                      <span>{formatStatus(test.status)} · {test.isProductionSafe ? 'Production-safe' : 'Isolated'}</span>
+                      <span>
+                        {formatStatus(test.status)} ·{' '}
+                        {test.isProductionSafe ? 'Production-safe' : 'Isolated'}
+                      </span>
                       {test.lessonsLearned ? <p>{test.lessonsLearned}</p> : null}
                     </div>
                   ))}
@@ -321,14 +393,22 @@ export function BusinessContinuityPage() {
           {activeTab === 'storage' ? (
             <Panel title="Storage Health">
               {dashboard.storageHealth.length === 0 ? (
-                <EmptyState title="No storage snapshots" description="Capture storage health snapshots to monitor redundancy and capacity." />
+                <EmptyState
+                  title="No storage snapshots"
+                  description="Capture storage health snapshots to monitor redundancy and capacity."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.storageHealth.map((snapshot) => (
                     <div key={snapshot.id} className="data-list-item">
                       <strong>{snapshot.storageType}</strong>
-                      <span>{formatStatus(snapshot.healthStatus)} · {formatBytes(snapshot.usageBytes)} used</span>
-                      {snapshot.redundancyLevel ? <span>Redundancy: {snapshot.redundancyLevel}</span> : null}
+                      <span>
+                        {formatStatus(snapshot.healthStatus)} · {formatBytes(snapshot.usageBytes)}{' '}
+                        used
+                      </span>
+                      {snapshot.redundancyLevel ? (
+                        <span>Redundancy: {snapshot.redundancyLevel}</span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -339,13 +419,23 @@ export function BusinessContinuityPage() {
           {activeTab === 'verification' ? (
             <Panel title="Backup Verification">
               {dashboard.verificationRecords.length === 0 ? (
-                <EmptyState title="No verifications" description="Verification records track backup integrity, encryption, and restore capability." />
+                <EmptyState
+                  title="No verifications"
+                  description="Verification records track backup integrity, encryption, and restore capability."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.verificationRecords.map((record) => (
                     <div key={record.id} className="data-list-item">
                       <strong>{formatStatus(record.verificationType)}</strong>
-                      <span>{formatStatus(record.status)} · {record.passed === true ? 'Passed' : record.passed === false ? 'Failed' : 'Pending'}</span>
+                      <span>
+                        {formatStatus(record.status)} ·{' '}
+                        {record.passed === true
+                          ? 'Passed'
+                          : record.passed === false
+                            ? 'Failed'
+                            : 'Pending'}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -356,13 +446,19 @@ export function BusinessContinuityPage() {
           {activeTab === 'compliance' ? (
             <Panel title="Recovery Compliance">
               {dashboard.complianceRecords.length === 0 ? (
-                <EmptyState title="No compliance records" description="Track RPO/RTO compliance and recovery readiness." />
+                <EmptyState
+                  title="No compliance records"
+                  description="Track RPO/RTO compliance and recovery readiness."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.complianceRecords.map((record) => (
                     <div key={record.id} className="data-list-item">
                       <strong>{formatStatus(record.complianceType)}</strong>
-                      <span>{formatStatus(record.status)} · RPO {record.rpoMinutes ?? '—'} min · RTO {record.rtoMinutes ?? '—'} min</span>
+                      <span>
+                        {formatStatus(record.status)} · RPO {record.rpoMinutes ?? '—'} min · RTO{' '}
+                        {record.rtoMinutes ?? '—'} min
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -383,7 +479,10 @@ export function BusinessContinuityPage() {
                   <span>Captured {new Date(dashboard.analytics.capturedAt).toLocaleString()}</span>
                 </div>
               ) : (
-                <EmptyState title="No analytics" description="Capture analytics to track backup success rate and recovery readiness." />
+                <EmptyState
+                  title="No analytics"
+                  description="Capture analytics to track backup success rate and recovery readiness."
+                />
               )}
             </Panel>
           ) : null}
@@ -393,13 +492,18 @@ export function BusinessContinuityPage() {
               {isSupplementaryLoading ? (
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
-                <EmptyState title="No audit entries" description="Business continuity actions are fully audited." />
+                <EmptyState
+                  title="No audit entries"
+                  description="Business continuity actions are fully audited."
+                />
               ) : (
                 <div className="data-list">
                   {auditLogs.map((log) => (
                     <div key={log.id} className="data-list-item">
                       <strong>{formatStatus(log.actionType)}</strong>
-                      <span>{log.entityType ?? 'system'} · {new Date(log.createdAt).toLocaleString()}</span>
+                      <span>
+                        {log.entityType ?? 'system'} · {new Date(log.createdAt).toLocaleString()}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -431,11 +535,21 @@ export function BusinessContinuityPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'business_continuity' as import('@titan/shared').AgentKey)}
+                onSend={(content) =>
+                  void sendAgentMessage(
+                    content,
+                    'business_continuity' as import('@titan/shared').AgentKey,
+                  )
+                }
                 placeholder="Ask about backup status, recovery plans, verification reports, or draft continuity improvements…"
               />
             </Panel>

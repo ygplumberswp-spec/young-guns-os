@@ -105,10 +105,7 @@ export function createEnterpriseMissionControlRouter({
       const durationMs = Date.now() - startedAt;
       const existingTiming = res.getHeader('Server-Timing');
       const mcTiming = `mission-control;dur=${durationMs}`;
-      res.setHeader(
-        'Server-Timing',
-        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
-      );
+      res.setHeader('Server-Timing', existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming);
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -124,10 +121,7 @@ export function createEnterpriseMissionControlRouter({
       const durationMs = Date.now() - startedAt;
       const existingTiming = res.getHeader('Server-Timing');
       const mcTiming = `mission-control-summary;dur=${durationMs}`;
-      res.setHeader(
-        'Server-Timing',
-        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
-      );
+      res.setHeader('Server-Timing', existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming);
       res.json({ data: { summary } });
     } catch (error) {
       handleError(error, res);
@@ -137,16 +131,14 @@ export function createEnterpriseMissionControlRouter({
   router.get('/dashboard/modules', requireRead, async (req, res) => {
     try {
       const startedAt = Date.now();
-      const moduleSnapshots = await enterpriseMissionControlService.getMissionControlModuleSnapshots(
-        getAuth(req).companyId,
-      );
+      const moduleSnapshots =
+        await enterpriseMissionControlService.getMissionControlModuleSnapshots(
+          getAuth(req).companyId,
+        );
       const durationMs = Date.now() - startedAt;
       const existingTiming = res.getHeader('Server-Timing');
       const mcTiming = `mission-control-modules;dur=${durationMs}`;
-      res.setHeader(
-        'Server-Timing',
-        existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming,
-      );
+      res.setHeader('Server-Timing', existingTiming ? `${existingTiming}, ${mcTiming}` : mcTiming);
       res.json({ data: { moduleSnapshots } });
     } catch (error) {
       handleError(error, res);
@@ -155,7 +147,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.post('/alerts/sync', requireWrite, async (req, res) => {
     try {
-      const alerts = await enterpriseMissionControlService.syncAlertsFromModules(getAuth(req).companyId);
+      const alerts = await enterpriseMissionControlService.syncAlertsFromModules(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -228,7 +222,10 @@ export function createEnterpriseMissionControlRouter({
     try {
       const companyId = getAuth(req).companyId;
       const incidentId = getRouteParam(req.params.incidentId);
-      const timeline = await enterpriseMissionControlService.getIncidentTimeline(companyId, incidentId);
+      const timeline = await enterpriseMissionControlService.getIncidentTimeline(
+        companyId,
+        incidentId,
+      );
       res.json({ data: { timeline } });
     } catch (error) {
       handleError(error, res);
@@ -253,7 +250,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.get('/timeline', requireRead, async (req, res) => {
     try {
-      const events = await enterpriseMissionControlService.listTimelineEvents(getAuth(req).companyId);
+      const events = await enterpriseMissionControlService.listTimelineEvents(
+        getAuth(req).companyId,
+      );
       res.json({ data: { events } });
     } catch (error) {
       handleError(error, res);
@@ -262,7 +261,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.post('/timeline/sync', requireWrite, async (req, res) => {
     try {
-      const events = await enterpriseMissionControlService.syncTimelineFromModules(getAuth(req).companyId);
+      const events = await enterpriseMissionControlService.syncTimelineFromModules(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { events } });
     } catch (error) {
       handleError(error, res);
@@ -271,7 +272,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.get('/operations-map', requireRead, async (req, res) => {
     try {
-      const points = await enterpriseMissionControlService.listOperationsMap(getAuth(req).companyId);
+      const points = await enterpriseMissionControlService.listOperationsMap(
+        getAuth(req).companyId,
+      );
       res.json({ data: { points } });
     } catch (error) {
       handleError(error, res);
@@ -280,7 +283,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.post('/operations-map/capture', requireWrite, async (req, res) => {
     try {
-      const points = await enterpriseMissionControlService.captureOperationsMap(getAuth(req).companyId);
+      const points = await enterpriseMissionControlService.captureOperationsMap(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { points } });
     } catch (error) {
       handleError(error, res);
@@ -300,7 +305,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.get('/recommendations', requireRead, async (req, res) => {
     try {
-      const recommendations = await enterpriseMissionControlService.listRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseMissionControlService.listRecommendations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -309,7 +316,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     try {
-      const recommendations = await enterpriseMissionControlService.generateRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseMissionControlService.generateRecommendations(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -318,7 +327,9 @@ export function createEnterpriseMissionControlRouter({
 
   router.get('/actions', requireRead, async (req, res) => {
     try {
-      const actions = await enterpriseMissionControlService.listCommandActions(getAuth(req).companyId);
+      const actions = await enterpriseMissionControlService.listCommandActions(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actions } });
     } catch (error) {
       handleError(error, res);

@@ -21,7 +21,10 @@ type AuraMessageContentState = {
   renderFailed: boolean;
 };
 
-export class AuraMessageContent extends Component<AuraMessageContentProps, AuraMessageContentState> {
+export class AuraMessageContent extends Component<
+  AuraMessageContentProps,
+  AuraMessageContentState
+> {
   state: AuraMessageContentState = { renderFailed: false };
 
   static getDerivedStateFromError(): AuraMessageContentState {

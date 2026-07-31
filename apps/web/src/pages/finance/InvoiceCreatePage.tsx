@@ -1,18 +1,20 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
-import type { CustomerSummary, InvoiceStatus, JobSummary, QuoteSummary } from '@titan/shared';
-import { parseMoneyInput, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import type { CustomerSummary, InvoiceStage, InvoiceStatus, JobSummary, QuoteSummary } from '@titan/shared';
+import { parseMoneyInput, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { createInvoice, fetchQuotes } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { canManageFinance } from '../../features/finance/utils';
+import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
 
 export function InvoiceCreatePage() {
   const { accessToken, user } = useAuth();
+  const { invalidateInvoices } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -23,8 +25,10 @@ export function InvoiceCreatePage() {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [status, setStatus] = useState<InvoiceStatus>('draft');
+  const [stage, setStage] = useState<InvoiceStage>('standard');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [clientActionId] = useState(() => newFinanceClientActionId('invoice'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +71,9 @@ export function InvoiceCreatePage() {
     }
 
     void loadData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
@@ -87,17 +93,20 @@ export function InvoiceCreatePage() {
     setError(null);
 
     try {
-      await createInvoice(accessToken, {
+      const invoice = await createInvoice(accessToken, {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
         title,
         status,
+        stage,
         amountCents,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
         notes: notes.trim() || null,
+        clientActionId,
       });
-      navigate('/finance/invoices');
+      invalidateInvoices();
+      navigate(`/finance/invoices/${invoice.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create invoice');
     } finally {
@@ -112,7 +121,11 @@ export function InvoiceCreatePage() {
       <PageHeader
         title="New invoice"
         description="Create an invoice linked to a customer and optional job or quote."
-        actions={<Link href="/finance/invoices"><Button variant="secondary">Back to invoices</Button></Link>}
+        actions={
+          <Link href="/finance/invoices">
+            <Button variant="secondary">Back to invoices</Button>
+          </Link>
+        }
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}
@@ -123,38 +136,111 @@ export function InvoiceCreatePage() {
         <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
           <label className="titan-input-group">
             <span className="titan-input-label">Customer</span>
-            <select className="titan-input" value={customerId} onChange={(e) => { setCustomerId(e.target.value); setJobId(''); setQuoteId(''); }} required>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <select
+              className="titan-input"
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                setJobId('');
+                setQuoteId('');
+              }}
+              required
+            >
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
             </select>
           </label>
           <label className="titan-input-group">
             <span className="titan-input-label">Job (optional)</span>
-            <select className="titan-input" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+            <select
+              className="titan-input"
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+            >
               <option value="">No linked job</option>
-              {customerJobs.map((job) => <option key={job.id} value={job.id}>{job.title}</option>)}
+              {customerJobs.map((job) => (
+                <option key={job.id} value={job.id}>
+                  {job.title}
+                </option>
+              ))}
             </select>
           </label>
           <label className="titan-input-group">
             <span className="titan-input-label">Quote (optional)</span>
-            <select className="titan-input" value={quoteId} onChange={(e) => setQuoteId(e.target.value)}>
+            <select
+              className="titan-input"
+              value={quoteId}
+              onChange={(e) => setQuoteId(e.target.value)}
+            >
               <option value="">No linked quote</option>
-              {customerQuotes.map((quote) => <option key={quote.id} value={quote.id}>{quote.quoteNumber} · {quote.title}</option>)}
+              {customerQuotes.map((quote) => (
+                <option key={quote.id} value={quote.id}>
+                  {quote.quoteNumber} · {quote.title}
+                </option>
+              ))}
             </select>
           </label>
           <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-          <Input label="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+          <Input
+            label="Amount"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            required
+          />
           <label className="titan-input-group">
-            <span className="titan-input-label">Status</span>
-            <select className="titan-input" value={status} onChange={(e) => setStatus(e.target.value as InvoiceStatus)}>
-              {INVOICE_STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <span className="titan-input-label">Stage</span>
+            <select
+              className="titan-input"
+              value={stage}
+              onChange={(e) => setStage(e.target.value as InvoiceStage)}
+            >
+              {INVOICE_STAGE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </label>
-          <Input label="Due date" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          <label className="titan-input-group">
+            <span className="titan-input-label">Status</span>
+            <select
+              className="titan-input"
+              value={status}
+              onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+            >
+              {INVOICE_STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <Input
+            label="Due date"
+            type="datetime-local"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+          <p className="page-muted">
+            The invoice number shown here is an internal placeholder. The official invoice number
+            is assigned only once Xero sync completes.
+          </p>
           <label className="titan-input-group">
             <span className="titan-input-label">Notes</span>
-            <textarea className="titan-input finance-textarea" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <textarea
+              className="titan-input finance-textarea"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </label>
-          <Button type="submit" disabled={isSaving || !title.trim()}>{isSaving ? 'Creating…' : 'Create invoice'}</Button>
+          <Button type="submit" disabled={isSaving || !title.trim()}>
+            {isSaving ? 'Creating…' : 'Create invoice'}
+          </Button>
         </form>
       )}
     </div>

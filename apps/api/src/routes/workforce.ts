@@ -159,7 +159,9 @@ export function createWorkforceRouter({
   router.post('/candidates', requireWrite, async (req, res) => {
     const parsed = createCandidateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload' } });
       return;
     }
 
@@ -175,13 +177,19 @@ export function createWorkforceRouter({
   router.patch('/candidates/:id', requireWrite, async (req, res) => {
     const parsed = updateCandidateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const candidate = await recruitingService.updateCandidate(companyId, getRouteParam(req.params.id), parsed.data);
+      const candidate = await recruitingService.updateCandidate(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { candidate } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -191,7 +199,10 @@ export function createWorkforceRouter({
   router.get('/candidates/:id/activities', requireRead, async (req, res) => {
     try {
       const { companyId } = getAuth(req);
-      const activities = await workforceService.listCandidateActivities(companyId, getRouteParam(req.params.id));
+      const activities = await workforceService.listCandidateActivities(
+        companyId,
+        getRouteParam(req.params.id),
+      );
       res.json({ data: { activities } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -201,13 +212,19 @@ export function createWorkforceRouter({
   router.post('/candidates/:id/activities', requireWrite, async (req, res) => {
     const parsed = createActivitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
       return;
     }
 
     try {
       const auth = getAuth(req);
-      const activity = await workforceService.addCandidateActivity(auth, getRouteParam(req.params.id), parsed.data);
+      const activity = await workforceService.addCandidateActivity(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.status(201).json({ data: { activity } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -223,7 +240,9 @@ export function createWorkforceRouter({
   router.post('/skills', requireWrite, async (req, res) => {
     const parsed = createSkillSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid skill payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid skill payload' } });
       return;
     }
 
@@ -239,13 +258,19 @@ export function createWorkforceRouter({
   router.patch('/skills/:id', requireWrite, async (req, res) => {
     const parsed = updateSkillSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid skill payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid skill payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const skill = await workforceService.updateSkill(companyId, getRouteParam(req.params.id), parsed.data);
+      const skill = await workforceService.updateSkill(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { skill } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -268,7 +293,9 @@ export function createWorkforceRouter({
   router.post('/training', requireWrite, async (req, res) => {
     const parsed = createTrainingSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training payload' } });
       return;
     }
 
@@ -284,13 +311,19 @@ export function createWorkforceRouter({
   router.patch('/training/:id', requireWrite, async (req, res) => {
     const parsed = updateTrainingSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid training payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const record = await workforceService.updateTraining(companyId, getRouteParam(req.params.id), parsed.data);
+      const record = await workforceService.updateTraining(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { record } });
     } catch (error) {
       handleWorkforceError(res, error);
@@ -300,7 +333,9 @@ export function createWorkforceRouter({
   router.post('/certifications', requireWrite, async (req, res) => {
     const parsed = createCertificationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid certification payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid certification payload' } });
       return;
     }
 
@@ -316,7 +351,9 @@ export function createWorkforceRouter({
   router.patch('/certifications/:id', requireWrite, async (req, res) => {
     const parsed = updateCertificationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid certification payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid certification payload' } });
       return;
     }
 

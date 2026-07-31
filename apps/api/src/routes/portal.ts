@@ -44,6 +44,21 @@ const createPortalRequestSchema = z.object({
   entityType: z.string().trim().max(50).optional().nullable(),
   entityId: z.string().uuid().optional().nullable(),
   payload: z.record(z.unknown()).optional(),
+  clientActionId: z.string().trim().min(1).max(200).optional().nullable(),
+});
+
+const acceptQuoteSchema = z.object({
+  clientActionId: z.string().trim().min(1).max(200),
+  accepterName: z.string().trim().min(1).max(200),
+  acknowledgeScope: z.literal(true), acknowledgeExclusions: z.literal(true), acknowledgePrice: z.literal(true),
+  acknowledgeVat: z.literal(true), acknowledgePaymentTerms: z.literal(true), acknowledgeValidity: z.literal(true),
+  typedSignature: z.string().trim().max(500).optional().nullable(),
+});
+const declineQuoteSchema = z.object({
+  clientActionId: z.string().trim().min(1).max(200),
+  decision: z.enum(['declined', 'change_requested']),
+  reason: z.string().trim().min(1).max(2000),
+  message: z.string().trim().max(4000).optional().nullable(),
 });
 
 const notificationPreferencesSchema = z.object({
@@ -132,157 +147,256 @@ export function createPortalRouter({
   const requireStaffAuth = createAuthMiddleware({ jwtSecret, authService });
   const requirePortalAuth = createPortalAuthMiddleware({ jwtSecret, portalAuthService });
 
-  router.get('/dashboard', requirePortalAuth, requirePortalPermission('portal.dashboard:read'), async (req, res) => {
-    const auth = getPortalAuth(req);
+  router.get(
+    '/dashboard',
+    requirePortalAuth,
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      const auth = getPortalAuth(req);
 
+      try {
+        const dashboard = await portalService.getDashboard({
+          companyId: auth.companyId,
+          customerId: auth.customerId,
+          permissions: auth.permissions,
+        });
+        res.json({ data: dashboard });
+      } catch (error) {
+        handlePortalError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/experience/dashboard',
+    requirePortalAuth,
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      try {
+        const dashboard = await portalExperienceService.getExperienceDashboard(portalScope(req));
+        res.json({ data: { dashboard } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/jobs',
+    requirePortalAuth,
+    requirePortalPermission('portal.jobs:read'),
+    async (req, res) => {
+      try {
+        const jobs = await portalExperienceService.listJobs(portalScope(req));
+        res.json({ data: jobs });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/jobs/:jobId',
+    requirePortalAuth,
+    requirePortalPermission('portal.jobs:read'),
+    async (req, res) => {
+      try {
+        const job = await portalExperienceService.getJobTracking(
+          portalScope(req),
+          getRouteParam(req.params.jobId),
+        );
+        if (!job) {
+          res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Job not found' } });
+          return;
+        }
+        res.json({ data: { job } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/quotes',
+    requirePortalAuth,
+    requirePortalPermission('portal.quotes:read'),
+    async (req, res) => {
+      try {
+        const quotes = await portalExperienceService.listQuotes(portalScope(req));
+        res.json({ data: { quotes } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/quotes/:quoteId',
+    requirePortalAuth,
+    requirePortalPermission('portal.quotes:read'),
+    async (req, res) => {
+      try {
+        const quote = await portalExperienceService.getQuote(
+          portalScope(req),
+          getRouteParam(req.params.quoteId),
+        );
+        if (!quote) {
+          res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Quote not found' } });
+          return;
+        }
+        res.json({ data: { quote } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.post('/quotes/:quoteId/accept', requirePortalAuth, requirePortalPermission('portal.quotes:read'), async (req, res) => {
+    const parsed = acceptQuoteSchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid acceptance payload', details: parsed.error.flatten() } }); return; }
     try {
-      const dashboard = await portalService.getDashboard({
-        companyId: auth.companyId,
-        customerId: auth.customerId,
-        permissions: auth.permissions,
+      const acceptance = await portalExperienceService.acceptQuote(portalScope(req), getRouteParam(req.params.quoteId), parsed.data, { ipAddress: req.ip, userAgent: req.get('user-agent') ?? null });
+      res.status(201).json({ data: { acceptance } });
+    } catch (error) { handlePortalExperienceError(res, error); }
+  });
+  router.post('/quotes/:quoteId/decline', requirePortalAuth, requirePortalPermission('portal.quotes:read'), async (req, res) => {
+    const parsed = declineQuoteSchema.safeParse(req.body);
+    if (!parsed.success) { res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid decline payload', details: parsed.error.flatten() } }); return; }
+    try {
+      const acceptance = await portalExperienceService.declineQuote(portalScope(req), getRouteParam(req.params.quoteId), parsed.data, { ipAddress: req.ip, userAgent: req.get('user-agent') ?? null });
+      res.status(201).json({ data: { acceptance } });
+    } catch (error) { handlePortalExperienceError(res, error); }
+  });
+
+  router.get(
+    '/finance',
+    requirePortalAuth,
+    requirePortalPermission('portal.invoices:read'),
+    async (req, res) => {
+      try {
+        const finance = await portalExperienceService.getFinanceCentre(portalScope(req));
+        res.json({ data: { finance } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/appointments',
+    requirePortalAuth,
+    requirePortalPermission('portal.appointments:read'),
+    async (req, res) => {
+      try {
+        const appointments = await portalExperienceService.listAppointments(portalScope(req));
+        res.json({ data: { appointments } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/communications',
+    requirePortalAuth,
+    requirePortalPermission('portal.communications:read'),
+    async (req, res) => {
+      try {
+        const communications = await portalExperienceService.getCommunicationsCentre(
+          portalScope(req),
+        );
+        res.json({ data: { communications } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/knowledge/search',
+    requirePortalAuth,
+    requirePortalPermission('portal.knowledge:read'),
+    async (req, res) => {
+      const query = String(req.query.q ?? '').trim();
+      try {
+        const results = await portalExperienceService.searchKnowledge(portalScope(req), { query });
+        res.json({ data: { results } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/notifications',
+    requirePortalAuth,
+    requirePortalPermission('portal.notifications:read'),
+    async (req, res) => {
+      const scope = portalScope(req);
+      const notifications = await notificationService.listForPortal({
+        companyId: scope.companyId,
+        portalUserId: scope.portalUserId,
       });
-      res.json({ data: dashboard });
-    } catch (error) {
-      handlePortalError(res, error);
-    }
-  });
+      res.json({ data: { notifications } });
+    },
+  );
 
-  router.get('/experience/dashboard', requirePortalAuth, requirePortalPermission('portal.dashboard:read'), async (req, res) => {
-    try {
-      const dashboard = await portalExperienceService.getExperienceDashboard(portalScope(req));
-      res.json({ data: { dashboard } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/jobs', requirePortalAuth, requirePortalPermission('portal.jobs:read'), async (req, res) => {
-    try {
-      const jobs = await portalExperienceService.listJobs(portalScope(req));
-      res.json({ data: jobs });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/jobs/:jobId', requirePortalAuth, requirePortalPermission('portal.jobs:read'), async (req, res) => {
-    try {
-      const job = await portalExperienceService.getJobTracking(portalScope(req), getRouteParam(req.params.jobId));
-      if (!job) {
-        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Job not found' } });
+  router.patch(
+    '/notifications/:notificationId/read',
+    requirePortalAuth,
+    requirePortalPermission('portal.notifications:read'),
+    async (req, res) => {
+      const scope = portalScope(req);
+      const updated = await notificationService.markReadPortal(
+        { companyId: scope.companyId, portalUserId: scope.portalUserId },
+        getRouteParam(req.params.notificationId),
+      );
+      if (!updated) {
+        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Notification not found' } });
         return;
       }
-      res.json({ data: { job } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
+      res.json({ data: { read: true } });
+    },
+  );
 
-  router.get('/quotes', requirePortalAuth, requirePortalPermission('portal.quotes:read'), async (req, res) => {
-    try {
-      const quotes = await portalExperienceService.listQuotes(portalScope(req));
-      res.json({ data: { quotes } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
+  router.get(
+    '/notifications/preferences',
+    requirePortalAuth,
+    requirePortalPermission('portal.notifications:read'),
+    async (req, res) => {
+      const scope = portalScope(req);
+      const preferences = await notificationService.getPortalPreferences({
+        companyId: scope.companyId,
+        portalUserId: scope.portalUserId,
+      });
+      res.json({ data: { preferences } });
+    },
+  );
 
-  router.get('/quotes/:quoteId', requirePortalAuth, requirePortalPermission('portal.quotes:read'), async (req, res) => {
-    try {
-      const quote = await portalExperienceService.getQuote(portalScope(req), getRouteParam(req.params.quoteId));
-      if (!quote) {
-        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Quote not found' } });
+  router.patch(
+    '/notifications/preferences',
+    requirePortalAuth,
+    requirePortalPermission('portal.notifications:read'),
+    async (req, res) => {
+      const scope = portalScope(req);
+      const parsed = notificationPreferencesSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid preferences payload',
+            details: parsed.error.flatten(),
+          },
+        });
         return;
       }
-      res.json({ data: { quote } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/finance', requirePortalAuth, requirePortalPermission('portal.invoices:read'), async (req, res) => {
-    try {
-      const finance = await portalExperienceService.getFinanceCentre(portalScope(req));
-      res.json({ data: { finance } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/appointments', requirePortalAuth, requirePortalPermission('portal.appointments:read'), async (req, res) => {
-    try {
-      const appointments = await portalExperienceService.listAppointments(portalScope(req));
-      res.json({ data: { appointments } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/communications', requirePortalAuth, requirePortalPermission('portal.communications:read'), async (req, res) => {
-    try {
-      const communications = await portalExperienceService.getCommunicationsCentre(portalScope(req));
-      res.json({ data: { communications } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/knowledge/search', requirePortalAuth, requirePortalPermission('portal.knowledge:read'), async (req, res) => {
-    const query = String(req.query.q ?? '').trim();
-    try {
-      const results = await portalExperienceService.searchKnowledge(portalScope(req), { query });
-      res.json({ data: { results } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
-
-  router.get('/notifications', requirePortalAuth, requirePortalPermission('portal.notifications:read'), async (req, res) => {
-    const scope = portalScope(req);
-    const notifications = await notificationService.listForPortal({
-      companyId: scope.companyId,
-      portalUserId: scope.portalUserId,
-    });
-    res.json({ data: { notifications } });
-  });
-
-  router.patch('/notifications/:notificationId/read', requirePortalAuth, requirePortalPermission('portal.notifications:read'), async (req, res) => {
-    const scope = portalScope(req);
-    const updated = await notificationService.markReadPortal(
-      { companyId: scope.companyId, portalUserId: scope.portalUserId },
-      getRouteParam(req.params.notificationId),
-    );
-    if (!updated) {
-      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Notification not found' } });
-      return;
-    }
-    res.json({ data: { read: true } });
-  });
-
-  router.get('/notifications/preferences', requirePortalAuth, requirePortalPermission('portal.notifications:read'), async (req, res) => {
-    const scope = portalScope(req);
-    const preferences = await notificationService.getPortalPreferences({
-      companyId: scope.companyId,
-      portalUserId: scope.portalUserId,
-    });
-    res.json({ data: { preferences } });
-  });
-
-  router.patch('/notifications/preferences', requirePortalAuth, requirePortalPermission('portal.notifications:read'), async (req, res) => {
-    const scope = portalScope(req);
-    const parsed = notificationPreferencesSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid preferences payload', details: parsed.error.flatten() },
-      });
-      return;
-    }
-    const preferences = await notificationService.updatePortalPreferences(
-      { companyId: scope.companyId, portalUserId: scope.portalUserId },
-      parsed.data,
-    );
-    res.json({ data: { preferences } });
-  });
+      const preferences = await notificationService.updatePortalPreferences(
+        { companyId: scope.companyId, portalUserId: scope.portalUserId },
+        parsed.data,
+      );
+      res.json({ data: { preferences } });
+    },
+  );
 
   router.get('/requests', requirePortalAuth, async (req, res) => {
     try {
@@ -297,80 +411,107 @@ export function createPortalRouter({
     const parsed = createPortalRequestSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid request payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid request payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }
     try {
-      const request = await portalExperienceService.createCustomerRequest(portalScope(req), parsed.data);
+      const request = await portalExperienceService.createCustomerRequest(
+        portalScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { request } });
     } catch (error) {
       handlePortalExperienceError(res, error);
     }
   });
 
-  router.get('/aura/context', requirePortalAuth, requirePortalPermission('portal.dashboard:read'), async (req, res) => {
-    try {
-      const context = await portalExperienceService.buildPortalAuraContext(portalScope(req));
-      res.json({ data: { context } });
-    } catch (error) {
-      handlePortalExperienceError(res, error);
-    }
-  });
+  router.get(
+    '/aura/context',
+    requirePortalAuth,
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      try {
+        const context = await portalExperienceService.buildPortalAuraContext(portalScope(req));
+        res.json({ data: { context } });
+      } catch (error) {
+        handlePortalExperienceError(res, error);
+      }
+    },
+  );
 
   router.get('/permissions/catalog', requireStaffAuth, async (_req, res) => {
     res.json({ data: { permissions: portalService.getAccessPermissionCatalog() } });
   });
 
-  router.get('/stats', requireStaffAuth, requireAnyPermission('portal:read', 'portal:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    await teamService.ensureDefaultRoles(companyId);
-    const stats = await portalService.getStats(companyId);
-    res.json({ data: stats });
-  });
+  router.get(
+    '/stats',
+    requireStaffAuth,
+    requireAnyPermission('portal:read', 'portal:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      await teamService.ensureDefaultRoles(companyId);
+      const stats = await portalService.getStats(companyId);
+      res.json({ data: stats });
+    },
+  );
 
-  router.get('/users', requireStaffAuth, requireAnyPermission('portal:read', 'portal:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    await teamService.ensureDefaultRoles(companyId);
-    const users = await portalService.listPortalUsers(companyId);
-    res.json({ data: { users } });
-  });
+  router.get(
+    '/users',
+    requireStaffAuth,
+    requireAnyPermission('portal:read', 'portal:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      await teamService.ensureDefaultRoles(companyId);
+      const users = await portalService.listPortalUsers(companyId);
+      res.json({ data: { users } });
+    },
+  );
 
-  router.post('/users', requireStaffAuth, requireAnyPermission('portal:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    await teamService.ensureDefaultRoles(companyId);
-    const parsed = createPortalUserSchema.safeParse(req.body);
+  router.post(
+    '/users',
+    requireStaffAuth,
+    requireAnyPermission('portal:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      await teamService.ensureDefaultRoles(companyId);
+      const parsed = createPortalUserSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid portal user payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid portal user payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    const passwordError = validatePasswordStrength(parsed.data.password);
+      const passwordError = validatePasswordStrength(parsed.data.password);
 
-    if (passwordError) {
-      res.status(400).json({
-        error: {
-          code: 'WEAK_PASSWORD',
-          message: passwordError,
-        },
-      });
-      return;
-    }
+      if (passwordError) {
+        res.status(400).json({
+          error: {
+            code: 'WEAK_PASSWORD',
+            message: passwordError,
+          },
+        });
+        return;
+      }
 
-    try {
-      const user = await portalService.createPortalUser(companyId, parsed.data);
-      res.status(201).json({ data: { user } });
-    } catch (error) {
-      handlePortalError(res, error);
-    }
-  });
+      try {
+        const user = await portalService.createPortalUser(companyId, parsed.data);
+        res.status(201).json({ data: { user } });
+      } catch (error) {
+        handlePortalError(res, error);
+      }
+    },
+  );
 
   router.get(
     '/users/:id',

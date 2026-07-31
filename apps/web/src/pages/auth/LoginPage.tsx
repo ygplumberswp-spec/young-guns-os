@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { getStaffHomePath } from '@titan/auth/browser';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
@@ -19,6 +19,8 @@ export function LoginPage() {
 function LoginForm() {
   const { login } = useAuth();
   const [, setLocation] = useLocation();
+  const search = useSearch();
+  const reason = new URLSearchParams(search).get('reason');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +43,15 @@ function LoginForm() {
   }
 
   return (
-    <AuthLayout>
+    <AuthLayout
+      banner={
+        reason === 'session_expired' ? (
+          <p className="auth-banner auth-banner--warning" role="status">
+            Your session expired. Sign in again to continue.
+          </p>
+        ) : null
+      }
+    >
       <div className="auth-card">
         <h2 className="auth-card__title">Sign in</h2>
         <p className="auth-card__subtitle">Access your TITAN workspace</p>
@@ -54,6 +64,7 @@ function LoginForm() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
+            autoComplete="username"
           />
           <Input
             label="Password"
@@ -63,8 +74,13 @@ function LoginForm() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
+            autoComplete="current-password"
           />
-          {error ? <p className="auth-error">{error}</p> : null}
+          {error ? (
+            <p className="auth-error" role="alert">
+              {error}
+            </p>
+          ) : null}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Signing in...' : 'Sign in'}
           </Button>
@@ -72,7 +88,9 @@ function LoginForm() {
         <p className="auth-card__footer">
           New company? <Link href="/auth/signup">Create your workspace</Link>
         </p>
-        <p className="product-attribution">Created by Young Guns Plumbing</p>
+        <p className="auth-card__footer">
+          <Link href="/auth/recovery">Password recovery</Link>
+        </p>
       </div>
     </AuthLayout>
   );

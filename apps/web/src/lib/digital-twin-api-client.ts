@@ -14,16 +14,22 @@ import { request, ApiClientError } from './api-client';
 export { ApiClientError as DigitalTwinApiClientError };
 
 export async function fetchDigitalTwinDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseDigitalTwinDashboard }>('/digital-twin/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseDigitalTwinDashboard }>(
+    '/digital-twin/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
 export async function fetchDigitalTwinScenarios(accessToken: string) {
-  const data = await request<{ scenarios: DigitalTwinScenarioSummary[] }>('/digital-twin/scenarios', {
-    accessToken,
-  });
+  const data = await request<{ scenarios: DigitalTwinScenarioSummary[] }>(
+    '/digital-twin/scenarios',
+    {
+      accessToken,
+    },
+  );
   return data.scenarios;
 }
 
@@ -40,18 +46,24 @@ export async function createDigitalTwinScenario(
 }
 
 export async function fetchDigitalTwinSimulations(accessToken: string) {
-  const data = await request<{ simulations: DigitalTwinSimulationSummary[] }>('/digital-twin/simulations', {
-    accessToken,
-  });
+  const data = await request<{ simulations: DigitalTwinSimulationSummary[] }>(
+    '/digital-twin/simulations',
+    {
+      accessToken,
+    },
+  );
   return data.simulations;
 }
 
 export async function runDigitalTwinSimulation(accessToken: string, scenarioId: string) {
-  const data = await request<{ simulation: DigitalTwinSimulationSummary }>('/digital-twin/simulations/run', {
-    accessToken,
-    method: 'POST',
-    body: { scenarioId },
-  });
+  const data = await request<{ simulation: DigitalTwinSimulationSummary }>(
+    '/digital-twin/simulations/run',
+    {
+      accessToken,
+      method: 'POST',
+      body: { scenarioId },
+    },
+  );
   return data.simulation;
 }
 
@@ -71,17 +83,23 @@ export async function fetchDigitalTwinHeatMaps(accessToken: string) {
 }
 
 export async function captureDigitalTwinHeatMaps(accessToken: string) {
-  const data = await request<{ heatMaps: DigitalTwinHeatMapSummary[] }>('/digital-twin/heat-maps/capture', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ heatMaps: DigitalTwinHeatMapSummary[] }>(
+    '/digital-twin/heat-maps/capture',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.heatMaps;
 }
 
 export async function fetchDigitalTwinReplayEvents(accessToken: string) {
-  const data = await request<{ events: DigitalTwinReplayEventSummary[] }>('/digital-twin/replay-events', {
-    accessToken,
-  });
+  const data = await request<{ events: DigitalTwinReplayEventSummary[] }>(
+    '/digital-twin/replay-events',
+    {
+      accessToken,
+    },
+  );
   return data.events;
 }
 

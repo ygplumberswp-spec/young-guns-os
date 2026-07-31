@@ -12,13 +12,7 @@ export type SalesOpportunityType =
   | 'custom';
 
 export type SalesActivityType =
-  | 'call'
-  | 'email'
-  | 'meeting'
-  | 'follow_up'
-  | 'quote_sent'
-  | 'note'
-  | 'other';
+  'call' | 'email' | 'meeting' | 'follow_up' | 'quote_sent' | 'note' | 'other';
 
 export type SalesRecommendationType =
   | 'follow_up'
@@ -30,22 +24,26 @@ export type SalesRecommendationType =
 
 export type SalesRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
-export const SALES_OPPORTUNITY_STATUS_OPTIONS: Array<{ value: SalesOpportunityStatus; label: string }> = [
+export const SALES_OPPORTUNITY_STATUS_OPTIONS: Array<{
+  value: SalesOpportunityStatus;
+  label: string;
+}> = [
   { value: 'open', label: 'Open' },
   { value: 'won', label: 'Won' },
   { value: 'lost', label: 'Lost' },
   { value: 'on_hold', label: 'On hold' },
 ];
 
-export const SALES_OPPORTUNITY_TYPE_OPTIONS: Array<{ value: SalesOpportunityType; label: string }> = [
-  { value: 'recurring_service', label: 'Recurring service' },
-  { value: 'unconverted_quote', label: 'Unconverted quote' },
-  { value: 'incomplete_work', label: 'Incomplete work' },
-  { value: 'maintenance_due', label: 'Maintenance due' },
-  { value: 'high_value_customer', label: 'High value customer' },
-  { value: 'follow_up', label: 'Follow-up' },
-  { value: 'custom', label: 'Custom' },
-];
+export const SALES_OPPORTUNITY_TYPE_OPTIONS: Array<{ value: SalesOpportunityType; label: string }> =
+  [
+    { value: 'recurring_service', label: 'Recurring service' },
+    { value: 'unconverted_quote', label: 'Unconverted quote' },
+    { value: 'incomplete_work', label: 'Incomplete work' },
+    { value: 'maintenance_due', label: 'Maintenance due' },
+    { value: 'high_value_customer', label: 'High value customer' },
+    { value: 'follow_up', label: 'Follow-up' },
+    { value: 'custom', label: 'Custom' },
+  ];
 
 export const SALES_ACTIVITY_TYPE_OPTIONS: Array<{ value: SalesActivityType; label: string }> = [
   { value: 'call', label: 'Call' },

@@ -12,6 +12,11 @@ import * as api from './api-client';
 import * as teamApi from './team-api';
 import { clearAllQueryCache, clearQueryCacheForScope } from './query-cache';
 import { resetPreloadSession } from './preload-coordinator';
+import {
+  cacheStaffSessionForOffline,
+  clearAllMobileOfflineData,
+  readCachedStaffSession,
+} from './mobile-offline-queue';
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -25,7 +30,10 @@ type AuthContextValue = {
     firstName: string;
     lastName: string;
   }) => Promise<void>;
-  login: (input: { email: string; password: string }) => Promise<{ user: AuthUser; session: AuthSession }>;
+  login: (input: {
+    email: string;
+    password: string;
+  }) => Promise<{ user: AuthUser; session: AuthSession }>;
   acceptInvite: (input: {
     token: string;
     firstName: string;
@@ -47,7 +55,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function bootstrap() {
       try {
-        const restored = await api.restoreSession();
+        let restored: Awaited<ReturnType<typeof api.restoreSession>> = null;
+        try {
+          restored = await api.restoreSession();
+        } catch {
+          restored = null;
+        }
 
         if (cancelled) {
           return;
@@ -56,9 +69,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (restored) {
           setUser(restored.user);
           setAccessToken(restored.session.accessToken);
+          await cacheStaffSessionForOffline({
+            user: restored.user as unknown as Record<string, unknown>,
+            accessToken: restored.session.accessToken,
+          });
           return;
         }
 
+        // Offline reopen: use short-lived cached access token if still valid.
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const cached = await readCachedStaffSession();
+          if (cached) {
+            setUser(cached.user as unknown as AuthUser);
+            setAccessToken(cached.accessToken);
+            return;
+          }
+        } else {
+          // Online refresh failed ⇒ session expired — clear protected local data.
+          await clearAllMobileOfflineData();
+        }
         setUser(null);
         setAccessToken(null);
       } finally {
@@ -80,10 +109,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (previous && previous.id !== payload.user.id) {
         clearAllQueryCache();
         resetPreloadSession();
+        void clearAllMobileOfflineData();
       }
       return payload.user;
     });
     setAccessToken(payload.session.accessToken);
+    void cacheStaffSessionForOffline({
+      user: payload.user as unknown as Record<string, unknown>,
+      accessToken: payload.session.accessToken,
+    });
   }, []);
 
   const signup = useCallback(
@@ -110,12 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const acceptInvite = useCallback(
-    async (input: {
-      token: string;
-      firstName: string;
-      lastName: string;
-      password: string;
-    }) => {
+    async (input: { token: string; firstName: string; lastName: string; password: string }) => {
       const result = await teamApi.acceptInvite(input);
       applyAuth(result);
       return result;
@@ -124,9 +153,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    const scope =
-      user ?
-        {
+    const scope = user
+      ? {
           tenantId: user.companyId,
           actorId: user.id,
           actorKind: 'staff' as const,
@@ -140,6 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     clearAllQueryCache();
     resetPreloadSession();
+    await clearAllMobileOfflineData();
     setUser(null);
     setAccessToken(null);
   }, [user]);

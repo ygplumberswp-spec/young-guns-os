@@ -1,4 +1,13 @@
-import { jsonb, pgEnum, pgTable, text, timestamp, uuid, integer, uniqueIndex } from 'drizzle-orm/pg-core';
+import {
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  integer,
+  uniqueIndex,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 import { agentProfiles } from './agent-profiles';

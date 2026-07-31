@@ -103,7 +103,11 @@ export function createEnterpriseDeveloperPlatformRouter({
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('integrations:read', 'integrations:manage', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'integrations:read',
+    'integrations:manage',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('integrations:manage');
 
   router.use(requireAuth);
@@ -114,7 +118,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseDeveloperPlatformService.getDeveloperDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseDeveloperPlatformService.getDeveloperDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -123,7 +129,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/explorer', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseDeveloperPlatformService.getDeveloperDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseDeveloperPlatformService.getDeveloperDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { endpoints: dashboard.apiExplorerEndpoints } });
     } catch (error) {
       handleError(error, res);
@@ -132,7 +140,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.post('/openapi/generate', requireWrite, async (req, res) => {
     try {
-      const spec = await enterpriseDeveloperPlatformService.generateOpenApiSpec(getAuth(req).companyId);
+      const spec = await enterpriseDeveloperPlatformService.generateOpenApiSpec(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { spec } });
     } catch (error) {
       handleError(error, res);
@@ -142,7 +152,10 @@ export function createEnterpriseDeveloperPlatformRouter({
   router.post('/sdk/generate', requireWrite, async (req, res) => {
     try {
       const body = sdkSchema.parse(req.body);
-      const sdk = await enterpriseDeveloperPlatformService.generateSdkPackage(getAuth(req).companyId, body);
+      const sdk = await enterpriseDeveloperPlatformService.generateSdkPackage(
+        getAuth(req).companyId,
+        body,
+      );
       res.status(201).json({ data: { sdk } });
     } catch (error) {
       handleError(error, res);
@@ -151,7 +164,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/sdk', requireRead, async (req, res) => {
     try {
-      const packages = await enterpriseDeveloperPlatformService.listSdkPackages(getAuth(req).companyId);
+      const packages = await enterpriseDeveloperPlatformService.listSdkPackages(
+        getAuth(req).companyId,
+      );
       res.json({ data: { packages } });
     } catch (error) {
       handleError(error, res);
@@ -160,7 +175,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/changelog', requireRead, async (req, res) => {
     try {
-      const changelog = await enterpriseDeveloperPlatformService.listChangelog(getAuth(req).companyId);
+      const changelog = await enterpriseDeveloperPlatformService.listChangelog(
+        getAuth(req).companyId,
+      );
       res.json({ data: { changelog } });
     } catch (error) {
       handleError(error, res);
@@ -169,7 +186,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/extensions', requireRead, async (req, res) => {
     try {
-      const extensions = await enterpriseDeveloperPlatformService.listExtensions(getAuth(req).companyId);
+      const extensions = await enterpriseDeveloperPlatformService.listExtensions(
+        getAuth(req).companyId,
+      );
       res.json({ data: { extensions } });
     } catch (error) {
       handleError(error, res);
@@ -205,7 +224,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/marketplace', requireRead, async (req, res) => {
     try {
-      const listings = await enterpriseDeveloperPlatformService.listMarketplaceListings(getAuth(req).companyId);
+      const listings = await enterpriseDeveloperPlatformService.listMarketplaceListings(
+        getAuth(req).companyId,
+      );
       res.json({ data: { listings } });
     } catch (error) {
       handleError(error, res);
@@ -214,7 +235,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/webhooks/subscriptions', requireRead, async (req, res) => {
     try {
-      const subscriptions = await enterpriseDeveloperPlatformService.listWebhookSubscriptions(getAuth(req).companyId);
+      const subscriptions = await enterpriseDeveloperPlatformService.listWebhookSubscriptions(
+        getAuth(req).companyId,
+      );
       res.json({ data: { subscriptions } });
     } catch (error) {
       handleError(error, res);
@@ -237,7 +260,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/webhooks/dead-letter', requireRead, async (req, res) => {
     try {
-      const deadLetter = await enterpriseDeveloperPlatformService.listWebhookDeadLetter(getAuth(req).companyId);
+      const deadLetter = await enterpriseDeveloperPlatformService.listWebhookDeadLetter(
+        getAuth(req).companyId,
+      );
       res.json({ data: { deadLetter } });
     } catch (error) {
       handleError(error, res);
@@ -258,7 +283,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/oauth/apps', requireRead, async (req, res) => {
     try {
-      const apps = await enterpriseDeveloperPlatformService.listOauthApplications(getAuth(req).companyId);
+      const apps = await enterpriseDeveloperPlatformService.listOauthApplications(
+        getAuth(req).companyId,
+      );
       res.json({ data: { apps } });
     } catch (error) {
       handleError(error, res);
@@ -281,7 +308,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/tokens/personal', requireRead, async (req, res) => {
     try {
-      const tokens = await enterpriseDeveloperPlatformService.listPersonalAccessTokens(getAuth(req).companyId);
+      const tokens = await enterpriseDeveloperPlatformService.listPersonalAccessTokens(
+        getAuth(req).companyId,
+      );
       res.json({ data: { tokens } });
     } catch (error) {
       handleError(error, res);
@@ -317,7 +346,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/service-accounts', requireRead, async (req, res) => {
     try {
-      const accounts = await enterpriseDeveloperPlatformService.listServiceAccounts(getAuth(req).companyId);
+      const accounts = await enterpriseDeveloperPlatformService.listServiceAccounts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { accounts } });
     } catch (error) {
       handleError(error, res);
@@ -340,7 +371,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/analytics', requireRead, async (req, res) => {
     try {
-      const analytics = await enterpriseDeveloperPlatformService.getAnalytics(getAuth(req).companyId);
+      const analytics = await enterpriseDeveloperPlatformService.getAnalytics(
+        getAuth(req).companyId,
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -349,7 +382,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const snapshot = await enterpriseDeveloperPlatformService.captureAnalyticsSnapshot(getAuth(req).companyId);
+      const snapshot = await enterpriseDeveloperPlatformService.captureAnalyticsSnapshot(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { snapshot: { id: snapshot.id } } });
     } catch (error) {
       handleError(error, res);
@@ -358,7 +393,9 @@ export function createEnterpriseDeveloperPlatformRouter({
 
   router.get('/actions', requireRead, async (req, res) => {
     try {
-      const actions = await enterpriseDeveloperPlatformService.listPlatformActions(getAuth(req).companyId);
+      const actions = await enterpriseDeveloperPlatformService.listPlatformActions(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actions } });
     } catch (error) {
       handleError(error, res);

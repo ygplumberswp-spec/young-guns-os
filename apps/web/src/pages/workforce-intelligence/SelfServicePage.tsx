@@ -13,7 +13,10 @@ export function SelfServicePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canView = useMemo(() => (user ? canAccessWorkforceIntelligence(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessWorkforceIntelligence(user.permissions) : false),
+    [user],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -26,7 +29,10 @@ export function SelfServicePage() {
         const data = (await fetchSelfService(accessToken)) as WiSelfServiceSummary;
         if (!cancelled) setSelfService(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load self-service workspace');
+        if (!cancelled)
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load self-service workspace',
+          );
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -40,7 +46,10 @@ export function SelfServicePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Employee Self-Service" description="You do not have permission to access self-service." />
+        <PageHeader
+          title="Employee Self-Service"
+          description="You do not have permission to access self-service."
+        />
       </div>
     );
   }
@@ -70,13 +79,19 @@ export function SelfServicePage() {
                 <li>Status: {selfService.profile.lifecycleStage}</li>
               </ul>
             ) : (
-              <EmptyState title="No workforce profile" description="Your HR profile has not been created yet." />
+              <EmptyState
+                title="No workforce profile"
+                description="Your HR profile has not been created yet."
+              />
             )}
           </Panel>
 
           <Panel title="My Timesheets">
             {selfService.timesheets.length === 0 ? (
-              <EmptyState title="No timesheets" description="Submit timesheets through this workspace or mobile." />
+              <EmptyState
+                title="No timesheets"
+                description="Submit timesheets through this workspace or mobile."
+              />
             ) : (
               <ul className="simple-list">
                 {selfService.timesheets.map((ts) => (
@@ -90,7 +105,10 @@ export function SelfServicePage() {
 
           <Panel title="My Leave">
             {selfService.leaveApplications.length === 0 ? (
-              <EmptyState title="No leave applications" description="Request leave when leave categories are configured." />
+              <EmptyState
+                title="No leave applications"
+                description="Request leave when leave categories are configured."
+              />
             ) : (
               <ul className="simple-list">
                 {selfService.leaveApplications.map((leave) => (
@@ -104,20 +122,28 @@ export function SelfServicePage() {
 
           <Panel title="Certifications & Training">
             {selfService.certifications.length === 0 && selfService.training.length === 0 ? (
-              <EmptyState title="No records" description="Certifications and training records appear when configured by HR." />
+              <EmptyState
+                title="No records"
+                description="Certifications and training records appear when configured by HR."
+              />
             ) : (
               <>
                 {selfService.certifications.length > 0 ? (
                   <ul className="simple-list">
                     {selfService.certifications.map((cert) => (
-                      <li key={cert.id}>{cert.name}{cert.expiresAt ? ` — expires ${cert.expiresAt}` : ''}</li>
+                      <li key={cert.id}>
+                        {cert.name}
+                        {cert.expiresAt ? ` — expires ${cert.expiresAt}` : ''}
+                      </li>
                     ))}
                   </ul>
                 ) : null}
                 {selfService.training.length > 0 ? (
                   <ul className="simple-list">
                     {selfService.training.map((tr) => (
-                      <li key={tr.id}>{tr.title} ({tr.status})</li>
+                      <li key={tr.id}>
+                        {tr.title} ({tr.status})
+                      </li>
                     ))}
                   </ul>
                 ) : null}

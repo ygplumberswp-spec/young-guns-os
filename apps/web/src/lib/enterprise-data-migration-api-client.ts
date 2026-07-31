@@ -9,10 +9,15 @@ import type {
 } from '@titan/shared';
 import { request } from './api-client';
 
-export async function fetchDataMigrationDashboard(accessToken: string): Promise<EnterpriseDataMigrationDashboard> {
-  const data = await request<{ dashboard: EnterpriseDataMigrationDashboard }>('/enterprise-data-migration/dashboard', {
-    accessToken,
-  });
+export async function fetchDataMigrationDashboard(
+  accessToken: string,
+): Promise<EnterpriseDataMigrationDashboard> {
+  const data = await request<{ dashboard: EnterpriseDataMigrationDashboard }>(
+    '/enterprise-data-migration/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -20,11 +25,14 @@ export async function createImportJob(
   accessToken: string,
   input: { title: string; sourceFormat: DmSourceFormat; entityType: DmEntityType },
 ): Promise<DmImportJobSummary> {
-  const data = await request<{ importJob: DmImportJobSummary }>('/enterprise-data-migration/import-jobs', {
-    accessToken,
-    method: 'POST',
-    body: input,
-  });
+  const data = await request<{ importJob: DmImportJobSummary }>(
+    '/enterprise-data-migration/import-jobs',
+    {
+      accessToken,
+      method: 'POST',
+      body: input,
+    },
+  );
   return data.importJob;
 }
 
@@ -40,7 +48,10 @@ export async function uploadImportFile(
   return data.importJob;
 }
 
-export async function autoMapImportJob(accessToken: string, importJobId: string): Promise<DmImportJobSummary> {
+export async function autoMapImportJob(
+  accessToken: string,
+  importJobId: string,
+): Promise<DmImportJobSummary> {
   const data = await request<{ importJob: DmImportJobSummary }>(
     `/enterprise-data-migration/import-jobs/${importJobId}/auto-map`,
     { accessToken, method: 'POST' },
@@ -48,7 +59,10 @@ export async function autoMapImportJob(accessToken: string, importJobId: string)
   return data.importJob;
 }
 
-export async function validateImportJob(accessToken: string, importJobId: string): Promise<DmImportJobDetailSummary> {
+export async function validateImportJob(
+  accessToken: string,
+  importJobId: string,
+): Promise<DmImportJobDetailSummary> {
   const data = await request<{ importJob: DmImportJobDetailSummary }>(
     `/enterprise-data-migration/import-jobs/${importJobId}/validate`,
     { accessToken, method: 'POST' },
@@ -56,7 +70,10 @@ export async function validateImportJob(accessToken: string, importJobId: string
   return data.importJob;
 }
 
-export async function approveImportJob(accessToken: string, importJobId: string): Promise<DmImportJobSummary> {
+export async function approveImportJob(
+  accessToken: string,
+  importJobId: string,
+): Promise<DmImportJobSummary> {
   const data = await request<{ importJob: DmImportJobSummary }>(
     `/enterprise-data-migration/import-jobs/${importJobId}/approve`,
     { accessToken, method: 'POST' },
@@ -64,7 +81,10 @@ export async function approveImportJob(accessToken: string, importJobId: string)
   return data.importJob;
 }
 
-export async function executeImportJob(accessToken: string, importJobId: string): Promise<DmImportJobDetailSummary> {
+export async function executeImportJob(
+  accessToken: string,
+  importJobId: string,
+): Promise<DmImportJobDetailSummary> {
   const data = await request<{ importJob: DmImportJobDetailSummary }>(
     `/enterprise-data-migration/import-jobs/${importJobId}/execute`,
     { accessToken, method: 'POST' },
@@ -85,10 +105,13 @@ export async function createExportJob(
 }
 
 export async function executeExportJob(accessToken: string, exportJobId: string) {
-  const data = await request<{ exportJob: unknown }>(`/enterprise-data-migration/export-jobs/${exportJobId}/execute`, {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ exportJob: unknown }>(
+    `/enterprise-data-migration/export-jobs/${exportJobId}/execute`,
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.exportJob;
 }
 
@@ -101,21 +124,32 @@ export async function syncMigrationAlerts(accessToken: string): Promise<DmMigrat
 }
 
 export async function captureDataMigrationAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-data-migration/analytics/capture', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-data-migration/analytics/capture',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.analytics;
 }
 
-export async function fetchDataMigrationAuditLogs(accessToken: string): Promise<DmAuditLogSummary[]> {
-  const data = await request<{ auditLogs: DmAuditLogSummary[] }>('/enterprise-data-migration/audit-logs', {
-    accessToken,
-  });
+export async function fetchDataMigrationAuditLogs(
+  accessToken: string,
+): Promise<DmAuditLogSummary[]> {
+  const data = await request<{ auditLogs: DmAuditLogSummary[] }>(
+    '/enterprise-data-migration/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }
 
-export async function fetchImportJobDetail(accessToken: string, importJobId: string): Promise<DmImportJobDetailSummary> {
+export async function fetchImportJobDetail(
+  accessToken: string,
+  importJobId: string,
+): Promise<DmImportJobDetailSummary> {
   const data = await request<{ importJob: DmImportJobDetailSummary }>(
     `/enterprise-data-migration/import-jobs/${importJobId}`,
     { accessToken },

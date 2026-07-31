@@ -92,7 +92,9 @@ export class EnterprisePlatformHealthPerformanceService {
       }
     }
 
-    for (const module of productionDashboard.systemHealth.filter((m) => m.status === 'degraded' || m.status === 'unhealthy')) {
+    for (const module of productionDashboard.systemHealth.filter(
+      (m) => m.status === 'degraded' || m.status === 'unhealthy',
+    )) {
       insights.push(
         await this.insertInsight(companyId, {
           insightType: 'degraded_service',
@@ -153,7 +155,9 @@ export class EnterprisePlatformHealthPerformanceService {
   }
 }
 
-function toInsightSummary(row: typeof phPerformanceInsights.$inferSelect): PhPerformanceInsightSummary {
+function toInsightSummary(
+  row: typeof phPerformanceInsights.$inferSelect,
+): PhPerformanceInsightSummary {
   return {
     id: row.id,
     insightType: row.insightType,

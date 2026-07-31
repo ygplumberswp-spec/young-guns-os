@@ -102,9 +102,7 @@ export class AgentsService {
       this.getProfileChildCounts(companyId, 'executions'),
     ]);
 
-    return rows.map((row) =>
-      toProfileSummary(row, permissionCounts, toolCounts, executionCounts),
-    );
+    return rows.map((row) => toProfileSummary(row, permissionCounts, toolCounts, executionCounts));
   }
 
   async getProfile(companyId: string, profileId: string): Promise<AgentProfileDetail | null> {
@@ -368,10 +366,7 @@ export class AgentsService {
     };
   }
 
-  async buildAuraContext(
-    companyId: string,
-    agentProfileId?: string,
-  ): Promise<AuraAgentsContext> {
+  async buildAuraContext(companyId: string, agentProfileId?: string): Promise<AuraAgentsContext> {
     const stats = await this.getStats(companyId);
     const profiles = await this.listProfiles(companyId);
     const configuredKeys = new Set(profiles.map((profile) => profile.agentKey));
@@ -431,12 +426,10 @@ export class AgentsService {
     };
   }
 
-  private async replacePermissions(
-    companyId: string,
-    profileId: string,
-    permissions: string[],
-  ) {
-    const uniquePermissions = [...new Set(permissions.map((permission) => permission.trim()).filter(Boolean))];
+  private async replacePermissions(companyId: string, profileId: string, permissions: string[]) {
+    const uniquePermissions = [
+      ...new Set(permissions.map((permission) => permission.trim()).filter(Boolean)),
+    ];
 
     await this.db
       .delete(agentProfilePermissions)
@@ -543,9 +536,7 @@ export class AgentsService {
         count: sql<number>`count(*)::int`,
       })
       .from(agentProfileTools)
-      .where(
-        and(eq(agentProfileTools.companyId, companyId), eq(agentProfileTools.enabled, true)),
-      )
+      .where(and(eq(agentProfileTools.companyId, companyId), eq(agentProfileTools.enabled, true)))
       .groupBy(agentProfileTools.agentProfileId);
 
     const counts = new Map<string, number>();

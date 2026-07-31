@@ -54,11 +54,7 @@ export type KnowledgeGraphActionType =
   | 'executive_knowledge_report';
 
 export type KnowledgeGraphActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type KnowledgeGraphRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
@@ -93,7 +89,8 @@ export type OrganizationalMemorySummary = {
 };
 
 export type KnowledgeSemanticSearchResult = {
-  resultType: 'graph_entity' | 'organizational_memory' | 'knowledge_article' | 'sop' | 'policy' | 'document';
+  resultType:
+    'graph_entity' | 'organizational_memory' | 'knowledge_article' | 'sop' | 'policy' | 'document';
   id: string;
   title: string;
   summary: string | null;

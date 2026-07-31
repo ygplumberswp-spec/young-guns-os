@@ -14,11 +14,7 @@ import {
   type PortalUserSummary,
   type UpdatePortalUserRequest,
 } from '@titan/shared';
-import {
-  generateInviteToken,
-  hashInviteToken,
-  INVITE_TOKEN_TTL_MS,
-} from '@titan/auth';
+import { generateInviteToken, hashInviteToken, INVITE_TOKEN_TTL_MS } from '@titan/auth';
 import type { DatabaseClient } from '@titan/db';
 import {
   communications,
@@ -117,10 +113,7 @@ export class PortalService {
     });
 
     if (existingForCustomer) {
-      throw new PortalError(
-        'PORTAL_USER_EXISTS',
-        'A portal user already exists for this customer',
-      );
+      throw new PortalError('PORTAL_USER_EXISTS', 'A portal user already exists for this customer');
     }
 
     const existingEmail = await this.db.query.portalUsers.findFirst({
@@ -131,7 +124,9 @@ export class PortalService {
       throw new PortalError('EMAIL_IN_USE', 'A portal user with this email already exists');
     }
 
-    const permissions = normalizePermissions(input.permissions ?? DEFAULT_PORTAL_ACCESS_PERMISSIONS);
+    const permissions = normalizePermissions(
+      input.permissions ?? DEFAULT_PORTAL_ACCESS_PERMISSIONS,
+    );
     const passwordHash = await hashPassword(input.password);
 
     const [created] = await this.db
@@ -217,7 +212,11 @@ export class PortalService {
     }
 
     if (input.permissions) {
-      await this.replacePermissions(companyId, portalUserId, normalizePermissions(input.permissions));
+      await this.replacePermissions(
+        companyId,
+        portalUserId,
+        normalizePermissions(input.permissions),
+      );
     }
 
     const portalUser = await this.getPortalUser(companyId, portalUserId);
@@ -361,15 +360,19 @@ export class PortalService {
       portalUserCount: stats.portalUserCount,
       activePortalUserCount: stats.activePortalUserCount,
       linkedCustomerCount: stats.linkedCustomerCount,
-      portalUsers: rows.map((row: typeof portalUsers.$inferSelect & {
-        customer: typeof customers.$inferSelect | null;
-        permissions: Array<typeof portalUserPermissions.$inferSelect>;
-      }) => ({
-        customerName: row.customer?.name ?? 'Unknown',
-        email: row.email,
-        isActive: row.isActive,
-        permissionCount: row.permissions.length,
-      })),
+      portalUsers: rows.map(
+        (
+          row: typeof portalUsers.$inferSelect & {
+            customer: typeof customers.$inferSelect | null;
+            permissions: Array<typeof portalUserPermissions.$inferSelect>;
+          },
+        ) => ({
+          customerName: row.customer?.name ?? 'Unknown',
+          email: row.email,
+          isActive: row.isActive,
+          permissionCount: row.permissions.length,
+        }),
+      ),
       accessPermissions: PORTAL_ACCESS_PERMISSION_OPTIONS.map((option) => option.value),
     };
   }
@@ -460,7 +463,9 @@ export class PortalService {
         ),
       );
 
-    const permissions = normalizePermissions(input.permissions ?? DEFAULT_PORTAL_ACCESS_PERMISSIONS);
+    const permissions = normalizePermissions(
+      input.permissions ?? DEFAULT_PORTAL_ACCESS_PERMISSIONS,
+    );
     const token = generateInviteToken();
     const tokenHash = hashInviteToken(token);
     const expiresAt = new Date(Date.now() + INVITE_TOKEN_TTL_MS);
@@ -505,7 +510,7 @@ export class PortalService {
 
     return {
       invite: inviteSummary,
-      inviteUrl: `${this.appUrl.replace(/\/$/, '')}/portal/accept-invite?token=${token}`,
+      inviteUrl: `${this.appUrl.replace(/\/$/, '')}/my/accept-invite?token=${token}`,
     };
   }
 
@@ -542,7 +547,10 @@ export class PortalService {
     });
   }
 
-  async revokePortalUserAccess(scope: TenantScope, portalUserId: string): Promise<PortalUserDetail> {
+  async revokePortalUserAccess(
+    scope: TenantScope,
+    portalUserId: string,
+  ): Promise<PortalUserDetail> {
     const existing = await this.db.query.portalUsers.findFirst({
       where: and(eq(portalUsers.id, portalUserId), eq(portalUsers.companyId, scope.companyId)),
     });
@@ -636,8 +644,9 @@ function toPortalInviteSummary(
   },
 ): PortalUserInviteSummary {
   const permissions = Array.isArray(row.permissions)
-    ? row.permissions.filter((value): value is PortalAccessPermission =>
-        typeof value === 'string' && isPortalAccessPermission(value),
+    ? row.permissions.filter(
+        (value): value is PortalAccessPermission =>
+          typeof value === 'string' && isPortalAccessPermission(value),
       )
     : [];
 
@@ -646,7 +655,9 @@ function toPortalInviteSummary(
     customerId: row.customerId,
     email: row.email,
     permissions,
-    invitedByName: row.invitedBy ? `${row.invitedBy.firstName} ${row.invitedBy.lastName}` : 'Unknown',
+    invitedByName: row.invitedBy
+      ? `${row.invitedBy.firstName} ${row.invitedBy.lastName}`
+      : 'Unknown',
     expiresAt: row.expiresAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };

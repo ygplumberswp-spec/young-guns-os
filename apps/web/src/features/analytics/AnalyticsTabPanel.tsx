@@ -54,7 +54,11 @@ export function AnalyticsTabPanel({
           {onRetry ? (
             <>
               {' '}
-              <button type="button" className="analytics-tab-panel__retry-link" onClick={() => void onRetry()}>
+              <button
+                type="button"
+                className="analytics-tab-panel__retry-link"
+                onClick={() => void onRetry()}
+              >
                 Retry
               </button>
             </>

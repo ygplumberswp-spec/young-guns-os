@@ -156,7 +156,13 @@ export function createEnterpriseSaasPlatformRouter({
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('platform:read', 'platform:manage', 'saas:read', 'saas:manage', 'agents:read');
+  const requireRead = requireAnyPermission(
+    'platform:read',
+    'platform:manage',
+    'saas:read',
+    'saas:manage',
+    'agents:read',
+  );
   const requireWrite = requireAnyPermission('platform:manage', 'saas:manage');
   const requirePlatformManage = requireAnyPermission('platform:manage');
 
@@ -168,7 +174,9 @@ export function createEnterpriseSaasPlatformRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseSaasPlatformService.getPlatformDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseSaasPlatformService.getPlatformDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -230,7 +238,9 @@ export function createEnterpriseSaasPlatformRouter({
 
   router.get('/plans', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseSaasPlatformService.getPlatformDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseSaasPlatformService.getPlatformDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { plans: dashboard.plans } });
     } catch (error) {
       handleError(error, res);
@@ -308,7 +318,9 @@ export function createEnterpriseSaasPlatformRouter({
 
   router.post('/usage/capture', requireWrite, async (req, res) => {
     try {
-      const snapshot = await enterpriseSaasPlatformService.captureUsageSnapshot(getAuth(req).companyId);
+      const snapshot = await enterpriseSaasPlatformService.captureUsageSnapshot(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { snapshot: { id: snapshot.id } } });
     } catch (error) {
       handleError(error, res);
@@ -345,7 +357,9 @@ export function createEnterpriseSaasPlatformRouter({
 
   router.get('/actions', requireRead, async (req, res) => {
     try {
-      const actions = await enterpriseSaasPlatformService.listPlatformActions(getAuth(req).companyId);
+      const actions = await enterpriseSaasPlatformService.listPlatformActions(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actions } });
     } catch (error) {
       handleError(error, res);
@@ -379,7 +393,9 @@ export function createEnterpriseSaasPlatformRouter({
 
   router.get('/ai-operations/resilience', requireRead, async (req, res) => {
     try {
-      const resilience = await aiProviderResilienceService.getResilienceStatus(getAuth(req).companyId);
+      const resilience = await aiProviderResilienceService.getResilienceStatus(
+        getAuth(req).companyId,
+      );
       res.json({ data: { resilience } });
     } catch (error) {
       handleError(error, res);

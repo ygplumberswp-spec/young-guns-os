@@ -24,9 +24,16 @@ export function PortalKnowledgePage() {
 
   return (
     <div className="portal-page">
-      <PageHeader title="Help & self-service" description="Search customer-visible articles, FAQs, and guides." />
+      <PageHeader
+        title="Help & self-service"
+        description="Search customer-visible articles, FAQs, and guides."
+      />
       <form onSubmit={handleSearch}>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search knowledge..." />
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search knowledge..."
+        />
         <button type="submit">Search</button>
       </form>
       {error ? <p className="form-error">{error}</p> : null}

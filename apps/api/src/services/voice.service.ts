@@ -60,7 +60,8 @@ export class VoiceService {
       completedSessionCount: sessions.filter((row) => row.status === 'completed').length,
       followUpRequiredCount: sessions.filter((row) => row.followUpRequired).length,
       pendingFollowUpCount: followUps.length,
-      appointmentRequestCount: sessions.filter((row) => row.enquiryType === 'appointment_request').length,
+      appointmentRequestCount: sessions.filter((row) => row.enquiryType === 'appointment_request')
+        .length,
       quoteRequestCount: sessions.filter((row) => row.enquiryType === 'quote_request').length,
     };
   }
@@ -85,7 +86,10 @@ export class VoiceService {
     return row ? toSessionSummary(row) : null;
   }
 
-  async createSession(scope: TenantScope, input: CreateVoiceSessionRequest): Promise<VoiceSessionSummary> {
+  async createSession(
+    scope: TenantScope,
+    input: CreateVoiceSessionRequest,
+  ): Promise<VoiceSessionSummary> {
     if (input.customerId) {
       await this.ensureCustomerBelongsToCompany(scope.companyId, input.customerId);
     }
@@ -143,15 +147,22 @@ export class VoiceService {
         channel: input.channel,
         enquiryType: input.enquiryType,
         callerName: input.callerName !== undefined ? input.callerName?.trim() || null : undefined,
-        callerPhone: input.callerPhone !== undefined ? input.callerPhone?.trim() || null : undefined,
-        callerEmail: input.callerEmail !== undefined ? input.callerEmail?.trim() || null : undefined,
+        callerPhone:
+          input.callerPhone !== undefined ? input.callerPhone?.trim() || null : undefined,
+        callerEmail:
+          input.callerEmail !== undefined ? input.callerEmail?.trim() || null : undefined,
         durationSeconds: input.durationSeconds !== undefined ? input.durationSeconds : undefined,
         summary: input.summary !== undefined ? input.summary?.trim() || null : undefined,
         followUpRequired: input.followUpRequired,
         qualification: input.qualification,
         metadata: input.metadata,
         startedAt: input.startedAt ? new Date(input.startedAt) : undefined,
-        endedAt: input.endedAt !== undefined ? (input.endedAt ? new Date(input.endedAt) : null) : undefined,
+        endedAt:
+          input.endedAt !== undefined
+            ? input.endedAt
+              ? new Date(input.endedAt)
+              : null
+            : undefined,
         updatedAt: new Date(),
       })
       .where(and(eq(voiceSessions.id, sessionId), eq(voiceSessions.companyId, companyId)));
@@ -162,14 +173,19 @@ export class VoiceService {
         eventType: 'voice.call.completed',
         entityType: 'voice_session',
         entityId: sessionId,
-        payload: { session: { id: sessionId, status: 'completed', enquiryType: existing.enquiryType } },
+        payload: {
+          session: { id: sessionId, status: 'completed', enquiryType: existing.enquiryType },
+        },
       });
     }
 
     return (await this.getSession(companyId, sessionId))!;
   }
 
-  async listConversations(companyId: string, sessionId: string): Promise<VoiceConversationSummary[]> {
+  async listConversations(
+    companyId: string,
+    sessionId: string,
+  ): Promise<VoiceConversationSummary[]> {
     await this.ensureSessionBelongsToCompany(companyId, sessionId);
 
     const rows = await this.db.query.voiceConversations.findMany({
@@ -279,10 +295,7 @@ export class VoiceService {
 
   async generateFollowUpRecommendations(companyId: string): Promise<VoiceFollowUpSummary[]> {
     const sessions = await this.db.query.voiceSessions.findMany({
-      where: and(
-        eq(voiceSessions.companyId, companyId),
-        eq(voiceSessions.followUpRequired, true),
-      ),
+      where: and(eq(voiceSessions.companyId, companyId), eq(voiceSessions.followUpRequired, true)),
       with: { outcomes: true },
       orderBy: [desc(voiceSessions.startedAt)],
       limit: 30,
@@ -450,7 +463,10 @@ export class VoiceService {
     };
   }
 
-  async analyzeQualification(companyId: string, sessionId: string): Promise<VoiceQualificationResult> {
+  async analyzeQualification(
+    companyId: string,
+    sessionId: string,
+  ): Promise<VoiceQualificationResult> {
     const session = await this.getSession(companyId, sessionId);
     if (!session) {
       throw new VoiceError('NOT_FOUND', 'Voice session not found');
@@ -656,7 +672,10 @@ export class VoiceService {
     }
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -692,7 +711,9 @@ function toSessionSummary(
   };
 }
 
-function toConversationSummary(row: typeof voiceConversations.$inferSelect): VoiceConversationSummary {
+function toConversationSummary(
+  row: typeof voiceConversations.$inferSelect,
+): VoiceConversationSummary {
   return {
     id: row.id,
     sessionId: row.sessionId,
@@ -733,7 +754,16 @@ function toFollowUpSummary(row: typeof voiceFollowUps.$inferSelect): VoiceFollow
 }
 
 function extractKeyTopics(contents: string[]): string[] {
-  const keywords = ['plumbing', 'leak', 'quote', 'appointment', 'emergency', 'repair', 'install', 'service'];
+  const keywords = [
+    'plumbing',
+    'leak',
+    'quote',
+    'appointment',
+    'emergency',
+    'repair',
+    'install',
+    'service',
+  ];
   const topics = new Set<string>();
 
   for (const content of contents) {

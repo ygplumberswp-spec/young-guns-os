@@ -41,11 +41,23 @@ export function WorkforceIntelligencePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessWorkforceIntelligence(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageWorkforceIntelligence(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessWorkforceIntelligence(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageWorkforceIntelligence(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -65,7 +77,11 @@ export function WorkforceIntelligencePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load workforce intelligence dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load workforce intelligence dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -96,7 +112,10 @@ export function WorkforceIntelligencePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Workforce Intelligence" description="You do not have permission to view workforce intelligence." />
+        <PageHeader
+          title="Workforce Intelligence"
+          description="You do not have permission to view workforce intelligence."
+        />
       </div>
     );
   }
@@ -154,14 +173,25 @@ export function WorkforceIntelligencePage() {
             <StatCard label="Pending Leave" value={String(dashboard.pendingLeaveCount)} />
             <StatCard label="Timesheets Pending" value={String(dashboard.pendingTimesheetCount)} />
             <StatCard label="Active Providers" value={String(dashboard.activeProviderCount)} />
-            <StatCard label="Candidates in Pipeline" value={String(dashboard.workforceStats.activePipelineCount)} />
+            <StatCard
+              label="Candidates in Pipeline"
+              value={String(dashboard.workforceStats.activePipelineCount)}
+            />
             <StatCard label="Payroll Batches" value={String(dashboard.payrollBatchCount)} />
           </div>
           <Panel title="Summary" description={dashboard.summary}>
             <p>{dashboard.summary}</p>
             {canWrite ? (
               <div className="panel-actions">
-                <Button disabled={isWorking} onClick={() => void runAction(() => captureWorkforceAnalytics(accessToken!), 'Analytics captured from real workforce data.')}>
+                <Button
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => captureWorkforceAnalytics(accessToken!),
+                      'Analytics captured from real workforce data.',
+                    )
+                  }
+                >
                   Capture Analytics
                 </Button>
               </div>
@@ -173,12 +203,16 @@ export function WorkforceIntelligencePage() {
       {dashboard && activeTab === 'registry' ? (
         <Panel title="Workforce Registry" description="Tenant-configured workforce profiles">
           {dashboard.recentProfiles.length === 0 ? (
-            <EmptyState title="No workforce profiles" description="Create profiles linked to team members when onboarding staff." />
+            <EmptyState
+              title="No workforce profiles"
+              description="Create profiles linked to team members when onboarding staff."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentProfiles.map((profile) => (
                 <li key={profile.id}>
-                  <strong>{profile.userName}</strong> — {profile.jobTitle ?? 'No title'} ({formatLifecycleStage(profile.lifecycleStage)})
+                  <strong>{profile.userName}</strong> — {profile.jobTitle ?? 'No title'} (
+                  {formatLifecycleStage(profile.lifecycleStage)})
                   {profile.department ? ` · ${profile.department}` : ''}
                 </li>
               ))}
@@ -188,19 +222,31 @@ export function WorkforceIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'timesheets' ? (
-        <Panel title="Timesheets" description="Approved timesheets are never silently altered — corrections preserve audit history">
+        <Panel
+          title="Timesheets"
+          description="Approved timesheets are never silently altered — corrections preserve audit history"
+        >
           {dashboard.recentTimesheets.length === 0 ? (
-            <EmptyState title="No timesheets" description="Timesheets appear when employees submit time records." />
+            <EmptyState
+              title="No timesheets"
+              description="Timesheets appear when employees submit time records."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentTimesheets.map((ts) => (
                 <li key={ts.id}>
-                  {ts.userName}: {ts.periodStart} – {ts.periodEnd} ({ts.status}) — {ts.standardHours}h standard
+                  {ts.userName}: {ts.periodStart} – {ts.periodEnd} ({ts.status}) —{' '}
+                  {ts.standardHours}h standard
                   {canWrite && ts.status === 'submitted' ? (
                     <Button
                       variant="secondary"
                       disabled={isWorking}
-                      onClick={() => void runAction(() => approveTimesheet(accessToken!, ts.id), 'Timesheet approved.')}
+                      onClick={() =>
+                        void runAction(
+                          () => approveTimesheet(accessToken!, ts.id),
+                          'Timesheet approved.',
+                        )
+                      }
                     >
                       Approve
                     </Button>
@@ -215,17 +261,26 @@ export function WorkforceIntelligencePage() {
       {dashboard && activeTab === 'leave' ? (
         <Panel title="Leave Management" description="Configurable leave categories per tenant">
           {dashboard.pendingLeaveApplications.length === 0 ? (
-            <EmptyState title="No pending leave" description="Leave applications appear when employees request time off." />
+            <EmptyState
+              title="No pending leave"
+              description="Leave applications appear when employees request time off."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.pendingLeaveApplications.map((leave) => (
                 <li key={leave.id}>
-                  {leave.userName}: {leave.categoryName} {leave.startDate} – {leave.endDate} ({leave.daysRequested} days)
+                  {leave.userName}: {leave.categoryName} {leave.startDate} – {leave.endDate} (
+                  {leave.daysRequested} days)
                   {canWrite ? (
                     <Button
                       variant="secondary"
                       disabled={isWorking}
-                      onClick={() => void runAction(() => approveLeaveApplication(accessToken!, leave.id), 'Leave approved.')}
+                      onClick={() =>
+                        void runAction(
+                          () => approveLeaveApplication(accessToken!, leave.id),
+                          'Leave approved.',
+                        )
+                      }
                     >
                       Approve
                     </Button>
@@ -238,9 +293,15 @@ export function WorkforceIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'payroll' ? (
-        <Panel title="Payroll Preparation" description="Payroll export requires approval — TITAN does not submit statutory payroll autonomously">
+        <Panel
+          title="Payroll Preparation"
+          description="Payroll export requires approval — TITAN does not submit statutory payroll autonomously"
+        >
           {dashboard.payrollPreparations.length === 0 ? (
-            <EmptyState title="No payroll batches" description="Create payroll periods and prepare batches from approved timesheets." />
+            <EmptyState
+              title="No payroll batches"
+              description="Create payroll periods and prepare batches from approved timesheets."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.payrollPreparations.map((batch) => (
@@ -254,14 +315,25 @@ export function WorkforceIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'performance' ? (
-        <Panel title="Technician Performance" description="Performance scores from real job data with supporting evidence">
+        <Panel
+          title="Technician Performance"
+          description="Performance scores from real job data with supporting evidence"
+        >
           {dashboard.technicianPerformance.length === 0 ? (
             <>
-              <EmptyState title="No performance snapshots" description="Capture performance from real job completion data." />
+              <EmptyState
+                title="No performance snapshots"
+                description="Capture performance from real job completion data."
+              />
               {canWrite ? (
                 <Button
                   disabled={isWorking}
-                  onClick={() => void runAction(() => captureTechnicianPerformance(accessToken!), 'Performance captured from real job data.')}
+                  onClick={() =>
+                    void runAction(
+                      () => captureTechnicianPerformance(accessToken!),
+                      'Performance captured from real job data.',
+                    )
+                  }
                 >
                   Capture Performance
                 </Button>
@@ -282,17 +354,29 @@ export function WorkforceIntelligencePage() {
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="Payroll & HR Providers" description="Vendor-agnostic adapter framework — configure per tenant">
+        <Panel
+          title="Payroll & HR Providers"
+          description="Vendor-agnostic adapter framework — configure per tenant"
+        >
           {dashboard.providerCount === 0 ? (
-            <EmptyState title="No providers configured" description="Add Sage, Xero, PaySpace, BambooHR, or custom REST/SFTP adapters." />
+            <EmptyState
+              title="No providers configured"
+              description="Add Sage, Xero, PaySpace, BambooHR, or custom REST/SFTP adapters."
+            />
           ) : (
-            <p>{dashboard.activeProviderCount} active of {dashboard.providerCount} configured provider(s).</p>
+            <p>
+              {dashboard.activeProviderCount} active of {dashboard.providerCount} configured
+              provider(s).
+            </p>
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'analytics' ? (
-        <Panel title="Workforce Analytics" description="Real workforce metrics — no fabricated data">
+        <Panel
+          title="Workforce Analytics"
+          description="Real workforce metrics — no fabricated data"
+        >
           {dashboard.analytics ? (
             <ul className="simple-list">
               <li>Headcount: {dashboard.analytics.headcount}</li>
@@ -301,21 +385,37 @@ export function WorkforceIntelligencePage() {
               <li>Payroll exceptions: {dashboard.analytics.payrollExceptionCount}</li>
             </ul>
           ) : (
-            <EmptyState title="No analytics captured" description="Capture analytics from real workforce activity." />
+            <EmptyState
+              title="No analytics captured"
+              description="Capture analytics from real workforce activity."
+            />
           )}
         </Panel>
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Workforce Intelligence Agent" description="Recommendations only — approval required for HR and payroll actions">
+        <Panel
+          title="AURA Workforce Intelligence Agent"
+          description="Recommendations only — approval required for HR and payroll actions"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'workforce_intelligence' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(
+                content,
+                'workforce_intelligence' as import('@titan/shared').AgentKey,
+              )
+            }
             placeholder="Ask about workforce capacity, timesheets, leave, performance, or payroll exceptions…"
           />
         </Panel>

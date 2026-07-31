@@ -9,9 +9,12 @@ export const CUSTOMER_STATUS_OPTIONS: Array<{ value: CustomerStatus; label: stri
 export type CustomerSummary = {
   id: string;
   name: string;
+  contactPerson: string | null;
   email: string | null;
   phone: string | null;
   status: CustomerStatus;
+  isSupplierOnly: boolean;
+  doNotContact: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -35,17 +38,23 @@ export type CrmStats = {
 
 export type CreateCustomerRequest = {
   name: string;
+  contactPerson?: string | null;
   email?: string | null;
   phone?: string | null;
   status?: CustomerStatus;
+  isSupplierOnly?: boolean;
+  doNotContact?: boolean;
   notes?: string | null;
 };
 
 export type UpdateCustomerRequest = {
   name?: string;
+  contactPerson?: string | null;
   email?: string | null;
   phone?: string | null;
   status?: CustomerStatus;
+  isSupplierOnly?: boolean;
+  doNotContact?: boolean;
   notes?: string | null;
 };
 

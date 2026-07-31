@@ -32,6 +32,10 @@ export type CreateTeamInviteRequest = {
   roleId: string;
 };
 
+export type UpdateTeamMemberRoleRequest = {
+  roleId: string;
+};
+
 export type CreateTeamInviteResponse = {
   invite: TeamInvite;
   inviteUrl: string;

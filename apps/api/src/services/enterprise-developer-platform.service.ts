@@ -46,8 +46,16 @@ import {
   integrationWebhookDeliveries,
 } from '@titan/db';
 import { generateDeveloperApiKey, hashApiKey } from '../lib/crypto.js';
-import { buildDefaultChangelog, buildOpenApiSpec, TITAN_API_EXPLORER_ENDPOINTS } from '../lib/developer-openapi.js';
-import { buildSdkManifest, generateSdkExampleCode, getSdkPackageName } from '../lib/developer-sdk-templates.js';
+import {
+  buildDefaultChangelog,
+  buildOpenApiSpec,
+  TITAN_API_EXPLORER_ENDPOINTS,
+} from '../lib/developer-openapi.js';
+import {
+  buildSdkManifest,
+  generateSdkExampleCode,
+  getSdkPackageName,
+} from '../lib/developer-sdk-templates.js';
 import type { ConnectorEngineService } from './connector-engine.service.js';
 import type { IntegrationApiManagementService } from './integration-api-management.service.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
@@ -131,7 +139,9 @@ export class EnterpriseDeveloperPlatformService {
     };
   }
 
-  async buildDeveloperAuraContext(companyId: string): Promise<EnterpriseDeveloperPlatformAuraContext> {
+  async buildDeveloperAuraContext(
+    companyId: string,
+  ): Promise<EnterpriseDeveloperPlatformAuraContext> {
     const dashboard = await this.getDeveloperDashboard(companyId);
     return {
       summary: dashboard.summary,
@@ -158,7 +168,10 @@ export class EnterpriseDeveloperPlatformService {
     };
   }
 
-  async generateSdkPackage(companyId: string, input: GenerateDeveloperSdkRequest): Promise<DeveloperSdkPackageDetail> {
+  async generateSdkPackage(
+    companyId: string,
+    input: GenerateDeveloperSdkRequest,
+  ): Promise<DeveloperSdkPackageDetail> {
     const version = '1.0.0';
     const manifest = buildSdkManifest(input.language, version);
     const exampleCode = generateSdkExampleCode(input.language, this.deps.apiPublicUrl);
@@ -200,7 +213,10 @@ export class EnterpriseDeveloperPlatformService {
     return this.listChangelog(companyId);
   }
 
-  async createExtension(scope: StaffScope, input: CreateDeveloperExtensionRequest): Promise<DeveloperExtensionSummary> {
+  async createExtension(
+    scope: StaffScope,
+    input: CreateDeveloperExtensionRequest,
+  ): Promise<DeveloperExtensionSummary> {
     const [row] = await this.deps.db
       .insert(developerPlatformExtensions)
       .values({
@@ -236,14 +252,21 @@ export class EnterpriseDeveloperPlatformService {
     return rows.map(toExtensionSummary);
   }
 
-  async installExtension(scope: StaffScope, extensionId: string): Promise<DeveloperExtensionSummary> {
+  async installExtension(
+    scope: StaffScope,
+    extensionId: string,
+  ): Promise<DeveloperExtensionSummary> {
     const extension = await this.ensureExtension(scope.companyId, extensionId);
     const [updated] = await this.deps.db
       .update(developerPlatformExtensions)
       .set({ status: 'installed', installedAt: new Date(), updatedAt: new Date() })
       .where(eq(developerPlatformExtensions.id, extension.id))
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'api_key', actionType: 'extension_installed', subject: extension.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'api_key',
+      actionType: 'extension_installed',
+      subject: extension.name,
+    });
     return toExtensionSummary(updated!);
   }
 
@@ -253,7 +276,10 @@ export class EnterpriseDeveloperPlatformService {
   ): Promise<DeveloperMarketplaceListingSummary[]> {
     const rows = await this.deps.db.query.developerPlatformMarketplaceListings.findMany({
       where: status
-        ? and(eq(developerPlatformMarketplaceListings.companyId, companyId), eq(developerPlatformMarketplaceListings.status, status))
+        ? and(
+            eq(developerPlatformMarketplaceListings.companyId, companyId),
+            eq(developerPlatformMarketplaceListings.status, status),
+          )
         : eq(developerPlatformMarketplaceListings.companyId, companyId),
       orderBy: [desc(developerPlatformMarketplaceListings.updatedAt)],
     });
@@ -278,11 +304,17 @@ export class EnterpriseDeveloperPlatformService {
         createdByUserId: scope.userId,
       })
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'api_key', actionType: 'webhook_subscription_created', subject: input.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'api_key',
+      actionType: 'webhook_subscription_created',
+      subject: input.name,
+    });
     return { ...toWebhookSubscriptionSummary(row!), secret };
   }
 
-  async listWebhookSubscriptions(companyId: string): Promise<DeveloperWebhookSubscriptionSummary[]> {
+  async listWebhookSubscriptions(
+    companyId: string,
+  ): Promise<DeveloperWebhookSubscriptionSummary[]> {
     const rows = await this.deps.db.query.developerPlatformWebhookSubscriptions.findMany({
       where: eq(developerPlatformWebhookSubscriptions.companyId, companyId),
       orderBy: [desc(developerPlatformWebhookSubscriptions.createdAt)],
@@ -298,7 +330,10 @@ export class EnterpriseDeveloperPlatformService {
         limit: 50,
       }),
       this.deps.db.query.integrationWebhookDeliveries.findMany({
-        where: and(eq(integrationWebhookDeliveries.companyId, companyId), eq(integrationWebhookDeliveries.status, 'dead_letter')),
+        where: and(
+          eq(integrationWebhookDeliveries.companyId, companyId),
+          eq(integrationWebhookDeliveries.status, 'dead_letter'),
+        ),
         orderBy: [desc(integrationWebhookDeliveries.updatedAt)],
         limit: 50,
       }),
@@ -347,13 +382,20 @@ export class EnterpriseDeveloperPlatformService {
         createdByUserId: scope.userId,
       })
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'api_key', actionType: 'oauth_app_created', subject: input.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'api_key',
+      actionType: 'oauth_app_created',
+      subject: input.name,
+    });
     return { ...toOauthApplicationSummary(row!), clientSecret };
   }
 
   async listOauthApplications(companyId: string): Promise<DeveloperOauthApplicationSummary[]> {
     const rows = await this.deps.db.query.developerPlatformOauthApplications.findMany({
-      where: and(eq(developerPlatformOauthApplications.companyId, companyId), isNull(developerPlatformOauthApplications.revokedAt)),
+      where: and(
+        eq(developerPlatformOauthApplications.companyId, companyId),
+        isNull(developerPlatformOauthApplications.revokedAt),
+      ),
       orderBy: [desc(developerPlatformOauthApplications.createdAt)],
     });
     return rows.map(toOauthApplicationSummary);
@@ -376,26 +418,42 @@ export class EnterpriseDeveloperPlatformService {
         createdByUserId: scope.userId,
       })
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'personal_token', actionType: 'token_created', subject: input.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'personal_token',
+      actionType: 'token_created',
+      subject: input.name,
+    });
     return { ...toPersonalTokenSummary(row!), token };
   }
 
-  async listPersonalAccessTokens(companyId: string): Promise<DeveloperPersonalAccessTokenSummary[]> {
+  async listPersonalAccessTokens(
+    companyId: string,
+  ): Promise<DeveloperPersonalAccessTokenSummary[]> {
     const rows = await this.deps.db.query.developerPlatformPersonalAccessTokens.findMany({
-      where: and(eq(developerPlatformPersonalAccessTokens.companyId, companyId), isNull(developerPlatformPersonalAccessTokens.revokedAt)),
+      where: and(
+        eq(developerPlatformPersonalAccessTokens.companyId, companyId),
+        isNull(developerPlatformPersonalAccessTokens.revokedAt),
+      ),
       orderBy: [desc(developerPlatformPersonalAccessTokens.createdAt)],
     });
     return rows.map(toPersonalTokenSummary);
   }
 
-  async revokePersonalAccessToken(scope: StaffScope, tokenId: string): Promise<DeveloperPersonalAccessTokenSummary> {
+  async revokePersonalAccessToken(
+    scope: StaffScope,
+    tokenId: string,
+  ): Promise<DeveloperPersonalAccessTokenSummary> {
     const row = await this.ensurePersonalToken(scope.companyId, tokenId);
     const [updated] = await this.deps.db
       .update(developerPlatformPersonalAccessTokens)
       .set({ revokedAt: new Date(), updatedAt: new Date() })
       .where(eq(developerPlatformPersonalAccessTokens.id, row.id))
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'personal_token', actionType: 'token_revoked', subject: row.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'personal_token',
+      actionType: 'token_revoked',
+      subject: row.name,
+    });
     return toPersonalTokenSummary(updated!);
   }
 
@@ -416,13 +474,20 @@ export class EnterpriseDeveloperPlatformService {
         createdByUserId: scope.userId,
       })
       .returning();
-    await this.recordAuthAudit(scope, { tokenType: 'service_account', actionType: 'service_account_created', subject: input.name });
+    await this.recordAuthAudit(scope, {
+      tokenType: 'service_account',
+      actionType: 'service_account_created',
+      subject: input.name,
+    });
     return { ...toServiceAccountSummary(row!), token };
   }
 
   async listServiceAccounts(companyId: string): Promise<DeveloperServiceAccountSummary[]> {
     const rows = await this.deps.db.query.developerPlatformServiceAccounts.findMany({
-      where: and(eq(developerPlatformServiceAccounts.companyId, companyId), isNull(developerPlatformServiceAccounts.revokedAt)),
+      where: and(
+        eq(developerPlatformServiceAccounts.companyId, companyId),
+        isNull(developerPlatformServiceAccounts.revokedAt),
+      ),
       orderBy: [desc(developerPlatformServiceAccounts.createdAt)],
     });
     return rows.map(toServiceAccountSummary);
@@ -457,7 +522,10 @@ export class EnterpriseDeveloperPlatformService {
   ): Promise<DeveloperPlatformActionSummary[]> {
     const rows = await this.deps.db.query.developerPlatformActions.findMany({
       where: status
-        ? and(eq(developerPlatformActions.companyId, companyId), eq(developerPlatformActions.status, status))
+        ? and(
+            eq(developerPlatformActions.companyId, companyId),
+            eq(developerPlatformActions.status, status),
+          )
         : eq(developerPlatformActions.companyId, companyId),
       orderBy: [desc(developerPlatformActions.createdAt)],
     });
@@ -494,19 +562,22 @@ export class EnterpriseDeveloperPlatformService {
       extensionUsageCount: snapshot.extensionUsageCount,
       sdkDownloadCount: snapshot.sdkDownloadCount,
       errorRatePercent:
-        snapshot.apiRequestCount > 0 ? Math.round((snapshot.apiErrorCount / snapshot.apiRequestCount) * 100) : null,
+        snapshot.apiRequestCount > 0
+          ? Math.round((snapshot.apiErrorCount / snapshot.apiRequestCount) * 100)
+          : null,
     };
   }
 
   async captureAnalyticsSnapshot(companyId: string) {
-    const [usage, healthRows, gatewayTraces, webhookDeliveries, extensions, sdkPackages] = await Promise.all([
-      this.deps.integrationApiManagementService.listApiUsage(companyId),
-      this.deps.integrationApiManagementService.getApiHealth(companyId),
-      this.deps.integrationPlatformService.listGatewayTraces(companyId, 100),
-      this.deps.integrationApiManagementService.listWebhookDeliveries(companyId, 100),
-      this.listInstalledExtensions(companyId),
-      this.listSdkPackages(companyId),
-    ]);
+    const [usage, healthRows, gatewayTraces, webhookDeliveries, extensions, sdkPackages] =
+      await Promise.all([
+        this.deps.integrationApiManagementService.listApiUsage(companyId),
+        this.deps.integrationApiManagementService.getApiHealth(companyId),
+        this.deps.integrationPlatformService.listGatewayTraces(companyId, 100),
+        this.deps.integrationApiManagementService.listWebhookDeliveries(companyId, 100),
+        this.listInstalledExtensions(companyId),
+        this.listSdkPackages(companyId),
+      ]);
     const apiRequestCount = usage.reduce((sum, row) => sum + row.requestCount, 0);
     const apiErrorCount = usage.reduce((sum, row) => sum + row.failureCount, 0);
     const healthLatency =
@@ -517,7 +588,9 @@ export class EnterpriseDeveloperPlatformService {
         : null;
     const avgLatencyMs =
       gatewayTraces.length > 0
-        ? Math.round(gatewayTraces.reduce((sum, t) => sum + (t.durationMs ?? 0), 0) / gatewayTraces.length)
+        ? Math.round(
+            gatewayTraces.reduce((sum, t) => sum + (t.durationMs ?? 0), 0) / gatewayTraces.length,
+          )
         : healthLatency;
     const overallStatus = healthRows.some((row) => row.healthStatus === 'unhealthy')
       ? 'unhealthy'
@@ -534,7 +607,9 @@ export class EnterpriseDeveloperPlatformService {
         apiErrorCount,
         avgLatencyMs,
         webhookDeliveryCount: webhookDeliveries.length,
-        webhookFailureCount: webhookDeliveries.filter((d) => d.status === 'failed' || d.status === 'dead_letter').length,
+        webhookFailureCount: webhookDeliveries.filter(
+          (d) => d.status === 'failed' || d.status === 'dead_letter',
+        ).length,
         extensionUsageCount: extensions.length,
         sdkDownloadCount: sdkPackages.length,
         metrics: { healthStatus: overallStatus },
@@ -582,7 +657,9 @@ export class EnterpriseDeveloperPlatformService {
     };
   }
 
-  private async getLatestOpenApiSpec(companyId: string): Promise<DeveloperOpenApiSpecDetail | null> {
+  private async getLatestOpenApiSpec(
+    companyId: string,
+  ): Promise<DeveloperOpenApiSpecDetail | null> {
     const row = await this.deps.db.query.developerPlatformOpenapiSpecs.findFirst({
       where: eq(developerPlatformOpenapiSpecs.companyId, companyId),
       orderBy: [desc(developerPlatformOpenapiSpecs.generatedAt)],
@@ -599,7 +676,11 @@ export class EnterpriseDeveloperPlatformService {
 
   private async recordAuthAudit(
     scope: StaffScope,
-    input: { tokenType: 'api_key' | 'personal_token' | 'service_account'; actionType: string; subject: string },
+    input: {
+      tokenType: 'api_key' | 'personal_token' | 'service_account';
+      actionType: string;
+      subject: string;
+    },
   ) {
     await this.deps.db.insert(developerPlatformAuthAuditLog).values({
       companyId: scope.companyId,
@@ -612,7 +693,10 @@ export class EnterpriseDeveloperPlatformService {
 
   private async ensureExtension(companyId: string, extensionId: string) {
     const row = await this.deps.db.query.developerPlatformExtensions.findFirst({
-      where: and(eq(developerPlatformExtensions.companyId, companyId), eq(developerPlatformExtensions.id, extensionId)),
+      where: and(
+        eq(developerPlatformExtensions.companyId, companyId),
+        eq(developerPlatformExtensions.id, extensionId),
+      ),
     });
     if (!row) throw new EnterpriseDeveloperPlatformError('NOT_FOUND', 'Extension not found');
     return row;
@@ -620,14 +704,20 @@ export class EnterpriseDeveloperPlatformService {
 
   private async ensurePersonalToken(companyId: string, tokenId: string) {
     const row = await this.deps.db.query.developerPlatformPersonalAccessTokens.findFirst({
-      where: and(eq(developerPlatformPersonalAccessTokens.companyId, companyId), eq(developerPlatformPersonalAccessTokens.id, tokenId)),
+      where: and(
+        eq(developerPlatformPersonalAccessTokens.companyId, companyId),
+        eq(developerPlatformPersonalAccessTokens.id, tokenId),
+      ),
     });
-    if (!row) throw new EnterpriseDeveloperPlatformError('NOT_FOUND', 'Personal access token not found');
+    if (!row)
+      throw new EnterpriseDeveloperPlatformError('NOT_FOUND', 'Personal access token not found');
     return row;
   }
 }
 
-function toExtensionSummary(row: typeof developerPlatformExtensions.$inferSelect): DeveloperExtensionSummary {
+function toExtensionSummary(
+  row: typeof developerPlatformExtensions.$inferSelect,
+): DeveloperExtensionSummary {
   return {
     id: row.id,
     extensionKey: row.extensionKey,
@@ -642,7 +732,9 @@ function toExtensionSummary(row: typeof developerPlatformExtensions.$inferSelect
   };
 }
 
-function toMarketplaceSummary(row: typeof developerPlatformMarketplaceListings.$inferSelect): DeveloperMarketplaceListingSummary {
+function toMarketplaceSummary(
+  row: typeof developerPlatformMarketplaceListings.$inferSelect,
+): DeveloperMarketplaceListingSummary {
   return {
     id: row.id,
     name: row.name,
@@ -672,7 +764,9 @@ function toWebhookSubscriptionSummary(
   };
 }
 
-function toOauthApplicationSummary(row: typeof developerPlatformOauthApplications.$inferSelect): DeveloperOauthApplicationSummary {
+function toOauthApplicationSummary(
+  row: typeof developerPlatformOauthApplications.$inferSelect,
+): DeveloperOauthApplicationSummary {
   return {
     id: row.id,
     name: row.name,
@@ -697,7 +791,9 @@ function toPersonalTokenSummary(
   };
 }
 
-function toServiceAccountSummary(row: typeof developerPlatformServiceAccounts.$inferSelect): DeveloperServiceAccountSummary {
+function toServiceAccountSummary(
+  row: typeof developerPlatformServiceAccounts.$inferSelect,
+): DeveloperServiceAccountSummary {
   return {
     id: row.id,
     name: row.name,
@@ -708,7 +804,9 @@ function toServiceAccountSummary(row: typeof developerPlatformServiceAccounts.$i
   };
 }
 
-function toSdkPackageSummary(row: typeof developerPlatformSdkPackages.$inferSelect): DeveloperSdkPackageSummary {
+function toSdkPackageSummary(
+  row: typeof developerPlatformSdkPackages.$inferSelect,
+): DeveloperSdkPackageSummary {
   return {
     id: row.id,
     language: row.language,
@@ -718,7 +816,9 @@ function toSdkPackageSummary(row: typeof developerPlatformSdkPackages.$inferSele
   };
 }
 
-function toActionSummary(row: typeof developerPlatformActions.$inferSelect): DeveloperPlatformActionSummary {
+function toActionSummary(
+  row: typeof developerPlatformActions.$inferSelect,
+): DeveloperPlatformActionSummary {
   return {
     id: row.id,
     actionType: row.actionType,

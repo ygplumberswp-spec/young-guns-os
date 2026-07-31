@@ -1,8 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
-import type { CustomerDetail, CustomerStatus, CustomerPortalAccessSummary, WhatsappMessageSummary } from '@titan/shared';
-import { AI_NAME, CUSTOMER_STATUS_OPTIONS } from '@titan/shared';
+import type {
+  CustomerDetail,
+  CustomerStatus,
+  CustomerPortalAccessSummary,
+  WhatsappMessageSummary,
+} from '@titan/shared';
+import { AI_NAME, CUSTOMER_STATUS_OPTIONS, isPlaceholderEmail } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { addCustomerActivity, fetchCustomer, updateCustomer } from '../../lib/crm-api';
 import {
@@ -18,6 +23,7 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageCustomers } from '../../features/crm/CustomerList';
+import { canAccessMarketingIntelligence } from '../../features/marketing-intelligence/utils';
 
 function formatStatus(status: CustomerDetail['status']): string {
   return CUSTOMER_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
@@ -52,8 +58,10 @@ export function CustomerDetailPage() {
   const [isPortalLoading, setIsPortalLoading] = useState(false);
   const [isInvitingPortal, setIsInvitingPortal] = useState(false);
 
-  const canWrite = useMemo(
-    () => (user ? canManageCustomers(user.permissions) : false),
+  const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
+
+  const canAccessReactivation = useMemo(
+    () => (user ? canAccessMarketingIntelligence(user.permissions) : false),
     [user],
   );
 
@@ -348,11 +356,29 @@ export function CustomerDetailPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
+      {customer.email && isPlaceholderEmail(customer.email) ? (
+        <p className="form-error">
+          This customer&apos;s email looks like a shared/placeholder company inbox, not a
+          verified personal address. It will not count as verified contact for marketing.
+          {canAccessReactivation ? (
+            <>
+              {' '}
+              <Link href="/marketing?tab=reactivation">Review in Reactivation Eligibility</Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+
       <div className="crm-detail">
         <Panel title="Profile">
           {isEditing && canWrite ? (
             <form className="crm-form" onSubmit={(event) => void handleSave(event)}>
-              <Input label="Name" value={name} onChange={(event) => setName(event.target.value)} required />
+              <Input
+                label="Name"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                required
+              />
 
               <Input
                 label="Email"
@@ -361,7 +387,11 @@ export function CustomerDetailPage() {
                 onChange={(event) => setEmail(event.target.value)}
               />
 
-              <Input label="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
+              <Input
+                label="Phone"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+              />
 
               <label className="titan-input-group">
                 <span className="titan-input-label">Status</span>
@@ -511,7 +541,8 @@ export function CustomerDetailPage() {
             ) : (
               <form className="stack-form" onSubmit={(event) => void handleInvitePortal(event)}>
                 <p className="page-muted">
-                  Invite this customer to their own portal. Creating the customer record does not grant login access.
+                  Invite this customer to their own portal. Creating the customer record does not
+                  grant login access.
                 </p>
                 <Input
                   label="Invitation email"
@@ -524,7 +555,9 @@ export function CustomerDetailPage() {
                   {isInvitingPortal ? 'Creating invitation…' : 'Invite to portal'}
                 </Button>
                 {inviteUrl ? (
-                  <p className="page-muted">Share this secure link with the customer: {inviteUrl}</p>
+                  <p className="page-muted">
+                    Share this secure link with the customer: {inviteUrl}
+                  </p>
                 ) : null}
               </form>
             )}
@@ -543,7 +576,8 @@ export function CustomerDetailPage() {
                   <p className="crm-activity-item__content">{message.messageContent}</p>
                   <p className="crm-activity-item__meta">
                     {message.direction} · {message.deliveryStatus}
-                    {message.isDraft ? ' · draft' : ''} · {new Date(message.createdAt).toLocaleString()}
+                    {message.isDraft ? ' · draft' : ''} ·{' '}
+                    {new Date(message.createdAt).toLocaleString()}
                   </p>
                   {message.isDraft && canCommunicate ? (
                     <Button
@@ -561,7 +595,10 @@ export function CustomerDetailPage() {
           )}
 
           {canCommunicate ? (
-            <form className="crm-activity-form" onSubmit={(event) => void handleSendWhatsapp(event)}>
+            <form
+              className="crm-activity-form"
+              onSubmit={(event) => void handleSendWhatsapp(event)}
+            >
               <label className="titan-input-group">
                 <span className="titan-input-label">Send WhatsApp message</span>
                 <textarea
@@ -581,11 +618,16 @@ export function CustomerDetailPage() {
                 />
                 Save as draft for approval (recommended)
               </label>
-              <Button type="submit" disabled={isSendingWhatsapp || !whatsappMessage.trim() || !phone.trim()}>
+              <Button
+                type="submit"
+                disabled={isSendingWhatsapp || !whatsappMessage.trim() || !phone.trim()}
+              >
                 {isSendingWhatsapp ? 'Sending…' : sendAsDraft ? 'Create draft' : 'Send WhatsApp'}
               </Button>
               {!phone.trim() ? (
-                <p className="page-muted">Add a phone number to the customer profile to send WhatsApp messages.</p>
+                <p className="page-muted">
+                  Add a phone number to the customer profile to send WhatsApp messages.
+                </p>
               ) : null}
             </form>
           ) : null}

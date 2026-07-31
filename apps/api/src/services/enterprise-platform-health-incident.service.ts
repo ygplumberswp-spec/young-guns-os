@@ -1,4 +1,8 @@
-import type { CreatePhIncidentRequest, ItoIncidentSummary, UpdatePhIncidentRequest } from '@titan/shared';
+import type {
+  CreatePhIncidentRequest,
+  ItoIncidentSummary,
+  UpdatePhIncidentRequest,
+} from '@titan/shared';
 import type { EnterpriseItOperationsService } from './enterprise-it-operations.service.js';
 
 type StaffScope = { companyId: string; userId: string };
@@ -24,7 +28,11 @@ export class EnterprisePlatformHealthIncidentService {
     });
   }
 
-  updateIncident(scope: StaffScope, incidentId: string, input: UpdatePhIncidentRequest): Promise<ItoIncidentSummary> {
+  updateIncident(
+    scope: StaffScope,
+    incidentId: string,
+    input: UpdatePhIncidentRequest,
+  ): Promise<ItoIncidentSummary> {
     return this.itOperationsService.updateIncident(scope, incidentId, {
       title: input.title,
       description: input.description,

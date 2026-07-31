@@ -119,7 +119,9 @@ export function createVoiceRouter({
   router.post('/sessions', requireWrite, async (req, res) => {
     const parsed = createSessionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid session payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid session payload' } });
       return;
     }
 
@@ -135,13 +137,19 @@ export function createVoiceRouter({
   router.patch('/sessions/:id', requireWrite, async (req, res) => {
     const parsed = updateSessionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid session payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid session payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const session = await voiceService.updateSession(companyId, getRouteParam(req.params.id), parsed.data);
+      const session = await voiceService.updateSession(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { session } });
     } catch (error) {
       handleVoiceError(res, error);
@@ -157,13 +165,19 @@ export function createVoiceRouter({
   router.post('/sessions/:id/outcomes', requireWrite, async (req, res) => {
     const parsed = createOutcomeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid outcome payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid outcome payload' } });
       return;
     }
 
     try {
       const auth = getAuth(req);
-      const outcome = await voiceService.createOutcome(auth, getRouteParam(req.params.id), parsed.data);
+      const outcome = await voiceService.createOutcome(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.status(201).json({ data: { outcome } });
     } catch (error) {
       handleVoiceError(res, error);
@@ -197,7 +211,11 @@ export function createVoiceRouter({
 
     try {
       const { companyId } = getAuth(req);
-      const followUp = await voiceService.updateFollowUp(companyId, getRouteParam(req.params.id), parsed.data);
+      const followUp = await voiceService.updateFollowUp(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { followUp } });
     } catch (error) {
       handleVoiceError(res, error);
@@ -207,7 +225,10 @@ export function createVoiceRouter({
   router.get('/sessions/:id/conversations', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     try {
-      const conversations = await voiceService.listConversations(companyId, getRouteParam(req.params.id));
+      const conversations = await voiceService.listConversations(
+        companyId,
+        getRouteParam(req.params.id),
+      );
       res.json({ data: { conversations } });
     } catch (error) {
       handleVoiceError(res, error);
@@ -217,13 +238,19 @@ export function createVoiceRouter({
   router.post('/sessions/:id/conversations', requireWrite, async (req, res) => {
     const parsed = createConversationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid conversation payload' } });
       return;
     }
 
     try {
       const auth = getAuth(req);
-      const conversation = await voiceService.addConversationTurn(auth, getRouteParam(req.params.id), parsed.data);
+      const conversation = await voiceService.addConversationTurn(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.status(201).json({ data: { conversation } });
     } catch (error) {
       handleVoiceError(res, error);
@@ -243,7 +270,10 @@ export function createVoiceRouter({
   router.get('/sessions/:id/qualification', requireRead, async (req, res) => {
     try {
       const { companyId } = getAuth(req);
-      const qualification = await voiceService.analyzeQualification(companyId, getRouteParam(req.params.id));
+      const qualification = await voiceService.analyzeQualification(
+        companyId,
+        getRouteParam(req.params.id),
+      );
       res.json({ data: { qualification } });
     } catch (error) {
       handleVoiceError(res, error);

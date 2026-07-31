@@ -1,45 +1,139 @@
 import { eq } from 'drizzle-orm';
-import type { RlmLaunchChecklistItemSummary, RlmReleaseStatus, RlmVersionRecordSummary } from '@titan/shared';
+import type {
+  RlmLaunchChecklistItemSummary,
+  RlmReleaseStatus,
+  RlmVersionRecordSummary,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { rlmLaunchChecklistItems, rlmVersionRecords } from '@titan/db';
 
 type StaffScope = { companyId: string; userId: string };
 
 const DEFAULT_LAUNCH_CHECKLIST: Array<{ itemKey: string; itemName: string; category: string }> = [
-  { itemKey: 'production_infrastructure', itemName: 'Production infrastructure verified', category: 'infrastructure' },
-  { itemKey: 'security_hardening', itemName: 'Security hardening and penetration review complete', category: 'security' },
-  { itemKey: 'integrations_live', itemName: 'Live integrations verified (Xero, email, payments)', category: 'integrations' },
-  { itemKey: 'ios_production_build', itemName: 'iOS production build verified', category: 'mobile' },
-  { itemKey: 'android_production_build', itemName: 'Android production build verified', category: 'mobile' },
-  { itemKey: 'app_store_metadata', itemName: 'App Store metadata and privacy declarations prepared', category: 'mobile' },
-  { itemKey: 'play_store_listing', itemName: 'Google Play Store listing prepared', category: 'mobile' },
-  { itemKey: 'documentation_complete', itemName: 'Production documentation complete', category: 'documentation' },
-  { itemKey: 'monitoring_active', itemName: 'Monitoring and alerting active', category: 'monitoring' },
-  { itemKey: 'backups_verified', itemName: 'Backup and recovery procedures verified', category: 'backups' },
-  { itemKey: 'billing_configured', itemName: 'Billing and subscription flows configured', category: 'billing' },
-  { itemKey: 'customer_onboarding', itemName: 'Customer onboarding flows tested', category: 'onboarding' },
-  { itemKey: 'support_readiness', itemName: 'Support team trained and escalation paths defined', category: 'support' },
-  { itemKey: 'release_notes_published', itemName: 'Release notes finalized for v1.0.0', category: 'release' },
-  { itemKey: 'owner_approval', itemName: 'Owner approval for public release obtained', category: 'release' },
+  {
+    itemKey: 'production_infrastructure',
+    itemName: 'Production infrastructure verified',
+    category: 'infrastructure',
+  },
+  {
+    itemKey: 'security_hardening',
+    itemName: 'Security hardening and penetration review complete',
+    category: 'security',
+  },
+  {
+    itemKey: 'integrations_live',
+    itemName: 'Live integrations verified (Xero, email, payments)',
+    category: 'integrations',
+  },
+  {
+    itemKey: 'ios_production_build',
+    itemName: 'iOS production build verified',
+    category: 'mobile',
+  },
+  {
+    itemKey: 'android_production_build',
+    itemName: 'Android production build verified',
+    category: 'mobile',
+  },
+  {
+    itemKey: 'app_store_metadata',
+    itemName: 'App Store metadata and privacy declarations prepared',
+    category: 'mobile',
+  },
+  {
+    itemKey: 'play_store_listing',
+    itemName: 'Google Play Store listing prepared',
+    category: 'mobile',
+  },
+  {
+    itemKey: 'documentation_complete',
+    itemName: 'Production documentation complete',
+    category: 'documentation',
+  },
+  {
+    itemKey: 'monitoring_active',
+    itemName: 'Monitoring and alerting active',
+    category: 'monitoring',
+  },
+  {
+    itemKey: 'backups_verified',
+    itemName: 'Backup and recovery procedures verified',
+    category: 'backups',
+  },
+  {
+    itemKey: 'billing_configured',
+    itemName: 'Billing and subscription flows configured',
+    category: 'billing',
+  },
+  {
+    itemKey: 'customer_onboarding',
+    itemName: 'Customer onboarding flows tested',
+    category: 'onboarding',
+  },
+  {
+    itemKey: 'support_readiness',
+    itemName: 'Support team trained and escalation paths defined',
+    category: 'support',
+  },
+  {
+    itemKey: 'release_notes_published',
+    itemName: 'Release notes finalized for v1.0.0',
+    category: 'release',
+  },
+  {
+    itemKey: 'owner_approval',
+    itemName: 'Owner approval for public release obtained',
+    category: 'release',
+  },
 ];
 
 const V1_FEATURE_SUMMARY = [
-  { module: 'CRM & Customers', description: 'Customer management, activities, and portal experience' },
-  { module: 'Jobs & Dispatch', description: 'Job scheduling, dispatch intelligence, and field workforce' },
+  {
+    module: 'CRM & Customers',
+    description: 'Customer management, activities, and portal experience',
+  },
+  {
+    module: 'Jobs & Dispatch',
+    description: 'Job scheduling, dispatch intelligence, and field workforce',
+  },
   { module: 'Finance', description: 'Invoicing, Xero integration, and financial intelligence' },
-  { module: 'Fleet & Assets', description: 'Fleet tracking, asset lifecycle, and equipment intelligence' },
-  { module: 'Mobile Platform', description: 'Offline sync, push notifications, camera, GPS, and field media' },
-  { module: 'Integrations', description: 'Xero, email, WhatsApp, SMS, payments, and connector hub' },
+  {
+    module: 'Fleet & Assets',
+    description: 'Fleet tracking, asset lifecycle, and equipment intelligence',
+  },
+  {
+    module: 'Mobile Platform',
+    description: 'Offline sync, push notifications, camera, GPS, and field media',
+  },
+  {
+    module: 'Integrations',
+    description: 'Xero, email, WhatsApp, SMS, payments, and connector hub',
+  },
   { module: 'AURA AI', description: 'Agent orchestration, task approval, and domain specialists' },
-  { module: 'Enterprise Security', description: 'RBAC, audit logging, tenant isolation, and compliance' },
+  {
+    module: 'Enterprise Security',
+    description: 'RBAC, audit logging, tenant isolation, and compliance',
+  },
   { module: 'Mission Control', description: 'Platform health, alerts, and operational dashboard' },
-  { module: 'Release & Launch', description: 'Release center, production launch, and go-live wizard' },
+  {
+    module: 'Release & Launch',
+    description: 'Release center, production launch, and go-live wizard',
+  },
 ];
 
 const V1_KNOWN_LIMITATIONS = [
-  { area: 'App Store Submission', description: 'Manual submission required — no automatic publishing' },
-  { area: 'Documentation', description: 'Documentation artifacts require manual completion of outlined sections' },
-  { area: 'White-label', description: 'Branding profiles must be configured per tenant for full white-label release' },
+  {
+    area: 'App Store Submission',
+    description: 'Manual submission required — no automatic publishing',
+  },
+  {
+    area: 'Documentation',
+    description: 'Documentation artifacts require manual completion of outlined sections',
+  },
+  {
+    area: 'White-label',
+    description: 'Branding profiles must be configured per tenant for full white-label release',
+  },
 ];
 
 export class EnterpriseReleaseManagementVersionService {
@@ -135,7 +229,9 @@ export class EnterpriseReleaseManagementVersionService {
 
   isLaunchChecklistComplete(items: RlmLaunchChecklistItemSummary[]): boolean {
     const required = items.filter((i) => i.isRequired);
-    return required.length > 0 && required.every((i) => i.status === 'passed' || i.status === 'manual');
+    return (
+      required.length > 0 && required.every((i) => i.status === 'passed' || i.status === 'manual')
+    );
   }
 }
 
@@ -156,7 +252,9 @@ function toVersionSummary(row: typeof rlmVersionRecords.$inferSelect): RlmVersio
   };
 }
 
-function toChecklistSummary(row: typeof rlmLaunchChecklistItems.$inferSelect): RlmLaunchChecklistItemSummary {
+function toChecklistSummary(
+  row: typeof rlmLaunchChecklistItems.$inferSelect,
+): RlmLaunchChecklistItemSummary {
   return {
     id: row.id,
     itemKey: row.itemKey,

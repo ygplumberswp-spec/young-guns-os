@@ -1,0 +1,18 @@
+{
+  "name": "TITAN Mobile",
+  "short_name": "TITAN",
+  "description": "Technician field execution — installable mobile shell with offline action queue",
+  "start_url": "/mobile",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/titan-mobile-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

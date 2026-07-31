@@ -1,6 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { apiReadCache, buildTenantCacheKey, cachedTenantRead, invalidateIntegrationReadCaches } from './api-read-cache.js';
+import {
+  apiReadCache,
+  buildTenantCacheKey,
+  cachedTenantRead,
+  invalidateIntegrationReadCaches,
+} from './api-read-cache.js';
 
 test('cachedTenantRead stores and returns values until invalidated', async () => {
   apiReadCache.invalidateAll();
@@ -56,21 +61,32 @@ test('invalidateIntegrationReadCaches clears integration namespaces only for ten
   apiReadCache.invalidateAll();
   let hubLoads = 0;
 
-  await cachedTenantRead(buildTenantCacheKey('tenant-a', 'integration-hub/dashboard', 'simple'), async () => {
-    hubLoads += 1;
-    return { ok: true };
-  });
-  await cachedTenantRead(buildTenantCacheKey('tenant-a', 'crm/stats'), async () => ({ customers: 1 }));
-  await cachedTenantRead(buildTenantCacheKey('tenant-b', 'integration-hub/dashboard', 'simple'), async () => ({
-    ok: true,
+  await cachedTenantRead(
+    buildTenantCacheKey('tenant-a', 'integration-hub/dashboard', 'simple'),
+    async () => {
+      hubLoads += 1;
+      return { ok: true };
+    },
+  );
+  await cachedTenantRead(buildTenantCacheKey('tenant-a', 'crm/stats'), async () => ({
+    customers: 1,
   }));
+  await cachedTenantRead(
+    buildTenantCacheKey('tenant-b', 'integration-hub/dashboard', 'simple'),
+    async () => ({
+      ok: true,
+    }),
+  );
 
   invalidateIntegrationReadCaches('tenant-a');
 
-  await cachedTenantRead(buildTenantCacheKey('tenant-a', 'integration-hub/dashboard', 'simple'), async () => {
-    hubLoads += 1;
-    return { ok: true };
-  });
+  await cachedTenantRead(
+    buildTenantCacheKey('tenant-a', 'integration-hub/dashboard', 'simple'),
+    async () => {
+      hubLoads += 1;
+      return { ok: true };
+    },
+  );
 
   const crmCached = apiReadCache.get(buildTenantCacheKey('tenant-a', 'crm/stats'));
   const tenantBHubCached = apiReadCache.get(

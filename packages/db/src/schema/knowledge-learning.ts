@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { documents } from './documents';
 import { users } from './users';
@@ -20,7 +29,11 @@ export const knowledgeContentStatusEnum = pgEnum('knowledge_content_status', [
   'archived',
 ]);
 
-export const knowledgeEntityTypeEnum = pgEnum('knowledge_entity_type', ['article', 'sop', 'policy']);
+export const knowledgeEntityTypeEnum = pgEnum('knowledge_entity_type', [
+  'article',
+  'sop',
+  'policy',
+]);
 
 export const policyTypeEnum = pgEnum('policy_type', [
   'safety',
@@ -38,7 +51,11 @@ export const trainingContentTypeEnum = pgEnum('training_content_type', [
   'other',
 ]);
 
-export const trainingCourseStatusEnum = pgEnum('training_course_status', ['draft', 'active', 'archived']);
+export const trainingCourseStatusEnum = pgEnum('training_course_status', [
+  'draft',
+  'active',
+  'archived',
+]);
 
 export const trainingRecordStatusEnum = pgEnum('training_record_status', [
   'not_started',
@@ -79,7 +96,9 @@ export const knowledgeArticles = pgTable('knowledge_articles', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => knowledgeCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => knowledgeCategories.id, {
+    onDelete: 'set null',
+  }),
   articleType: knowledgeArticleTypeEnum('article_type').notNull().default('article'),
   title: text('title').notNull(),
   content: text('content').notNull(),
@@ -94,7 +113,9 @@ export const knowledgeArticles = pgTable('knowledge_articles', {
   createdByUserId: uuid('created_by_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'no action' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -122,7 +143,9 @@ export const sopDocuments = pgTable('sop_documents', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => knowledgeCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => knowledgeCategories.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   content: text('content').notNull(),
   summary: text('summary'),
@@ -137,7 +160,9 @@ export const sopDocuments = pgTable('sop_documents', {
   createdByUserId: uuid('created_by_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'no action' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -148,7 +173,9 @@ export const trainingCourses = pgTable('training_courses', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => knowledgeCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => knowledgeCategories.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   description: text('description'),
   contentType: trainingContentTypeEnum('content_type').notNull().default('article'),
@@ -190,7 +217,9 @@ export const companyPolicies = pgTable('company_policies', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => knowledgeCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => knowledgeCategories.id, {
+    onDelete: 'set null',
+  }),
   policyType: policyTypeEnum('policy_type').notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(),
@@ -204,7 +233,9 @@ export const companyPolicies = pgTable('company_policies', {
   createdByUserId: uuid('created_by_user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'no action' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

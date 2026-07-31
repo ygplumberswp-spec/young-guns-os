@@ -1,4 +1,14 @@
-import { boolean, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { jobs } from './jobs';
@@ -81,12 +91,18 @@ export const ucPlatformConfig = pgTable('uc_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   globalPolicies: jsonb('global_policies').$type<Record<string, unknown>>().notNull().default({}),
-  aiVoiceSettings: jsonb('ai_voice_settings').$type<Record<string, unknown>>().notNull().default({}),
+  aiVoiceSettings: jsonb('ai_voice_settings')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   recordingPolicy: jsonb('recording_policy').$type<Record<string, unknown>>().notNull().default({}),
   retentionDays: integer('retention_days').notNull().default(365),
   consentRequired: boolean('consent_required').notNull().default(true),
   routingRules: jsonb('routing_rules').$type<Record<string, unknown>>().notNull().default({}),
-  notificationTemplates: jsonb('notification_templates').$type<Record<string, unknown>>().notNull().default({}),
+  notificationTemplates: jsonb('notification_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -139,7 +155,9 @@ export const ucDispatchNotifications = pgTable('uc_dispatch_notifications', {
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
   notificationType: ucDispatchNotificationTypeEnum('notification_type').notNull(),
   channel: ucProviderChannelEnum('channel'),
-  providerAdapterId: uuid('provider_adapter_id').references(() => ucProviderAdapters.id, { onDelete: 'set null' }),
+  providerAdapterId: uuid('provider_adapter_id').references(() => ucProviderAdapters.id, {
+    onDelete: 'set null',
+  }),
   status: ucDispatchNotificationStatusEnum('status').notNull().default('pending'),
   recipientAddress: text('recipient_address'),
   messageBody: text('message_body'),
@@ -181,7 +199,10 @@ export const ucAnalyticsSnapshots = pgTable('uc_analytics_snapshots', {
   leadConversionRate: numeric('lead_conversion_rate', { precision: 5, scale: 2 }),
   customerSatisfactionScore: numeric('customer_satisfaction_score', { precision: 5, scale: 2 }),
   channelUsage: jsonb('channel_usage').$type<Record<string, unknown>>().notNull().default({}),
-  providerPerformance: jsonb('provider_performance').$type<Record<string, unknown>>().notNull().default({}),
+  providerPerformance: jsonb('provider_performance')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

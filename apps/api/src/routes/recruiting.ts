@@ -63,17 +63,25 @@ export function createRecruitingRouter({
     next();
   });
 
-  router.get('/stats', requireAnyPermission('recruiting:read', 'recruiting:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stats = await recruitingService.getStats(companyId);
-    res.json({ data: { stats } });
-  });
+  router.get(
+    '/stats',
+    requireAnyPermission('recruiting:read', 'recruiting:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const stats = await recruitingService.getStats(companyId);
+      res.json({ data: { stats } });
+    },
+  );
 
-  router.get('/candidates', requireAnyPermission('recruiting:read', 'recruiting:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const candidates = await recruitingService.listCandidates(companyId);
-    res.json({ data: { candidates } });
-  });
+  router.get(
+    '/candidates',
+    requireAnyPermission('recruiting:read', 'recruiting:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const candidates = await recruitingService.listCandidates(companyId);
+      res.json({ data: { candidates } });
+    },
+  );
 
   router.post('/candidates', requireAnyPermission('recruiting:write'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -81,7 +89,11 @@ export function createRecruitingRouter({
 
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid candidate payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }
@@ -94,17 +106,24 @@ export function createRecruitingRouter({
     }
   });
 
-  router.get('/candidates/:id', requireAnyPermission('recruiting:read', 'recruiting:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const candidate = await recruitingService.getCandidate(companyId, getRouteParam(req.params.id));
+  router.get(
+    '/candidates/:id',
+    requireAnyPermission('recruiting:read', 'recruiting:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const candidate = await recruitingService.getCandidate(
+        companyId,
+        getRouteParam(req.params.id),
+      );
 
-    if (!candidate) {
-      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Candidate not found' } });
-      return;
-    }
+      if (!candidate) {
+        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Candidate not found' } });
+        return;
+      }
 
-    res.json({ data: { candidate } });
-  });
+      res.json({ data: { candidate } });
+    },
+  );
 
   router.patch('/candidates/:id', requireAnyPermission('recruiting:write'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -112,7 +131,11 @@ export function createRecruitingRouter({
 
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid candidate payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid candidate payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }
@@ -129,11 +152,15 @@ export function createRecruitingRouter({
     }
   });
 
-  router.get('/applications', requireAnyPermission('recruiting:read', 'recruiting:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const applications = await recruitingService.listApplications(companyId);
-    res.json({ data: { applications } });
-  });
+  router.get(
+    '/applications',
+    requireAnyPermission('recruiting:read', 'recruiting:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const applications = await recruitingService.listApplications(companyId);
+      res.json({ data: { applications } });
+    },
+  );
 
   router.post('/applications', requireAnyPermission('recruiting:write'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -141,7 +168,11 @@ export function createRecruitingRouter({
 
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid application payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid application payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }
@@ -160,7 +191,11 @@ export function createRecruitingRouter({
 
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid application payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid application payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }

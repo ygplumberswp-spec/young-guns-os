@@ -101,10 +101,19 @@ export class EnterpriseNotificationsService {
       this.listPlatformAlerts(scope.companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(scope.companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(scope.companyId)
+      .catch(() => null);
 
-    const notificationHealth = this.buildNotificationHealth(alerts, deliveryJobs, escalations, platformAlerts);
-    const criticalAlertCount = alerts.filter((a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency').length;
+    const notificationHealth = this.buildNotificationHealth(
+      alerts,
+      deliveryJobs,
+      escalations,
+      platformAlerts,
+    );
+    const criticalAlertCount = alerts.filter(
+      (a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency',
+    ).length;
     const overallNotificationHealthStatus =
       criticalAlertCount > 0 || notificationHealth.failedDeliveryCount > 10
         ? 'critical'
@@ -146,7 +155,10 @@ export class EnterpriseNotificationsService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateNcPlatformConfigRequest): Promise<NcPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateNcPlatformConfigRequest,
+  ): Promise<NcPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(ncPlatformConfig)
@@ -171,7 +183,10 @@ export class EnterpriseNotificationsService {
     });
 
     const states = await this.deps.db.query.ncInboxState.findMany({
-      where: and(eq(ncInboxState.companyId, scope.companyId), eq(ncInboxState.userId, scope.userId)),
+      where: and(
+        eq(ncInboxState.companyId, scope.companyId),
+        eq(ncInboxState.userId, scope.userId),
+      ),
     });
     const stateByNotificationId = new Map(states.map((s) => [s.notificationId, s]));
 
@@ -193,7 +208,10 @@ export class EnterpriseNotificationsService {
     });
   }
 
-  async updateInboxState(scope: StaffScope, input: UpdateNcInboxStateRequest): Promise<NcInboxItemSummary[]> {
+  async updateInboxState(
+    scope: StaffScope,
+    input: UpdateNcInboxStateRequest,
+  ): Promise<NcInboxItemSummary[]> {
     const existing = await this.deps.db.query.ncInboxState.findFirst({
       where: and(
         eq(ncInboxState.companyId, scope.companyId),
@@ -208,7 +226,12 @@ export class EnterpriseNotificationsService {
         .set({
           isPinned: input.isPinned ?? existing.isPinned,
           isArchived: input.isArchived ?? existing.isArchived,
-          snoozedUntil: input.snoozedUntil === undefined ? existing.snoozedUntil : input.snoozedUntil ? new Date(input.snoozedUntil) : null,
+          snoozedUntil:
+            input.snoozedUntil === undefined
+              ? existing.snoozedUntil
+              : input.snoozedUntil
+                ? new Date(input.snoozedUntil)
+                : null,
           updatedAt: new Date(),
         })
         .where(eq(ncInboxState.id, existing.id));
@@ -250,7 +273,10 @@ export class EnterpriseNotificationsService {
     return rows.map(toRuleSummary);
   }
 
-  async createRule(scope: StaffScope, input: CreateNcNotificationRuleRequest): Promise<NcNotificationRuleSummary> {
+  async createRule(
+    scope: StaffScope,
+    input: CreateNcNotificationRuleRequest,
+  ): Promise<NcNotificationRuleSummary> {
     const [created] = await this.deps.db
       .insert(ncNotificationRules)
       .values({
@@ -269,14 +295,18 @@ export class EnterpriseNotificationsService {
         conditions: input.conditions ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to create notification rule');
+    if (!created)
+      throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to create notification rule');
     await this.logAudit(scope, 'create_rule', 'nc_notification_rules', created.id);
     return toRuleSummary(created);
   }
 
   async listUserPreferences(scope: StaffScope): Promise<NcUserPreferenceSummary[]> {
     const rows = await this.deps.db.query.ncUserPreferences.findMany({
-      where: and(eq(ncUserPreferences.companyId, scope.companyId), eq(ncUserPreferences.userId, scope.userId)),
+      where: and(
+        eq(ncUserPreferences.companyId, scope.companyId),
+        eq(ncUserPreferences.userId, scope.userId),
+      ),
     });
     return rows.map(toUserPreferenceSummary);
   }
@@ -377,7 +407,9 @@ export class EnterpriseNotificationsService {
   async syncPlatformAlerts(scope: StaffScope): Promise<NcPlatformAlertSummary[]> {
     const deliveryJobs = await this.deliveryService.listDeliveryJobs(scope.companyId);
     const alerts = await this.alertService.listAlerts(scope.companyId, { status: 'open' });
-    const escalations = await this.escalationService.listEscalations(scope.companyId, { status: 'pending' });
+    const escalations = await this.escalationService.listEscalations(scope.companyId, {
+      status: 'pending',
+    });
     const synced: NcPlatformAlertSummary[] = [];
 
     const failedDeliveries = deliveryJobs.filter((j) => j.status === 'failed');
@@ -404,7 +436,9 @@ export class EnterpriseNotificationsService {
       );
     }
 
-    const criticalAlerts = alerts.filter((a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency');
+    const criticalAlerts = alerts.filter(
+      (a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency',
+    );
     if (criticalAlerts.length > 0) {
       synced.push(
         await this.upsertPlatformAlert(scope.companyId, {
@@ -449,12 +483,16 @@ export class EnterpriseNotificationsService {
         },
       })
       .returning();
-    if (!created) throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to capture analytics');
+    if (!created)
+      throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to capture analytics');
     await this.logAudit(scope, 'capture_analytics', 'nc_analytics_snapshots', created.id);
     return toAnalyticsSummary(created);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateNcActionDraftRequest): Promise<NcActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateNcActionDraftRequest,
+  ): Promise<NcActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(ncActionDrafts)
       .values({
@@ -466,7 +504,8 @@ export class EnterpriseNotificationsService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseNotificationsError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'nc_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -489,12 +528,18 @@ export class EnterpriseNotificationsService {
     return rows.map(toAuditLogSummary);
   }
 
-  async listPlatformAlerts(companyId: string, options?: { status?: string }): Promise<NcPlatformAlertSummary[]> {
+  async listPlatformAlerts(
+    companyId: string,
+    options?: { status?: string },
+  ): Promise<NcPlatformAlertSummary[]> {
     const rows = await this.deps.db.query.ncPlatformAlerts.findMany({
       where: options?.status
         ? and(
             eq(ncPlatformAlerts.companyId, companyId),
-            eq(ncPlatformAlerts.status, options.status as typeof ncPlatformAlerts.status.enumValues[number]),
+            eq(
+              ncPlatformAlerts.status,
+              options.status as (typeof ncPlatformAlerts.status.enumValues)[number],
+            ),
           )
         : eq(ncPlatformAlerts.companyId, companyId),
       orderBy: [desc(ncPlatformAlerts.createdAt)],
@@ -530,7 +575,12 @@ export class EnterpriseNotificationsService {
 
   private async upsertPlatformAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description?: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description?: string;
+    },
   ): Promise<NcPlatformAlertSummary> {
     const existing = await this.deps.db.query.ncPlatformAlerts.findFirst({
       where: and(
@@ -575,7 +625,9 @@ export class EnterpriseNotificationsService {
   ): NcNotificationHealthSummary {
     return {
       activeAlertCount: alerts.length,
-      criticalAlertCount: alerts.filter((a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency').length,
+      criticalAlertCount: alerts.filter(
+        (a) => a.alertLevel === 'critical' || a.alertLevel === 'emergency',
+      ).length,
       failedDeliveryCount: deliveryJobs.filter((j) => j.status === 'failed').length,
       queuedDeliveryCount: deliveryJobs.filter((j) => j.status === 'queued').length,
       pendingEscalationCount: escalations.length,
@@ -609,7 +661,9 @@ export class EnterpriseNotificationsService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof ncPlatformConfig.$inferSelect): NcPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof ncPlatformConfig.$inferSelect,
+): NcPlatformConfigSummary {
   return {
     deliveryPolicy: row.deliveryPolicy ?? {},
     escalationPolicy: row.escalationPolicy ?? {},
@@ -638,7 +692,9 @@ function toRuleSummary(row: typeof ncNotificationRules.$inferSelect): NcNotifica
   };
 }
 
-function toUserPreferenceSummary(row: typeof ncUserPreferences.$inferSelect): NcUserPreferenceSummary {
+function toUserPreferenceSummary(
+  row: typeof ncUserPreferences.$inferSelect,
+): NcUserPreferenceSummary {
   return {
     id: row.id,
     channel: row.channel,

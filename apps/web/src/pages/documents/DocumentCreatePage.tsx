@@ -5,10 +5,7 @@ import type { CustomerSummary, DocumentCategorySummary, JobSummary } from '@tita
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { fetchJobs } from '../../lib/jobs-api';
-import {
-  createDocument,
-  fetchDocumentCategories,
-} from '../../lib/documents-api';
+import { createDocument, fetchDocumentCategories } from '../../lib/documents-api';
 import { useAuth } from '../../lib/auth-context';
 import { DocumentsNav } from '../../features/documents/DocumentsNav';
 import { canManageDocuments } from '../../features/documents/utils';
@@ -33,9 +30,7 @@ export function DocumentCreatePage() {
 
   const canWrite = user ? canManageDocuments(user.permissions) : false;
 
-  const filteredJobs = customerId
-    ? jobs.filter((job) => job.customerId === customerId)
-    : jobs;
+  const filteredJobs = customerId ? jobs.filter((job) => job.customerId === customerId) : jobs;
 
   useEffect(() => {
     if (user && !canWrite) navigate('/documents');
@@ -72,7 +67,9 @@ export function DocumentCreatePage() {
     }
 
     void loadData();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   useEffect(() => {

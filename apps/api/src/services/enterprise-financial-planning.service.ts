@@ -87,7 +87,8 @@ export class EnterpriseFinancialPlanningService {
   constructor(private readonly deps: FinancialPlanningDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseFinancialPlanningDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       budgets,
@@ -127,7 +128,9 @@ export class EnterpriseFinancialPlanningService {
     ]);
 
     const activeBudgets = budgets.filter((b) => b.status === 'active');
-    const activeForecasts = forecasts.filter((f) => f.workflowStatus === 'executed' || f.workflowStatus === 'approved');
+    const activeForecasts = forecasts.filter(
+      (f) => f.workflowStatus === 'executed' || f.workflowStatus === 'approved',
+    );
     const treasuryBalanceCents = treasuryAccounts.reduce(
       (sum, account) => sum + (account.currentBalanceCents ?? 0),
       0,
@@ -169,13 +172,14 @@ export class EnterpriseFinancialPlanningService {
   }
 
   async getFinancialMonitoring(companyId: string): Promise<FpFinancialMonitoringSummary> {
-    const [cashFlow, receivables, budgets, accountingProviders, bankingProviders] = await Promise.all([
-      this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId),
-      this.deps.financeIntelligenceService.getReceivablesIntelligence(companyId),
-      this.listBudgets(companyId),
-      this.listAccountingProviders(companyId),
-      this.listBankingProviders(companyId),
-    ]);
+    const [cashFlow, receivables, budgets, accountingProviders, bankingProviders] =
+      await Promise.all([
+        this.deps.financeIntelligenceService.getCashFlowIntelligence(companyId),
+        this.deps.financeIntelligenceService.getReceivablesIntelligence(companyId),
+        this.listBudgets(companyId),
+        this.listAccountingProviders(companyId),
+        this.listBankingProviders(companyId),
+      ]);
 
     const activeBudgets = budgets.filter((b) => b.status === 'active');
     let budgetOverspendCount = 0;
@@ -188,7 +192,10 @@ export class EnterpriseFinancialPlanningService {
     const financeBudgets = await this.deps.financeIntelligenceService.listBudgets(companyId);
     for (const budget of financeBudgets.filter((row) => row.status === 'active')) {
       try {
-        const variance = await this.deps.financeIntelligenceService.getBudgetVariance(companyId, budget.id);
+        const variance = await this.deps.financeIntelligenceService.getBudgetVariance(
+          companyId,
+          budget.id,
+        );
         if (variance.totalVarianceCents < 0) {
           budgetOverspendCount += 1;
         }
@@ -205,7 +212,11 @@ export class EnterpriseFinancialPlanningService {
       .getProfitabilityIntelligence(companyId)
       .catch(() => null);
     const marginDeclineCount =
-      profitability != null && profitability.netMarginPercent != null && profitability.netMarginPercent < 10 ? 1 : 0;
+      profitability != null &&
+      profitability.netMarginPercent != null &&
+      profitability.netMarginPercent < 10
+        ? 1
+        : 0;
 
     const cashShortfallRisk = cashFlow.cashShortageWarning;
     const treasuryAccounts = await this.listTreasuryAccounts(companyId);
@@ -238,7 +249,10 @@ export class EnterpriseFinancialPlanningService {
     };
   }
 
-  async getPortalFinanceSummary(companyId: string, customerId?: string): Promise<FpPortalFinanceSummary> {
+  async getPortalFinanceSummary(
+    companyId: string,
+    customerId?: string,
+  ): Promise<FpPortalFinanceSummary> {
     const [stats, invoiceRows, quoteRows] = await Promise.all([
       this.deps.financeService.getStats(companyId),
       this.deps.financeService.listInvoices(companyId),
@@ -297,7 +311,8 @@ export class EnterpriseFinancialPlanningService {
       .update(fpPlatformConfig)
       .set({
         financeStandards: input.financeStandards ?? existing.financeStandards,
-        providerAdapterTemplates: input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
+        providerAdapterTemplates:
+          input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
         currencyStandards: input.currencyStandards ?? existing.currencyStandards,
         planningTemplates: input.planningTemplates ?? existing.planningTemplates,
         kpiTemplates: input.kpiTemplates ?? existing.kpiTemplates,
@@ -383,7 +398,8 @@ export class EnterpriseFinancialPlanningService {
         categoryId: input.categoryId ?? null,
         ownerUserId: scope.userId,
         title: input.title.trim(),
-        budgetPeriod: (input.budgetPeriod as typeof fpBudgets.$inferInsert.budgetPeriod) ?? 'annual',
+        budgetPeriod:
+          (input.budgetPeriod as typeof fpBudgets.$inferInsert.budgetPeriod) ?? 'annual',
         status: 'draft',
         workflowStatus: 'draft',
         periodStart: input.periodStart ?? null,
@@ -449,7 +465,10 @@ export class EnterpriseFinancialPlanningService {
   async submitBudgetForReview(scope: StaffScope, budgetId: string): Promise<FpBudgetSummary> {
     const budget = await this.ensureBudget(scope.companyId, budgetId);
     if (budget.workflowStatus !== 'draft') {
-      throw new EnterpriseFinancialPlanningError('VALIDATION_ERROR', 'Budget must be in draft to submit for review');
+      throw new EnterpriseFinancialPlanningError(
+        'VALIDATION_ERROR',
+        'Budget must be in draft to submit for review',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -458,7 +477,10 @@ export class EnterpriseFinancialPlanningService {
       .where(eq(fpBudgets.id, budgetId))
       .returning();
 
-    await this.syncLatestBudgetVersion(scope.companyId, budgetId, { workflowStatus: 'review', status: 'review' });
+    await this.syncLatestBudgetVersion(scope.companyId, budgetId, {
+      workflowStatus: 'review',
+      status: 'review',
+    });
     await this.recordAudit(scope, 'budget_submitted_for_review', 'fp_budget', budgetId);
     return this.buildBudgetSummary(updated!);
   }
@@ -474,7 +496,11 @@ export class EnterpriseFinancialPlanningService {
 
     const [updated] = await this.deps.db
       .update(fpBudgets)
-      .set({ workflowStatus: 'pending_approval', status: 'pending_approval', updatedAt: new Date() })
+      .set({
+        workflowStatus: 'pending_approval',
+        status: 'pending_approval',
+        updatedAt: new Date(),
+      })
       .where(eq(fpBudgets.id, budgetId))
       .returning();
 
@@ -489,7 +515,10 @@ export class EnterpriseFinancialPlanningService {
   async approveBudget(scope: StaffScope, budgetId: string): Promise<FpBudgetSummary> {
     const budget = await this.ensureBudget(scope.companyId, budgetId);
     if (budget.workflowStatus !== 'pending_approval') {
-      throw new EnterpriseFinancialPlanningError('VALIDATION_ERROR', 'Budget is not pending approval');
+      throw new EnterpriseFinancialPlanningError(
+        'VALIDATION_ERROR',
+        'Budget is not pending approval',
+      );
     }
 
     const latestVersion = await this.getLatestBudgetVersion(scope.companyId, budgetId);
@@ -525,10 +554,16 @@ export class EnterpriseFinancialPlanningService {
   async activateBudget(scope: StaffScope, budgetId: string): Promise<FpBudgetSummary> {
     const budget = await this.ensureBudget(scope.companyId, budgetId);
     if (budget.workflowStatus !== 'approved') {
-      throw new EnterpriseFinancialPlanningError('VALIDATION_ERROR', 'Budget must be approved before activation');
+      throw new EnterpriseFinancialPlanningError(
+        'VALIDATION_ERROR',
+        'Budget must be approved before activation',
+      );
     }
 
-    const supersedeConditions = [eq(fpBudgets.companyId, scope.companyId), eq(fpBudgets.status, 'active')];
+    const supersedeConditions = [
+      eq(fpBudgets.companyId, scope.companyId),
+      eq(fpBudgets.status, 'active'),
+    ];
     if (budget.entityId) {
       await this.deps.db
         .update(fpBudgets)
@@ -621,14 +656,21 @@ export class EnterpriseFinancialPlanningService {
       .where(eq(fpBudgets.id, budgetId))
       .returning();
 
-    await this.recordAudit(scope, 'budget_version_created', 'fp_budget', budgetId, { version: nextVersion });
+    await this.recordAudit(scope, 'budget_version_created', 'fp_budget', budgetId, {
+      version: nextVersion,
+    });
     return this.buildBudgetSummary(updated!);
   }
 
-  async createForecast(scope: StaffScope, input: CreateFpForecastRequest): Promise<FpForecastSummary> {
+  async createForecast(
+    scope: StaffScope,
+    input: CreateFpForecastRequest,
+  ): Promise<FpForecastSummary> {
     if (input.entityId) await this.ensureEntity(scope.companyId, input.entityId);
 
-    const cashFlow = await this.deps.financeIntelligenceService.getCashFlowIntelligence(scope.companyId);
+    const cashFlow = await this.deps.financeIntelligenceService.getCashFlowIntelligence(
+      scope.companyId,
+    );
 
     const [created] = await this.deps.db
       .insert(fpForecasts)
@@ -637,7 +679,8 @@ export class EnterpriseFinancialPlanningService {
         entityId: input.entityId ?? null,
         ownerUserId: scope.userId,
         title: input.title.trim(),
-        forecastType: (input.forecastType as typeof fpForecasts.$inferInsert.forecastType) ?? 'base',
+        forecastType:
+          (input.forecastType as typeof fpForecasts.$inferInsert.forecastType) ?? 'base',
         workflowStatus: 'draft',
         periodStart: input.periodStart ?? null,
         periodEnd: input.periodEnd ?? null,
@@ -706,7 +749,12 @@ export class EnterpriseFinancialPlanningService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'forecast_snapshot_captured', 'fp_forecast_snapshot', created!.id);
+    await this.recordAudit(
+      scope,
+      'forecast_snapshot_captured',
+      'fp_forecast_snapshot',
+      created!.id,
+    );
     return {
       id: created!.id,
       forecastId: created!.forecastId,
@@ -726,7 +774,10 @@ export class EnterpriseFinancialPlanningService {
     return rows.map(toCashFlowProjectionSummary);
   }
 
-  async generateCashFlowProjection(scope: StaffScope, entityId?: string): Promise<FpCashFlowProjectionSummary> {
+  async generateCashFlowProjection(
+    scope: StaffScope,
+    entityId?: string,
+  ): Promise<FpCashFlowProjectionSummary> {
     if (entityId) await this.ensureEntity(scope.companyId, entityId);
 
     const [cashFlow, receivables, invoiceRows, purchaseOrders] = await Promise.all([
@@ -751,7 +802,9 @@ export class EnterpriseFinancialPlanningService {
     const closingBalanceCents = openingBalanceCents + expectedInflowCents - expectedOutflowCents;
     const dailyOutflow = cashFlow.outflowCents > 0 ? Math.round(cashFlow.outflowCents / 30) : 0;
     const cashRunwayDays =
-      dailyOutflow > 0 && closingBalanceCents > 0 ? Math.floor(closingBalanceCents / dailyOutflow) : null;
+      dailyOutflow > 0 && closingBalanceCents > 0
+        ? Math.floor(closingBalanceCents / dailyOutflow)
+        : null;
 
     const [created] = await this.deps.db
       .insert(fpCashFlowProjections)
@@ -776,7 +829,12 @@ export class EnterpriseFinancialPlanningService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'cash_flow_projection_generated', 'fp_cash_flow_projection', created!.id);
+    await this.recordAudit(
+      scope,
+      'cash_flow_projection_generated',
+      'fp_cash_flow_projection',
+      created!.id,
+    );
     return toCashFlowProjectionSummary(created!);
   }
 
@@ -814,7 +872,10 @@ export class EnterpriseFinancialPlanningService {
     return rows.map(toTreasuryAccountSummary);
   }
 
-  async createScenario(scope: StaffScope, input: CreateFpScenarioRequest): Promise<FpScenarioSummary> {
+  async createScenario(
+    scope: StaffScope,
+    input: CreateFpScenarioRequest,
+  ): Promise<FpScenarioSummary> {
     if (input.entityId) await this.ensureEntity(scope.companyId, input.entityId);
 
     const cashImpactCents = input.lines?.reduce((sum, line) => sum + line.amountCents, 0) ?? null;
@@ -904,7 +965,10 @@ export class EnterpriseFinancialPlanningService {
     const conditions = [eq(fpFinancialAlerts.companyId, companyId)];
     if (filters?.status) {
       conditions.push(
-        eq(fpFinancialAlerts.status, filters.status as typeof fpFinancialAlerts.$inferSelect.status),
+        eq(
+          fpFinancialAlerts.status,
+          filters.status as typeof fpFinancialAlerts.$inferSelect.status,
+        ),
       );
     }
 
@@ -986,7 +1050,9 @@ export class EnterpriseFinancialPlanningService {
       }
     }
 
-    for (const receivableAlert of monitoring.alerts.filter((msg) => msg.includes('overdue invoice'))) {
+    for (const receivableAlert of monitoring.alerts.filter((msg) =>
+      msg.includes('overdue invoice'),
+    )) {
       const alertType = 'overdue_invoices';
       const existing = existingOpen.find((row) => row.alertType === alertType);
       if (!existing) {
@@ -1018,7 +1084,8 @@ export class EnterpriseFinancialPlanningService {
       .values({
         companyId: scope.companyId,
         entityId: input.entityId ?? null,
-        providerType: input.providerType as typeof fpAccountingProviderAdapters.$inferInsert.providerType,
+        providerType:
+          input.providerType as typeof fpAccountingProviderAdapters.$inferInsert.providerType,
         name: input.name.trim(),
         syncDirection: input.syncDirection ?? 'bidirectional',
         syncFrequency: input.syncFrequency?.trim() ?? null,
@@ -1028,7 +1095,12 @@ export class EnterpriseFinancialPlanningService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'accounting_provider_created', 'fp_accounting_provider', created!.id);
+    await this.recordAudit(
+      scope,
+      'accounting_provider_created',
+      'fp_accounting_provider',
+      created!.id,
+    );
     return toAccountingProviderSummary(created!);
   }
 
@@ -1040,7 +1112,10 @@ export class EnterpriseFinancialPlanningService {
     return rows.map(toAccountingProviderSummary);
   }
 
-  async testAccountingProvider(scope: StaffScope, providerId: string): Promise<FpAccountingProviderSummary> {
+  async testAccountingProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<FpAccountingProviderSummary> {
     const provider = await this.ensureAccountingProvider(scope.companyId, providerId);
     const hasConfig = Object.keys(provider.config ?? {}).length > 0;
     const testStatus = hasConfig ? 'success' : 'pending_configuration';
@@ -1056,7 +1131,12 @@ export class EnterpriseFinancialPlanningService {
       .where(eq(fpAccountingProviderAdapters.id, providerId))
       .returning();
 
-    await this.recordAudit(scope, 'accounting_provider_tested', 'fp_accounting_provider', providerId);
+    await this.recordAudit(
+      scope,
+      'accounting_provider_tested',
+      'fp_accounting_provider',
+      providerId,
+    );
     return toAccountingProviderSummary(updated!);
   }
 
@@ -1071,7 +1151,8 @@ export class EnterpriseFinancialPlanningService {
       .values({
         companyId: scope.companyId,
         entityId: input.entityId ?? null,
-        providerType: input.providerType as typeof fpBankingProviderAdapters.$inferInsert.providerType,
+        providerType:
+          input.providerType as typeof fpBankingProviderAdapters.$inferInsert.providerType,
         name: input.name.trim(),
         refreshSchedule: input.refreshSchedule?.trim() ?? null,
         accountMappings: input.accountMappings ?? {},
@@ -1092,7 +1173,10 @@ export class EnterpriseFinancialPlanningService {
     return rows.map(toBankingProviderSummary);
   }
 
-  async testBankingProvider(scope: StaffScope, providerId: string): Promise<FpBankingProviderSummary> {
+  async testBankingProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<FpBankingProviderSummary> {
     const provider = await this.ensureBankingProvider(scope.companyId, providerId);
     const hasConfig = Object.keys(provider.config ?? {}).length > 0;
     const testStatus = hasConfig ? 'success' : 'pending_configuration';
@@ -1186,7 +1270,12 @@ export class EnterpriseFinancialPlanningService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'profitability_snapshot_captured', 'fp_profitability_snapshot', created!.id);
+    await this.recordAudit(
+      scope,
+      'profitability_snapshot_captured',
+      'fp_profitability_snapshot',
+      created!.id,
+    );
     return toProfitabilitySnapshotSummary(created!);
   }
 
@@ -1218,7 +1307,12 @@ export class EnterpriseFinancialPlanningService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'planning_draft_created', 'fp_planning_action_draft', created!.id);
+    await this.recordAudit(
+      scope,
+      'planning_draft_created',
+      'fp_planning_action_draft',
+      created!.id,
+    );
     return {
       id: created!.id,
       title: created!.title,
@@ -1286,8 +1380,11 @@ export class EnterpriseFinancialPlanningService {
     return this.buildWorkingCapitalSummary(companyId);
   }
 
-  private async buildReceivablesSummary(companyId: string): Promise<FpReceivablesIntelligenceSummary> {
-    const receivables = await this.deps.financeIntelligenceService.getReceivablesIntelligence(companyId);
+  private async buildReceivablesSummary(
+    companyId: string,
+  ): Promise<FpReceivablesIntelligenceSummary> {
+    const receivables =
+      await this.deps.financeIntelligenceService.getReceivablesIntelligence(companyId);
     const invoiceRows = await this.deps.financeService.listInvoices(companyId);
 
     let outstandingAmountCents = 0;
@@ -1306,7 +1403,8 @@ export class EnterpriseFinancialPlanningService {
               .reduce((sum, row) => sum + (row.averageDaysToPay ?? 0), 0) /
               Math.max(
                 1,
-                receivables.customerPaymentBehaviour.filter((row) => row.averageDaysToPay != null).length,
+                receivables.customerPaymentBehaviour.filter((row) => row.averageDaysToPay != null)
+                  .length,
               ),
           )
         : null;
@@ -1389,7 +1487,9 @@ export class EnterpriseFinancialPlanningService {
         ? Math.round((receivablesCents / Math.max(receivables.overdueAmountCents, 1)) * 30)
         : null;
     const daysPayableOutstanding =
-      payablesCents > 0 ? Math.round((payablesCents / Math.max(cashFlow.inflowCents, 1)) * 30) : null;
+      payablesCents > 0
+        ? Math.round((payablesCents / Math.max(cashFlow.inflowCents, 1)) * 30)
+        : null;
     const cashConversionCycleDays =
       daysSalesOutstanding != null && daysPayableOutstanding != null
         ? daysSalesOutstanding - daysPayableOutstanding
@@ -1406,7 +1506,10 @@ export class EnterpriseFinancialPlanningService {
     };
   }
 
-  private estimateCashRunwayDays(cashPositionCents: number, monthlyOutflowCents: number): number | null {
+  private estimateCashRunwayDays(
+    cashPositionCents: number,
+    monthlyOutflowCents: number,
+  ): number | null {
     if (cashPositionCents <= 0) return 0;
     const dailyOutflow = monthlyOutflowCents > 0 ? monthlyOutflowCents / 30 : 0;
     if (dailyOutflow <= 0) return null;
@@ -1445,7 +1548,9 @@ export class EnterpriseFinancialPlanningService {
     };
   }
 
-  private async buildForecastSummary(row: typeof fpForecasts.$inferSelect): Promise<FpForecastSummary> {
+  private async buildForecastSummary(
+    row: typeof fpForecasts.$inferSelect,
+  ): Promise<FpForecastSummary> {
     const owner = row.ownerUserId
       ? await this.deps.db.query.users.findFirst({ where: eq(users.id, row.ownerUserId) })
       : null;
@@ -1471,12 +1576,18 @@ export class EnterpriseFinancialPlanningService {
   ) {
     const latestVersion = await this.getLatestBudgetVersion(companyId, budgetId);
     if (!latestVersion || latestVersion.workflowStatus === 'approved') return;
-    await this.deps.db.update(fpBudgetVersions).set(patch).where(eq(fpBudgetVersions.id, latestVersion.id));
+    await this.deps.db
+      .update(fpBudgetVersions)
+      .set(patch)
+      .where(eq(fpBudgetVersions.id, latestVersion.id));
   }
 
   private async getLatestBudgetVersion(companyId: string, budgetId: string) {
     return this.deps.db.query.fpBudgetVersions.findFirst({
-      where: and(eq(fpBudgetVersions.companyId, companyId), eq(fpBudgetVersions.budgetId, budgetId)),
+      where: and(
+        eq(fpBudgetVersions.companyId, companyId),
+        eq(fpBudgetVersions.budgetId, budgetId),
+      ),
       orderBy: [desc(fpBudgetVersions.versionNumber)],
     });
   }
@@ -1492,9 +1603,13 @@ export class EnterpriseFinancialPlanningService {
 
   private async ensureCategory(companyId: string, categoryId: string) {
     const category = await this.deps.db.query.fpPlanningCategories.findFirst({
-      where: and(eq(fpPlanningCategories.companyId, companyId), eq(fpPlanningCategories.id, categoryId)),
+      where: and(
+        eq(fpPlanningCategories.companyId, companyId),
+        eq(fpPlanningCategories.id, categoryId),
+      ),
     });
-    if (!category) throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Planning category not found');
+    if (!category)
+      throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Planning category not found');
     return category;
   }
 
@@ -1529,7 +1644,8 @@ export class EnterpriseFinancialPlanningService {
         eq(fpAccountingProviderAdapters.id, providerId),
       ),
     });
-    if (!provider) throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Accounting provider not found');
+    if (!provider)
+      throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Accounting provider not found');
     return provider;
   }
 
@@ -1540,7 +1656,8 @@ export class EnterpriseFinancialPlanningService {
         eq(fpBankingProviderAdapters.id, providerId),
       ),
     });
-    if (!provider) throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Banking provider not found');
+    if (!provider)
+      throw new EnterpriseFinancialPlanningError('NOT_FOUND', 'Banking provider not found');
     return provider;
   }
 
@@ -1562,7 +1679,9 @@ export class EnterpriseFinancialPlanningService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof fpPlatformConfig.$inferSelect): FpPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof fpPlatformConfig.$inferSelect,
+): FpPlatformConfigSummary {
   return {
     financeStandards: row.financeStandards,
     providerAdapterTemplates: row.providerAdapterTemplates,
@@ -1597,7 +1716,9 @@ function toEntitySummary(row: typeof fpEntities.$inferSelect) {
   };
 }
 
-function toCashFlowProjectionSummary(row: typeof fpCashFlowProjections.$inferSelect): FpCashFlowProjectionSummary {
+function toCashFlowProjectionSummary(
+  row: typeof fpCashFlowProjections.$inferSelect,
+): FpCashFlowProjectionSummary {
   return {
     id: row.id,
     projectionDate: row.projectionDate,
@@ -1611,7 +1732,9 @@ function toCashFlowProjectionSummary(row: typeof fpCashFlowProjections.$inferSel
   };
 }
 
-function toTreasuryAccountSummary(row: typeof fpTreasuryAccounts.$inferSelect): FpTreasuryAccountSummary {
+function toTreasuryAccountSummary(
+  row: typeof fpTreasuryAccounts.$inferSelect,
+): FpTreasuryAccountSummary {
   return {
     id: row.id,
     accountName: row.accountName,
@@ -1637,7 +1760,9 @@ function toScenarioSummary(row: typeof fpScenarios.$inferSelect): FpScenarioSumm
   };
 }
 
-function toFinancialTargetSummary(row: typeof fpFinancialTargets.$inferSelect): FpFinancialTargetSummary {
+function toFinancialTargetSummary(
+  row: typeof fpFinancialTargets.$inferSelect,
+): FpFinancialTargetSummary {
   return {
     id: row.id,
     targetKey: row.targetKey,
@@ -1651,7 +1776,9 @@ function toFinancialTargetSummary(row: typeof fpFinancialTargets.$inferSelect): 
   };
 }
 
-function toFinancialAlertSummary(row: typeof fpFinancialAlerts.$inferSelect): FpFinancialAlertSummary {
+function toFinancialAlertSummary(
+  row: typeof fpFinancialAlerts.$inferSelect,
+): FpFinancialAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,
@@ -1678,7 +1805,9 @@ function toAccountingProviderSummary(
   };
 }
 
-function toBankingProviderSummary(row: typeof fpBankingProviderAdapters.$inferSelect): FpBankingProviderSummary {
+function toBankingProviderSummary(
+  row: typeof fpBankingProviderAdapters.$inferSelect,
+): FpBankingProviderSummary {
   return {
     id: row.id,
     name: row.name,

@@ -73,10 +73,19 @@ export const itoPlatformConfig = pgTable('ito_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  healthThresholds: jsonb('health_thresholds').$type<Record<string, unknown>>().notNull().default({}),
-  monitoringConfig: jsonb('monitoring_config').$type<Record<string, unknown>>().notNull().default({}),
+  healthThresholds: jsonb('health_thresholds')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  monitoringConfig: jsonb('monitoring_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   healingPolicies: jsonb('healing_policies').$type<Record<string, unknown>>().notNull().default({}),
-  deploymentStandards: jsonb('deployment_standards').$type<Record<string, unknown>>().notNull().default({}),
+  deploymentStandards: jsonb('deployment_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   alertRouting: jsonb('alert_routing').$type<Record<string, unknown>>().notNull().default({}),
   changeManagementPolicy: jsonb('change_management_policy')
     .$type<Record<string, unknown>>()
@@ -178,13 +187,17 @@ export const itoRootCauseAnalyses = pgTable('ito_root_cause_analyses', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  bugDetectionId: uuid('bug_detection_id').references(() => itoBugDetections.id, { onDelete: 'set null' }),
+  bugDetectionId: uuid('bug_detection_id').references(() => itoBugDetections.id, {
+    onDelete: 'set null',
+  }),
   incidentId: uuid('incident_id').references(() => itoIncidents.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   rootCause: text('root_cause'),
   analysis: jsonb('analysis').$type<Record<string, unknown>>().notNull().default({}),
   workflowStatus: itoWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  analyzedByUserId: uuid('analyzed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  analyzedByUserId: uuid('analyzed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -196,7 +209,9 @@ export const itoRepairAttempts = pgTable('ito_repair_attempts', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  bugDetectionId: uuid('bug_detection_id').references(() => itoBugDetections.id, { onDelete: 'set null' }),
+  bugDetectionId: uuid('bug_detection_id').references(() => itoBugDetections.id, {
+    onDelete: 'set null',
+  }),
   rootCauseAnalysisId: uuid('root_cause_analysis_id').references(() => itoRootCauseAnalyses.id, {
     onDelete: 'set null',
   }),
@@ -206,7 +221,9 @@ export const itoRepairAttempts = pgTable('ito_repair_attempts', {
   success: boolean('success'),
   notes: text('notes'),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
-  attemptedByUserId: uuid('attempted_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  attemptedByUserId: uuid('attempted_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   attemptedAt: timestamp('attempted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -239,7 +256,9 @@ export const itoTestRuns = pgTable('ito_test_runs', {
   passedCount: integer('passed_count').notNull().default(0),
   failedCount: integer('failed_count').notNull().default(0),
   skippedCount: integer('skipped_count').notNull().default(0),
-  buildRecordId: uuid('build_record_id').references(() => itoBuildRecords.id, { onDelete: 'set null' }),
+  buildRecordId: uuid('build_record_id').references(() => itoBuildRecords.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -256,8 +275,12 @@ export const itoChangeRequests = pgTable('ito_change_requests', {
   description: text('description'),
   workflowStatus: itoWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   riskLevel: itoRepairRiskLevelEnum('risk_level').notNull().default('medium'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
@@ -274,9 +297,15 @@ export const itoDeployments = pgTable('ito_deployments', {
   environment: text('environment').notNull(),
   deploymentStatus: itoDeploymentStatusEnum('deployment_status').notNull().default('planned'),
   version: text('version'),
-  buildRecordId: uuid('build_record_id').references(() => itoBuildRecords.id, { onDelete: 'set null' }),
-  changeRequestId: uuid('change_request_id').references(() => itoChangeRequests.id, { onDelete: 'set null' }),
-  deployedByUserId: uuid('deployed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  buildRecordId: uuid('build_record_id').references(() => itoBuildRecords.id, {
+    onDelete: 'set null',
+  }),
+  changeRequestId: uuid('change_request_id').references(() => itoChangeRequests.id, {
+    onDelete: 'set null',
+  }),
+  deployedByUserId: uuid('deployed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
@@ -402,7 +431,9 @@ export const itoBackupVerifications = pgTable('ito_backup_verifications', {
   verificationPassed: boolean('verification_passed'),
   notes: text('notes'),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
-  verifiedByUserId: uuid('verified_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  verifiedByUserId: uuid('verified_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   verifiedAt: timestamp('verified_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -421,7 +452,9 @@ export const itoItAlerts = pgTable('ito_it_alerts', {
   sourceEntityId: uuid('source_entity_id'),
   incidentId: uuid('incident_id').references(() => itoIncidents.id, { onDelete: 'set null' }),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -440,7 +473,9 @@ export const itoItActionDrafts = pgTable('ito_it_action_drafts', {
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

@@ -10,7 +10,10 @@ import {
 } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { integrationConnections, integrationProviderEnum } from './integration-connections';
-import { integrationWebhookEndpoints, integrationWebhookDirectionEnum } from './integration-webhook-endpoints';
+import {
+  integrationWebhookEndpoints,
+  integrationWebhookDirectionEnum,
+} from './integration-webhook-endpoints';
 import { users } from './users';
 
 export const integrationAuthTypeEnum = pgEnum('integration_auth_type', [

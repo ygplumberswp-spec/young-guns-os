@@ -13,12 +13,19 @@ export function PortalNotificationsPage() {
     if (!accessToken) return;
     void fetchPortalNotifications(accessToken)
       .then(setNotifications)
-      .catch((err) => setError(err instanceof PortalApiClientError ? err.message : 'Unable to load notifications'));
+      .catch((err) =>
+        setError(
+          err instanceof PortalApiClientError ? err.message : 'Unable to load notifications',
+        ),
+      );
   }, [accessToken]);
 
   return (
     <div className="portal-page">
-      <PageHeader title="Notifications" description="Job, quote, invoice, appointment, and support updates." />
+      <PageHeader
+        title="Notifications"
+        description="Job, quote, invoice, appointment, and support updates."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       <Panel title="Notification centre">
         <ul className="portal-list">

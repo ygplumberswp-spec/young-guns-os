@@ -30,7 +30,8 @@ export type OpsServiceModule =
 export type OpsHealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 export type OpsReadinessStatus = 'ready' | 'warning' | 'critical' | 'unknown';
 export type OpsMaintenanceWindowStatus = 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
-export type OpsMaintenanceActionStatus = 'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
+export type OpsMaintenanceActionStatus =
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 export type OpsBackupRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'verified';
 export type OpsLogSeverity = 'debug' | 'info' | 'warn' | 'error' | 'critical';
 export type OpsDeploymentStatus = 'planned' | 'in_progress' | 'completed' | 'rolled_back';

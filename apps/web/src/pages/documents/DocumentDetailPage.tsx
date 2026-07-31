@@ -10,17 +10,10 @@ import type {
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { fetchJobs } from '../../lib/jobs-api';
-import {
-  fetchDocument,
-  fetchDocumentCategories,
-  updateDocument,
-} from '../../lib/documents-api';
+import { fetchDocument, fetchDocumentCategories, updateDocument } from '../../lib/documents-api';
 import { useAuth } from '../../lib/auth-context';
 import { DocumentsNav } from '../../features/documents/DocumentsNav';
-import {
-  canManageDocuments,
-  formatFileSize,
-} from '../../features/documents/utils';
+import { canManageDocuments, formatFileSize } from '../../features/documents/utils';
 
 export function DocumentDetailPage() {
   const [, params] = useRoute('/documents/:id');
@@ -47,9 +40,7 @@ export function DocumentDetailPage() {
 
   const canWrite = useMemo(() => (user ? canManageDocuments(user.permissions) : false), [user]);
 
-  const filteredJobs = customerId
-    ? jobs.filter((job) => job.customerId === customerId)
-    : jobs;
+  const filteredJobs = customerId ? jobs.filter((job) => job.customerId === customerId) : jobs;
 
   async function loadDocument() {
     if (!accessToken || !documentId) return;
@@ -69,9 +60,7 @@ export function DocumentDetailPage() {
     setDescription(documentData.description ?? '');
     setFileName(documentData.fileName);
     setFileType(documentData.fileType ?? '');
-    setFileSizeBytes(
-      documentData.fileSizeBytes != null ? String(documentData.fileSizeBytes) : '',
-    );
+    setFileSizeBytes(documentData.fileSizeBytes != null ? String(documentData.fileSizeBytes) : '');
     setCategoryId(documentData.categoryId ?? '');
     setCustomerId(documentData.customerId ?? '');
     setJobId(documentData.jobId ?? '');
@@ -98,7 +87,9 @@ export function DocumentDetailPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, documentId]);
 
   useEffect(() => {
@@ -235,7 +226,11 @@ export function DocumentDetailPage() {
           </label>
           <label className="titan-input-group">
             <span className="titan-input-label">Job</span>
-            <select className="titan-input" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+            <select
+              className="titan-input"
+              value={jobId}
+              onChange={(e) => setJobId(e.target.value)}
+            >
               <option value="">No job</option>
               {filteredJobs.map((job) => (
                 <option key={job.id} value={job.id}>

@@ -1,10 +1,6 @@
 import { and, count, desc, eq, gte, inArray } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import {
-  DEFAULT_TEAM_ROLES,
-  slugifyCompanyName,
-  withUniqueSuffix,
-} from '@titan/auth';
+import { DEFAULT_TEAM_ROLES, slugifyCompanyName, withUniqueSuffix } from '@titan/auth';
 import type {
   ChangeSaasSubscriptionPlanRequest,
   CreateSaasFeatureFlagRequest,
@@ -206,19 +202,26 @@ export class EnterpriseSaasPlatformService {
       summary: dashboard.summary,
       isPlatformOwner: dashboard.isPlatformOwner,
       tenantCount: dashboard.tenants.length,
-      activeSubscriptionCount: dashboard.platformAnalytics?.activeSubscriptions ?? (dashboard.subscription?.status === 'active' ? 1 : 0),
+      activeSubscriptionCount:
+        dashboard.platformAnalytics?.activeSubscriptions ??
+        (dashboard.subscription?.status === 'active' ? 1 : 0),
       pendingActionCount: dashboard.pendingActionCount,
       subscriptionStatus: dashboard.subscription?.status ?? null,
     };
   }
 
-  async markPlatformOwner(scope: StaffScope): Promise<{ companyId: string; tenantKind: 'platform_owner' }> {
+  async markPlatformOwner(
+    scope: StaffScope,
+  ): Promise<{ companyId: string; tenantKind: 'platform_owner' }> {
     const existingOwner = await this.deps.db.query.saasTenantProfiles.findFirst({
       where: eq(saasTenantProfiles.tenantKind, 'platform_owner'),
     });
 
     if (existingOwner && existingOwner.companyId !== scope.companyId) {
-      throw new EnterpriseSaasPlatformError('VALIDATION_ERROR', 'A platform owner tenant already exists');
+      throw new EnterpriseSaasPlatformError(
+        'VALIDATION_ERROR',
+        'A platform owner tenant already exists',
+      );
     }
 
     await this.ensureTenantProfile(scope.companyId);
@@ -241,9 +244,15 @@ export class EnterpriseSaasPlatformService {
     return { companyId: scope.companyId, tenantKind: 'platform_owner' };
   }
 
-  async provisionTenant(scope: StaffScope, input: ProvisionSaasTenantRequest): Promise<SaasTenantSummary> {
+  async provisionTenant(
+    scope: StaffScope,
+    input: ProvisionSaasTenantRequest,
+  ): Promise<SaasTenantSummary> {
     if (!(await this.isPlatformOwnerTenant(scope.companyId))) {
-      throw new EnterpriseSaasPlatformError('FORBIDDEN', 'Only the platform owner can provision tenants');
+      throw new EnterpriseSaasPlatformError(
+        'FORBIDDEN',
+        'Only the platform owner can provision tenants',
+      );
     }
 
     const baseSlug = slugifyCompanyName(input.companyName);
@@ -257,7 +266,10 @@ export class EnterpriseSaasPlatformService {
         .returning();
 
       if (!company) {
-        throw new EnterpriseSaasPlatformError('PROVISION_FAILED', 'Unable to create tenant company');
+        throw new EnterpriseSaasPlatformError(
+          'PROVISION_FAILED',
+          'Unable to create tenant company',
+        );
       }
 
       await tx.insert(roles).values(
@@ -350,7 +362,10 @@ export class EnterpriseSaasPlatformService {
     return this.getTenantSummary(targetCompanyId);
   }
 
-  async createPlan(scope: StaffScope, input: CreateSaasSubscriptionPlanRequest): Promise<SaasSubscriptionPlanSummary> {
+  async createPlan(
+    scope: StaffScope,
+    input: CreateSaasSubscriptionPlanRequest,
+  ): Promise<SaasSubscriptionPlanSummary> {
     await this.requirePlatformOwner(scope.companyId);
     const [row] = await this.deps.db
       .insert(saasSubscriptionPlans)
@@ -374,14 +389,20 @@ export class EnterpriseSaasPlatformService {
     return plan;
   }
 
-  async upgradePlan(scope: StaffScope, input: ChangeSaasSubscriptionPlanRequest): Promise<SaasSubscriptionSummary> {
+  async upgradePlan(
+    scope: StaffScope,
+    input: ChangeSaasSubscriptionPlanRequest,
+  ): Promise<SaasSubscriptionSummary> {
     if (await this.shouldEnforceSubscription(scope.companyId)) {
       await this.assertSubscriptionActive(scope.companyId);
     }
     return this.changePlan(scope, input.planId, 'plan_upgrade');
   }
 
-  async downgradePlan(scope: StaffScope, input: ChangeSaasSubscriptionPlanRequest): Promise<SaasSubscriptionSummary> {
+  async downgradePlan(
+    scope: StaffScope,
+    input: ChangeSaasSubscriptionPlanRequest,
+  ): Promise<SaasSubscriptionSummary> {
     if (await this.shouldEnforceSubscription(scope.companyId)) {
       await this.assertSubscriptionActive(scope.companyId);
     }
@@ -409,7 +430,10 @@ export class EnterpriseSaasPlatformService {
     return (await this.getSubscriptionSummary(scope.companyId))!;
   }
 
-  async updateBranding(scope: StaffScope, input: UpdateSaasBrandingRequest): Promise<SaasBrandingProfileSummary> {
+  async updateBranding(
+    scope: StaffScope,
+    input: UpdateSaasBrandingRequest,
+  ): Promise<SaasBrandingProfileSummary> {
     await this.ensureBrandingProfile(scope.companyId);
     await this.deps.db
       .update(saasBrandingProfiles)
@@ -448,7 +472,10 @@ export class EnterpriseSaasPlatformService {
     return flag;
   }
 
-  async createBranch(scope: StaffScope, input: CreateSaasTenantBranchRequest): Promise<SaasTenantBranchSummary> {
+  async createBranch(
+    scope: StaffScope,
+    input: CreateSaasTenantBranchRequest,
+  ): Promise<SaasTenantBranchSummary> {
     const [row] = await this.deps.db
       .insert(saasTenantBranches)
       .values({
@@ -485,7 +512,9 @@ export class EnterpriseSaasPlatformService {
     const [aiUsageCountRow] = await this.deps.db
       .select({ value: count() })
       .from(aiUsageRecords)
-      .where(and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)));
+      .where(
+        and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)),
+      );
 
     const [row] = await this.deps.db
       .insert(saasUsageSnapshots)
@@ -540,7 +569,10 @@ export class EnterpriseSaasPlatformService {
       return false;
     }
     const entitlement = await this.deps.db.query.saasFeatureEntitlements.findFirst({
-      where: and(eq(saasFeatureEntitlements.companyId, companyId), eq(saasFeatureEntitlements.featureKey, featureKey)),
+      where: and(
+        eq(saasFeatureEntitlements.companyId, companyId),
+        eq(saasFeatureEntitlements.featureKey, featureKey),
+      ),
     });
     if (entitlement) {
       return entitlement.enabled;
@@ -549,7 +581,11 @@ export class EnterpriseSaasPlatformService {
     return subscription?.plan?.features.includes(featureKey) ?? false;
   }
 
-  private async changePlan(scope: StaffScope, planId: string, actionType: 'plan_upgrade' | 'plan_downgrade') {
+  private async changePlan(
+    scope: StaffScope,
+    planId: string,
+    actionType: 'plan_upgrade' | 'plan_downgrade',
+  ) {
     const plan = await this.deps.db.query.saasSubscriptionPlans.findFirst({
       where: eq(saasSubscriptionPlans.id, planId),
     });
@@ -743,7 +779,9 @@ export class EnterpriseSaasPlatformService {
     };
   }
 
-  private async listFeatureEntitlements(companyId: string): Promise<SaasFeatureEntitlementSummary[]> {
+  private async listFeatureEntitlements(
+    companyId: string,
+  ): Promise<SaasFeatureEntitlementSummary[]> {
     const rows = await this.deps.db.query.saasFeatureEntitlements.findMany({
       where: eq(saasFeatureEntitlements.companyId, companyId),
       orderBy: [desc(saasFeatureEntitlements.createdAt)],
@@ -805,7 +843,10 @@ export class EnterpriseSaasPlatformService {
     }
 
     const rows = await this.deps.db.query.saasSubscriptionPlans.findMany({
-      where: and(eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId), eq(saasSubscriptionPlans.isActive, true)),
+      where: and(
+        eq(saasSubscriptionPlans.ownerCompanyId, ownerCompanyId),
+        eq(saasSubscriptionPlans.isActive, true),
+      ),
       orderBy: [desc(saasSubscriptionPlans.createdAt)],
     });
     return rows.map((row) => this.toPlanSummary(row));
@@ -890,9 +931,13 @@ export class EnterpriseSaasPlatformService {
           })
         : [];
     const planById = new Map(plans.map((plan) => [plan.id, plan]));
-    const subscriptionByCompany = new Map(subscriptions.map((subscription) => [subscription.companyId, subscription]));
+    const subscriptionByCompany = new Map(
+      subscriptions.map((subscription) => [subscription.companyId, subscription]),
+    );
     const userCountByCompany = new Map(userCounts.map((row) => [row.companyId, Number(row.value)]));
-    const branchCountByCompany = new Map(branchCounts.map((row) => [row.companyId, Number(row.value)]));
+    const branchCountByCompany = new Map(
+      branchCounts.map((row) => [row.companyId, Number(row.value)]),
+    );
 
     return rows.map((row) => {
       const subscription = subscriptionByCompany.get(row.companyId);
@@ -916,7 +961,9 @@ export class EnterpriseSaasPlatformService {
 
   private async getTenantSummary(companyId: string): Promise<SaasTenantSummary> {
     const profile = await this.getTenantProfileRow(companyId);
-    const company = await this.deps.db.query.companies.findFirst({ where: eq(companies.id, companyId) });
+    const company = await this.deps.db.query.companies.findFirst({
+      where: eq(companies.id, companyId),
+    });
     const subscription = await this.getSubscriptionSummary(companyId);
     const [userCountRow] = await this.deps.db
       .select({ value: count() })
@@ -938,7 +985,10 @@ export class EnterpriseSaasPlatformService {
       branchCount: Number(branchCountRow?.value ?? 0),
       userCount: Number(userCountRow?.value ?? 0),
       provisionedAt: profile?.provisionedAt?.toISOString() ?? null,
-      createdAt: profile?.createdAt.toISOString() ?? company?.createdAt.toISOString() ?? new Date().toISOString(),
+      createdAt:
+        profile?.createdAt.toISOString() ??
+        company?.createdAt.toISOString() ??
+        new Date().toISOString(),
     };
   }
 
@@ -950,11 +1000,21 @@ export class EnterpriseSaasPlatformService {
     const [activeTenantsRow] = await this.deps.db
       .select({ value: count() })
       .from(saasTenantProfiles)
-      .where(and(eq(saasTenantProfiles.tenantKind, 'customer'), eq(saasTenantProfiles.lifecycleStatus, 'active')));
+      .where(
+        and(
+          eq(saasTenantProfiles.tenantKind, 'customer'),
+          eq(saasTenantProfiles.lifecycleStatus, 'active'),
+        ),
+      );
     const [suspendedTenantsRow] = await this.deps.db
       .select({ value: count() })
       .from(saasTenantProfiles)
-      .where(and(eq(saasTenantProfiles.tenantKind, 'customer'), eq(saasTenantProfiles.lifecycleStatus, 'suspended')));
+      .where(
+        and(
+          eq(saasTenantProfiles.tenantKind, 'customer'),
+          eq(saasTenantProfiles.lifecycleStatus, 'suspended'),
+        ),
+      );
     const [trialTenantsRow] = await this.deps.db
       .select({ value: count() })
       .from(saasSubscriptions)
@@ -1001,7 +1061,10 @@ export class EnterpriseSaasPlatformService {
 
   private async assertSubscriptionActive(companyId: string) {
     if (!(await this.isSubscriptionUsable(companyId))) {
-      throw new EnterpriseSaasPlatformError('SUBSCRIPTION_REQUIRED', 'An active subscription is required for this action');
+      throw new EnterpriseSaasPlatformError(
+        'SUBSCRIPTION_REQUIRED',
+        'An active subscription is required for this action',
+      );
     }
   }
 
@@ -1047,7 +1110,9 @@ export class EnterpriseSaasPlatformService {
     });
   }
 
-  private toPlanSummary(row: typeof saasSubscriptionPlans.$inferSelect): SaasSubscriptionPlanSummary {
+  private toPlanSummary(
+    row: typeof saasSubscriptionPlans.$inferSelect,
+  ): SaasSubscriptionPlanSummary {
     return {
       id: row.id,
       planKey: row.planKey,

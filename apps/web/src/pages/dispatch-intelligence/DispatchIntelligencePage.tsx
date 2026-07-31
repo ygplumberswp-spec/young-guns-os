@@ -18,13 +18,7 @@ import {
 } from '../../lib/dispatch-intelligence-api-client';
 
 type DispatchTab =
-  | 'dashboard'
-  | 'receptionist'
-  | 'queue'
-  | 'matching'
-  | 'emergency'
-  | 'callbacks'
-  | 'actions';
+  'dashboard' | 'receptionist' | 'queue' | 'matching' | 'emergency' | 'callbacks' | 'actions';
 
 function canAccess(permissions: string[]) {
   return (
@@ -50,11 +44,17 @@ export function DispatchIntelligencePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<DispatchTab>('dashboard');
   const [dashboard, setDashboard] = useState<DispatchOperationsDashboard | null>(null);
-  const [summaries, setSummaries] = useState<Awaited<ReturnType<typeof fetchReceptionistSummaries>>>([]);
+  const [summaries, setSummaries] = useState<
+    Awaited<ReturnType<typeof fetchReceptionistSummaries>>
+  >([]);
   const [matches, setMatches] = useState<Awaited<ReturnType<typeof fetchTechnicianMatching>>>([]);
-  const [recommendations, setRecommendations] = useState<Awaited<ReturnType<typeof fetchDispatchRecommendations>>>([]);
+  const [recommendations, setRecommendations] = useState<
+    Awaited<ReturnType<typeof fetchDispatchRecommendations>>
+  >([]);
   const [callbacks, setCallbacks] = useState<Awaited<ReturnType<typeof fetchCallbackQueue>>>([]);
-  const [assessments, setAssessments] = useState<Awaited<ReturnType<typeof fetchEmergencyAssessments>>>([]);
+  const [assessments, setAssessments] = useState<
+    Awaited<ReturnType<typeof fetchEmergencyAssessments>>
+  >([]);
   const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchDispatchActions>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +108,11 @@ export function DispatchIntelligencePage() {
         await loadPage();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to load dispatch data');
+          setError(
+            err instanceof DispatchIntelligenceApiClientError
+              ? err.message
+              : 'Unable to load dispatch data',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -132,7 +136,9 @@ export function DispatchIntelligencePage() {
       setSummaryText('');
       await loadPage();
     } catch (err) {
-      setError(err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to save summary');
+      setError(
+        err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to save summary',
+      );
     }
   }
 
@@ -142,12 +148,19 @@ export function DispatchIntelligencePage() {
 
     try {
       setError(null);
-      await createDispatchCallback(accessToken, { phoneNumber: callbackPhone.trim() || undefined, missedCallTracked: true });
+      await createDispatchCallback(accessToken, {
+        phoneNumber: callbackPhone.trim() || undefined,
+        missedCallTracked: true,
+      });
       setSuccess('Callback request submitted for approval.');
       setCallbackPhone('');
       await loadPage();
     } catch (err) {
-      setError(err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to create callback');
+      setError(
+        err instanceof DispatchIntelligenceApiClientError
+          ? err.message
+          : 'Unable to create callback',
+      );
     }
   }
 
@@ -167,7 +180,9 @@ export function DispatchIntelligencePage() {
       setActionRecommendation('');
       await loadPage();
     } catch (err) {
-      setError(err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to create action');
+      setError(
+        err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to create action',
+      );
     }
   }
 
@@ -180,7 +195,11 @@ export function DispatchIntelligencePage() {
       setSuccess('Dispatch recommendations generated.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof DispatchIntelligenceApiClientError ? err.message : 'Unable to generate recommendations');
+      setError(
+        err instanceof DispatchIntelligenceApiClientError
+          ? err.message
+          : 'Unable to generate recommendations',
+      );
     }
   }
 
@@ -210,12 +229,24 @@ export function DispatchIntelligencePage() {
         description="AI receptionist intelligence, call queue analytics, technician matching, and dispatch recommendations."
       />
 
-      {error ? <Panel title="Error" className="border-red-200 bg-red-50 text-red-700">{error}</Panel> : null}
-      {success ? <Panel title="Success" className="border-green-200 bg-green-50 text-green-700">{success}</Panel> : null}
+      {error ? (
+        <Panel title="Error" className="border-red-200 bg-red-50 text-red-700">
+          {error}
+        </Panel>
+      ) : null}
+      {success ? (
+        <Panel title="Success" className="border-green-200 bg-green-50 text-green-700">
+          {success}
+        </Panel>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
-          <Button key={tab.id} variant={activeTab === tab.id ? 'primary' : 'secondary'} onClick={() => setActiveTab(tab.id)}>
+          <Button
+            key={tab.id}
+            variant={activeTab === tab.id ? 'primary' : 'secondary'}
+            onClick={() => setActiveTab(tab.id)}
+          >
             {tab.label}
           </Button>
         ))}
@@ -256,7 +287,10 @@ export function DispatchIntelligencePage() {
           ) : null}
           <Panel title="Receptionist summaries">
             {summaries.length === 0 ? (
-              <EmptyState title="No summaries" description="Receptionist summaries appear from real call handling records." />
+              <EmptyState
+                title="No summaries"
+                description="Receptionist summaries appear from real call handling records."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {summaries.map((summary) => (
@@ -278,9 +312,18 @@ export function DispatchIntelligencePage() {
         <Panel title="Call queue intelligence">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Live queue" value={String(dashboard.callQueue.liveQueueCount)} />
-            <StatCard label="Callback queue" value={String(dashboard.callQueue.callbackQueueCount)} />
-            <StatCard label="Abandoned calls" value={String(dashboard.callQueue.abandonedCallCount)} />
-            <StatCard label="Receptionist workload" value={String(dashboard.callQueue.receptionistWorkloadCount)} />
+            <StatCard
+              label="Callback queue"
+              value={String(dashboard.callQueue.callbackQueueCount)}
+            />
+            <StatCard
+              label="Abandoned calls"
+              value={String(dashboard.callQueue.abandonedCallCount)}
+            />
+            <StatCard
+              label="Receptionist workload"
+              value={String(dashboard.callQueue.receptionistWorkloadCount)}
+            />
           </div>
         </Panel>
       ) : null}
@@ -288,7 +331,10 @@ export function DispatchIntelligencePage() {
       {!isLoading && activeTab === 'matching' ? (
         <Panel title="Technician matching">
           {matches.length === 0 ? (
-            <EmptyState title="No technicians" description="Assignees appear from your active team roster." />
+            <EmptyState
+              title="No technicians"
+              description="Assignees appear from your active team roster."
+            />
           ) : (
             <ul className="divide-y divide-slate-200">
               {matches.map((match) => (
@@ -305,7 +351,10 @@ export function DispatchIntelligencePage() {
       {!isLoading && activeTab === 'emergency' ? (
         <Panel title="Emergency dispatch assessments">
           {assessments.length === 0 ? (
-            <EmptyState title="No emergency assessments" description="Emergency assessments are recorded from real incidents — never auto-dispatched." />
+            <EmptyState
+              title="No emergency assessments"
+              description="Emergency assessments are recorded from real incidents — never auto-dispatched."
+            />
           ) : (
             <ul className="divide-y divide-slate-200">
               {assessments.map((assessment) => (
@@ -324,19 +373,28 @@ export function DispatchIntelligencePage() {
           {canManage ? (
             <Panel title="Request callback">
               <form className="space-y-3" onSubmit={handleCreateCallback}>
-                <Input label="Phone number" value={callbackPhone} onChange={(event) => setCallbackPhone(event.target.value)} />
+                <Input
+                  label="Phone number"
+                  value={callbackPhone}
+                  onChange={(event) => setCallbackPhone(event.target.value)}
+                />
                 <Button type="submit">Submit for approval</Button>
               </form>
             </Panel>
           ) : null}
           <Panel title="Callback queue">
             {callbacks.length === 0 ? (
-              <EmptyState title="No callbacks" description="Callback requests require staff approval before execution." />
+              <EmptyState
+                title="No callbacks"
+                description="Callback requests require staff approval before execution."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {callbacks.map((callback) => (
                   <li key={callback.id} className="py-3">
-                    <p className="font-medium">{callback.phoneNumber ?? callback.customerName ?? 'Callback request'}</p>
+                    <p className="font-medium">
+                      {callback.phoneNumber ?? callback.customerName ?? 'Callback request'}
+                    </p>
                     <p className="text-sm text-slate-500">{callback.status}</p>
                   </li>
                 ))}
@@ -351,11 +409,17 @@ export function DispatchIntelligencePage() {
           {canManage ? (
             <>
               <Panel title="Generate recommendations">
-                <Button onClick={() => void handleGenerateRecommendations()}>Generate dispatch recommendations</Button>
+                <Button onClick={() => void handleGenerateRecommendations()}>
+                  Generate dispatch recommendations
+                </Button>
               </Panel>
               <Panel title="Draft dispatch action">
                 <form className="space-y-3" onSubmit={handleCreateAction}>
-                  <Input label="Subject" value={actionSubject} onChange={(event) => setActionSubject(event.target.value)} />
+                  <Input
+                    label="Subject"
+                    value={actionSubject}
+                    onChange={(event) => setActionSubject(event.target.value)}
+                  />
                   <label className="block text-sm">
                     Recommendation
                     <textarea
@@ -371,7 +435,10 @@ export function DispatchIntelligencePage() {
           ) : null}
           <Panel title="Recommendations">
             {recommendations.length === 0 ? (
-              <EmptyState title="No recommendations" description="Generate recommendations from real scheduling and quality data." />
+              <EmptyState
+                title="No recommendations"
+                description="Generate recommendations from real scheduling and quality data."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {recommendations.map((item) => (
@@ -385,7 +452,10 @@ export function DispatchIntelligencePage() {
           </Panel>
           <Panel title="Pending and recent actions">
             {actions.length === 0 ? (
-              <EmptyState title="No actions" description="Dispatch actions follow Draft → Approval → Execution." />
+              <EmptyState
+                title="No actions"
+                description="Dispatch actions follow Draft → Approval → Execution."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {actions.map((action) => (

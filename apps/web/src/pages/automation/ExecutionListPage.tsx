@@ -42,23 +42,25 @@ export function ExecutionListPage() {
     }
 
     void loadExecutions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Executions" description="You do not have permission to view automation." />
+        <PageHeader
+          title="Executions"
+          description="You do not have permission to view automation."
+        />
       </div>
     );
   }
 
   return (
     <div className="automation-page">
-      <PageHeader
-        title="Automation"
-        description="Workflow execution history across your tenant."
-      />
+      <PageHeader title="Automation" description="Workflow execution history across your tenant." />
       <AutomationNav />
 
       {isLoading ? <p className="page-muted">Loading execution history…</p> : null}
@@ -90,11 +92,14 @@ export function ExecutionListPage() {
                     <tr key={execution.id}>
                       <td>
                         {execution.workflowId ? (
-                          <Link href={`/automation/${execution.workflowId}`} className="automation-link">
+                          <Link
+                            href={`/automation/${execution.workflowId}`}
+                            className="automation-link"
+                          >
                             {execution.workflowName ?? 'Unknown workflow'}
                           </Link>
                         ) : (
-                          execution.workflowName ?? 'Unknown workflow'
+                          (execution.workflowName ?? 'Unknown workflow')
                         )}
                       </td>
                       <td>{formatTriggerType(execution.triggerType as WorkflowTriggerType)}</td>

@@ -24,10 +24,13 @@ import { companies } from './companies';
 import { customerActivities } from './customer-activities';
 import { customers } from './customers';
 import { jobs } from './jobs';
-import { invoices } from './invoices';
+import { cxCustomerProperties } from './enterprise-customer-experience';
+import { invoiceLineItems, invoices } from './invoices';
 import { inventoryItems } from './inventory-items';
 import { inventoryLocations } from './inventory-locations';
 import { inventoryStockLevels } from './inventory-stock-levels';
+import { inventoryStockMovements } from './inventory-stock-movements';
+import { jobMaterialLines } from './job-execution';
 import { integrationConnections } from './integration-connections';
 import { integrationVehicleMappings } from './integration-vehicle-mappings';
 import { gpsPositions } from './gps-positions';
@@ -52,6 +55,13 @@ import { workflowTemplates } from './workflow-templates';
 import { workflowSchedules } from './workflow-schedules';
 import { workflowWebhooks } from './workflow-webhooks';
 import { workflowAuditLogs } from './workflow-audit-logs';
+import {
+  n8nAuditEvents,
+  n8nCallbackReceipts,
+  n8nConnections,
+  n8nExecutions,
+  n8nWorkflowRegistrations,
+} from './n8n-orchestration';
 import { portalUserPermissions } from './portal-user-permissions';
 import { portalSessions } from './portal-sessions';
 import { portalUsers } from './portal-users';
@@ -141,7 +151,7 @@ import {
   securityPrivacyRequests,
   securityRiskAlerts,
 } from './enterprise-security';
-import { payments } from './payments';
+import { paymentReceipts, payments } from './payments';
 import { integrationSyncJobs } from './integration-sync-jobs';
 import { integrationWebhookEndpoints } from './integration-webhook-endpoints';
 import { integrationWebhookEvents } from './integration-webhook-events';
@@ -181,17 +191,14 @@ import {
 } from './marketing';
 import {
   leadActivities,
+  leadConversions,
   leadRecommendations,
   leadScores,
   leadSources,
+  leadStatusHistory,
   leads,
 } from './leads';
-import {
-  voiceConversations,
-  voiceFollowUps,
-  voiceOutcomes,
-  voiceSessions,
-} from './voice';
+import { voiceConversations, voiceFollowUps, voiceOutcomes, voiceSessions } from './voice';
 import {
   customerSupportConversations,
   customerSupportEscalations,
@@ -245,7 +252,12 @@ import {
   dashboardWidgets,
   predictiveForecasts,
 } from './business-intelligence';
-import { quotes } from './quotes';
+import {
+  companyFinanceSettings,
+  quoteAcceptances,
+  quoteLineItems,
+  quotes,
+} from './quotes';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
@@ -500,6 +512,10 @@ export const jobsRelations = relations(jobs, ({ one, many }) => ({
     fields: [jobs.customerId],
     references: [customers.id],
   }),
+  property: one(cxCustomerProperties, {
+    fields: [jobs.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
   assignedUser: one(users, {
     fields: [jobs.assignedUserId],
     references: [users.id],
@@ -530,7 +546,54 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
     fields: [quotes.jobId],
     references: [jobs.id],
   }),
+  property: one(cxCustomerProperties, {
+    fields: [quotes.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  lead: one(leads, {
+    fields: [quotes.leadId],
+    references: [leads.id],
+  }),
+  estimator: one(users, {
+    fields: [quotes.estimatorUserId],
+    references: [users.id],
+  }),
+  lineItems: many(quoteLineItems),
+  acceptances: many(quoteAcceptances),
   invoices: many(invoices),
+}));
+
+export const quoteLineItemsRelations = relations(quoteLineItems, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteLineItems.quoteId],
+    references: [quotes.id],
+  }),
+  company: one(companies, {
+    fields: [quoteLineItems.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const quoteAcceptancesRelations = relations(quoteAcceptances, ({ one }) => ({
+  quote: one(quotes, {
+    fields: [quoteAcceptances.quoteId],
+    references: [quotes.id],
+  }),
+  customer: one(customers, {
+    fields: [quoteAcceptances.customerId],
+    references: [customers.id],
+  }),
+  company: one(companies, {
+    fields: [quoteAcceptances.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const companyFinanceSettingsRelations = relations(companyFinanceSettings, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyFinanceSettings.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const invoicesRelations = relations(invoices, ({ one, many }) => ({
@@ -550,7 +613,23 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
     fields: [invoices.quoteId],
     references: [quotes.id],
   }),
+  property: one(cxCustomerProperties, {
+    fields: [invoices.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  lineItems: many(invoiceLineItems),
   payments: many(payments),
+}));
+
+export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) => ({
+  invoice: one(invoices, {
+    fields: [invoiceLineItems.invoiceId],
+    references: [invoices.id],
+  }),
+  company: one(companies, {
+    fields: [invoiceLineItems.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
@@ -562,6 +641,25 @@ export const paymentsRelations = relations(payments, ({ one }) => ({
     fields: [payments.invoiceId],
     references: [invoices.id],
   }),
+  receipt: one(paymentReceipts, {
+    fields: [payments.id],
+    references: [paymentReceipts.paymentId],
+  }),
+}));
+
+export const paymentReceiptsRelations = relations(paymentReceipts, ({ one }) => ({
+  payment: one(payments, {
+    fields: [paymentReceipts.paymentId],
+    references: [payments.id],
+  }),
+  invoice: one(invoices, {
+    fields: [paymentReceipts.invoiceId],
+    references: [invoices.id],
+  }),
+  company: one(companies, {
+    fields: [paymentReceipts.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const inventoryLocationsRelations = relations(inventoryLocations, ({ one, many }) => ({
@@ -569,7 +667,69 @@ export const inventoryLocationsRelations = relations(inventoryLocations, ({ one,
     fields: [inventoryLocations.companyId],
     references: [companies.id],
   }),
+  vehicle: one(vehicles, {
+    fields: [inventoryLocations.vehicleId],
+    references: [vehicles.id],
+  }),
   stockLevels: many(inventoryStockLevels),
+}));
+
+export const jobMaterialLinesRelations = relations(jobMaterialLines, ({ one }) => ({
+  company: one(companies, {
+    fields: [jobMaterialLines.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [jobMaterialLines.jobId],
+    references: [jobs.id],
+  }),
+  inventoryItem: one(inventoryItems, {
+    fields: [jobMaterialLines.inventoryItemId],
+    references: [inventoryItems.id],
+  }),
+  location: one(inventoryLocations, {
+    fields: [jobMaterialLines.locationId],
+    references: [inventoryLocations.id],
+  }),
+  recordedBy: one(users, {
+    fields: [jobMaterialLines.recordedByUserId],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [jobMaterialLines.approvedByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const inventoryStockMovementsRelations = relations(inventoryStockMovements, ({ one }) => ({
+  company: one(companies, {
+    fields: [inventoryStockMovements.companyId],
+    references: [companies.id],
+  }),
+  item: one(inventoryItems, {
+    fields: [inventoryStockMovements.itemId],
+    references: [inventoryItems.id],
+  }),
+  location: one(inventoryLocations, {
+    fields: [inventoryStockMovements.locationId],
+    references: [inventoryLocations.id],
+  }),
+  job: one(jobs, {
+    fields: [inventoryStockMovements.jobId],
+    references: [jobs.id],
+  }),
+  purchaseOrder: one(purchaseOrders, {
+    fields: [inventoryStockMovements.purchaseOrderId],
+    references: [purchaseOrders.id],
+  }),
+  purchaseOrderItem: one(purchaseOrderItems, {
+    fields: [inventoryStockMovements.purchaseOrderItemId],
+    references: [purchaseOrderItems.id],
+  }),
+  recordedByUser: one(users, {
+    fields: [inventoryStockMovements.recordedByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const inventoryItemsRelations = relations(inventoryItems, ({ one, many }) => ({
@@ -612,15 +772,18 @@ export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   fleetActions: many(fleetActions),
 }));
 
-export const integrationConnectionsRelations = relations(integrationConnections, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [integrationConnections.companyId],
-    references: [companies.id],
+export const integrationConnectionsRelations = relations(
+  integrationConnections,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [integrationConnections.companyId],
+      references: [companies.id],
+    }),
+    vehicleMappings: many(integrationVehicleMappings),
+    gpsPositions: many(gpsPositions),
+    syncJobs: many(integrationSyncJobs),
   }),
-  vehicleMappings: many(integrationVehicleMappings),
-  gpsPositions: many(gpsPositions),
-  syncJobs: many(integrationSyncJobs),
-}));
+);
 
 export const integrationVehicleMappingsRelations = relations(
   integrationVehicleMappings,
@@ -671,6 +834,10 @@ export const communicationsRelations = relations(communications, ({ one }) => ({
   customer: one(customers, {
     fields: [communications.customerId],
     references: [customers.id],
+  }),
+  job: one(jobs, {
+    fields: [communications.jobId],
+    references: [jobs.id],
   }),
   author: one(users, {
     fields: [communications.authorUserId],
@@ -1053,23 +1220,29 @@ export const integrationWebhookEventsRelations = relations(integrationWebhookEve
   }),
 }));
 
-export const integrationRegistrySettingsRelations = relations(integrationRegistrySettings, ({ one }) => ({
-  company: one(companies, {
-    fields: [integrationRegistrySettings.companyId],
-    references: [companies.id],
+export const integrationRegistrySettingsRelations = relations(
+  integrationRegistrySettings,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [integrationRegistrySettings.companyId],
+      references: [companies.id],
+    }),
   }),
-}));
+);
 
-export const integrationCredentialMetadataRelations = relations(integrationCredentialMetadata, ({ one }) => ({
-  company: one(companies, {
-    fields: [integrationCredentialMetadata.companyId],
-    references: [companies.id],
+export const integrationCredentialMetadataRelations = relations(
+  integrationCredentialMetadata,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [integrationCredentialMetadata.companyId],
+      references: [companies.id],
+    }),
+    connection: one(integrationConnections, {
+      fields: [integrationCredentialMetadata.connectionId],
+      references: [integrationConnections.id],
+    }),
   }),
-  connection: one(integrationConnections, {
-    fields: [integrationCredentialMetadata.connectionId],
-    references: [integrationConnections.id],
-  }),
-}));
+);
 
 export const integrationApiUsageRelations = relations(integrationApiUsage, ({ one }) => ({
   company: one(companies, {
@@ -1078,12 +1251,15 @@ export const integrationApiUsageRelations = relations(integrationApiUsage, ({ on
   }),
 }));
 
-export const integrationHealthSnapshotsRelations = relations(integrationHealthSnapshots, ({ one }) => ({
-  company: one(companies, {
-    fields: [integrationHealthSnapshots.companyId],
-    references: [companies.id],
+export const integrationHealthSnapshotsRelations = relations(
+  integrationHealthSnapshots,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [integrationHealthSnapshots.companyId],
+      references: [companies.id],
+    }),
   }),
-}));
+);
 
 export const integrationRequestLogsRelations = relations(integrationRequestLogs, ({ one }) => ({
   company: one(companies, {
@@ -1092,23 +1268,29 @@ export const integrationRequestLogsRelations = relations(integrationRequestLogs,
   }),
 }));
 
-export const integrationWebhookDeliveriesRelations = relations(integrationWebhookDeliveries, ({ one }) => ({
-  company: one(companies, {
-    fields: [integrationWebhookDeliveries.companyId],
-    references: [companies.id],
+export const integrationWebhookDeliveriesRelations = relations(
+  integrationWebhookDeliveries,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [integrationWebhookDeliveries.companyId],
+      references: [companies.id],
+    }),
+    endpoint: one(integrationWebhookEndpoints, {
+      fields: [integrationWebhookDeliveries.webhookEndpointId],
+      references: [integrationWebhookEndpoints.id],
+    }),
   }),
-  endpoint: one(integrationWebhookEndpoints, {
-    fields: [integrationWebhookDeliveries.webhookEndpointId],
-    references: [integrationWebhookEndpoints.id],
-  }),
-}));
+);
 
-export const integrationRecommendationsRelations = relations(integrationRecommendations, ({ one }) => ({
-  company: one(companies, {
-    fields: [integrationRecommendations.companyId],
-    references: [companies.id],
+export const integrationRecommendationsRelations = relations(
+  integrationRecommendations,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [integrationRecommendations.companyId],
+      references: [companies.id],
+    }),
   }),
-}));
+);
 
 export const developerApiKeysRelations = relations(developerApiKeys, ({ one }) => ({
   company: one(companies, {
@@ -1401,64 +1583,76 @@ export const agentOrchestrationStepsRelations = relations(agentOrchestrationStep
   }),
 }));
 
-export const agentOrchestrationTriggersRelations = relations(agentOrchestrationTriggers, ({ one }) => ({
-  company: one(companies, {
-    fields: [agentOrchestrationTriggers.companyId],
-    references: [companies.id],
+export const agentOrchestrationTriggersRelations = relations(
+  agentOrchestrationTriggers,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [agentOrchestrationTriggers.companyId],
+      references: [companies.id],
+    }),
+    orchestration: one(agentOrchestrations, {
+      fields: [agentOrchestrationTriggers.orchestrationId],
+      references: [agentOrchestrations.id],
+    }),
   }),
-  orchestration: one(agentOrchestrations, {
-    fields: [agentOrchestrationTriggers.orchestrationId],
-    references: [agentOrchestrations.id],
-  }),
-}));
+);
 
-export const agentOrchestrationRunsRelations = relations(agentOrchestrationRuns, ({ one, many }) => ({
-  company: one(companies, {
-    fields: [agentOrchestrationRuns.companyId],
-    references: [companies.id],
+export const agentOrchestrationRunsRelations = relations(
+  agentOrchestrationRuns,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [agentOrchestrationRuns.companyId],
+      references: [companies.id],
+    }),
+    orchestration: one(agentOrchestrations, {
+      fields: [agentOrchestrationRuns.orchestrationId],
+      references: [agentOrchestrations.id],
+    }),
+    initiatedBy: one(users, {
+      fields: [agentOrchestrationRuns.initiatedByUserId],
+      references: [users.id],
+    }),
+    steps: many(agentOrchestrationRunSteps),
+    logs: many(agentOrchestrationLogs),
+    approvals: many(agentOrchestrationApprovals),
   }),
-  orchestration: one(agentOrchestrations, {
-    fields: [agentOrchestrationRuns.orchestrationId],
-    references: [agentOrchestrations.id],
-  }),
-  initiatedBy: one(users, {
-    fields: [agentOrchestrationRuns.initiatedByUserId],
-    references: [users.id],
-  }),
-  steps: many(agentOrchestrationRunSteps),
-  logs: many(agentOrchestrationLogs),
-  approvals: many(agentOrchestrationApprovals),
-}));
+);
 
-export const agentOrchestrationRunStepsRelations = relations(agentOrchestrationRunSteps, ({ one }) => ({
-  company: one(companies, {
-    fields: [agentOrchestrationRunSteps.companyId],
-    references: [companies.id],
+export const agentOrchestrationRunStepsRelations = relations(
+  agentOrchestrationRunSteps,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [agentOrchestrationRunSteps.companyId],
+      references: [companies.id],
+    }),
+    run: one(agentOrchestrationRuns, {
+      fields: [agentOrchestrationRunSteps.runId],
+      references: [agentOrchestrationRuns.id],
+    }),
+    definitionStep: one(agentOrchestrationSteps, {
+      fields: [agentOrchestrationRunSteps.definitionStepId],
+      references: [agentOrchestrationSteps.id],
+    }),
   }),
-  run: one(agentOrchestrationRuns, {
-    fields: [agentOrchestrationRunSteps.runId],
-    references: [agentOrchestrationRuns.id],
-  }),
-  definitionStep: one(agentOrchestrationSteps, {
-    fields: [agentOrchestrationRunSteps.definitionStepId],
-    references: [agentOrchestrationSteps.id],
-  }),
-}));
+);
 
-export const agentOrchestrationApprovalsRelations = relations(agentOrchestrationApprovals, ({ one }) => ({
-  company: one(companies, {
-    fields: [agentOrchestrationApprovals.companyId],
-    references: [companies.id],
+export const agentOrchestrationApprovalsRelations = relations(
+  agentOrchestrationApprovals,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [agentOrchestrationApprovals.companyId],
+      references: [companies.id],
+    }),
+    run: one(agentOrchestrationRuns, {
+      fields: [agentOrchestrationApprovals.runId],
+      references: [agentOrchestrationRuns.id],
+    }),
+    runStep: one(agentOrchestrationRunSteps, {
+      fields: [agentOrchestrationApprovals.runStepId],
+      references: [agentOrchestrationRunSteps.id],
+    }),
   }),
-  run: one(agentOrchestrationRuns, {
-    fields: [agentOrchestrationApprovals.runId],
-    references: [agentOrchestrationRuns.id],
-  }),
-  runStep: one(agentOrchestrationRunSteps, {
-    fields: [agentOrchestrationApprovals.runStepId],
-    references: [agentOrchestrationRunSteps.id],
-  }),
-}));
+);
 
 export const agentOrchestrationLogsRelations = relations(agentOrchestrationLogs, ({ one }) => ({
   company: one(companies, {
@@ -1734,6 +1928,58 @@ export const leadsRelations = relations(leads, ({ one, many }) => ({
   activities: many(leadActivities),
   scores: many(leadScores),
   recommendations: many(leadRecommendations),
+  statusHistory: many(leadStatusHistory),
+  conversions: many(leadConversions),
+  property: one(cxCustomerProperties, {
+    fields: [leads.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  job: one(jobs, {
+    fields: [leads.jobId],
+    references: [jobs.id],
+  }),
+}));
+
+export const leadStatusHistoryRelations = relations(leadStatusHistory, ({ one }) => ({
+  company: one(companies, {
+    fields: [leadStatusHistory.companyId],
+    references: [companies.id],
+  }),
+  lead: one(leads, {
+    fields: [leadStatusHistory.leadId],
+    references: [leads.id],
+  }),
+  actor: one(users, {
+    fields: [leadStatusHistory.actorUserId],
+    references: [users.id],
+  }),
+}));
+
+export const leadConversionsRelations = relations(leadConversions, ({ one }) => ({
+  company: one(companies, {
+    fields: [leadConversions.companyId],
+    references: [companies.id],
+  }),
+  lead: one(leads, {
+    fields: [leadConversions.leadId],
+    references: [leads.id],
+  }),
+  customer: one(customers, {
+    fields: [leadConversions.customerId],
+    references: [customers.id],
+  }),
+  property: one(cxCustomerProperties, {
+    fields: [leadConversions.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  job: one(jobs, {
+    fields: [leadConversions.jobId],
+    references: [jobs.id],
+  }),
+  convertedBy: one(users, {
+    fields: [leadConversions.convertedByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const leadActivitiesRelations = relations(leadActivities, ({ one }) => ({
@@ -2010,6 +2256,14 @@ export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many })
     fields: [purchaseOrders.approvedByUserId],
     references: [users.id],
   }),
+  job: one(jobs, {
+    fields: [purchaseOrders.jobId],
+    references: [jobs.id],
+  }),
+  destinationLocation: one(inventoryLocations, {
+    fields: [purchaseOrders.destinationLocationId],
+    references: [inventoryLocations.id],
+  }),
   items: many(purchaseOrderItems),
 }));
 
@@ -2043,12 +2297,15 @@ export const supplierActivitiesRelations = relations(supplierActivities, ({ one 
   }),
 }));
 
-export const procurementRecommendationsRelations = relations(procurementRecommendations, ({ one }) => ({
-  company: one(companies, {
-    fields: [procurementRecommendations.companyId],
-    references: [companies.id],
+export const procurementRecommendationsRelations = relations(
+  procurementRecommendations,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [procurementRecommendations.companyId],
+      references: [companies.id],
+    }),
   }),
-}));
+);
 
 export const businessHealthSnapshotsRelations = relations(businessHealthSnapshots, ({ one }) => ({
   company: one(companies, {
@@ -2382,16 +2639,19 @@ export const mobileSyncConflictsRelations = relations(mobileSyncConflicts, ({ on
   }),
 }));
 
-export const mobileCompanyAnnouncementsRelations = relations(mobileCompanyAnnouncements, ({ one }) => ({
-  company: one(companies, {
-    fields: [mobileCompanyAnnouncements.companyId],
-    references: [companies.id],
+export const mobileCompanyAnnouncementsRelations = relations(
+  mobileCompanyAnnouncements,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [mobileCompanyAnnouncements.companyId],
+      references: [companies.id],
+    }),
+    createdBy: one(users, {
+      fields: [mobileCompanyAnnouncements.createdByUserId],
+      references: [users.id],
+    }),
   }),
-  createdBy: one(users, {
-    fields: [mobileCompanyAnnouncements.createdByUserId],
-    references: [users.id],
-  }),
-}));
+);
 
 export const qualityComebacksRelations = relations(qualityComebacks, ({ one }) => ({
   company: one(companies, {
@@ -2525,29 +2785,32 @@ export const commIntelRecordingsRelations = relations(commIntelRecordings, ({ on
   }),
 }));
 
-export const commIntelCallIntelligenceRelations = relations(commIntelCallIntelligence, ({ one }) => ({
-  company: one(companies, {
-    fields: [commIntelCallIntelligence.companyId],
-    references: [companies.id],
+export const commIntelCallIntelligenceRelations = relations(
+  commIntelCallIntelligence,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [commIntelCallIntelligence.companyId],
+      references: [companies.id],
+    }),
+    voiceSession: one(voiceSessions, {
+      fields: [commIntelCallIntelligence.voiceSessionId],
+      references: [voiceSessions.id],
+    }),
+    customer: one(customers, {
+      fields: [commIntelCallIntelligence.customerId],
+      references: [customers.id],
+    }),
+    assignedStaff: one(users, {
+      fields: [commIntelCallIntelligence.assignedStaffId],
+      references: [users.id],
+      relationName: 'commIntelAssignedStaff',
+    }),
+    recording: one(commIntelRecordings, {
+      fields: [commIntelCallIntelligence.recordingId],
+      references: [commIntelRecordings.id],
+    }),
   }),
-  voiceSession: one(voiceSessions, {
-    fields: [commIntelCallIntelligence.voiceSessionId],
-    references: [voiceSessions.id],
-  }),
-  customer: one(customers, {
-    fields: [commIntelCallIntelligence.customerId],
-    references: [customers.id],
-  }),
-  assignedStaff: one(users, {
-    fields: [commIntelCallIntelligence.assignedStaffId],
-    references: [users.id],
-    relationName: 'commIntelAssignedStaff',
-  }),
-  recording: one(commIntelRecordings, {
-    fields: [commIntelCallIntelligence.recordingId],
-    references: [commIntelRecordings.id],
-  }),
-}));
+);
 
 export const commIntelConversationInsightsRelations = relations(
   commIntelConversationInsights,
@@ -2619,7 +2882,10 @@ export const assetEquipmentRelations = relations(assetEquipment, ({ one }) => ({
 
 export const assetLifecycleEventsRelations = relations(assetLifecycleEvents, ({ one }) => ({
   company: one(companies, { fields: [assetLifecycleEvents.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetLifecycleEvents.assetId], references: [assetEquipment.id] }),
+  asset: one(assetEquipment, {
+    fields: [assetLifecycleEvents.assetId],
+    references: [assetEquipment.id],
+  }),
   createdBy: one(users, {
     fields: [assetLifecycleEvents.createdByUserId],
     references: [users.id],
@@ -2627,17 +2893,29 @@ export const assetLifecycleEventsRelations = relations(assetLifecycleEvents, ({ 
   }),
 }));
 
-export const assetMaintenanceSchedulesRelations = relations(assetMaintenanceSchedules, ({ one }) => ({
-  company: one(companies, { fields: [assetMaintenanceSchedules.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, {
-    fields: [assetMaintenanceSchedules.assetId],
-    references: [assetEquipment.id],
+export const assetMaintenanceSchedulesRelations = relations(
+  assetMaintenanceSchedules,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [assetMaintenanceSchedules.companyId],
+      references: [companies.id],
+    }),
+    asset: one(assetEquipment, {
+      fields: [assetMaintenanceSchedules.assetId],
+      references: [assetEquipment.id],
+    }),
   }),
-}));
+);
 
 export const assetMaintenanceRecordsRelations = relations(assetMaintenanceRecords, ({ one }) => ({
-  company: one(companies, { fields: [assetMaintenanceRecords.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetMaintenanceRecords.assetId], references: [assetEquipment.id] }),
+  company: one(companies, {
+    fields: [assetMaintenanceRecords.companyId],
+    references: [companies.id],
+  }),
+  asset: one(assetEquipment, {
+    fields: [assetMaintenanceRecords.assetId],
+    references: [assetEquipment.id],
+  }),
   assignedTechnician: one(users, {
     fields: [assetMaintenanceRecords.assignedTechnicianId],
     references: [users.id],
@@ -2653,7 +2931,10 @@ export const assetMaintenanceRecordsRelations = relations(assetMaintenanceRecord
 
 export const assetInspectionsRelations = relations(assetInspections, ({ one }) => ({
   company: one(companies, { fields: [assetInspections.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetInspections.assetId], references: [assetEquipment.id] }),
+  asset: one(assetEquipment, {
+    fields: [assetInspections.assetId],
+    references: [assetEquipment.id],
+  }),
   inspector: one(users, {
     fields: [assetInspections.inspectorUserId],
     references: [users.id],
@@ -2663,12 +2944,21 @@ export const assetInspectionsRelations = relations(assetInspections, ({ one }) =
 
 export const assetCalibrationsRelations = relations(assetCalibrations, ({ one }) => ({
   company: one(companies, { fields: [assetCalibrations.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetCalibrations.assetId], references: [assetEquipment.id] }),
+  asset: one(assetEquipment, {
+    fields: [assetCalibrations.assetId],
+    references: [assetEquipment.id],
+  }),
 }));
 
 export const assetMaintenanceCostsRelations = relations(assetMaintenanceCosts, ({ one }) => ({
-  company: one(companies, { fields: [assetMaintenanceCosts.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetMaintenanceCosts.assetId], references: [assetEquipment.id] }),
+  company: one(companies, {
+    fields: [assetMaintenanceCosts.companyId],
+    references: [companies.id],
+  }),
+  asset: one(assetEquipment, {
+    fields: [assetMaintenanceCosts.assetId],
+    references: [assetEquipment.id],
+  }),
   maintenanceRecord: one(assetMaintenanceRecords, {
     fields: [assetMaintenanceCosts.maintenanceRecordId],
     references: [assetMaintenanceRecords.id],
@@ -2676,8 +2966,14 @@ export const assetMaintenanceCostsRelations = relations(assetMaintenanceCosts, (
 }));
 
 export const assetMaintenanceActionsRelations = relations(assetMaintenanceActions, ({ one }) => ({
-  company: one(companies, { fields: [assetMaintenanceActions.companyId], references: [companies.id] }),
-  asset: one(assetEquipment, { fields: [assetMaintenanceActions.assetId], references: [assetEquipment.id] }),
+  company: one(companies, {
+    fields: [assetMaintenanceActions.companyId],
+    references: [companies.id],
+  }),
+  asset: one(assetEquipment, {
+    fields: [assetMaintenanceActions.assetId],
+    references: [assetEquipment.id],
+  }),
   createdBy: one(users, {
     fields: [assetMaintenanceActions.createdByUserId],
     references: [users.id],
@@ -2702,7 +2998,10 @@ export const aiRoutingRulesRelations = relations(aiRoutingRules, ({ one }) => ({
     fields: [aiRoutingRules.primaryProviderId],
     references: [aiProviders.id],
   }),
-  primaryModel: one(aiModels, { fields: [aiRoutingRules.primaryModelId], references: [aiModels.id] }),
+  primaryModel: one(aiModels, {
+    fields: [aiRoutingRules.primaryModelId],
+    references: [aiModels.id],
+  }),
 }));
 
 export const aiPromptTemplatesRelations = relations(aiPromptTemplates, ({ one, many }) => ({
@@ -2712,14 +3011,23 @@ export const aiPromptTemplatesRelations = relations(aiPromptTemplates, ({ one, m
 
 export const aiPromptVersionsRelations = relations(aiPromptVersions, ({ one }) => ({
   company: one(companies, { fields: [aiPromptVersions.companyId], references: [companies.id] }),
-  template: one(aiPromptTemplates, { fields: [aiPromptVersions.templateId], references: [aiPromptTemplates.id] }),
+  template: one(aiPromptTemplates, {
+    fields: [aiPromptVersions.templateId],
+    references: [aiPromptTemplates.id],
+  }),
   createdBy: one(users, { fields: [aiPromptVersions.createdByUserId], references: [users.id] }),
   approvedBy: one(users, { fields: [aiPromptVersions.approvedByUserId], references: [users.id] }),
 }));
 
 export const aiConfigurationActionsRelations = relations(aiConfigurationActions, ({ one }) => ({
-  company: one(companies, { fields: [aiConfigurationActions.companyId], references: [companies.id] }),
-  createdBy: one(users, { fields: [aiConfigurationActions.createdByUserId], references: [users.id] }),
+  company: one(companies, {
+    fields: [aiConfigurationActions.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [aiConfigurationActions.createdByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const aiUsageRecordsRelations = relations(aiUsageRecords, ({ one }) => ({
@@ -2731,14 +3039,20 @@ export const aiUsageRecordsRelations = relations(aiUsageRecords, ({ one }) => ({
 
 export const aiQualityEvaluationsRelations = relations(aiQualityEvaluations, ({ one }) => ({
   company: one(companies, { fields: [aiQualityEvaluations.companyId], references: [companies.id] }),
-  provider: one(aiProviders, { fields: [aiQualityEvaluations.providerId], references: [aiProviders.id] }),
+  provider: one(aiProviders, {
+    fields: [aiQualityEvaluations.providerId],
+    references: [aiProviders.id],
+  }),
   model: one(aiModels, { fields: [aiQualityEvaluations.modelId], references: [aiModels.id] }),
 }));
 
 export const aiFeedbackRecordsRelations = relations(aiFeedbackRecords, ({ one }) => ({
   company: one(companies, { fields: [aiFeedbackRecords.companyId], references: [companies.id] }),
   user: one(users, { fields: [aiFeedbackRecords.userId], references: [users.id] }),
-  provider: one(aiProviders, { fields: [aiFeedbackRecords.providerId], references: [aiProviders.id] }),
+  provider: one(aiProviders, {
+    fields: [aiFeedbackRecords.providerId],
+    references: [aiProviders.id],
+  }),
   model: one(aiModels, { fields: [aiFeedbackRecords.modelId], references: [aiModels.id] }),
 }));
 
@@ -2758,47 +3072,83 @@ export const aiFailoverEventsRelations = relations(aiFailoverEvents, ({ one }) =
 
 export const aiMemorySyncRecordsRelations = relations(aiMemorySyncRecords, ({ one }) => ({
   company: one(companies, { fields: [aiMemorySyncRecords.companyId], references: [companies.id] }),
-  provider: one(aiProviders, { fields: [aiMemorySyncRecords.providerId], references: [aiProviders.id] }),
-}));
-
-export const dispatchReceptionistSummariesRelations = relations(dispatchReceptionistSummaries, ({ one }) => ({
-  company: one(companies, { fields: [dispatchReceptionistSummaries.companyId], references: [companies.id] }),
-  customer: one(customers, { fields: [dispatchReceptionistSummaries.customerId], references: [customers.id] }),
-  createdBy: one(users, {
-    fields: [dispatchReceptionistSummaries.createdByUserId],
-    references: [users.id],
+  provider: one(aiProviders, {
+    fields: [aiMemorySyncRecords.providerId],
+    references: [aiProviders.id],
   }),
 }));
 
-export const dispatchRoutingRecommendationsRelations = relations(dispatchRoutingRecommendations, ({ one }) => ({
-  company: one(companies, { fields: [dispatchRoutingRecommendations.companyId], references: [companies.id] }),
-  createdBy: one(users, {
-    fields: [dispatchRoutingRecommendations.createdByUserId],
-    references: [users.id],
+export const dispatchReceptionistSummariesRelations = relations(
+  dispatchReceptionistSummaries,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [dispatchReceptionistSummaries.companyId],
+      references: [companies.id],
+    }),
+    customer: one(customers, {
+      fields: [dispatchReceptionistSummaries.customerId],
+      references: [customers.id],
+    }),
+    createdBy: one(users, {
+      fields: [dispatchReceptionistSummaries.createdByUserId],
+      references: [users.id],
+    }),
   }),
-}));
+);
+
+export const dispatchRoutingRecommendationsRelations = relations(
+  dispatchRoutingRecommendations,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [dispatchRoutingRecommendations.companyId],
+      references: [companies.id],
+    }),
+    createdBy: one(users, {
+      fields: [dispatchRoutingRecommendations.createdByUserId],
+      references: [users.id],
+    }),
+  }),
+);
 
 export const dispatchCallbackRequestsRelations = relations(dispatchCallbackRequests, ({ one }) => ({
-  company: one(companies, { fields: [dispatchCallbackRequests.companyId], references: [companies.id] }),
-  customer: one(customers, { fields: [dispatchCallbackRequests.customerId], references: [customers.id] }),
+  company: one(companies, {
+    fields: [dispatchCallbackRequests.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [dispatchCallbackRequests.customerId],
+    references: [customers.id],
+  }),
   createdBy: one(users, {
     fields: [dispatchCallbackRequests.createdByUserId],
     references: [users.id],
   }),
 }));
 
-export const dispatchEmergencyAssessmentsRelations = relations(dispatchEmergencyAssessments, ({ one }) => ({
-  company: one(companies, { fields: [dispatchEmergencyAssessments.companyId], references: [companies.id] }),
-  job: one(jobs, { fields: [dispatchEmergencyAssessments.jobId], references: [jobs.id] }),
-  createdBy: one(users, {
-    fields: [dispatchEmergencyAssessments.createdByUserId],
-    references: [users.id],
+export const dispatchEmergencyAssessmentsRelations = relations(
+  dispatchEmergencyAssessments,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [dispatchEmergencyAssessments.companyId],
+      references: [companies.id],
+    }),
+    job: one(jobs, { fields: [dispatchEmergencyAssessments.jobId], references: [jobs.id] }),
+    createdBy: one(users, {
+      fields: [dispatchEmergencyAssessments.createdByUserId],
+      references: [users.id],
+    }),
   }),
-}));
+);
 
 export const dispatchRecommendationsRelations = relations(dispatchRecommendations, ({ one }) => ({
-  company: one(companies, { fields: [dispatchRecommendations.companyId], references: [companies.id] }),
-  technician: one(users, { fields: [dispatchRecommendations.technicianId], references: [users.id] }),
+  company: one(companies, {
+    fields: [dispatchRecommendations.companyId],
+    references: [companies.id],
+  }),
+  technician: one(users, {
+    fields: [dispatchRecommendations.technicianId],
+    references: [users.id],
+  }),
   job: one(jobs, { fields: [dispatchRecommendations.jobId], references: [jobs.id] }),
 }));
 
@@ -2817,10 +3167,19 @@ export const fleetMonthlyReportsRelations = relations(fleetMonthlyReports, ({ on
   company: one(companies, { fields: [fleetMonthlyReports.companyId], references: [companies.id] }),
 }));
 
-export const fleetDriverBehaviourEventsRelations = relations(fleetDriverBehaviourEvents, ({ one }) => ({
-  company: one(companies, { fields: [fleetDriverBehaviourEvents.companyId], references: [companies.id] }),
-  vehicle: one(vehicles, { fields: [fleetDriverBehaviourEvents.vehicleId], references: [vehicles.id] }),
-}));
+export const fleetDriverBehaviourEventsRelations = relations(
+  fleetDriverBehaviourEvents,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [fleetDriverBehaviourEvents.companyId],
+      references: [companies.id],
+    }),
+    vehicle: one(vehicles, {
+      fields: [fleetDriverBehaviourEvents.vehicleId],
+      references: [vehicles.id],
+    }),
+  }),
+);
 
 export const fleetOperatingCostsRelations = relations(fleetOperatingCosts, ({ one }) => ({
   company: one(companies, { fields: [fleetOperatingCosts.companyId], references: [companies.id] }),
@@ -2848,21 +3207,33 @@ export const personalCommAccountsRelations = relations(personalCommAccounts, ({ 
   conversations: many(personalCommConversations),
 }));
 
-export const personalCommConversationsRelations = relations(personalCommConversations, ({ one, many }) => ({
-  company: one(companies, { fields: [personalCommConversations.companyId], references: [companies.id] }),
-  account: one(personalCommAccounts, {
-    fields: [personalCommConversations.accountId],
-    references: [personalCommAccounts.id],
+export const personalCommConversationsRelations = relations(
+  personalCommConversations,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [personalCommConversations.companyId],
+      references: [companies.id],
+    }),
+    account: one(personalCommAccounts, {
+      fields: [personalCommConversations.accountId],
+      references: [personalCommAccounts.id],
+    }),
+    customer: one(customers, {
+      fields: [personalCommConversations.customerId],
+      references: [customers.id],
+    }),
+    mediaItems: many(personalCommMediaItems),
+    leadSignals: many(personalCommLeadSignals),
+    followUps: many(personalCommFollowUps),
+    actions: many(personalCommActions),
   }),
-  customer: one(customers, { fields: [personalCommConversations.customerId], references: [customers.id] }),
-  mediaItems: many(personalCommMediaItems),
-  leadSignals: many(personalCommLeadSignals),
-  followUps: many(personalCommFollowUps),
-  actions: many(personalCommActions),
-}));
+);
 
 export const personalCommMediaItemsRelations = relations(personalCommMediaItems, ({ one }) => ({
-  company: one(companies, { fields: [personalCommMediaItems.companyId], references: [companies.id] }),
+  company: one(companies, {
+    fields: [personalCommMediaItems.companyId],
+    references: [companies.id],
+  }),
   conversation: one(personalCommConversations, {
     fields: [personalCommMediaItems.conversationId],
     references: [personalCommConversations.id],
@@ -2888,12 +3259,92 @@ export const securityAuditLogsRelations = relations(securityAuditLogs, ({ one })
 }));
 
 export const securityPermissionGrantsRelations = relations(securityPermissionGrants, ({ one }) => ({
-  company: one(companies, { fields: [securityPermissionGrants.companyId], references: [companies.id] }),
-  grantedTo: one(users, { fields: [securityPermissionGrants.grantedToUserId], references: [users.id] }),
-  grantedBy: one(users, { fields: [securityPermissionGrants.grantedByUserId], references: [users.id] }),
+  company: one(companies, {
+    fields: [securityPermissionGrants.companyId],
+    references: [companies.id],
+  }),
+  grantedTo: one(users, {
+    fields: [securityPermissionGrants.grantedToUserId],
+    references: [users.id],
+  }),
+  grantedBy: one(users, {
+    fields: [securityPermissionGrants.grantedByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const securityActionsRelations = relations(securityActions, ({ one }) => ({
   company: one(companies, { fields: [securityActions.companyId], references: [companies.id] }),
   createdBy: one(users, { fields: [securityActions.createdByUserId], references: [users.id] }),
+}));
+
+export const n8nConnectionsRelations = relations(n8nConnections, ({ one }) => ({
+  company: one(companies, {
+    fields: [n8nConnections.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const n8nWorkflowRegistrationsRelations = relations(
+  n8nWorkflowRegistrations,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [n8nWorkflowRegistrations.companyId],
+      references: [companies.id],
+    }),
+    nativeWorkflow: one(workflows, {
+      fields: [n8nWorkflowRegistrations.nativeWorkflowId],
+      references: [workflows.id],
+    }),
+    owner: one(users, {
+      fields: [n8nWorkflowRegistrations.ownerUserId],
+      references: [users.id],
+    }),
+    createdBy: one(users, {
+      fields: [n8nWorkflowRegistrations.createdByUserId],
+      references: [users.id],
+    }),
+    executions: many(n8nExecutions),
+  }),
+);
+
+export const n8nExecutionsRelations = relations(n8nExecutions, ({ one }) => ({
+  company: one(companies, {
+    fields: [n8nExecutions.companyId],
+    references: [companies.id],
+  }),
+  workflowRegistration: one(n8nWorkflowRegistrations, {
+    fields: [n8nExecutions.workflowRegistrationId],
+    references: [n8nWorkflowRegistrations.id],
+  }),
+  approvedBy: one(users, {
+    fields: [n8nExecutions.approvedByUserId],
+    references: [users.id],
+  }),
+  createdBy: one(users, {
+    fields: [n8nExecutions.createdByUserId],
+    references: [users.id],
+  }),
+}));
+
+export const n8nCallbackReceiptsRelations = relations(n8nCallbackReceipts, ({ one }) => ({
+  company: one(companies, {
+    fields: [n8nCallbackReceipts.companyId],
+    references: [companies.id],
+  }),
+  execution: one(n8nExecutions, {
+    fields: [n8nCallbackReceipts.executionId],
+    references: [n8nExecutions.id],
+  }),
+}));
+
+export const n8nAuditEventsRelations = relations(n8nAuditEvents, ({ one }) => ({
+  company: one(companies, {
+    fields: [n8nAuditEvents.companyId],
+    references: [companies.id],
+  }),
+  actor: one(users, {
+    fields: [n8nAuditEvents.actorUserId],
+    references: [users.id],
+  }),
 }));

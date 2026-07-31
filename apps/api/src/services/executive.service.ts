@@ -283,8 +283,7 @@ export class ExecutiveService {
   }
 
   async getBusinessSummary(companyId: string): Promise<BusinessSummary> {
-    const period =
-      'monthly' as const;
+    const period = 'monthly' as const;
     const [dashboard, intelligence, health, alerts] = await Promise.all([
       this.deps.analyticsService.getDashboard(companyId, { period }),
       this.deps.intelligenceService.getDashboard(companyId),
@@ -294,7 +293,9 @@ export class ExecutiveService {
 
     const highlights: string[] = [];
     if (dashboard.revenue.changePercent !== null && dashboard.revenue.changePercent < 0) {
-      highlights.push(`Revenue down ${Math.abs(dashboard.revenue.changePercent)}% vs prior period.`);
+      highlights.push(
+        `Revenue down ${Math.abs(dashboard.revenue.changePercent)}% vs prior period.`,
+      );
     } else if (dashboard.revenue.changePercent !== null && dashboard.revenue.changePercent > 0) {
       highlights.push(`Revenue up ${dashboard.revenue.changePercent}% vs prior period.`);
     }
@@ -375,7 +376,9 @@ export class ExecutiveService {
         ? Math.min(
             100,
             Math.round(
-              (profitability.totals.estimatedProfitCents / profitability.totals.revenueCents) * 100 + 50,
+              (profitability.totals.estimatedProfitCents / profitability.totals.revenueCents) *
+                100 +
+                50,
             ),
           )
         : 50;
@@ -402,8 +405,14 @@ export class ExecutiveService {
           ? 100
           : null,
     );
-    const salesScore = Math.min(100, sales.openOpportunityCount * 10 + sales.pipelineValueCents > 0 ? 70 : 40);
-    const workforceScore = Math.max(0, 100 - workforce.skillGapCount * 8 - workforce.activePipelineCount * 2);
+    const salesScore = Math.min(
+      100,
+      sales.openOpportunityCount * 10 + sales.pipelineValueCents > 0 ? 70 : 40,
+    );
+    const workforceScore = Math.max(
+      0,
+      100 - workforce.skillGapCount * 8 - workforce.activePipelineCount * 2,
+    );
     const inventoryScore = Math.max(0, 100 - procurement.lowStockCount * 10);
 
     return [
@@ -469,7 +478,9 @@ export class ExecutiveService {
   private resolveHealthTrend(components: BusinessHealthComponent[]): BusinessHealthTrend {
     const revenue = components.find((component) => component.key === 'revenue');
     const cashFlow = components.find((component) => component.key === 'cash_flow');
-    const avg = Math.round(components.reduce((sum, component) => sum + component.score, 0) / components.length);
+    const avg = Math.round(
+      components.reduce((sum, component) => sum + component.score, 0) / components.length,
+    );
 
     if ((revenue?.score ?? 50) >= 70 && (cashFlow?.score ?? 50) >= 60 && avg >= 65) {
       return 'improving';
@@ -484,14 +495,15 @@ export class ExecutiveService {
   }
 
   private async buildAlertSignals(companyId: string) {
-    const [monthly, profitability, intelligence, workforce, procurement, marketing] = await Promise.all([
-      this.deps.analyticsService.getDashboard(companyId, { period: 'monthly' }),
-      this.deps.analyticsService.getProfitability(companyId, { period: 'monthly' }),
-      this.deps.intelligenceService.getDashboard(companyId),
-      this.deps.workforceService.getStaffingInsights(companyId),
-      this.deps.procurementService.getStockIntelligence(companyId),
-      this.deps.marketingService.buildAuraContext(companyId),
-    ]);
+    const [monthly, profitability, intelligence, workforce, procurement, marketing] =
+      await Promise.all([
+        this.deps.analyticsService.getDashboard(companyId, { period: 'monthly' }),
+        this.deps.analyticsService.getProfitability(companyId, { period: 'monthly' }),
+        this.deps.intelligenceService.getDashboard(companyId),
+        this.deps.workforceService.getStaffingInsights(companyId),
+        this.deps.procurementService.getStockIntelligence(companyId),
+        this.deps.marketingService.buildAuraContext(companyId),
+      ]);
 
     const signals: Array<{
       alertType: ExecutiveAlertSummary['alertType'];
@@ -507,7 +519,10 @@ export class ExecutiveService {
         title: 'Revenue decline detected',
         description: `Revenue is down ${Math.abs(monthly.revenue.changePercent)}% compared to the prior period.`,
         priority: 'high',
-        context: { changePercent: monthly.revenue.changePercent, revenueCents: monthly.revenue.totalCents },
+        context: {
+          changePercent: monthly.revenue.changePercent,
+          revenueCents: monthly.revenue.totalCents,
+        },
       });
     }
 
@@ -516,7 +531,8 @@ export class ExecutiveService {
         alertType: 'unpaid_invoices',
         title: 'Outstanding invoices require attention',
         description: `${intelligence.outstandingInvoices.count} unpaid/partial invoice(s) totalling ${(intelligence.outstandingInvoices.totalOutstandingCents / 100).toFixed(2)} ${intelligence.outstandingInvoices.currency}.`,
-        priority: intelligence.outstandingInvoices.totalOutstandingCents > 100000 ? 'high' : 'medium',
+        priority:
+          intelligence.outstandingInvoices.totalOutstandingCents > 100000 ? 'high' : 'medium',
         context: {
           count: intelligence.outstandingInvoices.count,
           totalOutstandingCents: intelligence.outstandingInvoices.totalOutstandingCents,
@@ -561,7 +577,9 @@ export class ExecutiveService {
       });
     }
 
-    for (const signal of procurement.filter((row) => ['low_stock', 'zero_stock'].includes(row.signalType)).slice(0, 4)) {
+    for (const signal of procurement
+      .filter((row) => ['low_stock', 'zero_stock'].includes(row.signalType))
+      .slice(0, 4)) {
       signals.push({
         alertType: 'stock_risk',
         title: `Stock risk — ${signal.itemName}`,
@@ -624,7 +642,10 @@ export class ExecutiveService {
         title: 'Convert open sales opportunities',
         description: `${sales.openOpportunityCount} open opportunit${sales.openOpportunityCount === 1 ? 'y' : 'ies'} in pipeline — review follow-ups and quote readiness.`,
         priority: 'medium',
-        context: { openOpportunityCount: sales.openOpportunityCount, pipelineValueCents: sales.pipelineValueCents },
+        context: {
+          openOpportunityCount: sales.openOpportunityCount,
+          pipelineValueCents: sales.pipelineValueCents,
+        },
       });
     }
 
@@ -648,7 +669,9 @@ export class ExecutiveService {
       });
     }
 
-    for (const rec of procurement.filter((row) => row.recommendationType === 'low_stock').slice(0, 3)) {
+    for (const rec of procurement
+      .filter((row) => row.recommendationType === 'low_stock')
+      .slice(0, 3)) {
       signals.push({
         recommendationType: 'operational_improvement',
         title: rec.title,
@@ -683,7 +706,11 @@ export class ExecutiveService {
 
   private async buildReportContent(companyId: string, reportType: ExecutiveReportType) {
     const period =
-      reportType === 'daily_summary' ? 'weekly' : reportType === 'weekly_review' ? 'weekly' : 'monthly';
+      reportType === 'daily_summary'
+        ? 'weekly'
+        : reportType === 'weekly_review'
+          ? 'weekly'
+          : 'monthly';
     const [dashboard, intelligence, summary, health] = await Promise.all([
       this.deps.analyticsService.getDashboard(companyId, { period }),
       this.deps.intelligenceService.getDashboard(companyId),
@@ -699,12 +726,14 @@ export class ExecutiveService {
       `Outstanding invoices: ${intelligence.outstandingInvoices.count} (${(intelligence.outstandingInvoices.totalOutstandingCents / 100).toFixed(2)} ${intelligence.outstandingInvoices.currency})`,
       `Low stock items: ${intelligence.lowStockCount}`,
       `Pending approvals: ${intelligence.pendingApprovals.count}`,
-      health ? `Business health score: ${health.overallScore}/100 (${health.trend})` : 'Business health score: not yet calculated',
+      health
+        ? `Business health score: ${health.overallScore}/100 (${health.trend})`
+        : 'Business health score: not yet calculated',
       '',
       'Highlights:',
       ...summary.highlights.map((line) => `- ${line}`),
       '',
-      "This report uses real TITAN data only. Recommended actions require explicit human approval before execution.",
+      'This report uses real TITAN data only. Recommended actions require explicit human approval before execution.',
     ];
 
     return {

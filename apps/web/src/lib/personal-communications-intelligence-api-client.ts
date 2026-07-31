@@ -94,7 +94,10 @@ export async function fetchPrivacySettings(accessToken: string) {
   return data.privacy;
 }
 
-export async function updatePrivacySettings(accessToken: string, body: UpdatePersonalCommPrivacyRequest) {
+export async function updatePrivacySettings(
+  accessToken: string,
+  body: UpdatePersonalCommPrivacyRequest,
+) {
   const data = await request<{ privacy: PersonalCommPrivacySettings }>(
     '/personal-communications-intelligence/privacy',
     { accessToken, method: 'PUT', body },
@@ -110,7 +113,10 @@ export async function fetchPersonalCommActions(accessToken: string) {
   return data.actions;
 }
 
-export async function createPersonalCommAction(accessToken: string, body: CreatePersonalCommActionRequest) {
+export async function createPersonalCommAction(
+  accessToken: string,
+  body: CreatePersonalCommActionRequest,
+) {
   const data = await request<{ action: PersonalCommActionSummary }>(
     '/personal-communications-intelligence/actions',
     { accessToken, method: 'POST', body },

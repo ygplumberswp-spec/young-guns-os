@@ -46,7 +46,10 @@ export class EnterpriseNotificationTemplateService {
 
   async getTemplate(companyId: string, templateId: string) {
     return this.db.query.ncNotificationTemplates.findFirst({
-      where: and(eq(ncNotificationTemplates.companyId, companyId), eq(ncNotificationTemplates.id, templateId)),
+      where: and(
+        eq(ncNotificationTemplates.companyId, companyId),
+        eq(ncNotificationTemplates.id, templateId),
+      ),
     });
   }
 
@@ -87,7 +90,9 @@ function applyVariables(template: string, variables: Record<string, string>): st
   return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => variables[key] ?? `{{${key}}}`);
 }
 
-function toTemplateSummary(row: typeof ncNotificationTemplates.$inferSelect): NcNotificationTemplateSummary {
+function toTemplateSummary(
+  row: typeof ncNotificationTemplates.$inferSelect,
+): NcNotificationTemplateSummary {
   return {
     id: row.id,
     templateKey: row.templateKey,

@@ -41,7 +41,9 @@ const createSupplierProductSchema = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
 });
 
-const updateSupplierProductSchema = createSupplierProductSchema.omit({ supplierId: true }).partial();
+const updateSupplierProductSchema = createSupplierProductSchema
+  .omit({ supplierId: true })
+  .partial();
 
 const purchaseOrderItemSchema = z.object({
   inventoryItemId: z.string().uuid().optional().nullable(),
@@ -55,6 +57,10 @@ const createPurchaseOrderSchema = z.object({
   referenceNumber: z.string().trim().max(100).optional(),
   notes: z.string().trim().max(5000).optional().nullable(),
   items: z.array(purchaseOrderItemSchema).min(1),
+  jobId: z.string().uuid().optional().nullable(),
+  jobReference: z.string().trim().max(100).optional().nullable(),
+  destinationLocationId: z.string().uuid().optional().nullable(),
+  clientActionId: z.string().trim().min(1).max(200).optional().nullable(),
 });
 
 const updatePurchaseOrderSchema = z.object({
@@ -64,6 +70,20 @@ const updatePurchaseOrderSchema = z.object({
 
 const updatePurchaseOrderStatusSchema = z.object({
   status: purchaseOrderStatusSchema,
+  cancelReason: z.string().trim().max(2000).optional().nullable(),
+});
+
+const receivePurchaseOrderSchema = z.object({
+  clientActionId: z.string().trim().min(1).max(200),
+  destinationLocationId: z.string().uuid(),
+  lines: z
+    .array(
+      z.object({
+        purchaseOrderItemId: z.string().uuid(),
+        quantityReceived: z.number().int().min(1),
+      }),
+    )
+    .min(1),
 });
 
 const createActivitySchema = z.object({
@@ -100,7 +120,11 @@ export function createProcurementRouter({
 }: ProcurementRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('procurement:read', 'procurement:write', 'inventory:read');
+  const requireRead = requireAnyPermission(
+    'procurement:read',
+    'procurement:write',
+    'inventory:read',
+  );
   const requireWrite = requireAnyPermission('procurement:write');
 
   router.use(requireAuth);
@@ -133,7 +157,9 @@ export function createProcurementRouter({
   router.post('/suppliers', requireWrite, async (req, res) => {
     const parsed = createSupplierSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier payload' } });
       return;
     }
 
@@ -149,7 +175,9 @@ export function createProcurementRouter({
   router.patch('/suppliers/:id', requireWrite, async (req, res) => {
     const parsed = updateSupplierSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier payload' } });
       return;
     }
 
@@ -182,7 +210,9 @@ export function createProcurementRouter({
   router.post('/suppliers/:id/activities', requireWrite, async (req, res) => {
     const parsed = createActivitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
       return;
     }
 
@@ -208,7 +238,9 @@ export function createProcurementRouter({
   router.post('/supplier-products', requireWrite, async (req, res) => {
     const parsed = createSupplierProductSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier product payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier product payload' } });
       return;
     }
 
@@ -224,7 +256,9 @@ export function createProcurementRouter({
   router.patch('/supplier-products/:id', requireWrite, async (req, res) => {
     const parsed = updateSupplierProductSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier product payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid supplier product payload' } });
       return;
     }
 
@@ -269,7 +303,9 @@ export function createProcurementRouter({
   router.post('/purchase-orders', requireWrite, async (req, res) => {
     const parsed = createPurchaseOrderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid purchase order payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid purchase order payload' } });
       return;
     }
 
@@ -285,7 +321,9 @@ export function createProcurementRouter({
   router.patch('/purchase-orders/:id', requireWrite, async (req, res) => {
     const parsed = updatePurchaseOrderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid purchase order payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid purchase order payload' } });
       return;
     }
 
@@ -302,10 +340,34 @@ export function createProcurementRouter({
     }
   });
 
+  router.post('/purchase-orders/:id/receive', requireWrite, async (req, res) => {
+    const parsed = receivePurchaseOrderSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid receipt payload' } });
+      return;
+    }
+
+    try {
+      const auth = getAuth(req);
+      const purchaseOrder = await procurementService.receivePurchaseOrder(
+        auth,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { purchaseOrder } });
+    } catch (error) {
+      handleProcurementError(res, error);
+    }
+  });
+
   router.patch('/purchase-orders/:id/status', requireWrite, async (req, res) => {
     const parsed = updatePurchaseOrderStatusSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid status payload' } });
       return;
     }
 
@@ -366,7 +428,13 @@ export function createProcurementRouter({
 function handleProcurementError(res: import('express').Response, error: unknown) {
   if (error instanceof ProcurementError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'INVALID_STATUS' ? 409 : 400;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'INVALID_STATUS'
+          ? 409
+          : error.code === 'INSUFFICIENT_STOCK'
+            ? 409
+            : 400;
     res.status(status).json({
       error: { code: error.code, message: error.message },
     });

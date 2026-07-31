@@ -30,13 +30,7 @@ export const MOBILE_FLEET_PROVIDER_TYPES: MobileFleetProviderType[] = [
 ];
 
 export type MobileMediaType =
-  | 'photo'
-  | 'video'
-  | 'document'
-  | 'barcode'
-  | 'qr_code'
-  | 'signature'
-  | 'voice_note';
+  'photo' | 'video' | 'document' | 'barcode' | 'qr_code' | 'signature' | 'voice_note';
 
 export type MobileOfflineResourceType =
   | 'job'

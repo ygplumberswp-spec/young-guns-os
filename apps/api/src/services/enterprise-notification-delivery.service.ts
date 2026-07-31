@@ -29,12 +29,18 @@ export class EnterpriseNotificationDeliveryService {
     private readonly templateService: EnterpriseNotificationTemplateService,
   ) {}
 
-  async listDeliveryJobs(companyId: string, options?: { status?: string }): Promise<NcDeliveryJobSummary[]> {
+  async listDeliveryJobs(
+    companyId: string,
+    options?: { status?: string },
+  ): Promise<NcDeliveryJobSummary[]> {
     const rows = await this.db.query.ncDeliveryJobs.findMany({
       where: options?.status
         ? and(
             eq(ncDeliveryJobs.companyId, companyId),
-            eq(ncDeliveryJobs.status, options.status as typeof ncDeliveryJobs.status.enumValues[number]),
+            eq(
+              ncDeliveryJobs.status,
+              options.status as (typeof ncDeliveryJobs.status.enumValues)[number],
+            ),
           )
         : eq(ncDeliveryJobs.companyId, companyId),
       orderBy: [desc(ncDeliveryJobs.createdAt)],
@@ -43,9 +49,15 @@ export class EnterpriseNotificationDeliveryService {
     return rows.map(toDeliveryJobSummary);
   }
 
-  async listDeliveryEvents(companyId: string, deliveryJobId: string): Promise<NcDeliveryEventSummary[]> {
+  async listDeliveryEvents(
+    companyId: string,
+    deliveryJobId: string,
+  ): Promise<NcDeliveryEventSummary[]> {
     const rows = await this.db.query.ncDeliveryEvents.findMany({
-      where: and(eq(ncDeliveryEvents.companyId, companyId), eq(ncDeliveryEvents.deliveryJobId, deliveryJobId)),
+      where: and(
+        eq(ncDeliveryEvents.companyId, companyId),
+        eq(ncDeliveryEvents.deliveryJobId, deliveryJobId),
+      ),
       orderBy: [desc(ncDeliveryEvents.occurredAt)],
       limit: 100,
     });
@@ -63,7 +75,9 @@ export class EnterpriseNotificationDeliveryService {
     input: DispatchNcNotificationRequest,
   ): Promise<NcDeliveryJobSummary[]> {
     if (!input.moduleSource || !input.eventType || !input.title?.trim() || !input.body?.trim()) {
-      throw new Error('Invalid notification dispatch — module, event, title, and body are required');
+      throw new Error(
+        'Invalid notification dispatch — module, event, title, and body are required',
+      );
     }
 
     let title = input.title.trim();
@@ -71,7 +85,10 @@ export class EnterpriseNotificationDeliveryService {
     let templateId: string | null = null;
 
     if (input.templateKey) {
-      const template = await this.templateService.getTemplateByKey(scope.companyId, input.templateKey);
+      const template = await this.templateService.getTemplateByKey(
+        scope.companyId,
+        input.templateKey,
+      );
       if (template) {
         const preview = this.templateService.previewTemplate(
           template.subjectTemplate,
@@ -182,14 +199,17 @@ export class EnterpriseNotificationDeliveryService {
 
     const ucChannel = CHANNEL_TO_UC[input.channel];
     let providerAdapterId: string | null = null;
-    let status: typeof ncDeliveryJobs.status.enumValues[number] = 'failed';
+    let status: (typeof ncDeliveryJobs.status.enumValues)[number] = 'failed';
     let errorMessage: string | null = null;
 
     if (ucChannel) {
       const adapter = await this.db.query.ucProviderAdapters.findFirst({
         where: and(
           eq(ucProviderAdapters.companyId, scope.companyId),
-          eq(ucProviderAdapters.channel, ucChannel as typeof ucProviderAdapters.channel.enumValues[number]),
+          eq(
+            ucProviderAdapters.channel,
+            ucChannel as (typeof ucProviderAdapters.channel.enumValues)[number],
+          ),
           eq(ucProviderAdapters.status, 'active'),
         ),
       });
@@ -230,7 +250,7 @@ export class EnterpriseNotificationDeliveryService {
     companyId: string,
     deliveryJobId: string,
     eventType: string,
-    status: typeof ncDeliveryJobs.status.enumValues[number],
+    status: (typeof ncDeliveryJobs.status.enumValues)[number],
     details: Record<string, unknown>,
   ) {
     await this.db.insert(ncDeliveryEvents).values({

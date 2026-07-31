@@ -155,7 +155,8 @@ export class WhatsappService {
     const resolvedAccessToken =
       accessToken ||
       (connection.credentialsEncrypted
-        ? decryptWhatsappCredentials(connection.credentialsEncrypted, this.encryptionKey!).accessToken
+        ? decryptWhatsappCredentials(connection.credentialsEncrypted, this.encryptionKey!)
+            .accessToken
         : '');
     const webhookVerifyToken =
       input.webhookVerifyToken?.trim() || connection.webhookVerifyToken || generateWebhookSecret();
@@ -473,7 +474,10 @@ export class WhatsappService {
     const phoneNumber = input.phoneNumber.trim();
 
     if (!messageContent || !phoneNumber) {
-      throw new WhatsappServiceError('VALIDATION_ERROR', 'Phone number and message content are required');
+      throw new WhatsappServiceError(
+        'VALIDATION_ERROR',
+        'Phone number and message content are required',
+      );
     }
 
     const externalMessageId = await client.sendTextMessage({
@@ -484,10 +488,7 @@ export class WhatsappService {
     return { externalMessageId };
   }
 
-  async approveDraft(
-    scope: TenantScope,
-    messageId: string,
-  ): Promise<WhatsappMessageSummary> {
+  async approveDraft(scope: TenantScope, messageId: string): Promise<WhatsappMessageSummary> {
     const draft = await this.db.query.whatsappMessages.findFirst({
       where: and(
         eq(whatsappMessages.id, messageId),
@@ -589,7 +590,9 @@ export class WhatsappService {
         messageContent: incoming.body,
         externalMessageId: incoming.externalMessageId,
         deliveryStatus: 'delivered',
-        deliveredAt: incoming.timestamp ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000) : new Date(),
+        deliveredAt: incoming.timestamp
+          ? new Date(Number.parseInt(incoming.timestamp, 10) * 1000)
+          : new Date(),
       });
 
       emitBusinessEvent({
@@ -627,7 +630,8 @@ export class WhatsappService {
         .update(whatsappMessages)
         .set({
           deliveryStatus,
-          deliveredAt: deliveryStatus === 'delivered' || deliveryStatus === 'read' ? timestamp : undefined,
+          deliveredAt:
+            deliveryStatus === 'delivered' || deliveryStatus === 'read' ? timestamp : undefined,
           readAt: deliveryStatus === 'read' ? timestamp : undefined,
           updatedAt: new Date(),
         })
@@ -708,21 +712,30 @@ export class WhatsappService {
           continue;
         }
 
-        const category = (action.config.category as WhatsappTemplateCategory | undefined) ??
-          (action.actionType === 'send_whatsapp_draft' ? 'payment_reminder' : 'job_booked_confirmation');
+        const category =
+          (action.config.category as WhatsappTemplateCategory | undefined) ??
+          (action.actionType === 'send_whatsapp_draft'
+            ? 'payment_reminder'
+            : 'job_booked_confirmation');
 
         if (!context.customerId) {
           continue;
         }
 
-        const preview = await this.buildNotificationPreview(companyId, context.customerId, category, action.config);
+        const preview = await this.buildNotificationPreview(
+          companyId,
+          context.customerId,
+          category,
+          action.config,
+        );
         const draft = await this.createDraftMessage(
           { companyId, userId: workflow.createdByUserId },
           {
             customerId: context.customerId,
             messageContent: preview,
             notificationCategory: category,
-            templateId: typeof action.config.templateId === 'string' ? action.config.templateId : null,
+            templateId:
+              typeof action.config.templateId === 'string' ? action.config.templateId : null,
           },
         );
 
@@ -740,10 +753,7 @@ export class WhatsappService {
     return results;
   }
 
-  async buildAuraContext(
-    companyId: string,
-    customerId?: string,
-  ): Promise<AuraWhatsappContext> {
+  async buildAuraContext(companyId: string, customerId?: string): Promise<AuraWhatsappContext> {
     const connection = await this.getOrCreateConnection(companyId);
     const stats = await this.getStats(companyId);
 
@@ -923,10 +933,7 @@ export class WhatsappService {
       return existing;
     }
 
-    const [created] = await this.db
-      .insert(whatsappConnections)
-      .values({ companyId })
-      .returning();
+    const [created] = await this.db.insert(whatsappConnections).values({ companyId }).returning();
 
     return created!;
   }
@@ -934,7 +941,11 @@ export class WhatsappService {
   private async requireConnectedConnection(companyId: string) {
     const connection = await this.getOrCreateConnection(companyId);
 
-    if (connection.status !== 'connected' || !connection.credentialsEncrypted || !connection.phoneNumberId) {
+    if (
+      connection.status !== 'connected' ||
+      !connection.credentialsEncrypted ||
+      !connection.phoneNumberId
+    ) {
       throw new WhatsappServiceError('NOT_CONNECTED', 'WhatsApp is not connected');
     }
 
@@ -943,7 +954,10 @@ export class WhatsappService {
 
   private createClient(connection: typeof whatsappConnections.$inferSelect) {
     this.ensureEncryptionKey();
-    const credentials = decryptWhatsappCredentials(connection.credentialsEncrypted!, this.encryptionKey!);
+    const credentials = decryptWhatsappCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
 
     return new WhatsappClient({
       accessToken: credentials.accessToken,
@@ -960,7 +974,9 @@ export class WhatsappService {
     }
   }
 
-  private toConnectionSummary(connection: typeof whatsappConnections.$inferSelect): WhatsappConnectionSummary {
+  private toConnectionSummary(
+    connection: typeof whatsappConnections.$inferSelect,
+  ): WhatsappConnectionSummary {
     return {
       provider: connection.provider,
       status: connection.status,
@@ -984,8 +1000,12 @@ export class WhatsappService {
     });
 
     return (
-      rows.find((customer) => customer.phone && customer.phone.replace(/\D/g, '').endsWith(normalized)) ??
-      rows.find((customer) => customer.phone && normalized.endsWith(customer.phone.replace(/\D/g, ''))) ??
+      rows.find(
+        (customer) => customer.phone && customer.phone.replace(/\D/g, '').endsWith(normalized),
+      ) ??
+      rows.find(
+        (customer) => customer.phone && normalized.endsWith(customer.phone.replace(/\D/g, '')),
+      ) ??
       null
     );
   }
@@ -1070,7 +1090,9 @@ function toMessageSummary(
   };
 }
 
-function mapDeliveryStatus(status: string): typeof whatsappMessages.$inferSelect['deliveryStatus'] {
+function mapDeliveryStatus(
+  status: string,
+): (typeof whatsappMessages.$inferSelect)['deliveryStatus'] {
   switch (status) {
     case 'sent':
       return 'sent';

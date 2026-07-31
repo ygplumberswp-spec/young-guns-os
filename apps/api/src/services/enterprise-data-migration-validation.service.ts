@@ -144,7 +144,11 @@ export function findDuplicates(
   rows: Record<string, string>[],
   existingKeys: Set<string>,
 ): Array<{ rowNumber: number; duplicateKey: string; existingEntityId: string | null }> {
-  const duplicates: Array<{ rowNumber: number; duplicateKey: string; existingEntityId: string | null }> = [];
+  const duplicates: Array<{
+    rowNumber: number;
+    duplicateKey: string;
+    existingEntityId: string | null;
+  }> = [];
   rows.forEach((row, index) => {
     const duplicateKey = buildDuplicateKey(entityType, row);
     if (duplicateKey.endsWith(':')) return;

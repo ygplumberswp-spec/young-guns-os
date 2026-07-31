@@ -3,6 +3,8 @@ import { verifyPortalAccessToken } from '@titan/auth';
 import type { PortalAccessPermission } from '@titan/shared';
 import { isPortalAccessPermission } from '@titan/shared';
 import type { PortalAuthService } from '../services/portal-auth.service.js';
+import { recordAuthorizationFailure } from './authorization-guards.js';
+import { getRbacAuditDb } from './rbac.js';
 
 export type PortalAuthenticatedRequest = Request & {
   portalAuth: {
@@ -78,6 +80,25 @@ export function requirePortalPermission(...required: PortalAccessPermission[]) {
     const allowed = required.some((permission) => auth.permissions.includes(permission));
 
     if (!allowed) {
+      const db = getRbacAuditDb();
+      if (db) {
+        void recordAuthorizationFailure(db, {
+          companyId: auth.companyId,
+          userId: auth.portalUserId,
+          sessionId: auth.sessionId,
+          action: 'portal_permission_denied',
+          metadata: {
+            path: req.path,
+            method: req.method,
+            requiredPermissions: required,
+            customerId: auth.customerId,
+          },
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        }).catch(() => {
+          /* never block the 403 on audit failure */
+        });
+      }
       res.status(403).json({
         error: {
           code: 'FORBIDDEN',

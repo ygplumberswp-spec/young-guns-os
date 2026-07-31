@@ -42,7 +42,9 @@ export function AgentExecutionListPage() {
     }
 
     void loadExecutions();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
@@ -55,10 +57,7 @@ export function AgentExecutionListPage() {
 
   return (
     <div className="agents-page">
-      <PageHeader
-        title="AURA Agents"
-        description="Agent execution history across your tenant."
-      />
+      <PageHeader title="AURA Agents" description="Agent execution history across your tenant." />
       <AgentsNav />
 
       {isLoading ? <p className="page-muted">Loading execution history…</p> : null}
@@ -97,12 +96,10 @@ export function AgentExecutionListPage() {
                             {execution.agentProfileName ?? 'Unknown profile'}
                           </Link>
                         ) : (
-                          execution.agentProfileName ?? 'Unknown profile'
+                          (execution.agentProfileName ?? 'Unknown profile')
                         )}
                       </td>
-                      <td>
-                        {execution.agentKey ? formatAgentKey(execution.agentKey) : '—'}
-                      </td>
+                      <td>{execution.agentKey ? formatAgentKey(execution.agentKey) : '—'}</td>
                       <td>{formatAgentExecutionStatus(execution.status)}</td>
                       <td>{execution.executionMode}</td>
                       <td>{new Date(execution.startedAt).toLocaleString()}</td>

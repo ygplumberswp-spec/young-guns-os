@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { EnterpriseGlobalSearchDashboard, GsSearchMode, GsSearchResultSummary } from '@titan/shared';
+import type {
+  EnterpriseGlobalSearchDashboard,
+  GsSearchMode,
+  GsSearchResultSummary,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureGlobalSearchAnalytics,
@@ -44,7 +48,9 @@ export function GlobalSearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState<GsSearchMode>('hybrid');
   const [searchResults, setSearchResults] = useState<GsSearchResultSummary[]>([]);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchGlobalSearchAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchGlobalSearchAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
@@ -52,8 +58,14 @@ export function GlobalSearchPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessGlobalSearch(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageGlobalSearch(user.permissions) : false), [user]);
@@ -91,7 +103,9 @@ export function GlobalSearchPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load global search dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load global search dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -144,7 +158,11 @@ export function GlobalSearchPage() {
     setIsSearching(true);
     setError(null);
     try {
-      const results = await runGlobalSearch(accessToken, { query: searchQuery.trim(), searchMode, limit: 50 });
+      const results = await runGlobalSearch(accessToken, {
+        query: searchQuery.trim(),
+        searchMode,
+        limit: 50,
+      });
       setSearchResults(results);
       await loadDashboard();
     } catch (err) {
@@ -158,7 +176,10 @@ export function GlobalSearchPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Global Search" description="You do not have permission to view global search." />
+        <PageHeader
+          title="Global Search"
+          description="You do not have permission to view global search."
+        />
       </div>
     );
   }
@@ -174,7 +195,9 @@ export function GlobalSearchPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncSearchAlerts(accessToken!), 'Search alerts synced.')}
+                onClick={() =>
+                  void runAction(() => syncSearchAlerts(accessToken!), 'Search alerts synced.')
+                }
               >
                 Sync Alerts
               </Button>
@@ -182,7 +205,10 @@ export function GlobalSearchPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => captureGlobalSearchAnalytics(accessToken!), 'Analytics captured.')
+                  void runAction(
+                    () => captureGlobalSearchAnalytics(accessToken!),
+                    'Analytics captured.',
+                  )
                 }
               >
                 Capture Analytics
@@ -238,7 +264,10 @@ export function GlobalSearchPage() {
                   </label>
                   <label>
                     Search mode
-                    <select value={searchMode} onChange={(event) => setSearchMode(event.target.value as GsSearchMode)}>
+                    <select
+                      value={searchMode}
+                      onChange={(event) => setSearchMode(event.target.value as GsSearchMode)}
+                    >
                       <option value="hybrid">Hybrid</option>
                       <option value="keyword">Keyword</option>
                       <option value="fuzzy">Fuzzy</option>
@@ -254,7 +283,10 @@ export function GlobalSearchPage() {
                 <Panel title={`Results (${searchResults.length})`}>
                   <div className="data-list">
                     {searchResults.map((result) => (
-                      <div key={`${result.sourceModule}-${result.sourceEntityId}`} className="data-list-item">
+                      <div
+                        key={`${result.sourceModule}-${result.sourceEntityId}`}
+                        className="data-list-item"
+                      >
                         <strong>{result.title}</strong>
                         <span>
                           {formatEntityType(result.entityType)} · {result.sourceModule} ·{' '}
@@ -311,7 +343,8 @@ export function GlobalSearchPage() {
                     <div key={item.id} className="data-list-item">
                       <strong>{item.title}</strong>
                       <span>
-                        {formatStatus(item.feedScope)} · {item.moduleKey} · {formatStatus(item.eventType)} ·{' '}
+                        {formatStatus(item.feedScope)} · {item.moduleKey} ·{' '}
+                        {formatStatus(item.eventType)} ·{' '}
                         {new Date(item.occurredAt).toLocaleString()}
                       </span>
                       {item.description ? <p>{item.description}</p> : null}
@@ -325,7 +358,10 @@ export function GlobalSearchPage() {
           {activeTab === 'saved' ? (
             <Panel title="Saved Searches">
               {dashboard.savedSearches.length === 0 ? (
-                <EmptyState title="No saved searches" description="Save frequently used queries from the Search tab." />
+                <EmptyState
+                  title="No saved searches"
+                  description="Save frequently used queries from the Search tab."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.savedSearches.map((saved) => (
@@ -369,7 +405,8 @@ export function GlobalSearchPage() {
                   {dashboard.relationshipPreview.map((link) => (
                     <div key={link.id} className="data-list-item">
                       <strong>
-                        {formatEntityType(link.fromEntityType)} → {formatEntityType(link.toEntityType)}
+                        {formatEntityType(link.fromEntityType)} →{' '}
+                        {formatEntityType(link.toEntityType)}
                       </strong>
                       <span>
                         {formatStatus(link.relationshipType)} · {link.sourceModule}
@@ -396,7 +433,9 @@ export function GlobalSearchPage() {
                         <strong>{suggestion.suggestionText}</strong>
                         <span>
                           {formatStatus(suggestion.suggestionType)}
-                          {suggestion.entityType ? ` · ${formatEntityType(suggestion.entityType)}` : ''}
+                          {suggestion.entityType
+                            ? ` · ${formatEntityType(suggestion.entityType)}`
+                            : ''}
                         </span>
                       </div>
                     ))}
@@ -418,18 +457,36 @@ export function GlobalSearchPage() {
           {activeTab === 'analytics' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Indexed Records" value={String(dashboard.searchHealth.indexedCount)} />
-                <StatCard label="Pending Index" value={String(dashboard.searchHealth.pendingIndexCount)} />
-                <StatCard label="Failed Index" value={String(dashboard.searchHealth.failedIndexCount)} />
-                <StatCard label="Timeline Events" value={String(dashboard.searchHealth.timelineEntryCount)} />
-                <StatCard label="Activity Items" value={String(dashboard.searchHealth.activityFeedCount)} />
+                <StatCard
+                  label="Indexed Records"
+                  value={String(dashboard.searchHealth.indexedCount)}
+                />
+                <StatCard
+                  label="Pending Index"
+                  value={String(dashboard.searchHealth.pendingIndexCount)}
+                />
+                <StatCard
+                  label="Failed Index"
+                  value={String(dashboard.searchHealth.failedIndexCount)}
+                />
+                <StatCard
+                  label="Timeline Events"
+                  value={String(dashboard.searchHealth.timelineEntryCount)}
+                />
+                <StatCard
+                  label="Activity Items"
+                  value={String(dashboard.searchHealth.activityFeedCount)}
+                />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
               </div>
               <Panel title="Latest Analytics Snapshot">
                 {dashboard.analytics ? (
                   <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
                 ) : (
-                  <EmptyState title="No analytics captured" description="Capture analytics to record search metrics." />
+                  <EmptyState
+                    title="No analytics captured"
+                    description="Capture analytics to record search metrics."
+                  />
                 )}
               </Panel>
             </>
@@ -475,7 +532,10 @@ export function GlobalSearchPage() {
               {isSupplementaryLoading ? (
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
-                <EmptyState title="No audit entries" description="Global search actions are fully auditable." />
+                <EmptyState
+                  title="No audit entries"
+                  description="Global search actions are fully auditable."
+                />
               ) : (
                 <div className="data-list">
                   {auditLogs.map((log) => (
@@ -496,12 +556,20 @@ export function GlobalSearchPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
                 onSend={(content) =>
-                  void sendAgentMessage(content, 'search_intelligence' as import('@titan/shared').AgentKey)
+                  void sendAgentMessage(
+                    content,
+                    'search_intelligence' as import('@titan/shared').AgentKey,
+                  )
                 }
                 placeholder="Ask about search results, timelines, activity feeds, or draft search reports…"
               />

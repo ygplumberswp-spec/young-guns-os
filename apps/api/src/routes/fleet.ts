@@ -104,19 +104,23 @@ export function createFleetRouter({
     }
   });
 
-  router.get('/vehicles/:vehicleId', requireAnyPermission('fleet:read', 'fleet:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const vehicle = await fleetService.getVehicle(companyId, getRouteParam(req.params.vehicleId));
+  router.get(
+    '/vehicles/:vehicleId',
+    requireAnyPermission('fleet:read', 'fleet:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const vehicle = await fleetService.getVehicle(companyId, getRouteParam(req.params.vehicleId));
 
-    if (!vehicle) {
-      res.status(404).json({
-        error: { code: 'NOT_FOUND', message: 'Vehicle not found' },
-      });
-      return;
-    }
+      if (!vehicle) {
+        res.status(404).json({
+          error: { code: 'NOT_FOUND', message: 'Vehicle not found' },
+        });
+        return;
+      }
 
-    res.json({ data: { vehicle } });
-  });
+      res.json({ data: { vehicle } });
+    },
+  );
 
   router.patch('/vehicles/:vehicleId', requireAnyPermission('fleet:write'), async (req, res) => {
     const { companyId } = getAuth(req);

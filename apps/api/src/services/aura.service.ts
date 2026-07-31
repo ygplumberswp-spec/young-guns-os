@@ -434,7 +434,10 @@ export class AuraService {
       throw new AuraError('EMPTY_MESSAGE', 'Message content is required');
     }
 
-    if (!this.provider && !(await this.aiProviderResilienceService.hasConfiguredProviders(scope.companyId))) {
+    if (
+      !this.provider &&
+      !(await this.aiProviderResilienceService.hasConfiguredProviders(scope.companyId))
+    ) {
       throw new AuraError(
         'PROVIDER_NOT_CONFIGURED',
         'No AI providers are configured. Configure tenant providers or set AURA_OPENAI_API_KEY.',
@@ -595,9 +598,7 @@ export class AuraService {
       }
 
       const title =
-        conversation.messages.length === 0
-          ? deriveConversationTitle(trimmed)
-          : conversation.title;
+        conversation.messages.length === 0 ? deriveConversationTitle(trimmed) : conversation.title;
 
       const [updatedConversation] = await tx
         .update(auraConversations)

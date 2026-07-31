@@ -325,7 +325,8 @@ export class CommunicationsIntelligenceService {
         voiceSessionId: input.voiceSessionId ?? null,
         storageReference: input.storageReference?.trim() || null,
         retentionPolicyDays: input.retentionPolicyDays ?? null,
-        consentStatus: (input.consentStatus as 'granted' | 'denied' | 'unknown' | 'revoked') ?? 'unknown',
+        consentStatus:
+          (input.consentStatus as 'granted' | 'denied' | 'unknown' | 'revoked') ?? 'unknown',
         transcriptReference: input.transcriptReference?.trim() || null,
         aiSummary: input.aiSummary?.trim() || null,
         recordingStatus: input.storageReference ? 'available' : 'pending',
@@ -366,7 +367,9 @@ export class CommunicationsIntelligenceService {
     return history.find((row) => row.voiceSessionId === created!.voiceSessionId)!;
   }
 
-  async listConversationInsights(companyId: string): Promise<CommIntelConversationInsightSummary[]> {
+  async listConversationInsights(
+    companyId: string,
+  ): Promise<CommIntelConversationInsightSummary[]> {
     const rows = await this.db.query.commIntelConversationInsights.findMany({
       where: eq(commIntelConversationInsights.companyId, companyId),
       with: { customer: true },
@@ -455,7 +458,11 @@ export class CommunicationsIntelligenceService {
       })
       .returning();
 
-    return (await this.getConversationSummary(scope.companyId, created!.sourceType, created!.sourceId))!;
+    return (await this.getConversationSummary(
+      scope.companyId,
+      created!.sourceType,
+      created!.sourceId,
+    ))!;
   }
 
   async listEmailThreads(companyId: string): Promise<CommIntelEmailThreadSummary[]> {
@@ -607,7 +614,10 @@ export class CommunicationsIntelligenceService {
   ): Promise<CommIntelDraftActionSummary[]> {
     const rows = await this.db.query.commIntelDraftActions.findMany({
       where: status
-        ? and(eq(commIntelDraftActions.companyId, companyId), eq(commIntelDraftActions.status, status as never))
+        ? and(
+            eq(commIntelDraftActions.companyId, companyId),
+            eq(commIntelDraftActions.status, status as never),
+          )
         : eq(commIntelDraftActions.companyId, companyId),
       with: { customer: true },
       orderBy: [desc(commIntelDraftActions.createdAt)],
@@ -673,9 +683,12 @@ export class CommunicationsIntelligenceService {
     return drafts.find((row) => row.id === created!.id)!;
   }
 
-  async buildCommunicationsIntelligenceAuraContext(companyId: string): Promise<CommIntelAuraContext> {
+  async buildCommunicationsIntelligenceAuraContext(
+    companyId: string,
+  ): Promise<CommIntelAuraContext> {
     const dashboard = await this.getAnalyticsDashboard(companyId);
-    const topChannel = [...dashboard.channelUsage].sort((a, b) => b.count - a.count)[0]?.channel ?? null;
+    const topChannel =
+      [...dashboard.channelUsage].sort((a, b) => b.count - a.count)[0]?.channel ?? null;
 
     return {
       summary: `${dashboard.totalCommunications} communication(s), ${dashboard.missedCallCount} missed call(s), ${dashboard.pendingDraftCount} pending draft(s).`,
@@ -683,13 +696,16 @@ export class CommunicationsIntelligenceService {
       missedCallCount: dashboard.missedCallCount,
       pendingDraftCount: dashboard.pendingDraftCount,
       openSupportCount: dashboard.supportResponsePerformance.openConversationCount,
-      whatsappMessageCount: dashboard.channelUsage.find((row) => row.channel === 'whatsapp')?.count ?? 0,
+      whatsappMessageCount:
+        dashboard.channelUsage.find((row) => row.channel === 'whatsapp')?.count ?? 0,
       topChannel,
     };
   }
 }
 
-function toRecordingSummary(row: typeof commIntelRecordings.$inferSelect): CommIntelRecordingSummary {
+function toRecordingSummary(
+  row: typeof commIntelRecordings.$inferSelect,
+): CommIntelRecordingSummary {
   return {
     id: row.id,
     voiceSessionId: row.voiceSessionId,

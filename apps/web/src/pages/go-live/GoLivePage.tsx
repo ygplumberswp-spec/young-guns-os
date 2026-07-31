@@ -50,7 +50,9 @@ export function GoLivePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<GoLiveTab>('overview');
   const [dashboard, setDashboard] = useState<EnterpriseProductionLaunchDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchProductionLaunchAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchProductionLaunchAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
@@ -58,12 +60,27 @@ export function GoLivePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [wizardTitle, setWizardTitle] = useState('Production go-live');
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessProductionLaunch(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageProductionLaunch(user.permissions) : false), [user]);
-  const canManage = useMemo(() => (user ? canAdministerProductionLaunch(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessProductionLaunch(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageProductionLaunch(user.permissions) : false),
+    [user],
+  );
+  const canManage = useMemo(
+    () => (user ? canAdministerProductionLaunch(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: GoLiveTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -97,7 +114,9 @@ export function GoLivePage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load go-live dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load go-live dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -147,7 +166,10 @@ export function GoLivePage() {
   if (!canView) {
     return (
       <div className="p-6">
-        <EmptyState title="Access denied" description="You do not have permission to view the go-live center." />
+        <EmptyState
+          title="Access denied"
+          description="You do not have permission to view the go-live center."
+        />
       </div>
     );
   }
@@ -175,7 +197,9 @@ export function GoLivePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncProductionLaunchAlerts(accessToken!), 'Alerts synced.')}
+                onClick={() =>
+                  void runAction(() => syncProductionLaunchAlerts(accessToken!), 'Alerts synced.')
+                }
               >
                 Sync Alerts
               </Button>
@@ -204,7 +228,10 @@ export function GoLivePage() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             <StatCard label="Launch Status" value={formatLaunchStatus(readiness.launchStatus)} />
-            <StatCard label="Production Status" value={formatLaunchStatus(dashboard.overallProductionStatus)} />
+            <StatCard
+              label="Production Status"
+              value={formatLaunchStatus(dashboard.overallProductionStatus)}
+            />
             <StatCard label="Provider Failures" value={String(readiness.failedProviderCount)} />
             <StatCard label="Pending Approvals" value={String(readiness.pendingApprovalCount)} />
           </div>
@@ -212,14 +239,16 @@ export function GoLivePage() {
           {readiness.launchStatus === 'blocked' || readiness.launchStatus === 'not_ready' ? (
             <Panel title="Launch blockers">
               <p className="text-sm text-red-700">
-                Production launch is {formatLaunchStatus(readiness.launchStatus)} — resolve configuration and provider issues before go-live.
+                Production launch is {formatLaunchStatus(readiness.launchStatus)} — resolve
+                configuration and provider issues before go-live.
               </p>
             </Panel>
           ) : null}
           {dashboard.releaseCenterSummary ? (
             <Panel title="Release Center">
               <p className="text-sm">
-                Release readiness score: {String(dashboard.releaseCenterSummary.readinessScore ?? '—')}, status:{' '}
+                Release readiness score:{' '}
+                {String(dashboard.releaseCenterSummary.readinessScore ?? '—')}, status:{' '}
                 {String(dashboard.releaseCenterSummary.overallStatus ?? 'unknown')}
               </p>
             </Panel>
@@ -233,7 +262,12 @@ export function GoLivePage() {
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => runEnvironmentReview(accessToken!), 'Environment review completed.')}
+              onClick={() =>
+                void runAction(
+                  () => runEnvironmentReview(accessToken!),
+                  'Environment review completed.',
+                )
+              }
             >
               Run Environment Review
             </Button>
@@ -249,7 +283,10 @@ export function GoLivePage() {
                 ))}
               </ul>
             ) : (
-              <EmptyState title="No environment review" description="Verify DATABASE_URL, JWT secrets, APP_URL, and production environment variables." />
+              <EmptyState
+                title="No environment review"
+                description="Verify DATABASE_URL, JWT secrets, APP_URL, and production environment variables."
+              />
             )}
           </Panel>
         </div>
@@ -261,7 +298,12 @@ export function GoLivePage() {
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => runLiveIntegrationVerification(accessToken!), 'Live integration verification completed.')}
+              onClick={() =>
+                void runAction(
+                  () => runLiveIntegrationVerification(accessToken!),
+                  'Live integration verification completed.',
+                )
+              }
             >
               Verify Live Providers
             </Button>
@@ -269,21 +311,30 @@ export function GoLivePage() {
           <Panel title="Latest Verification">
             {dashboard.latestLiveIntegrationRun ? (
               <p className="text-sm">
-                {dashboard.latestLiveIntegrationRun.runKey} — {formatValidationStatus(dashboard.latestLiveIntegrationRun.status)} ·{' '}
-                {dashboard.latestLiveIntegrationRun.connectedCount}/{dashboard.latestLiveIntegrationRun.providerCount} connected
+                {dashboard.latestLiveIntegrationRun.runKey} —{' '}
+                {formatValidationStatus(dashboard.latestLiveIntegrationRun.status)} ·{' '}
+                {dashboard.latestLiveIntegrationRun.connectedCount}/
+                {dashboard.latestLiveIntegrationRun.providerCount} connected
               </p>
             ) : (
-              <EmptyState title="No verification runs" description="Verify live connectivity for Xero, email, WhatsApp, SMS, payments, Cartrack, and AI providers." />
+              <EmptyState
+                title="No verification runs"
+                description="Verify live connectivity for Xero, email, WhatsApp, SMS, payments, Cartrack, and AI providers."
+              />
             )}
           </Panel>
           <Panel title="Provider Results">
             {dashboard.latestLiveIntegrationResults.length === 0 ? (
-              <EmptyState title="No provider results" description="Run live integration verification against configured providers." />
+              <EmptyState
+                title="No provider results"
+                description="Run live integration verification against configured providers."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.latestLiveIntegrationResults.map((result) => (
                   <li key={result.id} className="py-2 text-sm">
-                    <span className="font-medium">{result.providerName}</span> — {formatValidationStatus(result.status)}
+                    <span className="font-medium">{result.providerName}</span> —{' '}
+                    {formatValidationStatus(result.status)}
                     {result.message ? `: ${result.message}` : ''}
                   </li>
                 ))}
@@ -299,7 +350,12 @@ export function GoLivePage() {
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => runDomainSecurityReview(accessToken!), 'Domain and security review completed.')}
+              onClick={() =>
+                void runAction(
+                  () => runDomainSecurityReview(accessToken!),
+                  'Domain and security review completed.',
+                )
+              }
             >
               Run Domain & Security Review
             </Button>
@@ -315,7 +371,10 @@ export function GoLivePage() {
                 ))}
               </ul>
             ) : (
-              <EmptyState title="No security review" description="Verify HTTPS, CORS, session security, cookie security, and secret management." />
+              <EmptyState
+                title="No security review"
+                description="Verify HTTPS, CORS, session security, cookie security, and secret management."
+              />
             )}
           </Panel>
         </div>
@@ -327,7 +386,12 @@ export function GoLivePage() {
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => runMobileProductionReview(accessToken!), 'Mobile production review completed.')}
+              onClick={() =>
+                void runAction(
+                  () => runMobileProductionReview(accessToken!),
+                  'Mobile production review completed.',
+                )
+              }
             >
               Run Mobile Production Review
             </Button>
@@ -340,7 +404,10 @@ export function GoLivePage() {
                 <li>Warnings: {dashboard.latestMobileReview.warningCount}</li>
               </ul>
             ) : (
-              <EmptyState title="No mobile review" description="Verify iOS/Android builds, push notifications, authentication, and offline sync." />
+              <EmptyState
+                title="No mobile review"
+                description="Verify iOS/Android builds, push notifications, authentication, and offline sync."
+              />
             )}
           </Panel>
         </div>
@@ -352,7 +419,12 @@ export function GoLivePage() {
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => runCommercialReadinessReview(accessToken!), 'Commercial readiness review completed.')}
+              onClick={() =>
+                void runAction(
+                  () => runCommercialReadinessReview(accessToken!),
+                  'Commercial readiness review completed.',
+                )
+              }
             >
               Run Commercial Readiness Review
             </Button>
@@ -365,7 +437,10 @@ export function GoLivePage() {
                 <li>Warnings: {dashboard.latestCommercialReview.warningCount}</li>
               </ul>
             ) : (
-              <EmptyState title="No commercial review" description="Verify SaaS subscriptions, billing, tenant provisioning, and license activation." />
+              <EmptyState
+                title="No commercial review"
+                description="Verify SaaS subscriptions, billing, tenant provisioning, and license activation."
+              />
             )}
           </Panel>
         </div>
@@ -378,7 +453,12 @@ export function GoLivePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => createDeploymentRun(accessToken!, { title: 'Production deployment' }), 'Deployment run created.')}
+                onClick={() =>
+                  void runAction(
+                    () => createDeploymentRun(accessToken!, { title: 'Production deployment' }),
+                    'Deployment run created.',
+                  )
+                }
               >
                 Create Deployment Run
               </Button>
@@ -387,21 +467,36 @@ export function GoLivePage() {
                   <Button
                     variant="secondary"
                     disabled={isWorking}
-                    onClick={() => void runAction(() => runDeploymentHealthVerification(accessToken!, activeDeployment.id), 'Health verification completed.')}
+                    onClick={() =>
+                      void runAction(
+                        () => runDeploymentHealthVerification(accessToken!, activeDeployment.id),
+                        'Health verification completed.',
+                      )
+                    }
                   >
                     Health Verification
                   </Button>
                   <Button
                     variant="secondary"
                     disabled={isWorking}
-                    onClick={() => void runAction(() => runDeploymentSmokeTests(accessToken!, activeDeployment.id), 'Smoke tests completed.')}
+                    onClick={() =>
+                      void runAction(
+                        () => runDeploymentSmokeTests(accessToken!, activeDeployment.id),
+                        'Smoke tests completed.',
+                      )
+                    }
                   >
                     Run Smoke Tests
                   </Button>
                   <Button
                     variant="secondary"
                     disabled={isWorking}
-                    onClick={() => void runAction(() => submitDeploymentForApproval(accessToken!, activeDeployment.id), 'Submitted for approval.')}
+                    onClick={() =>
+                      void runAction(
+                        () => submitDeploymentForApproval(accessToken!, activeDeployment.id),
+                        'Submitted for approval.',
+                      )
+                    }
                   >
                     Submit for Approval
                   </Button>
@@ -419,12 +514,18 @@ export function GoLivePage() {
                 <li>Owner approved: {activeDeployment.ownerApproved ? 'Yes' : 'No'}</li>
               </ul>
             ) : (
-              <EmptyState title="No deployment runs" description="Create a deployment run — owner approval required, no automatic deployment." />
+              <EmptyState
+                title="No deployment runs"
+                description="Create a deployment run — owner approval required, no automatic deployment."
+              />
             )}
           </Panel>
           <Panel title="Deployment History">
             {dashboard.deploymentHistory.length === 0 ? (
-              <EmptyState title="No history" description="Deployment history tracks health verification, smoke tests, approvals, and rollbacks." />
+              <EmptyState
+                title="No history"
+                description="Deployment history tracks health verification, smoke tests, approvals, and rollbacks."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.deploymentHistory.map((run) => (
@@ -450,7 +551,12 @@ export function GoLivePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => createGoLiveWizard(accessToken!, { title: wizardTitle }), 'Go-live wizard created.')}
+                onClick={() =>
+                  void runAction(
+                    () => createGoLiveWizard(accessToken!, { title: wizardTitle }),
+                    'Go-live wizard created.',
+                  )
+                }
               >
                 Create Wizard
               </Button>
@@ -459,14 +565,24 @@ export function GoLivePage() {
                   <Button
                     variant="secondary"
                     disabled={isWorking}
-                    onClick={() => void runAction(() => approveGoLiveWizard(accessToken!, activeWizard.id), 'Wizard approved.')}
+                    onClick={() =>
+                      void runAction(
+                        () => approveGoLiveWizard(accessToken!, activeWizard.id),
+                        'Wizard approved.',
+                      )
+                    }
                   >
                     Owner Approve
                   </Button>
                   <Button
                     variant="secondary"
                     disabled={isWorking}
-                    onClick={() => void runAction(() => confirmGoLiveLaunch(accessToken!, activeWizard.id), 'Launch confirmed.')}
+                    onClick={() =>
+                      void runAction(
+                        () => confirmGoLiveLaunch(accessToken!, activeWizard.id),
+                        'Launch confirmed.',
+                      )
+                    }
                   >
                     Confirm Launch
                   </Button>
@@ -490,7 +606,10 @@ export function GoLivePage() {
                 </ul>
               </div>
             ) : (
-              <EmptyState title="No go-live wizard" description="Create an owner go-live wizard with infrastructure, integrations, security, domain, mobile, billing, AI, and final verification steps." />
+              <EmptyState
+                title="No go-live wizard"
+                description="Create an owner go-live wizard with infrastructure, integrations, security, domain, mobile, billing, AI, and final verification steps."
+              />
             )}
           </Panel>
         </div>
@@ -501,7 +620,10 @@ export function GoLivePage() {
           {isSupplementaryLoading ? (
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
-            <EmptyState title="No audit entries" description="Production launch actions are logged for complete auditability." />
+            <EmptyState
+              title="No audit entries"
+              description="Production launch actions are logged for complete auditability."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {auditLogs.map((log) => (
@@ -517,15 +639,26 @@ export function GoLivePage() {
       {activeTab === 'assistant' ? (
         <Panel title="AURA Production Launch Agent">
           <p className="mb-4 text-sm text-slate-600">
-            Ask about deployment readiness, provider status, configuration, validation reports, or request draft deployment plans and launch reports.
+            Ask about deployment readiness, provider status, configuration, validation reports, or
+            request draft deployment plans and launch reports.
           </p>
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'production_launch' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(
+                content,
+                'production_launch' as import('@titan/shared').AgentKey,
+              )
+            }
           />
           {assistantError ? <p className="mt-2 text-sm text-red-600">{assistantError}</p> : null}
         </Panel>

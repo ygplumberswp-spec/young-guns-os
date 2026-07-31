@@ -10,10 +10,7 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import {
-  canAccessIntegrations,
-  canManageIntegrations,
-} from '../../features/integrations/utils';
+import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
 
 export function YocoSettingsPage() {
@@ -58,7 +55,9 @@ export function YocoSettingsPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
@@ -165,7 +164,11 @@ export function YocoSettingsPage() {
               </div>
               <div>
                 <dt>Last sync</dt>
-                <dd>{connection.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'}</dd>
+                <dd>
+                  {connection.lastSyncAt
+                    ? new Date(connection.lastSyncAt).toLocaleString()
+                    : 'Never'}
+                </dd>
               </div>
             </dl>
           </Panel>
@@ -197,7 +200,12 @@ export function YocoSettingsPage() {
                       {isSaving ? 'Connecting…' : 'Save & connect'}
                     </Button>
                     {connection.hasCredentials ? (
-                      <Button type="button" variant="ghost" disabled={isSaving} onClick={() => void handleDisconnect()}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={isSaving}
+                        onClick={() => void handleDisconnect()}
+                      >
                         Disconnect
                       </Button>
                     ) : null}

@@ -41,53 +41,73 @@ export function createWhatsappRouter({
     next();
   });
 
-  router.get('/messages', requireAnyPermission('communications:read', 'communications:write', 'integrations:read', 'integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const customerId = typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
-    const messages = await whatsappService.listMessages(companyId, { customerId });
-    res.json({ data: { messages } });
-  });
+  router.get(
+    '/messages',
+    requireAnyPermission(
+      'communications:read',
+      'communications:write',
+      'integrations:read',
+      'integrations:manage',
+    ),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const customerId =
+        typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
+      const messages = await whatsappService.listMessages(companyId, { customerId });
+      res.json({ data: { messages } });
+    },
+  );
 
-  router.post('/messages/send', requireAnyPermission('communications:write', 'integrations:manage'), async (req, res) => {
-    const auth = getAuth(req);
-    const parsed = sendMessageSchema.safeParse(req.body);
+  router.post(
+    '/messages/send',
+    requireAnyPermission('communications:write', 'integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = sendMessageSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid WhatsApp message payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid WhatsApp message payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const message = await whatsappService.sendMessage(
-        { companyId: auth.companyId, userId: auth.userId },
-        parsed.data,
-      );
-      res.status(201).json({ data: { message } });
-    } catch (error) {
-      handleWhatsappError(res, error);
-    }
-  });
+      try {
+        const message = await whatsappService.sendMessage(
+          { companyId: auth.companyId, userId: auth.userId },
+          parsed.data,
+        );
+        res.status(201).json({ data: { message } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
 
-  router.post('/messages/:messageId/approve', requireAnyPermission('communications:write', 'integrations:manage'), async (req, res) => {
-    const auth = getAuth(req);
-    const messageId = Array.isArray(req.params.messageId) ? req.params.messageId[0] : req.params.messageId;
+  router.post(
+    '/messages/:messageId/approve',
+    requireAnyPermission('communications:write', 'integrations:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const messageId = Array.isArray(req.params.messageId)
+        ? req.params.messageId[0]
+        : req.params.messageId;
 
-    try {
-      const message = await whatsappService.approveDraft(
-        { companyId: auth.companyId, userId: auth.userId },
-        messageId,
-      );
-      res.json({ data: { message } });
-    } catch (error) {
-      handleWhatsappError(res, error);
-    }
-  });
+      try {
+        const message = await whatsappService.approveDraft(
+          { companyId: auth.companyId, userId: auth.userId },
+          messageId,
+        );
+        res.json({ data: { message } });
+      } catch (error) {
+        handleWhatsappError(res, error);
+      }
+    },
+  );
 
   return router;
 }
@@ -97,7 +117,9 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'NOT_CONNECTED' || error.code === 'VALIDATION_ERROR' || error.code === 'CONNECTION_FAILED'
+        : error.code === 'NOT_CONNECTED' ||
+            error.code === 'VALIDATION_ERROR' ||
+            error.code === 'CONNECTION_FAILED'
           ? 400
           : error.code === 'ENCRYPTION_NOT_CONFIGURED'
             ? 503

@@ -157,9 +157,9 @@ export function useAuraChat(pageContext?: {
           conversationId,
           trimmed,
           pageContext?.customerId ||
-          pageContext?.jobId ||
-          pageContext?.vehicleId ||
-          pageContext?.schedulingView
+            pageContext?.jobId ||
+            pageContext?.vehicleId ||
+            pageContext?.schedulingView
             ? {
                 customerId: pageContext.customerId,
                 jobId: pageContext.jobId,

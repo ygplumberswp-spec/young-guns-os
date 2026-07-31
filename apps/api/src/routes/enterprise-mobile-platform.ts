@@ -23,7 +23,15 @@ const pushTokenSchema = z.object({
 
 const mediaAssetSchema = z.object({
   jobId: z.string().uuid().optional(),
-  mediaType: z.enum(['photo', 'video', 'document', 'barcode', 'qr_code', 'signature', 'voice_note']),
+  mediaType: z.enum([
+    'photo',
+    'video',
+    'document',
+    'barcode',
+    'qr_code',
+    'signature',
+    'voice_note',
+  ]),
   title: z.string().trim().min(1).max(500),
   fileName: z.string().trim().max(500).optional(),
   mimeType: z.string().trim().max(100).optional(),
@@ -103,7 +111,9 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
     async (req, res, next) => {
       try {
         const authContext = getAuth(req);
-        const dashboard = await deps.enterpriseMobilePlatformService.getDashboard(authContext.companyId);
+        const dashboard = await deps.enterpriseMobilePlatformService.getDashboard(
+          authContext.companyId,
+        );
         res.json({ dashboard });
       } catch (error) {
         next(error);
@@ -118,7 +128,9 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
     async (req, res, next) => {
       try {
         const authContext = getAuth(req);
-        const workspace = await deps.enterpriseMobilePlatformService.getDispatcherWorkspace(authContext.companyId);
+        const workspace = await deps.enterpriseMobilePlatformService.getDispatcherWorkspace(
+          authContext.companyId,
+        );
         res.json({ workspace });
       } catch (error) {
         next(error);
@@ -257,7 +269,9 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
     async (req, res, next) => {
       try {
         const authContext = getAuth(req);
-        const snapshot = await deps.enterpriseMobilePlatformService.captureFieldIntelligence(authContext.companyId);
+        const snapshot = await deps.enterpriseMobilePlatformService.captureFieldIntelligence(
+          authContext.companyId,
+        );
         res.json({ snapshot });
       } catch (error) {
         next(error);

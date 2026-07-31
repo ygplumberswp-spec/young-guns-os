@@ -93,7 +93,12 @@ export const alTelemetryQualityEnum = pgEnum('al_telemetry_quality', [
   'unknown',
 ]);
 
-export const alAlertSeverityEnum = pgEnum('al_alert_severity', ['info', 'warning', 'critical', 'emergency']);
+export const alAlertSeverityEnum = pgEnum('al_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+  'emergency',
+]);
 
 export const alAlertStatusEnum = pgEnum('al_alert_status', [
   'open',
@@ -160,10 +165,22 @@ export const alPlatformConfig = pgTable('al_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   globalPolicies: jsonb('global_policies').$type<Record<string, unknown>>().notNull().default({}),
-  iotAdapterTemplates: jsonb('iot_adapter_templates').$type<Record<string, unknown>>().notNull().default({}),
-  telemetryStandards: jsonb('telemetry_standards').$type<Record<string, unknown>>().notNull().default({}),
-  retentionPolicies: jsonb('retention_policies').$type<Record<string, unknown>>().notNull().default({}),
-  defaultAlertPolicies: jsonb('default_alert_policies').$type<Record<string, unknown>>().notNull().default({}),
+  iotAdapterTemplates: jsonb('iot_adapter_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  telemetryStandards: jsonb('telemetry_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  retentionPolicies: jsonb('retention_policies')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  defaultAlertPolicies: jsonb('default_alert_policies')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -194,7 +211,9 @@ export const alAssetRegistryProfiles = pgTable('al_asset_registry_profiles', {
   customCategoryName: text('custom_category_name'),
   ownershipType: alOwnershipTypeEnum('ownership_type').notNull().default('company_owned'),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
-  propertyId: uuid('property_id').references(() => cxCustomerProperties.id, { onDelete: 'set null' }),
+  propertyId: uuid('property_id').references(() => cxCustomerProperties.id, {
+    onDelete: 'set null',
+  }),
   manufacturer: text('manufacturer'),
   model: text('model'),
   installationDate: date('installation_date'),
@@ -219,7 +238,9 @@ export const alLifecycleStageHistory = pgTable('al_lifecycle_stage_history', {
   status: alLifecycleStageStatusEnum('status').notNull().default('executed'),
   title: text('title').notNull(),
   description: text('description'),
-  responsibleUserId: uuid('responsible_user_id').references(() => users.id, { onDelete: 'set null' }),
+  responsibleUserId: uuid('responsible_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   costCents: integer('cost_cents'),
   currency: text('currency').default('USD'),
   documentIds: jsonb('document_ids').$type<string[]>().notNull().default([]),
@@ -266,7 +287,10 @@ export const alIotDevices = pgTable('al_iot_devices', {
   connectivityStatus: text('connectivity_status'),
   batteryLevel: numeric('battery_level', { precision: 5, scale: 2 }),
   signalStrength: numeric('signal_strength', { precision: 5, scale: 2 }),
-  telemetryFieldMap: jsonb('telemetry_field_map').$type<Record<string, unknown>>().notNull().default({}),
+  telemetryFieldMap: jsonb('telemetry_field_map')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   thresholdConfig: jsonb('threshold_config').$type<Record<string, unknown>>().notNull().default({}),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -324,7 +348,9 @@ export const alPreventiveMaintenanceDue = pgTable('al_preventive_maintenance_due
   assetId: uuid('asset_id')
     .notNull()
     .references(() => assetEquipment.id, { onDelete: 'cascade' }),
-  scheduleId: uuid('schedule_id').references(() => assetMaintenanceSchedules.id, { onDelete: 'set null' }),
+  scheduleId: uuid('schedule_id').references(() => assetMaintenanceSchedules.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   dueReason: text('due_reason').notNull(),
   status: alMaintenanceDueStatusEnum('status').notNull().default('due'),
@@ -350,7 +376,10 @@ export const alPredictiveAssessments = pgTable('al_predictive_assessments', {
   inspectionRecommendation: text('inspection_recommendation'),
   partsRecommendation: text('parts_recommendation'),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   explanation: text('explanation'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

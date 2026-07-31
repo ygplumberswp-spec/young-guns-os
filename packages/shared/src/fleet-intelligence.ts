@@ -1,11 +1,5 @@
 export type FleetCostType =
-  | 'fuel'
-  | 'maintenance'
-  | 'tyre'
-  | 'licensing'
-  | 'insurance'
-  | 'repair'
-  | 'other';
+  'fuel' | 'maintenance' | 'tyre' | 'licensing' | 'insurance' | 'repair' | 'other';
 
 export type FleetRecommendationType =
   | 'maintenance_planning'
@@ -18,19 +12,11 @@ export type FleetRecommendationType =
   | 'comeback_travel_reduction';
 
 export type FleetBehaviourEventType =
-  | 'speeding'
-  | 'harsh_braking'
-  | 'harsh_acceleration'
-  | 'excessive_idling'
-  | 'route_deviation';
+  'speeding' | 'harsh_braking' | 'harsh_acceleration' | 'excessive_idling' | 'route_deviation';
 
 export type FleetActionType = 'fleet_action' | 'vehicle_replacement';
 export type FleetActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type FleetTripSummary = {
   vehicleId: string | null;
@@ -58,7 +44,12 @@ export type FleetMonthlyReportSummary = {
   idleHours: number;
   averageTripDistanceKm: number | null;
   averageTripDurationMinutes: number | null;
-  vehicleSummaries: Array<{ vehicleId: string | null; vehicleName: string | null; kilometres: number; trips: number }>;
+  vehicleSummaries: Array<{
+    vehicleId: string | null;
+    vehicleName: string | null;
+    kilometres: number;
+    trips: number;
+  }>;
   exportMetadata: Record<string, unknown>;
   generatedAt: string;
 };

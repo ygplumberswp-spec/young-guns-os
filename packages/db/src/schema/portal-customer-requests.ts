@@ -38,6 +38,7 @@ export const portalCustomerRequests = pgTable('portal_customer_requests', {
   message: text('message').notNull(),
   entityType: text('entity_type'),
   entityId: uuid('entity_id'),
+  clientActionId: text('client_action_id'),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

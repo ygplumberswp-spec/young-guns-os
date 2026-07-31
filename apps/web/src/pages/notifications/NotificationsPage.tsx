@@ -46,19 +46,30 @@ export function NotificationsPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<NotificationsTab>('inbox');
   const [dashboard, setDashboard] = useState<EnterpriseNotificationsDashboard | null>(null);
-  const [auditLogs, setAuditLogs] = useState<Awaited<ReturnType<typeof fetchNotificationsAuditLogs>>>([]);
+  const [auditLogs, setAuditLogs] = useState<
+    Awaited<ReturnType<typeof fetchNotificationsAuditLogs>>
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessNotifications(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageNotifications(user.permissions) : false), [user]);
-  const canManage = useMemo(() => (user ? canAdministerNotifications(user.permissions) : false), [user]);
+  const canManage = useMemo(
+    () => (user ? canAdministerNotifications(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: NotificationsTab; label: string }> = [
     { id: 'inbox', label: 'Inbox' },
@@ -94,7 +105,9 @@ export function NotificationsPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load notifications dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load notifications dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -144,7 +157,10 @@ export function NotificationsPage() {
   if (!canView) {
     return (
       <div className="p-6">
-        <EmptyState title="Access denied" description="You do not have permission to view the notification center." />
+        <EmptyState
+          title="Access denied"
+          description="You do not have permission to view the notification center."
+        />
       </div>
     );
   }
@@ -170,7 +186,9 @@ export function NotificationsPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncPlatformAlerts(accessToken!), 'Platform alerts synced.')}
+                onClick={() =>
+                  void runAction(() => syncPlatformAlerts(accessToken!), 'Platform alerts synced.')
+                }
               >
                 Sync Alerts
               </Button>
@@ -178,7 +196,10 @@ export function NotificationsPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => captureNotificationsAnalytics(accessToken!), 'Analytics captured.')
+                  void runAction(
+                    () => captureNotificationsAnalytics(accessToken!),
+                    'Analytics captured.',
+                  )
                 }
               >
                 Capture Analytics
@@ -197,7 +218,9 @@ export function NotificationsPage() {
             key={tab.id}
             type="button"
             className={`rounded-md px-3 py-1.5 text-sm ${
-              activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              activeTab === tab.id
+                ? 'bg-slate-900 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
             onClick={() => setActiveTab(tab.id)}
           >
@@ -210,37 +233,63 @@ export function NotificationsPage() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             <StatCard label="Inbox Items" value={String(dashboard.inboxItems.length)} />
-            <StatCard label="Unread" value={String(dashboard.inboxItems.filter((i) => !i.isRead).length)} />
-            <StatCard label="Pinned" value={String(dashboard.inboxItems.filter((i) => i.isPinned).length)} />
-            <StatCard label="Archived" value={String(dashboard.inboxItems.filter((i) => i.isArchived).length)} />
+            <StatCard
+              label="Unread"
+              value={String(dashboard.inboxItems.filter((i) => !i.isRead).length)}
+            />
+            <StatCard
+              label="Pinned"
+              value={String(dashboard.inboxItems.filter((i) => i.isPinned).length)}
+            />
+            <StatCard
+              label="Archived"
+              value={String(dashboard.inboxItems.filter((i) => i.isArchived).length)}
+            />
           </div>
           {canWrite ? (
             <Button
               variant="secondary"
               disabled={isWorking}
-              onClick={() => void runAction(() => markAllNotificationsRead(accessToken!), 'All notifications marked read.')}
+              onClick={() =>
+                void runAction(
+                  () => markAllNotificationsRead(accessToken!),
+                  'All notifications marked read.',
+                )
+              }
             >
               Mark All Read
             </Button>
           ) : null}
           <Panel title="Inbox">
             {dashboard.inboxItems.length === 0 ? (
-              <EmptyState title="No notifications" description="Your inbox is empty. Notifications appear here when modules dispatch legitimate events." />
+              <EmptyState
+                title="No notifications"
+                description="Your inbox is empty. Notifications appear here when modules dispatch legitimate events."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.inboxItems.map((item) => (
                   <li key={item.id} className="py-3">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className={`font-medium ${item.isRead ? 'text-slate-600' : 'text-slate-900'}`}>{item.title}</p>
+                        <p
+                          className={`font-medium ${item.isRead ? 'text-slate-600' : 'text-slate-900'}`}
+                        >
+                          {item.title}
+                        </p>
                         <p className="text-sm text-slate-500">{item.body}</p>
                         <p className="mt-1 text-xs text-slate-400">
-                          {formatModuleSource(item.notificationType)} · {new Date(item.createdAt).toLocaleString()}
+                          {formatModuleSource(item.notificationType)} ·{' '}
+                          {new Date(item.createdAt).toLocaleString()}
                           {item.isPinned ? ' · Pinned' : ''}
                           {item.isArchived ? ' · Archived' : ''}
                         </p>
                       </div>
-                      {!item.isRead ? <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">New</span> : null}
+                      {!item.isRead ? (
+                        <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs text-white">
+                          New
+                        </span>
+                      ) : null}
                     </div>
                   </li>
                 ))}
@@ -259,14 +308,19 @@ export function NotificationsPage() {
           </div>
           <Panel title="Alerts">
             {dashboard.alerts.length === 0 ? (
-              <EmptyState title="No active alerts" description="Alerts appear when modules raise notification events." />
+              <EmptyState
+                title="No active alerts"
+                description="Alerts appear when modules raise notification events."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.alerts.map((alert) => (
                   <li key={alert.id} className="flex items-start justify-between gap-4 py-3">
                     <div>
                       <p className="font-medium">{alert.title}</p>
-                      <p className="text-sm text-slate-500">{alert.description ?? 'No description'}</p>
+                      <p className="text-sm text-slate-500">
+                        {alert.description ?? 'No description'}
+                      </p>
                       <p className="mt-1 text-xs text-slate-400">
                         {formatAlertLevel(alert.alertLevel)} · {alert.status}
                         {alert.moduleSource ? ` · ${formatModuleSource(alert.moduleSource)}` : ''}
@@ -278,7 +332,12 @@ export function NotificationsPage() {
                           variant="secondary"
                           size="sm"
                           disabled={isWorking}
-                          onClick={() => void runAction(() => acknowledgeAlert(accessToken!, alert.id), 'Alert acknowledged.')}
+                          onClick={() =>
+                            void runAction(
+                              () => acknowledgeAlert(accessToken!, alert.id),
+                              'Alert acknowledged.',
+                            )
+                          }
                         >
                           Acknowledge
                         </Button>
@@ -286,7 +345,12 @@ export function NotificationsPage() {
                           variant="secondary"
                           size="sm"
                           disabled={isWorking}
-                          onClick={() => void runAction(() => resolveAlert(accessToken!, alert.id), 'Alert resolved.')}
+                          onClick={() =>
+                            void runAction(
+                              () => resolveAlert(accessToken!, alert.id),
+                              'Alert resolved.',
+                            )
+                          }
                         >
                           Resolve
                         </Button>
@@ -303,14 +367,20 @@ export function NotificationsPage() {
       {activeTab === 'escalations' ? (
         <Panel title="Escalations">
           {dashboard.escalations.length === 0 ? (
-            <EmptyState title="No pending escalations" description="Escalations are created when alerts are not acknowledged within configured time limits." />
+            <EmptyState
+              title="No pending escalations"
+              description="Escalations are created when alerts are not acknowledged within configured time limits."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {dashboard.escalations.map((esc) => (
                 <li key={esc.id} className="py-3">
-                  <p className="font-medium">Step {esc.escalationStep} · {esc.status}</p>
+                  <p className="font-medium">
+                    Step {esc.escalationStep} · {esc.status}
+                  </p>
                   <p className="text-sm text-slate-500">
-                    Escalate to {esc.escalateToType}: {esc.escalateToRef ?? 'default'} after {esc.escalateAfterMinutes} min
+                    Escalate to {esc.escalateToType}: {esc.escalateToRef ?? 'default'} after{' '}
+                    {esc.escalateAfterMinutes} min
                   </p>
                 </li>
               ))}
@@ -343,7 +413,10 @@ export function NotificationsPage() {
           ) : null}
           <Panel title="Templates">
             {dashboard.templates.length === 0 ? (
-              <EmptyState title="No templates" description="Create reusable notification templates with variables and localization." />
+              <EmptyState
+                title="No templates"
+                description="Create reusable notification templates with variables and localization."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.templates.map((t) => (
@@ -370,14 +443,21 @@ export function NotificationsPage() {
           </div>
           <Panel title="Delivery Jobs">
             {dashboard.deliveryJobs.length === 0 ? (
-              <EmptyState title="No delivery jobs" description="Delivery jobs are created when notifications are dispatched through configured channels." />
+              <EmptyState
+                title="No delivery jobs"
+                description="Delivery jobs are created when notifications are dispatched through configured channels."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.deliveryJobs.map((job) => (
                   <li key={job.id} className="py-3">
                     <p className="font-medium">{job.title}</p>
-                    <p className="text-sm text-slate-500">{formatDeliveryStatus(job.status)} · {formatChannel(job.channel)}</p>
-                    {job.errorMessage ? <p className="mt-1 text-xs text-red-600">{job.errorMessage}</p> : null}
+                    <p className="text-sm text-slate-500">
+                      {formatDeliveryStatus(job.status)} · {formatChannel(job.channel)}
+                    </p>
+                    {job.errorMessage ? (
+                      <p className="mt-1 text-xs text-red-600">{job.errorMessage}</p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -409,14 +489,18 @@ export function NotificationsPage() {
           ) : null}
           <Panel title="Notification Rules">
             {dashboard.rules.length === 0 ? (
-              <EmptyState title="No rules configured" description="Configure rules by user, role, department, severity, module, and event type." />
+              <EmptyState
+                title="No rules configured"
+                description="Configure rules by user, role, department, severity, module, and event type."
+              />
             ) : (
               <ul className="divide-y divide-slate-100">
                 {dashboard.rules.map((rule) => (
                   <li key={rule.id} className="py-3">
                     <p className="font-medium">{rule.name}</p>
                     <p className="text-sm text-slate-500">
-                      {rule.scope} · {rule.deliveryMode} · {rule.channels.map(formatChannel).join(', ')}
+                      {rule.scope} · {rule.deliveryMode} ·{' '}
+                      {rule.channels.map(formatChannel).join(', ')}
                     </p>
                   </li>
                 ))}
@@ -429,7 +513,10 @@ export function NotificationsPage() {
       {activeTab === 'preferences' ? (
         <Panel title="User Preferences">
           {dashboard.userPreferences.length === 0 ? (
-            <EmptyState title="No channel preferences" description="Configure delivery preferences per channel, module, and event type." />
+            <EmptyState
+              title="No channel preferences"
+              description="Configure delivery preferences per channel, module, and event type."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {dashboard.userPreferences.map((pref) => (
@@ -452,7 +539,10 @@ export function NotificationsPage() {
               {JSON.stringify(dashboard.analytics.metrics, null, 2)}
             </pre>
           ) : (
-            <EmptyState title="No analytics captured" description="Capture analytics to track notification platform health and delivery metrics." />
+            <EmptyState
+              title="No analytics captured"
+              description="Capture analytics to track notification platform health and delivery metrics."
+            />
           )}
         </Panel>
       ) : null}
@@ -462,14 +552,20 @@ export function NotificationsPage() {
           {isSupplementaryLoading ? (
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
-            <EmptyState title="No audit entries" description="All notification platform actions are logged for auditability." />
+            <EmptyState
+              title="No audit entries"
+              description="All notification platform actions are logged for auditability."
+            />
           ) : (
             <ul className="divide-y divide-slate-100">
               {auditLogs.map((log) => (
                 <li key={log.id} className="py-2 text-sm">
                   <span className="font-medium">{log.actionType}</span>
                   {log.entityType ? ` · ${log.entityType}` : ''}
-                  <span className="text-slate-400"> · {new Date(log.createdAt).toLocaleString()}</span>
+                  <span className="text-slate-400">
+                    {' '}
+                    · {new Date(log.createdAt).toLocaleString()}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -486,13 +582,17 @@ export function NotificationsPage() {
             </div>
             <div>
               <dt className="text-slate-500">Health status</dt>
-              <dd className="font-medium">{formatSeverity(dashboard.overallNotificationHealthStatus)}</dd>
+              <dd className="font-medium">
+                {formatSeverity(dashboard.overallNotificationHealthStatus)}
+              </dd>
             </div>
             <div>
               <dt className="text-slate-500">Default channels</dt>
               <dd className="font-medium">
                 {Array.isArray(dashboard.platformConfig.deliveryPolicy.defaultChannels)
-                  ? (dashboard.platformConfig.deliveryPolicy.defaultChannels as string[]).map(formatChannel).join(', ')
+                  ? (dashboard.platformConfig.deliveryPolicy.defaultChannels as string[])
+                      .map(formatChannel)
+                      .join(', ')
                   : 'In App'}
               </dd>
             </div>
@@ -504,12 +604,20 @@ export function NotificationsPage() {
         <Panel title="AURA Notification Intelligence">
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
             onSend={(content) =>
-              void sendAgentMessage(content, 'notification_intelligence' as import('@titan/shared').AgentKey)
+              void sendAgentMessage(
+                content,
+                'notification_intelligence' as import('@titan/shared').AgentKey,
+              )
             }
           />
           {assistantError ? <p className="mt-2 text-sm text-red-600">{assistantError}</p> : null}

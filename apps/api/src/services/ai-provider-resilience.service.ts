@@ -11,13 +11,7 @@ import type {
   ProviderRoutingStageTimings,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import {
-  aiFailoverEvents,
-  aiModels,
-  aiProviders,
-  aiRequestQueue,
-  aiRoutingRules,
-} from '@titan/db';
+import { aiFailoverEvents, aiModels, aiProviders, aiRequestQueue, aiRoutingRules } from '@titan/db';
 import { decryptSecret } from '../lib/crypto.js';
 import {
   AiIntelligentRoutingService,
@@ -132,10 +126,7 @@ export class AiProviderResilienceService {
     dbQueryCount += configCachedBefore ? 0 : 1;
 
     stages.policyValidationMs = Date.now();
-    if (
-      options.routingCategory &&
-      config.blockedCategories.includes(options.routingCategory)
-    ) {
+    if (options.routingCategory && config.blockedCategories.includes(options.routingCategory)) {
       throw new AiProviderResilienceError(
         'ROUTING_BLOCKED',
         `Routing category ${options.routingCategory} is blocked by tenant policy.`,
@@ -222,9 +213,7 @@ export class AiProviderResilienceService {
       providerRoutingMs: number;
     },
   ): Promise<AiGenerateWithResilienceResult> {
-    const preparedChain =
-      prepared ??
-      (await this.prepareProviderChain(companyId, options));
+    const preparedChain = prepared ?? (await this.prepareProviderChain(companyId, options));
     const { config, chain, providerRoutingMs } = preparedChain;
 
     if (chain.length === 0) {
@@ -237,7 +226,9 @@ export class AiProviderResilienceService {
     const sanitizedRequest = this.deps.aiMemorySyncService
       ? {
           ...request,
-          context: this.deps.aiMemorySyncService.sanitizeContextForExternalProvider(request.context),
+          context: this.deps.aiMemorySyncService.sanitizeContextForExternalProvider(
+            request.context,
+          ),
         }
       : request;
 
@@ -277,7 +268,9 @@ export class AiProviderResilienceService {
     const sanitizedRequest = this.deps.aiMemorySyncService
       ? {
           ...request,
-          context: this.deps.aiMemorySyncService.sanitizeContextForExternalProvider(request.context),
+          context: this.deps.aiMemorySyncService.sanitizeContextForExternalProvider(
+            request.context,
+          ),
         }
       : request;
 
@@ -326,10 +319,7 @@ export class AiProviderResilienceService {
     };
   }
 
-  private async assertRoutingAllowed(
-    companyId: string,
-    options: AiGenerateWithResilienceOptions,
-  ) {
+  private async assertRoutingAllowed(companyId: string, options: AiGenerateWithResilienceOptions) {
     const [_, config] = await Promise.all([
       this.deps.aiOperationsService.assertAiOperationAllowed(
         { companyId, userId: options.userId },
@@ -338,10 +328,7 @@ export class AiProviderResilienceService {
       this.deps.aiOperationsService.ensureResilienceConfig(companyId),
     ]);
 
-    if (
-      options.routingCategory &&
-      config.blockedCategories.includes(options.routingCategory)
-    ) {
+    if (options.routingCategory && config.blockedCategories.includes(options.routingCategory)) {
       throw new AiProviderResilienceError(
         'ROUTING_BLOCKED',
         `Routing category ${options.routingCategory} is blocked by tenant policy.`,
@@ -364,10 +351,7 @@ export class AiProviderResilienceService {
       return false;
     }
 
-    if (
-      options.routingCategory &&
-      config.blockedCategories.includes(options.routingCategory)
-    ) {
+    if (options.routingCategory && config.blockedCategories.includes(options.routingCategory)) {
       return false;
     }
 
@@ -422,9 +406,15 @@ export class AiProviderResilienceService {
     const started = Date.now();
     const content = await candidate.provider.generate(request);
     const latencyMs = Date.now() - started;
-    const promptTokens = estimateTokens(request.messages.map((message) => message.content).join('\n'));
+    const promptTokens = estimateTokens(
+      request.messages.map((message) => message.content).join('\n'),
+    );
     const completionTokens = estimateTokens(content);
-    const costCents = estimateModelCostCents(candidate.pricingMetadata, promptTokens, completionTokens);
+    const costCents = estimateModelCostCents(
+      candidate.pricingMetadata,
+      promptTokens,
+      completionTokens,
+    );
 
     await this.deferRecordSuccessfulUsage(
       companyId,
@@ -485,7 +475,11 @@ export class AiProviderResilienceService {
             request.messages.map((message) => message.content).join('\n'),
           );
           const completionTokens = estimateTokens(content);
-          const costCents = estimateModelCostCents(candidate.pricingMetadata, promptTokens, completionTokens);
+          const costCents = estimateModelCostCents(
+            candidate.pricingMetadata,
+            promptTokens,
+            completionTokens,
+          );
 
           this.deferRecordSuccessfulUsage(
             companyId,
@@ -523,7 +517,10 @@ export class AiProviderResilienceService {
             await this.deps.db
               .update(aiProviders)
               .set({
-                healthStatus: reason === 'rate_limit' || reason === 'credit_exhausted' ? 'degraded' : 'unhealthy',
+                healthStatus:
+                  reason === 'rate_limit' || reason === 'credit_exhausted'
+                    ? 'degraded'
+                    : 'unhealthy',
                 updatedAt: new Date(),
               })
               .where(eq(aiProviders.id, candidate.providerId));
@@ -727,7 +724,10 @@ export class AiProviderResilienceService {
       if (rule?.primaryProviderId) {
         const [primaryProvider, primaryModel] = await Promise.all([
           this.deps.db.query.aiProviders.findFirst({
-            where: and(eq(aiProviders.id, rule.primaryProviderId), eq(aiProviders.companyId, companyId)),
+            where: and(
+              eq(aiProviders.id, rule.primaryProviderId),
+              eq(aiProviders.companyId, companyId),
+            ),
           }),
           rule.primaryModelId
             ? this.deps.db.query.aiModels.findFirst({
@@ -753,7 +753,12 @@ export class AiProviderResilienceService {
           if (!entry.providerKey) {
             return null;
           }
-          return this.resolveRuntimeProvider(companyId, entry.providerKey, entry.modelKey, entry.providerId);
+          return this.resolveRuntimeProvider(
+            companyId,
+            entry.providerKey,
+            entry.modelKey,
+            entry.providerId,
+          );
         }),
       );
       for (const candidate of resolved) {
@@ -854,7 +859,10 @@ export class AiProviderResilienceService {
       provider,
       contextWindow: modelRow?.contextWindow ?? 8192,
       capabilities: (modelRow?.capabilities ?? []) as RankableProvider['capabilities'],
-      multimodal: Boolean(modelRow?.capabilities?.includes('multimodal') || modelRow?.capabilities?.includes('vision')),
+      multimodal: Boolean(
+        modelRow?.capabilities?.includes('multimodal') ||
+        modelRow?.capabilities?.includes('vision'),
+      ),
       averageLatencyMs: row.averageLatencyMs,
       priorityWeight: row.priorityWeight,
       pricingMetadata: modelRow?.pricingMetadata ?? {},
@@ -867,7 +875,12 @@ export class AiProviderResilienceService {
     modelKey?: string,
     providerId?: string,
   ): Promise<RuntimeProvider | null> {
-    if (providerKey === 'openai' && this.deps.envProvider && this.deps.auraConfig.provider === 'openai' && !providerId) {
+    if (
+      providerKey === 'openai' &&
+      this.deps.envProvider &&
+      this.deps.auraConfig.provider === 'openai' &&
+      !providerId
+    ) {
       return {
         providerKey: 'openai',
         modelKey: modelKey ?? this.deps.auraConfig.openaiModel,
@@ -885,7 +898,11 @@ export class AiProviderResilienceService {
 
     const row = providerId
       ? await this.deps.db.query.aiProviders.findFirst({
-          where: and(eq(aiProviders.id, providerId), eq(aiProviders.companyId, companyId), eq(aiProviders.isEnabled, true)),
+          where: and(
+            eq(aiProviders.id, providerId),
+            eq(aiProviders.companyId, companyId),
+            eq(aiProviders.isEnabled, true),
+          ),
         })
       : await this.deps.db.query.aiProviders.findFirst({
           where: and(
@@ -935,7 +952,10 @@ export class AiProviderResilienceService {
       provider,
       contextWindow: modelRow?.contextWindow ?? 8192,
       capabilities: (modelRow?.capabilities ?? []) as RankableProvider['capabilities'],
-      multimodal: Boolean(modelRow?.capabilities?.includes('multimodal') || modelRow?.capabilities?.includes('vision')),
+      multimodal: Boolean(
+        modelRow?.capabilities?.includes('multimodal') ||
+        modelRow?.capabilities?.includes('vision'),
+      ),
       averageLatencyMs: row.averageLatencyMs,
       priorityWeight: row.priorityWeight,
       pricingMetadata: modelRow?.pricingMetadata ?? {},
@@ -1024,11 +1044,17 @@ function estimateTokens(text: string) {
 
 function mapFailoverReason(
   error: unknown,
-): 'provider_unavailable' | 'timeout' | 'rate_limit' | 'degraded_performance' | 'credit_exhausted' | 'context_window_exceeded' {
-    if (error instanceof AuraProviderError) {
-      if (error.code === 'PROVIDER_UNAVAILABLE' || error.code === 'PROVIDER_TIMEOUT') {
-        return error.code === 'PROVIDER_TIMEOUT' ? 'timeout' : 'provider_unavailable';
-      }
+):
+  | 'provider_unavailable'
+  | 'timeout'
+  | 'rate_limit'
+  | 'degraded_performance'
+  | 'credit_exhausted'
+  | 'context_window_exceeded' {
+  if (error instanceof AuraProviderError) {
+    if (error.code === 'PROVIDER_UNAVAILABLE' || error.code === 'PROVIDER_TIMEOUT') {
+      return error.code === 'PROVIDER_TIMEOUT' ? 'timeout' : 'provider_unavailable';
+    }
     if (error.details && typeof error.details === 'object' && 'status' in error.details) {
       const status = Number((error.details as { status?: number }).status);
       if (status === 429) {

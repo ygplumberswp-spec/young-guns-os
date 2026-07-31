@@ -16,6 +16,8 @@ export const xeroInvoiceMappings = pgTable('xero_invoice_mappings', {
     .notNull()
     .references(() => invoices.id, { onDelete: 'cascade' }),
   xeroInvoiceId: text('xero_invoice_id'),
+  xeroInvoiceNumber: text('xero_invoice_number'),
+  xeroReference: text('xero_reference'),
   syncStatus: xeroSyncEntityStatusEnum('sync_status').notNull().default('pending'),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
   lastSuccessfulSyncAt: timestamp('last_successful_sync_at', { withTimezone: true }),

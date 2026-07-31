@@ -1,22 +1,14 @@
 import type { IntegrationProvider } from './integrations.js';
 
 export type IntegrationAuthType =
-  | 'oauth'
-  | 'api_key'
-  | 'bearer_token'
-  | 'webhook_secret'
-  | 'basic_auth';
+  'oauth' | 'api_key' | 'bearer_token' | 'webhook_secret' | 'basic_auth';
 
 export type IntegrationHealthStatus = 'healthy' | 'degraded' | 'unhealthy' | 'unknown';
 
 export type IntegrationLogDirection = 'inbound' | 'outbound';
 
 export type IntegrationWebhookDeliveryStatus =
-  | 'pending'
-  | 'delivered'
-  | 'failed'
-  | 'dead_letter'
-  | 'retry';
+  'pending' | 'delivered' | 'failed' | 'dead_letter' | 'retry';
 
 export type IntegrationWebhookDirection = 'inbound' | 'outbound';
 

@@ -25,11 +25,20 @@ import {
 type QualityTab = 'dashboard' | 'comebacks' | 'warranty' | 'technicians' | 'suppliers' | 'actions';
 
 function canAccessQuality(permissions: string[]) {
-  return permissions.includes('quality:read') || permissions.includes('quality:write') || permissions.includes('executive:read') || permissions.includes('*');
+  return (
+    permissions.includes('quality:read') ||
+    permissions.includes('quality:write') ||
+    permissions.includes('executive:read') ||
+    permissions.includes('*')
+  );
 }
 
 function canWriteQuality(permissions: string[]) {
-  return permissions.includes('quality:write') || permissions.includes('executive:write') || permissions.includes('*');
+  return (
+    permissions.includes('quality:write') ||
+    permissions.includes('executive:write') ||
+    permissions.includes('*')
+  );
 }
 
 export function QualityPage() {
@@ -38,7 +47,9 @@ export function QualityPage() {
   const [dashboard, setDashboard] = useState<QualityExecutiveDashboard | null>(null);
   const [comebacks, setComebacks] = useState<QualityComebackSummary[]>([]);
   const [warrantyClaims, setWarrantyClaims] = useState<QualityWarrantyClaimSummary[]>([]);
-  const [technicianIntel, setTechnicianIntel] = useState<QualityTechnicianIntelligence | null>(null);
+  const [technicianIntel, setTechnicianIntel] = useState<QualityTechnicianIntelligence | null>(
+    null,
+  );
   const [supplierIntel, setSupplierIntel] = useState<QualitySupplierIntelligence | null>(null);
   const [actions, setActions] = useState<QualityActionSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -56,21 +67,15 @@ export function QualityPage() {
   async function loadPage() {
     if (!accessToken) return;
 
-    const [
-      dashboardData,
-      comebackRows,
-      warrantyRows,
-      technicianData,
-      supplierData,
-      actionRows,
-    ] = await Promise.all([
-      fetchQualityDashboard(accessToken),
-      fetchQualityComebacks(accessToken),
-      fetchQualityWarrantyClaims(accessToken),
-      fetchQualityTechnicianIntelligence(accessToken),
-      fetchQualitySupplierIntelligence(accessToken),
-      fetchQualityActions(accessToken),
-    ]);
+    const [dashboardData, comebackRows, warrantyRows, technicianData, supplierData, actionRows] =
+      await Promise.all([
+        fetchQualityDashboard(accessToken),
+        fetchQualityComebacks(accessToken),
+        fetchQualityWarrantyClaims(accessToken),
+        fetchQualityTechnicianIntelligence(accessToken),
+        fetchQualitySupplierIntelligence(accessToken),
+        fetchQualityActions(accessToken),
+      ]);
 
     setDashboard(dashboardData);
     setComebacks(comebackRows);
@@ -93,7 +98,9 @@ export function QualityPage() {
         await loadPage();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof QualityApiClientError ? err.message : 'Unable to load quality data');
+          setError(
+            err instanceof QualityApiClientError ? err.message : 'Unable to load quality data',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -146,7 +153,9 @@ export function QualityPage() {
       setSuccess('Quality action drafted for approval.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof QualityApiClientError ? err.message : 'Unable to create quality action');
+      setError(
+        err instanceof QualityApiClientError ? err.message : 'Unable to create quality action',
+      );
     }
   }
 
@@ -191,9 +200,7 @@ export function QualityPage() {
         ))}
       </div>
 
-      {isLoading && !dashboard ? (
-        <LoadingState label="Loading quality intelligence…" />
-      ) : null}
+      {isLoading && !dashboard ? <LoadingState label="Loading quality intelligence…" /> : null}
 
       {activeTab === 'dashboard' && dashboard ? (
         <>
@@ -208,13 +215,21 @@ export function QualityPage() {
             />
             <StatCard
               label="First-time fix rate"
-              value={dashboard.firstTimeFixRatePercent != null ? `${dashboard.firstTimeFixRatePercent}%` : 'N/A'}
+              value={
+                dashboard.firstTimeFixRatePercent != null
+                  ? `${dashboard.firstTimeFixRatePercent}%`
+                  : 'N/A'
+              }
             />
             <StatCard label="Open comebacks" value={String(dashboard.openComebackCount)} />
             <StatCard label="Open warranty claims" value={String(dashboard.openWarrantyCount)} />
             <StatCard
               label="Monthly quality score"
-              value={dashboard.monthlyQualityScore != null ? String(dashboard.monthlyQualityScore) : 'N/A'}
+              value={
+                dashboard.monthlyQualityScore != null
+                  ? String(dashboard.monthlyQualityScore)
+                  : 'N/A'
+              }
             />
           </div>
 
@@ -258,7 +273,8 @@ export function QualityPage() {
                     <li key={row.branchKey}>
                       <strong>{row.branchKey}</strong>
                       <span>
-                        {row.comebackCount} comeback(s) · {formatMoney(row.costCents, dashboard.currency)}
+                        {row.comebackCount} comeback(s) ·{' '}
+                        {formatMoney(row.costCents, dashboard.currency)}
                       </span>
                     </li>
                   ))}
@@ -287,7 +303,10 @@ export function QualityPage() {
       {activeTab === 'comebacks' ? (
         <>
           {canWrite ? (
-            <Panel title="Record comeback" description="Links to a real job — no demo records are created.">
+            <Panel
+              title="Record comeback"
+              description="Links to a real job — no demo records are created."
+            >
               <form className="form-grid" onSubmit={(event) => void handleCreateComeback(event)}>
                 <Input
                   label="Original job ID"
@@ -308,7 +327,10 @@ export function QualityPage() {
 
           <Panel title="Comeback history">
             {comebacks.length === 0 ? (
-              <EmptyState title="No comebacks" description="Comebacks appear when recorded against real jobs." />
+              <EmptyState
+                title="No comebacks"
+                description="Comebacks appear when recorded against real jobs."
+              />
             ) : (
               <ul className="portal-list">
                 {comebacks.map((comeback) => (
@@ -329,7 +351,10 @@ export function QualityPage() {
       {activeTab === 'warranty' ? (
         <Panel title="Warranty claims">
           {warrantyClaims.length === 0 ? (
-            <EmptyState title="No warranty claims" description="Warranty claims appear when recorded against real jobs." />
+            <EmptyState
+              title="No warranty claims"
+              description="Warranty claims appear when recorded against real jobs."
+            />
           ) : (
             <ul className="portal-list">
               {warrantyClaims.map((claim) => (
@@ -349,7 +374,10 @@ export function QualityPage() {
       {activeTab === 'technicians' && technicianIntel ? (
         <Panel title="Technician quality intelligence">
           {technicianIntel.technicians.length === 0 ? (
-            <EmptyState title="No technician scores" description="Scores are calculated from real job and comeback data." />
+            <EmptyState
+              title="No technician scores"
+              description="Scores are calculated from real job and comeback data."
+            />
           ) : (
             <ul className="portal-list">
               {technicianIntel.technicians.map((tech) => (
@@ -357,11 +385,12 @@ export function QualityPage() {
                   <strong>{tech.technicianName}</strong>
                   <span>
                     FTFR: {tech.firstTimeFixRatePercent ?? 'N/A'}% · Comeback rate:{' '}
-                    {tech.comebackRatePercent ?? 'N/A'}% · Warranty rate: {tech.warrantyRatePercent ?? 'N/A'}%
+                    {tech.comebackRatePercent ?? 'N/A'}% · Warranty rate:{' '}
+                    {tech.warrantyRatePercent ?? 'N/A'}%
                   </span>
                   <span>
-                    Jobs: {tech.completedJobCount} · Comebacks: {tech.comebackCount} · Repeat failures:{' '}
-                    {tech.repeatFailureCount}
+                    Jobs: {tech.completedJobCount} · Comebacks: {tech.comebackCount} · Repeat
+                    failures: {tech.repeatFailureCount}
                   </span>
                 </li>
               ))}
@@ -373,14 +402,18 @@ export function QualityPage() {
       {activeTab === 'suppliers' && supplierIntel ? (
         <Panel title="Supplier quality intelligence">
           {supplierIntel.defects.length === 0 ? (
-            <EmptyState title="No supplier defects" description="Defect records appear when logged against real inventory." />
+            <EmptyState
+              title="No supplier defects"
+              description="Defect records appear when logged against real inventory."
+            />
           ) : (
             <ul className="portal-list">
               {supplierIntel.defects.map((defect) => (
                 <li key={defect.id}>
                   <strong>{defect.supplierName ?? 'Unknown supplier'}</strong>
                   <span>
-                    {defect.itemName ?? 'Unknown item'} · {defect.isRecurring ? 'Recurring' : 'Single'}
+                    {defect.itemName ?? 'Unknown item'} ·{' '}
+                    {defect.isRecurring ? 'Recurring' : 'Single'}
                   </span>
                   <span>{defect.defectDescription}</span>
                 </li>
@@ -393,7 +426,10 @@ export function QualityPage() {
       {activeTab === 'actions' ? (
         <>
           {canWrite ? (
-            <Panel title="Draft quality action" description="Draft → Approval → Execution. No automatic penalties.">
+            <Panel
+              title="Draft quality action"
+              description="Draft → Approval → Execution. No automatic penalties."
+            >
               <form className="form-grid" onSubmit={(event) => void handleCreateAction(event)}>
                 <Input
                   label="Subject"
@@ -414,7 +450,10 @@ export function QualityPage() {
 
           <Panel title="Pending and historical actions">
             {actions.length === 0 ? (
-              <EmptyState title="No quality actions" description="Actions are drafted for manager approval." />
+              <EmptyState
+                title="No quality actions"
+                description="Actions are drafted for manager approval."
+              />
             ) : (
               <ul className="portal-list">
                 {actions.map((action) => (

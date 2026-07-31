@@ -3,10 +3,7 @@ import { Link } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type { CustomerSummary, PortalStats, PortalUserSummary } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
-import {
-  DEFAULT_PORTAL_ACCESS_PERMISSIONS,
-  PORTAL_ACCESS_PERMISSION_OPTIONS,
-} from '@titan/shared';
+import { DEFAULT_PORTAL_ACCESS_PERMISSIONS, PORTAL_ACCESS_PERMISSION_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import {
@@ -16,10 +13,7 @@ import {
   updatePortalUser,
 } from '../../lib/portal-admin-api';
 import { useAuth } from '../../lib/auth-context';
-import {
-  canAccessPortalSettings,
-  canManagePortalSettings,
-} from '../../features/portal/utils';
+import { canAccessPortalSettings, canManagePortalSettings } from '../../features/portal/utils';
 
 export function PortalSettingsPage() {
   const { accessToken, user } = useAuth();
@@ -39,10 +33,7 @@ export function PortalSettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const canView = useMemo(
-    () => (user ? canAccessPortalSettings(user.permissions) : false),
-    [user],
-  );
+  const canView = useMemo(() => (user ? canAccessPortalSettings(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManagePortalSettings(user.permissions) : false),
     [user],
@@ -93,7 +84,9 @@ export function PortalSettingsPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
@@ -155,7 +148,10 @@ export function PortalSettingsPage() {
   if (!canView) {
     return (
       <div className="portal-admin-page">
-        <PageHeader title="Customer Portal" description="You do not have permission to manage the portal." />
+        <PageHeader
+          title="Customer Portal"
+          description="You do not have permission to manage the portal."
+        />
       </div>
     );
   }
@@ -168,7 +164,7 @@ export function PortalSettingsPage() {
         title="Customer Portal"
         description="Provision portal users linked to customers and manage customer access permissions."
         actions={
-          <Link href="/portal/login">
+          <Link href="/my/login">
             <Button variant="secondary">Open portal login</Button>
           </Link>
         }
@@ -213,10 +209,32 @@ export function PortalSettingsPage() {
                   ))}
                 </select>
               </label>
-              <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-              <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-              <Input label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-              <Input label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              <Input
+                label="Email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Input
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Input
+                label="First name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+              <Input
+                label="Last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
               <div className="portal-permission-grid">
                 {PORTAL_ACCESS_PERMISSION_OPTIONS.map((option) => (
                   <label key={option.value} className="portal-permission-option">

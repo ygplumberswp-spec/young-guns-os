@@ -3,7 +3,9 @@ import { Link } from 'wouter';
 import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
 import {
   COMMUNICATION_CHANNEL_OPTIONS,
+  COMMUNICATION_DELIVERY_STATE_OPTIONS,
   COMMUNICATION_DIRECTION_OPTIONS,
+  COMMUNICATION_VISIBILITY_OPTIONS,
   type CommunicationSummary,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -25,16 +27,43 @@ function formatDirection(direction: CommunicationSummary['direction']): string {
   );
 }
 
+function formatVisibility(visibility: CommunicationSummary['visibility']): string {
+  return (
+    COMMUNICATION_VISIBILITY_OPTIONS.find((option) => option.value === visibility)?.label ??
+    visibility
+  );
+}
+
+/** Decision 4 / UX-G — never render "Sent"/"Delivered" unless deliveryState says so. */
+function formatDeliveryState(deliveryState: CommunicationSummary['deliveryState']): string {
+  return (
+    COMMUNICATION_DELIVERY_STATE_OPTIONS.find((option) => option.value === deliveryState)?.label ??
+    deliveryState
+  );
+}
+
+function deliveryStatePillModifier(deliveryState: CommunicationSummary['deliveryState']): string {
+  switch (deliveryState) {
+    case 'provider_delivered':
+      return 'connected';
+    case 'queued':
+    case 'requested':
+      return 'pending';
+    case 'send_failed':
+      return 'error';
+    case 'logged_only':
+    default:
+      return 'disabled';
+  }
+}
+
 export function MessageListPage() {
   const { accessToken, user } = useAuth();
   const [messages, setMessages] = useState<CommunicationSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canView = useMemo(
-    () => (user ? canAccessCommunications(user.permissions) : false),
-    [user],
-  );
+  const canView = useMemo(() => (user ? canAccessCommunications(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManageCommunications(user.permissions) : false),
     [user],
@@ -62,13 +91,18 @@ export function MessageListPage() {
     }
 
     void loadMessages();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
     return (
       <div className="communications-page">
-        <PageHeader title="Communications" description="You do not have permission to view communications." />
+        <PageHeader
+          title="Communications"
+          description="You do not have permission to view communications."
+        />
       </div>
     );
   }
@@ -111,8 +145,11 @@ export function MessageListPage() {
                 <thead>
                   <tr>
                     <th>Customer</th>
+                    <th>Job</th>
                     <th>Channel</th>
                     <th>Direction</th>
+                    <th>Visibility</th>
+                    <th>Delivery</th>
                     <th>Subject</th>
                     <th>Message</th>
                     <th>Author</th>
@@ -127,8 +164,26 @@ export function MessageListPage() {
                           {message.customerName}
                         </Link>
                       </td>
+                      <td>
+                        {message.jobId && message.jobNumber ? (
+                          <Link href={`/jobs/${message.jobId}`} className="communications-link">
+                            {message.jobNumber}
+                          </Link>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>{formatChannel(message.channel)}</td>
                       <td>{formatDirection(message.direction)}</td>
+                      <td>{formatVisibility(message.visibility)}</td>
+                      <td>
+                        <span
+                          className={`status-pill status-pill--${deliveryStatePillModifier(message.deliveryState)}`}
+                          title={message.failureReason ?? undefined}
+                        >
+                          {formatDeliveryState(message.deliveryState)}
+                        </span>
+                      </td>
                       <td>{message.subject ?? '—'}</td>
                       <td className="communications-table__body">{message.body}</td>
                       <td>{message.authorName}</td>

@@ -76,7 +76,9 @@ export function CartrackSettingsPage() {
         await loadPageData();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load Cartrack settings');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load Cartrack settings',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -84,7 +86,9 @@ export function CartrackSettingsPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
@@ -171,7 +175,10 @@ export function CartrackSettingsPage() {
   if (!canView) {
     return (
       <div className="integrations-page">
-        <PageHeader title="Cartrack GPS" description="You do not have permission to view integrations." />
+        <PageHeader
+          title="Cartrack GPS"
+          description="You do not have permission to view integrations."
+        />
       </div>
     );
   }
@@ -179,7 +186,10 @@ export function CartrackSettingsPage() {
   if (isLoading) {
     return (
       <div className="integrations-page">
-        <PageHeader title="Cartrack GPS" description="Connect Cartrack to sync vehicles and store live GPS positions for your fleet." />
+        <PageHeader
+          title="Cartrack GPS"
+          description="Connect Cartrack to sync vehicles and store live GPS positions for your fleet."
+        />
         <IntegrationsNav />
         <p className="page-muted">Loading Cartrack settings…</p>
       </div>
@@ -265,14 +275,28 @@ export function CartrackSettingsPage() {
             </p>
             <div className="integration-actions">
               <Button type="submit" disabled={isSaving}>
-                {isSaving ? 'Connecting…' : connection?.status === 'connected' ? 'Update connection' : 'Connect'}
+                {isSaving
+                  ? 'Connecting…'
+                  : connection?.status === 'connected'
+                    ? 'Update connection'
+                    : 'Connect'}
               </Button>
               {connection?.status === 'connected' ? (
                 <>
-                  <Button type="button" variant="secondary" disabled={isSyncing} onClick={() => void handleSync()}>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSyncing}
+                    onClick={() => void handleSync()}
+                  >
                     {isSyncing ? 'Syncing…' : 'Sync now'}
                   </Button>
-                  <Button type="button" variant="ghost" disabled={isSaving} onClick={() => void handleDisconnect()}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={isSaving}
+                    onClick={() => void handleDisconnect()}
+                  >
                     Disconnect
                   </Button>
                 </>
@@ -285,7 +309,8 @@ export function CartrackSettingsPage() {
       <Panel title="Vehicle sync mappings">
         {mappings.length === 0 ? (
           <p className="page-muted">
-            No Cartrack vehicles synced yet. Connect Cartrack and run a sync to import external vehicles.
+            No Cartrack vehicles synced yet. Connect Cartrack and run a sync to import external
+            vehicles.
           </p>
         ) : (
           <div className="integration-table-wrap">
@@ -319,7 +344,7 @@ export function CartrackSettingsPage() {
                           ))}
                         </select>
                       ) : (
-                        mapping.vehicleName ?? 'Unmapped'
+                        (mapping.vehicleName ?? 'Unmapped')
                       )}
                     </td>
                   </tr>

@@ -4,13 +4,7 @@ export type WhatsappConnectionStatus = 'disconnected' | 'pending' | 'connected' 
 
 export type WhatsappMessageDirection = 'incoming' | 'outgoing';
 
-export type WhatsappDeliveryStatus =
-  | 'draft'
-  | 'pending'
-  | 'sent'
-  | 'delivered'
-  | 'read'
-  | 'failed';
+export type WhatsappDeliveryStatus = 'draft' | 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
 
 export type WhatsappTemplateCategory =
   | 'job_booked_confirmation'

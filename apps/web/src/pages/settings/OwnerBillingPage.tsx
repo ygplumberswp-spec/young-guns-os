@@ -9,7 +9,12 @@ import {
   upgradeSubscription,
 } from '../../lib/enterprise-saas-management-api-client';
 import { useAuth } from '../../lib/auth-context';
-import { canAccessSaasManagement, canManageSaasManagement, formatCurrency, formatStatus } from '../../features/saas-management/utils';
+import {
+  canAccessSaasManagement,
+  canManageSaasManagement,
+  formatCurrency,
+  formatStatus,
+} from '../../features/saas-management/utils';
 
 export function OwnerBillingPage() {
   const { accessToken, user } = useAuth();
@@ -20,7 +25,10 @@ export function OwnerBillingPage() {
   const [success, setSuccess] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessSaasManagement(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageSaasManagement(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageSaasManagement(user.permissions) : false),
+    [user],
+  );
 
   async function load() {
     if (!accessToken) return;
@@ -38,7 +46,8 @@ export function OwnerBillingPage() {
       try {
         await load();
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load billing');
+        if (!cancelled)
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load billing');
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -68,7 +77,10 @@ export function OwnerBillingPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Subscription & Billing" description="You do not have permission to view billing." />
+        <PageHeader
+          title="Subscription & Billing"
+          description="You do not have permission to view billing."
+        />
       </div>
     );
   }
@@ -95,7 +107,10 @@ export function OwnerBillingPage() {
       ) : (
         <>
           <div className="stat-grid">
-            <StatCard label="Subscription" value={billing.subscription ? formatStatus(billing.subscription.status) : 'None'} />
+            <StatCard
+              label="Subscription"
+              value={billing.subscription ? formatStatus(billing.subscription.status) : 'None'}
+            />
             <StatCard label="Plan" value={billing.subscription?.plan?.name ?? '—'} />
             <StatCard label="Users" value={String(billing.usage.userCount)} />
             <StatCard label="API Calls" value={String(billing.usage.apiRequestCount)} />
@@ -105,33 +120,59 @@ export function OwnerBillingPage() {
             {billing.subscription ? (
               <>
                 <p>Status: {formatStatus(billing.subscription.status)}</p>
-                {billing.subscription.trialEndsAt ? <p>Trial ends: {new Date(billing.subscription.trialEndsAt).toLocaleDateString()}</p> : null}
+                {billing.subscription.trialEndsAt ? (
+                  <p>
+                    Trial ends: {new Date(billing.subscription.trialEndsAt).toLocaleDateString()}
+                  </p>
+                ) : null}
                 {canWrite && billing.subscription.plan ? (
                   <div className="page-header-actions">
-                    {billing.plans.filter((p) => p.id !== billing.subscription?.plan?.id).map((plan) => (
-                      <Button
-                        key={plan.id}
-                        variant="secondary"
-                        disabled={isWorking}
-                        onClick={() => void runAction(() => upgradeSubscription(accessToken!, plan.id), `Plan change to ${plan.name} requested.`)}
-                      >
-                        Switch to {plan.name}
-                      </Button>
-                    ))}
-                    <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => cancelSubscription(accessToken!), 'Cancellation requested.')}>
+                    {billing.plans
+                      .filter((p) => p.id !== billing.subscription?.plan?.id)
+                      .map((plan) => (
+                        <Button
+                          key={plan.id}
+                          variant="secondary"
+                          disabled={isWorking}
+                          onClick={() =>
+                            void runAction(
+                              () => upgradeSubscription(accessToken!, plan.id),
+                              `Plan change to ${plan.name} requested.`,
+                            )
+                          }
+                        >
+                          Switch to {plan.name}
+                        </Button>
+                      ))}
+                    <Button
+                      variant="secondary"
+                      disabled={isWorking}
+                      onClick={() =>
+                        void runAction(
+                          () => cancelSubscription(accessToken!),
+                          'Cancellation requested.',
+                        )
+                      }
+                    >
                       Cancel Subscription
                     </Button>
                   </div>
                 ) : null}
               </>
             ) : (
-              <EmptyState title="No subscription" description="Contact your platform administrator to activate a subscription." />
+              <EmptyState
+                title="No subscription"
+                description="Contact your platform administrator to activate a subscription."
+              />
             )}
           </Panel>
 
           <Panel title="Invoices & Billing Records">
             {billing.billingRecords.length === 0 ? (
-              <EmptyState title="No invoices" description="Billing records appear when invoices are generated." />
+              <EmptyState
+                title="No invoices"
+                description="Billing records appear when invoices are generated."
+              />
             ) : (
               <div className="data-list">
                 {billing.billingRecords.map((record) => (
@@ -148,7 +189,10 @@ export function OwnerBillingPage() {
 
           <Panel title="Usage">
             <div className="stat-grid">
-              <StatCard label="Storage" value={`${Math.round(billing.usage.storageBytes / 1024 / 1024)} MB`} />
+              <StatCard
+                label="Storage"
+                value={`${Math.round(billing.usage.storageBytes / 1024 / 1024)} MB`}
+              />
               <StatCard label="AI Usage" value={String(billing.usage.aiUsageCount)} />
               <StatCard label="Integrations" value={String(billing.usage.integrationCount)} />
             </div>
@@ -156,7 +200,15 @@ export function OwnerBillingPage() {
 
           <Panel title="Add-ons">
             {billing.addOns.length === 0 ? (
-              <EmptyState title="No add-ons" description="Purchase add-ons from SaaS Management." action={<Link href="/saas-management"><Button variant="secondary">View Add-ons</Button></Link>} />
+              <EmptyState
+                title="No add-ons"
+                description="Purchase add-ons from SaaS Management."
+                action={
+                  <Link href="/saas-management">
+                    <Button variant="secondary">View Add-ons</Button>
+                  </Link>
+                }
+              />
             ) : (
               <div className="data-list">
                 {billing.addOns.map((addOn) => (

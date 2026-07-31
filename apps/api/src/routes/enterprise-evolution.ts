@@ -107,7 +107,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseEvolutionService.getEvolutionDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseEvolutionService.getEvolutionDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -116,7 +118,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.post('/learning/sync', requireWrite, async (req, res) => {
     try {
-      const events = await enterpriseEvolutionService.syncLearningFromModules(getAuth(req).companyId);
+      const events = await enterpriseEvolutionService.syncLearningFromModules(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { events } });
     } catch (error) {
       handleError(error, res);
@@ -189,7 +193,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.get('/recommendations', requireRead, async (req, res) => {
     try {
-      const recommendations = await enterpriseEvolutionService.listRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseEvolutionService.listRecommendations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -198,7 +204,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     try {
-      const recommendations = await enterpriseEvolutionService.generateRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseEvolutionService.generateRecommendations(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -222,7 +230,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.get('/optimizations', requireRead, async (req, res) => {
     try {
-      const optimizations = await enterpriseEvolutionService.listOptimizations(getAuth(req).companyId);
+      const optimizations = await enterpriseEvolutionService.listOptimizations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { optimizations } });
     } catch (error) {
       handleError(error, res);
@@ -270,7 +280,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.post('/timeline/sync', requireWrite, async (req, res) => {
     try {
-      const events = await enterpriseEvolutionService.syncTimelineFromModules(getAuth(req).companyId);
+      const events = await enterpriseEvolutionService.syncTimelineFromModules(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { events } });
     } catch (error) {
       handleError(error, res);
@@ -288,7 +300,9 @@ export function createEnterpriseEvolutionRouter({
 
   router.get('/policies', requireRead, async (req, res) => {
     try {
-      const policies = await enterpriseEvolutionService.listSafeLearningPolicies(getAuth(req).companyId);
+      const policies = await enterpriseEvolutionService.listSafeLearningPolicies(
+        getAuth(req).companyId,
+      );
       res.json({ data: { policies } });
     } catch (error) {
       handleError(error, res);

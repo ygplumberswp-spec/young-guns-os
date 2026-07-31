@@ -33,25 +33,69 @@ export class EnterpriseProductionLaunchEnvironmentService {
     const reviewKey = `env_${Date.now()}`;
     const findings: Array<Record<string, unknown>> = [];
 
-    const checks: Array<{ key: string; configured: boolean; required: boolean; message: string }> = [
-      { key: 'DATABASE_URL', configured: !!this.deps.databaseUrl, required: true, message: 'Production database connection string.' },
-      { key: 'JWT_SECRET', configured: !!this.deps.jwtSecret, required: true, message: 'Authentication JWT secret.' },
-      { key: 'JWT_REFRESH_SECRET', configured: !!this.deps.jwtRefreshSecret, required: true, message: 'Refresh token secret.' },
-      { key: 'INTEGRATIONS_ENCRYPTION_KEY', configured: !!this.deps.encryptionKey, required: false, message: 'Integration credentials encryption key.' },
-      { key: 'APP_URL', configured: !!this.deps.appUrl, required: true, message: 'Frontend application URL.' },
-      { key: 'API_PUBLIC_URL', configured: !!this.deps.apiPublicUrl, required: false, message: 'Public API URL for webhooks and connectors.' },
-      { key: 'REDIS_URL', configured: !!this.deps.redisUrl, required: false, message: 'Redis for background jobs and caching.' },
-      { key: 'NODE_ENV', configured: this.deps.nodeEnv === 'production', required: false, message: 'NODE_ENV should be production for live deployment.' },
-    ];
+    const checks: Array<{ key: string; configured: boolean; required: boolean; message: string }> =
+      [
+        {
+          key: 'DATABASE_URL',
+          configured: !!this.deps.databaseUrl,
+          required: true,
+          message: 'Production database connection string.',
+        },
+        {
+          key: 'JWT_SECRET',
+          configured: !!this.deps.jwtSecret,
+          required: true,
+          message: 'Authentication JWT secret.',
+        },
+        {
+          key: 'JWT_REFRESH_SECRET',
+          configured: !!this.deps.jwtRefreshSecret,
+          required: true,
+          message: 'Refresh token secret.',
+        },
+        {
+          key: 'INTEGRATIONS_ENCRYPTION_KEY',
+          configured: !!this.deps.encryptionKey,
+          required: false,
+          message: 'Integration credentials encryption key.',
+        },
+        {
+          key: 'APP_URL',
+          configured: !!this.deps.appUrl,
+          required: true,
+          message: 'Frontend application URL.',
+        },
+        {
+          key: 'API_PUBLIC_URL',
+          configured: !!this.deps.apiPublicUrl,
+          required: false,
+          message: 'Public API URL for webhooks and connectors.',
+        },
+        {
+          key: 'REDIS_URL',
+          configured: !!this.deps.redisUrl,
+          required: false,
+          message: 'Redis for background jobs and caching.',
+        },
+        {
+          key: 'NODE_ENV',
+          configured: this.deps.nodeEnv === 'production',
+          required: false,
+          message: 'NODE_ENV should be production for live deployment.',
+        },
+      ];
 
     for (const check of checks) {
-      const severity = !check.configured && check.required ? 'critical' : !check.configured ? 'warning' : 'info';
+      const severity =
+        !check.configured && check.required ? 'critical' : !check.configured ? 'warning' : 'info';
       findings.push({
         key: check.key,
         configured: check.configured,
         required: check.required,
         severity,
-        message: check.configured ? `${check.key} configured.` : `${check.key} not configured — ${check.message}`,
+        message: check.configured
+          ? `${check.key} configured.`
+          : `${check.key} not configured — ${check.message}`,
       });
     }
 
@@ -68,7 +112,9 @@ export class EnterpriseProductionLaunchEnvironmentService {
       key: 'supabase',
       configured: isSupabase || !!this.deps.databaseUrl,
       severity: 'info',
-      message: isSupabase ? 'Supabase/Postgres database detected.' : 'Database URL configured (verify Supabase settings if applicable).',
+      message: isSupabase
+        ? 'Supabase/Postgres database detected.'
+        : 'Database URL configured (verify Supabase settings if applicable).',
     });
 
     const missingConfigCount = findings.filter((f) => f.severity === 'critical').length;

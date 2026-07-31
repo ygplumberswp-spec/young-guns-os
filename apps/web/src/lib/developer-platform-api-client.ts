@@ -12,9 +12,12 @@ import { request, ApiClientError } from './api-client';
 export { ApiClientError as DeveloperPlatformApiClientError };
 
 export async function fetchDeveloperDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseDeveloperPlatformDashboard }>('/developer-platform/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseDeveloperPlatformDashboard }>(
+    '/developer-platform/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -27,11 +30,14 @@ export async function generateOpenApiSpec(accessToken: string) {
 }
 
 export async function generateSdkPackage(accessToken: string, body: GenerateDeveloperSdkRequest) {
-  const data = await request<{ sdk: DeveloperSdkPackageDetail }>('/developer-platform/sdk/generate', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+  const data = await request<{ sdk: DeveloperSdkPackageDetail }>(
+    '/developer-platform/sdk/generate',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.sdk;
 }
 
@@ -45,11 +51,14 @@ export async function createDeveloperExtension(
     permissions?: string[];
   },
 ) {
-  const data = await request<{ extension: DeveloperExtensionSummary }>('/developer-platform/extensions', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+  const data = await request<{ extension: DeveloperExtensionSummary }>(
+    '/developer-platform/extensions',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.extension;
 }
 
@@ -81,9 +90,12 @@ export async function replayWebhookDelivery(accessToken: string, deliveryId: str
 }
 
 export async function fetchMarketplaceListings(accessToken: string) {
-  const data = await request<{ listings: DeveloperMarketplaceListingSummary[] }>('/developer-platform/marketplace', {
-    accessToken,
-  });
+  const data = await request<{ listings: DeveloperMarketplaceListingSummary[] }>(
+    '/developer-platform/marketplace',
+    {
+      accessToken,
+    },
+  );
   return data.listings;
 }
 
@@ -96,9 +108,12 @@ export async function fetchWebhookDeadLetter(accessToken: string) {
 }
 
 export async function captureDeveloperAnalytics(accessToken: string) {
-  const data = await request<{ snapshot: { id: string } }>('/developer-platform/analytics/capture', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ snapshot: { id: string } }>(
+    '/developer-platform/analytics/capture',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.snapshot;
 }

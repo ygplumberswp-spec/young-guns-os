@@ -76,7 +76,10 @@ export function createAuthRouter({
       return;
     }
 
-    authLog?.info({ email: parsed.data.email, companyName: parsed.data.companyName }, 'Signup request received');
+    authLog?.info(
+      { email: parsed.data.email, companyName: parsed.data.companyName },
+      'Signup request received',
+    );
 
     try {
       authLog?.debug({ email: parsed.data.email }, 'Creating company, roles, and user');
@@ -87,7 +90,11 @@ export function createAuthRouter({
       });
 
       authLog?.info(
-        { userId: result.user.id, companyId: result.user.companyId, sessionExpiresIn: result.session.expiresIn },
+        {
+          userId: result.user.id,
+          companyId: result.user.companyId,
+          sessionExpiresIn: result.session.expiresIn,
+        },
         'Signup succeeded — session created',
       );
 
@@ -130,7 +137,11 @@ export function createAuthRouter({
       });
 
       authLog?.info(
-        { userId: result.user.id, companyId: result.user.companyId, sessionExpiresIn: result.session.expiresIn },
+        {
+          userId: result.user.id,
+          companyId: result.user.companyId,
+          sessionExpiresIn: result.session.expiresIn,
+        },
         'Login succeeded — JWT issued',
       );
 
@@ -371,7 +382,10 @@ async function recordSecurityLoginEvent(
   try {
     await enterpriseSecurityService.recordLoginEvent(input);
   } catch (error) {
-    authLog?.warn({ err: error, eventType: input.eventType }, 'Security login event logging failed — auth continues');
+    authLog?.warn(
+      { err: error, eventType: input.eventType },
+      'Security login event logging failed — auth continues',
+    );
   }
 }
 
@@ -382,7 +396,9 @@ function isDatabaseUnavailable(error: unknown): boolean {
 
   const message = error.message.toLowerCase();
   const causeMessage =
-    error.cause instanceof Error ? error.cause.message.toLowerCase() : String(error.cause ?? '').toLowerCase();
+    error.cause instanceof Error
+      ? error.cause.message.toLowerCase()
+      : String(error.cause ?? '').toLowerCase();
 
   return (
     message.includes('connect') ||

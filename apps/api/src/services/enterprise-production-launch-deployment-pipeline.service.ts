@@ -37,7 +37,10 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
     return row ? toSummary(row) : null;
   }
 
-  async createDeploymentRun(scope: StaffScope, input: CreatePlDeploymentRunRequest): Promise<PlDeploymentPipelineRunSummary> {
+  async createDeploymentRun(
+    scope: StaffScope,
+    input: CreatePlDeploymentRunRequest,
+  ): Promise<PlDeploymentPipelineRunSummary> {
     const runKey = `deploy_${Date.now()}`;
     const [created] = await this.deps.db
       .insert(plDeploymentPipelineRuns)
@@ -53,10 +56,15 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
     return toSummary(created!);
   }
 
-  async runHealthVerification(scope: StaffScope, runId: string): Promise<PlDeploymentPipelineRunSummary> {
+  async runHealthVerification(
+    scope: StaffScope,
+    runId: string,
+  ): Promise<PlDeploymentPipelineRunSummary> {
     const run = await this.ensureRun(scope.companyId, runId);
     const dbOk = await checkDbConnection(this.deps.databaseUrl ?? '');
-    const readiness = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+    const readiness = await this.deps.enterpriseProductionReadinessService.getDashboard(
+      scope.companyId,
+    );
     const healthVerified = dbOk && readiness.overallHealthStatus !== 'unhealthy';
 
     const [updated] = await this.deps.db
@@ -78,13 +86,17 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
 
   async runSmokeTests(scope: StaffScope, runId: string): Promise<PlDeploymentPipelineRunSummary> {
     const run = await this.ensureRun(scope.companyId, runId);
-    const readiness = await this.deps.enterpriseProductionReadinessService.getDashboard(scope.companyId);
+    const readiness = await this.deps.enterpriseProductionReadinessService.getDashboard(
+      scope.companyId,
+    );
 
     const smokeTests: Array<Record<string, unknown>> = [
       {
         testKey: 'database_connectivity',
         status: run.healthVerified ? 'passed' : 'failed',
-        message: run.healthVerified ? 'Database connectivity OK.' : 'Health verification required first.',
+        message: run.healthVerified
+          ? 'Database connectivity OK.'
+          : 'Health verification required first.',
       },
       {
         testKey: 'api_readiness',
@@ -113,10 +125,15 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
     return toSummary(updated!);
   }
 
-  async submitForApproval(scope: StaffScope, runId: string): Promise<PlDeploymentPipelineRunSummary> {
+  async submitForApproval(
+    scope: StaffScope,
+    runId: string,
+  ): Promise<PlDeploymentPipelineRunSummary> {
     const run = await this.ensureRun(scope.companyId, runId);
     if (!run.healthVerified || !run.smokeTestPassed) {
-      throw new Error('Health verification and smoke tests must pass before submitting for approval.');
+      throw new Error(
+        'Health verification and smoke tests must pass before submitting for approval.',
+      );
     }
     const [updated] = await this.deps.db
       .update(plDeploymentPipelineRuns)
@@ -126,7 +143,11 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
     return toSummary(updated!);
   }
 
-  async approveDeployment(scope: StaffScope, runId: string, input: ApprovePlDeploymentRunRequest): Promise<PlDeploymentPipelineRunSummary> {
+  async approveDeployment(
+    scope: StaffScope,
+    runId: string,
+    input: ApprovePlDeploymentRunRequest,
+  ): Promise<PlDeploymentPipelineRunSummary> {
     const run = await this.ensureRun(scope.companyId, runId);
     if (run.status !== 'pending_approval') {
       throw new Error('Deployment must be pending approval.');
@@ -151,7 +172,10 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
     return toSummary(updated!);
   }
 
-  async confirmDeployment(scope: StaffScope, runId: string): Promise<PlDeploymentPipelineRunSummary> {
+  async confirmDeployment(
+    scope: StaffScope,
+    runId: string,
+  ): Promise<PlDeploymentPipelineRunSummary> {
     const run = await this.ensureRun(scope.companyId, runId);
     if (!run.ownerApproved || run.status !== 'approved') {
       throw new Error('Deployment requires owner approval before confirmation.');
@@ -194,14 +218,19 @@ export class EnterpriseProductionLaunchDeploymentPipelineService {
 
   private async ensureRun(companyId: string, runId: string) {
     const run = await this.deps.db.query.plDeploymentPipelineRuns.findFirst({
-      where: and(eq(plDeploymentPipelineRuns.companyId, companyId), eq(plDeploymentPipelineRuns.id, runId)),
+      where: and(
+        eq(plDeploymentPipelineRuns.companyId, companyId),
+        eq(plDeploymentPipelineRuns.id, runId),
+      ),
     });
     if (!run) throw new Error('Deployment run not found');
     return run;
   }
 }
 
-function toSummary(row: typeof plDeploymentPipelineRuns.$inferSelect): PlDeploymentPipelineRunSummary {
+function toSummary(
+  row: typeof plDeploymentPipelineRuns.$inferSelect,
+): PlDeploymentPipelineRunSummary {
   return {
     id: row.id,
     runKey: row.runKey,

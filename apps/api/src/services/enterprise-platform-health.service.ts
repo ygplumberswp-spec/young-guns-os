@@ -87,7 +87,9 @@ export class EnterprisePlatformHealthService {
       deps.enterpriseProductionReadinessService,
       deps.enterpriseSaasPlatformService,
     );
-    this.incidentService = new EnterprisePlatformHealthIncidentService(deps.enterpriseItOperationsService);
+    this.incidentService = new EnterprisePlatformHealthIncidentService(
+      deps.enterpriseItOperationsService,
+    );
   }
 
   async getDashboard(companyId: string): Promise<EnterprisePlatformHealthDashboard> {
@@ -117,10 +119,14 @@ export class EnterprisePlatformHealthService {
       this.listPlatformAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
-    const latestDiagnosticResults =
-      diagnosticRuns[0] ? (await this.diagnosticsService.getDiagnosticRunDetail(companyId, diagnosticRuns[0].id))?.results ?? [] : [];
+    const latestDiagnosticResults = diagnosticRuns[0]
+      ? ((await this.diagnosticsService.getDiagnosticRunDetail(companyId, diagnosticRuns[0].id))
+          ?.results ?? [])
+      : [];
 
     const serviceHealth: PhServiceHealthSummary[] = productionDashboard.systemHealth.map((m) => ({
       moduleKey: m.moduleKey,
@@ -138,7 +144,9 @@ export class EnterprisePlatformHealthService {
     const degradedServiceCount = serviceHealth.filter((s) => s.status !== 'healthy').length;
 
     const platformHealth = this.buildPlatformHealthSummary({
-      overallHealthScore: latestHealthSnapshot?.overallHealthScore ?? resolveHealthScore(productionDashboard.overallHealthStatus),
+      overallHealthScore:
+        latestHealthSnapshot?.overallHealthScore ??
+        resolveHealthScore(productionDashboard.overallHealthStatus),
       overallHealthStatus: mapOpsStatus(productionDashboard.overallHealthStatus),
       criticalIncidentCount: criticalIncidents.length,
       failedDiagnosticCount: failedDiagnostics,
@@ -198,7 +206,10 @@ export class EnterprisePlatformHealthService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdatePhPlatformConfigRequest): Promise<PhPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdatePhPlatformConfigRequest,
+  ): Promise<PhPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(phPlatformConfig)
@@ -224,7 +235,9 @@ export class EnterprisePlatformHealthService {
     ]);
 
     await this.deps.enterpriseProductionReadinessService.captureHealthSnapshots(scope.companyId);
-    await this.deps.enterpriseProductionReadinessService.capturePerformanceSnapshot(scope.companyId);
+    await this.deps.enterpriseProductionReadinessService.capturePerformanceSnapshot(
+      scope.companyId,
+    );
     await this.deps.enterpriseItOperationsService.captureHealthSignals(scope);
 
     const performance = productionDashboard.performance;
@@ -288,7 +301,11 @@ export class EnterprisePlatformHealthService {
     return this.incidentService.createIncident(scope, input);
   }
 
-  updateIncident(scope: StaffScope, incidentId: string, input: UpdatePhIncidentRequest): Promise<ItoIncidentSummary> {
+  updateIncident(
+    scope: StaffScope,
+    incidentId: string,
+    input: UpdatePhIncidentRequest,
+  ): Promise<ItoIncidentSummary> {
     return this.incidentService.updateIncident(scope, incidentId, input);
   }
 
@@ -370,12 +387,16 @@ export class EnterprisePlatformHealthService {
         },
       })
       .returning();
-    if (!created) throw new EnterprisePlatformHealthError('CREATE_FAILED', 'Unable to capture analytics');
+    if (!created)
+      throw new EnterprisePlatformHealthError('CREATE_FAILED', 'Unable to capture analytics');
     await this.logAudit(scope, 'capture_analytics', 'ph_analytics_snapshots', created.id);
     return toAnalyticsSummary(created);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreatePhActionDraftRequest): Promise<PhActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreatePhActionDraftRequest,
+  ): Promise<PhActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(phActionDrafts)
       .values({
@@ -387,7 +408,8 @@ export class EnterprisePlatformHealthService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterprisePlatformHealthError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterprisePlatformHealthError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'ph_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -410,12 +432,18 @@ export class EnterprisePlatformHealthService {
     return rows.map(toAuditLogSummary);
   }
 
-  async listPlatformAlerts(companyId: string, options?: { status?: string }): Promise<PhPlatformAlertSummary[]> {
+  async listPlatformAlerts(
+    companyId: string,
+    options?: { status?: string },
+  ): Promise<PhPlatformAlertSummary[]> {
     const rows = await this.deps.db.query.phPlatformAlerts.findMany({
       where: options?.status
         ? and(
             eq(phPlatformAlerts.companyId, companyId),
-            eq(phPlatformAlerts.status, options.status as typeof phPlatformAlerts.status.enumValues[number]),
+            eq(
+              phPlatformAlerts.status,
+              options.status as (typeof phPlatformAlerts.status.enumValues)[number],
+            ),
           )
         : eq(phPlatformAlerts.companyId, companyId),
       orderBy: [desc(phPlatformAlerts.createdAt)],
@@ -424,7 +452,9 @@ export class EnterprisePlatformHealthService {
     return rows.map(toPlatformAlertSummary);
   }
 
-  private async getLatestHealthSnapshot(companyId: string): Promise<PhHealthSnapshotSummary | null> {
+  private async getLatestHealthSnapshot(
+    companyId: string,
+  ): Promise<PhHealthSnapshotSummary | null> {
     const row = await this.deps.db.query.phHealthSnapshots.findFirst({
       where: eq(phHealthSnapshots.companyId, companyId),
       orderBy: [desc(phHealthSnapshots.capturedAt)],
@@ -474,7 +504,12 @@ export class EnterprisePlatformHealthService {
 
   private async upsertPlatformAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description?: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description?: string;
+    },
   ): Promise<PhPlatformAlertSummary> {
     const existing = await this.deps.db.query.phPlatformAlerts.findFirst({
       where: and(
@@ -543,7 +578,9 @@ function resolveHealthScore(status: string): number | null {
   return null;
 }
 
-function toPlatformConfigSummary(row: typeof phPlatformConfig.$inferSelect): PhPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof phPlatformConfig.$inferSelect,
+): PhPlatformConfigSummary {
   return {
     monitoringPolicy: row.monitoringPolicy ?? {},
     diagnosticsPolicy: row.diagnosticsPolicy ?? {},
@@ -554,7 +591,9 @@ function toPlatformConfigSummary(row: typeof phPlatformConfig.$inferSelect): PhP
   };
 }
 
-function toHealthSnapshotSummary(row: typeof phHealthSnapshots.$inferSelect): PhHealthSnapshotSummary {
+function toHealthSnapshotSummary(
+  row: typeof phHealthSnapshots.$inferSelect,
+): PhHealthSnapshotSummary {
   return {
     id: row.id,
     overallHealthScore: row.overallHealthScore,

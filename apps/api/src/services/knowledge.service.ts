@@ -71,12 +71,20 @@ export class KnowledgeService {
 
   async getStats(companyId: string): Promise<KnowledgeStats> {
     const [articles, sops, courses, policies, recommendations, records] = await Promise.all([
-      this.deps.db.query.knowledgeArticles.findMany({ where: eq(knowledgeArticles.companyId, companyId) }),
+      this.deps.db.query.knowledgeArticles.findMany({
+        where: eq(knowledgeArticles.companyId, companyId),
+      }),
       this.deps.db.query.sopDocuments.findMany({ where: eq(sopDocuments.companyId, companyId) }),
-      this.deps.db.query.trainingCourses.findMany({ where: eq(trainingCourses.companyId, companyId) }),
-      this.deps.db.query.companyPolicies.findMany({ where: eq(companyPolicies.companyId, companyId) }),
+      this.deps.db.query.trainingCourses.findMany({
+        where: eq(trainingCourses.companyId, companyId),
+      }),
+      this.deps.db.query.companyPolicies.findMany({
+        where: eq(companyPolicies.companyId, companyId),
+      }),
       this.listRecommendations(companyId),
-      this.deps.db.query.knowledgeTrainingRecords.findMany({ where: eq(knowledgeTrainingRecords.companyId, companyId) }),
+      this.deps.db.query.knowledgeTrainingRecords.findMany({
+        where: eq(knowledgeTrainingRecords.companyId, companyId),
+      }),
     ]);
 
     const now = new Date();
@@ -117,7 +125,10 @@ export class KnowledgeService {
     }));
   }
 
-  async createCategory(companyId: string, input: CreateKnowledgeCategoryRequest): Promise<KnowledgeCategorySummary> {
+  async createCategory(
+    companyId: string,
+    input: CreateKnowledgeCategoryRequest,
+  ): Promise<KnowledgeCategorySummary> {
     const name = input.name.trim();
     if (!name) {
       throw new KnowledgeError('VALIDATION_ERROR', 'Category name is required');
@@ -155,17 +166,23 @@ export class KnowledgeService {
       .update(knowledgeCategories)
       .set({
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         parentId: input.parentId,
         updatedAt: new Date(),
       })
-      .where(and(eq(knowledgeCategories.id, categoryId), eq(knowledgeCategories.companyId, companyId)));
+      .where(
+        and(eq(knowledgeCategories.id, categoryId), eq(knowledgeCategories.companyId, companyId)),
+      );
 
     const categories = await this.listCategories(companyId);
     return categories.find((row) => row.id === categoryId)!;
   }
 
-  async listArticles(companyId: string, userPermissions: string[]): Promise<KnowledgeArticleSummary[]> {
+  async listArticles(
+    companyId: string,
+    userPermissions: string[],
+  ): Promise<KnowledgeArticleSummary[]> {
     const rows = await this.deps.db.query.knowledgeArticles.findMany({
       where: eq(knowledgeArticles.companyId, companyId),
       with: { category: true, createdBy: true },
@@ -241,13 +258,12 @@ export class KnowledgeService {
     const title = input.title?.trim() ?? existing.title;
     const content = input.content?.trim() ?? existing.content;
     const keywords = extractKeywords(title, content, input.keywords ?? existing.keywords);
-    const summary = input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary;
+    const summary =
+      input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary;
     const versionNumber = existing.versionNumber + 1;
-    const relatedArticleIds = await this.findRelatedArticleIds(
-      scope.companyId,
-      keywords,
-      [articleId],
-    );
+    const relatedArticleIds = await this.findRelatedArticleIds(scope.companyId, keywords, [
+      articleId,
+    ]);
 
     await this.deps.db
       .update(knowledgeArticles)
@@ -265,7 +281,9 @@ export class KnowledgeService {
         status: 'draft',
         updatedAt: new Date(),
       })
-      .where(and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)));
+      .where(
+        and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)),
+      );
 
     await this.createVersion(
       scope,
@@ -291,7 +309,9 @@ export class KnowledgeService {
     await this.deps.db
       .update(knowledgeArticles)
       .set({ status: 'pending_approval', updatedAt: new Date() })
-      .where(and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)));
+      .where(
+        and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)),
+      );
 
     return (await this.getArticle(scope.companyId, articleId, ['*']))!;
   }
@@ -311,7 +331,9 @@ export class KnowledgeService {
         publishedAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)));
+      .where(
+        and(eq(knowledgeArticles.id, articleId), eq(knowledgeArticles.companyId, scope.companyId)),
+      );
 
     return (await this.getArticle(scope.companyId, articleId, ['*']))!;
   }
@@ -328,7 +350,11 @@ export class KnowledgeService {
       .map(toSopSummary);
   }
 
-  async getSop(companyId: string, sopId: string, userPermissions: string[]): Promise<SopDocumentDetail | null> {
+  async getSop(
+    companyId: string,
+    sopId: string,
+    userPermissions: string[],
+  ): Promise<SopDocumentDetail | null> {
     const row = await this.deps.db.query.sopDocuments.findFirst({
       where: and(eq(sopDocuments.id, sopId), eq(sopDocuments.companyId, companyId)),
       with: { category: true, createdBy: true, approvedBy: true },
@@ -372,7 +398,11 @@ export class KnowledgeService {
     return (await this.getSop(scope.companyId, created!.id, ['*']))!;
   }
 
-  async updateSop(scope: TenantScope, sopId: string, input: UpdateSopDocumentRequest): Promise<SopDocumentDetail> {
+  async updateSop(
+    scope: TenantScope,
+    sopId: string,
+    input: UpdateSopDocumentRequest,
+  ): Promise<SopDocumentDetail> {
     const existing = await this.ensureSop(scope.companyId, sopId);
     const title = input.title?.trim() ?? existing.title;
     const content = input.content?.trim() ?? existing.content;
@@ -385,9 +415,15 @@ export class KnowledgeService {
         categoryId: input.categoryId !== undefined ? input.categoryId : undefined,
         title,
         content,
-        summary: input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary,
+        summary:
+          input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary,
         department: input.department !== undefined ? input.department?.trim() || null : undefined,
-        effectiveDate: input.effectiveDate !== undefined ? (input.effectiveDate ? new Date(input.effectiveDate) : null) : undefined,
+        effectiveDate:
+          input.effectiveDate !== undefined
+            ? input.effectiveDate
+              ? new Date(input.effectiveDate)
+              : null
+            : undefined,
         keywords,
         versionNumber,
         requiredPermissions: input.requiredPermissions,
@@ -451,7 +487,10 @@ export class KnowledgeService {
     return rows.map(toTrainingCourseSummary);
   }
 
-  async createTrainingCourse(scope: TenantScope, input: CreateTrainingCourseRequest): Promise<TrainingCourseSummary> {
+  async createTrainingCourse(
+    scope: TenantScope,
+    input: CreateTrainingCourseRequest,
+  ): Promise<TrainingCourseSummary> {
     const title = input.title.trim();
     if (!title) {
       throw new KnowledgeError('VALIDATION_ERROR', 'Course title is required');
@@ -491,7 +530,8 @@ export class KnowledgeService {
       .set({
         categoryId: input.categoryId !== undefined ? input.categoryId : undefined,
         title: input.title?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         contentType: input.contentType,
         contentUrl: input.contentUrl !== undefined ? input.contentUrl?.trim() || null : undefined,
         documentId: input.documentId !== undefined ? input.documentId : undefined,
@@ -507,10 +547,16 @@ export class KnowledgeService {
     return courses.find((row) => row.id === courseId)!;
   }
 
-  async listTrainingRecords(companyId: string, userId?: string): Promise<KnowledgeTrainingRecordSummary[]> {
+  async listTrainingRecords(
+    companyId: string,
+    userId?: string,
+  ): Promise<KnowledgeTrainingRecordSummary[]> {
     const rows = await this.deps.db.query.knowledgeTrainingRecords.findMany({
       where: userId
-        ? and(eq(knowledgeTrainingRecords.companyId, companyId), eq(knowledgeTrainingRecords.userId, userId))
+        ? and(
+            eq(knowledgeTrainingRecords.companyId, companyId),
+            eq(knowledgeTrainingRecords.userId, userId),
+          )
         : eq(knowledgeTrainingRecords.companyId, companyId),
       with: { course: true, user: true },
       orderBy: [desc(knowledgeTrainingRecords.updatedAt)],
@@ -572,13 +618,21 @@ export class KnowledgeService {
         notes: input.notes !== undefined ? normalizeOptionalText(input.notes) : undefined,
         updatedAt: new Date(),
       })
-      .where(and(eq(knowledgeTrainingRecords.id, recordId), eq(knowledgeTrainingRecords.companyId, companyId)));
+      .where(
+        and(
+          eq(knowledgeTrainingRecords.id, recordId),
+          eq(knowledgeTrainingRecords.companyId, companyId),
+        ),
+      );
 
     const records = await this.listTrainingRecords(companyId);
     return records.find((row) => row.id === recordId)!;
   }
 
-  async listPolicies(companyId: string, userPermissions: string[]): Promise<CompanyPolicySummary[]> {
+  async listPolicies(
+    companyId: string,
+    userPermissions: string[],
+  ): Promise<CompanyPolicySummary[]> {
     const rows = await this.deps.db.query.companyPolicies.findMany({
       where: eq(companyPolicies.companyId, companyId),
       with: { category: true, createdBy: true },
@@ -590,7 +644,11 @@ export class KnowledgeService {
       .map(toPolicySummary);
   }
 
-  async getPolicy(companyId: string, policyId: string, userPermissions: string[]): Promise<CompanyPolicyDetail | null> {
+  async getPolicy(
+    companyId: string,
+    policyId: string,
+    userPermissions: string[],
+  ): Promise<CompanyPolicyDetail | null> {
     const row = await this.deps.db.query.companyPolicies.findFirst({
       where: and(eq(companyPolicies.id, policyId), eq(companyPolicies.companyId, companyId)),
       with: { category: true, createdBy: true, approvedBy: true },
@@ -603,7 +661,10 @@ export class KnowledgeService {
     return toPolicyDetail(row);
   }
 
-  async createPolicy(scope: TenantScope, input: CreateCompanyPolicyRequest): Promise<CompanyPolicyDetail> {
+  async createPolicy(
+    scope: TenantScope,
+    input: CreateCompanyPolicyRequest,
+  ): Promise<CompanyPolicyDetail> {
     const title = input.title.trim();
     const content = input.content.trim();
     if (!title || !content) {
@@ -653,9 +714,20 @@ export class KnowledgeService {
         policyType: input.policyType,
         title,
         content,
-        summary: input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary,
-        effectiveDate: input.effectiveDate !== undefined ? (input.effectiveDate ? new Date(input.effectiveDate) : null) : undefined,
-        expiryDate: input.expiryDate !== undefined ? (input.expiryDate ? new Date(input.expiryDate) : null) : undefined,
+        summary:
+          input.summary !== undefined ? normalizeOptionalText(input.summary) : existing.summary,
+        effectiveDate:
+          input.effectiveDate !== undefined
+            ? input.effectiveDate
+              ? new Date(input.effectiveDate)
+              : null
+            : undefined,
+        expiryDate:
+          input.expiryDate !== undefined
+            ? input.expiryDate
+              ? new Date(input.expiryDate)
+              : null
+            : undefined,
         keywords,
         versionNumber,
         requiredPermissions: input.requiredPermissions,
@@ -743,7 +815,10 @@ export class KnowledgeService {
 
     if (types.includes('article')) {
       const rows = await this.deps.db.query.knowledgeArticles.findMany({
-        where: and(eq(knowledgeArticles.companyId, companyId), eq(knowledgeArticles.status, 'published')),
+        where: and(
+          eq(knowledgeArticles.companyId, companyId),
+          eq(knowledgeArticles.status, 'published'),
+        ),
         with: { category: true },
       });
 
@@ -789,7 +864,10 @@ export class KnowledgeService {
 
     if (types.includes('policy')) {
       const rows = await this.deps.db.query.companyPolicies.findMany({
-        where: and(eq(companyPolicies.companyId, companyId), eq(companyPolicies.status, 'published')),
+        where: and(
+          eq(companyPolicies.companyId, companyId),
+          eq(companyPolicies.status, 'published'),
+        ),
         with: { category: true },
       });
 
@@ -856,7 +934,10 @@ export class KnowledgeService {
     return results.sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, limit);
   }
 
-  async indexDocument(scope: TenantScope, input: IndexDocumentRequest): Promise<KnowledgeArticleDetail> {
+  async indexDocument(
+    scope: TenantScope,
+    input: IndexDocumentRequest,
+  ): Promise<KnowledgeArticleDetail> {
     const document = await this.deps.db.query.documents.findFirst({
       where: and(eq(documents.id, input.documentId), eq(documents.companyId, scope.companyId)),
     });
@@ -896,10 +977,16 @@ export class KnowledgeService {
 
   async generateRecommendations(companyId: string): Promise<KnowledgeRecommendationSummary[]> {
     const [articles, sops, courses, records, stats] = await Promise.all([
-      this.deps.db.query.knowledgeArticles.findMany({ where: eq(knowledgeArticles.companyId, companyId) }),
+      this.deps.db.query.knowledgeArticles.findMany({
+        where: eq(knowledgeArticles.companyId, companyId),
+      }),
       this.deps.db.query.sopDocuments.findMany({ where: eq(sopDocuments.companyId, companyId) }),
-      this.deps.db.query.trainingCourses.findMany({ where: eq(trainingCourses.companyId, companyId) }),
-      this.deps.db.query.knowledgeTrainingRecords.findMany({ where: eq(knowledgeTrainingRecords.companyId, companyId) }),
+      this.deps.db.query.trainingCourses.findMany({
+        where: eq(trainingCourses.companyId, companyId),
+      }),
+      this.deps.db.query.knowledgeTrainingRecords.findMany({
+        where: eq(knowledgeTrainingRecords.companyId, companyId),
+      }),
       this.getStats(companyId),
     ]);
 
@@ -916,7 +1003,8 @@ export class KnowledgeService {
       signals.push({
         recommendationType: 'missing_documentation',
         title: 'Create knowledge base articles',
-        description: 'No knowledge articles exist yet — consider documenting core procedures and FAQs.',
+        description:
+          'No knowledge articles exist yet — consider documenting core procedures and FAQs.',
         priority: 'high',
         context: {},
       });
@@ -951,8 +1039,13 @@ export class KnowledgeService {
       });
     }
 
-    const activeCourses = courses.filter((row) => row.status === 'active' && row.certificationRequired);
-    if (activeCourses.length > 0 && records.filter((row) => row.status === 'completed').length === 0) {
+    const activeCourses = courses.filter(
+      (row) => row.status === 'active' && row.certificationRequired,
+    );
+    if (
+      activeCourses.length > 0 &&
+      records.filter((row) => row.status === 'completed').length === 0
+    ) {
       signals.push({
         recommendationType: 'training_requirement',
         title: 'Assign required training',
@@ -1042,7 +1135,10 @@ export class KnowledgeService {
         limit: 8,
       }),
       this.deps.db.query.companyPolicies.findMany({
-        where: and(eq(companyPolicies.companyId, companyId), eq(companyPolicies.status, 'published')),
+        where: and(
+          eq(companyPolicies.companyId, companyId),
+          eq(companyPolicies.status, 'published'),
+        ),
         orderBy: [desc(companyPolicies.updatedAt)],
         limit: 8,
       }),
@@ -1118,14 +1214,21 @@ export class KnowledgeService {
     }
 
     const rows = await this.deps.db.query.knowledgeArticles.findMany({
-      where: and(eq(knowledgeArticles.companyId, companyId), eq(knowledgeArticles.status, 'published')),
+      where: and(
+        eq(knowledgeArticles.companyId, companyId),
+        eq(knowledgeArticles.status, 'published'),
+      ),
       columns: { id: true, title: true, keywords: true },
       limit: 50,
     });
 
     return rows
       .filter((row) => !excludeIds.includes(row.id))
-      .filter((row) => keywords.some((keyword) => row.keywords.includes(keyword) || row.title.toLowerCase().includes(keyword)))
+      .filter((row) =>
+        keywords.some(
+          (keyword) => row.keywords.includes(keyword) || row.title.toLowerCase().includes(keyword),
+        ),
+      )
       .slice(0, 5)
       .map((row) => row.id);
   }
@@ -1152,7 +1255,10 @@ export class KnowledgeService {
 
   private async ensureCategory(companyId: string, categoryId: string) {
     const row = await this.deps.db.query.knowledgeCategories.findFirst({
-      where: and(eq(knowledgeCategories.id, categoryId), eq(knowledgeCategories.companyId, companyId)),
+      where: and(
+        eq(knowledgeCategories.id, categoryId),
+        eq(knowledgeCategories.companyId, companyId),
+      ),
     });
 
     if (!row) {
@@ -1212,7 +1318,10 @@ export class KnowledgeService {
 
   private async ensureTrainingRecord(companyId: string, recordId: string) {
     const row = await this.deps.db.query.knowledgeTrainingRecords.findFirst({
-      where: and(eq(knowledgeTrainingRecords.id, recordId), eq(knowledgeTrainingRecords.companyId, companyId)),
+      where: and(
+        eq(knowledgeTrainingRecords.id, recordId),
+        eq(knowledgeTrainingRecords.companyId, companyId),
+      ),
     });
 
     if (!row) {

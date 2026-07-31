@@ -5,6 +5,7 @@ import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessFleet, canManageFleet, VehicleList } from '../../features/fleet/VehicleList';
+import { FleetDispatchBoard } from '../../features/fleet/FleetDispatchBoard';
 
 export function VehicleListPage() {
   const { accessToken, user } = useAuth();
@@ -12,7 +13,11 @@ export function VehicleListPage() {
   const canView = useMemo(() => (user ? canAccessFleet(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFleet(user.permissions) : false), [user]);
 
-  const { data: vehicles, error, isLoading } = useCachedQuery({
+  const {
+    data: vehicles,
+    error,
+    isLoading,
+  } = useCachedQuery({
     queryKey: 'fleet/vehicles',
     accessToken,
     enabled: canView,
@@ -32,7 +37,7 @@ export function VehicleListPage() {
     <div className="fleet-page">
       <PageHeader
         title="Fleet"
-        description="Manage company vehicles and driver assignments."
+        description="Manage company vehicles and today's dispatch board (stored data only — live Maps/Cartrack deferred)."
         actions={
           canWrite ? (
             <Link href="/fleet/new">
@@ -41,6 +46,8 @@ export function VehicleListPage() {
           ) : undefined
         }
       />
+
+      <FleetDispatchBoard />
 
       <PageLoadState
         isLoading={isLoading}

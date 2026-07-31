@@ -1,5 +1,8 @@
 import { request, ApiClientError } from './api-client';
-import type { EnterpriseLegalComplianceDashboard, UpdateLcPlatformConfigRequest } from '@titan/shared';
+import type {
+  EnterpriseLegalComplianceDashboard,
+  UpdateLcPlatformConfigRequest,
+} from '@titan/shared';
 
 export { ApiClientError as EnterpriseLegalComplianceApiClientError };
 
@@ -12,10 +15,13 @@ export async function fetchLegalComplianceDashboard(accessToken: string) {
 }
 
 export async function captureLegalAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-legal-compliance/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-legal-compliance/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
@@ -51,16 +57,24 @@ export async function testSignatureProvider(accessToken: string, providerId: str
   return data.provider;
 }
 
-export async function updateLegalPlatformConfig(accessToken: string, body: UpdateLcPlatformConfigRequest) {
-  const data = await request<{ platformConfig: unknown }>('/enterprise-legal-compliance/platform-config', {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+export async function updateLegalPlatformConfig(
+  accessToken: string,
+  body: UpdateLcPlatformConfigRequest,
+) {
+  const data = await request<{ platformConfig: unknown }>(
+    '/enterprise-legal-compliance/platform-config',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.platformConfig;
 }
 
 export async function fetchEmployeeLegalSummary(accessToken: string) {
-  const data = await request<{ summary: unknown }>('/enterprise-legal-compliance/employee', { accessToken });
+  const data = await request<{ summary: unknown }>('/enterprise-legal-compliance/employee', {
+    accessToken,
+  });
   return data.summary;
 }

@@ -35,7 +35,7 @@ export function MobileJobsPage() {
           <div className="portal-grid">
             {jobs.jobs.map((job) => (
               <Panel key={job.id} title={job.title} description={job.customerName ?? 'Customer'}>
-                <Link href={`/mobile/jobs/${job.id}`}>Open job</Link>
+                <Link href={`/jobs/${job.id}`}>Open job</Link>
               </Panel>
             ))}
           </div>

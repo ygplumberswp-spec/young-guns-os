@@ -10,6 +10,7 @@ import {
   fetchPortalInvitePreview,
   restorePortalSession,
 } from '../../lib/portal-api-client';
+import { toAppAbsoluteHref } from '../../lib/nested-routing';
 
 export function PortalAcceptInvitePage() {
   const [, setLocation] = useLocation();
@@ -43,7 +44,9 @@ export function PortalAcceptInvitePage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof PortalApiClientError ? err.message : 'Invite is invalid or expired');
+          setError(
+            err instanceof PortalApiClientError ? err.message : 'Invite is invalid or expired',
+          );
         }
       } finally {
         if (!cancelled) {
@@ -78,7 +81,7 @@ export function PortalAcceptInvitePage() {
     try {
       await acceptPortalInvite({ token, firstName, lastName, password });
       await restorePortalSession();
-      setLocation('/portal');
+      setLocation(toAppAbsoluteHref('/portal'));
     } catch (err) {
       setError(err instanceof PortalApiClientError ? err.message : 'Unable to accept invite');
     } finally {
@@ -100,8 +103,18 @@ export function PortalAcceptInvitePage() {
             </p>
             <p className="text-muted">Email: {preview.email}</p>
             <form className="stack-form" onSubmit={handleSubmit}>
-              <Input label="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-              <Input label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+              <Input
+                label="First name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+              />
+              <Input
+                label="Last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
               <Input
                 label="Password"
                 type="password"

@@ -10,13 +10,14 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import {
-  canAccessIntegrations,
-  canManageIntegrations,
-} from '../../features/integrations/utils';
+import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
 
-function readOAuthMessage(): { outcome: string | null; message: string | null; organisation: string | null } {
+function readOAuthMessage(): {
+  outcome: string | null;
+  message: string | null;
+  organisation: string | null;
+} {
   const params = new URLSearchParams(window.location.search);
   return {
     outcome: params.get('xero'),
@@ -228,12 +229,17 @@ export function XeroSettingsPage() {
                     onClick={() => void handleConnect()}
                     disabled={isBusy || !connection.oauthConfigured}
                   >
-                    {isBusy ? 'Redirecting…' : showReconnect ? 'Reconnect with Xero' : 'Connect with Xero'}
+                    {isBusy
+                      ? 'Redirecting…'
+                      : showReconnect
+                        ? 'Reconnect with Xero'
+                        : 'Connect with Xero'}
                   </Button>
                 ) : null}
 
                 {connection.status === 'connected' ? (
                   <Button
+                    type="button"
                     variant="ghost"
                     onClick={() => void handleTestConnection()}
                     disabled={isBusy}
@@ -252,7 +258,11 @@ export function XeroSettingsPage() {
                       {confirmDisconnect ? 'Confirm disconnect' : 'Disconnect'}
                     </Button>
                     {confirmDisconnect ? (
-                      <Button variant="ghost" onClick={() => setConfirmDisconnect(false)} disabled={isBusy}>
+                      <Button
+                        variant="ghost"
+                        onClick={() => setConfirmDisconnect(false)}
+                        disabled={isBusy}
+                      >
                         Cancel
                       </Button>
                     ) : null}

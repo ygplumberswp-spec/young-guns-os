@@ -6,6 +6,10 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { createApiGatewayMiddleware } from '../middleware/api-gateway.js';
 import type { ConnectorEngineService } from '../services/connector-engine.service.js';
+import type { BusinessIntegrationsService } from '../services/business-integrations.service.js';
+import { BusinessIntegrationsError } from '../services/business-integrations.service.js';
+import type { XeroSyncService } from '../services/xero-sync.service.js';
+import { XeroSyncError } from '../services/xero-sync.service.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { invalidateIntegrationReadCaches } from '../services/api-read-cache.js';
 
@@ -45,6 +49,8 @@ const diagnosticSchema = z.object({
 type RouterDeps = {
   integrationPlatformService: IntegrationPlatformService;
   connectorEngineService: ConnectorEngineService;
+  businessIntegrationsService: BusinessIntegrationsService;
+  xeroSyncService: XeroSyncService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -61,6 +67,8 @@ function getRouteParam(value: string | string[]): string {
 export function createIntegrationPlatformRouter({
   integrationPlatformService,
   connectorEngineService,
+  businessIntegrationsService,
+  xeroSyncService,
   teamService,
   jwtSecret,
   authService,
@@ -78,7 +86,11 @@ export function createIntegrationPlatformRouter({
   );
   const requireWrite = requireAnyPermission('integrations:manage');
 
-  const ensureRoles = async (req: import('express').Request, _res: import('express').Response, next: import('express').NextFunction) => {
+  const ensureRoles = async (
+    req: import('express').Request,
+    _res: import('express').Response,
+    next: import('express').NextFunction,
+  ) => {
     await teamService.ensureDefaultRoles(getAuth(req).companyId);
     next();
   };
@@ -107,12 +119,35 @@ export function createIntegrationPlatformRouter({
   });
 
   router.post('/connectors/sync', requireWrite, ensureRoles, async (req, res) => {
-    const { companyId } = getAuth(req);
+    const { companyId, userId } = getAuth(req);
     await connectorEngineService.ensureConnectors(companyId);
     await connectorEngineService.syncConnectorStatuses(companyId);
+
+    let xeroSync = null;
+
+    try {
+      const xeroConnection = await businessIntegrationsService.getXeroConnection(companyId);
+
+      if (xeroConnection.status === 'connected') {
+        xeroSync = await xeroSyncService.syncFromXero(companyId, userId);
+      }
+    } catch (error) {
+      if (error instanceof XeroSyncError || error instanceof BusinessIntegrationsError) {
+        res.status(400).json({
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+        });
+        return;
+      }
+
+      throw error;
+    }
+
     invalidateIntegrationReadCaches(companyId);
     const connectors = await connectorEngineService.listConnectors(companyId);
-    res.json({ data: { connectors } });
+    res.json({ data: { connectors, xeroSync } });
   });
 
   router.get('/monitoring', requireRead, async (req, res) => {
@@ -190,11 +225,9 @@ export function createIntegrationPlatformRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res
-        .status(400)
-        .json({
-          error: { code: 'VALIDATION_ERROR', message: 'Invalid integration action payload' },
-        });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid integration action payload' },
+      });
       return;
     }
 
@@ -231,18 +264,23 @@ export function createIntegrationPlatformRouter({
     }
   });
 
-  router.post('/connectors/:connectorId/retry-sync', requireWrite, ensureRoles, async (req, res) => {
-    const auth = getAuth(req);
-    try {
-      const result = await integrationPlatformService.retryConnectorSync(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.connectorId),
-      );
-      res.json({ data: result });
-    } catch (error) {
-      handleError(res, error);
-    }
-  });
+  router.post(
+    '/connectors/:connectorId/retry-sync',
+    requireWrite,
+    ensureRoles,
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const result = await integrationPlatformService.retryConnectorSync(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.connectorId),
+        );
+        res.json({ data: result });
+      } catch (error) {
+        handleError(res, error);
+      }
+    },
+  );
 
   router.get('/diagnostics', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);

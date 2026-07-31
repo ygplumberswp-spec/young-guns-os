@@ -1,4 +1,11 @@
-import type { CreateTeamInviteRequest, CreateTeamInviteResponse, InvitePreview, TeamInvite, TeamMember, TeamRole } from '@titan/shared';
+import type {
+  CreateTeamInviteRequest,
+  CreateTeamInviteResponse,
+  InvitePreview,
+  TeamInvite,
+  TeamMember,
+  TeamRole,
+} from '@titan/shared';
 import { request, type AuthPayload } from './api-client';
 
 export async function fetchTeamMembers(
@@ -16,8 +23,16 @@ export async function fetchTeamMembers(
 export async function fetchTeamRoles(
   accessToken: string,
   options?: { signal?: AbortSignal; timeoutMs?: number },
-): Promise<{ roles: TeamRole[]; assignableRoles: TeamRole[] }> {
-  return request<{ roles: TeamRole[]; assignableRoles: TeamRole[] }>('/team/roles', {
+): Promise<{
+  roles: TeamRole[];
+  assignableRoles: TeamRole[];
+  manuallyAssignableRoles: TeamRole[];
+}> {
+  return request<{
+    roles: TeamRole[];
+    assignableRoles: TeamRole[];
+    manuallyAssignableRoles: TeamRole[];
+  }>('/team/roles', {
     accessToken,
     signal: options?.signal,
     timeoutMs: options?.timeoutMs ?? 20_000,
@@ -63,6 +78,19 @@ export async function updateTeamMemberStatus(
     method: 'PATCH',
     accessToken,
     body: { isActive },
+  });
+  return data.member;
+}
+
+export async function updateTeamMemberRole(
+  accessToken: string,
+  memberId: string,
+  roleId: string,
+): Promise<TeamMember> {
+  const data = await request<{ member: TeamMember }>(`/team/members/${memberId}/role`, {
+    method: 'PATCH',
+    accessToken,
+    body: { roleId },
   });
   return data.member;
 }

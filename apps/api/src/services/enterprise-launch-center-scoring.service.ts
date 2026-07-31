@@ -32,24 +32,49 @@ export class EnterpriseLaunchCenterScoringService {
       ...((config?.scoringWeights as Record<string, number> | undefined) ?? {}),
     };
 
-    const criticalBlockers = input.results.filter((r) => r.severity === 'critical' && r.status !== 'passed');
-    const highPriority = input.results.filter((r) => r.severity === 'high' && r.status !== 'passed');
-    const warnings = input.results.filter((r) => r.status === 'warning' || r.severity === 'warning');
+    const criticalBlockers = input.results.filter(
+      (r) => r.severity === 'critical' && r.status !== 'passed',
+    );
+    const highPriority = input.results.filter(
+      (r) => r.severity === 'high' && r.status !== 'passed',
+    );
+    const warnings = input.results.filter(
+      (r) => r.status === 'warning' || r.severity === 'warning',
+    );
     const passed = input.results.filter((r) => r.status === 'passed');
 
-    const overallStatus = resolveScoreStatus(criticalBlockers.length, highPriority.length, warnings.length, passed.length);
+    const overallStatus = resolveScoreStatus(
+      criticalBlockers.length,
+      highPriority.length,
+      warnings.length,
+      passed.length,
+    );
 
     let overallScore: number | null = null;
     if (criticalBlockers.length > 0) {
       overallScore = 0;
     } else if (input.results.length > 0) {
       const totalWeight = input.results.reduce((sum, r) => {
-        const weightKey = r.severity === 'critical' ? 'critical' : r.severity === 'high' ? 'high' : r.status === 'warning' ? 'warning' : 'info';
+        const weightKey =
+          r.severity === 'critical'
+            ? 'critical'
+            : r.severity === 'high'
+              ? 'high'
+              : r.status === 'warning'
+                ? 'warning'
+                : 'info';
         const weight = weights[weightKey] ?? 1;
         return sum + (r.status === 'passed' ? weight : 0);
       }, 0);
       const maxWeight = input.results.reduce((sum, r) => {
-        const weightKey = r.severity === 'critical' ? 'critical' : r.severity === 'high' ? 'high' : r.status === 'warning' ? 'warning' : 'info';
+        const weightKey =
+          r.severity === 'critical'
+            ? 'critical'
+            : r.severity === 'high'
+              ? 'high'
+              : r.status === 'warning'
+                ? 'warning'
+                : 'info';
         return sum + (weights[weightKey] ?? 1);
       }, 0);
       overallScore = maxWeight > 0 ? Math.round((totalWeight / maxWeight) * 100) : null;
@@ -109,14 +134,17 @@ function resolveScoreStatus(
 }
 
 function groupByCategory(results: LncReadinessCheckResultSummary[]) {
-  return results.reduce<Record<string, { passed: number; failed: number; warning: number }>>((acc, r) => {
-    const key = r.category ?? 'platform';
-    acc[key] ??= { passed: 0, failed: 0, warning: 0 };
-    if (r.status === 'passed') acc[key].passed += 1;
-    else if (r.status === 'warning') acc[key].warning += 1;
-    else acc[key].failed += 1;
-    return acc;
-  }, {});
+  return results.reduce<Record<string, { passed: number; failed: number; warning: number }>>(
+    (acc, r) => {
+      const key = r.category ?? 'platform';
+      acc[key] ??= { passed: 0, failed: 0, warning: 0 };
+      if (r.status === 'passed') acc[key].passed += 1;
+      else if (r.status === 'warning') acc[key].warning += 1;
+      else acc[key].failed += 1;
+      return acc;
+    },
+    {},
+  );
 }
 
 function toScoreSummary(row: typeof lncReadinessScores.$inferSelect): LncReadinessScoreSummary {

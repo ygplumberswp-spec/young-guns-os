@@ -1,13 +1,7 @@
 export type SupplierStatus = 'active' | 'inactive';
 
 export type PurchaseOrderStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'ordered'
-  | 'received'
-  | 'completed'
-  | 'cancelled';
+  'draft' | 'pending_approval' | 'approved' | 'ordered' | 'received' | 'completed' | 'cancelled';
 
 export type SupplierActivityType = 'note' | 'communication' | 'performance' | 'order' | 'other';
 
@@ -53,12 +47,15 @@ export type SupplierProductSummary = {
   updatedAt: string;
 };
 
+export type PurchaseOrderDeliveryStatus = 'not_started' | 'partial' | 'delivered';
+
 export type PurchaseOrderItemSummary = {
   id: string;
   inventoryItemId: string | null;
   inventoryItemName: string | null;
   description: string;
   quantity: number;
+  quantityReceived: number;
   unitCostCents: number;
   lineTotalCents: number;
 };
@@ -72,6 +69,13 @@ export type PurchaseOrderSummary = {
   notes: string | null;
   totalCostCents: number;
   itemCount: number;
+  jobId: string | null;
+  jobNumber: string | null;
+  jobReference: string | null;
+  destinationLocationId: string | null;
+  destinationLocationName: string | null;
+  deliveryStatus: PurchaseOrderDeliveryStatus;
+  cancelReason: string | null;
   createdByUserId: string | null;
   createdByName: string | null;
   approvedByUserId: string | null;
@@ -152,7 +156,11 @@ export type ProcurementAuraContext = {
   pendingRecommendationCount: number;
   stockSignals: StockIntelligenceSignal[];
   supplierInsights: SupplierInsight[];
-  topRecommendations: Array<{ title: string; recommendationType: ProcurementRecommendationType; priority: string }>;
+  topRecommendations: Array<{
+    title: string;
+    recommendationType: ProcurementRecommendationType;
+    priority: string;
+  }>;
   summary: string;
 };
 
@@ -178,7 +186,9 @@ export type CreateSupplierProductRequest = {
   notes?: string | null;
 };
 
-export type UpdateSupplierProductRequest = Partial<Omit<CreateSupplierProductRequest, 'supplierId'>>;
+export type UpdateSupplierProductRequest = Partial<
+  Omit<CreateSupplierProductRequest, 'supplierId'>
+>;
 
 export type CreatePurchaseOrderItemRequest = {
   inventoryItemId?: string | null;
@@ -192,6 +202,10 @@ export type CreatePurchaseOrderRequest = {
   referenceNumber?: string;
   notes?: string | null;
   items: CreatePurchaseOrderItemRequest[];
+  jobId?: string | null;
+  jobReference?: string | null;
+  destinationLocationId?: string | null;
+  clientActionId?: string | null;
 };
 
 export type UpdatePurchaseOrderRequest = {
@@ -201,6 +215,18 @@ export type UpdatePurchaseOrderRequest = {
 
 export type UpdatePurchaseOrderStatusRequest = {
   status: PurchaseOrderStatus;
+  cancelReason?: string | null;
+};
+
+export type ReceivePurchaseOrderLine = {
+  purchaseOrderItemId: string;
+  quantityReceived: number;
+};
+
+export type ReceivePurchaseOrderRequest = {
+  clientActionId: string;
+  destinationLocationId: string;
+  lines: ReceivePurchaseOrderLine[];
 };
 
 export type CreateSupplierActivityRequest = {

@@ -8,14 +8,25 @@ export type JobAssignee = {
 
 export type ScheduledJobEvent = {
   id: string;
+  jobNumber: string | null;
   title: string;
   status: string;
+  priority: string;
+  jobType: string | null;
   customerId: string;
   customerName: string;
+  suburb: string | null;
+  addressDisplay: string | null;
+  siteContactName: string | null;
+  siteContactMobile: string | null;
+  accessWarning: boolean;
+  accessInstructions: string | null;
   scheduledAt: string;
   scheduledEndAt: string | null;
   assignedUserId: string | null;
   assignedUserName: string | null;
+  vehicleLabel: string | null;
+  crewLabel: string | null;
 };
 
 export type SchedulingCalendarResponse = {

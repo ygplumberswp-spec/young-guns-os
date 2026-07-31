@@ -63,7 +63,8 @@ export class IntegrationPlatformService {
     if (!includeVault && !refreshConnectors) {
       return cachedTenantRead(
         buildTenantCacheKey(companyId, 'integration-platform/dashboard'),
-        () => this.loadExecutiveDashboard(companyId, { includeVault: false, refreshConnectors: false }),
+        () =>
+          this.loadExecutiveDashboard(companyId, { includeVault: false, refreshConnectors: false }),
         CACHE_TTLS.dashboard,
       );
     }

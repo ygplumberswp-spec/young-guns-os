@@ -41,11 +41,17 @@ export function groupEventsByDay<T extends { scheduledAt: string }>(
     date.setDate(weekStart.getDate() + index);
 
     const dayKey = date.toDateString();
-    const dayEvents = events.filter((event) => new Date(event.scheduledAt).toDateString() === dayKey);
+    const dayEvents = events.filter(
+      (event) => new Date(event.scheduledAt).toDateString() === dayKey,
+    );
 
     days.push({
       date,
-      label: date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+      label: date.toLocaleDateString(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      }),
       events: dayEvents.sort(
         (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
       ),

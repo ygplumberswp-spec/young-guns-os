@@ -48,11 +48,23 @@ export function ServiceDeliveryPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessServiceDelivery(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageServiceDelivery(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessServiceDelivery(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageServiceDelivery(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -72,7 +84,11 @@ export function ServiceDeliveryPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load service delivery dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load service delivery dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -103,7 +119,10 @@ export function ServiceDeliveryPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Service Delivery" description="You do not have permission to view service delivery." />
+        <PageHeader
+          title="Service Delivery"
+          description="You do not have permission to view service delivery."
+        />
       </div>
     );
   }
@@ -173,13 +192,19 @@ export function ServiceDeliveryPage() {
           </div>
           <Panel
             title="Service Monitoring"
-            description={dashboard.serviceMonitoring.alerts.join(' · ') || 'No active alerts from real operational data'}
+            description={
+              dashboard.serviceMonitoring.alerts.join(' · ') ||
+              'No active alerts from real operational data'
+            }
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
               <li>Overdue inspections: {dashboard.serviceMonitoring.overdueInspectionCount}</li>
               <li>Promise breaches: {dashboard.serviceMonitoring.promiseBreachCount}</li>
-              <li>Pending corrective actions: {dashboard.serviceMonitoring.pendingCorrectiveActionCount}</li>
+              <li>
+                Pending corrective actions:{' '}
+                {dashboard.serviceMonitoring.pendingCorrectiveActionCount}
+              </li>
               <li>
                 First-time fix rate:{' '}
                 {dashboard.qualityStats.firstTimeFixRatePercent != null
@@ -192,7 +217,10 @@ export function ServiceDeliveryPage() {
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureServiceAnalytics(accessToken!), 'Analytics captured from real service data.')
+                    void runAction(
+                      () => captureServiceAnalytics(accessToken!),
+                      'Analytics captured from real service data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -201,7 +229,10 @@ export function ServiceDeliveryPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncServiceAlerts(accessToken!), 'Service alerts synced from real records.')
+                    void runAction(
+                      () => syncServiceAlerts(accessToken!),
+                      'Service alerts synced from real records.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -210,7 +241,10 @@ export function ServiceDeliveryPage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
                 <li>Completed jobs: {dashboard.analytics.completedJobCount}</li>
                 <li>SLA breaches: {dashboard.analytics.slaBreachCount}</li>
@@ -236,14 +270,21 @@ export function ServiceDeliveryPage() {
       ) : null}
 
       {dashboard && activeTab === 'sla' ? (
-        <Panel title="SLA Intelligence" description="Configurable SLA frameworks — alerts from real data only">
+        <Panel
+          title="SLA Intelligence"
+          description="Configurable SLA frameworks — alerts from real data only"
+        >
           {dashboard.recentSlaRecords.length === 0 ? (
-            <EmptyState title="No SLA records" description="SLA records appear when tracked against real jobs." />
+            <EmptyState
+              title="No SLA records"
+              description="SLA records appear when tracked against real jobs."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentSlaRecords.map((record) => (
                 <li key={record.id}>
-                  {record.slaType} — {record.breachedAt ? 'breached' : record.metAt ? 'met' : 'open'}
+                  {record.slaType} —{' '}
+                  {record.breachedAt ? 'breached' : record.metAt ? 'met' : 'open'}
                   {record.targetAt ? ` · target ${record.targetAt}` : ''}
                 </li>
               ))}
@@ -253,14 +294,21 @@ export function ServiceDeliveryPage() {
       ) : null}
 
       {dashboard && activeTab === 'quality' ? (
-        <Panel title="Quality Assurance" description="Defects, non-conformances, and corrective actions">
+        <Panel
+          title="Quality Assurance"
+          description="Defects, non-conformances, and corrective actions"
+        >
           {dashboard.recentDefects.length === 0 ? (
-            <EmptyState title="No defects" description="Quality records appear from real inspections and jobs." />
+            <EmptyState
+              title="No defects"
+              description="Quality records appear from real inspections and jobs."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentDefects.map((defect) => (
                 <li key={defect.id}>
-                  <strong>{defect.defectType}</strong> — {defect.severity} ({formatWorkflowStatus(defect.workflowStatus)})
+                  <strong>{defect.defectType}</strong> — {defect.severity} (
+                  {formatWorkflowStatus(defect.workflowStatus)})
                 </li>
               ))}
             </ul>
@@ -281,9 +329,15 @@ export function ServiceDeliveryPage() {
       ) : null}
 
       {dashboard && activeTab === 'inspections' ? (
-        <Panel title="Digital Inspections" description="Draft → Inspection → Review → Approval → Completion">
+        <Panel
+          title="Digital Inspections"
+          description="Draft → Inspection → Review → Approval → Completion"
+        >
           {dashboard.recentInspections.length === 0 ? (
-            <EmptyState title="No inspections" description="Inspections appear when created from configurable templates." />
+            <EmptyState
+              title="No inspections"
+              description="Inspections appear when created from configurable templates."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentInspections.map((inspection) => (
@@ -298,20 +352,30 @@ export function ServiceDeliveryPage() {
       ) : null}
 
       {dashboard && activeTab === 'warranties' ? (
-        <Panel title="Warranty Intelligence" description="Warranty periods, claims, and repeat failures from real records">
+        <Panel
+          title="Warranty Intelligence"
+          description="Warranty periods, claims, and repeat failures from real records"
+        >
           <p>Open warranty claims (quality module): {dashboard.qualityStats.openWarrantyCount}</p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'callbacks' ? (
-        <Panel title="Callback Intelligence" description="Repeat jobs and rework — recommendations only">
+        <Panel
+          title="Callback Intelligence"
+          description="Repeat jobs and rework — recommendations only"
+        >
           {dashboard.recentCallbacks.length === 0 ? (
-            <EmptyState title="No callbacks" description="Callback records appear from real repeat visits and quality data." />
+            <EmptyState
+              title="No callbacks"
+              description="Callback records appear from real repeat visits and quality data."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentCallbacks.map((callback) => (
                 <li key={callback.id}>
-                  <strong>{callback.callbackReason}</strong> — {formatWorkflowStatus(callback.workflowStatus)}
+                  <strong>{callback.callbackReason}</strong> —{' '}
+                  {formatWorkflowStatus(callback.workflowStatus)}
                   {callback.scheduledAt ? ` · scheduled ${callback.scheduledAt}` : ''}
                 </li>
               ))}
@@ -320,24 +384,43 @@ export function ServiceDeliveryPage() {
         </Panel>
       ) : null}
 
-      {dashboard && ['improvement', 'cx', 'workforce', 'fleet', 'inventory', 'finance', 'analytics'].includes(activeTab) ? (
-        <Panel title={tabs.find((t) => t.id === activeTab)?.label ?? 'Service Delivery'} description="Integrated with existing TITAN modules — real data only">
+      {dashboard &&
+      ['improvement', 'cx', 'workforce', 'fleet', 'inventory', 'finance', 'analytics'].includes(
+        activeTab,
+      ) ? (
+        <Panel
+          title={tabs.find((t) => t.id === activeTab)?.label ?? 'Service Delivery'}
+          description="Integrated with existing TITAN modules — real data only"
+        >
           <p>
-            {activeTab === 'cx' && 'Customer experience integration supports live ETA, service timeline, and portal tracking.'}
-            {activeTab === 'workforce' && 'Workforce intelligence measures productivity, utilization, quality, and certification impact.'}
-            {activeTab === 'fleet' && 'Fleet intelligence tracks travel efficiency, route quality, and vehicle utilization.'}
-            {activeTab === 'inventory' && 'Inventory integration tracks parts usage, vehicle stock, and shortages.'}
-            {activeTab === 'finance' && 'Financial planning integration measures job profitability, warranty cost, and rework cost.'}
-            {activeTab === 'improvement' && 'Continuous improvement identifies trends from real operational data — recommendations only.'}
-            {activeTab === 'analytics' && 'Analytics snapshots capture real job, SLA, and quality metrics.'}
+            {activeTab === 'cx' &&
+              'Customer experience integration supports live ETA, service timeline, and portal tracking.'}
+            {activeTab === 'workforce' &&
+              'Workforce intelligence measures productivity, utilization, quality, and certification impact.'}
+            {activeTab === 'fleet' &&
+              'Fleet intelligence tracks travel efficiency, route quality, and vehicle utilization.'}
+            {activeTab === 'inventory' &&
+              'Inventory integration tracks parts usage, vehicle stock, and shortages.'}
+            {activeTab === 'finance' &&
+              'Financial planning integration measures job profitability, warranty cost, and rework cost.'}
+            {activeTab === 'improvement' &&
+              'Continuous improvement identifies trends from real operational data — recommendations only.'}
+            {activeTab === 'analytics' &&
+              'Analytics snapshots capture real job, SLA, and quality metrics.'}
           </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'alerts' ? (
-        <Panel title="Service Delivery Alerts" description="Real alerts from SLA breaches, quality, and callbacks">
+        <Panel
+          title="Service Delivery Alerts"
+          description="Real alerts from SLA breaches, quality, and callbacks"
+        >
           {dashboard.recentAlerts.length === 0 ? (
-            <EmptyState title="No open alerts" description="Alerts are generated from real tenant activity." />
+            <EmptyState
+              title="No open alerts"
+              description="Alerts are generated from real tenant activity."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentAlerts.map((alert) => (
@@ -352,15 +435,25 @@ export function ServiceDeliveryPage() {
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Service Delivery Agent" description="Recommendations and drafts only — no autonomous job closure or quality approval">
+        <Panel
+          title="AURA Service Delivery Agent"
+          description="Recommendations and drafts only — no autonomous job closure or quality approval"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'service_delivery' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(content, 'service_delivery' as import('@titan/shared').AgentKey)
+            }
             placeholder="Ask about SLA, inspections, quality, warranties, or callbacks…"
           />
         </Panel>

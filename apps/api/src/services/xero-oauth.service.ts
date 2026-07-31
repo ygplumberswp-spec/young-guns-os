@@ -19,7 +19,7 @@ const TOKEN_URL = 'https://identity.xero.com/connect/token';
 const REVOKE_URL = 'https://identity.xero.com/connect/revocation';
 const CONNECTIONS_URL = 'https://api.xero.com/connections';
 const OAUTH_SCOPES =
-  'openid profile email offline_access accounting.settings.read accounting.settings accounting.contacts accounting.contacts.read accounting.transactions accounting.transactions.read';
+  'openid profile email offline_access accounting.settings accounting.contacts accounting.invoices accounting.payments accounting.banktransactions';
 const STATE_TTL_MS = 10 * 60 * 1000;
 const TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 
@@ -379,7 +379,10 @@ export class XeroOAuthService {
 
   async getValidAccessToken(companyId: string): Promise<string> {
     const connection = await this.requireOAuthConnection(companyId);
-    const credentials = decryptXeroCredentials(connection.credentialsEncrypted!, this.encryptionKey!);
+    const credentials = decryptXeroCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
 
     if (!isXeroOAuthCredentials(credentials)) {
       throw new XeroOAuthError(
@@ -400,11 +403,13 @@ export class XeroOAuthService {
       return inflight;
     }
 
-    const refreshPromise = this.refreshAndPersistTokens(companyId, connection.id, credentials).finally(
-      () => {
-        this.refreshInflight.delete(companyId);
-      },
-    );
+    const refreshPromise = this.refreshAndPersistTokens(
+      companyId,
+      connection.id,
+      credentials,
+    ).finally(() => {
+      this.refreshInflight.delete(companyId);
+    });
 
     this.refreshInflight.set(companyId, refreshPromise);
     return refreshPromise;
@@ -594,7 +599,10 @@ export class XeroOAuthService {
     }
 
     if (!response.ok) {
-      throw new XeroOAuthError('CONNECTIONS_FAILED', 'Unable to load authorised Xero organisations.');
+      throw new XeroOAuthError(
+        'CONNECTIONS_FAILED',
+        'Unable to load authorised Xero organisations.',
+      );
     }
 
     const payload = (await response.json()) as Array<Record<string, unknown>>;
@@ -639,7 +647,10 @@ export class XeroOAuthService {
     }
 
     if (!response.ok) {
-      throw new XeroOAuthError('ORGANISATION_LOOKUP_FAILED', 'Unable to verify the Xero organisation.');
+      throw new XeroOAuthError(
+        'ORGANISATION_LOOKUP_FAILED',
+        'Unable to verify the Xero organisation.',
+      );
     }
 
     const payload = (await response.json()) as { Organisations?: Array<Record<string, unknown>> };
@@ -648,7 +659,10 @@ export class XeroOAuthService {
     const name = organisation ? pickString(organisation, ['Name']) : null;
 
     if (!organisationId || !name) {
-      throw new XeroOAuthError('ORGANISATION_LOOKUP_FAILED', 'Xero did not return organisation details.');
+      throw new XeroOAuthError(
+        'ORGANISATION_LOOKUP_FAILED',
+        'Xero did not return organisation details.',
+      );
     }
 
     return {

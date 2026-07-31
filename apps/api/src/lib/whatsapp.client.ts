@@ -1,3 +1,9 @@
+import {
+  isTimeoutError,
+  providerTimeoutSignal,
+  PROVIDER_REQUEST_TIMEOUT_MS,
+} from './http-timeout.js';
+
 const DEFAULT_API_VERSION = 'v21.0';
 
 export class WhatsappError extends Error {
@@ -42,7 +48,10 @@ export class WhatsappClient {
     this.apiVersion = config.apiVersion ?? DEFAULT_API_VERSION;
   }
 
-  async verifyConnection(): Promise<{ displayPhoneNumber: string | null; verifiedName: string | null }> {
+  async verifyConnection(): Promise<{
+    displayPhoneNumber: string | null;
+    verifiedName: string | null;
+  }> {
     const response = await this.request<WhatsappPhoneNumberResponse>(
       `/${this.phoneNumberId}?fields=id,display_phone_number,verified_name`,
       { method: 'GET' },
@@ -58,10 +67,7 @@ export class WhatsappClient {
     };
   }
 
-  async sendTextMessage(input: {
-    to: string;
-    body: string;
-  }): Promise<string> {
+  async sendTextMessage(input: { to: string; body: string }): Promise<string> {
     const response = await this.request<WhatsappSendMessageResponse>(
       `/${this.phoneNumberId}/messages`,
       {
@@ -127,14 +133,30 @@ export class WhatsappClient {
   }
 
   private async request<T>(path: string, init: RequestInit): Promise<T> {
-    const response = await fetch(`https://graph.facebook.com/${this.apiVersion}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`,
-        'Content-Type': 'application/json',
-        ...(init.headers ?? {}),
-      },
-    });
+    let response: Response;
+
+    try {
+      response = await fetch(`https://graph.facebook.com/${this.apiVersion}${path}`, {
+        ...init,
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/json',
+          ...(init.headers ?? {}),
+        },
+        signal: init.signal ?? providerTimeoutSignal(),
+      });
+    } catch (error) {
+      if (isTimeoutError(error)) {
+        throw new WhatsappError(
+          'TIMEOUT',
+          `WhatsApp request timed out after ${PROVIDER_REQUEST_TIMEOUT_MS}ms`,
+        );
+      }
+      throw new WhatsappError(
+        'NETWORK_ERROR',
+        error instanceof Error ? error.message : 'Unable to reach WhatsApp API',
+      );
+    }
 
     const payload = (await response.json()) as T & {
       error?: { message: string; type?: string; code?: number };

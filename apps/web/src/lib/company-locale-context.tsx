@@ -60,9 +60,15 @@ export function CompanyLocaleProvider({ children }: { children: ReactNode }) {
   const [locale, setLocale] = useState<CompanyLocaleSettings>(
     () => cachedLocale?.locale ?? DEFAULT_COMPANY_LOCALE,
   );
-  const [logoFileId, setLogoFileId] = useState<string | null>(() => cachedLocale?.logoFileId ?? null);
-  const [companyName, setCompanyName] = useState<string | null>(() => cachedLocale?.companyName ?? null);
-  const [isLoading, setIsLoading] = useState(() => Boolean(accessToken && isAuthenticated && !cachedLocale));
+  const [logoFileId, setLogoFileId] = useState<string | null>(
+    () => cachedLocale?.logoFileId ?? null,
+  );
+  const [companyName, setCompanyName] = useState<string | null>(
+    () => cachedLocale?.companyName ?? null,
+  );
+  const [isLoading, setIsLoading] = useState(() =>
+    Boolean(accessToken && isAuthenticated && !cachedLocale),
+  );
 
   useEffect(() => {
     let cancelled = false;

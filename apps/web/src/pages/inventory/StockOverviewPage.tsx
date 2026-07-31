@@ -4,8 +4,11 @@ import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   InventoryItemSummary,
   InventoryLocationSummary,
+  InventoryLocationType,
   InventoryStockLevelSummary,
+  VehicleSummary,
 } from '@titan/shared';
+import { INVENTORY_LOCATION_TYPE_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createInventoryLocation,
@@ -14,6 +17,7 @@ import {
   fetchInventoryStock,
   setInventoryStock,
 } from '../../lib/inventory-api';
+import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { InventoryNav } from '../../features/inventory/InventoryNav';
 import { canAccessInventory, canManageInventory } from '../../features/inventory/utils';
@@ -23,12 +27,16 @@ export function StockOverviewPage() {
   const [stockLevels, setStockLevels] = useState<InventoryStockLevelSummary[]>([]);
   const [items, setItems] = useState<InventoryItemSummary[]>([]);
   const [locations, setLocations] = useState<InventoryLocationSummary[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showLocationForm, setShowLocationForm] = useState(false);
   const [showStockForm, setShowStockForm] = useState(false);
   const [locationName, setLocationName] = useState('');
   const [locationCode, setLocationCode] = useState('');
+  const [locationAddress, setLocationAddress] = useState('');
+  const [locationType, setLocationType] = useState<InventoryLocationType>('warehouse');
+  const [vehicleId, setVehicleId] = useState('');
   const [itemId, setItemId] = useState('');
   const [locationId, setLocationId] = useState('');
   const [quantityOnHand, setQuantityOnHand] = useState('0');
@@ -37,6 +45,15 @@ export function StockOverviewPage() {
 
   const canView = useMemo(() => (user ? canAccessInventory(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageInventory(user.permissions) : false), [user]);
+  const canViewVehicles = useMemo(
+    () =>
+      user
+        ? user.permissions.includes('*') ||
+          user.permissions.includes('fleet:read') ||
+          user.permissions.includes('fleet:write')
+        : false,
+    [user],
+  );
 
   async function loadData() {
     if (!accessToken || !canView) {
@@ -45,15 +62,17 @@ export function StockOverviewPage() {
     }
 
     try {
-      const [stockData, itemData, locationData] = await Promise.all([
+      const [stockData, itemData, locationData, vehicleData] = await Promise.all([
         fetchInventoryStock(accessToken),
         fetchInventoryItems(accessToken),
         fetchInventoryLocations(accessToken),
+        canViewVehicles ? fetchVehicles(accessToken) : Promise.resolve<VehicleSummary[]>([]),
       ]);
 
       setStockLevels(stockData);
       setItems(itemData);
       setLocations(locationData);
+      setVehicles(vehicleData);
       setItemId(itemData[0]?.id ?? '');
       setLocationId(locationData[0]?.id ?? '');
     } catch (err) {
@@ -78,10 +97,16 @@ export function StockOverviewPage() {
       await createInventoryLocation(accessToken, {
         name: locationName,
         code: locationCode.trim() || null,
+        address: locationAddress.trim() || null,
+        locationType,
+        vehicleId: locationType === 'van' && vehicleId ? vehicleId : null,
         isDefault: locations.length === 0,
       });
       setLocationName('');
       setLocationCode('');
+      setLocationAddress('');
+      setLocationType('warehouse');
+      setVehicleId('');
       setShowLocationForm(false);
       setIsLoading(true);
       await loadData();
@@ -171,6 +196,42 @@ export function StockOverviewPage() {
               value={locationCode}
               onChange={(e) => setLocationCode(e.target.value)}
             />
+            <Input
+              label="Address (optional)"
+              value={locationAddress}
+              onChange={(e) => setLocationAddress(e.target.value)}
+            />
+            <label className="titan-input-group">
+              <span className="titan-input-label">Location type</span>
+              <select
+                className="titan-input"
+                value={locationType}
+                onChange={(e) => setLocationType(e.target.value as InventoryLocationType)}
+              >
+                {INVENTORY_LOCATION_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {locationType === 'van' ? (
+              <label className="titan-input-group">
+                <span className="titan-input-label">Vehicle</span>
+                <select
+                  className="titan-input"
+                  value={vehicleId}
+                  onChange={(e) => setVehicleId(e.target.value)}
+                >
+                  <option value="">No vehicle linked</option>
+                  {vehicles.map((vehicle) => (
+                    <option key={vehicle.id} value={vehicle.id}>
+                      {vehicle.name} ({vehicle.licensePlate})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <Button type="submit" disabled={isSaving || !locationName.trim()}>
               {isSaving ? 'Creating…' : 'Create location'}
             </Button>
@@ -250,6 +311,9 @@ export function StockOverviewPage() {
                     <tr>
                       <th>Name</th>
                       <th>Code</th>
+                      <th>Type</th>
+                      <th>Address</th>
+                      <th>Vehicle</th>
                       <th>Default</th>
                     </tr>
                   </thead>
@@ -258,6 +322,13 @@ export function StockOverviewPage() {
                       <tr key={location.id}>
                         <td>{location.name}</td>
                         <td>{location.code ?? '—'}</td>
+                        <td>
+                          {INVENTORY_LOCATION_TYPE_OPTIONS.find(
+                            (option) => option.value === location.locationType,
+                          )?.label ?? location.locationType}
+                        </td>
+                        <td>{location.address ?? '—'}</td>
+                        <td>{location.vehicleLabel ?? '—'}</td>
                         <td>{location.isDefault ? 'Yes' : '—'}</td>
                       </tr>
                     ))}

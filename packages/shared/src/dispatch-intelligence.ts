@@ -9,29 +9,14 @@ export type DispatchEmergencyType =
   | 'other';
 
 export type DispatchRoutingType =
-  | 'branch'
-  | 'region'
-  | 'department'
-  | 'emergency'
-  | 'technician'
-  | 'office'
-  | 'service_type';
+  'branch' | 'region' | 'department' | 'emergency' | 'technician' | 'office' | 'service_type';
 
 export type DispatchCallbackStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'scheduled'
-  | 'completed'
-  | 'cancelled'
-  | 'missed';
+  'pending_approval' | 'approved' | 'scheduled' | 'completed' | 'cancelled' | 'missed';
 
 export type DispatchActionType = 'dispatch_action' | 'callback_action';
 export type DispatchActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type DispatchRecommendationType =
   | 'technician_reassignment'

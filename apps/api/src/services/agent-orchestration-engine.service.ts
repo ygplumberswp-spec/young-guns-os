@@ -53,7 +53,10 @@ export class AgentOrchestrationEngineService {
     const pendingJobs = await this.deps.db.query.automationQueueJobs.findMany({
       where: and(
         inArray(automationQueueJobs.status, ['pending', 'retry']),
-        inArray(automationQueueJobs.jobType, ['execute_orchestration_event', 'execute_orchestration_run']),
+        inArray(automationQueueJobs.jobType, [
+          'execute_orchestration_event',
+          'execute_orchestration_run',
+        ]),
         lte(automationQueueJobs.scheduledFor, now),
       ),
       orderBy: [asc(automationQueueJobs.scheduledFor)],
@@ -153,7 +156,10 @@ export class AgentOrchestrationEngineService {
     }
 
     if (orchestration.status !== 'active') {
-      throw new AgentOrchestrationEngineError('INVALID_STATUS', 'Orchestration must be active to run');
+      throw new AgentOrchestrationEngineError(
+        'INVALID_STATUS',
+        'Orchestration must be active to run',
+      );
     }
 
     return this.startRun({
@@ -193,10 +199,17 @@ export class AgentOrchestrationEngineService {
       .set({ status: 'completed', completedAt: new Date() })
       .where(eq(agentOrchestrationRunSteps.id, approval.runStepId));
 
-    await this.log(approval.companyId, approval.runId, approval.runStepId, 'info', 'Step approved', {
-      approvalId,
-      userId: scope.userId,
-    });
+    await this.log(
+      approval.companyId,
+      approval.runId,
+      approval.runStepId,
+      'info',
+      'Step approved',
+      {
+        approvalId,
+        userId: scope.userId,
+      },
+    );
 
     await this.enqueueRunExecution(approval.runId);
   }
@@ -220,13 +233,24 @@ export class AgentOrchestrationEngineService {
 
     await this.deps.db
       .update(agentOrchestrationRuns)
-      .set({ status: 'cancelled', completedAt: new Date(), errorMessage: 'Step rejected by reviewer' })
+      .set({
+        status: 'cancelled',
+        completedAt: new Date(),
+        errorMessage: 'Step rejected by reviewer',
+      })
       .where(eq(agentOrchestrationRuns.id, approval.runId));
 
-    await this.log(approval.companyId, approval.runId, approval.runStepId, 'warn', 'Step rejected', {
-      approvalId,
-      userId: scope.userId,
-    });
+    await this.log(
+      approval.companyId,
+      approval.runId,
+      approval.runStepId,
+      'warn',
+      'Step rejected',
+      {
+        approvalId,
+        userId: scope.userId,
+      },
+    );
   }
 
   private async startRun(input: {
@@ -323,7 +347,10 @@ export class AgentOrchestrationEngineService {
 
     const steps = await this.deps.db.query.agentOrchestrationRunSteps.findMany({
       where: eq(agentOrchestrationRunSteps.runId, runId),
-      orderBy: [asc(agentOrchestrationRunSteps.sortOrder), asc(agentOrchestrationRunSteps.createdAt)],
+      orderBy: [
+        asc(agentOrchestrationRunSteps.sortOrder),
+        asc(agentOrchestrationRunSteps.createdAt),
+      ],
     });
 
     const pendingSteps = steps.filter((step) => step.status === 'pending');
@@ -389,14 +416,20 @@ export class AgentOrchestrationEngineService {
     },
     step: typeof agentOrchestrationRunSteps.$inferSelect,
     sharedContext: Record<string, unknown>,
-  ): Promise<{ awaitingApproval: boolean; failed: boolean; errorMessage?: string; contextOut: Record<string, unknown> }> {
+  ): Promise<{
+    awaitingApproval: boolean;
+    failed: boolean;
+    errorMessage?: string;
+    contextOut: Record<string, unknown>;
+  }> {
     const definitionStep = step.definitionStepId
       ? await this.deps.db.query.agentOrchestrationSteps.findFirst({
           where: eq(agentOrchestrationSteps.id, step.definitionStepId),
         })
       : null;
 
-    const requestTemplate = definitionStep?.requestTemplate ?? 'Analyze the current business context.';
+    const requestTemplate =
+      definitionStep?.requestTemplate ?? 'Analyze the current business context.';
     const request = renderTemplate(requestTemplate, sharedContext);
 
     await this.deps.db
@@ -404,9 +437,16 @@ export class AgentOrchestrationEngineService {
       .set({ status: 'running', startedAt: new Date(), contextIn: sharedContext })
       .where(eq(agentOrchestrationRunSteps.id, step.id));
 
-    await this.log(run.companyId, run.id, step.id, 'info', `Executing ${step.agentKey} step ${step.stepKey}`, {
-      agentKey: step.agentKey,
-    });
+    await this.log(
+      run.companyId,
+      run.id,
+      step.id,
+      'info',
+      `Executing ${step.agentKey} step ${step.stepKey}`,
+      {
+        agentKey: step.agentKey,
+      },
+    );
 
     try {
       const userId = run.initiatedByUserId ?? (await this.resolveSystemUserId(run.companyId));
@@ -525,7 +565,10 @@ export class AgentOrchestrationEngineService {
     });
 
     if (!user) {
-      throw new AgentOrchestrationEngineError('NO_ACTIVE_USER', 'No active user found for orchestration run');
+      throw new AgentOrchestrationEngineError(
+        'NO_ACTIVE_USER',
+        'No active user found for orchestration run',
+      );
     }
 
     return user.id;

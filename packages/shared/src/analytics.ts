@@ -17,8 +17,16 @@ export type ReportType =
 
 export const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; description: string }> =
   [
-    { value: 'revenue', label: 'Revenue report', description: 'Payment and revenue totals for the selected period' },
-    { value: 'customer', label: 'Customer report', description: 'Customer growth, repeat business, and activity' },
+    {
+      value: 'revenue',
+      label: 'Revenue report',
+      description: 'Payment and revenue totals for the selected period',
+    },
+    {
+      value: 'customer',
+      label: 'Customer report',
+      description: 'Customer growth, repeat business, and activity',
+    },
     {
       value: 'job_performance',
       label: 'Job performance report',
@@ -29,9 +37,21 @@ export const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; desc
       label: 'Technician performance report',
       description: 'Workload and completion metrics by assigned technician',
     },
-    { value: 'finance', label: 'Finance report', description: 'Invoices, payments, cash flow, and outstanding balances' },
-    { value: 'fleet', label: 'Fleet report', description: 'Vehicle status and utilisation overview' },
-    { value: 'inventory', label: 'Inventory report', description: 'Stock levels and low-stock items' },
+    {
+      value: 'finance',
+      label: 'Finance report',
+      description: 'Invoices, payments, cash flow, and outstanding balances',
+    },
+    {
+      value: 'fleet',
+      label: 'Fleet report',
+      description: 'Vehicle status and utilisation overview',
+    },
+    {
+      value: 'inventory',
+      label: 'Inventory report',
+      description: 'Stock levels and low-stock items',
+    },
   ];
 
 export type ReportRunStatus = 'pending' | 'running' | 'completed' | 'failed';

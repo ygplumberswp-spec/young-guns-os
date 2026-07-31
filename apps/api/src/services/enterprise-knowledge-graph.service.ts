@@ -111,7 +111,9 @@ export class EnterpriseKnowledgeGraphService {
     };
   }
 
-  async buildKnowledgeGraphAuraContext(companyId: string): Promise<EnterpriseKnowledgeGraphAuraContext> {
+  async buildKnowledgeGraphAuraContext(
+    companyId: string,
+  ): Promise<EnterpriseKnowledgeGraphAuraContext> {
     const dashboard = await this.getExecutiveDashboard(companyId);
     return {
       summary: dashboard.summary,
@@ -119,12 +121,15 @@ export class EnterpriseKnowledgeGraphService {
       relationshipCount: dashboard.relationshipCount,
       memoryEntryCount: dashboard.memoryEntryCount,
       indexedCount: dashboard.indexedCount,
-      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending').length,
+      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending')
+        .length,
       pendingActionCount: dashboard.pendingActionCount,
     };
   }
 
-  async syncGraphFromModules(companyId: string): Promise<{ entityCount: number; relationshipCount: number }> {
+  async syncGraphFromModules(
+    companyId: string,
+  ): Promise<{ entityCount: number; relationshipCount: number }> {
     const entityIdByKey = new Map<string, string>();
     const db = this.deps.db;
     let relationshipCount = 0;
@@ -172,13 +177,15 @@ export class EnterpriseKnowledgeGraphService {
 
       entityIdByKey.set(`${entityType}:${sourceEntityId}`, graphEntityId);
 
-      await db.delete(knowledgeSemanticIndex).where(
-        and(
-          eq(knowledgeSemanticIndex.companyId, companyId),
-          eq(knowledgeSemanticIndex.entityType, entityType),
-          eq(knowledgeSemanticIndex.sourceEntityId, sourceEntityId),
-        ),
-      );
+      await db
+        .delete(knowledgeSemanticIndex)
+        .where(
+          and(
+            eq(knowledgeSemanticIndex.companyId, companyId),
+            eq(knowledgeSemanticIndex.entityType, entityType),
+            eq(knowledgeSemanticIndex.sourceEntityId, sourceEntityId),
+          ),
+        );
 
       await db.insert(knowledgeSemanticIndex).values({
         companyId,
@@ -208,28 +215,57 @@ export class EnterpriseKnowledgeGraphService {
       communicationRows,
       articleRows,
     ] = await Promise.all([
-      this.deps.db.query.customers.findMany({ where: eq(customers.companyId, companyId), limit: 200 }),
+      this.deps.db.query.customers.findMany({
+        where: eq(customers.companyId, companyId),
+        limit: 200,
+      }),
       this.deps.db.query.jobs.findMany({ where: eq(jobs.companyId, companyId), limit: 200 }),
-      this.deps.db.query.vehicles.findMany({ where: eq(vehicles.companyId, companyId), limit: 200 }),
-      this.deps.db.query.inventoryItems.findMany({ where: eq(inventoryItems.companyId, companyId), limit: 200 }),
-      this.deps.db.query.invoices.findMany({ where: eq(invoices.companyId, companyId), limit: 200 }),
-      this.deps.db.query.documents.findMany({ where: eq(documents.companyId, companyId), limit: 200 }),
-      this.deps.db.query.workflows.findMany({ where: eq(workflows.companyId, companyId), limit: 100 }),
+      this.deps.db.query.vehicles.findMany({
+        where: eq(vehicles.companyId, companyId),
+        limit: 200,
+      }),
+      this.deps.db.query.inventoryItems.findMany({
+        where: eq(inventoryItems.companyId, companyId),
+        limit: 200,
+      }),
+      this.deps.db.query.invoices.findMany({
+        where: eq(invoices.companyId, companyId),
+        limit: 200,
+      }),
+      this.deps.db.query.documents.findMany({
+        where: eq(documents.companyId, companyId),
+        limit: 200,
+      }),
+      this.deps.db.query.workflows.findMany({
+        where: eq(workflows.companyId, companyId),
+        limit: 100,
+      }),
       this.deps.db.query.users.findMany({ where: eq(users.companyId, companyId), limit: 100 }),
-      this.deps.db.query.integrationConnections.findMany({ where: eq(integrationConnections.companyId, companyId), limit: 50 }),
+      this.deps.db.query.integrationConnections.findMany({
+        where: eq(integrationConnections.companyId, companyId),
+        limit: 50,
+      }),
       this.deps.db.query.digitalTwinStateSnapshots.findMany({
         where: eq(digitalTwinStateSnapshots.companyId, companyId),
         limit: 50,
       }),
-      this.deps.db.query.communications.findMany({ where: eq(communications.companyId, companyId), limit: 100 }),
+      this.deps.db.query.communications.findMany({
+        where: eq(communications.companyId, companyId),
+        limit: 100,
+      }),
       this.deps.db.query.knowledgeArticles.findMany({
-        where: and(eq(knowledgeArticles.companyId, companyId), eq(knowledgeArticles.status, 'published')),
+        where: and(
+          eq(knowledgeArticles.companyId, companyId),
+          eq(knowledgeArticles.status, 'published'),
+        ),
         limit: 100,
       }),
     ]);
 
     for (const row of customerRows) {
-      await upsertEntity('customer', row.id, row.name, row.notes, { status: row.status }, ['customers:read']);
+      await upsertEntity('customer', row.id, row.name, row.notes, { status: row.status }, [
+        'customers:read',
+      ]);
     }
 
     for (const row of userRows) {
@@ -244,7 +280,9 @@ export class EnterpriseKnowledgeGraphService {
     }
 
     for (const row of jobRows) {
-      await upsertEntity('job', row.id, row.title, row.description, { status: row.status }, ['jobs:read']);
+      await upsertEntity('job', row.id, row.title, row.description, { status: row.status }, [
+        'jobs:read',
+      ]);
       if (row.customerId) {
         const customerGraphId = entityIdByKey.get(`customer:${row.customerId}`);
         const jobGraphId = entityIdByKey.get(`job:${row.id}`);
@@ -274,15 +312,26 @@ export class EnterpriseKnowledgeGraphService {
     }
 
     for (const row of vehicleRows) {
-      await upsertEntity('vehicle', row.id, row.name, row.licensePlate, { status: row.status }, ['fleet:read']);
+      await upsertEntity('vehicle', row.id, row.name, row.licensePlate, { status: row.status }, [
+        'fleet:read',
+      ]);
     }
 
     for (const row of inventoryRows) {
-      await upsertEntity('inventory', row.id, row.name, row.sku, { unit: row.unit }, ['inventory:read']);
+      await upsertEntity('inventory', row.id, row.name, row.sku, { unit: row.unit }, [
+        'inventory:read',
+      ]);
     }
 
     for (const row of invoiceRows) {
-      await upsertEntity('invoice', row.id, row.title, row.notes, { status: row.status, invoiceNumber: row.invoiceNumber }, ['finance:read']);
+      await upsertEntity(
+        'invoice',
+        row.id,
+        row.title,
+        row.notes,
+        { status: row.status, invoiceNumber: row.invoiceNumber },
+        ['finance:read'],
+      );
       if (row.customerId) {
         const customerGraphId = entityIdByKey.get(`customer:${row.customerId}`);
         const invoiceGraphId = entityIdByKey.get(`invoice:${row.id}`);
@@ -303,7 +352,9 @@ export class EnterpriseKnowledgeGraphService {
     }
 
     for (const row of workflowRows) {
-      await upsertEntity('workflow', row.id, row.name, row.description, { status: row.status }, ['automation:read']);
+      await upsertEntity('workflow', row.id, row.name, row.description, { status: row.status }, [
+        'automation:read',
+      ]);
     }
 
     for (const row of integrationRows) {
@@ -375,7 +426,9 @@ export class EnterpriseKnowledgeGraphService {
         const mappedType: KnowledgeSemanticSearchResult['resultType'] =
           row.resultType === 'article' || row.resultType === 'training'
             ? 'knowledge_article'
-            : row.resultType === 'sop' || row.resultType === 'policy' || row.resultType === 'document'
+            : row.resultType === 'sop' ||
+                row.resultType === 'policy' ||
+                row.resultType === 'document'
               ? row.resultType
               : 'graph_entity';
         results.push({
@@ -435,7 +488,9 @@ export class EnterpriseKnowledgeGraphService {
       }
     }
 
-    const merged = dedupeResults(results).sort((a, b) => b.relevanceScore - a.relevanceScore).slice(0, limit);
+    const merged = dedupeResults(results)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, limit);
 
     await this.deps.db.insert(knowledgeSearchAudit).values({
       companyId: scope.companyId,
@@ -453,7 +508,10 @@ export class EnterpriseKnowledgeGraphService {
     input: TraverseKnowledgeGraphRequest,
   ): Promise<KnowledgeGraphTraversalResult> {
     const root = await this.deps.db.query.knowledgeGraphEntities.findFirst({
-      where: and(eq(knowledgeGraphEntities.companyId, companyId), eq(knowledgeGraphEntities.id, input.entityId)),
+      where: and(
+        eq(knowledgeGraphEntities.companyId, companyId),
+        eq(knowledgeGraphEntities.id, input.entityId),
+      ),
     });
 
     if (!root) {
@@ -679,7 +737,8 @@ export class EnterpriseKnowledgeGraphService {
     if (entities.length === 0) {
       signals.push({
         title: 'Knowledge graph not indexed',
-        recommendation: 'Run graph sync to index customers, jobs, fleet, inventory, and documents from existing modules.',
+        recommendation:
+          'Run graph sync to index customers, jobs, fleet, inventory, and documents from existing modules.',
         priority: 'high',
       });
     }
@@ -687,7 +746,8 @@ export class EnterpriseKnowledgeGraphService {
     if (stats.publishedArticleCount === 0 && stats.publishedSopCount === 0) {
       signals.push({
         title: 'Missing published documentation',
-        recommendation: 'No published articles or SOPs found — create and publish knowledge content for technician and operational reference.',
+        recommendation:
+          'No published articles or SOPs found — create and publish knowledge content for technician and operational reference.',
         priority: 'high',
       });
     }
@@ -695,7 +755,8 @@ export class EnterpriseKnowledgeGraphService {
     if (relationships.length < Math.max(1, Math.floor(entities.length / 4))) {
       signals.push({
         title: 'Sparse relationship coverage',
-        recommendation: 'Graph relationships are sparse — sync graph data and link jobs, customers, and technicians for better relationship intelligence.',
+        recommendation:
+          'Graph relationships are sparse — sync graph data and link jobs, customers, and technicians for better relationship intelligence.',
         priority: 'medium',
       });
     }
@@ -703,7 +764,8 @@ export class EnterpriseKnowledgeGraphService {
     if (memoryEntries.length === 0) {
       signals.push({
         title: 'No organizational memory entries',
-        recommendation: 'Capture business decisions, lessons learned, and project history in organizational memory for semantic search.',
+        recommendation:
+          'Capture business decisions, lessons learned, and project history in organizational memory for semantic search.',
         priority: 'medium',
       });
     }
@@ -748,7 +810,10 @@ export class EnterpriseKnowledgeGraphService {
   ): Promise<KnowledgeGraphPlatformActionSummary[]> {
     const rows = await this.deps.db.query.knowledgeGraphPlatformActions.findMany({
       where: status
-        ? and(eq(knowledgeGraphPlatformActions.companyId, companyId), eq(knowledgeGraphPlatformActions.status, status))
+        ? and(
+            eq(knowledgeGraphPlatformActions.companyId, companyId),
+            eq(knowledgeGraphPlatformActions.status, status),
+          )
         : eq(knowledgeGraphPlatformActions.companyId, companyId),
       orderBy: [desc(knowledgeGraphPlatformActions.createdAt)],
       limit: 50,
@@ -844,7 +909,15 @@ export class EnterpriseKnowledgeGraphService {
       entityTypeCounts[entity.entityType] = (entityTypeCounts[entity.entityType] ?? 0) + 1;
     }
 
-    const moduleTypes = ['customer', 'job', 'vehicle', 'inventory', 'invoice', 'document', 'workflow'];
+    const moduleTypes = [
+      'customer',
+      'job',
+      'vehicle',
+      'inventory',
+      'invoice',
+      'document',
+      'workflow',
+    ];
     const covered = moduleTypes.filter((type) => (entityTypeCounts[type] ?? 0) > 0).length;
 
     return {
@@ -884,7 +957,9 @@ function dedupeResults(results: KnowledgeSemanticSearchResult[]): KnowledgeSeman
   return [...seen.values()];
 }
 
-function toEntitySummary(row: typeof knowledgeGraphEntities.$inferSelect): KnowledgeGraphEntitySummary {
+function toEntitySummary(
+  row: typeof knowledgeGraphEntities.$inferSelect,
+): KnowledgeGraphEntitySummary {
   return {
     id: row.id,
     entityType: row.entityType,
@@ -896,7 +971,9 @@ function toEntitySummary(row: typeof knowledgeGraphEntities.$inferSelect): Knowl
   };
 }
 
-function toMemorySummary(row: typeof organizationalMemoryEntries.$inferSelect): OrganizationalMemorySummary {
+function toMemorySummary(
+  row: typeof organizationalMemoryEntries.$inferSelect,
+): OrganizationalMemorySummary {
   return {
     id: row.id,
     memoryType: row.memoryType,
@@ -921,7 +998,9 @@ function toRecommendationSummary(
   };
 }
 
-function toActionSummary(row: typeof knowledgeGraphPlatformActions.$inferSelect): KnowledgeGraphPlatformActionSummary {
+function toActionSummary(
+  row: typeof knowledgeGraphPlatformActions.$inferSelect,
+): KnowledgeGraphPlatformActionSummary {
   return {
     id: row.id,
     actionType: row.actionType,

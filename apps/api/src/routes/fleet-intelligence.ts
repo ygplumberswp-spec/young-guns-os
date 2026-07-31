@@ -6,7 +6,15 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
-const costTypeSchema = z.enum(['fuel', 'maintenance', 'tyre', 'licensing', 'insurance', 'repair', 'other']);
+const costTypeSchema = z.enum([
+  'fuel',
+  'maintenance',
+  'tyre',
+  'licensing',
+  'insurance',
+  'repair',
+  'other',
+]);
 const actionTypeSchema = z.enum(['fleet_action', 'vehicle_replacement']);
 
 const operatingCostSchema = z.object({
@@ -88,7 +96,9 @@ export function createFleetIntelligenceRouter({
     const { companyId } = getAuth(req);
     const parsed = monthlyReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid monthly report payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid monthly report payload' } });
       return;
     }
 
@@ -135,7 +145,9 @@ export function createFleetIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = operatingCostSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid operating cost payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid operating cost payload' } });
       return;
     }
 
@@ -169,7 +181,9 @@ export function createFleetIntelligenceRouter({
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     const { companyId } = getAuth(req);
     const branchKey = typeof req.body?.branchKey === 'string' ? req.body.branchKey : undefined;
-    const recommendations = await fleetIntelligenceService.generateRecommendations(companyId, { branchKey });
+    const recommendations = await fleetIntelligenceService.generateRecommendations(companyId, {
+      branchKey,
+    });
     res.status(201).json({ data: { recommendations } });
   });
 
@@ -184,7 +198,9 @@ export function createFleetIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid fleet action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid fleet action payload' } });
       return;
     }
 

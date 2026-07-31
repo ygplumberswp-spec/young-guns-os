@@ -65,25 +65,26 @@ export class MarketingService {
   constructor(private readonly db: DatabaseClient) {}
 
   async getStats(companyId: string): Promise<MarketingStats> {
-    const [storedSegments, campaigns, activityCountRow, recommendations, computed] = await Promise.all([
-      this.db.query.marketingSegments.findMany({
-        where: eq(marketingSegments.companyId, companyId),
-      }),
-      this.db.query.marketingCampaigns.findMany({
-        where: eq(marketingCampaigns.companyId, companyId),
-      }),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(marketingActivities)
-        .where(eq(marketingActivities.companyId, companyId)),
-      this.db.query.marketingRecommendations.findMany({
-        where: and(
-          eq(marketingRecommendations.companyId, companyId),
-          eq(marketingRecommendations.status, 'pending'),
-        ),
-      }),
-      this.computeCustomerSegments(companyId),
-    ]);
+    const [storedSegments, campaigns, activityCountRow, recommendations, computed] =
+      await Promise.all([
+        this.db.query.marketingSegments.findMany({
+          where: eq(marketingSegments.companyId, companyId),
+        }),
+        this.db.query.marketingCampaigns.findMany({
+          where: eq(marketingCampaigns.companyId, companyId),
+        }),
+        this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(marketingActivities)
+          .where(eq(marketingActivities.companyId, companyId)),
+        this.db.query.marketingRecommendations.findMany({
+          where: and(
+            eq(marketingRecommendations.companyId, companyId),
+            eq(marketingRecommendations.status, 'pending'),
+          ),
+        }),
+        this.computeCustomerSegments(companyId),
+      ]);
 
     return {
       segmentCount: storedSegments.length,
@@ -175,7 +176,10 @@ export class MarketingService {
       .set({
         segmentKey: input.segmentKey?.trim() || existing.segmentKey,
         name: input.name?.trim() || existing.name,
-        description: input.description !== undefined ? input.description?.trim() || null : existing.description,
+        description:
+          input.description !== undefined
+            ? input.description?.trim() || null
+            : existing.description,
         segmentType: input.segmentType ?? existing.segmentType,
         criteria: input.criteria ?? existing.criteria,
         updatedAt: new Date(),
@@ -242,7 +246,10 @@ export class MarketingService {
     input: UpdateMarketingCampaignRequest,
   ): Promise<MarketingCampaignSummary> {
     const existing = await this.db.query.marketingCampaigns.findFirst({
-      where: and(eq(marketingCampaigns.id, campaignId), eq(marketingCampaigns.companyId, companyId)),
+      where: and(
+        eq(marketingCampaigns.id, campaignId),
+        eq(marketingCampaigns.companyId, companyId),
+      ),
       with: { activities: true },
     });
 
@@ -254,17 +261,24 @@ export class MarketingService {
     const startedAt =
       nextStatus === 'active' && existing.status !== 'active' ? new Date() : existing.startedAt;
     const completedAt =
-      nextStatus === 'completed' && existing.status !== 'completed' ? new Date() : existing.completedAt;
+      nextStatus === 'completed' && existing.status !== 'completed'
+        ? new Date()
+        : existing.completedAt;
 
     const [updated] = await this.db
       .update(marketingCampaigns)
       .set({
         name: input.name?.trim() || existing.name,
-        description: input.description !== undefined ? input.description?.trim() || null : existing.description,
+        description:
+          input.description !== undefined
+            ? input.description?.trim() || null
+            : existing.description,
         status: nextStatus,
         campaignType: input.campaignType ?? existing.campaignType,
         targetSegmentKey:
-          input.targetSegmentKey !== undefined ? input.targetSegmentKey?.trim() || null : existing.targetSegmentKey,
+          input.targetSegmentKey !== undefined
+            ? input.targetSegmentKey?.trim() || null
+            : existing.targetSegmentKey,
         config: input.config ?? existing.config,
         startedAt,
         completedAt,
@@ -286,10 +300,16 @@ export class MarketingService {
     return toCampaignSummary(updated!, existing.activities.length);
   }
 
-  async listActivities(companyId: string, campaignId?: string): Promise<MarketingActivitySummary[]> {
+  async listActivities(
+    companyId: string,
+    campaignId?: string,
+  ): Promise<MarketingActivitySummary[]> {
     const rows = await this.db.query.marketingActivities.findMany({
       where: campaignId
-        ? and(eq(marketingActivities.companyId, companyId), eq(marketingActivities.campaignId, campaignId))
+        ? and(
+            eq(marketingActivities.companyId, companyId),
+            eq(marketingActivities.campaignId, campaignId),
+          )
         : eq(marketingActivities.companyId, companyId),
       with: { customer: true, author: true, campaign: true },
       orderBy: [desc(marketingActivities.occurredAt)],
@@ -476,7 +496,8 @@ export class MarketingService {
     if (month >= 8 || month <= 1) {
       suggestions.push({
         title: 'Seasonal service campaign',
-        description: 'Seasonal maintenance and preparation services may resonate with existing customers.',
+        description:
+          'Seasonal maintenance and preparation services may resonate with existing customers.',
         channel: 'email_or_whatsapp',
         targetSegmentKey: 'seasonal',
         messagingGuidance:
@@ -530,11 +551,36 @@ export class MarketingService {
     const highValueThreshold = revenueValues[2] ?? revenueValues[0] ?? 0;
 
     const segments: MarketingSegmentSummary[] = [
-      buildComputedSegment('high_value', 'High value customers', 'high_value', profiles.filter((p) => p.revenueCents >= highValueThreshold && highValueThreshold > 0)),
-      buildComputedSegment('repeat_service', 'Repeat service customers', 'repeat_service', profiles.filter((p) => p.completedJobCount >= 2)),
-      buildComputedSegment('dormant', 'Dormant customers', 'dormant', profiles.filter((p) => !p.lastContactAt || p.lastContactAt < sixtyDaysAgo)),
-      buildComputedSegment('new_customer', 'New customers', 'new_customer', profiles.filter((p) => p.createdAt >= thirtyDaysAgo)),
-      buildComputedSegment('high_engagement', 'Highly engaged customers', 'high_engagement', profiles.filter((p) => p.communicationCount + p.activityCount >= 3)),
+      buildComputedSegment(
+        'high_value',
+        'High value customers',
+        'high_value',
+        profiles.filter((p) => p.revenueCents >= highValueThreshold && highValueThreshold > 0),
+      ),
+      buildComputedSegment(
+        'repeat_service',
+        'Repeat service customers',
+        'repeat_service',
+        profiles.filter((p) => p.completedJobCount >= 2),
+      ),
+      buildComputedSegment(
+        'dormant',
+        'Dormant customers',
+        'dormant',
+        profiles.filter((p) => !p.lastContactAt || p.lastContactAt < sixtyDaysAgo),
+      ),
+      buildComputedSegment(
+        'new_customer',
+        'New customers',
+        'new_customer',
+        profiles.filter((p) => p.createdAt >= thirtyDaysAgo),
+      ),
+      buildComputedSegment(
+        'high_engagement',
+        'Highly engaged customers',
+        'high_engagement',
+        profiles.filter((p) => p.communicationCount + p.activityCount >= 3),
+      ),
     ];
 
     return segments;
@@ -555,14 +601,20 @@ export class MarketingService {
     }> = [];
 
     for (const profile of profiles) {
-      if (profile.completedJobCount >= 2 && (!profile.lastContactAt || profile.lastContactAt < ninetyDaysAgo)) {
+      if (
+        profile.completedJobCount >= 2 &&
+        (!profile.lastContactAt || profile.lastContactAt < ninetyDaysAgo)
+      ) {
         signals.push({
           customerId: profile.id,
           recommendationType: 'maintenance_reminder',
           title: `Maintenance reminder — ${profile.name}`,
           description: `${profile.name} has repeat service history but no recent contact. Consider a maintenance reminder campaign.`,
           priority: 'high',
-          context: { completedJobCount: profile.completedJobCount, lastContactAt: profile.lastContactAt?.toISOString() ?? null },
+          context: {
+            completedJobCount: profile.completedJobCount,
+            lastContactAt: profile.lastContactAt?.toISOString() ?? null,
+          },
         });
       }
 
@@ -584,7 +636,10 @@ export class MarketingService {
           title: `Service upsell — ${profile.name}`,
           description: `${profile.name} may be interested in additional services based on job and payment history.`,
           priority: 'medium',
-          context: { completedJobCount: profile.completedJobCount, revenueCents: profile.revenueCents },
+          context: {
+            completedJobCount: profile.completedJobCount,
+            revenueCents: profile.revenueCents,
+          },
         });
       }
     }
@@ -595,7 +650,8 @@ export class MarketingService {
         customerId: null,
         recommendationType: 'seasonal',
         title: 'Seasonal marketing opportunity',
-        description: 'Consider a seasonal maintenance campaign targeting repeat and dormant customer segments.',
+        description:
+          'Consider a seasonal maintenance campaign targeting repeat and dormant customer segments.',
         priority: 'medium',
         context: { season: month >= 8 ? 'pre_winter' : 'pre_summer' },
       });
@@ -606,9 +662,14 @@ export class MarketingService {
         customerId: null,
         recommendationType: 'engagement',
         title: 'Engagement campaign opportunity',
-        description: 'Some customers have no recorded engagement. A welcome or re-introduction campaign may help.',
+        description:
+          'Some customers have no recorded engagement. A welcome or re-introduction campaign may help.',
         priority: 'low',
-        context: { unengagedCustomerCount: profiles.filter((p) => p.communicationCount + p.activityCount === 0).length },
+        context: {
+          unengagedCustomerCount: profiles.filter(
+            (p) => p.communicationCount + p.activityCount === 0,
+          ).length,
+        },
       });
     }
 
@@ -616,33 +677,46 @@ export class MarketingService {
   }
 
   private async loadCustomerProfiles(companyId: string): Promise<CustomerProfile[]> {
-    const [customerRows, jobRows, paymentRows, communicationRows, activityRows] = await Promise.all([
-      this.db.query.customers.findMany({ where: eq(customers.companyId, companyId) }),
-      this.db.query.jobs.findMany({ where: eq(jobs.companyId, companyId) }),
-      this.db.query.payments.findMany({
-        where: eq(payments.companyId, companyId),
-        with: { invoice: true },
-      }),
-      this.db.query.communications.findMany({ where: eq(communications.companyId, companyId) }),
-      this.db.query.customerActivities.findMany({ where: eq(customerActivities.companyId, companyId) }),
-    ]);
+    const [customerRows, jobRows, paymentRows, communicationRows, activityRows] = await Promise.all(
+      [
+        this.db.query.customers.findMany({ where: eq(customers.companyId, companyId) }),
+        this.db.query.jobs.findMany({ where: eq(jobs.companyId, companyId) }),
+        this.db.query.payments.findMany({
+          where: eq(payments.companyId, companyId),
+          with: { invoice: true },
+        }),
+        this.db.query.communications.findMany({ where: eq(communications.companyId, companyId) }),
+        this.db.query.customerActivities.findMany({
+          where: eq(customerActivities.companyId, companyId),
+        }),
+      ],
+    );
 
     const revenueByCustomer = new Map<string, number>();
     for (const payment of paymentRows) {
       const customerId = payment.invoice?.customerId;
       if (!customerId) continue;
-      revenueByCustomer.set(customerId, (revenueByCustomer.get(customerId) ?? 0) + payment.amountCents);
+      revenueByCustomer.set(
+        customerId,
+        (revenueByCustomer.get(customerId) ?? 0) + payment.amountCents,
+      );
     }
 
     const completedJobsByCustomer = new Map<string, number>();
     for (const job of jobRows) {
       if (job.status !== 'completed') continue;
-      completedJobsByCustomer.set(job.customerId, (completedJobsByCustomer.get(job.customerId) ?? 0) + 1);
+      completedJobsByCustomer.set(
+        job.customerId,
+        (completedJobsByCustomer.get(job.customerId) ?? 0) + 1,
+      );
     }
 
     const communicationsByCustomer = new Map<string, number>();
     for (const row of communicationRows) {
-      communicationsByCustomer.set(row.customerId, (communicationsByCustomer.get(row.customerId) ?? 0) + 1);
+      communicationsByCustomer.set(
+        row.customerId,
+        (communicationsByCustomer.get(row.customerId) ?? 0) + 1,
+      );
     }
 
     const activitiesByCustomer = new Map<string, number>();
@@ -674,7 +748,10 @@ export class MarketingService {
     }));
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -771,9 +848,9 @@ function toRecommendationSummary(
   };
 }
 
-function dedupeSignals<T extends { customerId: string | null; recommendationType: string; title: string }>(
-  signals: T[],
-): T[] {
+function dedupeSignals<
+  T extends { customerId: string | null; recommendationType: string; title: string },
+>(signals: T[]): T[] {
   const seen = new Set<string>();
   const result: T[] = [];
 

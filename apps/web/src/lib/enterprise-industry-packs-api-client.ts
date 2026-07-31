@@ -11,9 +11,12 @@ import type {
 } from '@titan/shared';
 
 export async function fetchIndustryPacksDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseIndustryPackDashboard }>('/enterprise-industry-packs/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseIndustryPackDashboard }>(
+    '/enterprise-industry-packs/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -26,10 +29,13 @@ export async function syncIndustryAlerts(accessToken: string) {
 }
 
 export async function captureIndustryAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-industry-packs/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-industry-packs/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
@@ -50,19 +56,25 @@ export async function fetchInstalledPacks(accessToken: string) {
 }
 
 export async function installIndustryPack(accessToken: string, packCatalogId: string) {
-  const data = await request<{ installation: IpPackInstallationSummary }>('/enterprise-industry-packs/installed-packs', {
-    method: 'POST',
-    accessToken,
-    body: { packCatalogId },
-  });
+  const data = await request<{ installation: IpPackInstallationSummary }>(
+    '/enterprise-industry-packs/installed-packs',
+    {
+      method: 'POST',
+      accessToken,
+      body: { packCatalogId },
+    },
+  );
   return data.installation;
 }
 
 export async function fetchIndustryTemplates(accessToken: string, templateType?: string) {
   const query = templateType ? `?templateType=${encodeURIComponent(templateType)}` : '';
-  const data = await request<{ templates: IpTemplateSummary[] }>(`/enterprise-industry-packs/templates${query}`, {
-    accessToken,
-  });
+  const data = await request<{ templates: IpTemplateSummary[] }>(
+    `/enterprise-industry-packs/templates${query}`,
+    {
+      accessToken,
+    },
+  );
   return data.templates;
 }
 
@@ -75,9 +87,12 @@ export async function fetchComplianceFrameworks(accessToken: string) {
 }
 
 export async function fetchIndustryCertificates(accessToken: string) {
-  const data = await request<{ certificates: IpCertificateSummary[] }>('/enterprise-industry-packs/certificates', {
-    accessToken,
-  });
+  const data = await request<{ certificates: IpCertificateSummary[] }>(
+    '/enterprise-industry-packs/certificates',
+    {
+      accessToken,
+    },
+  );
   return data.certificates;
 }
 
@@ -90,9 +105,8 @@ export async function fetchEquipmentCatalog(accessToken: string) {
 }
 
 export async function fetchIndustryAuditLogs(accessToken: string) {
-  const data = await request<{ auditLogs: Array<{ id: string; actionType: string; createdAt: string }> }>(
-    '/enterprise-industry-packs/audit-logs',
-    { accessToken },
-  );
+  const data = await request<{
+    auditLogs: Array<{ id: string; actionType: string; createdAt: string }>;
+  }>('/enterprise-industry-packs/audit-logs', { accessToken });
   return data.auditLogs;
 }

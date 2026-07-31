@@ -1,6 +1,12 @@
-import type { CommIntelRecordingSummary, CommIntelUnifiedDashboard } from './communications-intelligence.js';
+import type {
+  CommIntelRecordingSummary,
+  CommIntelUnifiedDashboard,
+} from './communications-intelligence.js';
 import type { VoiceSessionSummary, VoiceStats } from './voice.js';
-import type { UcProviderAdapterSummary, UcVoiceReceptionistSummary } from './enterprise-unified-communications.js';
+import type {
+  UcProviderAdapterSummary,
+  UcVoiceReceptionistSummary,
+} from './enterprise-unified-communications.js';
 
 export type VrPlatformConfigSummary = {
   telephonyPolicy: Record<string, unknown>;

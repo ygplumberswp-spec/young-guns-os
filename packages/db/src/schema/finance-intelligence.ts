@@ -7,7 +7,11 @@ export const financeBudgetPeriodTypeEnum = pgEnum('finance_budget_period_type', 
   'yearly',
 ]);
 
-export const financeBudgetStatusEnum = pgEnum('finance_budget_status', ['draft', 'active', 'closed']);
+export const financeBudgetStatusEnum = pgEnum('finance_budget_status', [
+  'draft',
+  'active',
+  'closed',
+]);
 
 export const financeRecommendationTypeEnum = pgEnum('finance_recommendation_type', [
   'pricing',

@@ -6,7 +6,14 @@ const tabs = [
     label: 'Workflows',
     match: (location: string) =>
       location === '/automation' ||
-      (location.startsWith('/automation/') && !location.startsWith('/automation/executions')),
+      (location.startsWith('/automation/') &&
+        !location.startsWith('/automation/executions') &&
+        !location.startsWith('/automation/n8n')),
+  },
+  {
+    href: '/automation/n8n',
+    label: 'n8n',
+    match: (location: string) => location.startsWith('/automation/n8n'),
   },
   {
     href: '/automation/executions',

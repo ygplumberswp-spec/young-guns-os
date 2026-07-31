@@ -1,4 +1,13 @@
-import { doublePrecision, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  doublePrecision,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -36,11 +45,10 @@ export const developerTokenTypeEnum = pgEnum('developer_token_type', [
   'service_account',
 ]);
 
-export const developerWebhookSubscriptionStatusEnum = pgEnum('developer_webhook_subscription_status', [
-  'active',
-  'paused',
-  'disabled',
-]);
+export const developerWebhookSubscriptionStatusEnum = pgEnum(
+  'developer_webhook_subscription_status',
+  ['active', 'paused', 'disabled'],
+);
 
 export const developerPlatformActionTypeEnum = pgEnum('developer_platform_action_type', [
   'extension_install',
@@ -94,25 +102,32 @@ export const developerPlatformExtensionVersions = pgTable('developer_platform_ex
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const developerPlatformMarketplaceListings = pgTable('developer_platform_marketplace_listings', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  extensionId: uuid('extension_id').references(() => developerPlatformExtensions.id, { onDelete: 'set null' }),
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  category: text('category').notNull(),
-  status: developerMarketplaceStatusEnum('status').notNull().default('draft'),
-  version: text('version').notNull().default('1.0.0'),
-  permissions: jsonb('permissions').$type<string[]>().notNull().default([]),
-  averageRating: doublePrecision('average_rating'),
-  reviewCount: integer('review_count').notNull().default(0),
-  publishedAt: timestamp('published_at', { withTimezone: true }),
-  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const developerPlatformMarketplaceListings = pgTable(
+  'developer_platform_marketplace_listings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    extensionId: uuid('extension_id').references(() => developerPlatformExtensions.id, {
+      onDelete: 'set null',
+    }),
+    name: text('name').notNull(),
+    description: text('description').notNull(),
+    category: text('category').notNull(),
+    status: developerMarketplaceStatusEnum('status').notNull().default('draft'),
+    version: text('version').notNull().default('1.0.0'),
+    permissions: jsonb('permissions').$type<string[]>().notNull().default([]),
+    averageRating: doublePrecision('average_rating'),
+    reviewCount: integer('review_count').notNull().default(0),
+    publishedAt: timestamp('published_at', { withTimezone: true }),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const developerPlatformOauthApplications = pgTable('developer_platform_oauth_applications', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -132,24 +147,27 @@ export const developerPlatformOauthApplications = pgTable('developer_platform_oa
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const developerPlatformPersonalAccessTokens = pgTable('developer_platform_personal_access_tokens', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  tokenPrefix: text('token_prefix').notNull(),
-  tokenHash: text('token_hash').notNull(),
-  scopes: jsonb('scopes').$type<string[]>().notNull().default([]),
-  expiresAt: timestamp('expires_at', { withTimezone: true }),
-  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
-  revokedAt: timestamp('revoked_at', { withTimezone: true }),
-  createdByUserId: uuid('created_by_user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'no action' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const developerPlatformPersonalAccessTokens = pgTable(
+  'developer_platform_personal_access_tokens',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    tokenPrefix: text('token_prefix').notNull(),
+    tokenHash: text('token_hash').notNull(),
+    scopes: jsonb('scopes').$type<string[]>().notNull().default([]),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'no action' }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const developerPlatformServiceAccounts = pgTable('developer_platform_service_accounts', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -169,38 +187,49 @@ export const developerPlatformServiceAccounts = pgTable('developer_platform_serv
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const developerPlatformWebhookSubscriptions = pgTable('developer_platform_webhook_subscriptions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  targetUrl: text('target_url').notNull(),
-  eventTypes: jsonb('event_types').$type<string[]>().notNull().default([]),
-  secretHash: text('secret_hash').notNull(),
-  secretPrefix: text('secret_prefix').notNull(),
-  status: developerWebhookSubscriptionStatusEnum('status').notNull().default('active'),
-  maxRetries: integer('max_retries').notNull().default(3),
-  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const developerPlatformWebhookSubscriptions = pgTable(
+  'developer_platform_webhook_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    targetUrl: text('target_url').notNull(),
+    eventTypes: jsonb('event_types').$type<string[]>().notNull().default([]),
+    secretHash: text('secret_hash').notNull(),
+    secretPrefix: text('secret_prefix').notNull(),
+    status: developerWebhookSubscriptionStatusEnum('status').notNull().default('active'),
+    maxRetries: integer('max_retries').notNull().default(3),
+    createdByUserId: uuid('created_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
-export const developerPlatformWebhookDeadLetter = pgTable('developer_platform_webhook_dead_letter', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  subscriptionId: uuid('subscription_id').references(() => developerPlatformWebhookSubscriptions.id, {
-    onDelete: 'set null',
-  }),
-  eventType: text('event_type').notNull(),
-  payloadSummary: text('payload_summary'),
-  errorMessage: text('error_message'),
-  attempts: integer('attempts').notNull().default(0),
-  failedAt: timestamp('failed_at', { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const developerPlatformWebhookDeadLetter = pgTable(
+  'developer_platform_webhook_dead_letter',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    subscriptionId: uuid('subscription_id').references(
+      () => developerPlatformWebhookSubscriptions.id,
+      {
+        onDelete: 'set null',
+      },
+    ),
+    eventType: text('event_type').notNull(),
+    payloadSummary: text('payload_summary'),
+    errorMessage: text('error_message'),
+    attempts: integer('attempts').notNull().default(0),
+    failedAt: timestamp('failed_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const developerPlatformApiChangelog = pgTable('developer_platform_api_changelog', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -248,28 +277,33 @@ export const developerPlatformAuthAuditLog = pgTable('developer_platform_auth_au
   tokenType: developerTokenTypeEnum('token_type').notNull(),
   actionType: text('action_type').notNull(),
   subject: text('subject').notNull(),
-  performedByUserId: uuid('performed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  performedByUserId: uuid('performed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   performedAt: timestamp('performed_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const developerPlatformAnalyticsSnapshots = pgTable('developer_platform_analytics_snapshots', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  apiRequestCount: integer('api_request_count').notNull().default(0),
-  apiErrorCount: integer('api_error_count').notNull().default(0),
-  avgLatencyMs: integer('avg_latency_ms'),
-  webhookDeliveryCount: integer('webhook_delivery_count').notNull().default(0),
-  webhookFailureCount: integer('webhook_failure_count').notNull().default(0),
-  extensionUsageCount: integer('extension_usage_count').notNull().default(0),
-  sdkDownloadCount: integer('sdk_download_count').notNull().default(0),
-  metrics: jsonb('metrics').$type<Record<string, unknown>>().notNull().default({}),
-  capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const developerPlatformAnalyticsSnapshots = pgTable(
+  'developer_platform_analytics_snapshots',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    apiRequestCount: integer('api_request_count').notNull().default(0),
+    apiErrorCount: integer('api_error_count').notNull().default(0),
+    avgLatencyMs: integer('avg_latency_ms'),
+    webhookDeliveryCount: integer('webhook_delivery_count').notNull().default(0),
+    webhookFailureCount: integer('webhook_failure_count').notNull().default(0),
+    extensionUsageCount: integer('extension_usage_count').notNull().default(0),
+    sdkDownloadCount: integer('sdk_download_count').notNull().default(0),
+    metrics: jsonb('metrics').$type<Record<string, unknown>>().notNull().default({}),
+    capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const developerPlatformActions = pgTable('developer_platform_actions', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -281,7 +315,9 @@ export const developerPlatformActions = pgTable('developer_platform_actions', {
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
-  extensionId: uuid('extension_id').references(() => developerPlatformExtensions.id, { onDelete: 'set null' }),
+  extensionId: uuid('extension_id').references(() => developerPlatformExtensions.id, {
+    onDelete: 'set null',
+  }),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

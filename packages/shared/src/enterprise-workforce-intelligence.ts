@@ -68,7 +68,8 @@ export type WiLifecycleStage =
   | 'termination'
   | 'alumni';
 
-export type WiLifecycleStatus = 'draft' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
+export type WiLifecycleStatus =
+  'draft' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
 export type WiTimesheetStatus = 'draft' | 'submitted' | 'approved' | 'corrected';
 export type WiLeaveStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 export type WiPayrollPrepStatus = 'draft' | 'pending_approval' | 'approved' | 'exported' | 'failed';

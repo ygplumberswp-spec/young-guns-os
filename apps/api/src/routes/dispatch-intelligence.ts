@@ -146,7 +146,9 @@ export function createDispatchIntelligenceRouter({
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     const { companyId } = getAuth(req);
     const branchKey = typeof req.body?.branchKey === 'string' ? req.body.branchKey : undefined;
-    const recommendations = await dispatchIntelligenceService.generateRecommendations(companyId, { branchKey });
+    const recommendations = await dispatchIntelligenceService.generateRecommendations(companyId, {
+      branchKey,
+    });
     res.status(201).json({ data: { recommendations } });
   });
 
@@ -161,7 +163,9 @@ export function createDispatchIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = callbackRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid callback payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid callback payload' } });
       return;
     }
 
@@ -182,7 +186,9 @@ export function createDispatchIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = emergencyAssessmentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid emergency assessment payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid emergency assessment payload' },
+      });
       return;
     }
 
@@ -203,7 +209,9 @@ export function createDispatchIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = receptionistSummarySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid receptionist summary payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid receptionist summary payload' },
+      });
       return;
     }
 
@@ -232,7 +240,9 @@ export function createDispatchIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = routingRecommendationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid routing recommendation payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid routing recommendation payload' },
+      });
       return;
     }
 
@@ -254,7 +264,9 @@ export function createDispatchIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dispatch action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dispatch action payload' } });
       return;
     }
 

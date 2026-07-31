@@ -7,7 +7,9 @@ import type {
 } from '@titan/shared';
 import { request } from './api-client';
 
-export async function fetchIntelligenceDashboard(accessToken: string): Promise<IntelligenceDashboard> {
+export async function fetchIntelligenceDashboard(
+  accessToken: string,
+): Promise<IntelligenceDashboard> {
   const data = await request<{ dashboard: IntelligenceDashboard }>('/intelligence/dashboard', {
     accessToken,
   });

@@ -21,10 +21,7 @@ export function TemplateListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const canView = useMemo(
-    () => (user ? canAccessCommunications(user.permissions) : false),
-    [user],
-  );
+  const canView = useMemo(() => (user ? canAccessCommunications(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManageCommunications(user.permissions) : false),
     [user],
@@ -52,13 +49,18 @@ export function TemplateListPage() {
     }
 
     void loadTemplates();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
     return (
       <div className="communications-page">
-        <PageHeader title="Templates" description="You do not have permission to view communications." />
+        <PageHeader
+          title="Templates"
+          description="You do not have permission to view communications."
+        />
       </div>
     );
   }

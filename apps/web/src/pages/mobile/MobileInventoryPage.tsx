@@ -48,7 +48,8 @@ export function MobileInventoryPage() {
                     <li key={item.itemId}>
                       <strong>{item.name}</strong>
                       <span>
-                        {item.sku} · {item.totalQuantityOnHand} on hand (reorder at {item.reorderLevel})
+                        {item.sku} · {item.totalQuantityOnHand} on hand (reorder at{' '}
+                        {item.reorderLevel})
                       </span>
                     </li>
                   ))}

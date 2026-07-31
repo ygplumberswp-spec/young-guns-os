@@ -50,9 +50,6 @@ export function getCachedAgentRegistry(accessToken: string): AgentRegistryEntry[
   return cached.registry;
 }
 
-export function setCachedAgentRegistry(
-  accessToken: string,
-  registry: AgentRegistryEntry[],
-): void {
+export function setCachedAgentRegistry(accessToken: string, registry: AgentRegistryEntry[]): void {
   agentRegistryCache.set(accessToken, { registry, fetchedAt: Date.now() });
 }

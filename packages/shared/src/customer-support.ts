@@ -1,21 +1,12 @@
 export type CustomerSupportConversationStatus =
-  | 'open'
-  | 'in_progress'
-  | 'waiting_customer'
-  | 'escalated'
-  | 'resolved'
-  | 'closed';
+  'open' | 'in_progress' | 'waiting_customer' | 'escalated' | 'resolved' | 'closed';
 
 export type CustomerSupportChannel = 'portal' | 'email' | 'phone' | 'chat' | 'other';
 
 export type CustomerSupportMessageRole = 'customer' | 'agent' | 'system' | 'ai_draft';
 
 export type CustomerSupportEscalationStatus =
-  | 'pending'
-  | 'assigned'
-  | 'in_progress'
-  | 'resolved'
-  | 'dismissed';
+  'pending' | 'assigned' | 'in_progress' | 'resolved' | 'dismissed';
 
 export type CustomerSupportEscalationPriority = 'low' | 'medium' | 'high' | 'urgent';
 

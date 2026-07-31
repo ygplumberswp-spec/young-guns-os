@@ -83,7 +83,10 @@ export class TenantCapabilityBuilderService {
     );
   }
 
-  async getCapability(companyId: string, capabilityId: string): Promise<TenantCapabilityDetail | null> {
+  async getCapability(
+    companyId: string,
+    capabilityId: string,
+  ): Promise<TenantCapabilityDetail | null> {
     const row = await this.db.query.tenantCapabilities.findFirst({
       where: and(
         eq(tenantCapabilities.id, capabilityId),
@@ -94,10 +97,16 @@ export class TenantCapabilityBuilderService {
     return toDetail(row);
   }
 
-  async discover(scope: TenantScope, input: DiscoverCapabilityRequest): Promise<CapabilityDiscoveryResponse> {
+  async discover(
+    scope: TenantScope,
+    input: DiscoverCapabilityRequest,
+  ): Promise<CapabilityDiscoveryResponse> {
     const description = input.description.trim();
     if (!description) {
-      throw new TenantCapabilityBuilderError('VALIDATION_ERROR', 'Describe the capability you need.');
+      throw new TenantCapabilityBuilderError(
+        'VALIDATION_ERROR',
+        'Describe the capability you need.',
+      );
     }
 
     const route = matchCapabilityKeywordRoute(description);
@@ -145,7 +154,15 @@ export class TenantCapabilityBuilderService {
       recommendationSummary: extendMatch
         ? `This looks similar to ${extendMatch.name}. AURA recommends extending that capability instead of creating a duplicate.`
         : 'AURA can configure this as a tenant capability using approved tools and data access.',
-      proposal: buildProposal(description, route, answers, false, duplicateMatches, recommendation, extendMatch),
+      proposal: buildProposal(
+        description,
+        route,
+        answers,
+        false,
+        duplicateMatches,
+        recommendation,
+        extendMatch,
+      ),
     };
   }
 
@@ -203,10 +220,18 @@ export class TenantCapabilityBuilderService {
       .returning();
 
     if (!created) {
-      throw new TenantCapabilityBuilderError('CREATE_FAILED', 'Unable to create capability proposal.');
+      throw new TenantCapabilityBuilderError(
+        'CREATE_FAILED',
+        'Unable to create capability proposal.',
+      );
     }
 
-    await this.recordAudit(scope, created.id, 'proposal_created', `Proposal created for ${created.name}`);
+    await this.recordAudit(
+      scope,
+      created.id,
+      'proposal_created',
+      `Proposal created for ${created.name}`,
+    );
     await this.recordVersion(scope, created, 'Proposal created');
 
     const detail = await this.getCapability(scope.companyId, created.id);
@@ -226,7 +251,10 @@ export class TenantCapabilityBuilderService {
       throw new TenantCapabilityBuilderError('NOT_FOUND', 'Capability not found.');
     }
     if (existing.status === 'active' || existing.status === 'archived') {
-      throw new TenantCapabilityBuilderError('INVALID_STATE', 'Active or archived capabilities cannot be edited here.');
+      throw new TenantCapabilityBuilderError(
+        'INVALID_STATE',
+        'Active or archived capabilities cannot be edited here.',
+      );
     }
 
     const proposal: CapabilityProposal = {
@@ -235,8 +263,9 @@ export class TenantCapabilityBuilderService {
       department: input.department || existing.proposal.department,
       purpose: input.purpose?.trim() || existing.proposal.purpose,
       departmentLabel:
-        CAPABILITY_DEPARTMENTS.find((d) => d.id === (input.department || existing.proposal.department))?.label ??
-        existing.proposal.departmentLabel,
+        CAPABILITY_DEPARTMENTS.find(
+          (d) => d.id === (input.department || existing.proposal.department),
+        )?.label ?? existing.proposal.departmentLabel,
       dataAccess: input.dataAccess ?? existing.proposal.dataAccess,
     };
 
@@ -250,7 +279,8 @@ export class TenantCapabilityBuilderService {
 
     const configuration = {
       ...existing.configuration,
-      roleScope: input.roleScope ?? (existing.configuration.roleScope as string[] | undefined) ?? ['owner'],
+      roleScope: input.roleScope ??
+        (existing.configuration.roleScope as string[] | undefined) ?? ['owner'],
       dataAccess: proposal.dataAccess,
     };
 
@@ -266,7 +296,10 @@ export class TenantCapabilityBuilderService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(tenantCapabilities.id, capabilityId), eq(tenantCapabilities.companyId, scope.companyId)),
+        and(
+          eq(tenantCapabilities.id, capabilityId),
+          eq(tenantCapabilities.companyId, scope.companyId),
+        ),
       )
       .returning();
 
@@ -274,9 +307,15 @@ export class TenantCapabilityBuilderService {
       throw new TenantCapabilityBuilderError('UPDATE_FAILED', 'Unable to update proposal.');
     }
 
-    await this.recordAudit(scope, capabilityId, 'proposal_updated', `Proposal updated for ${updated.name}`);
+    await this.recordAudit(
+      scope,
+      capabilityId,
+      'proposal_updated',
+      `Proposal updated for ${updated.name}`,
+    );
     const detail = await this.getCapability(scope.companyId, capabilityId);
-    if (!detail) throw new TenantCapabilityBuilderError('UPDATE_FAILED', 'Unable to load capability.');
+    if (!detail)
+      throw new TenantCapabilityBuilderError('UPDATE_FAILED', 'Unable to load capability.');
     return detail;
   }
 
@@ -330,7 +369,10 @@ export class TenantCapabilityBuilderService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(tenantCapabilities.id, capabilityId), eq(tenantCapabilities.companyId, scope.companyId)),
+        and(
+          eq(tenantCapabilities.id, capabilityId),
+          eq(tenantCapabilities.companyId, scope.companyId),
+        ),
       );
 
     await this.recordAudit(scope, capabilityId, 'capability_tested', summary);
@@ -369,10 +411,7 @@ export class TenantCapabilityBuilderService {
 
     const verification = await this.verifyConfiguration(scope.companyId, capability);
     if (verification.failed.length > 0) {
-      throw new TenantCapabilityBuilderError(
-        'VERIFICATION_FAILED',
-        verification.failed.join(' '),
-      );
+      throw new TenantCapabilityBuilderError('VERIFICATION_FAILED', verification.failed.join(' '));
     }
 
     if (capability.status !== 'testing' && capability.status !== 'draft') {
@@ -399,7 +438,10 @@ export class TenantCapabilityBuilderService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(tenantCapabilities.id, capabilityId), eq(tenantCapabilities.companyId, scope.companyId)),
+        and(
+          eq(tenantCapabilities.id, capabilityId),
+          eq(tenantCapabilities.companyId, scope.companyId),
+        ),
       )
       .returning();
 
@@ -408,18 +450,36 @@ export class TenantCapabilityBuilderService {
     }
 
     await this.recordVersion(scope, activated, 'Activated');
-    await this.recordAudit(scope, capabilityId, 'capability_activated', `${activated.name} is now active.`);
+    await this.recordAudit(
+      scope,
+      capabilityId,
+      'capability_activated',
+      `${activated.name} is now active.`,
+    );
 
     const detail = await this.getCapability(scope.companyId, capabilityId);
-    if (!detail) throw new TenantCapabilityBuilderError('ACTIVATION_FAILED', 'Unable to load capability.');
+    if (!detail)
+      throw new TenantCapabilityBuilderError('ACTIVATION_FAILED', 'Unable to load capability.');
     return detail;
   }
 
-  async disableCapability(scope: TenantScope, capabilityId: string): Promise<TenantCapabilityDetail> {
-    return this.setStatus(scope, capabilityId, 'disabled', 'capability_disabled', 'Capability disabled.');
+  async disableCapability(
+    scope: TenantScope,
+    capabilityId: string,
+  ): Promise<TenantCapabilityDetail> {
+    return this.setStatus(
+      scope,
+      capabilityId,
+      'disabled',
+      'capability_disabled',
+      'Capability disabled.',
+    );
   }
 
-  async archiveCapability(scope: TenantScope, capabilityId: string): Promise<TenantCapabilityDetail> {
+  async archiveCapability(
+    scope: TenantScope,
+    capabilityId: string,
+  ): Promise<TenantCapabilityDetail> {
     const [updated] = await this.db
       .update(tenantCapabilities)
       .set({
@@ -429,7 +489,10 @@ export class TenantCapabilityBuilderService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(tenantCapabilities.id, capabilityId), eq(tenantCapabilities.companyId, scope.companyId)),
+        and(
+          eq(tenantCapabilities.id, capabilityId),
+          eq(tenantCapabilities.companyId, scope.companyId),
+        ),
       )
       .returning();
 
@@ -442,7 +505,10 @@ export class TenantCapabilityBuilderService {
     return detail;
   }
 
-  async listVersions(companyId: string, capabilityId: string): Promise<TenantCapabilityVersionSummary[]> {
+  async listVersions(
+    companyId: string,
+    capabilityId: string,
+  ): Promise<TenantCapabilityVersionSummary[]> {
     const rows = await this.db.query.tenantCapabilityVersions.findMany({
       where: and(
         eq(tenantCapabilityVersions.capabilityId, capabilityId),
@@ -507,7 +573,10 @@ export class TenantCapabilityBuilderService {
         updatedAt: new Date(),
       })
       .where(
-        and(eq(tenantCapabilities.id, capabilityId), eq(tenantCapabilities.companyId, scope.companyId)),
+        and(
+          eq(tenantCapabilities.id, capabilityId),
+          eq(tenantCapabilities.companyId, scope.companyId),
+        ),
       )
       .returning();
 
@@ -529,10 +598,14 @@ export class TenantCapabilityBuilderService {
     const normalized = description.toLowerCase();
 
     for (const entry of AGENT_REGISTRY) {
-      const haystack = `${entry.name} ${entry.description} ${entry.focusAreas.join(' ')}`.toLowerCase();
+      const haystack =
+        `${entry.name} ${entry.description} ${entry.focusAreas.join(' ')}`.toLowerCase();
       const overlap = route?.registryAgentKey === entry.agentKey;
       const keywordHit = route?.keywords.some((k) => normalized.includes(k));
-      if (overlap || (keywordHit && haystack.split(' ').some((w) => normalized.includes(w) && w.length > 4))) {
+      if (
+        overlap ||
+        (keywordHit && haystack.split(' ').some((w) => normalized.includes(w) && w.length > 4))
+      ) {
         matches.push({
           matchType: 'registry_agent',
           id: entry.agentKey,
@@ -552,7 +625,10 @@ export class TenantCapabilityBuilderService {
 
     for (const capability of existing) {
       const terms = `${capability.name} ${capability.purpose}`.toLowerCase();
-      if (route?.keywords.some((k) => terms.includes(k)) || normalized.includes(capability.name.toLowerCase())) {
+      if (
+        route?.keywords.some((k) => terms.includes(k)) ||
+        normalized.includes(capability.name.toLowerCase())
+      ) {
         matches.push({
           matchType: 'tenant_capability',
           id: capability.id,
@@ -612,7 +688,11 @@ export class TenantCapabilityBuilderService {
         })
       : null;
 
-    if (profileConflict && capability.extendsAgentKey && profileConflict.id !== capability.agentProfileId) {
+    if (
+      profileConflict &&
+      capability.extendsAgentKey &&
+      profileConflict.id !== capability.agentProfileId
+    ) {
       checks.push('Existing profile will be extended safely');
     }
 
@@ -648,7 +728,9 @@ export class TenantCapabilityBuilderService {
       const mergedConfig = {
         ...(existing.config ?? {}),
         customCapabilities: [
-          ...(((existing.config as Record<string, unknown>)?.customCapabilities as unknown[]) ?? []).filter(
+          ...(
+            ((existing.config as Record<string, unknown>)?.customCapabilities as unknown[]) ?? []
+          ).filter(
             (item) =>
               typeof item === 'object' &&
               item !== null &&
@@ -670,8 +752,10 @@ export class TenantCapabilityBuilderService {
       return existing.id;
     }
 
-    const toolKeys = ((capability.configuration.approvedToolKeys as string[] | undefined) ??
-      registry.suggestedToolKeys).slice(0, 12);
+    const toolKeys = (
+      (capability.configuration.approvedToolKeys as string[] | undefined) ??
+      registry.suggestedToolKeys
+    ).slice(0, 12);
     const validToolKeys = toolKeys.filter((toolKey) =>
       AGENT_TOOL_REGISTRY.some((tool) => tool.toolKey === toolKey),
     );
@@ -829,7 +913,9 @@ function buildProposal(
     riskLevel: codeBacked ? 'high' : allowLowRisk ? 'medium' : 'low',
     baseAgentKey,
     extendsAgentKey,
-    extendsAgentName: extendsAgentKey ? getAgentRegistryEntry(extendsAgentKey)?.name ?? null : null,
+    extendsAgentName: extendsAgentKey
+      ? (getAgentRegistryEntry(extendsAgentKey)?.name ?? null)
+      : null,
     configurationOnly: !codeBacked,
     estimatedUsageNote: null,
   };
@@ -859,7 +945,8 @@ function inferName(description: string, route: CapabilityKeywordRoute | null): s
   if (route?.keywords.includes('certificate')) return 'Technician Certificate Monitor';
   if (route?.keywords.includes('retention')) return 'Customer Retention Agent';
   const trimmed = description.trim();
-  if (trimmed.length <= 48) return trimmed.replace(/^(add|create)\s+(an?\s+)?agent\s+(that|to)\s+/i, '').slice(0, 48);
+  if (trimmed.length <= 48)
+    return trimmed.replace(/^(add|create)\s+(an?\s+)?agent\s+(that|to)\s+/i, '').slice(0, 48);
   return 'Custom Business Capability';
 }
 

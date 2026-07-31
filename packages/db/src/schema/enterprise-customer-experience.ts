@@ -1,4 +1,15 @@
-import { boolean, date, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  date,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { documents } from './documents';
@@ -71,9 +82,15 @@ export const cxPlatformConfig = pgTable('cx_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   globalPolicies: jsonb('global_policies').$type<Record<string, unknown>>().notNull().default({}),
-  brandingTemplates: jsonb('branding_templates').$type<Record<string, unknown>>().notNull().default({}),
+  brandingTemplates: jsonb('branding_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   portalDefaults: jsonb('portal_defaults').$type<Record<string, unknown>>().notNull().default({}),
-  communicationPolicies: jsonb('communication_policies').$type<Record<string, unknown>>().notNull().default({}),
+  communicationPolicies: jsonb('communication_policies')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   engagementRules: jsonb('engagement_rules').$type<Record<string, unknown>>().notNull().default({}),
   loyaltySettings: jsonb('loyalty_settings').$type<Record<string, unknown>>().notNull().default({}),
   trackingEnabled: boolean('tracking_enabled').notNull().default(false),
@@ -94,8 +111,11 @@ export const cxCustomerProperties = pgTable('cx_customer_properties', {
   propertyName: text('property_name').notNull(),
   addressLine1: text('address_line1'),
   addressLine2: text('address_line2'),
+  suburb: text('suburb'),
   city: text('city'),
+  province: text('province'),
   postalCode: text('postal_code'),
+  unitNumber: text('unit_number'),
   isPrimary: boolean('is_primary').notNull().default(false),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -111,7 +131,9 @@ export const cxAppointmentBookings = pgTable('cx_appointment_bookings', {
     .notNull()
     .references(() => customers.id, { onDelete: 'cascade' }),
   portalUserId: uuid('portal_user_id').references(() => portalUsers.id, { onDelete: 'set null' }),
-  propertyId: uuid('property_id').references(() => cxCustomerProperties.id, { onDelete: 'set null' }),
+  propertyId: uuid('property_id').references(() => cxCustomerProperties.id, {
+    onDelete: 'set null',
+  }),
   bookingType: cxBookingTypeEnum('booking_type').notNull().default('standard'),
   status: cxBookingStatusEnum('status').notNull().default('pending_approval'),
   subject: text('subject').notNull(),
@@ -193,7 +215,9 @@ export const cxLoyaltyReferrals = pgTable('cx_loyalty_referrals', {
     onDelete: 'set null',
   }),
   referredEmail: text('referred_email').notNull(),
-  referredCustomerId: uuid('referred_customer_id').references(() => customers.id, { onDelete: 'set null' }),
+  referredCustomerId: uuid('referred_customer_id').references(() => customers.id, {
+    onDelete: 'set null',
+  }),
   status: cxReferralStatusEnum('status').notNull().default('invited'),
   rewardApplied: boolean('reward_applied').notNull().default(false),
   invitedAt: timestamp('invited_at', { withTimezone: true }).notNull().defaultNow(),

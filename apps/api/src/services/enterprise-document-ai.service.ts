@@ -99,19 +99,55 @@ const SYSTEM_CLASSIFICATIONS: Array<{
   name: string;
   description: string;
 }> = [
-  { classificationKey: 'customer_document', name: 'Customer Document', description: 'Customer-related documents.' },
-  { classificationKey: 'job_document', name: 'Job Document', description: 'Job and work order documents.' },
+  {
+    classificationKey: 'customer_document',
+    name: 'Customer Document',
+    description: 'Customer-related documents.',
+  },
+  {
+    classificationKey: 'job_document',
+    name: 'Job Document',
+    description: 'Job and work order documents.',
+  },
   { classificationKey: 'quote', name: 'Quote', description: 'Customer quotation documents.' },
   { classificationKey: 'invoice', name: 'Invoice', description: 'Customer invoice documents.' },
-  { classificationKey: 'purchase_order', name: 'Purchase Order', description: 'Purchase order documents.' },
-  { classificationKey: 'supplier_invoice', name: 'Supplier Invoice', description: 'Supplier invoice documents.' },
-  { classificationKey: 'delivery_note', name: 'Delivery Note', description: 'Delivery and dispatch notes.' },
-  { classificationKey: 'compliance_certificate', name: 'Compliance Certificate', description: 'Compliance and certification documents.' },
-  { classificationKey: 'inspection_report', name: 'Inspection Report', description: 'Inspection and quality reports.' },
+  {
+    classificationKey: 'purchase_order',
+    name: 'Purchase Order',
+    description: 'Purchase order documents.',
+  },
+  {
+    classificationKey: 'supplier_invoice',
+    name: 'Supplier Invoice',
+    description: 'Supplier invoice documents.',
+  },
+  {
+    classificationKey: 'delivery_note',
+    name: 'Delivery Note',
+    description: 'Delivery and dispatch notes.',
+  },
+  {
+    classificationKey: 'compliance_certificate',
+    name: 'Compliance Certificate',
+    description: 'Compliance and certification documents.',
+  },
+  {
+    classificationKey: 'inspection_report',
+    name: 'Inspection Report',
+    description: 'Inspection and quality reports.',
+  },
   { classificationKey: 'asset_record', name: 'Asset Record', description: 'Asset documentation.' },
   { classificationKey: 'warranty', name: 'Warranty', description: 'Warranty documents.' },
-  { classificationKey: 'technical_manual', name: 'Technical Manual', description: 'Technical manuals and guides.' },
-  { classificationKey: 'employment_document', name: 'Employment Document', description: 'Employment and HR documents.' },
+  {
+    classificationKey: 'technical_manual',
+    name: 'Technical Manual',
+    description: 'Technical manuals and guides.',
+  },
+  {
+    classificationKey: 'employment_document',
+    name: 'Employment Document',
+    description: 'Employment and HR documents.',
+  },
   { classificationKey: 'contract', name: 'Contract', description: 'Contractual documents.' },
   { classificationKey: 'other', name: 'Other', description: 'Uncategorised documents.' },
 ];
@@ -172,10 +208,18 @@ export class EnterpriseDocumentAiService {
       this.getSearchIndexCount(companyId),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const failedOcr = await this.listOcrJobs(companyId, { status: 'failed' });
-    const processingHealth = this.buildProcessingHealth(ocrQueue, failedOcr, reviewQueue, intelligenceRecords, alerts);
+    const processingHealth = this.buildProcessingHealth(
+      ocrQueue,
+      failedOcr,
+      reviewQueue,
+      intelligenceRecords,
+      alerts,
+    );
     const activeOcrProviderCount = ocrProviders.filter((p) => p.enabled).length;
     const enabledSourceCount = sourceConfigs.filter((s) => s.enabled).length;
     const criticalAlertCount = alerts.filter((a) => a.severity === 'critical').length;
@@ -229,7 +273,10 @@ export class EnterpriseDocumentAiService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateDipPlatformConfigRequest): Promise<DipPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateDipPlatformConfigRequest,
+  ): Promise<DipPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(dipPlatformConfig)
@@ -256,7 +303,10 @@ export class EnterpriseDocumentAiService {
     return rows.map(toOcrProviderSummary);
   }
 
-  async createOcrProvider(scope: StaffScope, input: CreateDipOcrProviderRequest): Promise<DipOcrProviderSummary> {
+  async createOcrProvider(
+    scope: StaffScope,
+    input: CreateDipOcrProviderRequest,
+  ): Promise<DipOcrProviderSummary> {
     const [created] = await this.deps.db
       .insert(dipOcrProviderConfigs)
       .values({
@@ -267,7 +317,8 @@ export class EnterpriseDocumentAiService {
         config: input.config ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create OCR provider');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create OCR provider');
     await this.logAudit(scope, 'create_ocr_provider', 'dip_ocr_provider_configs', created.id);
     return toOcrProviderSummary(created);
   }
@@ -280,7 +331,10 @@ export class EnterpriseDocumentAiService {
     return rows.map(toSourceConfigSummary);
   }
 
-  async createSourceConfig(scope: StaffScope, input: CreateDipSourceConfigRequest): Promise<DipSourceConfigSummary> {
+  async createSourceConfig(
+    scope: StaffScope,
+    input: CreateDipSourceConfigRequest,
+  ): Promise<DipSourceConfigSummary> {
     const [created] = await this.deps.db
       .insert(dipSourceConfigs)
       .values({
@@ -291,7 +345,8 @@ export class EnterpriseDocumentAiService {
         config: input.config ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create source config');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create source config');
     await this.logAudit(scope, 'create_source_config', 'dip_source_configs', created.id);
     return toSourceConfigSummary(created);
   }
@@ -304,12 +359,18 @@ export class EnterpriseDocumentAiService {
       orderBy: [desc(dipOcrJobs.createdAt)],
       limit: 100,
     });
-    const docMap = await this.getDocumentTitleMap(companyId, rows.map((r) => r.documentId));
+    const docMap = await this.getDocumentTitleMap(
+      companyId,
+      rows.map((r) => r.documentId),
+    );
     return rows.map((row) => toOcrJobSummary(row, docMap.get(row.documentId) ?? null));
   }
 
   async createOcrJob(scope: StaffScope, input: CreateDipOcrJobRequest): Promise<DipOcrJobSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const [created] = await this.deps.db
@@ -324,11 +385,16 @@ export class EnterpriseDocumentAiService {
       })
       .returning();
     if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create OCR job');
-    await this.logAudit(scope, 'create_ocr_job', 'dip_ocr_jobs', created.id, { documentId: input.documentId });
+    await this.logAudit(scope, 'create_ocr_job', 'dip_ocr_jobs', created.id, {
+      documentId: input.documentId,
+    });
     return toOcrJobSummary(created, document.title);
   }
 
-  async recordOcrResult(scope: StaffScope, input: CreateDipOcrResultRequest): Promise<DipOcrResultSummary> {
+  async recordOcrResult(
+    scope: StaffScope,
+    input: CreateDipOcrResultRequest,
+  ): Promise<DipOcrResultSummary> {
     const job = await this.deps.db.query.dipOcrJobs.findFirst({
       where: and(eq(dipOcrJobs.id, input.ocrJobId), eq(dipOcrJobs.companyId, scope.companyId)),
     });
@@ -366,7 +432,10 @@ export class EnterpriseDocumentAiService {
   async listClassificationCatalog(companyId: string): Promise<DipClassificationCatalogSummary[]> {
     await this.ensureSystemCatalog(companyId);
     const rows = await this.deps.db.query.dipClassificationCatalog.findMany({
-      where: or(eq(dipClassificationCatalog.companyId, companyId), eq(dipClassificationCatalog.isSystemType, true)),
+      where: or(
+        eq(dipClassificationCatalog.companyId, companyId),
+        eq(dipClassificationCatalog.isSystemType, true),
+      ),
       orderBy: [desc(dipClassificationCatalog.createdAt)],
     });
     return rows.map(toClassificationCatalogSummary);
@@ -378,12 +447,23 @@ export class EnterpriseDocumentAiService {
       orderBy: [desc(dipClassificationRecords.createdAt)],
       limit: 100,
     });
-    const docMap = await this.getDocumentTitleMap(companyId, rows.map((r) => r.documentId));
-    return rows.map((row) => toClassificationRecordSummary(row, docMap.get(row.documentId) ?? null));
+    const docMap = await this.getDocumentTitleMap(
+      companyId,
+      rows.map((r) => r.documentId),
+    );
+    return rows.map((row) =>
+      toClassificationRecordSummary(row, docMap.get(row.documentId) ?? null),
+    );
   }
 
-  async createClassification(scope: StaffScope, input: CreateDipClassificationRequest): Promise<DipClassificationRecordSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+  async createClassification(
+    scope: StaffScope,
+    input: CreateDipClassificationRequest,
+  ): Promise<DipClassificationRecordSummary> {
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const [created] = await this.deps.db
@@ -428,8 +508,14 @@ export class EnterpriseDocumentAiService {
         fieldSchema: input.fieldSchema ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create extraction template');
-    await this.logAudit(scope, 'create_extraction_template', 'dip_extraction_templates', created.id);
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create extraction template');
+    await this.logAudit(
+      scope,
+      'create_extraction_template',
+      'dip_extraction_templates',
+      created.id,
+    );
     return toExtractionTemplateSummary(created);
   }
 
@@ -439,7 +525,10 @@ export class EnterpriseDocumentAiService {
       orderBy: [desc(dipExtractionRecords.createdAt)],
       limit: 100,
     });
-    const docMap = await this.getDocumentTitleMap(companyId, rows.map((r) => r.documentId));
+    const docMap = await this.getDocumentTitleMap(
+      companyId,
+      rows.map((r) => r.documentId),
+    );
     return rows.map((row) => toExtractionRecordSummary(row, docMap.get(row.documentId) ?? null));
   }
 
@@ -447,7 +536,10 @@ export class EnterpriseDocumentAiService {
     scope: StaffScope,
     input: CreateDipExtractionRecordRequest,
   ): Promise<DipExtractionRecordSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const [created] = await this.deps.db
@@ -485,8 +577,14 @@ export class EnterpriseDocumentAiService {
     return rows.map(toMatchingRecordSummary);
   }
 
-  async createMatchingRecord(scope: StaffScope, input: CreateDipMatchingRecordRequest): Promise<DipMatchingRecordSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+  async createMatchingRecord(
+    scope: StaffScope,
+    input: CreateDipMatchingRecordRequest,
+  ): Promise<DipMatchingRecordSummary> {
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const requiresReview = input.requiresReview ?? (input.confidenceScore ?? 1) < 0.7;
@@ -517,15 +615,24 @@ export class EnterpriseDocumentAiService {
     return toMatchingRecordSummary(created!);
   }
 
-  async listReviewQueue(companyId: string, filters?: { status?: string }): Promise<DipReviewQueueItemSummary[]> {
+  async listReviewQueue(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<DipReviewQueueItemSummary[]> {
     const rows = await this.deps.db.query.dipReviewQueueItems.findMany({
       where: filters?.status
-        ? and(eq(dipReviewQueueItems.companyId, companyId), eq(dipReviewQueueItems.status, filters.status as never))
+        ? and(
+            eq(dipReviewQueueItems.companyId, companyId),
+            eq(dipReviewQueueItems.status, filters.status as never),
+          )
         : eq(dipReviewQueueItems.companyId, companyId),
       orderBy: [desc(dipReviewQueueItems.createdAt)],
       limit: 100,
     });
-    const docMap = await this.getDocumentTitleMap(companyId, rows.map((r) => r.documentId));
+    const docMap = await this.getDocumentTitleMap(
+      companyId,
+      rows.map((r) => r.documentId),
+    );
     return rows.map((row) => toReviewQueueItemSummary(row, docMap.get(row.documentId) ?? null));
   }
 
@@ -533,7 +640,10 @@ export class EnterpriseDocumentAiService {
     scope: StaffScope,
     input: CreateDipReviewQueueItemRequest,
   ): Promise<DipReviewQueueItemSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const [created] = await this.deps.db
@@ -549,7 +659,8 @@ export class EnterpriseDocumentAiService {
         status: 'pending',
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create review queue item');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create review queue item');
     await this.logAudit(scope, 'create_review_queue_item', 'dip_review_queue_items', created.id);
     return toReviewQueueItemSummary(created, document.title);
   }
@@ -560,7 +671,10 @@ export class EnterpriseDocumentAiService {
     input: UpdateDipReviewQueueItemRequest,
   ): Promise<DipReviewQueueItemSummary> {
     const existing = await this.deps.db.query.dipReviewQueueItems.findFirst({
-      where: and(eq(dipReviewQueueItems.id, reviewItemId), eq(dipReviewQueueItems.companyId, scope.companyId)),
+      where: and(
+        eq(dipReviewQueueItems.id, reviewItemId),
+        eq(dipReviewQueueItems.companyId, scope.companyId),
+      ),
     });
     if (!existing) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Review queue item not found');
 
@@ -582,7 +696,9 @@ export class EnterpriseDocumentAiService {
       notes: input.notes?.trim() ?? null,
     });
 
-    await this.logAudit(scope, 'update_review_queue_item', 'dip_review_queue_items', reviewItemId, { status: input.status });
+    await this.logAudit(scope, 'update_review_queue_item', 'dip_review_queue_items', reviewItemId, {
+      status: input.status,
+    });
     const doc = await this.deps.documentsService.getDocument(scope.companyId, existing.documentId);
     return toReviewQueueItemSummary(updated ?? existing, doc?.title ?? null);
   }
@@ -593,7 +709,10 @@ export class EnterpriseDocumentAiService {
       orderBy: [desc(dipIntelligenceRecords.createdAt)],
       limit: 100,
     });
-    const docMap = await this.getDocumentTitleMap(companyId, rows.map((r) => r.documentId));
+    const docMap = await this.getDocumentTitleMap(
+      companyId,
+      rows.map((r) => r.documentId),
+    );
     return rows.map((row) => toIntelligenceRecordSummary(row, docMap.get(row.documentId) ?? null));
   }
 
@@ -601,7 +720,10 @@ export class EnterpriseDocumentAiService {
     scope: StaffScope,
     input: CreateDipIntelligenceRecordRequest,
   ): Promise<DipIntelligenceRecordSummary> {
-    const document = await this.deps.documentsService.getDocument(scope.companyId, input.documentId);
+    const document = await this.deps.documentsService.getDocument(
+      scope.companyId,
+      input.documentId,
+    );
     if (!document) throw new EnterpriseDocumentAiError('NOT_FOUND', 'Document not found');
 
     const [created] = await this.deps.db
@@ -621,7 +743,12 @@ export class EnterpriseDocumentAiService {
       await this.upsertSearchIndex(scope.companyId, input.documentId, { aiSummary: input.content });
     }
 
-    await this.logAudit(scope, 'create_intelligence_record', 'dip_intelligence_records', created?.id);
+    await this.logAudit(
+      scope,
+      'create_intelligence_record',
+      'dip_intelligence_records',
+      created?.id,
+    );
     return toIntelligenceRecordSummary(created!, document.title);
   }
 
@@ -634,7 +761,10 @@ export class EnterpriseDocumentAiService {
     return rows.map(toWorkflowDraftSummary);
   }
 
-  async createWorkflowDraft(scope: StaffScope, input: CreateDipWorkflowDraftRequest): Promise<DipWorkflowDraftSummary> {
+  async createWorkflowDraft(
+    scope: StaffScope,
+    input: CreateDipWorkflowDraftRequest,
+  ): Promise<DipWorkflowDraftSummary> {
     const [created] = await this.deps.db
       .insert(dipWorkflowDrafts)
       .values({
@@ -646,12 +776,16 @@ export class EnterpriseDocumentAiService {
         approvalRequired: input.approvalRequired ?? true,
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create workflow draft');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create workflow draft');
     await this.logAudit(scope, 'create_workflow_draft', 'dip_workflow_drafts', created.id);
     return toWorkflowDraftSummary(created);
   }
 
-  async searchDocuments(companyId: string, input: DipSearchRequest): Promise<DipSearchResultSummary[]> {
+  async searchDocuments(
+    companyId: string,
+    input: DipSearchRequest,
+  ): Promise<DipSearchResultSummary[]> {
     const query = input.query.trim().toLowerCase();
     if (!query) return [];
 
@@ -697,10 +831,16 @@ export class EnterpriseDocumentAiService {
       });
   }
 
-  async listDocumentAlerts(companyId: string, filters?: { status?: string }): Promise<DipDocumentAlertSummary[]> {
+  async listDocumentAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<DipDocumentAlertSummary[]> {
     const rows = await this.deps.db.query.dipDocumentAlerts.findMany({
       where: filters?.status
-        ? and(eq(dipDocumentAlerts.companyId, companyId), eq(dipDocumentAlerts.status, filters.status as never))
+        ? and(
+            eq(dipDocumentAlerts.companyId, companyId),
+            eq(dipDocumentAlerts.status, filters.status as never),
+          )
         : eq(dipDocumentAlerts.companyId, companyId),
       orderBy: [desc(dipDocumentAlerts.createdAt)],
       limit: 50,
@@ -756,7 +896,9 @@ export class EnterpriseDocumentAiService {
       );
     }
 
-    await this.logAudit(scope, 'sync_document_alerts', 'dip_document_alerts', undefined, { alertCount: alerts.length });
+    await this.logAudit(scope, 'sync_document_alerts', 'dip_document_alerts', undefined, {
+      alertCount: alerts.length,
+    });
     return alerts;
   }
 
@@ -778,7 +920,8 @@ export class EnterpriseDocumentAiService {
       .insert(dipAnalyticsSnapshots)
       .values({ companyId: scope.companyId, metrics })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to capture analytics');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to capture analytics');
     await this.logAudit(scope, 'capture_analytics', 'dip_analytics_snapshots', created.id);
     return toAnalyticsSummary(created);
   }
@@ -792,7 +935,10 @@ export class EnterpriseDocumentAiService {
     return rows.map(toActionDraftSummary);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateDipActionDraftRequest): Promise<DipActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateDipActionDraftRequest,
+  ): Promise<DipActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(dipActionDrafts)
       .values({
@@ -804,7 +950,8 @@ export class EnterpriseDocumentAiService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseDocumentAiError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'dip_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -825,10 +972,16 @@ export class EnterpriseDocumentAiService {
     intelligence: DipIntelligenceRecordSummary[],
     alerts: DipDocumentAlertSummary[],
   ): DipProcessingHealthSummary {
-    const expiringDocumentCount = intelligence.filter((i) => i.intelligenceType === 'expiry').length;
+    const expiringDocumentCount = intelligence.filter(
+      (i) => i.intelligenceType === 'expiry',
+    ).length;
     const duplicateAlertCount = alerts.filter((a) => a.alertType === 'duplicate_documents').length;
     const ocrHealthStatus =
-      failedOcr.length > 5 ? 'critical' : failedOcr.length > 0 || ocrQueue.length > 20 ? 'degraded' : 'healthy';
+      failedOcr.length > 5
+        ? 'critical'
+        : failedOcr.length > 0 || ocrQueue.length > 20
+          ? 'degraded'
+          : 'healthy';
 
     return {
       ocrHealthStatus,
@@ -859,10 +1012,18 @@ export class EnterpriseDocumentAiService {
   private async upsertSearchIndex(
     companyId: string,
     documentId: string,
-    input: { ocrText?: string; aiSummary?: string; classificationKey?: DipClassificationKey; tags?: string[] },
+    input: {
+      ocrText?: string;
+      aiSummary?: string;
+      classificationKey?: DipClassificationKey;
+      tags?: string[];
+    },
   ) {
     const existing = await this.deps.db.query.dipSearchIndexEntries.findFirst({
-      where: and(eq(dipSearchIndexEntries.companyId, companyId), eq(dipSearchIndexEntries.documentId, documentId)),
+      where: and(
+        eq(dipSearchIndexEntries.companyId, companyId),
+        eq(dipSearchIndexEntries.documentId, documentId),
+      ),
     });
 
     if (existing) {
@@ -941,7 +1102,10 @@ export class EnterpriseDocumentAiService {
       where: eq(dipPlatformConfig.companyId, companyId),
     });
     if (existing) return existing;
-    const [created] = await this.deps.db.insert(dipPlatformConfig).values({ companyId }).returning();
+    const [created] = await this.deps.db
+      .insert(dipPlatformConfig)
+      .values({ companyId })
+      .returning();
     return created!;
   }
 
@@ -1036,7 +1200,9 @@ export class EnterpriseDocumentAiService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof dipPlatformConfig.$inferSelect): DipPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof dipPlatformConfig.$inferSelect,
+): DipPlatformConfigSummary {
   return {
     ocrPolicy: row.ocrPolicy ?? {},
     classificationPolicy: row.classificationPolicy ?? {},
@@ -1047,7 +1213,9 @@ function toPlatformConfigSummary(row: typeof dipPlatformConfig.$inferSelect): Di
   };
 }
 
-function toOcrProviderSummary(row: typeof dipOcrProviderConfigs.$inferSelect): DipOcrProviderSummary {
+function toOcrProviderSummary(
+  row: typeof dipOcrProviderConfigs.$inferSelect,
+): DipOcrProviderSummary {
   return {
     id: row.id,
     providerKey: row.providerKey,
@@ -1067,7 +1235,10 @@ function toSourceConfigSummary(row: typeof dipSourceConfigs.$inferSelect): DipSo
   };
 }
 
-function toOcrJobSummary(row: typeof dipOcrJobs.$inferSelect, documentTitle: string | null): DipOcrJobSummary {
+function toOcrJobSummary(
+  row: typeof dipOcrJobs.$inferSelect,
+  documentTitle: string | null,
+): DipOcrJobSummary {
   return {
     id: row.id,
     documentId: row.documentId,
@@ -1094,7 +1265,9 @@ function toOcrResultSummary(row: typeof dipOcrResults.$inferSelect): DipOcrResul
   };
 }
 
-function toClassificationCatalogSummary(row: typeof dipClassificationCatalog.$inferSelect): DipClassificationCatalogSummary {
+function toClassificationCatalogSummary(
+  row: typeof dipClassificationCatalog.$inferSelect,
+): DipClassificationCatalogSummary {
   return {
     id: row.id,
     classificationKey: row.classificationKey,
@@ -1119,7 +1292,9 @@ function toClassificationRecordSummary(
   };
 }
 
-function toExtractionTemplateSummary(row: typeof dipExtractionTemplates.$inferSelect): DipExtractionTemplateSummary {
+function toExtractionTemplateSummary(
+  row: typeof dipExtractionTemplates.$inferSelect,
+): DipExtractionTemplateSummary {
   return {
     id: row.id,
     templateKey: row.templateKey,
@@ -1145,7 +1320,9 @@ function toExtractionRecordSummary(
   };
 }
 
-function toMatchingRecordSummary(row: typeof dipMatchingRecords.$inferSelect): DipMatchingRecordSummary {
+function toMatchingRecordSummary(
+  row: typeof dipMatchingRecords.$inferSelect,
+): DipMatchingRecordSummary {
   return {
     id: row.id,
     documentId: row.documentId,
@@ -1190,7 +1367,9 @@ function toIntelligenceRecordSummary(
   };
 }
 
-function toWorkflowDraftSummary(row: typeof dipWorkflowDrafts.$inferSelect): DipWorkflowDraftSummary {
+function toWorkflowDraftSummary(
+  row: typeof dipWorkflowDrafts.$inferSelect,
+): DipWorkflowDraftSummary {
   return {
     id: row.id,
     documentId: row.documentId,
@@ -1203,7 +1382,9 @@ function toWorkflowDraftSummary(row: typeof dipWorkflowDrafts.$inferSelect): Dip
   };
 }
 
-function toDocumentAlertSummary(row: typeof dipDocumentAlerts.$inferSelect): DipDocumentAlertSummary {
+function toDocumentAlertSummary(
+  row: typeof dipDocumentAlerts.$inferSelect,
+): DipDocumentAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,

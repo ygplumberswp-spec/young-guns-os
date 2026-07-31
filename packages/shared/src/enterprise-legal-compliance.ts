@@ -1,6 +1,7 @@
 import type { DocumentsStats } from './documents.js';
 
-export type LcWorkflowStatus = 'draft' | 'review' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
+export type LcWorkflowStatus =
+  'draft' | 'review' | 'pending_approval' | 'approved' | 'executed' | 'cancelled';
 
 export type LcContractStatus =
   | 'request'
@@ -49,7 +50,8 @@ export const LC_SIGNATURE_PROVIDER_TYPES: LcSignatureProviderType[] = [
 ];
 
 export type LcAdapterStatus = 'active' | 'inactive' | 'testing' | 'error';
-export type LcObligationStatus = 'pending' | 'in_progress' | 'completed' | 'overdue' | 'waived' | 'cancelled';
+export type LcObligationStatus =
+  'pending' | 'in_progress' | 'completed' | 'overdue' | 'waived' | 'cancelled';
 export type LcRiskCategory =
   | 'strategic'
   | 'operational'
@@ -68,20 +70,19 @@ export type LcRiskCategory =
   | 'reputation'
   | 'project'
   | 'custom';
-export type LcRiskStatus = 'identified' | 'assessed' | 'treatment_planned' | 'mitigated' | 'accepted' | 'closed';
+export type LcRiskStatus =
+  'identified' | 'assessed' | 'treatment_planned' | 'mitigated' | 'accepted' | 'closed';
 export type LcControlStatus = 'active' | 'inactive' | 'failed' | 'remediation';
-export type LcPolicyStatus = 'draft' | 'review' | 'pending_approval' | 'published' | 'expired' | 'archived';
-export type LcLegalMatterStatus = 'open' | 'in_progress' | 'pending' | 'resolved' | 'closed' | 'archived';
-export type LcPrivacyRequestType = 'access' | 'correction' | 'deletion' | 'portability' | 'objection';
-export type LcPrivacyRequestStatus = 'pending' | 'in_review' | 'approved' | 'rejected' | 'completed';
+export type LcPolicyStatus =
+  'draft' | 'review' | 'pending_approval' | 'published' | 'expired' | 'archived';
+export type LcLegalMatterStatus =
+  'open' | 'in_progress' | 'pending' | 'resolved' | 'closed' | 'archived';
+export type LcPrivacyRequestType =
+  'access' | 'correction' | 'deletion' | 'portability' | 'objection';
+export type LcPrivacyRequestStatus =
+  'pending' | 'in_review' | 'approved' | 'rejected' | 'completed';
 export type LcSignatureRequestStatus =
-  | 'draft'
-  | 'sent'
-  | 'partially_signed'
-  | 'completed'
-  | 'declined'
-  | 'expired'
-  | 'cancelled';
+  'draft' | 'sent' | 'partially_signed' | 'completed' | 'declined' | 'expired' | 'cancelled';
 
 export type LcLegalDraftType =
   | 'contract_summary'

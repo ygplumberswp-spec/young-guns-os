@@ -162,7 +162,12 @@ export function createBusinessIntelligenceRouter({
 }: BusinessIntelligenceRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('bi:read', 'bi:write', 'intelligence:read', 'analytics:read');
+  const requireRead = requireAnyPermission(
+    'bi:read',
+    'bi:write',
+    'intelligence:read',
+    'analytics:read',
+  );
   const requireWrite = requireAnyPermission('bi:write');
 
   router.use(requireAuth);
@@ -214,7 +219,11 @@ export function createBusinessIntelligenceRouter({
 
     try {
       const { companyId } = getAuth(req);
-      const kpi = await businessIntelligenceService.updateKpi(companyId, getRouteParam(req.params.id), parsed.data);
+      const kpi = await businessIntelligenceService.updateKpi(
+        companyId,
+        getRouteParam(req.params.id),
+        parsed.data,
+      );
       res.json({ data: { kpi } });
     } catch (error) {
       handleBusinessIntelligenceError(res, error);
@@ -224,13 +233,18 @@ export function createBusinessIntelligenceRouter({
   router.post('/kpis/snapshots/generate', requireWrite, async (req, res) => {
     const parsed = generateKpiSnapshotsSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid snapshot payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid snapshot payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const snapshots = await businessIntelligenceService.generateKpiSnapshots(companyId, parsed.data);
+      const snapshots = await businessIntelligenceService.generateKpiSnapshots(
+        companyId,
+        parsed.data,
+      );
       res.status(201).json({ data: { snapshots } });
     } catch (error) {
       handleBusinessIntelligenceError(res, error);
@@ -245,7 +259,10 @@ export function createBusinessIntelligenceRouter({
 
   router.get('/kpis/:id/snapshots', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const snapshots = await businessIntelligenceService.listKpiSnapshots(companyId, getRouteParam(req.params.id));
+    const snapshots = await businessIntelligenceService.listKpiSnapshots(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     res.json({ data: { snapshots } });
   });
 
@@ -258,18 +275,26 @@ export function createBusinessIntelligenceRouter({
   router.get('/dashboards/type/:type', requireRead, async (req, res) => {
     const dashboardType = dashboardTypeSchema.safeParse(getRouteParam(req.params.type));
     if (!dashboardType.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard type' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard type' } });
       return;
     }
 
     const { companyId } = getAuth(req);
-    const dashboard = await businessIntelligenceService.getDashboardByType(companyId, dashboardType.data);
+    const dashboard = await businessIntelligenceService.getDashboardByType(
+      companyId,
+      dashboardType.data,
+    );
     res.json({ data: { dashboard } });
   });
 
   router.get('/dashboards/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const dashboard = await businessIntelligenceService.getDashboard(companyId, getRouteParam(req.params.id));
+    const dashboard = await businessIntelligenceService.getDashboard(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!dashboard) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Dashboard not found' } });
       return;
@@ -280,7 +305,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/dashboards', requireWrite, async (req, res) => {
     const parsed = createDashboardSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard payload' } });
       return;
     }
 
@@ -299,7 +326,9 @@ export function createBusinessIntelligenceRouter({
   router.patch('/dashboards/:id', requireWrite, async (req, res) => {
     const parsed = updateDashboardSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid dashboard payload' } });
       return;
     }
 
@@ -319,7 +348,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/dashboards/:id/widgets', requireWrite, async (req, res) => {
     const parsed = createWidgetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid widget payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid widget payload' } });
       return;
     }
 
@@ -345,13 +376,18 @@ export function createBusinessIntelligenceRouter({
   router.post('/report-templates', requireWrite, async (req, res) => {
     const parsed = createReportTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const template = await businessIntelligenceService.createReportTemplate(companyId, parsed.data);
+      const template = await businessIntelligenceService.createReportTemplate(
+        companyId,
+        parsed.data,
+      );
       res.status(201).json({ data: { template } });
     } catch (error) {
       handleBusinessIntelligenceError(res, error);
@@ -361,7 +397,9 @@ export function createBusinessIntelligenceRouter({
   router.patch('/report-templates/:id', requireWrite, async (req, res) => {
     const parsed = updateReportTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
       return;
     }
 
@@ -386,7 +424,10 @@ export function createBusinessIntelligenceRouter({
 
   router.get('/reports/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const report = await businessIntelligenceService.getReport(companyId, getRouteParam(req.params.id));
+    const report = await businessIntelligenceService.getReport(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!report) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Report not found' } });
       return;
@@ -397,7 +438,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/reports', requireWrite, async (req, res) => {
     const parsed = createReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
       return;
     }
 
@@ -416,7 +459,9 @@ export function createBusinessIntelligenceRouter({
   router.patch('/reports/:id', requireWrite, async (req, res) => {
     const parsed = updateReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
       return;
     }
 
@@ -463,7 +508,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/reports/:id/schedule', requireWrite, async (req, res) => {
     const parsed = scheduleReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
       return;
     }
 
@@ -483,7 +530,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/reports/:id/generate', requireWrite, async (req, res) => {
     const parsed = generateReportSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid generate payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid generate payload' } });
       return;
     }
 
@@ -519,7 +568,9 @@ export function createBusinessIntelligenceRouter({
   router.patch('/insights/:id', requireWrite, async (req, res) => {
     const parsed = updateInsightSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insight payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insight payload' } });
       return;
     }
 
@@ -545,7 +596,9 @@ export function createBusinessIntelligenceRouter({
   router.post('/forecasts/generate', requireWrite, async (req, res) => {
     const parsed = generateForecastSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast payload' } });
       return;
     }
 

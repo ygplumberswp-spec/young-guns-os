@@ -19,6 +19,9 @@ export function InventoryNav() {
           {tab.label}
         </Link>
       ))}
+      <Link href="/procurement" className="inventory-nav__link">
+        Procurement →
+      </Link>
     </nav>
   );
 }

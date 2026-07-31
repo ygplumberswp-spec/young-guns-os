@@ -62,7 +62,9 @@ export class EnterpriseProductionLaunchMobileService {
       {
         key: 'cartrack',
         severity: dashboard.cartrackConnected ? 'info' : 'info',
-        message: dashboard.cartrackConnected ? 'Cartrack fleet integration connected.' : 'Cartrack not connected — optional for mobile fleet tracking.',
+        message: dashboard.cartrackConnected
+          ? 'Cartrack fleet integration connected.'
+          : 'Cartrack not connected — optional for mobile fleet tracking.',
       },
     ];
 
@@ -92,7 +94,9 @@ export class EnterpriseProductionLaunchMobileService {
   }
 }
 
-function toSummary(row: typeof plMobileProductionReviews.$inferSelect): PlMobileProductionReviewSummary {
+function toSummary(
+  row: typeof plMobileProductionReviews.$inferSelect,
+): PlMobileProductionReviewSummary {
   return {
     id: row.id,
     reviewKey: row.reviewKey,

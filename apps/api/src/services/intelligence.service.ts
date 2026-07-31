@@ -227,7 +227,9 @@ export class IntelligenceService {
     }
 
     if (params.unpaidInvoices > 0) {
-      parts.push(`${params.unpaidInvoices} unpaid invoice${params.unpaidInvoices === 1 ? '' : 's'}`);
+      parts.push(
+        `${params.unpaidInvoices} unpaid invoice${params.unpaidInvoices === 1 ? '' : 's'}`,
+      );
     }
 
     if (params.pendingApprovals > 0) {
@@ -342,8 +344,10 @@ export class IntelligenceService {
           continue;
         }
 
-        const currentEnd = current.scheduledEndAt ?? new Date(current.scheduledAt.getTime() + 60 * 60 * 1000);
-        const otherEnd = other.scheduledEndAt ?? new Date(other.scheduledAt.getTime() + 60 * 60 * 1000);
+        const currentEnd =
+          current.scheduledEndAt ?? new Date(current.scheduledAt.getTime() + 60 * 60 * 1000);
+        const otherEnd =
+          other.scheduledEndAt ?? new Date(other.scheduledAt.getTime() + 60 * 60 * 1000);
 
         if (current.scheduledAt < otherEnd && other.scheduledAt < currentEnd) {
           conflicts += 1;

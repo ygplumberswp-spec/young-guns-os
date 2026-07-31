@@ -1,10 +1,23 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { agentKeyEnum } from './agent-profiles';
 import { agentRuns } from './agent-runs';
 import { companies } from './companies';
 import { users } from './users';
 
-export const orchestrationStatusEnum = pgEnum('orchestration_status', ['draft', 'active', 'paused']);
+export const orchestrationStatusEnum = pgEnum('orchestration_status', [
+  'draft',
+  'active',
+  'paused',
+]);
 
 export const orchestrationRunStatusEnum = pgEnum('orchestration_run_status', [
   'pending',
@@ -24,7 +37,10 @@ export const orchestrationStepStatusEnum = pgEnum('orchestration_step_status', [
   'awaiting_approval',
 ]);
 
-export const orchestrationStepModeEnum = pgEnum('orchestration_step_mode', ['sequential', 'parallel']);
+export const orchestrationStepModeEnum = pgEnum('orchestration_step_mode', [
+  'sequential',
+  'parallel',
+]);
 
 export const orchestrationApprovalStatusEnum = pgEnum('orchestration_approval_status', [
   'pending',
@@ -32,7 +48,11 @@ export const orchestrationApprovalStatusEnum = pgEnum('orchestration_approval_st
   'rejected',
 ]);
 
-export const orchestrationLogLevelEnum = pgEnum('orchestration_log_level', ['info', 'warn', 'error']);
+export const orchestrationLogLevelEnum = pgEnum('orchestration_log_level', [
+  'info',
+  'warn',
+  'error',
+]);
 
 export const agentOrchestrations = pgTable('agent_orchestrations', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -100,7 +120,9 @@ export const agentOrchestrationRuns = pgTable('agent_orchestration_runs', {
   triggerEntityId: uuid('trigger_entity_id'),
   status: orchestrationRunStatusEnum('status').notNull().default('pending'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  initiatedByUserId: uuid('initiated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  initiatedByUserId: uuid('initiated_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   errorMessage: text('error_message'),
@@ -149,7 +171,9 @@ export const agentOrchestrationApprovals = pgTable('agent_orchestration_approval
   status: orchestrationApprovalStatusEnum('status').notNull().default('pending'),
   preview: text('preview').notNull(),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   decidedByUserId: uuid('decided_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   decidedAt: timestamp('decided_at', { withTimezone: true }),

@@ -50,11 +50,20 @@ export function VoiceReceptionPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessVoiceReception(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageVoiceReception(user.permissions) : false), [user]);
+  const canWrite = useMemo(
+    () => (user ? canManageVoiceReception(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: VoiceReceptionTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -92,7 +101,11 @@ export function VoiceReceptionPage() {
         if (!cancelled) setIsLoading(false);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load voice reception dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load voice reception dashboard',
+          );
           setIsLoading(false);
         }
       }
@@ -142,7 +155,10 @@ export function VoiceReceptionPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Voice Reception" description="You do not have permission to view voice reception." />
+        <PageHeader
+          title="Voice Reception"
+          description="You do not have permission to view voice reception."
+        />
       </div>
     );
   }
@@ -158,7 +174,9 @@ export function VoiceReceptionPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncVoiceAlerts(accessToken!), 'Voice alerts synced.')}
+                onClick={() =>
+                  void runAction(() => syncVoiceAlerts(accessToken!), 'Voice alerts synced.')
+                }
               >
                 Sync Alerts
               </Button>
@@ -207,9 +225,18 @@ export function VoiceReceptionPage() {
                 <StatCard label="Active Calls" value={String(dashboard.activeCallCount)} />
                 <StatCard label="Missed Calls" value={String(dashboard.missedCallCount)} />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
-                <StatCard label="Telephony Providers" value={String(dashboard.activeProviderCount)} />
-                <StatCard label="Voice Health" value={formatStatus(dashboard.overallVoiceHealthStatus)} />
-                <StatCard label="AI Receptionist" value={dashboard.aiReceptionist.enabled ? 'Enabled' : 'Disabled'} />
+                <StatCard
+                  label="Telephony Providers"
+                  value={String(dashboard.activeProviderCount)}
+                />
+                <StatCard
+                  label="Voice Health"
+                  value={formatStatus(dashboard.overallVoiceHealthStatus)}
+                />
+                <StatCard
+                  label="AI Receptionist"
+                  value={dashboard.aiReceptionist.enabled ? 'Enabled' : 'Disabled'}
+                />
               </div>
               <Panel title="Summary">
                 <p>{dashboard.summary}</p>
@@ -220,7 +247,9 @@ export function VoiceReceptionPage() {
                     {dashboard.recentAlerts.map((alert) => (
                       <div key={alert.id} className="data-list-item">
                         <strong>{alert.title}</strong>
-                        <span>{formatSeverity(alert.severity)} · {formatStatus(alert.status)}</span>
+                        <span>
+                          {formatSeverity(alert.severity)} · {formatStatus(alert.status)}
+                        </span>
                         {alert.description ? <p>{alert.description}</p> : null}
                       </div>
                     ))}
@@ -233,13 +262,18 @@ export function VoiceReceptionPage() {
           {activeTab === 'live-calls' ? (
             <Panel title="Live Calls">
               {dashboard.liveCalls.length === 0 ? (
-                <EmptyState title="No live calls" description="Active voice sessions appear here from real call activity." />
+                <EmptyState
+                  title="No live calls"
+                  description="Active voice sessions appear here from real call activity."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.liveCalls.map((call) => (
                     <div key={call.id} className="data-list-item">
                       <strong>{call.callerName ?? call.callerPhone ?? 'Unknown'}</strong>
-                      <span>{formatStatus(call.status)} · {formatStatus(call.enquiryType)}</span>
+                      <span>
+                        {formatStatus(call.status)} · {formatStatus(call.enquiryType)}
+                      </span>
                       <span>{formatDuration(call.durationSeconds)}</span>
                     </div>
                   ))}
@@ -251,14 +285,19 @@ export function VoiceReceptionPage() {
           {activeTab === 'call-queue' ? (
             <Panel title="Call Queues">
               {dashboard.callQueues.length === 0 ? (
-                <EmptyState title="No call queues configured" description="Configure call queues in Routing settings." />
+                <EmptyState
+                  title="No call queues configured"
+                  description="Configure call queues in Routing settings."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.callQueues.map((queue) => (
                     <div key={queue.id} className="data-list-item">
                       <strong>{queue.name}</strong>
                       <span>{queue.queueKey}</span>
-                      {queue.maxWaitSeconds != null ? <span>Max wait {queue.maxWaitSeconds}s</span> : null}
+                      {queue.maxWaitSeconds != null ? (
+                        <span>Max wait {queue.maxWaitSeconds}s</span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -269,13 +308,18 @@ export function VoiceReceptionPage() {
           {activeTab === 'call-history' ? (
             <Panel title="Call History">
               {dashboard.callHistory.length === 0 ? (
-                <EmptyState title="No call history" description="Completed voice sessions appear here from real call activity." />
+                <EmptyState
+                  title="No call history"
+                  description="Completed voice sessions appear here from real call activity."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.callHistory.map((call) => (
                     <div key={call.id} className="data-list-item">
                       <strong>{call.callerName ?? call.callerPhone ?? 'Unknown'}</strong>
-                      <span>{formatStatus(call.status)} · {formatStatus(call.enquiryType)}</span>
+                      <span>
+                        {formatStatus(call.status)} · {formatStatus(call.enquiryType)}
+                      </span>
                       <span>{new Date(call.startedAt).toLocaleString()}</span>
                     </div>
                   ))}
@@ -287,7 +331,10 @@ export function VoiceReceptionPage() {
           {activeTab === 'recordings' ? (
             <Panel title="Recordings">
               {dashboard.recordings.length === 0 ? (
-                <EmptyState title="No recordings" description="Call recordings appear here when captured with proper consent." />
+                <EmptyState
+                  title="No recordings"
+                  description="Call recordings appear here when captured with proper consent."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recordings.map((recording) => (
@@ -295,7 +342,9 @@ export function VoiceReceptionPage() {
                       <strong>Recording {recording.id.slice(0, 8)}</strong>
                       <span>Consent: {formatStatus(recording.consentStatus)}</span>
                       <span>Status: {formatStatus(recording.recordingStatus)}</span>
-                      {recording.storageReference ? <span>{recording.storageReference}</span> : null}
+                      {recording.storageReference ? (
+                        <span>{recording.storageReference}</span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -305,8 +354,12 @@ export function VoiceReceptionPage() {
 
           {activeTab === 'transcripts' ? (
             <Panel title="Transcripts">
-              {dashboard.recordings.filter((r) => r.transcriptReference || r.aiSummary).length === 0 ? (
-                <EmptyState title="No transcripts" description="Transcripts appear here when generated from real recordings." />
+              {dashboard.recordings.filter((r) => r.transcriptReference || r.aiSummary).length ===
+              0 ? (
+                <EmptyState
+                  title="No transcripts"
+                  description="Transcripts appear here when generated from real recordings."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recordings
@@ -329,19 +382,26 @@ export function VoiceReceptionPage() {
                 {dashboard.aiReceptionist.enabled ? 'Enabled' : 'Disabled'} · Confidence threshold{' '}
                 {dashboard.aiReceptionist.confidenceThreshold}%
               </p>
-              {dashboard.aiReceptionist.welcomeMessage ? <p>Welcome: {dashboard.aiReceptionist.welcomeMessage}</p> : null}
+              {dashboard.aiReceptionist.welcomeMessage ? (
+                <p>Welcome: {dashboard.aiReceptionist.welcomeMessage}</p>
+              ) : null}
               {canWrite ? (
                 <Button
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
                     void runAction(
-                      () => updateAiReceptionistConfig(accessToken!, { enabled: !dashboard.aiReceptionist.enabled }),
+                      () =>
+                        updateAiReceptionistConfig(accessToken!, {
+                          enabled: !dashboard.aiReceptionist.enabled,
+                        }),
                       `AI receptionist ${dashboard.aiReceptionist.enabled ? 'disabled' : 'enabled'}.`,
                     )
                   }
                 >
-                  {dashboard.aiReceptionist.enabled ? 'Disable AI Receptionist' : 'Enable AI Receptionist'}
+                  {dashboard.aiReceptionist.enabled
+                    ? 'Disable AI Receptionist'
+                    : 'Enable AI Receptionist'}
                 </Button>
               ) : null}
               {dashboard.conversationDrafts.length > 0 ? (
@@ -367,7 +427,9 @@ export function VoiceReceptionPage() {
                     {dashboard.routingRules.map((rule) => (
                       <div key={rule.id} className="data-list-item">
                         <strong>{rule.name}</strong>
-                        <span>Priority {rule.priority} → {rule.destinationType}</span>
+                        <span>
+                          Priority {rule.priority} → {rule.destinationType}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -393,14 +455,19 @@ export function VoiceReceptionPage() {
           {activeTab === 'business-hours' ? (
             <Panel title="Business Hours">
               {dashboard.businessHours.length === 0 ? (
-                <EmptyState title="No business hours configured" description="Configure schedules for routing and AI receptionist." />
+                <EmptyState
+                  title="No business hours configured"
+                  description="Configure schedules for routing and AI receptionist."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.businessHours.map((schedule) => (
                     <div key={schedule.id} className="data-list-item">
                       <strong>{schedule.name}</strong>
                       <span>{schedule.timezone}</span>
-                      {schedule.afterHoursDestination ? <span>After hours → {schedule.afterHoursDestination}</span> : null}
+                      {schedule.afterHoursDestination ? (
+                        <span>After hours → {schedule.afterHoursDestination}</span>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -411,10 +478,22 @@ export function VoiceReceptionPage() {
           {activeTab === 'analytics' ? (
             <Panel title="Analytics">
               <div className="stat-grid">
-                <StatCard label="Total Sessions" value={String(dashboard.voiceStats.totalSessionCount)} />
-                <StatCard label="Completed" value={String(dashboard.voiceStats.completedSessionCount)} />
-                <StatCard label="Follow-ups Required" value={String(dashboard.voiceStats.followUpRequiredCount)} />
-                <StatCard label="Appointment Requests" value={String(dashboard.voiceStats.appointmentRequestCount)} />
+                <StatCard
+                  label="Total Sessions"
+                  value={String(dashboard.voiceStats.totalSessionCount)}
+                />
+                <StatCard
+                  label="Completed"
+                  value={String(dashboard.voiceStats.completedSessionCount)}
+                />
+                <StatCard
+                  label="Follow-ups Required"
+                  value={String(dashboard.voiceStats.followUpRequiredCount)}
+                />
+                <StatCard
+                  label="Appointment Requests"
+                  value={String(dashboard.voiceStats.appointmentRequestCount)}
+                />
               </div>
               {dashboard.analytics ? (
                 <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
@@ -427,12 +506,25 @@ export function VoiceReceptionPage() {
           {activeTab === 'quality' ? (
             <Panel title="Quality Assurance">
               <div className="stat-grid">
-                <StatCard label="Resolution Rate" value={formatPercent(dashboard.quality.resolutionRate)} />
-                <StatCard label="Escalation Rate" value={formatPercent(dashboard.quality.escalationRate)} />
-                <StatCard label="Booking Success" value={formatPercent(dashboard.quality.bookingSuccessRate)} />
+                <StatCard
+                  label="Resolution Rate"
+                  value={formatPercent(dashboard.quality.resolutionRate)}
+                />
+                <StatCard
+                  label="Escalation Rate"
+                  value={formatPercent(dashboard.quality.escalationRate)}
+                />
+                <StatCard
+                  label="Booking Success"
+                  value={formatPercent(dashboard.quality.bookingSuccessRate)}
+                />
                 <StatCard
                   label="Call Quality"
-                  value={dashboard.quality.callQualityScore != null ? String(dashboard.quality.callQualityScore) : '—'}
+                  value={
+                    dashboard.quality.callQualityScore != null
+                      ? String(dashboard.quality.callQualityScore)
+                      : '—'
+                  }
                 />
               </div>
             </Panel>
@@ -445,13 +537,18 @@ export function VoiceReceptionPage() {
                   {dashboard.telephonyProviders.map((provider) => (
                     <div key={provider.id} className="data-list-item">
                       <strong>{provider.name}</strong>
-                      <span>{provider.providerKey} · {provider.enabled ? 'Enabled' : 'Disabled'}</span>
+                      <span>
+                        {provider.providerKey} · {provider.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
                     </div>
                   ))}
                   {dashboard.languageConfigs.map((lang) => (
                     <div key={lang.id} className="data-list-item">
                       <strong>{lang.name}</strong>
-                      <span>{lang.languageCode}{lang.isDefault ? ' · Default' : ''}</span>
+                      <span>
+                        {lang.languageCode}
+                        {lang.isDefault ? ' · Default' : ''}
+                      </span>
                     </div>
                   ))}
                   {dashboard.locationConfigs.map((loc) => (
@@ -465,7 +562,10 @@ export function VoiceReceptionPage() {
               <Panel title="Audit Log">
                 {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
                 {auditLogs.length === 0 ? (
-                  <EmptyState title="No audit logs" description="Voice reception actions are recorded for complete auditability." />
+                  <EmptyState
+                    title="No audit logs"
+                    description="Voice reception actions are recorded for complete auditability."
+                  />
                 ) : (
                   <div className="data-list">
                     {auditLogs.slice(0, 20).map((log) => (
@@ -485,11 +585,21 @@ export function VoiceReceptionPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'voice_reception' as import('@titan/shared').AgentKey)}
+                onSend={(content) =>
+                  void sendAgentMessage(
+                    content,
+                    'voice_reception' as import('@titan/shared').AgentKey,
+                  )
+                }
                 placeholder="Ask about call history, schedules, CRM, routing, or draft summaries and follow-ups…"
               />
             </Panel>

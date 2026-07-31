@@ -17,9 +17,12 @@ import { request, ApiClientError } from './api-client';
 export { ApiClientError as PlatformApiClientError };
 
 export async function fetchPlatformDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseSaasPlatformDashboard }>('/platform/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseSaasPlatformDashboard }>(
+    '/platform/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -41,22 +44,31 @@ export async function provisionTenant(accessToken: string, body: ProvisionSaasTe
 }
 
 export async function suspendTenant(accessToken: string, companyId: string) {
-  const data = await request<{ tenant: SaasTenantSummary }>(`/platform/tenants/${companyId}/suspend`, {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ tenant: SaasTenantSummary }>(
+    `/platform/tenants/${companyId}/suspend`,
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.tenant;
 }
 
 export async function reactivateTenant(accessToken: string, companyId: string) {
-  const data = await request<{ tenant: SaasTenantSummary }>(`/platform/tenants/${companyId}/reactivate`, {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ tenant: SaasTenantSummary }>(
+    `/platform/tenants/${companyId}/reactivate`,
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.tenant;
 }
 
-export async function createSubscriptionPlan(accessToken: string, body: CreateSaasSubscriptionPlanRequest) {
+export async function createSubscriptionPlan(
+  accessToken: string,
+  body: CreateSaasSubscriptionPlanRequest,
+) {
   const data = await request<{ plan: SaasSubscriptionPlanSummary }>('/platform/plans', {
     accessToken,
     method: 'POST',
@@ -66,28 +78,37 @@ export async function createSubscriptionPlan(accessToken: string, body: CreateSa
 }
 
 export async function upgradeSubscription(accessToken: string, planId: string) {
-  const data = await request<{ subscription: SaasSubscriptionSummary }>('/platform/subscription/upgrade', {
-    accessToken,
-    method: 'POST',
-    body: { planId },
-  });
+  const data = await request<{ subscription: SaasSubscriptionSummary }>(
+    '/platform/subscription/upgrade',
+    {
+      accessToken,
+      method: 'POST',
+      body: { planId },
+    },
+  );
   return data.subscription;
 }
 
 export async function downgradeSubscription(accessToken: string, planId: string) {
-  const data = await request<{ subscription: SaasSubscriptionSummary }>('/platform/subscription/downgrade', {
-    accessToken,
-    method: 'POST',
-    body: { planId },
-  });
+  const data = await request<{ subscription: SaasSubscriptionSummary }>(
+    '/platform/subscription/downgrade',
+    {
+      accessToken,
+      method: 'POST',
+      body: { planId },
+    },
+  );
   return data.subscription;
 }
 
 export async function cancelSubscription(accessToken: string) {
-  const data = await request<{ subscription: SaasSubscriptionSummary }>('/platform/subscription/cancel', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ subscription: SaasSubscriptionSummary }>(
+    '/platform/subscription/cancel',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.subscription;
 }
 
@@ -136,9 +157,8 @@ export async function updateAiResilienceConfig(
   accessToken: string,
   body: UpdateAiProviderResilienceConfigRequest,
 ) {
-  const data = await request<{ config: PlatformOwnerAiOperationsDashboard['resilience']['config'] }>(
-    '/platform/ai-operations/resilience',
-    { accessToken, method: 'PUT', body },
-  );
+  const data = await request<{
+    config: PlatformOwnerAiOperationsDashboard['resilience']['config'];
+  }>('/platform/ai-operations/resilience', { accessToken, method: 'PUT', body });
   return data.config;
 }

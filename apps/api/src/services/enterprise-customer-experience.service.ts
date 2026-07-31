@@ -72,7 +72,8 @@ export class EnterpriseCustomerExperienceService {
   constructor(private readonly deps: CustomerExperienceDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseCustomerExperienceDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       portalUserCount,
@@ -123,16 +124,25 @@ export class EnterpriseCustomerExperienceService {
 
   async getCustomerDashboard(scope: PortalCustomerScope): Promise<CxCustomerDashboard> {
     const base = await this.deps.portalExperienceService.getExperienceDashboard(scope);
-    const [properties, openBookings, recentDocuments, loyaltyPrograms, engagementPreferences, referralCount, openReviewCount] =
-      await Promise.all([
-        this.listCustomerProperties(scope),
-        this.listCustomerBookings(scope, { statuses: ['draft', 'pending_approval', 'approved', 'confirmed'] }),
-        this.listCustomerDocuments(scope),
-        this.listActiveLoyaltyPrograms(scope.companyId),
-        this.getEngagementPreferences(scope),
-        this.countCustomerReferrals(scope),
-        this.countCustomerReviews(scope, ['submitted', 'acknowledged']),
-      ]);
+    const [
+      properties,
+      openBookings,
+      recentDocuments,
+      loyaltyPrograms,
+      engagementPreferences,
+      referralCount,
+      openReviewCount,
+    ] = await Promise.all([
+      this.listCustomerProperties(scope),
+      this.listCustomerBookings(scope, {
+        statuses: ['draft', 'pending_approval', 'approved', 'confirmed'],
+      }),
+      this.listCustomerDocuments(scope),
+      this.listActiveLoyaltyPrograms(scope.companyId),
+      this.getEngagementPreferences(scope),
+      this.countCustomerReferrals(scope),
+      this.countCustomerReviews(scope, ['submitted', 'acknowledged']),
+    ]);
 
     await this.recordAudit(scope.companyId, {
       portalUserId: scope.portalUserId,
@@ -159,7 +169,12 @@ export class EnterpriseCustomerExperienceService {
       this.deps.portalExperienceService.listQuotes(scope),
       scope.permissions.includes('portal.invoices:read')
         ? this.deps.portalExperienceService.getFinanceCentre(scope)
-        : Promise.resolve({ invoices: [], outstandingBalanceCents: 0, currency: 'USD', payments: [] } as CxFinanceCentre),
+        : Promise.resolve({
+            invoices: [],
+            outstandingBalanceCents: 0,
+            currency: 'USD',
+            payments: [],
+          } as CxFinanceCentre),
     ]);
 
     return {
@@ -191,7 +206,9 @@ export class EnterpriseCustomerExperienceService {
 
     const config = await this.getPlatformConfig(scope.companyId);
     const engagement = await this.getEngagementPreferences(scope);
-    const fleetContext = await this.deps.integrationsService.buildFleetTrackingContext(scope.companyId);
+    const fleetContext = await this.deps.integrationsService.buildFleetTrackingContext(
+      scope.companyId,
+    );
 
     let lastKnownLocation: CxTechnicianTrackingSummary['lastKnownLocation'] = null;
     if (config.trackingEnabled && engagement.trackingConsent && fleetContext.cartrackConnected) {
@@ -332,10 +349,13 @@ export class EnterpriseCustomerExperienceService {
         customerId: scope.customerId,
         portalUserId: scope.portalUserId,
         propertyName: input.propertyName,
-        addressLine1: input.addressLine1 ?? null,
-        addressLine2: input.addressLine2 ?? null,
-        city: input.city ?? null,
-        postalCode: input.postalCode ?? null,
+        addressLine1: input.addressLine1?.trim() || null,
+        addressLine2: input.addressLine2?.trim() || null,
+        suburb: input.suburb?.trim() || null,
+        city: input.city?.trim() || null,
+        province: input.province?.trim() || null,
+        postalCode: input.postalCode?.trim() || null,
+        unitNumber: input.unitNumber?.trim() || null,
         isPrimary: input.isPrimary ?? false,
       })
       .returning();
@@ -393,7 +413,10 @@ export class EnterpriseCustomerExperienceService {
   async approveBooking(scope: StaffScope, bookingId: string): Promise<CxAppointmentBookingSummary> {
     const booking = await this.getBookingOrThrow(scope.companyId, bookingId);
     if (booking.status !== 'pending_approval') {
-      throw new EnterpriseCustomerExperienceError('VALIDATION_ERROR', 'Booking is not pending approval');
+      throw new EnterpriseCustomerExperienceError(
+        'VALIDATION_ERROR',
+        'Booking is not pending approval',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -415,7 +438,10 @@ export class EnterpriseCustomerExperienceService {
   async confirmBooking(scope: StaffScope, bookingId: string): Promise<CxAppointmentBookingSummary> {
     const booking = await this.getBookingOrThrow(scope.companyId, bookingId);
     if (!['approved', 'pending_approval'].includes(booking.status)) {
-      throw new EnterpriseCustomerExperienceError('VALIDATION_ERROR', 'Booking cannot be confirmed');
+      throw new EnterpriseCustomerExperienceError(
+        'VALIDATION_ERROR',
+        'Booking cannot be confirmed',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -547,7 +573,10 @@ export class EnterpriseCustomerExperienceService {
     resolutionNotes?: string,
   ): Promise<CxReviewFeedbackSummary> {
     const review = await this.deps.db.query.cxReviewsFeedback.findFirst({
-      where: and(eq(cxReviewsFeedback.id, reviewId), eq(cxReviewsFeedback.companyId, scope.companyId)),
+      where: and(
+        eq(cxReviewsFeedback.id, reviewId),
+        eq(cxReviewsFeedback.companyId, scope.companyId),
+      ),
     });
     if (!review) {
       throw new EnterpriseCustomerExperienceError('NOT_FOUND', 'Review not found');
@@ -635,7 +664,10 @@ export class EnterpriseCustomerExperienceService {
     return toReferralSummary(created!);
   }
 
-  async listReferrals(companyId: string, options?: { limit?: number }): Promise<CxLoyaltyReferralSummary[]> {
+  async listReferrals(
+    companyId: string,
+    options?: { limit?: number },
+  ): Promise<CxLoyaltyReferralSummary[]> {
     const rows = await this.deps.db.query.cxLoyaltyReferrals.findMany({
       where: eq(cxLoyaltyReferrals.companyId, companyId),
       orderBy: [desc(cxLoyaltyReferrals.invitedAt)],
@@ -644,7 +676,9 @@ export class EnterpriseCustomerExperienceService {
     return rows.map(toReferralSummary);
   }
 
-  async getEngagementPreferences(scope: PortalCustomerScope): Promise<CxEngagementPreferencesSummary> {
+  async getEngagementPreferences(
+    scope: PortalCustomerScope,
+  ): Promise<CxEngagementPreferencesSummary> {
     const row = await this.ensureEngagementPreferences(scope.companyId, scope.portalUserId);
     return toEngagementSummary(row);
   }
@@ -689,7 +723,10 @@ export class EnterpriseCustomerExperienceService {
 
     if (scope.permissions.includes('portal.documents:read')) {
       const jobDocs = await this.deps.db.query.documents.findMany({
-        where: and(eq(documents.companyId, scope.companyId), eq(documents.customerId, scope.customerId)),
+        where: and(
+          eq(documents.companyId, scope.companyId),
+          eq(documents.customerId, scope.customerId),
+        ),
         orderBy: [desc(documents.updatedAt)],
         limit: 50,
       });
@@ -725,12 +762,24 @@ export class EnterpriseCustomerExperienceService {
   async captureAnalytics(companyId: string): Promise<CxAnalyticsSummary> {
     const [portalUsage, mobileUsage, bookingStats, reviewStats, referralStats, loyaltyStats] =
       await Promise.all([
-        this.deps.db.select({ count: count() }).from(cxAuditLogs).where(
-          and(eq(cxAuditLogs.companyId, companyId), eq(cxAuditLogs.actionType, 'portal_dashboard_view')),
-        ),
-        this.deps.db.select({ count: count() }).from(cxAuditLogs).where(
-          and(eq(cxAuditLogs.companyId, companyId), eq(cxAuditLogs.actionType, 'mobile_app_view')),
-        ),
+        this.deps.db
+          .select({ count: count() })
+          .from(cxAuditLogs)
+          .where(
+            and(
+              eq(cxAuditLogs.companyId, companyId),
+              eq(cxAuditLogs.actionType, 'portal_dashboard_view'),
+            ),
+          ),
+        this.deps.db
+          .select({ count: count() })
+          .from(cxAuditLogs)
+          .where(
+            and(
+              eq(cxAuditLogs.companyId, companyId),
+              eq(cxAuditLogs.actionType, 'mobile_app_view'),
+            ),
+          ),
         this.deps.db.query.cxAppointmentBookings.findMany({
           where: eq(cxAppointmentBookings.companyId, companyId),
           columns: { status: true },
@@ -747,7 +796,8 @@ export class EnterpriseCustomerExperienceService {
     const confirmedBookings = bookingStats.filter(
       (b: { status: string }) => b.status === 'confirmed' || b.status === 'completed',
     ).length;
-    const bookingConversionRate = totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : null;
+    const bookingConversionRate =
+      totalBookings > 0 ? (confirmedBookings / totalBookings) * 100 : null;
 
     const ratings = reviewStats.filter((r) => r.rating != null).map((r) => r.rating!);
     const customerSatisfactionScore =
@@ -818,10 +868,7 @@ export class EnterpriseCustomerExperienceService {
     });
     if (existing) return existing;
 
-    const [created] = await this.deps.db
-      .insert(cxPlatformConfig)
-      .values({ companyId })
-      .returning();
+    const [created] = await this.deps.db.insert(cxPlatformConfig).values({ companyId }).returning();
     return created!;
   }
 
@@ -872,7 +919,10 @@ export class EnterpriseCustomerExperienceService {
 
   private async getBookingOrThrow(companyId: string, bookingId: string) {
     const booking = await this.deps.db.query.cxAppointmentBookings.findFirst({
-      where: and(eq(cxAppointmentBookings.id, bookingId), eq(cxAppointmentBookings.companyId, companyId)),
+      where: and(
+        eq(cxAppointmentBookings.id, bookingId),
+        eq(cxAppointmentBookings.companyId, companyId),
+      ),
     });
     if (!booking) {
       throw new EnterpriseCustomerExperienceError('NOT_FOUND', 'Booking not found');
@@ -922,7 +972,10 @@ export class EnterpriseCustomerExperienceService {
     return row?.count ?? 0;
   }
 
-  private async countCustomerReviews(scope: PortalCustomerScope, statuses: string[]): Promise<number> {
+  private async countCustomerReviews(
+    scope: PortalCustomerScope,
+    statuses: string[],
+  ): Promise<number> {
     const [row] = await this.deps.db
       .select({ count: count() })
       .from(cxReviewsFeedback)
@@ -988,7 +1041,9 @@ export class EnterpriseCustomerExperienceService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof cxPlatformConfig.$inferSelect): CxPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof cxPlatformConfig.$inferSelect,
+): CxPlatformConfigSummary {
   return {
     globalPolicies: row.globalPolicies,
     brandingTemplates: row.brandingTemplates,
@@ -1001,20 +1056,27 @@ function toPlatformConfigSummary(row: typeof cxPlatformConfig.$inferSelect): CxP
   };
 }
 
-function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): CxCustomerPropertySummary {
+function toPropertySummary(
+  row: typeof cxCustomerProperties.$inferSelect,
+): CxCustomerPropertySummary {
   return {
     id: row.id,
     propertyName: row.propertyName,
     addressLine1: row.addressLine1,
     addressLine2: row.addressLine2,
+    suburb: row.suburb,
     city: row.city,
+    province: row.province,
     postalCode: row.postalCode,
+    unitNumber: row.unitNumber,
     isPrimary: row.isPrimary,
     createdAt: row.createdAt.toISOString(),
   };
 }
 
-function toBookingSummary(row: typeof cxAppointmentBookings.$inferSelect): CxAppointmentBookingSummary {
+function toBookingSummary(
+  row: typeof cxAppointmentBookings.$inferSelect,
+): CxAppointmentBookingSummary {
   return {
     id: row.id,
     customerId: row.customerId,
@@ -1032,7 +1094,9 @@ function toBookingSummary(row: typeof cxAppointmentBookings.$inferSelect): CxApp
   };
 }
 
-function toDocumentSummary(row: typeof cxCustomerDocuments.$inferSelect): CxCustomerDocumentSummary {
+function toDocumentSummary(
+  row: typeof cxCustomerDocuments.$inferSelect,
+): CxCustomerDocumentSummary {
   return {
     id: row.id,
     documentId: row.documentId,
@@ -1060,7 +1124,9 @@ function toReviewSummary(row: typeof cxReviewsFeedback.$inferSelect): CxReviewFe
   };
 }
 
-function toLoyaltyProgramSummary(row: typeof cxLoyaltyPrograms.$inferSelect): CxLoyaltyProgramSummary {
+function toLoyaltyProgramSummary(
+  row: typeof cxLoyaltyPrograms.$inferSelect,
+): CxLoyaltyProgramSummary {
   return {
     id: row.id,
     name: row.name,
@@ -1085,7 +1151,9 @@ function toReferralSummary(row: typeof cxLoyaltyReferrals.$inferSelect): CxLoyal
   };
 }
 
-function toEngagementSummary(row: typeof cxEngagementPreferences.$inferSelect): CxEngagementPreferencesSummary {
+function toEngagementSummary(
+  row: typeof cxEngagementPreferences.$inferSelect,
+): CxEngagementPreferencesSummary {
   return {
     pushEnabled: row.pushEnabled,
     smsEnabled: row.smsEnabled,
@@ -1101,10 +1169,12 @@ function toAnalyticsSummary(row: typeof cxAnalyticsSnapshots.$inferSelect): CxAn
   return {
     portalUsageCount: row.portalUsageCount,
     mobileUsageCount: row.mobileUsageCount,
-    bookingConversionRate: row.bookingConversionRate != null ? Number(row.bookingConversionRate) : null,
+    bookingConversionRate:
+      row.bookingConversionRate != null ? Number(row.bookingConversionRate) : null,
     customerSatisfactionScore:
       row.customerSatisfactionScore != null ? Number(row.customerSatisfactionScore) : null,
-    avgResponseTimeHours: row.avgResponseTimeHours != null ? Number(row.avgResponseTimeHours) : null,
+    avgResponseTimeHours:
+      row.avgResponseTimeHours != null ? Number(row.avgResponseTimeHours) : null,
     technicianArrivalAccuracy:
       row.technicianArrivalAccuracy != null ? Number(row.technicianArrivalAccuracy) : null,
     referralCount: row.referralCount,

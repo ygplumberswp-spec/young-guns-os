@@ -115,25 +115,35 @@ export class EnterpriseDigitalTwinService {
       summary: dashboard.summary,
       healthScore: dashboard.executiveStats.healthScore,
       activeScenarioCount: dashboard.activeScenarios.length,
-      completedSimulationCount: dashboard.recentSimulations.filter((s) => s.status === 'completed').length,
-      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending').length,
+      completedSimulationCount: dashboard.recentSimulations.filter((s) => s.status === 'completed')
+        .length,
+      pendingRecommendationCount: dashboard.recommendations.filter((r) => r.status === 'pending')
+        .length,
       operationalRiskLevel: dashboard.riskIndicators.operationalRiskLevel,
       pendingActionCount: dashboard.pendingActionCount,
     };
   }
 
   async buildOperationalState(companyId: string): Promise<DigitalTwinOperationalState> {
-    const [jobsStats, schedulingContext, fleetStats, inventoryStats, financeStats, workforceStats, procurementStats, executiveStats] =
-      await Promise.all([
-        this.deps.jobsService.getStats(companyId),
-        this.deps.schedulingService.buildAuraContext(companyId),
-        this.deps.fleetService.getStats(companyId),
-        this.deps.inventoryService.getStats(companyId),
-        this.deps.financeService.getStats(companyId),
-        this.deps.workforceService.getStats(companyId),
-        this.deps.procurementService.getStats(companyId),
-        this.deps.executiveService.getStats(companyId),
-      ]);
+    const [
+      jobsStats,
+      schedulingContext,
+      fleetStats,
+      inventoryStats,
+      financeStats,
+      workforceStats,
+      procurementStats,
+      executiveStats,
+    ] = await Promise.all([
+      this.deps.jobsService.getStats(companyId),
+      this.deps.schedulingService.buildAuraContext(companyId),
+      this.deps.fleetService.getStats(companyId),
+      this.deps.inventoryService.getStats(companyId),
+      this.deps.financeService.getStats(companyId),
+      this.deps.workforceService.getStats(companyId),
+      this.deps.procurementService.getStats(companyId),
+      this.deps.executiveService.getStats(companyId),
+    ]);
 
     return {
       jobs: jobsStats as unknown as Record<string, unknown>,
@@ -234,7 +244,10 @@ export class EnterpriseDigitalTwinService {
   ): Promise<DigitalTwinScenarioSummary[]> {
     const rows = await this.deps.db.query.digitalTwinScenarios.findMany({
       where: status
-        ? and(eq(digitalTwinScenarios.companyId, companyId), eq(digitalTwinScenarios.status, status))
+        ? and(
+            eq(digitalTwinScenarios.companyId, companyId),
+            eq(digitalTwinScenarios.status, status),
+          )
         : eq(digitalTwinScenarios.companyId, companyId),
       orderBy: [desc(digitalTwinScenarios.updatedAt)],
       limit: 50,
@@ -248,7 +261,11 @@ export class EnterpriseDigitalTwinService {
   ): Promise<DigitalTwinSimulationSummary> {
     const scenario = await this.ensureScenario(scope.companyId, input.scenarioId);
     const operationalState = await this.buildOperationalState(scope.companyId);
-    const projectedOutcomes = this.projectOutcomes(scenario.simulationType, operationalState, scenario.variables);
+    const projectedOutcomes = this.projectOutcomes(
+      scenario.simulationType,
+      operationalState,
+      scenario.variables,
+    );
     const comparisonMetrics = this.buildComparisonMetrics(operationalState, projectedOutcomes);
     const resultSummary = `Read-only ${scenario.simulationType.replace(/_/g, ' ')} simulation completed. No production data modified.`;
 
@@ -288,7 +305,9 @@ export class EnterpriseDigitalTwinService {
         : [];
     const scenarioNameById = new Map(scenarioRows.map((row) => [row.id, row.name]));
 
-    return rows.map((row) => toSimulationSummary(row, scenarioNameById.get(row.scenarioId) ?? null));
+    return rows.map((row) =>
+      toSimulationSummary(row, scenarioNameById.get(row.scenarioId) ?? null),
+    );
   }
 
   async compareScenarios(
@@ -296,7 +315,10 @@ export class EnterpriseDigitalTwinService {
     input: CompareDigitalTwinScenariosRequest,
   ): Promise<DigitalTwinScenarioComparisonSummary> {
     if (input.scenarioIds.length < 2) {
-      throw new EnterpriseDigitalTwinError('VALIDATION_ERROR', 'At least two scenarios are required for comparison');
+      throw new EnterpriseDigitalTwinError(
+        'VALIDATION_ERROR',
+        'At least two scenarios are required for comparison',
+      );
     }
 
     const scenarios = await Promise.all(
@@ -308,7 +330,11 @@ export class EnterpriseDigitalTwinService {
       scenarioId: scenario.id,
       scenarioName: scenario.name,
       simulationType: scenario.simulationType,
-      projectedOutcomes: this.projectOutcomes(scenario.simulationType, operationalState, scenario.variables),
+      projectedOutcomes: this.projectOutcomes(
+        scenario.simulationType,
+        operationalState,
+        scenario.variables,
+      ),
       comparisonMetrics: this.buildComparisonMetrics(
         operationalState,
         this.projectOutcomes(scenario.simulationType, operationalState, scenario.variables),
@@ -423,12 +449,13 @@ export class EnterpriseDigitalTwinService {
   }
 
   async generateRecommendations(companyId: string): Promise<DigitalTwinRecommendationSummary[]> {
-    const [operationalState, riskIndicators, capacityUtilization, executiveStats] = await Promise.all([
-      this.buildOperationalState(companyId),
-      this.computeRiskIndicators(companyId),
-      this.computeCapacityUtilization(companyId),
-      this.deps.executiveService.getStats(companyId),
-    ]);
+    const [operationalState, riskIndicators, capacityUtilization, executiveStats] =
+      await Promise.all([
+        this.buildOperationalState(companyId),
+        this.computeRiskIndicators(companyId),
+        this.computeCapacityUtilization(companyId),
+        this.deps.executiveService.getStats(companyId),
+      ]);
 
     const signals: Array<{ title: string; recommendation: string; priority: string }> = [];
 
@@ -448,7 +475,10 @@ export class EnterpriseDigitalTwinService {
       });
     }
 
-    if (capacityUtilization.technicianUtilizationPercent != null && capacityUtilization.technicianUtilizationPercent > 85) {
+    if (
+      capacityUtilization.technicianUtilizationPercent != null &&
+      capacityUtilization.technicianUtilizationPercent > 85
+    ) {
       signals.push({
         title: 'Technician capacity constraint',
         recommendation: `Technician utilization at ${capacityUtilization.technicianUtilizationPercent}% — consider staffing or technician allocation simulations.`,
@@ -456,7 +486,10 @@ export class EnterpriseDigitalTwinService {
       });
     }
 
-    if (capacityUtilization.fleetUtilizationPercent != null && capacityUtilization.fleetUtilizationPercent > 80) {
+    if (
+      capacityUtilization.fleetUtilizationPercent != null &&
+      capacityUtilization.fleetUtilizationPercent > 80
+    ) {
       signals.push({
         title: 'Fleet utilization high',
         recommendation: `Fleet utilization at ${capacityUtilization.fleetUtilizationPercent}% — run fleet utilization simulation to assess expansion or reallocation.`,
@@ -476,7 +509,8 @@ export class EnterpriseDigitalTwinService {
     if (jobsActive === 0) {
       signals.push({
         title: 'No active jobs',
-        recommendation: 'No active jobs in current state — use customer demand or growth scenario simulations to plan capacity.',
+        recommendation:
+          'No active jobs in current state — use customer demand or growth scenario simulations to plan capacity.',
         priority: 'low',
       });
     }
@@ -515,7 +549,10 @@ export class EnterpriseDigitalTwinService {
   ): Promise<DigitalTwinPlatformActionSummary[]> {
     const rows = await this.deps.db.query.digitalTwinPlatformActions.findMany({
       where: status
-        ? and(eq(digitalTwinPlatformActions.companyId, companyId), eq(digitalTwinPlatformActions.status, status))
+        ? and(
+            eq(digitalTwinPlatformActions.companyId, companyId),
+            eq(digitalTwinPlatformActions.status, status),
+          )
         : eq(digitalTwinPlatformActions.companyId, companyId),
       orderBy: [desc(digitalTwinPlatformActions.createdAt)],
       limit: 50,
@@ -547,7 +584,9 @@ export class EnterpriseDigitalTwinService {
     return toActionSummary(row!);
   }
 
-  private async computeCapacityUtilization(companyId: string): Promise<DigitalTwinCapacityUtilization> {
+  private async computeCapacityUtilization(
+    companyId: string,
+  ): Promise<DigitalTwinCapacityUtilization> {
     const [schedulingContext, fleetStats, inventoryStats, financeStats] = await Promise.all([
       this.deps.schedulingService.buildAuraContext(companyId),
       this.deps.fleetService.getStats(companyId),
@@ -570,7 +609,9 @@ export class EnterpriseDigitalTwinService {
       fleetTotal > 0 ? Math.round((fleetAssigned / fleetTotal) * 100) : null;
 
     const inventoryPressureScore =
-      inventoryStats.lowStockCount != null && inventoryStats.itemCount != null && inventoryStats.itemCount > 0
+      inventoryStats.lowStockCount != null &&
+      inventoryStats.itemCount != null &&
+      inventoryStats.itemCount > 0
         ? Math.round((inventoryStats.lowStockCount / inventoryStats.itemCount) * 100)
         : null;
 
@@ -630,10 +671,12 @@ export class EnterpriseDigitalTwinService {
     variables: Record<string, unknown>,
   ): Record<string, unknown> {
     const jobsActive = (currentState.jobs as { activeCount?: number }).activeCount ?? 0;
-    const scheduledCount = (currentState.scheduling as { scheduledCount?: number }).scheduledCount ?? 0;
+    const scheduledCount =
+      (currentState.scheduling as { scheduledCount?: number }).scheduledCount ?? 0;
     const fleetTotal = (currentState.fleet as { totalCount?: number }).totalCount ?? 0;
     const growthFactor = typeof variables.growthFactor === 'number' ? variables.growthFactor : 1.1;
-    const staffingChange = typeof variables.staffingChange === 'number' ? variables.staffingChange : 0;
+    const staffingChange =
+      typeof variables.staffingChange === 'number' ? variables.staffingChange : 0;
 
     switch (simulationType) {
       case 'job_scheduling':
@@ -644,7 +687,10 @@ export class EnterpriseDigitalTwinService {
       case 'technician_allocation':
         return {
           projectedWorkloadPerTechnician: Math.round(jobsActive / Math.max(1, 1 + staffingChange)),
-          reallocationBenefit: staffingChange !== 0 ? `${staffingChange > 0 ? '+' : ''}${staffingChange} technicians` : 'No change',
+          reallocationBenefit:
+            staffingChange !== 0
+              ? `${staffingChange > 0 ? '+' : ''}${staffingChange} technicians`
+              : 'No change',
         };
       case 'dispatch_optimization':
         return {
@@ -653,13 +699,20 @@ export class EnterpriseDigitalTwinService {
         };
       case 'fleet_utilization':
         return {
-          projectedFleetUtilization: fleetTotal > 0 ? Math.min(100, Math.round((jobsActive / fleetTotal) * 100 * growthFactor)) : 0,
-          vehiclesRequired: Math.max(0, Math.ceil(jobsActive / Math.max(1, growthFactor)) - fleetTotal),
+          projectedFleetUtilization:
+            fleetTotal > 0
+              ? Math.min(100, Math.round((jobsActive / fleetTotal) * 100 * growthFactor))
+              : 0,
+          vehiclesRequired: Math.max(
+            0,
+            Math.ceil(jobsActive / Math.max(1, growthFactor)) - fleetTotal,
+          ),
         };
       case 'inventory_demand':
         return {
           projectedDemandIncreasePercent: Math.round((growthFactor - 1) * 100),
-          reorderRecommendation: growthFactor > 1.2 ? 'Increase safety stock' : 'Maintain current levels',
+          reorderRecommendation:
+            growthFactor > 1.2 ? 'Increase safety stock' : 'Maintain current levels',
         };
       case 'purchasing':
         return {
@@ -684,7 +737,8 @@ export class EnterpriseDigitalTwinService {
       case 'growth':
         return {
           projectedRevenueGrowthPercent: Math.round((growthFactor - 1) * 100),
-          operationalScaleRequired: growthFactor > 1.3 ? 'significant' : growthFactor > 1.1 ? 'moderate' : 'minimal',
+          operationalScaleRequired:
+            growthFactor > 1.3 ? 'significant' : growthFactor > 1.1 ? 'moderate' : 'minimal',
         };
       default:
         return { note: 'Simulation projection based on current operational state.' };
@@ -712,8 +766,12 @@ export class EnterpriseDigitalTwinService {
   ): Array<Record<string, unknown>> {
     switch (heatMapType) {
       case 'technician_workload': {
-        const workload = (operationalState.scheduling as { assigneeWorkload?: Array<{ userName: string; scheduledJobCount: number }> })
-          .assigneeWorkload ?? [];
+        const workload =
+          (
+            operationalState.scheduling as {
+              assigneeWorkload?: Array<{ userName: string; scheduledJobCount: number }>;
+            }
+          ).assigneeWorkload ?? [];
         return workload.map((w) => ({
           label: w.userName,
           intensity: w.scheduledJobCount,
@@ -742,7 +800,8 @@ export class EnterpriseDigitalTwinService {
           },
           {
             label: 'Scheduled',
-            intensity: (operationalState.scheduling as { scheduledCount?: number }).scheduledCount ?? 0,
+            intensity:
+              (operationalState.scheduling as { scheduledCount?: number }).scheduledCount ?? 0,
             metric: 'scheduled',
           },
         ];
@@ -750,7 +809,8 @@ export class EnterpriseDigitalTwinService {
         return [
           {
             label: 'Open quotes',
-            intensity: (operationalState.finance as { openQuoteCount?: number }).openQuoteCount ?? 0,
+            intensity:
+              (operationalState.finance as { openQuoteCount?: number }).openQuoteCount ?? 0,
             metric: 'quotes',
           },
         ];
@@ -758,7 +818,8 @@ export class EnterpriseDigitalTwinService {
         return [
           {
             label: 'Low stock items',
-            intensity: (operationalState.inventory as { lowStockCount?: number }).lowStockCount ?? 0,
+            intensity:
+              (operationalState.inventory as { lowStockCount?: number }).lowStockCount ?? 0,
             metric: 'low_stock',
           },
           {
@@ -771,7 +832,8 @@ export class EnterpriseDigitalTwinService {
         return [
           {
             label: 'Revenue MTD',
-            intensity: (operationalState.finance as { revenueMtdCents?: number }).revenueMtdCents ?? 0,
+            intensity:
+              (operationalState.finance as { revenueMtdCents?: number }).revenueMtdCents ?? 0,
             metric: 'revenue_mtd_cents',
           },
           {
@@ -795,7 +857,10 @@ export class EnterpriseDigitalTwinService {
 
   private async ensureScenario(companyId: string, scenarioId: string) {
     const row = await this.deps.db.query.digitalTwinScenarios.findFirst({
-      where: and(eq(digitalTwinScenarios.companyId, companyId), eq(digitalTwinScenarios.id, scenarioId)),
+      where: and(
+        eq(digitalTwinScenarios.companyId, companyId),
+        eq(digitalTwinScenarios.id, scenarioId),
+      ),
     });
     if (!row) {
       throw new EnterpriseDigitalTwinError('NOT_FOUND', 'Scenario not found');
@@ -805,7 +870,10 @@ export class EnterpriseDigitalTwinService {
 
   private async ensureSnapshot(companyId: string, snapshotId: string) {
     const row = await this.deps.db.query.digitalTwinStateSnapshots.findFirst({
-      where: and(eq(digitalTwinStateSnapshots.companyId, companyId), eq(digitalTwinStateSnapshots.id, snapshotId)),
+      where: and(
+        eq(digitalTwinStateSnapshots.companyId, companyId),
+        eq(digitalTwinStateSnapshots.id, snapshotId),
+      ),
     });
     if (!row) {
       throw new EnterpriseDigitalTwinError('NOT_FOUND', 'State snapshot not found');
@@ -814,7 +882,9 @@ export class EnterpriseDigitalTwinService {
   }
 }
 
-function toSnapshotSummary(row: typeof digitalTwinStateSnapshots.$inferSelect): DigitalTwinStateSnapshotSummary {
+function toSnapshotSummary(
+  row: typeof digitalTwinStateSnapshots.$inferSelect,
+): DigitalTwinStateSnapshotSummary {
   return {
     id: row.id,
     label: row.label,
@@ -823,7 +893,9 @@ function toSnapshotSummary(row: typeof digitalTwinStateSnapshots.$inferSelect): 
   };
 }
 
-function toScenarioSummary(row: typeof digitalTwinScenarios.$inferSelect): DigitalTwinScenarioSummary {
+function toScenarioSummary(
+  row: typeof digitalTwinScenarios.$inferSelect,
+): DigitalTwinScenarioSummary {
   return {
     id: row.id,
     name: row.name,
@@ -871,7 +943,9 @@ function toComparisonSummary(
   };
 }
 
-function toHeatMapSummary(row: typeof digitalTwinHeatMapSnapshots.$inferSelect): DigitalTwinHeatMapSummary {
+function toHeatMapSummary(
+  row: typeof digitalTwinHeatMapSnapshots.$inferSelect,
+): DigitalTwinHeatMapSummary {
   return {
     id: row.id,
     heatMapType: row.heatMapType,
@@ -881,7 +955,9 @@ function toHeatMapSummary(row: typeof digitalTwinHeatMapSnapshots.$inferSelect):
   };
 }
 
-function toReplayEventSummary(row: typeof digitalTwinReplayEvents.$inferSelect): DigitalTwinReplayEventSummary {
+function toReplayEventSummary(
+  row: typeof digitalTwinReplayEvents.$inferSelect,
+): DigitalTwinReplayEventSummary {
   return {
     id: row.id,
     eventType: row.eventType,
@@ -907,7 +983,9 @@ function toRecommendationSummary(
   };
 }
 
-function toActionSummary(row: typeof digitalTwinPlatformActions.$inferSelect): DigitalTwinPlatformActionSummary {
+function toActionSummary(
+  row: typeof digitalTwinPlatformActions.$inferSelect,
+): DigitalTwinPlatformActionSummary {
   return {
     id: row.id,
     actionType: row.actionType,

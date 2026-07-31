@@ -55,16 +55,30 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('release_center:read', 'release_center:manage', 'ops:read', 'launch_center:read');
-  const requireWrite = requireAnyPermission('release_center:write', 'release_center:manage', 'ops:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'release_center:read',
+    'release_center:manage',
+    'ops:read',
+    'launch_center:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'release_center:write',
+    'release_center:manage',
+    'ops:manage',
+  );
   const requireManage = requireAnyPermission('release_center:manage', 'ops:manage');
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterpriseReleaseCenterService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterpriseReleaseCenterService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -73,7 +87,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseReleaseCenterService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseReleaseCenterService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -83,7 +99,10 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseReleaseCenterService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseReleaseCenterService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -92,7 +111,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/integration-validation/run', requireWrite, async (req, res) => {
     try {
-      const run = await deps.enterpriseReleaseCenterService.runIntegrationValidation(staffScope(req));
+      const run = await deps.enterpriseReleaseCenterService.runIntegrationValidation(
+        staffScope(req),
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -101,7 +122,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/integration-validation/runs', requireRead, async (req, res) => {
     try {
-      const runs = await deps.enterpriseReleaseCenterService.listIntegrationRuns(getAuth(req).companyId);
+      const runs = await deps.enterpriseReleaseCenterService.listIntegrationRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { runs } });
     } catch (error) {
       handleError(error, res);
@@ -131,7 +154,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/workflow-validation/runs', requireRead, async (req, res) => {
     try {
-      const runs = await deps.enterpriseReleaseCenterService.listWorkflowRuns(getAuth(req).companyId);
+      const runs = await deps.enterpriseReleaseCenterService.listWorkflowRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { runs } });
     } catch (error) {
       handleError(error, res);
@@ -152,7 +177,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/performance/capture', requireWrite, async (req, res) => {
     try {
-      const snapshot = await deps.enterpriseReleaseCenterService.capturePerformanceSnapshot(staffScope(req));
+      const snapshot = await deps.enterpriseReleaseCenterService.capturePerformanceSnapshot(
+        staffScope(req),
+      );
       res.json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
@@ -161,7 +188,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/performance/latest', requireRead, async (req, res) => {
     try {
-      const snapshot = await deps.enterpriseReleaseCenterService.getLatestPerformanceSnapshot(getAuth(req).companyId);
+      const snapshot = await deps.enterpriseReleaseCenterService.getLatestPerformanceSnapshot(
+        getAuth(req).companyId,
+      );
       res.json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
@@ -170,7 +199,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/security-verification/run', requireWrite, async (req, res) => {
     try {
-      const run = await deps.enterpriseReleaseCenterService.runSecurityVerification(staffScope(req));
+      const run = await deps.enterpriseReleaseCenterService.runSecurityVerification(
+        staffScope(req),
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -179,7 +210,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/configuration-review/run', requireWrite, async (req, res) => {
     try {
-      const review = await deps.enterpriseReleaseCenterService.runConfigurationReview(staffScope(req));
+      const review = await deps.enterpriseReleaseCenterService.runConfigurationReview(
+        staffScope(req),
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -188,7 +221,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/release-report/generate', requireWrite, async (req, res) => {
     try {
-      const report = await deps.enterpriseReleaseCenterService.generateReleaseReport(staffScope(req));
+      const report = await deps.enterpriseReleaseCenterService.generateReleaseReport(
+        staffScope(req),
+      );
       res.json({ data: { report } });
     } catch (error) {
       handleError(error, res);
@@ -197,7 +232,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/release-report/latest', requireRead, async (req, res) => {
     try {
-      const report = await deps.enterpriseReleaseCenterService.getLatestReleaseReport(getAuth(req).companyId);
+      const report = await deps.enterpriseReleaseCenterService.getLatestReleaseReport(
+        getAuth(req).companyId,
+      );
       res.json({ data: { report } });
     } catch (error) {
       handleError(error, res);
@@ -206,7 +243,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/release-checklist', requireRead, async (req, res) => {
     try {
-      const checklist = await deps.enterpriseReleaseCenterService.listReleaseChecklist(getAuth(req).companyId);
+      const checklist = await deps.enterpriseReleaseCenterService.listReleaseChecklist(
+        getAuth(req).companyId,
+      );
       res.json({ data: { checklist } });
     } catch (error) {
       handleError(error, res);
@@ -215,7 +254,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.post('/platform-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const platformAlerts = await deps.enterpriseReleaseCenterService.syncPlatformAlerts(staffScope(req));
+      const platformAlerts = await deps.enterpriseReleaseCenterService.syncPlatformAlerts(
+        staffScope(req),
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -233,7 +274,9 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseReleaseCenterService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseReleaseCenterService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);
@@ -243,7 +286,10 @@ export function createEnterpriseReleaseCenterRouter(deps: RouterDeps): Router {
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const draft = await deps.enterpriseReleaseCenterService.createActionDraft(staffScope(req), input);
+      const draft = await deps.enterpriseReleaseCenterService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { draft } });
     } catch (error) {
       handleError(error, res);

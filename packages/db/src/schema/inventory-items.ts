@@ -13,6 +13,8 @@ export const inventoryItems = pgTable('inventory_items', {
   description: text('description'),
   unit: text('unit').notNull().default('each'),
   reorderLevel: integer('reorder_level').notNull().default(0),
+  unitCostCents: integer('unit_cost_cents').notNull().default(0),
+  sellPriceCents: integer('sell_price_cents').notNull().default(0),
   status: inventoryItemStatusEnum('status').notNull().default('active'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

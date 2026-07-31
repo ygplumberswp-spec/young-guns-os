@@ -32,11 +32,14 @@ export async function createTenantCapabilityProposal(
   accessToken: string,
   body: CreateCapabilityProposalRequest,
 ) {
-  const data = await request<{ capability: TenantCapabilityDetail }>('/tenant-capabilities/proposals', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+  const data = await request<{ capability: TenantCapabilityDetail }>(
+    '/tenant-capabilities/proposals',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.capability;
 }
 

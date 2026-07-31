@@ -17,7 +17,12 @@ import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
 import { useAuraChat } from '../../features/aura/useAuraChat';
-import { canAccessOperations, canManageOperations, formatHealthStatus, formatModuleKey } from '../../features/operations/utils';
+import {
+  canAccessOperations,
+  canManageOperations,
+  formatHealthStatus,
+  formatModuleKey,
+} from '../../features/operations/utils';
 
 type OperationsTab =
   | 'health'
@@ -71,7 +76,9 @@ export function OperationsPage() {
         await loadDashboard();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load operations dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load operations dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -102,7 +109,10 @@ export function OperationsPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Operations" description="You do not have permission to view production operations." />
+        <PageHeader
+          title="Operations"
+          description="You do not have permission to view production operations."
+        />
       </div>
     );
   }
@@ -130,10 +140,28 @@ export function OperationsPage() {
         actions={
           canWrite ? (
             <div className="page-header-actions">
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => captureOperationsHealth(accessToken!), 'Health snapshots captured.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(
+                    () => captureOperationsHealth(accessToken!),
+                    'Health snapshots captured.',
+                  )
+                }
+              >
                 Capture Health
               </Button>
-              <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => syncOperationsAlerts(accessToken!), 'Mission Control alerts synced.')}>
+              <Button
+                variant="secondary"
+                disabled={isWorking}
+                onClick={() =>
+                  void runAction(
+                    () => syncOperationsAlerts(accessToken!),
+                    'Mission Control alerts synced.',
+                  )
+                }
+              >
                 Sync Alerts
               </Button>
             </div>
@@ -146,7 +174,12 @@ export function OperationsPage() {
 
       <div className="tab-row">
         {tabs.map((tab) => (
-          <button key={tab.id} type="button" className={activeTab === tab.id ? 'tab-button active' : 'tab-button'} onClick={() => setActiveTab(tab.id)}>
+          <button
+            key={tab.id}
+            type="button"
+            className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
+            onClick={() => setActiveTab(tab.id)}
+          >
             {tab.label}
           </button>
         ))}
@@ -160,18 +193,28 @@ export function OperationsPage() {
         <>
           <Panel title="Operations Summary">
             <p>{dashboard.summary}</p>
-            <span className={`status-pill ${dashboard.overallHealthStatus === 'healthy' ? 'status-healthy' : ''}`}>
+            <span
+              className={`status-pill ${dashboard.overallHealthStatus === 'healthy' ? 'status-healthy' : ''}`}
+            >
               Overall: {formatHealthStatus(dashboard.overallHealthStatus)}
             </span>
             {dashboard.isPlatformOwner ? (
-              <span className="status-pill status-healthy">Platform Owner — global operational visibility</span>
+              <span className="status-pill status-healthy">
+                Platform Owner — global operational visibility
+              </span>
             ) : null}
           </Panel>
 
           {activeTab === 'health' ? (
             <Panel title="Service Module Health">
               {canWrite ? (
-                <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => captureOperationsHealth(accessToken!), 'Health captured.')}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(() => captureOperationsHealth(accessToken!), 'Health captured.')
+                  }
+                >
                   Refresh Health
                 </Button>
               ) : null}
@@ -180,7 +223,9 @@ export function OperationsPage() {
                   <div key={module.moduleKey} className="data-list-item">
                     <strong>{formatModuleKey(module.moduleKey)}</strong>
                     <span className="status-pill">{formatHealthStatus(module.status)}</span>
-                    {module.availabilityPercent != null ? <p>Availability: {module.availabilityPercent}%</p> : null}
+                    {module.availabilityPercent != null ? (
+                      <p>Availability: {module.availabilityPercent}%</p>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -190,19 +235,40 @@ export function OperationsPage() {
           {activeTab === 'performance' ? (
             <Panel title="Performance Monitoring">
               {canWrite ? (
-                <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => captureOperationsPerformance(accessToken!), 'Performance snapshot captured.')}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => captureOperationsPerformance(accessToken!),
+                      'Performance snapshot captured.',
+                    )
+                  }
+                >
                   Capture Performance
                 </Button>
               ) : null}
               {dashboard.performance ? (
                 <div className="stat-grid">
                   <StatCard label="Queue Depth" value={String(dashboard.performance.queueDepth)} />
-                  <StatCard label="Failed Jobs" value={String(dashboard.performance.backgroundJobFailureCount)} />
-                  <StatCard label="Memory (MB)" value={String(dashboard.performance.memoryUsageMb ?? '—')} />
-                  <StatCard label="AI Latency (ms)" value={String(dashboard.performance.aiProviderLatencyMs ?? '—')} />
+                  <StatCard
+                    label="Failed Jobs"
+                    value={String(dashboard.performance.backgroundJobFailureCount)}
+                  />
+                  <StatCard
+                    label="Memory (MB)"
+                    value={String(dashboard.performance.memoryUsageMb ?? '—')}
+                  />
+                  <StatCard
+                    label="AI Latency (ms)"
+                    value={String(dashboard.performance.aiProviderLatencyMs ?? '—')}
+                  />
                 </div>
               ) : (
-                <EmptyState title="No performance snapshot" description="Capture a performance snapshot to record real metrics." />
+                <EmptyState
+                  title="No performance snapshot"
+                  description="Capture a performance snapshot to record real metrics."
+                />
               )}
             </Panel>
           ) : null}
@@ -210,27 +276,49 @@ export function OperationsPage() {
           {activeTab === 'infrastructure' ? (
             <Panel title="High Availability">
               <div className="stat-grid">
-                <StatCard label="Read Replica Ready" value={dashboard.platformConfig.readReplicaEnabled ? 'Enabled' : 'Not configured'} />
-                <StatCard label="Multi-Region Ready" value={dashboard.scaling.multiRegionReady ? 'Ready' : 'Not configured'} />
-                <StatCard label="Multi-Region Active" value={dashboard.scaling.multiRegionActive ? 'Active' : 'Not active'} />
-                <StatCard label="DB Pool Max" value={String(dashboard.scaling.dbPoolMaxConnections)} />
+                <StatCard
+                  label="Read Replica Ready"
+                  value={dashboard.platformConfig.readReplicaEnabled ? 'Enabled' : 'Not configured'}
+                />
+                <StatCard
+                  label="Multi-Region Ready"
+                  value={dashboard.scaling.multiRegionReady ? 'Ready' : 'Not configured'}
+                />
+                <StatCard
+                  label="Multi-Region Active"
+                  value={dashboard.scaling.multiRegionActive ? 'Active' : 'Not active'}
+                />
+                <StatCard
+                  label="DB Pool Max"
+                  value={String(dashboard.scaling.dbPoolMaxConnections)}
+                />
               </div>
-              <p>Stateless API, distributed workers, readiness/liveness probes, and rolling deployments are supported via existing platform architecture.</p>
+              <p>
+                Stateless API, distributed workers, readiness/liveness probes, and rolling
+                deployments are supported via existing platform architecture.
+              </p>
             </Panel>
           ) : null}
 
           {activeTab === 'ai-providers' ? (
             <Panel title="Multi-AI Provider Operations">
               {dashboard.aiProviders.length === 0 ? (
-                <EmptyState title="No configured providers" description="Configure AI providers in AI Orchestration." />
+                <EmptyState
+                  title="No configured providers"
+                  description="Configure AI providers in AI Orchestration."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.aiProviders.map((provider) => (
-                    <div key={`${provider.providerKey}-${provider.providerId ?? 'env'}`} className="data-list-item">
+                    <div
+                      key={`${provider.providerKey}-${provider.providerId ?? 'env'}`}
+                      className="data-list-item"
+                    >
                       <strong>{provider.displayName}</strong>
                       <span className="status-pill">{provider.healthStatus}</span>
                       <p>
-                        Latency: {provider.averageLatencyMs ?? '—'} ms · Failovers: {provider.failoverCount} · Queue: {provider.queueDepth}
+                        Latency: {provider.averageLatencyMs ?? '—'} ms · Failovers:{' '}
+                        {provider.failoverCount} · Queue: {provider.queueDepth}
                       </p>
                     </div>
                   ))}
@@ -242,10 +330,22 @@ export function OperationsPage() {
           {activeTab === 'queues' ? (
             <Panel title="Queues & Workers">
               <div className="stat-grid">
-                <StatCard label="Queue Depth" value={String(dashboard.performance?.queueDepth ?? 0)} />
-                <StatCard label="Worker Throughput" value={String(dashboard.performance?.workerThroughputPerMinute ?? '—')} />
-                <StatCard label="Background Failures" value={String(dashboard.performance?.backgroundJobFailureCount ?? 0)} />
-                <StatCard label="AI Queue Concurrency" value={String(dashboard.scaling.aiRequestQueueConcurrency)} />
+                <StatCard
+                  label="Queue Depth"
+                  value={String(dashboard.performance?.queueDepth ?? 0)}
+                />
+                <StatCard
+                  label="Worker Throughput"
+                  value={String(dashboard.performance?.workerThroughputPerMinute ?? '—')}
+                />
+                <StatCard
+                  label="Background Failures"
+                  value={String(dashboard.performance?.backgroundJobFailureCount ?? 0)}
+                />
+                <StatCard
+                  label="AI Queue Concurrency"
+                  value={String(dashboard.scaling.aiRequestQueueConcurrency)}
+                />
               </div>
             </Panel>
           ) : null}
@@ -253,12 +353,24 @@ export function OperationsPage() {
           {activeTab === 'logs' ? (
             <Panel title="Operational Logs">
               {canWrite ? (
-                <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => syncOperationsLogs(accessToken!), 'Logs indexed from real events.')}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => syncOperationsLogs(accessToken!),
+                      'Logs indexed from real events.',
+                    )
+                  }
+                >
                   Sync Logs
                 </Button>
               ) : null}
               {dashboard.recentLogs.length === 0 ? (
-                <EmptyState title="No log entries" description="Sync logs to index failover events and workflow failures." />
+                <EmptyState
+                  title="No log entries"
+                  description="Sync logs to index failover events and workflow failures."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentLogs.map((log) => (
@@ -282,7 +394,11 @@ export function OperationsPage() {
                     disabled={isWorking}
                     onClick={() =>
                       void runAction(
-                        () => createBackupPolicy(accessToken!, { policyKey: `policy_${Date.now()}`, name: 'Tenant Backup Policy' }),
+                        () =>
+                          createBackupPolicy(accessToken!, {
+                            policyKey: `policy_${Date.now()}`,
+                            name: 'Tenant Backup Policy',
+                          }),
                         'Backup policy created (disabled until enabled).',
                       )
                     }
@@ -291,13 +407,18 @@ export function OperationsPage() {
                   </Button>
                 ) : null}
                 {dashboard.backupPolicies.length === 0 ? (
-                  <EmptyState title="No backup policies" description="Create backup policies — no demo backups are seeded." />
+                  <EmptyState
+                    title="No backup policies"
+                    description="Create backup policies — no demo backups are seeded."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.backupPolicies.map((policy) => (
                       <div key={policy.id} className="data-list-item">
                         <strong>{policy.name}</strong>
-                        <span className="status-pill">{policy.isEnabled ? 'enabled' : 'disabled'}</span>
+                        <span className="status-pill">
+                          {policy.isEnabled ? 'enabled' : 'disabled'}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -310,18 +431,38 @@ export function OperationsPage() {
             <>
               <Panel title="Recovery Objectives">
                 <div className="stat-grid">
-                  <StatCard label="RPO (minutes)" value={String(dashboard.platformConfig.recoveryPointObjectiveMinutes ?? '—')} />
-                  <StatCard label="RTO (minutes)" value={String(dashboard.platformConfig.recoveryTimeObjectiveMinutes ?? '—')} />
-                  <StatCard label="Backup Retention" value={`${dashboard.platformConfig.backupRetentionDays} days`} />
-                  <StatCard label="Recovery Readiness" value={dashboard.recovery.restoreTestStatus} />
+                  <StatCard
+                    label="RPO (minutes)"
+                    value={String(dashboard.platformConfig.recoveryPointObjectiveMinutes ?? '—')}
+                  />
+                  <StatCard
+                    label="RTO (minutes)"
+                    value={String(dashboard.platformConfig.recoveryTimeObjectiveMinutes ?? '—')}
+                  />
+                  <StatCard
+                    label="Backup Retention"
+                    value={`${dashboard.platformConfig.backupRetentionDays} days`}
+                  />
+                  <StatCard
+                    label="Recovery Readiness"
+                    value={dashboard.recovery.restoreTestStatus}
+                  />
                 </div>
               </Panel>
               <Panel title="Recovery Readiness">
                 <p>Latest backup: {dashboard.recovery.latestBackupAt ?? 'None recorded'}</p>
                 <p>Restore test: {dashboard.recovery.restoreTestStatus}</p>
-                <p>Freshness: {dashboard.recovery.backupFreshnessHours != null ? `${dashboard.recovery.backupFreshnessHours}h ago` : '—'}</p>
+                <p>
+                  Freshness:{' '}
+                  {dashboard.recovery.backupFreshnessHours != null
+                    ? `${dashboard.recovery.backupFreshnessHours}h ago`
+                    : '—'}
+                </p>
                 {dashboard.recentBackupRuns.length === 0 ? (
-                  <EmptyState title="No backup runs" description="Backup runs appear here after policies are enabled and executed." />
+                  <EmptyState
+                    title="No backup runs"
+                    description="Backup runs appear here after policies are enabled and executed."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.recentBackupRuns.map((run) => (
@@ -340,14 +481,38 @@ export function OperationsPage() {
           {activeTab === 'scaling' ? (
             <Panel title="Scalability Framework">
               <div className="stat-grid">
-                <StatCard label="API Scaling" value={dashboard.scaling.horizontalApiScalingEnabled ? 'Enabled' : 'Disabled'} />
-                <StatCard label="Worker Scaling" value={dashboard.scaling.horizontalWorkerScalingEnabled ? 'Enabled' : 'Disabled'} />
-                <StatCard label="Queue Concurrency" value={String(dashboard.scaling.queueConcurrencyLimit)} />
-                <StatCard label="Queue Partitions" value={String(dashboard.scaling.queuePartitionCount)} />
-                <StatCard label="DB Pool Max" value={String(dashboard.scaling.dbPoolMaxConnections)} />
-                <StatCard label="AI Queue Concurrency" value={String(dashboard.scaling.aiRequestQueueConcurrency)} />
-                <StatCard label="Search Index Shards" value={String(dashboard.scaling.searchIndexShards)} />
-                <StatCard label="Webhook Concurrency" value={String(dashboard.scaling.webhookConcurrency)} />
+                <StatCard
+                  label="API Scaling"
+                  value={dashboard.scaling.horizontalApiScalingEnabled ? 'Enabled' : 'Disabled'}
+                />
+                <StatCard
+                  label="Worker Scaling"
+                  value={dashboard.scaling.horizontalWorkerScalingEnabled ? 'Enabled' : 'Disabled'}
+                />
+                <StatCard
+                  label="Queue Concurrency"
+                  value={String(dashboard.scaling.queueConcurrencyLimit)}
+                />
+                <StatCard
+                  label="Queue Partitions"
+                  value={String(dashboard.scaling.queuePartitionCount)}
+                />
+                <StatCard
+                  label="DB Pool Max"
+                  value={String(dashboard.scaling.dbPoolMaxConnections)}
+                />
+                <StatCard
+                  label="AI Queue Concurrency"
+                  value={String(dashboard.scaling.aiRequestQueueConcurrency)}
+                />
+                <StatCard
+                  label="Search Index Shards"
+                  value={String(dashboard.scaling.searchIndexShards)}
+                />
+                <StatCard
+                  label="Webhook Concurrency"
+                  value={String(dashboard.scaling.webhookConcurrency)}
+                />
               </div>
             </Panel>
           ) : null}
@@ -355,17 +520,31 @@ export function OperationsPage() {
           {activeTab === 'readiness' ? (
             <Panel title="Operational Readiness Checks">
               {canWrite ? (
-                <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => runOperationsReadinessChecks(accessToken!), 'Readiness checks executed.')}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => runOperationsReadinessChecks(accessToken!),
+                      'Readiness checks executed.',
+                    )
+                  }
+                >
                   Run Readiness Checks
                 </Button>
               ) : null}
               {!dashboard.latestReadinessRun ? (
-                <EmptyState title="No readiness run" description="Run readiness checks to evaluate production configuration." />
+                <EmptyState
+                  title="No readiness run"
+                  description="Run readiness checks to evaluate production configuration."
+                />
               ) : (
                 <>
                   <p>
-                    Overall: {formatHealthStatus(dashboard.latestReadinessRun.overallStatus)} — {dashboard.latestReadinessRun.readyCount} ready,{' '}
-                    {dashboard.latestReadinessRun.warningCount} warning, {dashboard.latestReadinessRun.criticalCount} critical
+                    Overall: {formatHealthStatus(dashboard.latestReadinessRun.overallStatus)} —{' '}
+                    {dashboard.latestReadinessRun.readyCount} ready,{' '}
+                    {dashboard.latestReadinessRun.warningCount} warning,{' '}
+                    {dashboard.latestReadinessRun.criticalCount} critical
                   </p>
                   <div className="data-list">
                     {dashboard.latestReadinessRun.checks.map((check) => (
@@ -403,7 +582,10 @@ export function OperationsPage() {
                 </Button>
               ) : null}
               {dashboard.maintenanceActions.length === 0 ? (
-                <EmptyState title="No maintenance actions" description="Maintenance follows Draft → Approval → Execution." />
+                <EmptyState
+                  title="No maintenance actions"
+                  description="Maintenance follows Draft → Approval → Execution."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.maintenanceActions.map((action) => (
@@ -420,11 +602,19 @@ export function OperationsPage() {
 
           {activeTab === 'assistant' ? (
             <Panel title="AURA Production Operations Agent">
-              <p>Ask about platform health, performance, AI provider resilience, readiness risks, recovery, and maintenance. Recommendations only.</p>
+              <p>
+                Ask about platform health, performance, AI provider resilience, readiness risks,
+                recovery, and maintenance. Recommendations only.
+              </p>
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}

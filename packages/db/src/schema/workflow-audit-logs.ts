@@ -10,7 +10,9 @@ export const workflowAuditLogs = pgTable('workflow_audit_logs', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   workflowId: uuid('workflow_id').references(() => workflows.id, { onDelete: 'set null' }),
-  workflowRunId: uuid('workflow_run_id').references(() => workflowRuns.id, { onDelete: 'set null' }),
+  workflowRunId: uuid('workflow_run_id').references(() => workflowRuns.id, {
+    onDelete: 'set null',
+  }),
   eventType: text('event_type').notNull(),
   nodeKey: text('node_key'),
   message: text('message').notNull(),

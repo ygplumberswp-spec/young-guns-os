@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchJobs } from '../../lib/jobs-api';
@@ -8,14 +8,25 @@ import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobLi
 
 export function JobListPage() {
   const { accessToken, user } = useAuth();
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
 
-  const { data: jobs, error, isLoading } = useStaffCachedQuery({
-    queryKey: 'jobs/list',
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(handle);
+  }, [search]);
+
+  const {
+    data: jobs,
+    error,
+    isLoading,
+  } = useStaffCachedQuery({
+    queryKey: `jobs/list:${debouncedSearch}`,
     enabled: canView,
-    fetcher: async () => fetchJobs(accessToken!),
+    fetcher: async () => fetchJobs(accessToken!, debouncedSearch),
   });
 
   if (!canView) {
@@ -30,7 +41,7 @@ export function JobListPage() {
     <div className="jobs-page">
       <PageHeader
         title="Jobs"
-        description="Track work linked to your customers."
+        description="Operational job board — number, site, priority and technician."
         actions={
           canWrite ? (
             <Link href="/jobs/new">
@@ -43,12 +54,12 @@ export function JobListPage() {
       <PageLoadState
         isLoading={isLoading && jobs === undefined}
         error={error && jobs === undefined ? error : null}
-        isEmpty={(jobs?.length ?? 0) === 0}
+        isEmpty={false}
         emptyTitle="No jobs yet"
         emptyDescription="Create a job to track work for your customers."
         loadingLabel="Loading jobs…"
       >
-        <JobList jobs={jobs ?? []} canWrite={canWrite} />
+        <JobList jobs={jobs ?? []} canWrite={canWrite} search={search} onSearchChange={setSearch} />
       </PageLoadState>
     </div>
   );

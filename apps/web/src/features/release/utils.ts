@@ -39,5 +39,9 @@ export function formatChecklistStatus(status: string): string {
 }
 
 export function formatStorePlatform(platform: string): string {
-  return platform === 'apple_app_store' ? 'Apple App Store' : platform === 'google_play_store' ? 'Google Play Store' : platform;
+  return platform === 'apple_app_store'
+    ? 'Apple App Store'
+    : platform === 'google_play_store'
+      ? 'Google Play Store'
+      : platform;
 }

@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { commIntelCallIntelligence } from './communications-intelligence';
 import { companies } from './companies';
 import { customers } from './customers';
@@ -65,7 +74,9 @@ export const dispatchReceptionistSummaries = pgTable('dispatch_receptionist_summ
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
   serviceIntent: text('service_intent'),
   emergencyDetected: boolean('emergency_detected').notNull().default(false),
@@ -84,7 +95,9 @@ export const dispatchRoutingRecommendations = pgTable('dispatch_routing_recommen
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   callIntelligenceId: uuid('call_intelligence_id').references(() => commIntelCallIntelligence.id, {
     onDelete: 'set null',
   }),
@@ -104,7 +117,9 @@ export const dispatchCallbackRequests = pgTable('dispatch_callback_requests', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   phoneNumber: text('phone_number'),
   status: dispatchCallbackStatusEnum('status').notNull().default('pending_approval'),
   scheduledAt: timestamp('scheduled_at', { withTimezone: true }),
@@ -123,7 +138,9 @@ export const dispatchEmergencyAssessments = pgTable('dispatch_emergency_assessme
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   emergencyType: dispatchEmergencyTypeEnum('emergency_type').notNull(),
   priority: integer('priority').notNull().default(100),
   recommendedResponseMinutes: integer('recommended_response_minutes'),

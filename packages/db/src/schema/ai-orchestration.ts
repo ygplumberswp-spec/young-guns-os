@@ -1,4 +1,14 @@
-import { boolean, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { agentKeyEnum } from './agent-profiles';
 import { agentRuns } from './agent-runs';
 import { auraConversations } from './aura-conversations';
@@ -17,7 +27,11 @@ export const aiProviderKeyEnum = pgEnum('ai_provider_key', [
   'custom',
 ]);
 
-export const aiProviderStatusEnum = pgEnum('ai_provider_status', ['active', 'inactive', 'degraded']);
+export const aiProviderStatusEnum = pgEnum('ai_provider_status', [
+  'active',
+  'inactive',
+  'degraded',
+]);
 
 export const aiProviderHealthStatusEnum = pgEnum('ai_provider_health_status', [
   'unknown',
@@ -137,10 +151,14 @@ export const aiRoutingRules = pgTable('ai_routing_rules', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   category: aiRoutingCategoryEnum('category').notNull(),
   routingMode: aiRoutingModeEnum('routing_mode').notNull().default('automatic'),
-  primaryProviderId: uuid('primary_provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
+  primaryProviderId: uuid('primary_provider_id').references(() => aiProviders.id, {
+    onDelete: 'set null',
+  }),
   primaryModelId: uuid('primary_model_id').references(() => aiModels.id, { onDelete: 'set null' }),
   fallbackChain: jsonb('fallback_chain')
-    .$type<Array<{ providerId?: string; modelId?: string; providerKey?: string; modelKey?: string }>>()
+    .$type<
+      Array<{ providerId?: string; modelId?: string; providerKey?: string; modelKey?: string }>
+    >()
     .notNull()
     .default([]),
   priorityOrder: integer('priority_order').notNull().default(100),
@@ -178,7 +196,9 @@ export const aiPromptVersions = pgTable('ai_prompt_versions', {
   status: aiPromptVersionStatusEnum('status').notNull().default('draft'),
   changeNotes: text('change_notes'),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -209,7 +229,9 @@ export const aiUsageRecords = pgTable('ai_usage_records', {
   workflowKey: text('workflow_key'),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   agentRunId: uuid('agent_run_id').references(() => agentRuns.id, { onDelete: 'set null' }),
-  conversationId: uuid('conversation_id').references(() => auraConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => auraConversations.id, {
+    onDelete: 'set null',
+  }),
   promptTokens: integer('prompt_tokens').notNull().default(0),
   completionTokens: integer('completion_tokens').notNull().default(0),
   totalTokens: integer('total_tokens').notNull().default(0),
@@ -226,7 +248,9 @@ export const aiQualityEvaluations = pgTable('ai_quality_evaluations', {
   providerId: uuid('provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
   modelId: uuid('model_id').references(() => aiModels.id, { onDelete: 'set null' }),
   agentRunId: uuid('agent_run_id').references(() => agentRuns.id, { onDelete: 'set null' }),
-  conversationId: uuid('conversation_id').references(() => auraConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => auraConversations.id, {
+    onDelete: 'set null',
+  }),
   responseQualityScore: numeric('response_quality_score', { precision: 5, scale: 2 }),
   success: boolean('success').notNull().default(true),
   correctionRate: numeric('correction_rate', { precision: 5, scale: 4 }),
@@ -246,7 +270,9 @@ export const aiFeedbackRecords = pgTable('ai_feedback_records', {
   providerId: uuid('provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
   modelId: uuid('model_id').references(() => aiModels.id, { onDelete: 'set null' }),
   agentRunId: uuid('agent_run_id').references(() => agentRuns.id, { onDelete: 'set null' }),
-  conversationId: uuid('conversation_id').references(() => auraConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => auraConversations.id, {
+    onDelete: 'set null',
+  }),
   rating: integer('rating'),
   correctionText: text('correction_text'),
   accepted: boolean('accepted').notNull().default(false),
@@ -261,7 +287,9 @@ export const aiFailoverEvents = pgTable('ai_failover_events', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  fromProviderId: uuid('from_provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
+  fromProviderId: uuid('from_provider_id').references(() => aiProviders.id, {
+    onDelete: 'set null',
+  }),
   toProviderId: uuid('to_provider_id').references(() => aiProviders.id, { onDelete: 'set null' }),
   reason: aiFailoverReasonEnum('reason').notNull(),
   contextPreserved: boolean('context_preserved').notNull().default(true),

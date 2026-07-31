@@ -53,11 +53,7 @@ export const agentKeyEnum = pgEnum('agent_key', [
   'release_manager',
 ]);
 
-export const agentProfileStatusEnum = pgEnum('agent_profile_status', [
-  'draft',
-  'active',
-  'paused',
-]);
+export const agentProfileStatusEnum = pgEnum('agent_profile_status', ['draft', 'active', 'paused']);
 
 export const agentProfiles = pgTable('agent_profiles', {
   id: uuid('id').primaryKey().defaultRandom(),

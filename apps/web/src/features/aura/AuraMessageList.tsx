@@ -31,13 +31,8 @@ export function AuraMessageList({ messages, isSending }: AuraMessageListProps) {
   return (
     <div className="aura-messages">
       {messages.map((message) => (
-        <article
-          key={message.id}
-          className={`aura-message aura-message--${message.role}`}
-        >
-          <div className="aura-message__meta">
-            {message.role === 'assistant' ? AI_NAME : 'You'}
-          </div>
+        <article key={message.id} className={`aura-message aura-message--${message.role}`}>
+          <div className="aura-message__meta">{message.role === 'assistant' ? AI_NAME : 'You'}</div>
           <div className="aura-message__bubble">
             <AuraMessageContent content={message.content} role={message.role} />
           </div>

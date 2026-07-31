@@ -22,7 +22,12 @@ export const miWorkflowStatusEnum = pgEnum('mi_workflow_status', [
   'cancelled',
 ]);
 
-export const miAdapterStatusEnum = pgEnum('mi_adapter_status', ['active', 'inactive', 'testing', 'error']);
+export const miAdapterStatusEnum = pgEnum('mi_adapter_status', [
+  'active',
+  'inactive',
+  'testing',
+  'error',
+]);
 
 export const miMarketingProviderTypeEnum = pgEnum('mi_marketing_provider_type', [
   'meta_ads',
@@ -75,7 +80,12 @@ export const miCampaignLifecycleStatusEnum = pgEnum('mi_campaign_lifecycle_statu
 
 export const miAlertSeverityEnum = pgEnum('mi_alert_severity', ['info', 'warning', 'critical']);
 
-export const miAlertStatusEnum = pgEnum('mi_alert_status', ['open', 'acknowledged', 'resolved', 'dismissed']);
+export const miAlertStatusEnum = pgEnum('mi_alert_status', [
+  'open',
+  'acknowledged',
+  'resolved',
+  'dismissed',
+]);
 
 export const miContentStatusEnum = pgEnum('mi_content_status', [
   'draft',
@@ -92,15 +102,27 @@ export const miPlatformConfig = pgTable('mi_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  marketingStandards: jsonb('marketing_standards').$type<Record<string, unknown>>().notNull().default({}),
+  marketingStandards: jsonb('marketing_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   providerAdapterTemplates: jsonb('provider_adapter_templates')
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
   brandTemplates: jsonb('brand_templates').$type<Record<string, unknown>>().notNull().default({}),
-  campaignTemplates: jsonb('campaign_templates').$type<Record<string, unknown>>().notNull().default({}),
-  contentTemplates: jsonb('content_templates').$type<Record<string, unknown>>().notNull().default({}),
-  attributionStandards: jsonb('attribution_standards').$type<Record<string, unknown>>().notNull().default({}),
+  campaignTemplates: jsonb('campaign_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  contentTemplates: jsonb('content_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  attributionStandards: jsonb('attribution_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -207,7 +229,9 @@ export const miCampaignPlans = pgTable('mi_campaign_plans', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  strategyId: uuid('strategy_id').references(() => miMarketingStrategies.id, { onDelete: 'set null' }),
+  strategyId: uuid('strategy_id').references(() => miMarketingStrategies.id, {
+    onDelete: 'set null',
+  }),
   brandId: uuid('brand_id').references(() => miBrands.id, { onDelete: 'set null' }),
   audienceId: uuid('audience_id').references(() => miAudiences.id, { onDelete: 'set null' }),
   name: text('name').notNull(),
@@ -228,7 +252,9 @@ export const miContentItems = pgTable('mi_content_items', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   contentType: text('content_type').notNull(),
   contentStatus: miContentStatusEnum('content_status').notNull().default('draft'),
@@ -244,12 +270,16 @@ export const miCreativeRequests = pgTable('mi_creative_requests', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   requestType: text('request_type').notNull(),
   workflowStatus: miWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   brief: text('brief'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -276,8 +306,12 @@ export const miSocialPosts = pgTable('mi_social_posts', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  socialAccountId: uuid('social_account_id').references(() => miSocialAccounts.id, { onDelete: 'set null' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  socialAccountId: uuid('social_account_id').references(() => miSocialAccounts.id, {
+    onDelete: 'set null',
+  }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   title: text('title'),
   body: text('body').notNull(),
   contentStatus: miContentStatusEnum('content_status').notNull().default('draft'),
@@ -293,7 +327,9 @@ export const miSocialMentions = pgTable('mi_social_mentions', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  socialAccountId: uuid('social_account_id').references(() => miSocialAccounts.id, { onDelete: 'set null' }),
+  socialAccountId: uuid('social_account_id').references(() => miSocialAccounts.id, {
+    onDelete: 'set null',
+  }),
   mentionType: text('mention_type'),
   author: text('author'),
   content: text('content'),
@@ -338,7 +374,9 @@ export const miAdCampaigns = pgTable('mi_ad_campaigns', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   adAccountId: uuid('ad_account_id').references(() => miAdAccounts.id, { onDelete: 'set null' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   name: text('name').notNull(),
   externalCampaignId: text('external_campaign_id'),
   lifecycleStatus: miCampaignLifecycleStatusEnum('lifecycle_status').notNull().default('draft'),
@@ -413,7 +451,9 @@ export const miLandingPages = pgTable('mi_landing_pages', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   websiteId: uuid('website_id').references(() => miWebsites.id, { onDelete: 'set null' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   slug: text('slug').notNull(),
   contentStatus: miContentStatusEnum('content_status').notNull().default('draft'),
@@ -427,7 +467,9 @@ export const miEmailCampaigns = pgTable('mi_email_campaigns', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   name: text('name').notNull(),
   subject: text('subject'),
   contentStatus: miContentStatusEnum('content_status').notNull().default('draft'),
@@ -442,7 +484,9 @@ export const miMessagingCampaigns = pgTable('mi_messaging_campaigns', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   name: text('name').notNull(),
   channel: text('channel').notNull(),
   contentStatus: miContentStatusEnum('content_status').notNull().default('draft'),
@@ -469,7 +513,9 @@ export const miAttributionRecords = pgTable('mi_attribution_records', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   channel: text('channel').notNull(),
   touchpointType: text('touchpoint_type'),
   attributedValueCents: integer('attributed_value_cents'),
@@ -482,7 +528,9 @@ export const miRoiSnapshots = pgTable('mi_roi_snapshots', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   spendCents: integer('spend_cents').notNull().default(0),
   revenueCents: integer('revenue_cents').notNull().default(0),
   roiPercent: numeric('roi_percent', { precision: 7, scale: 2 }),
@@ -509,7 +557,9 @@ export const miCalendarEvents = pgTable('mi_calendar_events', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, { onDelete: 'set null' }),
+  campaignPlanId: uuid('campaign_plan_id').references(() => miCampaignPlans.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   eventType: text('event_type'),
   startsAt: timestamp('starts_at', { withTimezone: true }).notNull(),
@@ -560,7 +610,9 @@ export const miMarketingAlerts = pgTable('mi_marketing_alerts', {
   sourceModule: text('source_module'),
   sourceEntityId: uuid('source_entity_id'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -579,7 +631,9 @@ export const miMarketingActionDrafts = pgTable('mi_marketing_action_drafts', {
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

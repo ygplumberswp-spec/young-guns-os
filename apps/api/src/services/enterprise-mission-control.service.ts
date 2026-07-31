@@ -201,7 +201,9 @@ export class EnterpriseMissionControlService {
     );
   }
 
-  async getMissionControlModuleSnapshots(companyId: string): Promise<MissionControlModuleSnapshot[]> {
+  async getMissionControlModuleSnapshots(
+    companyId: string,
+  ): Promise<MissionControlModuleSnapshot[]> {
     return cachedTenantRead(
       buildTenantCacheKey(companyId, 'mission-control/modules'),
       () => this.buildModuleSnapshots(companyId),
@@ -1732,7 +1734,10 @@ export class EnterpriseMissionControlService {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [riskAlerts, pendingActions, failedLogins] = await Promise.all([
       this.deps.db.query.securityRiskAlerts.findMany({
-        where: and(eq(securityRiskAlerts.companyId, companyId), eq(securityRiskAlerts.resolved, false)),
+        where: and(
+          eq(securityRiskAlerts.companyId, companyId),
+          eq(securityRiskAlerts.resolved, false),
+        ),
         columns: { id: true },
       }),
       this.deps.db.query.securityActions.findMany({
@@ -1815,9 +1820,15 @@ export class EnterpriseMissionControlService {
       }),
     ]);
 
-    const completedSimulationCount = recentSimulations.filter((s) => s.status === 'completed').length;
+    const completedSimulationCount = recentSimulations.filter(
+      (s) => s.status === 'completed',
+    ).length;
     const operationalRiskLevel =
-      pendingRecommendations.length > 3 ? 'high' : pendingRecommendations.length > 0 ? 'medium' : 'low';
+      pendingRecommendations.length > 3
+        ? 'high'
+        : pendingRecommendations.length > 0
+          ? 'medium'
+          : 'low';
 
     return {
       summary: `${activeScenarios.length} active scenario(s), ${completedSimulationCount} completed simulation(s), ${pendingRecommendations.length} pending recommendation(s).`,

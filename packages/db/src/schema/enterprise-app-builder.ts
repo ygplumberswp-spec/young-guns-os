@@ -114,7 +114,9 @@ export const abFeatureRequests = pgTable('ab_feature_requests', {
   requestType: text('request_type').notNull(),
   workflowStatus: abFeatureRequestStatusEnum('workflow_status').notNull().default('submitted'),
   riskLevel: abRiskLevelEnum('risk_level').notNull().default('medium'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -290,7 +292,9 @@ export const abApprovalRecords = pgTable('ab_approval_records', {
   approvalType: text('approval_type').notNull(),
   workflowStatus: abApprovalStatusEnum('workflow_status').notNull().default('pending'),
   requiredAreas: jsonb('required_areas').$type<Record<string, unknown>>().notNull().default({}),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   rejectedReason: text('rejected_reason'),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -309,7 +313,9 @@ export const abDeployments = pgTable('ab_deployments', {
   environment: text('environment').notNull(),
   workflowStatus: abDeploymentStatusEnum('workflow_status').notNull().default('planned'),
   version: text('version'),
-  deployedByUserId: uuid('deployed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  deployedByUserId: uuid('deployed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   startedAt: timestamp('started_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   verificationStatus: text('verification_status'),
@@ -328,7 +334,9 @@ export const abRollbacks = pgTable('ab_rollbacks', {
   rollbackKey: text('rollback_key').notNull(),
   reason: text('reason'),
   workflowStatus: abWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  executedByUserId: uuid('executed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  executedByUserId: uuid('executed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   executedAt: timestamp('executed_at', { withTimezone: true }),
   verified: boolean('verified').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

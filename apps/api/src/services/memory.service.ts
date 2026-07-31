@@ -44,7 +44,10 @@ export class MemoryService {
     return rows.map(toMemorySummary);
   }
 
-  async createMemory(scope: TenantScope, input: CreateAuraMemoryRequest): Promise<AuraMemorySummary> {
+  async createMemory(
+    scope: TenantScope,
+    input: CreateAuraMemoryRequest,
+  ): Promise<AuraMemorySummary> {
     const information = input.information.trim();
 
     if (!information) {

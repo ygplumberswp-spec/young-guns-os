@@ -626,6 +626,13 @@
       "breakpoints": true
     },
     {
+      "idx": 89,
+      "version": "7",
+      "when": 1754096400000,
+      "tag": "0090_portal_user_invites",
+      "breakpoints": true
+    },
+    {
       "idx": 90,
       "version": "7",
       "when": 1754100000000,
@@ -637,6 +644,90 @@
       "version": "7",
       "when": 1754103600000,
       "tag": "0092_integration_oauth_states",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1754107200000,
+      "tag": "0093_xero_bank_transaction_entity_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1754110800000,
+      "tag": "0094_canonical_role_matrix",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1754114400000,
+      "tag": "0095_job_operational_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1754118000000,
+      "tag": "0096_job_execution_crew_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1754121600000,
+      "tag": "0097_job_evidence_offline_contract",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1754125200000,
+      "tag": "0098_job_material_used_trigger",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1754128800000,
+      "tag": "0099_lead_intake_conversion",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1754132400000,
+      "tag": "0100_quote_to_cash_finance",
+      "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1754136000000,
+      "tag": "0101_inventory_procurement_loop",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1754139600000,
+      "tag": "0102_comms_honesty",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1754143200000,
+      "tag": "0103_marketing_eligibility_consent",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1754146800000,
+      "tag": "0104_n8n_hybrid_orchestration",
       "breakpoints": true
     }
   ]

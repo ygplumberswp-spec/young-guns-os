@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { DISPATCHER_ROLE_NAME, OWNER_ROLE_NAME, type StaffExperience } from '@titan/auth';
-import { canPrefetchStaffRoute, canPrefetchPortalRoute, type StaffPreloadContext, type PortalPreloadContext } from './route-prefetch-registry.js';
+import {
+  canPrefetchStaffRoute,
+  canPrefetchPortalRoute,
+  type StaffPreloadContext,
+  type PortalPreloadContext,
+} from './route-prefetch-registry.js';
 
 const ownerContext: StaffPreloadContext = {
   kind: 'staff',
@@ -30,7 +35,7 @@ describe('route prefetch registry', () => {
       safeToPreload: true,
     };
 
-    assert.equal(canPrefetchStaffRoute(entry, ownerContext, 'platform_owner'), true);
+    assert.equal(canPrefetchStaffRoute(entry, ownerContext, 'company_owner'), true);
   });
 
   it('blocks dispatcher from aura routes', () => {
@@ -38,7 +43,7 @@ describe('route prefetch registry', () => {
       path: '/aura/agents',
       load: async () => ({}),
       permissions: ['agents:read'],
-      experiences: ['platform_owner', 'staff'] as StaffExperience[],
+      experiences: ['platform_owner', 'company_owner', 'manager', 'staff'] as StaffExperience[],
       priority: 3 as const,
       safeToPreload: true,
     };
@@ -57,7 +62,7 @@ describe('route prefetch registry', () => {
 
   it('blocks portal routes without permission', () => {
     const entry = {
-      path: '/portal/jobs',
+      path: '/my/jobs',
       load: async () => ({}),
       portalPermission: 'portal.jobs:read' as const,
       priority: 1 as const,

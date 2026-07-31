@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { communications } from './communications';
 import { companies } from './companies';
 import { customerSupportConversations } from './customer-support';
@@ -83,7 +92,10 @@ export const commIntelSmsStatusEnum = pgEnum('comm_intel_sms_status', [
   'replied',
 ]);
 
-export const commIntelDraftTypeEnum = pgEnum('comm_intel_draft_type', ['customer_reply', 'follow_up']);
+export const commIntelDraftTypeEnum = pgEnum('comm_intel_draft_type', [
+  'customer_reply',
+  'follow_up',
+]);
 
 export const commIntelDraftStatusEnum = pgEnum('comm_intel_draft_status', [
   'pending_approval',
@@ -98,7 +110,9 @@ export const commIntelRecordings = pgTable('comm_intel_recordings', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   storageReference: text('storage_reference'),
   retentionPolicyDays: integer('retention_policy_days'),
   consentStatus: commIntelConsentStatusEnum('consent_status').notNull().default('unknown'),
@@ -129,7 +143,9 @@ export const commIntelCallIntelligence = pgTable('comm_intel_call_intelligence',
   sentiment: commIntelSentimentEnum('sentiment'),
   intent: text('intent'),
   followUpStatus: text('follow_up_status').notNull().default('none'),
-  recordingId: uuid('recording_id').references(() => commIntelRecordings.id, { onDelete: 'set null' }),
+  recordingId: uuid('recording_id').references(() => commIntelRecordings.id, {
+    onDelete: 'set null',
+  }),
   durationSeconds: integer('duration_seconds'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -185,7 +201,9 @@ export const commIntelSmsRecords = pgTable('comm_intel_sms_records', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   customerId: uuid('customer_id').references(() => customers.id, { onDelete: 'set null' }),
-  communicationId: uuid('communication_id').references(() => communications.id, { onDelete: 'set null' }),
+  communicationId: uuid('communication_id').references(() => communications.id, {
+    onDelete: 'set null',
+  }),
   templateId: uuid('template_id').references(() => messageTemplates.id, { onDelete: 'set null' }),
   campaignKey: text('campaign_key'),
   direction: text('direction').notNull(),
@@ -213,9 +231,12 @@ export const commIntelDraftActions = pgTable('comm_intel_draft_actions', {
   jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
   quoteId: uuid('quote_id').references(() => quotes.id, { onDelete: 'set null' }),
   invoiceId: uuid('invoice_id').references(() => invoices.id, { onDelete: 'set null' }),
-  supportConversationId: uuid('support_conversation_id').references(() => customerSupportConversations.id, {
-    onDelete: 'set null',
-  }),
+  supportConversationId: uuid('support_conversation_id').references(
+    () => customerSupportConversations.id,
+    {
+      onDelete: 'set null',
+    },
+  ),
   leadId: uuid('lead_id'),
   technicianId: uuid('technician_id').references(() => users.id, { onDelete: 'set null' }),
   staffUserId: uuid('staff_user_id').references(() => users.id, { onDelete: 'set null' }),

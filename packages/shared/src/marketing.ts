@@ -1,20 +1,10 @@
 export type MarketingCampaignStatus = 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
 
 export type MarketingCampaignType =
-  | 'retention'
-  | 'maintenance'
-  | 'seasonal'
-  | 'engagement'
-  | 'acquisition'
-  | 'custom';
+  'retention' | 'maintenance' | 'seasonal' | 'engagement' | 'acquisition' | 'custom';
 
 export type MarketingActivityType =
-  | 'email_draft'
-  | 'content'
-  | 'outreach'
-  | 'social_draft'
-  | 'note'
-  | 'other';
+  'email_draft' | 'content' | 'outreach' | 'social_draft' | 'note' | 'other';
 
 export type MarketingRecommendationType =
   | 'maintenance_reminder'
@@ -28,14 +18,12 @@ export type MarketingRecommendationType =
 export type MarketingRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
 export type MarketingSegmentType =
-  | 'high_value'
-  | 'repeat_service'
-  | 'dormant'
-  | 'new_customer'
-  | 'high_engagement'
-  | 'custom';
+  'high_value' | 'repeat_service' | 'dormant' | 'new_customer' | 'high_engagement' | 'custom';
 
-export const MARKETING_CAMPAIGN_STATUS_OPTIONS: Array<{ value: MarketingCampaignStatus; label: string }> = [
+export const MARKETING_CAMPAIGN_STATUS_OPTIONS: Array<{
+  value: MarketingCampaignStatus;
+  label: string;
+}> = [
   { value: 'draft', label: 'Draft' },
   { value: 'active', label: 'Active' },
   { value: 'paused', label: 'Paused' },
@@ -43,7 +31,10 @@ export const MARKETING_CAMPAIGN_STATUS_OPTIONS: Array<{ value: MarketingCampaign
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-export const MARKETING_CAMPAIGN_TYPE_OPTIONS: Array<{ value: MarketingCampaignType; label: string }> = [
+export const MARKETING_CAMPAIGN_TYPE_OPTIONS: Array<{
+  value: MarketingCampaignType;
+  label: string;
+}> = [
   { value: 'retention', label: 'Retention' },
   { value: 'maintenance', label: 'Maintenance' },
   { value: 'seasonal', label: 'Seasonal' },
@@ -52,7 +43,10 @@ export const MARKETING_CAMPAIGN_TYPE_OPTIONS: Array<{ value: MarketingCampaignTy
   { value: 'custom', label: 'Custom' },
 ];
 
-export const MARKETING_ACTIVITY_TYPE_OPTIONS: Array<{ value: MarketingActivityType; label: string }> = [
+export const MARKETING_ACTIVITY_TYPE_OPTIONS: Array<{
+  value: MarketingActivityType;
+  label: string;
+}> = [
   { value: 'email_draft', label: 'Email draft' },
   { value: 'content', label: 'Content' },
   { value: 'outreach', label: 'Outreach' },

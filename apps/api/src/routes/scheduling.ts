@@ -54,84 +54,92 @@ export function createSchedulingRouter({
     next();
   });
 
-  router.get('/stats', requireAnyPermission('dispatch:read', 'dispatch:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stats = await schedulingService.getStats(companyId);
-    res.json({ data: stats });
-  });
-
-  router.get('/assignees', requireAnyPermission('dispatch:read', 'dispatch:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const assignees = await schedulingService.listAssignees(companyId);
-    res.json({ data: { assignees } });
-  });
-
-  router.get('/calendar', requireAnyPermission('dispatch:read', 'dispatch:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const fromParam = typeof req.query.from === 'string' ? req.query.from : null;
-    const toParam = typeof req.query.to === 'string' ? req.query.to : null;
-
-    if (!fromParam || !toParam) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Calendar requires from and to query parameters',
-        },
-      });
-      return;
-    }
-
-    const from = new Date(fromParam);
-    const to = new Date(toParam);
-
-    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid calendar date range',
-        },
-      });
-      return;
-    }
-
-    try {
-      const calendar = await schedulingService.getCalendar(companyId, from, to);
-      res.json({ data: calendar });
-    } catch (error) {
-      handleSchedulingError(res, error);
-    }
-  });
-
-  router.post(
-    '/jobs/:jobId/schedule',
-    requireAnyPermission('dispatch:write'),
+  router.get(
+    '/stats',
+    requireAnyPermission('dispatch:read', 'dispatch:write'),
     async (req, res) => {
       const { companyId } = getAuth(req);
-      const parsed = scheduleJobSchema.safeParse(req.body);
+      const stats = await schedulingService.getStats(companyId);
+      res.json({ data: stats });
+    },
+  );
 
-      if (!parsed.success) {
+  router.get(
+    '/assignees',
+    requireAnyPermission('dispatch:read', 'dispatch:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const assignees = await schedulingService.listAssignees(companyId);
+      res.json({ data: { assignees } });
+    },
+  );
+
+  router.get(
+    '/calendar',
+    requireAnyPermission('dispatch:read', 'dispatch:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const fromParam = typeof req.query.from === 'string' ? req.query.from : null;
+      const toParam = typeof req.query.to === 'string' ? req.query.to : null;
+
+      if (!fromParam || !toParam) {
         res.status(400).json({
           error: {
             code: 'VALIDATION_ERROR',
-            message: 'Invalid schedule payload',
-            details: parsed.error.flatten(),
+            message: 'Calendar requires from and to query parameters',
+          },
+        });
+        return;
+      }
+
+      const from = new Date(fromParam);
+      const to = new Date(toParam);
+
+      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid calendar date range',
           },
         });
         return;
       }
 
       try {
-        const event = await schedulingService.scheduleJob(
-          companyId,
-          getRouteParam(req.params.jobId),
-          parsed.data,
-        );
-        res.status(201).json({ data: { event } });
+        const calendar = await schedulingService.getCalendar(companyId, from, to);
+        res.json({ data: calendar });
       } catch (error) {
         handleSchedulingError(res, error);
       }
     },
   );
+
+  router.post('/jobs/:jobId/schedule', requireAnyPermission('dispatch:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const parsed = scheduleJobSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid schedule payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const event = await schedulingService.scheduleJob(
+        companyId,
+        getRouteParam(req.params.jobId),
+        parsed.data,
+      );
+      res.status(201).json({ data: { event } });
+    } catch (error) {
+      handleSchedulingError(res, error);
+    }
+  });
 
   router.patch(
     '/jobs/:jobId/schedule',

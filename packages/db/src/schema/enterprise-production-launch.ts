@@ -65,8 +65,17 @@ export const plWizardStepStatusEnum = pgEnum('pl_wizard_step_status', [
   'blocked',
   'skipped',
 ]);
-export const plInsightSeverityEnum = pgEnum('pl_insight_severity', ['info', 'warning', 'high', 'critical']);
-export const plPlatformAlertSeverityEnum = pgEnum('pl_platform_alert_severity', ['info', 'warning', 'critical']);
+export const plInsightSeverityEnum = pgEnum('pl_insight_severity', [
+  'info',
+  'warning',
+  'high',
+  'critical',
+]);
+export const plPlatformAlertSeverityEnum = pgEnum('pl_platform_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
 export const plPlatformAlertStatusEnum = pgEnum('pl_platform_alert_status', [
   'open',
   'acknowledged',
@@ -80,10 +89,16 @@ export const plPlatformConfig = pgTable('pl_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  deploymentPolicy: jsonb('deployment_policy').$type<Record<string, unknown>>().notNull().default({}),
+  deploymentPolicy: jsonb('deployment_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   providerPolicy: jsonb('provider_policy').$type<Record<string, unknown>>().notNull().default({}),
   launchPolicy: jsonb('launch_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -137,25 +152,28 @@ export const plLiveIntegrationVerificationRuns = pgTable('pl_live_integration_ve
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const plLiveIntegrationVerificationResults = pgTable('pl_live_integration_verification_results', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  verificationRunId: uuid('verification_run_id')
-    .notNull()
-    .references(() => plLiveIntegrationVerificationRuns.id, { onDelete: 'cascade' }),
-  providerKey: text('provider_key').notNull(),
-  providerName: text('provider_name').notNull(),
-  category: plProviderCategoryEnum('category'),
-  status: plValidationStatusEnum('status').notNull().default('pending'),
-  severity: plInsightSeverityEnum('severity').notNull().default('info'),
-  message: text('message'),
-  recommendation: text('recommendation'),
-  durationMs: integer('duration_ms'),
-  details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const plLiveIntegrationVerificationResults = pgTable(
+  'pl_live_integration_verification_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    verificationRunId: uuid('verification_run_id')
+      .notNull()
+      .references(() => plLiveIntegrationVerificationRuns.id, { onDelete: 'cascade' }),
+    providerKey: text('provider_key').notNull(),
+    providerName: text('provider_name').notNull(),
+    category: plProviderCategoryEnum('category'),
+    status: plValidationStatusEnum('status').notNull().default('pending'),
+    severity: plInsightSeverityEnum('severity').notNull().default('info'),
+    message: text('message'),
+    recommendation: text('recommendation'),
+    durationMs: integer('duration_ms'),
+    details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const plDeploymentPipelineRuns = pgTable('pl_deployment_pipeline_runs', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -169,12 +187,17 @@ export const plDeploymentPipelineRuns = pgTable('pl_deployment_pipeline_runs', {
   healthVerified: boolean('health_verified').notNull().default(false),
   smokeTestPassed: boolean('smoke_test_passed').notNull().default(false),
   ownerApproved: boolean('owner_approved').notNull().default(false),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   deployedAt: timestamp('deployed_at', { withTimezone: true }),
   rolledBackAt: timestamp('rolled_back_at', { withTimezone: true }),
   smokeTests: jsonb('smoke_tests').$type<Array<Record<string, unknown>>>().notNull().default([]),
-  deploymentReport: jsonb('deployment_report').$type<Record<string, unknown>>().notNull().default({}),
+  deploymentReport: jsonb('deployment_report')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -219,7 +242,9 @@ export const plGoLiveWizards = pgTable('pl_go_live_wizards', {
   status: plWizardStatusEnum('status').notNull().default('draft'),
   currentStepKey: text('current_step_key'),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   launchedAt: timestamp('launched_at', { withTimezone: true }),
   launchConfirmed: boolean('launch_confirmed').notNull().default(false),
@@ -241,7 +266,9 @@ export const plGoLiveWizardSteps = pgTable('pl_go_live_wizard_steps', {
   stepOrder: integer('step_order').notNull().default(0),
   status: plWizardStepStatusEnum('status').notNull().default('pending'),
   notes: text('notes'),
-  completedByUserId: uuid('completed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  completedByUserId: uuid('completed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

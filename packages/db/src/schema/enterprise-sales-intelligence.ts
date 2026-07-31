@@ -23,7 +23,12 @@ export const siWorkflowStatusEnum = pgEnum('si_workflow_status', [
   'cancelled',
 ]);
 
-export const siAdapterStatusEnum = pgEnum('si_adapter_status', ['active', 'inactive', 'testing', 'error']);
+export const siAdapterStatusEnum = pgEnum('si_adapter_status', [
+  'active',
+  'inactive',
+  'testing',
+  'error',
+]);
 
 export const siCrmProviderTypeEnum = pgEnum('si_crm_provider_type', [
   'salesforce',
@@ -47,7 +52,12 @@ export const siCrmProviderTypeEnum = pgEnum('si_crm_provider_type', [
 
 export const siAlertSeverityEnum = pgEnum('si_alert_severity', ['info', 'warning', 'critical']);
 
-export const siAlertStatusEnum = pgEnum('si_alert_status', ['open', 'acknowledged', 'resolved', 'dismissed']);
+export const siAlertStatusEnum = pgEnum('si_alert_status', [
+  'open',
+  'acknowledged',
+  'resolved',
+  'dismissed',
+]);
 
 export const siTargetStatusEnum = pgEnum('si_target_status', [
   'draft',
@@ -79,11 +89,23 @@ export const siPlatformConfig = pgTable('si_platform_config', {
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  pipelineTemplates: jsonb('pipeline_templates').$type<Record<string, unknown>>().notNull().default({}),
-  playbookTemplates: jsonb('playbook_templates').$type<Record<string, unknown>>().notNull().default({}),
+  pipelineTemplates: jsonb('pipeline_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  playbookTemplates: jsonb('playbook_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   targetTemplates: jsonb('target_templates').$type<Record<string, unknown>>().notNull().default({}),
-  forecastMethodology: jsonb('forecast_methodology').$type<Record<string, unknown>>().notNull().default({}),
-  attributionStandards: jsonb('attribution_standards').$type<Record<string, unknown>>().notNull().default({}),
+  forecastMethodology: jsonb('forecast_methodology')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  attributionStandards: jsonb('attribution_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -177,8 +199,14 @@ export const siPipelineStages = pgTable('si_pipeline_stages', {
   stageKey: text('stage_key').notNull(),
   sortOrder: integer('sort_order').notNull().default(0),
   probabilityPercent: numeric('probability_percent', { precision: 5, scale: 2 }),
-  entryRequirements: jsonb('entry_requirements').$type<Record<string, unknown>>().notNull().default({}),
-  exitRequirements: jsonb('exit_requirements').$type<Record<string, unknown>>().notNull().default({}),
+  entryRequirements: jsonb('entry_requirements')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  exitRequirements: jsonb('exit_requirements')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   slaHours: integer('sla_hours'),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -195,7 +223,9 @@ export const siLeadDeduplicationCandidates = pgTable('si_lead_deduplication_cand
   matchScore: numeric('match_score', { precision: 5, scale: 2 }),
   matchReason: text('match_reason'),
   status: text('status').notNull().default('pending'),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -208,7 +238,9 @@ export const siLeadMergeRecords = pgTable('si_lead_merge_records', {
   survivingLeadId: uuid('surviving_lead_id'),
   mergedLeadId: uuid('merged_lead_id'),
   mergeReason: text('merge_reason').notNull(),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   sourceHistory: jsonb('source_history').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -303,7 +335,10 @@ export const siSalesTargets = pgTable('si_sales_targets', {
   currency: text('currency'),
   progressPercent: numeric('progress_percent', { precision: 7, scale: 2 }),
   formula: text('formula'),
-  supportingRecords: jsonb('supporting_records').$type<Record<string, unknown>>().notNull().default({}),
+  supportingRecords: jsonb('supporting_records')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -370,7 +405,10 @@ export const siCustomerGrowthSnapshots = pgTable('si_customer_growth_snapshots',
   opportunityType: text('opportunity_type').notNull(),
   title: text('title').notNull(),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   limitations: text('limitations'),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -384,7 +422,10 @@ export const siRetentionRiskSnapshots = pgTable('si_retention_risk_snapshots', {
   riskLevel: text('risk_level').notNull(),
   riskFactors: jsonb('risk_factors').$type<unknown[]>().notNull().default([]),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -424,13 +465,17 @@ export const siDiscountRequests = pgTable('si_discount_requests', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   quoteId: uuid('quote_id'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   discountPercent: numeric('discount_percent', { precision: 7, scale: 2 }),
   discountAmountCents: integer('discount_amount_cents'),
   reason: text('reason'),
   marginImpactPercent: numeric('margin_impact_percent', { precision: 7, scale: 2 }),
   workflowStatus: siWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -459,7 +504,10 @@ export const siCommissionEntries = pgTable('si_commission_entries', {
   status: siCommissionStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull().default(0),
   formula: text('formula'),
-  sourceTransactions: jsonb('source_transactions').$type<Record<string, unknown>>().notNull().default({}),
+  sourceTransactions: jsonb('source_transactions')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   workflowStatus: siWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -474,10 +522,15 @@ export const siQualificationAnalyses = pgTable('si_qualification_analyses', {
   recommendation: text('recommendation'),
   priority: text('priority'),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   limitations: text('limitations'),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -493,7 +546,9 @@ export const siWinLossRecords = pgTable('si_win_loss_records', {
   priceImpact: text('price_impact'),
   customerFeedback: text('customer_feedback'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
-  recordedByUserId: uuid('recorded_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  recordedByUserId: uuid('recorded_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -569,7 +624,9 @@ export const siSalesAlerts = pgTable('si_sales_alerts', {
   sourceModule: text('source_module'),
   sourceEntityId: uuid('source_entity_id'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -588,7 +645,9 @@ export const siSalesActionDrafts = pgTable('si_sales_action_drafts', {
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

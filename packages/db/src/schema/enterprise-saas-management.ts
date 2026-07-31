@@ -62,7 +62,10 @@ export const smPlatformConfig = pgTable('sm_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   billingPolicy: jsonb('billing_policy').$type<Record<string, unknown>>().notNull().default({}),
-  provisioningPolicy: jsonb('provisioning_policy').$type<Record<string, unknown>>().notNull().default({}),
+  provisioningPolicy: jsonb('provisioning_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   licensingPolicy: jsonb('licensing_policy').$type<Record<string, unknown>>().notNull().default({}),
   partnerPolicy: jsonb('partner_policy').$type<Record<string, unknown>>().notNull().default({}),
   usagePolicy: jsonb('usage_policy').$type<Record<string, unknown>>().notNull().default({}),
@@ -240,7 +243,9 @@ export const smPartnerCommissions = pgTable('sm_partner_commissions', {
   partnerAccountId: uuid('partner_account_id')
     .notNull()
     .references(() => smPartnerAccounts.id, { onDelete: 'cascade' }),
-  targetCompanyId: uuid('target_company_id').references(() => companies.id, { onDelete: 'set null' }),
+  targetCompanyId: uuid('target_company_id').references(() => companies.id, {
+    onDelete: 'set null',
+  }),
   amountCents: integer('amount_cents').notNull().default(0),
   currency: text('currency').notNull().default('USD'),
   commissionType: text('commission_type').notNull(),
@@ -268,7 +273,9 @@ export const smUsageThresholds = pgTable('sm_usage_thresholds', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  targetCompanyId: uuid('target_company_id').references(() => companies.id, { onDelete: 'cascade' }),
+  targetCompanyId: uuid('target_company_id').references(() => companies.id, {
+    onDelete: 'cascade',
+  }),
   metricKey: text('metric_key').notNull(),
   warningPercent: integer('warning_percent').notNull().default(80),
   criticalPercent: integer('critical_percent').notNull().default(95),
@@ -294,7 +301,9 @@ export const smNotifications = pgTable('sm_notifications', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  targetCompanyId: uuid('target_company_id').references(() => companies.id, { onDelete: 'cascade' }),
+  targetCompanyId: uuid('target_company_id').references(() => companies.id, {
+    onDelete: 'cascade',
+  }),
   notificationType: text('notification_type').notNull(),
   title: text('title').notNull(),
   message: text('message'),
@@ -327,7 +336,9 @@ export const smSaasAlerts = pgTable('sm_saas_alerts', {
   status: smAlertStatusEnum('status').notNull().default('open'),
   title: text('title').notNull(),
   description: text('description'),
-  targetCompanyId: uuid('target_company_id').references(() => companies.id, { onDelete: 'set null' }),
+  targetCompanyId: uuid('target_company_id').references(() => companies.id, {
+    onDelete: 'set null',
+  }),
   sourceModule: text('source_module'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

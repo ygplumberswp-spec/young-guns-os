@@ -1,4 +1,15 @@
 import type {
+  CreateJobVariationRequest,
+  FlushOfflineActionsRequest,
+  FlushOfflineActionsResponse,
+  JobCompletionGateResult,
+  JobDetail,
+  JobEvidenceContentResponse,
+  JobMaterialLineSummary,
+  JobVariationSummary,
+  JobWorkflowAction,
+  JobWorkflowTransitionRequest,
+  MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
   MobileRouteIntelligence,
   MobileWorkforceDashboard,
@@ -10,8 +21,18 @@ import type {
   MobileTimeEntrySummary,
   MobileWorkforceRequestSummary,
   NotificationSummary,
+  RecordJobMaterialLineRequest,
+  SubmitGatedJobCompletionRequest,
+  SubmitMobileJobDocumentationRequest,
+  UploadJobEvidenceRequest,
 } from '@titan/shared';
 import { request, ApiClientError } from './api-client';
+
+function newClientActionId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export { newClientActionId };
 
 export { ApiClientError as MobileApiClientError };
 
@@ -78,10 +99,9 @@ export async function createMobileTimeEntry(
 }
 
 export async function fetchMobileNotifications(accessToken: string) {
-  return request<MobileWorkforceNotificationCentre>(
-    '/mobile/technician/workforce/notifications',
-    { accessToken },
-  );
+  return request<MobileWorkforceNotificationCentre>('/mobile/technician/workforce/notifications', {
+    accessToken,
+  });
 }
 
 export async function fetchMobileNotificationsLegacy(accessToken: string) {
@@ -138,4 +158,128 @@ export async function processMobileSync(accessToken: string) {
     { accessToken, method: 'POST', body: {} },
   );
   return data.result;
+}
+
+export async function transitionMobileJob(
+  accessToken: string,
+  jobId: string,
+  action: JobWorkflowAction,
+  reason?: string,
+) {
+  const body: JobWorkflowTransitionRequest = {
+    action,
+    reason: reason ?? null,
+    clientActionId: newClientActionId(action),
+  };
+  const data = await request<{ job: JobDetail }>(`/mobile/technician/jobs/${jobId}/transition`, {
+    accessToken,
+    method: 'POST',
+    body,
+  });
+  return data.job;
+}
+
+export async function fetchMobileCompletionGate(accessToken: string, jobId: string) {
+  const data = await request<{ gate: JobCompletionGateResult }>(
+    `/mobile/technician/jobs/${jobId}/completion-gate`,
+    { accessToken },
+  );
+  return data.gate;
+}
+
+export async function completeMobileJobGated(
+  accessToken: string,
+  jobId: string,
+  body: Omit<SubmitGatedJobCompletionRequest, 'clientActionId'>,
+) {
+  const data = await request<{ job: JobDetail; snapshotId: string }>(
+    `/mobile/technician/jobs/${jobId}/complete-gated`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { ...body, clientActionId: newClientActionId('complete') },
+    },
+  );
+  return data;
+}
+
+export async function submitMobileJobDocumentation(
+  accessToken: string,
+  jobId: string,
+  body: SubmitMobileJobDocumentationRequest,
+) {
+  const data = await request<{ documentation: MobileJobDocumentationSummary }>(
+    `/mobile/technician/workforce/jobs/${jobId}/documentation`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.documentation;
+}
+
+export async function uploadMobileJobEvidence(
+  accessToken: string,
+  jobId: string,
+  body: UploadJobEvidenceRequest,
+) {
+  const data = await request<{ documentation: MobileJobDocumentationSummary }>(
+    `/mobile/technician/workforce/jobs/${jobId}/documentation/upload`,
+    {
+      accessToken,
+      method: 'POST',
+      body: {
+        ...body,
+        clientActionId: body.clientActionId ?? newClientActionId('evidence'),
+      },
+      timeoutMs: 60_000,
+    },
+  );
+  return data.documentation;
+}
+
+export async function fetchMobileJobEvidenceContent(
+  accessToken: string,
+  jobId: string,
+  docId: string,
+) {
+  return request<JobEvidenceContentResponse>(
+    `/mobile/technician/workforce/jobs/${jobId}/documentation/${docId}/content`,
+    { accessToken, timeoutMs: 60_000 },
+  );
+}
+
+export async function flushMobileOfflineActions(
+  accessToken: string,
+  body: FlushOfflineActionsRequest,
+) {
+  return request<FlushOfflineActionsResponse>(
+    '/mobile/technician/workforce/offline/flush',
+    { accessToken, method: 'POST', body, timeoutMs: 90_000 },
+  );
+}
+
+export async function createMobileJobVariation(
+  accessToken: string,
+  jobId: string,
+  body: CreateJobVariationRequest,
+) {
+  const data = await request<{ variation: JobVariationSummary }>(
+    `/mobile/technician/jobs/${jobId}/variations`,
+    { accessToken, method: 'POST', body },
+  );
+  return data.variation;
+}
+
+export async function recordMobileMaterialLine(
+  accessToken: string,
+  jobId: string,
+  body: Omit<RecordJobMaterialLineRequest, 'clientActionId'>,
+) {
+  const data = await request<{ materialLine: JobMaterialLineSummary }>(
+    `/mobile/technician/jobs/${jobId}/material-lines`,
+    {
+      accessToken,
+      method: 'POST',
+      body: { ...body, clientActionId: newClientActionId('material') },
+    },
+  );
+  return data.materialLine;
 }

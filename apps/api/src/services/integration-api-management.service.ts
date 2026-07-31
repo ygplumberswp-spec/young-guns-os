@@ -19,10 +19,7 @@ import type {
   IntegrationWebhookDeliverySummary,
   UpdateIntegrationRegistrySettingsRequest,
 } from '@titan/shared';
-import {
-  getIntegrationProviderRegistryEntry,
-  INTEGRATION_PROVIDER_REGISTRY,
-} from '@titan/shared';
+import { getIntegrationProviderRegistryEntry, INTEGRATION_PROVIDER_REGISTRY } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   developerApiKeys,
@@ -39,10 +36,7 @@ import {
   integrationWebhookEvents,
   whatsappConnections,
 } from '@titan/db';
-import {
-  generateDeveloperApiKey,
-  hashApiKey,
-} from '../lib/crypto.js';
+import { generateDeveloperApiKey, hashApiKey } from '../lib/crypto.js';
 import type { BusinessIntegrationsService } from './business-integrations.service.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { IntegrationsService } from './integrations.service.js';
@@ -111,8 +105,9 @@ export class IntegrationApiManagementService {
         availability: entry.availability,
         authType: setting?.authType ?? PROVIDER_AUTH_TYPES[entry.provider] ?? null,
         version: setting?.version ?? null,
-        enabled: setting?.enabled ?? (status?.isConfigured ?? false),
-        healthStatus: setting?.healthStatus ?? this.inferHealthFromConnection(status?.connectionStatus),
+        enabled: setting?.enabled ?? status?.isConfigured ?? false,
+        healthStatus:
+          setting?.healthStatus ?? this.inferHealthFromConnection(status?.connectionStatus),
         connectionId: status?.connectionId ?? null,
         connectionStatus: status?.connectionStatus ?? 'disconnected',
         isConfigured: status?.isConfigured ?? false,
@@ -145,14 +140,14 @@ export class IntegrationApiManagementService {
       companyId,
       provider: provider as IntegrationProvider,
       enabled: input.enabled ?? existing?.enabled ?? false,
-      version: input.version !== undefined ? input.version : existing?.version ?? null,
+      version: input.version !== undefined ? input.version : (existing?.version ?? null),
       authType: existing?.authType ?? PROVIDER_AUTH_TYPES[provider] ?? null,
       nextSyncAt:
         input.nextSyncAt !== undefined
           ? input.nextSyncAt
             ? new Date(input.nextSyncAt)
             : null
-          : existing?.nextSyncAt ?? null,
+          : (existing?.nextSyncAt ?? null),
       updatedAt: new Date(),
     };
 
@@ -186,7 +181,10 @@ export class IntegrationApiManagementService {
     return rows.map(toCredentialMetadataSummary);
   }
 
-  async markCredentialRotationRequired(companyId: string, metadataId: string): Promise<IntegrationCredentialMetadataSummary> {
+  async markCredentialRotationRequired(
+    companyId: string,
+    metadataId: string,
+  ): Promise<IntegrationCredentialMetadataSummary> {
     const row = await this.deps.db.query.integrationCredentialMetadata.findFirst({
       where: and(
         eq(integrationCredentialMetadata.companyId, companyId),
@@ -241,7 +239,9 @@ export class IntegrationApiManagementService {
     return [...latestByProvider.values()];
   }
 
-  async generateHealthRecommendations(companyId: string): Promise<IntegrationRecommendationSummary[]> {
+  async generateHealthRecommendations(
+    companyId: string,
+  ): Promise<IntegrationRecommendationSummary[]> {
     const registry = await this.listRegistry(companyId);
     const credentials = await this.listCredentialMetadata(companyId);
     const deliveries = await this.listWebhookDeliveries(companyId, 20);
@@ -270,7 +270,8 @@ export class IntegrationApiManagementService {
         recommendations.push({
           provider: entry.provider as IntegrationProvider,
           title: `${entry.name} health degraded`,
-          description: 'Integration health check reports unhealthy status. Validate credentials and sync history.',
+          description:
+            'Integration health check reports unhealthy status. Validate credentials and sync history.',
           priority: 'medium',
           context: { healthStatus: entry.healthStatus },
         });
@@ -288,7 +289,10 @@ export class IntegrationApiManagementService {
         });
       }
 
-      if (credential.expiresAt && new Date(credential.expiresAt).getTime() < Date.now() + 7 * 86400000) {
+      if (
+        credential.expiresAt &&
+        new Date(credential.expiresAt).getTime() < Date.now() + 7 * 86400000
+      ) {
         recommendations.push({
           provider: credential.provider as IntegrationProvider,
           title: 'Credential expiry approaching',
@@ -340,7 +344,10 @@ export class IntegrationApiManagementService {
     return rows.map(toRecommendationSummary);
   }
 
-  async listIntegrationLogs(companyId: string, limit = 100): Promise<IntegrationRequestLogSummary[]> {
+  async listIntegrationLogs(
+    companyId: string,
+    limit = 100,
+  ): Promise<IntegrationRequestLogSummary[]> {
     await this.refreshLogsFromSyncJobs(companyId);
 
     const rows = await this.deps.db.query.integrationRequestLogs.findMany({
@@ -352,7 +359,10 @@ export class IntegrationApiManagementService {
     return rows.map(toRequestLogSummary);
   }
 
-  async listWebhookDeliveries(companyId: string, limit = 50): Promise<IntegrationWebhookDeliverySummary[]> {
+  async listWebhookDeliveries(
+    companyId: string,
+    limit = 50,
+  ): Promise<IntegrationWebhookDeliverySummary[]> {
     await this.refreshWebhookDeliveriesFromEvents(companyId);
 
     const rows = await this.deps.db.query.integrationWebhookDeliveries.findMany({
@@ -384,7 +394,10 @@ export class IntegrationApiManagementService {
     return toWebhookDeliverySummary(delivery);
   }
 
-  async replayWebhookDelivery(companyId: string, deliveryId: string): Promise<IntegrationWebhookDeliverySummary> {
+  async replayWebhookDelivery(
+    companyId: string,
+    deliveryId: string,
+  ): Promise<IntegrationWebhookDeliverySummary> {
     const delivery = await this.deps.db.query.integrationWebhookDeliveries.findFirst({
       where: and(
         eq(integrationWebhookDeliveries.companyId, companyId),
@@ -444,7 +457,10 @@ export class IntegrationApiManagementService {
     };
   }
 
-  async retrySyncJob(companyId: string, syncJobId: string): Promise<{ provider: string; retried: boolean }> {
+  async retrySyncJob(
+    companyId: string,
+    syncJobId: string,
+  ): Promise<{ provider: string; retried: boolean }> {
     const job = await this.deps.hubService.getSyncJob(companyId, syncJobId);
 
     if (!job) {
@@ -452,7 +468,10 @@ export class IntegrationApiManagementService {
     }
 
     if (job.status !== 'failed') {
-      throw new IntegrationApiManagementError('VALIDATION_ERROR', 'Only failed sync jobs can be retried');
+      throw new IntegrationApiManagementError(
+        'VALIDATION_ERROR',
+        'Only failed sync jobs can be retried',
+      );
     }
 
     switch (job.provider) {
@@ -478,7 +497,10 @@ export class IntegrationApiManagementService {
     return { provider: job.provider, retried: true };
   }
 
-  async validateIntegration(companyId: string, provider: string): Promise<IntegrationValidationResult> {
+  async validateIntegration(
+    companyId: string,
+    provider: string,
+  ): Promise<IntegrationValidationResult> {
     this.assertKnownProvider(provider);
 
     const checks: IntegrationValidationResult['checks'] = [];
@@ -502,7 +524,9 @@ export class IntegrationApiManagementService {
       checks.push({
         key: 'connection_exists',
         passed: Boolean(connection),
-        message: connection ? 'WhatsApp connection record exists' : 'No WhatsApp connection configured',
+        message: connection
+          ? 'WhatsApp connection record exists'
+          : 'No WhatsApp connection configured',
       });
 
       checks.push({
@@ -812,7 +836,9 @@ export class IntegrationApiManagementService {
       const [provider] = endpointKey.split(':');
       const avgResponseMs =
         stats.durations.length > 0
-          ? Math.round(stats.durations.reduce((sum, value) => sum + value, 0) / stats.durations.length)
+          ? Math.round(
+              stats.durations.reduce((sum, value) => sum + value, 0) / stats.durations.length,
+            )
           : null;
 
       const existing = await this.deps.db.query.integrationApiUsage.findFirst({
@@ -876,11 +902,11 @@ export class IntegrationApiManagementService {
         method: 'POST',
         endpoint,
         statusCode: job.status === 'failed' ? 500 : job.status === 'completed' ? 200 : 202,
-        durationMs: job.completedAt
-          ? job.completedAt.getTime() - job.startedAt.getTime()
-          : null,
+        durationMs: job.completedAt ? job.completedAt.getTime() - job.startedAt.getTime() : null,
         errorMessage: maskSensitiveText(job.errorMessage),
-        requestSummary: maskSensitiveText(`provider=${job.provider} scope=${job.syncScope ?? 'default'}`),
+        requestSummary: maskSensitiveText(
+          `provider=${job.provider} scope=${job.syncScope ?? 'default'}`,
+        ),
         responseSummary: maskSensitiveText(
           job.status === 'completed' ? 'Sync completed' : job.status,
         ),
@@ -954,7 +980,12 @@ export class IntegrationApiManagementService {
         webhookEndpoints.filter((endpoint) => endpoint.isActive).length === 0 ||
         failedEvents.filter((event) => event.provider === entry.provider).length === 0;
 
-      const healthStatus = this.resolveHealthStatus(authHealthy, apiAvailable, webhookHealthy, entry.lastError);
+      const healthStatus = this.resolveHealthStatus(
+        authHealthy,
+        apiAvailable,
+        webhookHealthy,
+        entry.lastError,
+      );
       const summary = [
         `Connection: ${entry.connectionStatus}`,
         entry.lastSyncAt ? `Last sync: ${entry.lastSyncAt}` : 'No sync recorded',
@@ -1043,7 +1074,10 @@ export class IntegrationApiManagementService {
 
   private assertKnownProvider(provider: string): void {
     if (!INTEGRATION_PROVIDER_REGISTRY.some((entry) => entry.provider === provider)) {
-      throw new IntegrationApiManagementError('VALIDATION_ERROR', `Unknown integration provider: ${provider}`);
+      throw new IntegrationApiManagementError(
+        'VALIDATION_ERROR',
+        `Unknown integration provider: ${provider}`,
+      );
     }
   }
 }
@@ -1078,7 +1112,9 @@ function toCredentialMetadataSummary(
   };
 }
 
-function toApiUsageSummary(row: typeof integrationApiUsage.$inferSelect): IntegrationApiUsageSummary {
+function toApiUsageSummary(
+  row: typeof integrationApiUsage.$inferSelect,
+): IntegrationApiUsageSummary {
   return {
     id: row.id,
     provider: row.provider,
@@ -1091,7 +1127,9 @@ function toApiUsageSummary(row: typeof integrationApiUsage.$inferSelect): Integr
   };
 }
 
-function toHealthSummary(row: typeof integrationHealthSnapshots.$inferSelect): IntegrationHealthSummary {
+function toHealthSummary(
+  row: typeof integrationHealthSnapshots.$inferSelect,
+): IntegrationHealthSummary {
   return {
     provider: row.provider,
     healthStatus: row.healthStatus,
@@ -1104,7 +1142,9 @@ function toHealthSummary(row: typeof integrationHealthSnapshots.$inferSelect): I
   };
 }
 
-function toRequestLogSummary(row: typeof integrationRequestLogs.$inferSelect): IntegrationRequestLogSummary {
+function toRequestLogSummary(
+  row: typeof integrationRequestLogs.$inferSelect,
+): IntegrationRequestLogSummary {
   return {
     id: row.id,
     provider: row.provider,
@@ -1153,7 +1193,9 @@ function toRecommendationSummary(
   };
 }
 
-function toDeveloperApiKeySummary(row: typeof developerApiKeys.$inferSelect): DeveloperApiKeySummary {
+function toDeveloperApiKeySummary(
+  row: typeof developerApiKeys.$inferSelect,
+): DeveloperApiKeySummary {
   return {
     id: row.id,
     name: row.name,

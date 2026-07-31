@@ -16,24 +16,38 @@ export function PortalAssetsPage() {
       { accessToken },
     )
       .then((data) => setAssets(data.assets))
-      .catch((err) => setError(err instanceof PortalApiClientError ? err.message : 'Unable to load assets'));
+      .catch((err) =>
+        setError(err instanceof PortalApiClientError ? err.message : 'Unable to load assets'),
+      );
   }, [accessToken]);
 
   return (
     <div className="portal-page">
-      <PageHeader title="My assets" description="View registered assets, warranties, and service history." />
+      <PageHeader
+        title="My assets"
+        description="View registered assets, warranties, and service history."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       {assets.length === 0 ? (
-        <EmptyState title="No assets registered" description="Assets linked to your account will appear here." />
+        <EmptyState
+          title="No assets registered"
+          description="Equipment and assets linked to your account will appear here when the office registers them. This empty list is truthful — nothing is hidden or still loading."
+        />
       ) : (
         <Panel title="Registered assets">
           <ul className="portal-list">
             {assets.map((asset) => (
               <li key={asset.assetId}>
                 <strong>{asset.name}</strong>
-                <span>{asset.categoryName ?? 'Asset'} · {asset.lifecycleStage.replace(/_/g, ' ')}</span>
-                {asset.warrantyExpiresAt ? <span>Warranty expires {asset.warrantyExpiresAt}</span> : null}
-                {asset.openAlertCount > 0 ? <span>{asset.openAlertCount} open alert(s)</span> : null}
+                <span>
+                  {asset.categoryName ?? 'Asset'} · {asset.lifecycleStage.replace(/_/g, ' ')}
+                </span>
+                {asset.warrantyExpiresAt ? (
+                  <span>Warranty expires {asset.warrantyExpiresAt}</span>
+                ) : null}
+                {asset.openAlertCount > 0 ? (
+                  <span>{asset.openAlertCount} open alert(s)</span>
+                ) : null}
               </li>
             ))}
           </ul>

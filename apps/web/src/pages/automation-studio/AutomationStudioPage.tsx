@@ -47,7 +47,9 @@ export function AutomationStudioPage() {
         await loadDashboard();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load automation studio');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load automation studio',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -79,7 +81,10 @@ export function AutomationStudioPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Automation Studio" description="You do not have permission to view automation." />
+        <PageHeader
+          title="Automation Studio"
+          description="You do not have permission to view automation."
+        />
       </div>
     );
   }
@@ -113,7 +118,11 @@ export function AutomationStudioPage() {
           <button
             key={tab.id}
             type="button"
-            className={activeTab === tab.id ? 'automation-nav__link automation-nav__link--active' : 'automation-nav__link'}
+            className={
+              activeTab === tab.id
+                ? 'automation-nav__link automation-nav__link--active'
+                : 'automation-nav__link'
+            }
             onClick={() => setActiveTab(tab.id)}
           >
             {tab.label}
@@ -137,7 +146,9 @@ export function AutomationStudioPage() {
             <StatCard label="Failed" value={String(monitoring?.failedCount ?? 0)} />
             <StatCard
               label="Success rate"
-              value={monitoring?.successRatePercent != null ? `${monitoring.successRatePercent}%` : '—'}
+              value={
+                monitoring?.successRatePercent != null ? `${monitoring.successRatePercent}%` : '—'
+              }
             />
             <StatCard label="Queue depth" value={String(monitoring?.queueDepth ?? 0)} />
             <StatCard label="Templates" value={String(dashboard.stats.templateCount)} />
@@ -160,7 +171,9 @@ export function AutomationStudioPage() {
               </div>
               <div>
                 <dt>Avg duration</dt>
-                <dd>{monitoring?.avgDurationMs != null ? `${monitoring.avgDurationMs} ms` : '—'}</dd>
+                <dd>
+                  {monitoring?.avgDurationMs != null ? `${monitoring.avgDurationMs} ms` : '—'}
+                </dd>
               </div>
             </dl>
           </Panel>
@@ -223,7 +236,10 @@ export function AutomationStudioPage() {
                 {dashboard.recentRuns.map((run) => (
                   <li key={run.id}>
                     <strong>{run.workflowName ?? 'Workflow'}</strong> — {run.status}
-                    <span className="page-muted"> · {new Date(run.startedAt).toLocaleString()}</span>
+                    <span className="page-muted">
+                      {' '}
+                      · {new Date(run.startedAt).toLocaleString()}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -236,7 +252,9 @@ export function AutomationStudioPage() {
         <>
           {canWrite ? (
             <div className="analytics-page__section-header">
-              <span className="page-muted">Recommendations derived from real workflow execution patterns.</span>
+              <span className="page-muted">
+                Recommendations derived from real workflow execution patterns.
+              </span>
               <Button
                 size="sm"
                 variant="secondary"
@@ -257,7 +275,9 @@ export function AutomationStudioPage() {
               <ul className="analytics-page__run-list">
                 {dashboard.recommendations.map((item) => (
                   <li key={item.id}>
-                    <strong>[{item.priority}] {item.title}</strong>
+                    <strong>
+                      [{item.priority}] {item.title}
+                    </strong>
                     <p className="page-muted">{item.recommendation}</p>
                   </li>
                 ))}
@@ -278,7 +298,9 @@ export function AutomationStudioPage() {
               {dashboard.recentRuns.slice(0, 15).map((run) => (
                 <li key={run.id}>
                   <strong>{run.workflowName ?? 'Workflow'}</strong> — {run.status}
-                  {run.errorMessage ? <span className="form-error"> · {run.errorMessage}</span> : null}
+                  {run.errorMessage ? (
+                    <span className="form-error"> · {run.errorMessage}</span>
+                  ) : null}
                 </li>
               ))}
             </ul>

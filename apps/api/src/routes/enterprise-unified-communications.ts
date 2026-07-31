@@ -59,7 +59,19 @@ const dispatchNotificationSchema = z.object({
     'invoice',
   ]),
   channel: z
-    .enum(['voice', 'whatsapp', 'sms', 'email', 'live_chat', 'website_chat', 'facebook_messenger', 'instagram', 'microsoft_teams', 'slack', 'custom'])
+    .enum([
+      'voice',
+      'whatsapp',
+      'sms',
+      'email',
+      'live_chat',
+      'website_chat',
+      'facebook_messenger',
+      'instagram',
+      'microsoft_teams',
+      'slack',
+      'custom',
+    ])
     .optional(),
   recipientAddress: z.string().trim().max(500).optional(),
   messageBody: z.string().trim().max(5000).optional(),
@@ -102,7 +114,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requireRead = requireAnyPermission(
     'communications:read',
     'communications:manage',
@@ -120,21 +135,26 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
   });
 
   router.get('/dashboard', requireRead, async (req, res) => {
-    const dashboard = await deps.enterpriseUnifiedCommunicationsService.getDashboard(getAuth(req).companyId);
+    const dashboard = await deps.enterpriseUnifiedCommunicationsService.getDashboard(
+      getAuth(req).companyId,
+    );
     res.json({ dashboard });
   });
 
   router.get('/aura-context', requireRead, async (req, res) => {
-    const context = await deps.enterpriseUnifiedCommunicationsService.buildAuraContext(getAuth(req).companyId);
+    const context = await deps.enterpriseUnifiedCommunicationsService.buildAuraContext(
+      getAuth(req).companyId,
+    );
     res.json({ context });
   });
 
   router.get('/customers/:customerId/center', requireRead, async (req, res) => {
     try {
-      const center = await deps.enterpriseUnifiedCommunicationsService.getCustomerCommunicationCenter(
-        getAuth(req).companyId,
-        getRouteParam(req.params.customerId),
-      );
+      const center =
+        await deps.enterpriseUnifiedCommunicationsService.getCustomerCommunicationCenter(
+          getAuth(req).companyId,
+          getRouteParam(req.params.customerId),
+        );
       res.json({ center });
     } catch (error) {
       handleError(error, res);
@@ -142,7 +162,9 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
   });
 
   router.post('/timeline/sync', requireWrite, async (req, res) => {
-    const timeline = await deps.enterpriseUnifiedCommunicationsService.syncTimelineFromModules(getAuth(req).companyId);
+    const timeline = await deps.enterpriseUnifiedCommunicationsService.syncTimelineFromModules(
+      getAuth(req).companyId,
+    );
     res.json({ timeline });
   });
 
@@ -212,10 +234,11 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
     try {
       const auth = getAuth(req);
       const body = dispatchNotificationSchema.parse(req.body);
-      const notification = await deps.enterpriseUnifiedCommunicationsService.queueDispatchNotification(
-        { companyId: auth.companyId, userId: auth.userId },
-        body,
-      );
+      const notification =
+        await deps.enterpriseUnifiedCommunicationsService.queueDispatchNotification(
+          { companyId: auth.companyId, userId: auth.userId },
+          body,
+        );
       res.status(201).json({ notification });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -227,7 +250,9 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
   });
 
   router.post('/analytics/capture', requireManage, async (req, res) => {
-    const snapshot = await deps.enterpriseUnifiedCommunicationsService.captureAnalytics(getAuth(req).companyId);
+    const snapshot = await deps.enterpriseUnifiedCommunicationsService.captureAnalytics(
+      getAuth(req).companyId,
+    );
     res.json({ snapshot });
   });
 

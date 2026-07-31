@@ -5,10 +5,15 @@ import type {
 } from '@titan/shared';
 import { request } from './api-client';
 
-export async function fetchDocumentAiDashboard(accessToken: string): Promise<EnterpriseDocumentAiDashboard> {
-  const data = await request<{ dashboard: EnterpriseDocumentAiDashboard }>('/enterprise-document-ai/dashboard', {
-    accessToken,
-  });
+export async function fetchDocumentAiDashboard(
+  accessToken: string,
+): Promise<EnterpriseDocumentAiDashboard> {
+  const data = await request<{ dashboard: EnterpriseDocumentAiDashboard }>(
+    '/enterprise-document-ai/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -29,9 +34,12 @@ export async function captureDocumentAiAnalytics(accessToken: string) {
 }
 
 export async function fetchDocumentAiAuditLogs(accessToken: string): Promise<DipAuditLogSummary[]> {
-  const data = await request<{ auditLogs: DipAuditLogSummary[] }>('/enterprise-document-ai/audit-logs', {
-    accessToken,
-  });
+  const data = await request<{ auditLogs: DipAuditLogSummary[] }>(
+    '/enterprise-document-ai/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }
 

@@ -38,9 +38,12 @@ export async function fetchCommunicationsTimeline(accessToken: string, customerI
 }
 
 export async function fetchCommunicationsCallHistory(accessToken: string) {
-  const data = await request<{ calls: CommIntelCallSummary[] }>('/communications-intelligence/calls', {
-    accessToken,
-  });
+  const data = await request<{ calls: CommIntelCallSummary[] }>(
+    '/communications-intelligence/calls',
+    {
+      accessToken,
+    },
+  );
   return data.calls;
 }
 

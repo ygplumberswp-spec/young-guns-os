@@ -1,4 +1,7 @@
-import type { EnterpriseMissionControlDashboard, MissionControlModuleSnapshot } from '@titan/shared';
+import type {
+  EnterpriseMissionControlDashboard,
+  MissionControlModuleSnapshot,
+} from '@titan/shared';
 import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as MissionControlApiClientError };
@@ -6,9 +9,12 @@ export { ApiClientError as MissionControlApiClientError };
 export type MissionControlSummary = Omit<EnterpriseMissionControlDashboard, 'moduleSnapshots'>;
 
 export async function fetchMissionControlSummary(accessToken: string) {
-  const data = await request<{ summary: MissionControlSummary }>('/mission-control/dashboard/summary', {
-    accessToken,
-  });
+  const data = await request<{ summary: MissionControlSummary }>(
+    '/mission-control/dashboard/summary',
+    {
+      accessToken,
+    },
+  );
   return data.summary;
 }
 
@@ -21,9 +27,12 @@ export async function fetchMissionControlModuleSnapshots(accessToken: string) {
 }
 
 export async function fetchMissionControlDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseMissionControlDashboard }>('/mission-control/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseMissionControlDashboard }>(
+    '/mission-control/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -60,18 +69,16 @@ export async function syncMissionControlTimeline(accessToken: string) {
 }
 
 export async function generateMissionControlRecommendations(accessToken: string) {
-  const data = await request<{ recommendations: EnterpriseMissionControlDashboard['recommendations'] }>(
-    '/mission-control/recommendations/generate',
-    { accessToken, method: 'POST' },
-  );
+  const data = await request<{
+    recommendations: EnterpriseMissionControlDashboard['recommendations'];
+  }>('/mission-control/recommendations/generate', { accessToken, method: 'POST' });
   return data.recommendations;
 }
 
 export async function refreshMissionControlDepartmentHealth(accessToken: string) {
-  const data = await request<{ departmentHealth: EnterpriseMissionControlDashboard['departmentHealth'] }>(
-    '/mission-control/department-health/refresh',
-    { accessToken, method: 'POST' },
-  );
+  const data = await request<{
+    departmentHealth: EnterpriseMissionControlDashboard['departmentHealth'];
+  }>('/mission-control/department-health/refresh', { accessToken, method: 'POST' });
   return data.departmentHealth;
 }
 
@@ -79,16 +86,20 @@ export async function createMissionControlIncident(
   accessToken: string,
   input: { title: string; description: string; severity?: string },
 ) {
-  const data = await request<{ incident: EnterpriseMissionControlDashboard['activeIncidents'][number] }>(
-    '/mission-control/incidents',
-    { accessToken, method: 'POST', body: input },
-  );
+  const data = await request<{
+    incident: EnterpriseMissionControlDashboard['activeIncidents'][number];
+  }>('/mission-control/incidents', { accessToken, method: 'POST', body: input });
   return data.incident;
 }
 
 export async function createMissionControlCommandAction(
   accessToken: string,
-  input: { actionType: string; subject: string; recommendation: string; incidentId?: string | null },
+  input: {
+    actionType: string;
+    subject: string;
+    recommendation: string;
+    incidentId?: string | null;
+  },
 ) {
   const data = await request<{ action: { id: string } }>('/mission-control/actions', {
     accessToken,

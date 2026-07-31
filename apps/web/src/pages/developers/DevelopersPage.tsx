@@ -37,10 +37,11 @@ export function DevelopersPage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<DeveloperTab>('explorer');
   const [dashboard, setDashboard] = useState<EnterpriseDeveloperPlatformDashboard | null>(null);
-  const [deadLetter, setDeadLetter] = useState<
-    Awaited<ReturnType<typeof fetchWebhookDeadLetter>> | null
-  >(null);
-  const [selectedSdkLanguage, setSelectedSdkLanguage] = useState<(typeof DEVELOPER_SDK_LANGUAGES)[number]>('typescript');
+  const [deadLetter, setDeadLetter] = useState<Awaited<
+    ReturnType<typeof fetchWebhookDeadLetter>
+  > | null>(null);
+  const [selectedSdkLanguage, setSelectedSdkLanguage] =
+    useState<(typeof DEVELOPER_SDK_LANGUAGES)[number]>('typescript');
   const [generatedSdkExample, setGeneratedSdkExample] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -57,8 +58,14 @@ export function DevelopersPage() {
     updateTask,
   } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessDeveloperPlatform(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageDeveloperPlatform(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessDeveloperPlatform(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageDeveloperPlatform(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -83,7 +90,9 @@ export function DevelopersPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load developer platform');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load developer platform',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -146,7 +155,10 @@ export function DevelopersPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => generateOpenApiSpec(accessToken!), 'OpenAPI specification generated.')
+                  void runAction(
+                    () => generateOpenApiSpec(accessToken!),
+                    'OpenAPI specification generated.',
+                  )
                 }
               >
                 Generate OpenAPI
@@ -197,7 +209,11 @@ export function DevelopersPage() {
                 <StatCard label="API Version" value={dashboard.apiHealth.apiVersion} />
                 <StatCard
                   label="Avg Latency"
-                  value={dashboard.apiHealth.avgLatencyMs != null ? `${dashboard.apiHealth.avgLatencyMs} ms` : '—'}
+                  value={
+                    dashboard.apiHealth.avgLatencyMs != null
+                      ? `${dashboard.apiHealth.avgLatencyMs} ms`
+                      : '—'
+                  }
                 />
                 <StatCard
                   label="Error Rate"
@@ -207,7 +223,10 @@ export function DevelopersPage() {
                       : '—'
                   }
                 />
-                <StatCard label="Gateway Traces" value={String(dashboard.apiHealth.gatewayTraceCount)} />
+                <StatCard
+                  label="Gateway Traces"
+                  value={String(dashboard.apiHealth.gatewayTraceCount)}
+                />
                 <StatCard label="API Keys" value={String(dashboard.apiKeysCount)} />
               </div>
 
@@ -239,7 +258,9 @@ export function DevelopersPage() {
                       className="titan-input"
                       value={selectedSdkLanguage}
                       onChange={(event) =>
-                        setSelectedSdkLanguage(event.target.value as (typeof DEVELOPER_SDK_LANGUAGES)[number])
+                        setSelectedSdkLanguage(
+                          event.target.value as (typeof DEVELOPER_SDK_LANGUAGES)[number],
+                        )
                       }
                     >
                       {DEVELOPER_SDK_LANGUAGES.map((language) => (
@@ -254,7 +275,9 @@ export function DevelopersPage() {
                     disabled={isWorking}
                     onClick={() =>
                       void runAction(async () => {
-                        const sdk = await generateSdkPackage(accessToken!, { language: selectedSdkLanguage });
+                        const sdk = await generateSdkPackage(accessToken!, {
+                          language: selectedSdkLanguage,
+                        });
                         setGeneratedSdkExample(sdk.exampleCode);
                       }, `${selectedSdkLanguage} SDK package generated.`)
                     }
@@ -323,7 +346,9 @@ export function DevelopersPage() {
                   {dashboard.installedExtensions.map((extension) => (
                     <div key={extension.id} className="data-list-item">
                       <strong>{extension.name}</strong>
-                      <span className="status-pill">{formatExtensionType(extension.extensionType)}</span>
+                      <span className="status-pill">
+                        {formatExtensionType(extension.extensionType)}
+                      </span>
                       <span className="status-pill">{formatStatus(extension.status)}</span>
                       <p>{extension.description}</p>
                       {canWrite && extension.status !== 'installed' ? (
@@ -376,16 +401,25 @@ export function DevelopersPage() {
           {activeTab === 'webhooks' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="Subscriptions" value={String(dashboard.webhookSubscriptionCount)} />
+                <StatCard
+                  label="Subscriptions"
+                  value={String(dashboard.webhookSubscriptionCount)}
+                />
                 <StatCard label="Dead Letter" value={String(dashboard.webhookDeadLetterCount)} />
-                <StatCard label="Deliveries" value={String(dashboard.analytics.webhookDeliveryCount)} />
-                <StatCard label="Failures" value={String(dashboard.analytics.webhookFailureCount)} />
+                <StatCard
+                  label="Deliveries"
+                  value={String(dashboard.analytics.webhookDeliveryCount)}
+                />
+                <StatCard
+                  label="Failures"
+                  value={String(dashboard.analytics.webhookFailureCount)}
+                />
               </div>
 
               <Panel title="Webhook Platform">
                 <p>
-                  Event subscriptions support retry queues, dead-letter storage, signature validation, and delivery
-                  replay through the existing integration hub.
+                  Event subscriptions support retry queues, dead-letter storage, signature
+                  validation, and delivery replay through the existing integration hub.
                 </p>
                 {deadLetter && deadLetter.length > 0 ? (
                   <div className="data-list">
@@ -398,7 +432,10 @@ export function DevelopersPage() {
                     ))}
                   </div>
                 ) : (
-                  <EmptyState title="No dead-letter entries" description="Failed webhook deliveries appear here." />
+                  <EmptyState
+                    title="No dead-letter entries"
+                    description="Failed webhook deliveries appear here."
+                  />
                 )}
               </Panel>
             </>
@@ -407,11 +444,18 @@ export function DevelopersPage() {
           {activeTab === 'analytics' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="API Requests" value={String(dashboard.analytics.apiRequestCount)} />
+                <StatCard
+                  label="API Requests"
+                  value={String(dashboard.analytics.apiRequestCount)}
+                />
                 <StatCard label="API Errors" value={String(dashboard.analytics.apiErrorCount)} />
                 <StatCard
                   label="Avg Latency"
-                  value={dashboard.analytics.avgLatencyMs != null ? `${dashboard.analytics.avgLatencyMs} ms` : '—'}
+                  value={
+                    dashboard.analytics.avgLatencyMs != null
+                      ? `${dashboard.analytics.avgLatencyMs} ms`
+                      : '—'
+                  }
                 />
                 <StatCard
                   label="Error Rate"
@@ -421,12 +465,21 @@ export function DevelopersPage() {
                       : '—'
                   }
                 />
-                <StatCard label="SDK Downloads" value={String(dashboard.analytics.sdkDownloadCount)} />
-                <StatCard label="Extension Usage" value={String(dashboard.analytics.extensionUsageCount)} />
+                <StatCard
+                  label="SDK Downloads"
+                  value={String(dashboard.analytics.sdkDownloadCount)}
+                />
+                <StatCard
+                  label="Extension Usage"
+                  value={String(dashboard.analytics.extensionUsageCount)}
+                />
               </div>
 
               <Panel title="Developer Analytics">
-                <p>Usage metrics derive from real API gateway traces, webhook deliveries, and SDK generation activity.</p>
+                <p>
+                  Usage metrics derive from real API gateway traces, webhook deliveries, and SDK
+                  generation activity.
+                </p>
               </Panel>
             </>
           ) : null}
@@ -444,7 +497,10 @@ export function DevelopersPage() {
 
               <Panel title="Changelog">
                 {dashboard.changelog.length === 0 ? (
-                  <EmptyState title="No changelog entries" description="Platform changelog is populated on first access." />
+                  <EmptyState
+                    title="No changelog entries"
+                    description="Platform changelog is populated on first access."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.changelog.map((entry) => (
@@ -464,8 +520,8 @@ export function DevelopersPage() {
               <Panel title="OpenAPI">
                 {dashboard.openapiSpec ? (
                   <p>
-                    Latest spec: {dashboard.openapiSpec.title} v{dashboard.openapiSpec.version} — generated{' '}
-                    {new Date(dashboard.openapiSpec.generatedAt).toLocaleString()}
+                    Latest spec: {dashboard.openapiSpec.title} v{dashboard.openapiSpec.version} —
+                    generated {new Date(dashboard.openapiSpec.generatedAt).toLocaleString()}
                   </p>
                 ) : (
                   <EmptyState
@@ -480,8 +536,9 @@ export function DevelopersPage() {
           {activeTab === 'assistant' ? (
             <Panel title="AURA Developer Agent">
               <p>
-                Ask about APIs, SDK examples, integration guides, webhook configuration, extension architecture, and
-                developer analytics. Recommendations only — credentials and extensions require approval.
+                Ask about APIs, SDK examples, integration guides, webhook configuration, extension
+                architecture, and developer analytics. Recommendations only — credentials and
+                extensions require approval.
               </p>
 
               {assistantError ? <p className="form-error">{assistantError}</p> : null}

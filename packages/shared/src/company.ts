@@ -1,3 +1,5 @@
+import type { YoungGunsCocSettings, YoungGunsServiceGeography } from './young-guns-ops.js';
+
 export type CompanyPreferences = {
   timezone?: string;
   currency?: string;
@@ -26,6 +28,10 @@ export type CompanyPreferences = {
   brandAccentColor?: string;
   logoFileId?: string | null;
   profileImageFileId?: string | null;
+  /** UX-I / UX-035 — Cape Town service geography (JSON prefs, no migration). */
+  serviceGeography?: YoungGunsServiceGeography;
+  /** UX-I / UX-035 — COC / SANS applicability defaults. */
+  cocSettings?: YoungGunsCocSettings;
 };
 
 export type CompanyProfile = {

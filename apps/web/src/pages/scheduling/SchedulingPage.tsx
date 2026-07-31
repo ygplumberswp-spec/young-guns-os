@@ -20,14 +20,8 @@ export function SchedulingPage() {
   const { accessToken, user } = useAuth();
   const [weekOffset, setWeekOffset] = useState(0);
 
-  const canView = useMemo(
-    () => (user ? canAccessScheduling(user.permissions) : false),
-    [user],
-  );
-  const canWrite = useMemo(
-    () => (user ? canManageScheduling(user.permissions) : false),
-    [user],
-  );
+  const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
+  const canWrite = useMemo(() => (user ? canManageScheduling(user.permissions) : false), [user]);
 
   const weekStart = useMemo(() => {
     const start = startOfWeek(new Date());
@@ -52,10 +46,7 @@ export function SchedulingPage() {
       fetchSchedulingCalendar(accessToken!, weekStart.toISOString(), weekEnd.toISOString()),
   });
 
-  const {
-    data: jobs,
-    isLoading: isJobsLoading,
-  } = useCachedQuery({
+  const { data: jobs, isLoading: isJobsLoading } = useCachedQuery({
     queryKey: 'jobs/list',
     accessToken,
     enabled: canView && canWrite,
@@ -124,17 +115,45 @@ export function SchedulingPage() {
                     <ul className="scheduling-calendar__events">
                       {day.events.map((event) => (
                         <li key={event.id} className="scheduling-calendar__event">
-                          <Link href={`/jobs/${event.id}`} className="scheduling-calendar__event-link">
+                          <Link
+                            href={`/jobs/${event.id}`}
+                            className="scheduling-calendar__event-link"
+                          >
                             <span className="scheduling-calendar__event-time">
                               {new Date(event.scheduledAt).toLocaleTimeString(undefined, {
                                 hour: 'numeric',
                                 minute: '2-digit',
                               })}
+                              {event.scheduledEndAt
+                                ? `–${new Date(event.scheduledEndAt).toLocaleTimeString(undefined, {
+                                    hour: 'numeric',
+                                    minute: '2-digit',
+                                  })}`
+                                : ''}
                             </span>
-                            <span className="scheduling-calendar__event-title">{event.title}</span>
+                            <span className="scheduling-calendar__event-title">
+                              {event.jobNumber ? `${event.jobNumber} · ` : ''}
+                              {event.title}
+                            </span>
                             <span className="scheduling-calendar__event-meta">
                               {event.customerName}
-                              {event.assignedUserName ? ` · ${event.assignedUserName}` : ' · Unassigned'}
+                              {event.suburb || event.addressDisplay
+                                ? ` · ${event.suburb || event.addressDisplay}`
+                                : ''}
+                            </span>
+                            <span className="scheduling-calendar__event-meta">
+                              {event.jobType || 'Job'}
+                              {` · ${event.priority}`}
+                              {` · ${event.status}`}
+                              {event.accessWarning ? ' · Access note' : ''}
+                            </span>
+                            <span className="scheduling-calendar__event-meta">
+                              {event.siteContactName || 'Site contact'}
+                              {event.siteContactMobile ? ` · ${event.siteContactMobile}` : ''}
+                              {event.assignedUserName || event.crewLabel
+                                ? ` · ${event.assignedUserName || event.crewLabel}`
+                                : ' · Unassigned'}
+                              {event.vehicleLabel ? ` · ${event.vehicleLabel}` : ''}
                             </span>
                           </Link>
                         </li>

@@ -42,11 +42,23 @@ export function AssetIntelligencePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessAssetIntelligence(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageAssetIntelligence(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessAssetIntelligence(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageAssetIntelligence(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -66,7 +78,11 @@ export function AssetIntelligencePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load asset intelligence dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load asset intelligence dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -97,7 +113,10 @@ export function AssetIntelligencePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Asset Intelligence" description="You do not have permission to view asset intelligence." />
+        <PageHeader
+          title="Asset Intelligence"
+          description="You do not have permission to view asset intelligence."
+        />
       </div>
     );
   }
@@ -130,7 +149,9 @@ export function AssetIntelligencePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => captureAssetAnalytics(accessToken!), 'Analytics captured')}
+                onClick={() =>
+                  void runAction(() => captureAssetAnalytics(accessToken!), 'Analytics captured')
+                }
               >
                 Capture analytics
               </Button>
@@ -169,15 +190,24 @@ export function AssetIntelligencePage() {
               <StatCard label="Active providers" value={String(dashboard.activeProviderCount)} />
               <StatCard label="Open alerts" value={String(dashboard.openAlertCount)} />
               <StatCard label="Maintenance due" value={String(dashboard.maintenanceDueCount)} />
-              <StatCard label="Predictive assessments" value={String(dashboard.predictiveAssessmentCount)} />
-              <StatCard label="Digital twin" value={dashboard.digitalTwinConnected ? 'Connected' : 'Available'} />
+              <StatCard
+                label="Predictive assessments"
+                value={String(dashboard.predictiveAssessmentCount)}
+              />
+              <StatCard
+                label="Digital twin"
+                value={dashboard.digitalTwinConnected ? 'Connected' : 'Available'}
+              />
             </div>
           ) : null}
 
           {activeTab === 'registry' ? (
             <Panel title="Asset registry" description="Custom categories and lifecycle profiles">
               {dashboard.recentAssets.length === 0 ? (
-                <EmptyState title="No assets" description="Assets appear when registered through asset equipment." />
+                <EmptyState
+                  title="No assets"
+                  description="Assets appear when registered through asset equipment."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentAssets.map((asset) => (
@@ -185,7 +215,8 @@ export function AssetIntelligencePage() {
                       <strong>{asset.name}</strong>
                       <p className="page-muted">
                         {asset.profile?.customCategoryName ?? asset.assetType} ·{' '}
-                        {formatLifecycleStage(asset.profile?.lifecycleStage ?? 'active_operation')} · {asset.status}
+                        {formatLifecycleStage(asset.profile?.lifecycleStage ?? 'active_operation')}{' '}
+                        · {asset.status}
                       </p>
                     </div>
                   ))}
@@ -195,9 +226,15 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'iot' ? (
-            <Panel title="IoT providers & telemetry" description="Vendor-agnostic provider adapters">
+            <Panel
+              title="IoT providers & telemetry"
+              description="Vendor-agnostic provider adapters"
+            >
               {dashboard.iotProviders.length === 0 ? (
-                <EmptyState title="No IoT providers" description="Configure IoT provider adapters to ingest telemetry." />
+                <EmptyState
+                  title="No IoT providers"
+                  description="Configure IoT provider adapters to ingest telemetry."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.iotProviders.map((provider) => (
@@ -216,7 +253,8 @@ export function AssetIntelligencePage() {
                     {dashboard.recentTelemetry.slice(0, 10).map((reading) => (
                       <li key={reading.id}>
                         {reading.field}: {reading.normalizedValue}
-                        {reading.unit ? ` ${reading.unit}` : ''} · {new Date(reading.recordedAt).toLocaleString()}
+                        {reading.unit ? ` ${reading.unit}` : ''} ·{' '}
+                        {new Date(reading.recordedAt).toLocaleString()}
                       </li>
                     ))}
                   </ul>
@@ -226,9 +264,15 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'alerts' ? (
-            <Panel title="Asset alerts" description="Threshold breaches and equipment alerts from real data">
+            <Panel
+              title="Asset alerts"
+              description="Threshold breaches and equipment alerts from real data"
+            >
               {dashboard.recentAlerts.length === 0 ? (
-                <EmptyState title="No alerts" description="Alerts appear when thresholds are breached or devices report faults." />
+                <EmptyState
+                  title="No alerts"
+                  description="Alerts appear when thresholds are breached or devices report faults."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentAlerts.map((alert) => (
@@ -236,7 +280,8 @@ export function AssetIntelligencePage() {
                       <div>
                         <strong>{alert.title}</strong>
                         <p className="page-muted">
-                          {formatAlertSeverity(alert.severity)} · {alert.status} · {alert.alertType.replace(/_/g, ' ')}
+                          {formatAlertSeverity(alert.severity)} · {alert.status} ·{' '}
+                          {alert.alertType.replace(/_/g, ' ')}
                         </p>
                       </div>
                       {canWrite && alert.status === 'open' ? (
@@ -245,7 +290,10 @@ export function AssetIntelligencePage() {
                             size="sm"
                             disabled={isWorking}
                             onClick={() =>
-                              void runAction(() => acknowledgeAssetAlert(accessToken!, alert.id), 'Alert acknowledged')
+                              void runAction(
+                                () => acknowledgeAssetAlert(accessToken!, alert.id),
+                                'Alert acknowledged',
+                              )
                             }
                           >
                             Acknowledge
@@ -255,7 +303,10 @@ export function AssetIntelligencePage() {
                             variant="secondary"
                             disabled={isWorking}
                             onClick={() =>
-                              void runAction(() => resolveAssetAlert(accessToken!, alert.id), 'Alert resolved')
+                              void runAction(
+                                () => resolveAssetAlert(accessToken!, alert.id),
+                                'Alert resolved',
+                              )
                             }
                           >
                             Resolve
@@ -276,14 +327,20 @@ export function AssetIntelligencePage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => generateMaintenanceDue(accessToken!), 'Maintenance due records generated')
+                    void runAction(
+                      () => generateMaintenanceDue(accessToken!),
+                      'Maintenance due records generated',
+                    )
                   }
                 >
                   Generate due records
                 </Button>
               ) : null}
               {dashboard.maintenanceDue.length === 0 ? (
-                <EmptyState title="No maintenance due" description="Due records appear when schedules become due." />
+                <EmptyState
+                  title="No maintenance due"
+                  description="Due records appear when schedules become due."
+                />
               ) : (
                 <ul className="portal-list">
                   {dashboard.maintenanceDue.map((due) => (
@@ -297,7 +354,10 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'predictive' ? (
-            <Panel title="Predictive maintenance" description="AURA recommendations from real maintenance and telemetry data">
+            <Panel
+              title="Predictive maintenance"
+              description="AURA recommendations from real maintenance and telemetry data"
+            >
               {dashboard.predictiveAssessments.length === 0 ? (
                 <EmptyState
                   title="No assessments"
@@ -309,7 +369,8 @@ export function AssetIntelligencePage() {
                     <div key={assessment.id} className="data-list__item">
                       <strong>Risk score: {assessment.failureRiskScore ?? '—'}</strong>
                       <p className="page-muted">
-                        Confidence {assessment.confidenceScore ?? '—'}% · RUL {assessment.remainingUsefulLifeDays ?? '—'} days
+                        Confidence {assessment.confidenceScore ?? '—'}% · RUL{' '}
+                        {assessment.remainingUsefulLifeDays ?? '—'} days
                       </p>
                       <p>{assessment.maintenanceRecommendation}</p>
                       <p className="page-muted">{assessment.explanation}</p>
@@ -356,15 +417,28 @@ export function AssetIntelligencePage() {
           ) : null}
 
           {activeTab === 'assistant' ? (
-            <Panel title="AURA Asset Intelligence Agent" description="Recommendations only — approval required for actions">
+            <Panel
+              title="AURA Asset Intelligence Agent"
+              description="Recommendations only — approval required for actions"
+            >
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'asset_intelligence' as import('@titan/shared').AgentKey)}
+                onSend={(content) =>
+                  void sendAgentMessage(
+                    content,
+                    'asset_intelligence' as import('@titan/shared').AgentKey,
+                  )
+                }
                 placeholder="Ask about assets, IoT telemetry, alerts, maintenance, or failure risk…"
               />
             </Panel>

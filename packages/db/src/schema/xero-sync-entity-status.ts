@@ -21,4 +21,5 @@ export const xeroSyncEntityTypeEnum = pgEnum('xero_sync_entity_type', [
   'quote',
   'invoice',
   'payment',
+  'bank_transaction',
 ]);

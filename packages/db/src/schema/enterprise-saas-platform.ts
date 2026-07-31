@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -76,7 +85,10 @@ export const saasTenantProfiles = pgTable('saas_tenant_profiles', {
   storageAllocationMb: integer('storage_allocation_mb').notNull().default(1024),
   aiConfig: jsonb('ai_config').$type<Record<string, unknown>>().notNull().default({}),
   auditConfig: jsonb('audit_config').$type<Record<string, unknown>>().notNull().default({}),
-  securityPolicyConfig: jsonb('security_policy_config').$type<Record<string, unknown>>().notNull().default({}),
+  securityPolicyConfig: jsonb('security_policy_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   provisionedAt: timestamp('provisioned_at', { withTimezone: true }),
   suspendedAt: timestamp('suspended_at', { withTimezone: true }),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
@@ -145,7 +157,9 @@ export const saasBillingRecords = pgTable('saas_billing_records', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  subscriptionId: uuid('subscription_id').references(() => saasSubscriptions.id, { onDelete: 'set null' }),
+  subscriptionId: uuid('subscription_id').references(() => saasSubscriptions.id, {
+    onDelete: 'set null',
+  }),
   recordType: saasBillingRecordTypeEnum('record_type').notNull(),
   status: saasBillingRecordStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull().default(0),
@@ -236,7 +250,9 @@ export const saasPlatformAudits = pgTable('saas_platform_audits', {
   actionType: text('action_type').notNull(),
   subject: text('subject').notNull(),
   details: text('details'),
-  performedByUserId: uuid('performed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  performedByUserId: uuid('performed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   performedAt: timestamp('performed_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -250,7 +266,9 @@ export const saasPlatformActions = pgTable('saas_platform_actions', {
   status: saasPlatformActionStatusEnum('status').notNull().default('pending_approval'),
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
-  targetCompanyId: uuid('target_company_id').references(() => companies.id, { onDelete: 'set null' }),
+  targetCompanyId: uuid('target_company_id').references(() => companies.id, {
+    onDelete: 'set null',
+  }),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

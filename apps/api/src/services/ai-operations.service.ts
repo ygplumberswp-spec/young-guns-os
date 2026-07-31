@@ -32,7 +32,8 @@ export class AiOperationsService {
   constructor(private readonly deps: AiOperationsDeps) {}
 
   async hasUnlimitedAiAccess(companyId: string): Promise<boolean> {
-    const snapshot = await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
+    const snapshot =
+      await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
     return snapshot.isPlatformOwner;
   }
 
@@ -64,7 +65,8 @@ export class AiOperationsService {
 
     let snapshot = aiRoutingCache.getPolicySnapshot(companyId);
     if (!snapshot) {
-      const loaded = await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
+      const loaded =
+        await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId);
       snapshot = {
         isPlatformOwner: loaded.isPlatformOwner,
         subscriptionUsable: loaded.subscriptionUsable,
@@ -144,17 +146,23 @@ export class AiOperationsService {
     return result;
   }
 
-  async getMissionControlAlertCandidates(companyId: string): Promise<AiMissionControlAlertCandidate[]> {
+  async getMissionControlAlertCandidates(
+    companyId: string,
+  ): Promise<AiMissionControlAlertCandidate[]> {
     const allowance = await this.getAllowanceSummary(companyId);
     const config = await this.ensureResilienceConfig(companyId);
     const alerts: AiMissionControlAlertCandidate[] = [];
     const isOwner = allowance.unlimited;
 
-    if (config.lowCreditWarningCents > 0 && allowance.monthlyCostCents >= config.lowCreditWarningCents) {
+    if (
+      config.lowCreditWarningCents > 0 &&
+      allowance.monthlyCostCents >= config.lowCreditWarningCents
+    ) {
       alerts.push({
         title: isOwner ? 'AI provider credit usage warning' : 'AI usage cost threshold reached',
         description: `Estimated AI spend this month is ${allowance.monthlyCostCents} cents${isOwner ? '. External provider billing should be reviewed.' : '.'}`,
-        severity: allowance.monthlyCostCents >= config.lowCreditWarningCents * 2 ? 'high' : 'medium',
+        severity:
+          allowance.monthlyCostCents >= config.lowCreditWarningCents * 2 ? 'high' : 'medium',
         sourceEntityId: `ai-cost-${companyId}`,
         context: {
           monthlyCostCents: allowance.monthlyCostCents,
@@ -203,7 +211,9 @@ export class AiOperationsService {
     return alerts;
   }
 
-  async getPlatformOwnerAiDashboard(companyId: string): Promise<PlatformOwnerAiOperationsDashboard> {
+  async getPlatformOwnerAiDashboard(
+    companyId: string,
+  ): Promise<PlatformOwnerAiOperationsDashboard> {
     const isPlatformOwner = await this.hasUnlimitedAiAccess(companyId);
     const allowance = await this.getAllowanceSummary(companyId);
     const alertCandidates = await this.getMissionControlAlertCandidates(companyId);
@@ -225,10 +235,7 @@ export class AiOperationsService {
     };
   }
 
-  async updateResilienceConfig(
-    scope: StaffScope,
-    input: UpdateAiProviderResilienceConfigRequest,
-  ) {
+  async updateResilienceConfig(scope: StaffScope, input: UpdateAiProviderResilienceConfigRequest) {
     await this.ensureResilienceConfig(scope.companyId);
     const [row] = await this.deps.db
       .update(aiProviderResilienceConfigs)
@@ -258,7 +265,8 @@ export class AiOperationsService {
 
     const owner =
       isPlatformOwner ??
-      (await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId)).isPlatformOwner;
+      (await this.deps.enterpriseSaasPlatformService.getAiAllowanceSnapshot(companyId))
+        .isPlatformOwner;
     const [row] = await this.deps.db
       .insert(aiProviderResilienceConfigs)
       .values({
@@ -310,7 +318,9 @@ export class AiOperationsService {
         cost: sql<number>`coalesce(sum(${aiUsageRecords.costCents}), 0)`,
       })
       .from(aiUsageRecords)
-      .where(and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)));
+      .where(
+        and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)),
+      );
 
     return {
       tokensUsed: Number(row?.tokens ?? 0),

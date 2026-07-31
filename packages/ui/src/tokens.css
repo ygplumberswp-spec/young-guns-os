@@ -1,0 +1,84 @@
+/**
+ * TITAN Brand Foundation — semantic design tokens
+ * Premium command-centre: midnight navy, chrome wordmark, electric teal accents.
+ */
+:root {
+  /* Backgrounds & surfaces */
+  --titan-bg: #070b14;
+  --titan-bg-elevated: #0b1220;
+  --titan-surface: #101a2e;
+  --titan-surface-raised: #152238;
+  --titan-surface-muted: #0e1729;
+  --titan-surface-hover: #1a2a44;
+
+  /* Borders */
+  --titan-border: #243554;
+  --titan-border-strong: #35507a;
+  --titan-border-subtle: rgba(148, 163, 184, 0.16);
+
+  /* Text */
+  --titan-text: #f8fafc;
+  --titan-text-secondary: #94a3b8;
+  --titan-text-muted: #64748b;
+  --titan-text-inverse: #070b14;
+
+  /* Accent / illumination */
+  --titan-accent: #22d3ee;
+  --titan-accent-strong: #06b6d4;
+  --titan-accent-soft: rgba(34, 211, 238, 0.14);
+  --titan-accent-glow: rgba(34, 211, 238, 0.28);
+  --titan-chrome-hi: #f1f5f9;
+  --titan-chrome-mid: #94a3b8;
+  --titan-chrome-lo: #64748b;
+
+  /* Focus */
+  --titan-focus: #22d3ee;
+  --titan-focus-ring: 0 0 0 2px #070b14, 0 0 0 4px #22d3ee;
+
+  /* Truthful status only */
+  --titan-success: #22c55e;
+  --titan-success-soft: rgba(34, 197, 94, 0.14);
+  --titan-warning: #f59e0b;
+  --titan-warning-soft: rgba(245, 158, 11, 0.14);
+  --titan-danger: #ef4444;
+  --titan-danger-soft: rgba(239, 68, 68, 0.14);
+
+  /* Radius */
+  --titan-radius-sm: 0.375rem;
+  --titan-radius-md: 0.5rem;
+  --titan-radius-lg: 0.75rem;
+  --titan-radius-xl: 1rem;
+
+  /* Shadow / depth */
+  --titan-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --titan-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --titan-shadow-glow: 0 0 40px rgba(34, 211, 238, 0.08);
+
+  /* Spacing scale (reference) */
+  --titan-space-1: 0.25rem;
+  --titan-space-2: 0.5rem;
+  --titan-space-3: 0.75rem;
+  --titan-space-4: 1rem;
+  --titan-space-5: 1.25rem;
+  --titan-space-6: 1.5rem;
+  --titan-space-8: 2rem;
+
+  /* Motion */
+  --titan-motion-fast: 120ms;
+  --titan-motion-base: 180ms;
+  --titan-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Typography */
+  --titan-font-display: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --titan-font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --titan-font-tabular: 'Inter', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --titan-motion-fast: 0ms;
+    --titan-motion-base: 0ms;
+  }
+}

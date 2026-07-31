@@ -82,7 +82,10 @@ export class EnterpriseLaunchCenterService {
     });
     this.acceptanceService = new EnterpriseLaunchCenterAcceptanceService(deps.db);
     this.scoringService = new EnterpriseLaunchCenterScoringService(deps.db);
-    this.goLiveService = new EnterpriseLaunchCenterGoLiveService(deps.db, deps.enterpriseBusinessContinuityService);
+    this.goLiveService = new EnterpriseLaunchCenterGoLiveService(
+      deps.db,
+      deps.enterpriseBusinessContinuityService,
+    );
     this.deploymentValidationService = new EnterpriseLaunchCenterDeploymentValidationService(
       deps.db,
       deps.enterpriseProductionReadinessService,
@@ -121,13 +124,19 @@ export class EnterpriseLaunchCenterService {
       this.listPlatformAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const latestReadinessScan = readinessScans[0] ?? null;
-    const latestCheckResults =
-      latestReadinessScan ? (await this.readinessService.getReadinessScanDetail(companyId, latestReadinessScan.id))?.results ?? [] : [];
+    const latestCheckResults = latestReadinessScan
+      ? ((await this.readinessService.getReadinessScanDetail(companyId, latestReadinessScan.id))
+          ?.results ?? [])
+      : [];
 
-    const pendingApprovalCount = goLiveWizards.filter((w) => w.status === 'pending_approval').length;
+    const pendingApprovalCount = goLiveWizards.filter(
+      (w) => w.status === 'pending_approval',
+    ).length;
     const launchReadiness = this.buildLaunchReadinessSummary({
       latestScore,
       latestScan: latestReadinessScan,
@@ -190,7 +199,10 @@ export class EnterpriseLaunchCenterService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateLncPlatformConfigRequest): Promise<LncPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateLncPlatformConfigRequest,
+  ): Promise<LncPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(lncPlatformConfig)
@@ -223,30 +235,41 @@ export class EnterpriseLaunchCenterService {
   }
 
   listReadinessScans = (companyId: string) => this.readinessService.listReadinessScans(companyId);
-  getReadinessScanDetail = (companyId: string, scanId: string) => this.readinessService.getReadinessScanDetail(companyId, scanId);
+  getReadinessScanDetail = (companyId: string, scanId: string) =>
+    this.readinessService.getReadinessScanDetail(companyId, scanId);
   getLatestReadinessScore = (companyId: string) => this.scoringService.getLatestScore(companyId);
   listAcceptanceSuites = (companyId: string) => this.acceptanceService.listSuites(companyId);
   listAcceptanceTestRuns = (companyId: string) => this.acceptanceService.listTestRuns(companyId);
-  getAcceptanceTestRunDetail = (companyId: string, runId: string) => this.acceptanceService.getTestRunDetail(companyId, runId);
-  runAcceptanceTests = (scope: StaffScope, suiteId?: string) => this.acceptanceService.runAcceptanceTests(scope, suiteId);
+  getAcceptanceTestRunDetail = (companyId: string, runId: string) =>
+    this.acceptanceService.getTestRunDetail(companyId, runId);
+  runAcceptanceTests = (scope: StaffScope, suiteId?: string) =>
+    this.acceptanceService.runAcceptanceTests(scope, suiteId);
   listGoLiveWizards = (companyId: string) => this.goLiveService.listWizards(companyId);
-  createGoLiveWizard = (scope: StaffScope, input: import('@titan/shared').CreateLncGoLiveWizardRequest) =>
-    this.goLiveService.createWizard(scope, input);
+  createGoLiveWizard = (
+    scope: StaffScope,
+    input: import('@titan/shared').CreateLncGoLiveWizardRequest,
+  ) => this.goLiveService.createWizard(scope, input);
   updateGoLiveWizardStep = (
     scope: StaffScope,
     wizardId: string,
     stepKey: string,
     input: import('@titan/shared').UpdateLncGoLiveWizardStepRequest,
   ) => this.goLiveService.updateWizardStep(scope, wizardId, stepKey, input);
-  approveGoLiveWizard = (scope: StaffScope, wizardId: string, input: import('@titan/shared').ApproveLncGoLiveWizardRequest) =>
-    this.goLiveService.approveWizard(scope, wizardId, input);
-  confirmDeployment = (scope: StaffScope, wizardId: string) => this.goLiveService.confirmDeployment(scope, wizardId);
-  listRollbackPlans = (companyId: string, wizardId?: string) => this.goLiveService.listRollbackPlans(companyId, wizardId);
+  approveGoLiveWizard = (
+    scope: StaffScope,
+    wizardId: string,
+    input: import('@titan/shared').ApproveLncGoLiveWizardRequest,
+  ) => this.goLiveService.approveWizard(scope, wizardId, input);
+  confirmDeployment = (scope: StaffScope, wizardId: string) =>
+    this.goLiveService.confirmDeployment(scope, wizardId);
+  listRollbackPlans = (companyId: string, wizardId?: string) =>
+    this.goLiveService.listRollbackPlans(companyId, wizardId);
   selectRollbackPlan = (scope: StaffScope, wizardId: string, rollbackPlanLinkId: string) =>
     this.goLiveService.selectRollbackPlan(scope, wizardId, rollbackPlanLinkId);
   validateRollbackPlan = (scope: StaffScope, rollbackPlanLinkId: string) =>
     this.goLiveService.validateRollbackPlan(scope, rollbackPlanLinkId);
-  listDeploymentValidations = (companyId: string) => this.deploymentValidationService.listValidations(companyId);
+  listDeploymentValidations = (companyId: string) =>
+    this.deploymentValidationService.listValidations(companyId);
   runPostDeploymentValidation = (scope: StaffScope, goLiveWizardId?: string) =>
     this.deploymentValidationService.runPostDeploymentValidation(scope, goLiveWizardId);
 
@@ -260,10 +283,34 @@ export class EnterpriseLaunchCenterService {
     const existingOpen = await this.listPlatformAlerts(scope.companyId, { status: 'open' });
     const syncedAt = new Date();
     const defs = [
-      ['critical_blockers', 'critical', 'Critical launch blockers', `${latestScore?.criticalBlockerCount ?? 0} critical blocker(s)`, (latestScore?.criticalBlockerCount ?? 0) > 0],
-      ['failed_checks', 'warning', 'Failed readiness checks', `${latestScan?.failedCount ?? 0} failed check(s)`, (latestScan?.failedCount ?? 0) > 0],
-      ['pending_approvals', 'warning', 'Pending go-live approvals', `${wizards.filter((w) => w.status === 'pending_approval').length} pending approval(s)`, wizards.some((w) => w.status === 'pending_approval')],
-      ['not_ready', 'critical', 'Not ready for production', `Status: ${latestScore?.overallStatus ?? 'unknown'}`, latestScore?.overallStatus === 'blocked' || latestScore?.overallStatus === 'not_ready'],
+      [
+        'critical_blockers',
+        'critical',
+        'Critical launch blockers',
+        `${latestScore?.criticalBlockerCount ?? 0} critical blocker(s)`,
+        (latestScore?.criticalBlockerCount ?? 0) > 0,
+      ],
+      [
+        'failed_checks',
+        'warning',
+        'Failed readiness checks',
+        `${latestScan?.failedCount ?? 0} failed check(s)`,
+        (latestScan?.failedCount ?? 0) > 0,
+      ],
+      [
+        'pending_approvals',
+        'warning',
+        'Pending go-live approvals',
+        `${wizards.filter((w) => w.status === 'pending_approval').length} pending approval(s)`,
+        wizards.some((w) => w.status === 'pending_approval'),
+      ],
+      [
+        'not_ready',
+        'critical',
+        'Not ready for production',
+        `Status: ${latestScore?.overallStatus ?? 'unknown'}`,
+        latestScore?.overallStatus === 'blocked' || latestScore?.overallStatus === 'not_ready',
+      ],
     ] as const;
 
     for (const [alertType, severity, title, description, active] of defs) {
@@ -309,7 +356,10 @@ export class EnterpriseLaunchCenterService {
     return toAnalyticsSummary(created!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateLncActionDraftRequest): Promise<LncActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateLncActionDraftRequest,
+  ): Promise<LncActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(lncActionDrafts)
       .values({
@@ -342,8 +392,10 @@ export class EnterpriseLaunchCenterService {
   }): LncLaunchReadinessSummary {
     return {
       overallScore: input.latestScore?.overallScore ?? null,
-      overallStatus: input.latestScore?.overallStatus ?? input.latestScan?.overallStatus ?? 'unknown',
-      criticalBlockerCount: input.latestScore?.criticalBlockerCount ?? input.latestScan?.criticalBlockerCount ?? 0,
+      overallStatus:
+        input.latestScore?.overallStatus ?? input.latestScan?.overallStatus ?? 'unknown',
+      criticalBlockerCount:
+        input.latestScore?.criticalBlockerCount ?? input.latestScan?.criticalBlockerCount ?? 0,
       highPriorityCount: input.latestScore?.highPriorityCount ?? 0,
       warningCount: input.latestScore?.warningCount ?? input.latestScan?.warningCount ?? 0,
       passedCheckCount: input.latestScore?.passedCount ?? input.latestScan?.passedCount ?? 0,
@@ -355,7 +407,10 @@ export class EnterpriseLaunchCenterService {
   private async listPlatformAlerts(companyId: string, filters?: { status?: string }) {
     const rows = await this.deps.db.query.lncPlatformAlerts.findMany({
       where: filters?.status
-        ? and(eq(lncPlatformAlerts.companyId, companyId), eq(lncPlatformAlerts.status, filters.status as 'open'))
+        ? and(
+            eq(lncPlatformAlerts.companyId, companyId),
+            eq(lncPlatformAlerts.status, filters.status as 'open'),
+          )
         : eq(lncPlatformAlerts.companyId, companyId),
       orderBy: [desc(lncPlatformAlerts.createdAt)],
       limit: 50,
@@ -376,11 +431,20 @@ export class EnterpriseLaunchCenterService {
       where: eq(lncPlatformConfig.companyId, companyId),
     });
     if (existing) return existing;
-    const [created] = await this.deps.db.insert(lncPlatformConfig).values({ companyId }).returning();
+    const [created] = await this.deps.db
+      .insert(lncPlatformConfig)
+      .values({ companyId })
+      .returning();
     return created!;
   }
 
-  private async logAudit(scope: StaffScope, actionType: string, entityType?: string, entityId?: string, metadata?: Record<string, unknown>) {
+  private async logAudit(
+    scope: StaffScope,
+    actionType: string,
+    entityType?: string,
+    entityId?: string,
+    metadata?: Record<string, unknown>,
+  ) {
     await this.deps.db.insert(lncAuditLogs).values({
       companyId: scope.companyId,
       userId: scope.userId,
@@ -392,7 +456,9 @@ export class EnterpriseLaunchCenterService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof lncPlatformConfig.$inferSelect): LncPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof lncPlatformConfig.$inferSelect,
+): LncPlatformConfigSummary {
   return {
     readinessPolicy: (row.readinessPolicy ?? {}) as Record<string, unknown>,
     scoringWeights: (row.scoringWeights ?? {}) as Record<string, unknown>,
@@ -404,7 +470,9 @@ function toPlatformConfigSummary(row: typeof lncPlatformConfig.$inferSelect): Ln
   };
 }
 
-function toPlatformAlertSummary(row: typeof lncPlatformAlerts.$inferSelect): LncPlatformAlertSummary {
+function toPlatformAlertSummary(
+  row: typeof lncPlatformAlerts.$inferSelect,
+): LncPlatformAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,
@@ -417,7 +485,11 @@ function toPlatformAlertSummary(row: typeof lncPlatformAlerts.$inferSelect): Lnc
 }
 
 function toAnalyticsSummary(row: typeof lncAnalyticsSnapshots.$inferSelect): LncAnalyticsSummary {
-  return { id: row.id, metrics: (row.metrics ?? {}) as Record<string, unknown>, capturedAt: row.capturedAt.toISOString() };
+  return {
+    id: row.id,
+    metrics: (row.metrics ?? {}) as Record<string, unknown>,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
 function toActionDraftSummary(row: typeof lncActionDrafts.$inferSelect): LncActionDraftSummary {

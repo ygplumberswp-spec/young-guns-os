@@ -1,8 +1,27 @@
 export type InventoryItemStatus = 'active' | 'inactive';
 
+export type InventoryLocationType = 'warehouse' | 'van' | 'other';
+
+export type InventoryStockMovementType =
+  | 'receipt'
+  | 'issue'
+  | 'return_to_stock'
+  | 'adjustment'
+  | 'correction'
+  | 'waste';
+
 export const INVENTORY_ITEM_STATUS_OPTIONS: Array<{ value: InventoryItemStatus; label: string }> = [
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
+];
+
+export const INVENTORY_LOCATION_TYPE_OPTIONS: Array<{
+  value: InventoryLocationType;
+  label: string;
+}> = [
+  { value: 'warehouse', label: 'Warehouse' },
+  { value: 'van', label: 'Van / vehicle' },
+  { value: 'other', label: 'Other' },
 ];
 
 export const INVENTORY_UNIT_OPTIONS: Array<{ value: string; label: string }> = [
@@ -20,6 +39,9 @@ export type InventoryLocationSummary = {
   name: string;
   code: string | null;
   address: string | null;
+  locationType: InventoryLocationType;
+  vehicleId: string | null;
+  vehicleLabel: string | null;
   isDefault: boolean;
   createdAt: string;
   updatedAt: string;
@@ -32,6 +54,8 @@ export type InventoryItemSummary = {
   description: string | null;
   unit: string;
   reorderLevel: number;
+  unitCostCents: number | null;
+  sellPriceCents: number | null;
   status: InventoryItemStatus;
   totalQuantityOnHand: number;
   isLowStock: boolean;
@@ -49,14 +73,34 @@ export type InventoryStockLevelSummary = {
   locationId: string;
   locationName: string;
   locationCode: string | null;
+  locationType: InventoryLocationType;
   quantityOnHand: number;
   isLowStock: boolean;
   updatedAt: string;
 };
 
+export type InventoryStockMovementSummary = {
+  id: string;
+  itemId: string;
+  locationId: string;
+  movementType: InventoryStockMovementType;
+  quantityDelta: number;
+  quantityBefore: number;
+  quantityAfter: number;
+  unitCostCents: number;
+  jobId: string | null;
+  purchaseOrderId: string | null;
+  jobMaterialLineId: string | null;
+  reason: string | null;
+  clientActionId: string | null;
+  createdAt: string;
+  idempotentReplay?: boolean;
+};
+
 export type InventoryStats = {
   itemCount: number;
   locationCount: number;
+  vanLocationCount: number;
   lowStockCount: number;
   totalUnitsOnHand: number;
 };
@@ -65,6 +109,8 @@ export type CreateInventoryLocationRequest = {
   name: string;
   code?: string | null;
   address?: string | null;
+  locationType?: InventoryLocationType;
+  vehicleId?: string | null;
   isDefault?: boolean;
 };
 
@@ -74,6 +120,8 @@ export type CreateInventoryItemRequest = {
   description?: string | null;
   unit?: string;
   reorderLevel?: number;
+  unitCostCents?: number;
+  sellPriceCents?: number;
   status?: InventoryItemStatus;
 };
 
@@ -81,4 +129,6 @@ export type SetInventoryStockRequest = {
   itemId: string;
   locationId: string;
   quantityOnHand: number;
+  clientActionId?: string | null;
+  reason?: string | null;
 };

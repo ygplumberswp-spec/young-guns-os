@@ -293,66 +293,66 @@ export function EnterpriseSecurityPage() {
         dashboardQuery.isLoading ? (
           <LoadingState label="Loading security dashboard…" />
         ) : dashboard ? (
-        <div className="stack gap-lg">
-          <div className="stat-grid">
-            <StatCard
-              label="Security Score"
-              value={
-                dashboard.securityScore != null ? String(dashboard.securityScore) : 'Not assessed'
-              }
-            />
-            <StatCard label="Active Sessions" value={String(dashboard.activeSessionCount)} />
-            <StatCard label="Risk Alerts" value={String(dashboard.riskAlertCount)} />
-            <StatCard label="Failed Logins (24h)" value={String(dashboard.failedLoginCount24h)} />
-            <StatCard label="Audit Events (24h)" value={String(dashboard.auditEventCount24h)} />
-            <StatCard
-              label="MFA Adoption"
-              value={
-                dashboard.mfaAdoptionPercent != null
-                  ? `${dashboard.mfaAdoptionPercent}%`
-                  : 'Not assessed'
-              }
-            />
-          </div>
-          <Panel title="Score calculation">
-            {dashboard.securityScore == null ? (
-              <p className="page-muted">
-                Not assessed — insufficient security evidence to calculate a score.
-              </p>
-            ) : (
-              <ul className="simple-list">
-                {dashboard.securityScoreFactors.map((factor) => (
-                  <li key={factor.label}>
-                    <strong>{factor.label}</strong> ({factor.impact >= 0 ? '+' : ''}
-                    {factor.impact}) — {factor.detail}
-                  </li>
-                ))}
+          <div className="stack gap-lg">
+            <div className="stat-grid">
+              <StatCard
+                label="Security Score"
+                value={
+                  dashboard.securityScore != null ? String(dashboard.securityScore) : 'Not assessed'
+                }
+              />
+              <StatCard label="Active Sessions" value={String(dashboard.activeSessionCount)} />
+              <StatCard label="Risk Alerts" value={String(dashboard.riskAlertCount)} />
+              <StatCard label="Failed Logins (24h)" value={String(dashboard.failedLoginCount24h)} />
+              <StatCard label="Audit Events (24h)" value={String(dashboard.auditEventCount24h)} />
+              <StatCard
+                label="MFA Adoption"
+                value={
+                  dashboard.mfaAdoptionPercent != null
+                    ? `${dashboard.mfaAdoptionPercent}%`
+                    : 'Not assessed'
+                }
+              />
+            </div>
+            <Panel title="Score calculation">
+              {dashboard.securityScore == null ? (
+                <p className="page-muted">
+                  Not assessed — insufficient security evidence to calculate a score.
+                </p>
+              ) : (
+                <ul className="simple-list">
+                  {dashboard.securityScoreFactors.map((factor) => (
+                    <li key={factor.label}>
+                      <strong>{factor.label}</strong> ({factor.impact >= 0 ? '+' : ''}
+                      {factor.impact}) — {factor.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+            <Panel title="Compliance & Encryption">
+              <p>{dashboard.summary}</p>
+              <ul>
+                <li>POPIA ready: {dashboard.compliance.popiaReady ? 'Yes' : 'No'}</li>
+                <li>GDPR ready: {dashboard.compliance.gdprReady ? 'Yes' : 'No'}</li>
+                <li>
+                  Audit logging: {dashboard.compliance.auditLoggingEnabled ? 'Enabled' : 'Disabled'}
+                </li>
+                <li>
+                  Personal workspace isolated:{' '}
+                  {dashboard.compliance.personalWorkspaceIsolated ? 'Yes' : 'No'}
+                </li>
+                <li>
+                  Integration credentials encrypted:{' '}
+                  {dashboard.encryption.integrationCredentialsEncrypted ? 'Yes' : 'No'}
+                </li>
+                <li>
+                  AI provider credentials encrypted:{' '}
+                  {dashboard.encryption.aiProviderCredentialsEncrypted ? 'Yes' : 'No'}
+                </li>
               </ul>
-            )}
-          </Panel>
-          <Panel title="Compliance & Encryption">
-            <p>{dashboard.summary}</p>
-            <ul>
-              <li>POPIA ready: {dashboard.compliance.popiaReady ? 'Yes' : 'No'}</li>
-              <li>GDPR ready: {dashboard.compliance.gdprReady ? 'Yes' : 'No'}</li>
-              <li>
-                Audit logging: {dashboard.compliance.auditLoggingEnabled ? 'Enabled' : 'Disabled'}
-              </li>
-              <li>
-                Personal workspace isolated:{' '}
-                {dashboard.compliance.personalWorkspaceIsolated ? 'Yes' : 'No'}
-              </li>
-              <li>
-                Integration credentials encrypted:{' '}
-                {dashboard.encryption.integrationCredentialsEncrypted ? 'Yes' : 'No'}
-              </li>
-              <li>
-                AI provider credentials encrypted:{' '}
-                {dashboard.encryption.aiProviderCredentialsEncrypted ? 'Yes' : 'No'}
-              </li>
-            </ul>
-          </Panel>
-        </div>
+            </Panel>
+          </div>
         ) : (
           <EmptyState title="No dashboard data" description="Security dashboard is unavailable." />
         )
@@ -360,316 +360,316 @@ export function EnterpriseSecurityPage() {
         auditQuery.isLoading ? (
           <LoadingState label="Loading audit logs…" />
         ) : (
-        <Panel title="Audit Logs">
-          {auditLogs.length === 0 ? (
-            <EmptyState
-              title="No audit events yet"
-              description="Audit logs appear from real tenant activity only."
-            />
-          ) : (
-            <ul>
-              {auditLogs.map((row) => (
-                <li key={row.id}>
-                  [{row.category}] {row.action} — {row.userName ?? 'System'} —{' '}
-                  {new Date(row.occurredAt).toLocaleString()}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+          <Panel title="Audit Logs">
+            {auditLogs.length === 0 ? (
+              <EmptyState
+                title="No audit events yet"
+                description="Audit logs appear from real tenant activity only."
+              />
+            ) : (
+              <ul>
+                {auditLogs.map((row) => (
+                  <li key={row.id}>
+                    [{row.category}] {row.action} — {row.userName ?? 'System'} —{' '}
+                    {new Date(row.occurredAt).toLocaleString()}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
         )
       ) : activeTab === 'sessions' ? (
         sessionsQuery.isLoading ? (
           <LoadingState label="Loading active sessions…" />
         ) : (
-        <Panel title="Active Sessions">
-          <p className="page-muted">
-            Count includes only non-revoked, non-expired sessions. Test and audit logins may
-            accumulate over time.
-          </p>
-          {canManage ? (
-            <div className="page-header-actions">
-              <Button
-                variant="secondary"
-                disabled={isRevoking || selectedSessionIds.length === 0}
-                onClick={() => {
-                  if (
-                    !accessToken ||
-                    !window.confirm(`Revoke ${selectedSessionIds.length} selected session(s)?`)
-                  ) {
-                    return;
-                  }
-                  setIsRevoking(true);
-                  void (async () => {
-                    try {
-                      for (const sessionId of selectedSessionIds) {
-                        await revokeSession(accessToken, sessionId);
+          <Panel title="Active Sessions">
+            <p className="page-muted">
+              Count includes only non-revoked, non-expired sessions. Test and audit logins may
+              accumulate over time.
+            </p>
+            {canManage ? (
+              <div className="page-header-actions">
+                <Button
+                  variant="secondary"
+                  disabled={isRevoking || selectedSessionIds.length === 0}
+                  onClick={() => {
+                    if (
+                      !accessToken ||
+                      !window.confirm(`Revoke ${selectedSessionIds.length} selected session(s)?`)
+                    ) {
+                      return;
+                    }
+                    setIsRevoking(true);
+                    void (async () => {
+                      try {
+                        for (const sessionId of selectedSessionIds) {
+                          await revokeSession(accessToken, sessionId);
+                        }
+                        setSelectedSessionIds([]);
+                        setSuccess('Selected sessions revoked.');
+                        await loadPage();
+                      } catch (err) {
+                        setError(
+                          err instanceof EnterpriseSecurityApiClientError
+                            ? err.message
+                            : 'Unable to revoke selected sessions',
+                        );
+                      } finally {
+                        setIsRevoking(false);
                       }
-                      setSelectedSessionIds([]);
-                      setSuccess('Selected sessions revoked.');
-                      await loadPage();
-                    } catch (err) {
-                      setError(
-                        err instanceof EnterpriseSecurityApiClientError
-                          ? err.message
-                          : 'Unable to revoke selected sessions',
-                      );
-                    } finally {
-                      setIsRevoking(false);
+                    })();
+                  }}
+                >
+                  Revoke selected
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={isRevoking}
+                  onClick={() => {
+                    if (
+                      !accessToken ||
+                      !window.confirm('Revoke all other sessions for this tenant?')
+                    ) {
+                      return;
                     }
-                  })();
-                }}
-              >
-                Revoke selected
-              </Button>
-              <Button
-                variant="secondary"
-                disabled={isRevoking}
-                onClick={() => {
-                  if (
-                    !accessToken ||
-                    !window.confirm('Revoke all other sessions for this tenant?')
-                  ) {
-                    return;
-                  }
-                  setIsRevoking(true);
-                  void (async () => {
-                    try {
-                      const count = await revokeAllOtherSessions(accessToken);
-                      setSuccess(`${count} other session(s) revoked.`);
-                      await loadPage();
-                    } catch (err) {
-                      setError(
-                        err instanceof EnterpriseSecurityApiClientError
-                          ? err.message
-                          : 'Unable to revoke other sessions',
-                      );
-                    } finally {
-                      setIsRevoking(false);
-                    }
-                  })();
-                }}
-              >
-                Revoke all other sessions
-              </Button>
-            </div>
-          ) : null}
-          {sessions.length === 0 ? (
-            <EmptyState
-              title="No active sessions"
-              description="Sessions appear when users authenticate."
-            />
-          ) : (
-            <div className="integrations-table-wrap">
-              <table className="integrations-table">
-                <thead>
-                  <tr>
-                    {canManage ? <th scope="col">Select</th> : null}
-                    <th scope="col">User</th>
-                    <th scope="col">Device / browser</th>
-                    <th scope="col">IP address</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Expires</th>
-                    <th scope="col">Status</th>
-                    {canManage ? <th scope="col">Actions</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((row) => (
-                    <tr key={row.id}>
-                      {canManage ? (
-                        <td>
-                          {!row.isCurrent ? (
-                            <input
-                              type="checkbox"
-                              checked={selectedSessionIds.includes(row.id)}
-                              onChange={(event) => {
-                                setSelectedSessionIds((current) =>
-                                  event.target.checked
-                                    ? [...current, row.id]
-                                    : current.filter((id) => id !== row.id),
-                                );
-                              }}
-                              aria-label={`Select session for ${row.userName}`}
-                            />
-                          ) : null}
-                        </td>
-                      ) : null}
-                      <td>{row.userName}</td>
-                      <td className="page-muted">{row.userAgent ?? 'Unknown device'}</td>
-                      <td>{row.ipAddress ?? 'Unknown'}</td>
-                      <td>{new Date(row.createdAt).toLocaleString()}</td>
-                      <td>{new Date(row.expiresAt).toLocaleString()}</td>
-                      <td>{row.isCurrent ? 'Current session' : 'Active'}</td>
-                      {canManage && !row.isCurrent ? (
-                        <td>
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            disabled={isRevoking}
-                            onClick={() => {
-                              if (!accessToken || !window.confirm('Revoke this session?')) return;
-                              void (async () => {
-                                setIsRevoking(true);
-                                try {
-                                  await revokeSession(accessToken, row.id);
-                                  setSuccess('Session revoked.');
-                                  await loadPage();
-                                } catch (err) {
-                                  setError(
-                                    err instanceof EnterpriseSecurityApiClientError
-                                      ? err.message
-                                      : 'Unable to revoke session',
-                                  );
-                                } finally {
-                                  setIsRevoking(false);
-                                }
-                              })();
-                            }}
-                          >
-                            Revoke
-                          </Button>
-                        </td>
-                      ) : canManage ? (
-                        <td>—</td>
-                      ) : null}
+                    setIsRevoking(true);
+                    void (async () => {
+                      try {
+                        const count = await revokeAllOtherSessions(accessToken);
+                        setSuccess(`${count} other session(s) revoked.`);
+                        await loadPage();
+                      } catch (err) {
+                        setError(
+                          err instanceof EnterpriseSecurityApiClientError
+                            ? err.message
+                            : 'Unable to revoke other sessions',
+                        );
+                      } finally {
+                        setIsRevoking(false);
+                      }
+                    })();
+                  }}
+                >
+                  Revoke all other sessions
+                </Button>
+              </div>
+            ) : null}
+            {sessions.length === 0 ? (
+              <EmptyState
+                title="No active sessions"
+                description="Sessions appear when users authenticate."
+              />
+            ) : (
+              <div className="integrations-table-wrap">
+                <table className="integrations-table">
+                  <thead>
+                    <tr>
+                      {canManage ? <th scope="col">Select</th> : null}
+                      <th scope="col">User</th>
+                      <th scope="col">Device / browser</th>
+                      <th scope="col">IP address</th>
+                      <th scope="col">Created</th>
+                      <th scope="col">Expires</th>
+                      <th scope="col">Status</th>
+                      {canManage ? <th scope="col">Actions</th> : null}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Panel>
+                  </thead>
+                  <tbody>
+                    {sessions.map((row) => (
+                      <tr key={row.id}>
+                        {canManage ? (
+                          <td>
+                            {!row.isCurrent ? (
+                              <input
+                                type="checkbox"
+                                checked={selectedSessionIds.includes(row.id)}
+                                onChange={(event) => {
+                                  setSelectedSessionIds((current) =>
+                                    event.target.checked
+                                      ? [...current, row.id]
+                                      : current.filter((id) => id !== row.id),
+                                  );
+                                }}
+                                aria-label={`Select session for ${row.userName}`}
+                              />
+                            ) : null}
+                          </td>
+                        ) : null}
+                        <td>{row.userName}</td>
+                        <td className="page-muted">{row.userAgent ?? 'Unknown device'}</td>
+                        <td>{row.ipAddress ?? 'Unknown'}</td>
+                        <td>{new Date(row.createdAt).toLocaleString()}</td>
+                        <td>{new Date(row.expiresAt).toLocaleString()}</td>
+                        <td>{row.isCurrent ? 'Current session' : 'Active'}</td>
+                        {canManage && !row.isCurrent ? (
+                          <td>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={isRevoking}
+                              onClick={() => {
+                                if (!accessToken || !window.confirm('Revoke this session?')) return;
+                                void (async () => {
+                                  setIsRevoking(true);
+                                  try {
+                                    await revokeSession(accessToken, row.id);
+                                    setSuccess('Session revoked.');
+                                    await loadPage();
+                                  } catch (err) {
+                                    setError(
+                                      err instanceof EnterpriseSecurityApiClientError
+                                        ? err.message
+                                        : 'Unable to revoke session',
+                                    );
+                                  } finally {
+                                    setIsRevoking(false);
+                                  }
+                                })();
+                              }}
+                            >
+                              Revoke
+                            </Button>
+                          </td>
+                        ) : canManage ? (
+                          <td>—</td>
+                        ) : null}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Panel>
         )
       ) : activeTab === 'devices' ? (
         devicesQuery.isLoading ? (
           <LoadingState label="Loading trusted devices…" />
         ) : (
-        <Panel title="Trusted Devices">
-          {trustedDevices.length === 0 ? (
-            <EmptyState
-              title="No trusted devices"
-              description="Register devices from authenticated clients."
-            />
-          ) : (
-            <ul>
-              {trustedDevices.map((row) => (
-                <li key={row.id}>
-                  {row.deviceLabel} — {row.approved ? 'Approved' : 'Pending approval'} — last seen{' '}
-                  {row.lastSeenAt ? new Date(row.lastSeenAt).toLocaleString() : 'never'}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+          <Panel title="Trusted Devices">
+            {trustedDevices.length === 0 ? (
+              <EmptyState
+                title="No trusted devices"
+                description="Register devices from authenticated clients."
+              />
+            ) : (
+              <ul>
+                {trustedDevices.map((row) => (
+                  <li key={row.id}>
+                    {row.deviceLabel} — {row.approved ? 'Approved' : 'Pending approval'} — last seen{' '}
+                    {row.lastSeenAt ? new Date(row.lastSeenAt).toLocaleString() : 'never'}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
         )
       ) : activeTab === 'alerts' ? (
         alertsQuery.isLoading ? (
           <LoadingState label="Loading risk alerts…" />
         ) : (
-        <Panel title="Risk Alerts">
-          {riskAlerts.length === 0 ? (
-            <EmptyState
-              title="No risk alerts"
-              description="Alerts are created from real suspicious activity only."
-            />
-          ) : (
-            <ul>
-              {riskAlerts.map((row) => (
-                <li key={row.id}>
-                  [{row.riskLevel}] {row.subject} — {row.description}
-                  {canManage && !row.resolved ? (
-                    <Button
-                      variant="secondary"
-                      onClick={async () => {
-                        if (!accessToken) return;
-                        await resolveRiskAlert(accessToken, row.id);
-                        await loadPage();
-                      }}
-                    >
-                      Resolve
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
+          <Panel title="Risk Alerts">
+            {riskAlerts.length === 0 ? (
+              <EmptyState
+                title="No risk alerts"
+                description="Alerts are created from real suspicious activity only."
+              />
+            ) : (
+              <ul>
+                {riskAlerts.map((row) => (
+                  <li key={row.id}>
+                    [{row.riskLevel}] {row.subject} — {row.description}
+                    {canManage && !row.resolved ? (
+                      <Button
+                        variant="secondary"
+                        onClick={async () => {
+                          if (!accessToken) return;
+                          await resolveRiskAlert(accessToken, row.id);
+                          await loadPage();
+                        }}
+                      >
+                        Resolve
+                      </Button>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Panel>
         )
       ) : activeTab === 'actions' ? (
         actionsQuery.isLoading ? (
           <LoadingState label="Loading security actions…" />
         ) : (
-        <div className="stack gap-lg">
-          <Panel title="Pending Security Actions">
-            {actions.length === 0 ? (
-              <EmptyState
-                title="No security actions"
-                description="Draft recommendations follow approval workflow."
-              />
-            ) : (
-              <ul>
-                {actions.map((row) => (
-                  <li key={row.id}>
-                    [{row.status}] {row.subject} — {row.recommendation}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-          {canManage ? (
-            <Panel title="Draft Security Action">
-              <form className="stack gap-md" onSubmit={handleCreateAction}>
-                <Input
-                  value={actionSubject}
-                  onChange={(event) => setActionSubject(event.target.value)}
-                  placeholder="Subject"
+          <div className="stack gap-lg">
+            <Panel title="Pending Security Actions">
+              {actions.length === 0 ? (
+                <EmptyState
+                  title="No security actions"
+                  description="Draft recommendations follow approval workflow."
                 />
-                <Input
-                  value={actionRecommendation}
-                  onChange={(event) => setActionRecommendation(event.target.value)}
-                  placeholder="Recommendation"
-                />
-                <Button type="submit">Draft for approval</Button>
-              </form>
+              ) : (
+                <ul>
+                  {actions.map((row) => (
+                    <li key={row.id}>
+                      [{row.status}] {row.subject} — {row.recommendation}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Panel>
-          ) : null}
-        </div>
+            {canManage ? (
+              <Panel title="Draft Security Action">
+                <form className="stack gap-md" onSubmit={handleCreateAction}>
+                  <Input
+                    value={actionSubject}
+                    onChange={(event) => setActionSubject(event.target.value)}
+                    placeholder="Subject"
+                  />
+                  <Input
+                    value={actionRecommendation}
+                    onChange={(event) => setActionRecommendation(event.target.value)}
+                    placeholder="Recommendation"
+                  />
+                  <Button type="submit">Draft for approval</Button>
+                </form>
+              </Panel>
+            ) : null}
+          </div>
         )
       ) : activeTab === 'privacy' ? (
         privacyQuery.isLoading ? (
           <LoadingState label="Loading privacy requests…" />
         ) : (
-        <div className="stack gap-lg">
-          <Panel title="Privacy Requests">
-            {privacyRequests.length === 0 ? (
-              <EmptyState
-                title="No privacy requests"
-                description="POPIA/GDPR export and deletion workflows start here."
-              />
-            ) : (
-              <ul>
-                {privacyRequests.map((row) => (
-                  <li key={row.id}>
-                    [{row.status}] {row.requestType} — {row.subject}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-          {canManage ? (
-            <Panel title="Submit Privacy Request">
-              <form className="stack gap-md" onSubmit={handleCreatePrivacyRequest}>
-                <Input
-                  value={privacySubject}
-                  onChange={(event) => setPrivacySubject(event.target.value)}
-                  placeholder="Subject"
+          <div className="stack gap-lg">
+            <Panel title="Privacy Requests">
+              {privacyRequests.length === 0 ? (
+                <EmptyState
+                  title="No privacy requests"
+                  description="POPIA/GDPR export and deletion workflows start here."
                 />
-                <Button type="submit">Submit data export request</Button>
-              </form>
+              ) : (
+                <ul>
+                  {privacyRequests.map((row) => (
+                    <li key={row.id}>
+                      [{row.status}] {row.requestType} — {row.subject}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Panel>
-          ) : null}
-        </div>
+            {canManage ? (
+              <Panel title="Submit Privacy Request">
+                <form className="stack gap-md" onSubmit={handleCreatePrivacyRequest}>
+                  <Input
+                    value={privacySubject}
+                    onChange={(event) => setPrivacySubject(event.target.value)}
+                    placeholder="Subject"
+                  />
+                  <Button type="submit">Submit data export request</Button>
+                </form>
+              </Panel>
+            ) : null}
+          </div>
         )
       ) : policyQuery.isLoading ? (
         <LoadingState label="Loading security policy…" />

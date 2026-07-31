@@ -25,7 +25,10 @@ export async function fetchWorkflows(accessToken: string): Promise<WorkflowSumma
   return data.workflows;
 }
 
-export async function fetchWorkflow(accessToken: string, workflowId: string): Promise<WorkflowDetail> {
+export async function fetchWorkflow(
+  accessToken: string,
+  workflowId: string,
+): Promise<WorkflowDetail> {
   const data = await request<{ workflow: WorkflowDetail }>(`/automation/workflows/${workflowId}`, {
     accessToken,
   });
@@ -120,11 +123,14 @@ export async function runWorkflow(
   workflowId: string,
   payload?: Record<string, unknown>,
 ): Promise<WorkflowRunDetail> {
-  const data = await request<{ run: WorkflowRunDetail }>(`/automation/workflows/${workflowId}/run`, {
-    method: 'POST',
-    accessToken,
-    body: { payload },
-  });
+  const data = await request<{ run: WorkflowRunDetail }>(
+    `/automation/workflows/${workflowId}/run`,
+    {
+      method: 'POST',
+      accessToken,
+      body: { payload },
+    },
+  );
   return data.run;
 }
 

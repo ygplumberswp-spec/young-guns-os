@@ -246,10 +246,7 @@ export async function buildSelectedAuraContext(
         'integrations:manage',
       ]),
       load: async () => ({
-        whatsapp: await deps.whatsappService.buildAuraContext(
-          companyId,
-          pageContext?.customerId,
-        ),
+        whatsapp: await deps.whatsappService.buildAuraContext(companyId, pageContext?.customerId),
       }),
     },
     {
@@ -375,7 +372,11 @@ export async function buildSelectedAuraContext(
     },
     {
       domain: 'procurement',
-      enabled: hasAnyPermission(permissions, ['procurement:read', 'procurement:write', 'agents:read']),
+      enabled: hasAnyPermission(permissions, [
+        'procurement:read',
+        'procurement:write',
+        'agents:read',
+      ]),
       load: async () => ({
         procurement: await deps.procurementService.buildAuraContext(companyId),
       }),
@@ -415,14 +416,17 @@ export async function buildSelectedAuraContext(
         'agents:read',
       ]),
       load: async () => ({
-        enterpriseAnalytics: await deps.enterpriseAnalyticsService.buildAnalyticsAuraContext(
-          companyId,
-        ),
+        enterpriseAnalytics:
+          await deps.enterpriseAnalyticsService.buildAnalyticsAuraContext(companyId),
       }),
     },
     {
       domain: 'enterpriseAutomationStudio',
-      enabled: hasAnyPermission(permissions, ['automation:read', 'automation:write', 'agents:read']),
+      enabled: hasAnyPermission(permissions, [
+        'automation:read',
+        'automation:write',
+        'agents:read',
+      ]),
       load: async () => ({
         enterpriseAutomationStudio:
           await deps.enterpriseAutomationStudioService.buildAutomationAuraContext(companyId),
@@ -471,14 +475,17 @@ export async function buildSelectedAuraContext(
         'agents:read',
       ]),
       load: async () => ({
-        enterpriseEvolution: await deps.enterpriseEvolutionService.buildEvolutionAuraContext(
-          companyId,
-        ),
+        enterpriseEvolution:
+          await deps.enterpriseEvolutionService.buildEvolutionAuraContext(companyId),
       }),
     },
     {
       domain: 'enterpriseDeveloperPlatform',
-      enabled: hasAnyPermission(permissions, ['integrations:read', 'integrations:manage', 'agents:read']),
+      enabled: hasAnyPermission(permissions, [
+        'integrations:read',
+        'integrations:manage',
+        'agents:read',
+      ]),
       load: async () => ({
         enterpriseDeveloperPlatform:
           await deps.enterpriseDeveloperPlatformService.buildDeveloperAuraContext(companyId),
@@ -486,7 +493,12 @@ export async function buildSelectedAuraContext(
     },
     {
       domain: 'enterpriseSaasPlatform',
-      enabled: hasAnyPermission(permissions, ['saas:read', 'saas:manage', 'platform:read', 'agents:read']),
+      enabled: hasAnyPermission(permissions, [
+        'saas:read',
+        'saas:manage',
+        'platform:read',
+        'agents:read',
+      ]),
       load: async () => ({
         enterpriseSaasPlatform:
           await deps.enterpriseSaasPlatformService.buildSaasAuraContext(companyId),
@@ -577,9 +589,8 @@ export async function buildSelectedAuraContext(
         'agents:read',
       ]),
       load: async () => ({
-        assetEquipment: await deps.assetEquipmentIntelligenceService.buildAssetAuraContext(
-          companyId,
-        ),
+        assetEquipment:
+          await deps.assetEquipmentIntelligenceService.buildAssetAuraContext(companyId),
       }),
     },
     {
@@ -591,9 +602,8 @@ export async function buildSelectedAuraContext(
         'executive:read',
       ]),
       load: async () => ({
-        aiOrchestration: await deps.aiOrchestrationService.buildAiOrchestrationAuraContext(
-          companyId,
-        ),
+        aiOrchestration:
+          await deps.aiOrchestrationService.buildAiOrchestrationAuraContext(companyId),
       }),
     },
     {
@@ -654,7 +664,11 @@ export async function buildSelectedAuraContext(
     },
     {
       domain: 'integrationPlatform',
-      enabled: hasAnyPermission(permissions, ['integrations:read', 'integrations:manage', 'agents:read']),
+      enabled: hasAnyPermission(permissions, [
+        'integrations:read',
+        'integrations:manage',
+        'agents:read',
+      ]),
       load: async () => ({
         integrationPlatform:
           await deps.integrationPlatformService.buildIntegrationAuraContext(companyId),

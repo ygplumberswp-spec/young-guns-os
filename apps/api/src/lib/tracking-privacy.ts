@@ -42,7 +42,10 @@ export async function getActiveEnRouteTracking(
   return { startedAt: enRoute.createdAt, technicianUserId: enRoute.userId };
 }
 
-export function buildCustomerTrackingProgress(startedAt: Date, etaAt: string | null): number | null {
+export function buildCustomerTrackingProgress(
+  startedAt: Date,
+  etaAt: string | null,
+): number | null {
   if (!etaAt) return null;
   const etaMs = new Date(etaAt).getTime();
   const startMs = startedAt.getTime();

@@ -1,4 +1,5 @@
-export type RcValidationStatus = 'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
+export type RcValidationStatus =
+  'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
 
 export type RcReleaseStatus = 'not_ready' | 'blocked' | 'warning' | 'ready' | 'unknown';
 

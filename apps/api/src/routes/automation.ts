@@ -165,17 +165,25 @@ export function createAutomationRouter({
     next();
   });
 
-  router.get('/stats', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const stats = await automationService.getStats(companyId);
-    res.json({ data: stats });
-  });
+  router.get(
+    '/stats',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const stats = await automationService.getStats(companyId);
+      res.json({ data: stats });
+    },
+  );
 
-  router.get('/workflows', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const workflows = await automationService.listWorkflows(companyId);
-    res.json({ data: { workflows } });
-  });
+  router.get(
+    '/workflows',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const workflows = await automationService.listWorkflows(companyId);
+      res.json({ data: { workflows } });
+    },
+  );
 
   router.post('/workflows', requireAnyPermission('automation:write'), async (req, res) => {
     const { companyId, userId } = getAuth(req);
@@ -372,42 +380,42 @@ export function createAutomationRouter({
     },
   );
 
-  router.post(
-    '/workflows/:id/run',
-    requireAnyPermission('automation:write'),
+  router.post('/workflows/:id/run', requireAnyPermission('automation:write'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
+    const parsed = runWorkflowSchema.safeParse(req.body ?? {});
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid run payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const run = await workflowEngineService.runManual(
+        { companyId, userId },
+        getRouteParam(req.params.id),
+        parsed.data.payload ?? {},
+      );
+      res.status(201).json({ data: { run } });
+    } catch (error) {
+      handleAutomationError(res, error);
+    }
+  });
+
+  router.get(
+    '/runs',
+    requireAnyPermission('automation:read', 'automation:write'),
     async (req, res) => {
-      const { companyId, userId } = getAuth(req);
-      const parsed = runWorkflowSchema.safeParse(req.body ?? {});
-
-      if (!parsed.success) {
-        res.status(400).json({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid run payload',
-            details: parsed.error.flatten(),
-          },
-        });
-        return;
-      }
-
-      try {
-        const run = await workflowEngineService.runManual(
-          { companyId, userId },
-          getRouteParam(req.params.id),
-          parsed.data.payload ?? {},
-        );
-        res.status(201).json({ data: { run } });
-      } catch (error) {
-        handleAutomationError(res, error);
-      }
+      const { companyId } = getAuth(req);
+      const runs = await workflowEngineService.listRuns(companyId);
+      res.json({ data: { runs } });
     },
   );
-
-  router.get('/runs', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const runs = await workflowEngineService.listRuns(companyId);
-    res.json({ data: { runs } });
-  });
 
   router.get(
     '/runs/:id',
@@ -466,20 +474,16 @@ export function createAutomationRouter({
     },
   );
 
-  router.post(
-    '/steps/:id/retry',
-    requireAnyPermission('automation:write'),
-    async (req, res) => {
-      const { companyId, userId } = getAuth(req);
+  router.post('/steps/:id/retry', requireAnyPermission('automation:write'), async (req, res) => {
+    const { companyId, userId } = getAuth(req);
 
-      try {
-        await workflowEngineService.retryStep({ companyId, userId }, getRouteParam(req.params.id));
-        res.json({ data: { success: true } });
-      } catch (error) {
-        handleAutomationError(res, error);
-      }
-    },
-  );
+    try {
+      await workflowEngineService.retryStep({ companyId, userId }, getRouteParam(req.params.id));
+      res.json({ data: { success: true } });
+    } catch (error) {
+      handleAutomationError(res, error);
+    }
+  });
 
   router.get(
     '/executions',
@@ -519,85 +523,122 @@ export function createAutomationRouter({
     },
   );
 
-  router.post('/workflows/:id/submit', requireAnyPermission('automation:write'), async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const workflow = await workflowStudioService.submitWorkflow(
-        { companyId: auth.companyId, userId: auth.userId },
+  router.post(
+    '/workflows/:id/submit',
+    requireAnyPermission('automation:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const workflow = await workflowStudioService.submitWorkflow(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+        );
+        res.json({ data: { workflow } });
+      } catch (error) {
+        handleAutomationError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/workflows/:id/activate',
+    requireAnyPermission('automation:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const workflow = await workflowStudioService.activateWorkflow(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+        );
+        res.json({ data: { workflow } });
+      } catch (error) {
+        handleAutomationError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/workflows/:id/validate',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const validation = await workflowStudioService.validateWorkflow(
+        companyId,
         getRouteParam(req.params.id),
       );
-      res.json({ data: { workflow } });
-    } catch (error) {
-      handleAutomationError(res, error);
-    }
-  });
+      res.json({ data: { validation } });
+    },
+  );
 
-  router.post('/workflows/:id/activate', requireAnyPermission('automation:write'), async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const workflow = await workflowStudioService.activateWorkflow(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.id),
-      );
-      res.json({ data: { workflow } });
-    } catch (error) {
-      handleAutomationError(res, error);
-    }
-  });
+  router.post(
+    '/workflows/:id/simulate',
+    requireAnyPermission('automation:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const simulation = await workflowStudioService.simulateWorkflow(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+          req.body ?? {},
+        );
+        res.status(201).json({ data: { simulation } });
+      } catch (error) {
+        handleAutomationError(res, error);
+      }
+    },
+  );
 
-  router.get('/workflows/:id/validate', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const validation = await workflowStudioService.validateWorkflow(companyId, getRouteParam(req.params.id));
-    res.json({ data: { validation } });
-  });
+  router.post(
+    '/workflows/:id/execute',
+    requireAnyPermission('automation:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const run = await workflowStudioService.executeWorkflow(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+          (req.body?.payload as Record<string, unknown> | undefined) ?? {},
+        );
+        res.status(201).json({ data: { run } });
+      } catch (error) {
+        handleAutomationError(res, error);
+      }
+    },
+  );
 
-  router.post('/workflows/:id/simulate', requireAnyPermission('automation:write'), async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const simulation = await workflowStudioService.simulateWorkflow(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.id),
-        req.body ?? {},
-      );
-      res.status(201).json({ data: { simulation } });
-    } catch (error) {
-      handleAutomationError(res, error);
-    }
-  });
+  router.get(
+    '/history',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const workflowId =
+        typeof req.query.workflowId === 'string' ? req.query.workflowId : undefined;
+      const history = await workflowStudioService.listWorkflowHistory(companyId, workflowId);
+      res.json({ data: history });
+    },
+  );
 
-  router.post('/workflows/:id/execute', requireAnyPermission('automation:write'), async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const run = await workflowStudioService.executeWorkflow(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.id),
-        (req.body?.payload as Record<string, unknown> | undefined) ?? {},
-      );
-      res.status(201).json({ data: { run } });
-    } catch (error) {
-      handleAutomationError(res, error);
-    }
-  });
+  router.get(
+    '/audit-logs',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const workflowId =
+        typeof req.query.workflowId === 'string' ? req.query.workflowId : undefined;
+      const auditLogs = await workflowStudioService.listAuditLogs(companyId, workflowId);
+      res.json({ data: { auditLogs } });
+    },
+  );
 
-  router.get('/history', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const workflowId = typeof req.query.workflowId === 'string' ? req.query.workflowId : undefined;
-    const history = await workflowStudioService.listWorkflowHistory(companyId, workflowId);
-    res.json({ data: history });
-  });
-
-  router.get('/audit-logs', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const workflowId = typeof req.query.workflowId === 'string' ? req.query.workflowId : undefined;
-    const auditLogs = await workflowStudioService.listAuditLogs(companyId, workflowId);
-    res.json({ data: { auditLogs } });
-  });
-
-  router.get('/templates', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const templates = await workflowStudioService.listTemplates(companyId);
-    res.json({ data: { templates } });
-  });
+  router.get(
+    '/templates',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const templates = await workflowStudioService.listTemplates(companyId);
+      res.json({ data: { templates } });
+    },
+  );
 
   router.post('/templates', requireAnyPermission('automation:write'), async (req, res) => {
     const parsed = z
@@ -612,7 +653,9 @@ export function createAutomationRouter({
       .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid template payload' } });
       return;
     }
 
@@ -628,37 +671,47 @@ export function createAutomationRouter({
     }
   });
 
-  router.post('/templates/:id/instantiate', requireAnyPermission('automation:write'), async (req, res) => {
-    const parsed = z
-      .object({
-        name: z.string().trim().min(1).max(200),
-        description: z.string().trim().max(2000).optional().nullable(),
-      })
-      .safeParse(req.body);
+  router.post(
+    '/templates/:id/instantiate',
+    requireAnyPermission('automation:write'),
+    async (req, res) => {
+      const parsed = z
+        .object({
+          name: z.string().trim().min(1).max(200),
+          description: z.string().trim().max(2000).optional().nullable(),
+        })
+        .safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid instantiate payload' } });
-      return;
-    }
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid instantiate payload' } });
+        return;
+      }
 
-    try {
-      const auth = getAuth(req);
-      const workflow = await workflowStudioService.instantiateTemplate(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.id),
-        parsed.data,
-      );
-      res.status(201).json({ data: { workflow } });
-    } catch (error) {
-      handleAutomationError(res, error);
-    }
-  });
+      try {
+        const auth = getAuth(req);
+        const workflow = await workflowStudioService.instantiateTemplate(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.id),
+          parsed.data,
+        );
+        res.status(201).json({ data: { workflow } });
+      } catch (error) {
+        handleAutomationError(res, error);
+      }
+    },
+  );
 
-  router.get('/schedules', requireAnyPermission('automation:read', 'automation:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const schedules = await workflowStudioService.listSchedules(companyId);
-    res.json({ data: { schedules } });
-  });
+  router.get(
+    '/schedules',
+    requireAnyPermission('automation:read', 'automation:write'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const schedules = await workflowStudioService.listSchedules(companyId);
+      res.json({ data: { schedules } });
+    },
+  );
 
   router.post('/schedules', requireAnyPermission('automation:write'), async (req, res) => {
     const parsed = z
@@ -674,7 +727,9 @@ export function createAutomationRouter({
       .safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid schedule payload' } });
       return;
     }
 
@@ -694,7 +749,11 @@ export function createAutomationRouter({
 }
 
 function handleAutomationError(res: import('express').Response, error: unknown) {
-  if (error instanceof AutomationError || error instanceof WorkflowEngineError || error instanceof WorkflowStudioError) {
+  if (
+    error instanceof AutomationError ||
+    error instanceof WorkflowEngineError ||
+    error instanceof WorkflowStudioError
+  ) {
     const status =
       error.code === 'WORKFLOW_NOT_FOUND' ||
       error.code === 'RUN_NOT_FOUND' ||

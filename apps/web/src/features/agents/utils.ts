@@ -19,9 +19,7 @@ export function formatAgentProfileStatus(status: AgentProfileStatus): string {
 }
 
 export function formatAgentExecutionStatus(status: AgentExecutionStatus): string {
-  return (
-    AGENT_EXECUTION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
-  );
+  return AGENT_EXECUTION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
 }
 
 export function formatAgentKey(agentKey: AgentKey): string {

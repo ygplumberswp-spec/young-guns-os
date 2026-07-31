@@ -10,6 +10,7 @@ import type {
   ProcurementStats,
   PurchaseOrderDetail,
   PurchaseOrderSummary,
+  ReceivePurchaseOrderRequest,
   StockIntelligenceSignal,
   SupplierActivitySummary,
   SupplierInsight,
@@ -23,6 +24,7 @@ import type {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  inventoryStockMovements,
   jobs,
   procurementRecommendations,
   purchaseOrderItems,
@@ -33,6 +35,8 @@ import {
   users,
 } from '@titan/db';
 import type { InventoryService } from './inventory.service.js';
+import type { StockMovementsService } from './stock-movements.service.js';
+import { StockMovementError } from './stock-movements.service.js';
 
 export class ProcurementError extends Error {
   constructor(
@@ -52,6 +56,7 @@ type TenantScope = {
 type ProcurementServiceDeps = {
   db: DatabaseClient;
   inventoryService: InventoryService;
+  stockMovementsService: StockMovementsService;
 };
 
 export class ProcurementService {
@@ -61,7 +66,9 @@ export class ProcurementService {
     const [inventoryStats, supplierRows, orderRows, recommendations] = await Promise.all([
       this.deps.inventoryService.getStats(companyId),
       this.deps.db.query.suppliers.findMany({ where: eq(suppliers.companyId, companyId) }),
-      this.deps.db.query.purchaseOrders.findMany({ where: eq(purchaseOrders.companyId, companyId) }),
+      this.deps.db.query.purchaseOrders.findMany({
+        where: eq(purchaseOrders.companyId, companyId),
+      }),
       this.listRecommendations(companyId),
     ]);
 
@@ -136,7 +143,8 @@ export class ProcurementService {
       .update(suppliers)
       .set({
         name: input.name?.trim(),
-        contactName: input.contactName !== undefined ? input.contactName?.trim() || null : undefined,
+        contactName:
+          input.contactName !== undefined ? input.contactName?.trim() || null : undefined,
         email: input.email !== undefined ? input.email?.trim() || null : undefined,
         phone: input.phone !== undefined ? input.phone?.trim() || null : undefined,
         address: input.address !== undefined ? input.address?.trim() || null : undefined,
@@ -222,9 +230,10 @@ export class ProcurementService {
       .update(supplierProducts)
       .set({
         inventoryItemId:
-          input.inventoryItemId !== undefined ? input.inventoryItemId ?? null : undefined,
+          input.inventoryItemId !== undefined ? (input.inventoryItemId ?? null) : undefined,
         productName: input.productName?.trim(),
-        supplierSku: input.supplierSku !== undefined ? input.supplierSku?.trim() || null : undefined,
+        supplierSku:
+          input.supplierSku !== undefined ? input.supplierSku?.trim() || null : undefined,
         unitCostCents: input.unitCostCents,
         leadTimeDays: input.leadTimeDays !== undefined ? input.leadTimeDays : undefined,
         notes: input.notes !== undefined ? input.notes?.trim() || null : undefined,
@@ -293,14 +302,24 @@ export class ProcurementService {
   async listPurchaseOrders(companyId: string): Promise<PurchaseOrderSummary[]> {
     const rows = await this.deps.db.query.purchaseOrders.findMany({
       where: eq(purchaseOrders.companyId, companyId),
-      with: { supplier: true, createdBy: true, approvedBy: true, items: true },
+      with: {
+        supplier: true,
+        createdBy: true,
+        approvedBy: true,
+        items: true,
+        job: true,
+        destinationLocation: true,
+      },
       orderBy: [desc(purchaseOrders.updatedAt)],
     });
 
     return rows.map(toPurchaseOrderSummary);
   }
 
-  async getPurchaseOrder(companyId: string, purchaseOrderId: string): Promise<PurchaseOrderDetail | null> {
+  async getPurchaseOrder(
+    companyId: string,
+    purchaseOrderId: string,
+  ): Promise<PurchaseOrderDetail | null> {
     const row = await this.deps.db.query.purchaseOrders.findFirst({
       where: and(eq(purchaseOrders.id, purchaseOrderId), eq(purchaseOrders.companyId, companyId)),
       with: {
@@ -308,6 +327,8 @@ export class ProcurementService {
         createdBy: true,
         approvedBy: true,
         items: { with: { inventoryItem: true } },
+        job: true,
+        destinationLocation: true,
       },
     });
 
@@ -318,10 +339,26 @@ export class ProcurementService {
     scope: TenantScope,
     input: CreatePurchaseOrderRequest,
   ): Promise<PurchaseOrderDetail> {
+    if (input.clientActionId) {
+      const existing = await this.deps.db.query.purchaseOrders.findFirst({
+        where: and(
+          eq(purchaseOrders.companyId, scope.companyId),
+          eq(purchaseOrders.clientActionId, input.clientActionId),
+        ),
+      });
+      if (existing) {
+        const detail = await this.getPurchaseOrder(scope.companyId, existing.id);
+        if (detail) return detail;
+      }
+    }
+
     await this.ensureSupplier(scope.companyId, input.supplierId);
 
     if (!input.items.length) {
-      throw new ProcurementError('VALIDATION_ERROR', 'At least one purchase order item is required');
+      throw new ProcurementError(
+        'VALIDATION_ERROR',
+        'At least one purchase order item is required',
+      );
     }
 
     for (const item of input.items) {
@@ -330,9 +367,33 @@ export class ProcurementService {
       }
     }
 
+    let jobNumber: string | null = null;
+    if (input.jobId) {
+      const job = await this.deps.db.query.jobs.findFirst({
+        where: and(eq(jobs.id, input.jobId), eq(jobs.companyId, scope.companyId)),
+      });
+      if (!job) {
+        throw new ProcurementError('NOT_FOUND', 'Job not found');
+      }
+      jobNumber = job.jobNumber;
+    }
+
+    if (input.destinationLocationId) {
+      await this.deps.inventoryService.ensureLocationBelongsToCompany(
+        scope.companyId,
+        input.destinationLocationId,
+      );
+    }
+
+    const [countRow] = await this.deps.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(purchaseOrders)
+      .where(eq(purchaseOrders.companyId, scope.companyId));
+
     const referenceNumber =
-      input.referenceNumber?.trim() ||
-      `PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
+      input.referenceNumber?.trim() || `PO-${String((countRow?.count ?? 0) + 1).padStart(4, '0')}`;
+
+    const jobReference = input.jobReference?.trim() || jobNumber || null;
 
     const totalCostCents = input.items.reduce(
       (sum, item) => sum + item.quantity * item.unitCostCents,
@@ -348,6 +409,10 @@ export class ProcurementService {
         notes: input.notes?.trim() || null,
         totalCostCents,
         status: 'draft',
+        jobId: input.jobId ?? null,
+        jobReference,
+        destinationLocationId: input.destinationLocationId ?? null,
+        clientActionId: input.clientActionId?.trim() || null,
         createdByUserId: scope.userId,
       })
       .returning();
@@ -372,6 +437,150 @@ export class ProcurementService {
     return detail!;
   }
 
+  /**
+   * Receives stock against a purchase order. Idempotent on `clientActionId`: replaying the
+   * same receipt (e.g. after a network retry) is a no-op. Only lines linked to an inventory
+   * item move stock — the stock movement ledger is the sole authority for on-hand quantity.
+   */
+  async receivePurchaseOrder(
+    scope: TenantScope,
+    purchaseOrderId: string,
+    input: ReceivePurchaseOrderRequest,
+  ): Promise<PurchaseOrderDetail> {
+    const existing = await this.getPurchaseOrder(scope.companyId, purchaseOrderId);
+    if (!existing) {
+      throw new ProcurementError('NOT_FOUND', 'Purchase order not found');
+    }
+
+    if (!['approved', 'ordered', 'received'].includes(existing.status)) {
+      throw new ProcurementError(
+        'INVALID_STATUS',
+        `Purchase order in status ${existing.status} cannot be received`,
+      );
+    }
+
+    if (!input.lines.length) {
+      throw new ProcurementError('VALIDATION_ERROR', 'At least one receipt line is required');
+    }
+
+    await this.deps.inventoryService.ensureLocationBelongsToCompany(
+      scope.companyId,
+      input.destinationLocationId,
+    );
+
+    const lineClientActionIds = input.lines.map(
+      (line) => `${input.clientActionId}:${line.purchaseOrderItemId}`,
+    );
+    const alreadyApplied = await this.deps.db.query.inventoryStockMovements.findFirst({
+      where: and(
+        eq(inventoryStockMovements.companyId, scope.companyId),
+        eq(inventoryStockMovements.purchaseOrderId, purchaseOrderId),
+        inArray(inventoryStockMovements.clientActionId, lineClientActionIds),
+      ),
+    });
+    if (alreadyApplied) {
+      return existing;
+    }
+
+    const itemRows = await this.deps.db.query.purchaseOrderItems.findMany({
+      where: and(
+        eq(purchaseOrderItems.purchaseOrderId, purchaseOrderId),
+        eq(purchaseOrderItems.companyId, scope.companyId),
+      ),
+    });
+    const itemsById = new Map(itemRows.map((row) => [row.id, row]));
+
+    for (const line of input.lines) {
+      const item = itemsById.get(line.purchaseOrderItemId);
+      if (!item) {
+        throw new ProcurementError('NOT_FOUND', 'Purchase order item not found');
+      }
+      if (line.quantityReceived <= 0) {
+        throw new ProcurementError('VALIDATION_ERROR', 'Quantity received must be greater than zero');
+      }
+      const remaining = item.quantity - item.quantityReceived;
+      if (line.quantityReceived > remaining) {
+        throw new ProcurementError(
+          'VALIDATION_ERROR',
+          `Cannot receive more than the remaining ordered quantity for "${item.description}" (${remaining} remaining)`,
+        );
+      }
+    }
+
+    try {
+      await this.deps.db.transaction(async (tx) => {
+        for (const line of input.lines) {
+          const item = itemsById.get(line.purchaseOrderItemId)!;
+          const lineClientActionId = `${input.clientActionId}:${line.purchaseOrderItemId}`;
+
+          if (item.inventoryItemId) {
+            await this.deps.stockMovementsService.applyMovement(tx, {
+              companyId: scope.companyId,
+              itemId: item.inventoryItemId,
+              locationId: input.destinationLocationId,
+              movementType: 'receipt',
+              quantityDelta: line.quantityReceived,
+              unitCostCents: item.unitCostCents,
+              purchaseOrderId,
+              purchaseOrderItemId: item.id,
+              clientActionId: lineClientActionId,
+              recordedByUserId: scope.userId,
+              reason: 'purchase_order_receipt',
+            });
+          }
+
+          await tx
+            .update(purchaseOrderItems)
+            .set({
+              quantityReceived: item.quantityReceived + line.quantityReceived,
+              updatedAt: new Date(),
+            })
+            .where(eq(purchaseOrderItems.id, item.id));
+        }
+
+        const refreshedItems = await tx.query.purchaseOrderItems.findMany({
+          where: eq(purchaseOrderItems.purchaseOrderId, purchaseOrderId),
+        });
+
+        const allFullyReceived = refreshedItems.every(
+          (row) => row.quantityReceived >= row.quantity,
+        );
+        const anyReceived = refreshedItems.some((row) => row.quantityReceived > 0);
+
+        const now = new Date();
+        await tx
+          .update(purchaseOrders)
+          .set({
+            deliveryStatus: allFullyReceived ? 'delivered' : anyReceived ? 'partial' : 'not_started',
+            status: existing.status === 'completed' ? existing.status : 'received',
+            receivedAt: existing.receivedAt ? new Date(existing.receivedAt) : now,
+            updatedAt: now,
+          })
+          .where(eq(purchaseOrders.id, purchaseOrderId));
+      });
+    } catch (error) {
+      if (error instanceof StockMovementError) {
+        throw new ProcurementError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    emitBusinessEvent({
+      companyId: scope.companyId,
+      eventType: 'procurement.purchase_order_approved',
+      entityType: 'purchase_order',
+      entityId: purchaseOrderId,
+      payload: {
+        purchaseOrder: { id: purchaseOrderId, status: 'received' },
+        receivedLines: input.lines,
+      },
+      actorUserId: scope.userId,
+    });
+
+    const detail = await this.getPurchaseOrder(scope.companyId, purchaseOrderId);
+    return detail!;
+  }
+
   async updatePurchaseOrder(
     companyId: string,
     purchaseOrderId: string,
@@ -388,7 +597,10 @@ export class ProcurementService {
 
     if (input.items) {
       if (!input.items.length) {
-        throw new ProcurementError('VALIDATION_ERROR', 'At least one purchase order item is required');
+        throw new ProcurementError(
+          'VALIDATION_ERROR',
+          'At least one purchase order item is required',
+        );
       }
 
       await this.deps.db
@@ -442,10 +654,12 @@ export class ProcurementService {
     };
 
     const allowedTransitions: Record<string, PurchaseOrderSummary['status'][]> = {
-      draft: ['pending_approval', 'cancelled'],
+      // Owner/manager may approve a draft directly (pending_approval optional).
+      draft: ['pending_approval', 'approved', 'cancelled'],
       pending_approval: ['approved', 'draft', 'cancelled'],
       approved: ['ordered', 'cancelled'],
       ordered: ['received', 'cancelled'],
+      // Stock receipt is applied via receivePurchaseOrder; status→received alone does not invent stock.
       received: ['completed'],
       completed: [],
       cancelled: [],
@@ -473,6 +687,7 @@ export class ProcurementService {
     }
     if (input.status === 'cancelled') {
       updates.cancelledAt = now;
+      updates.cancelReason = input.cancelReason?.trim() || null;
     }
 
     await this.deps.db
@@ -562,7 +777,9 @@ export class ProcurementService {
       .slice(0, 5);
 
     for (const item of fastMoving) {
-      if (!signals.some((signal) => signal.itemId === item.id && signal.signalType === 'low_stock')) {
+      if (
+        !signals.some((signal) => signal.itemId === item.id && signal.signalType === 'low_stock')
+      ) {
         continue;
       }
       signals.push({
@@ -603,7 +820,11 @@ export class ProcurementService {
           title: `${supplier.name} completion rate`,
           description: `${completed.length}/${totalOrders} purchase orders completed (${completionRate}%).`,
           priority: completionRate < 50 ? 'high' : 'medium',
-          context: { completedCount: completed.length, totalOrders, cancelledCount: cancelled.length },
+          context: {
+            completedCount: completed.length,
+            totalOrders,
+            cancelledCount: cancelled.length,
+          },
         });
       }
 
@@ -618,7 +839,10 @@ export class ProcurementService {
           title: `${supplier.name} product costs`,
           description: `${supplier.products.length} linked product(s); average unit cost ${(avgCost / 100).toFixed(2)}.`,
           priority: 'low',
-          context: { productCount: supplier.products.length, averageUnitCostCents: Math.round(avgCost) },
+          context: {
+            productCount: supplier.products.length,
+            averageUnitCostCents: Math.round(avgCost),
+          },
         });
       }
 
@@ -627,7 +851,9 @@ export class ProcurementService {
         .filter((value): value is number => value !== null && value > 0);
 
       if (leadTimes.length > 0) {
-        const avgLead = Math.round(leadTimes.reduce((sum, value) => sum + value, 0) / leadTimes.length);
+        const avgLead = Math.round(
+          leadTimes.reduce((sum, value) => sum + value, 0) / leadTimes.length,
+        );
         insights.push({
           supplierId: supplier.id,
           supplierName: supplier.name,
@@ -685,7 +911,12 @@ export class ProcurementService {
       this.deps.db
         .select({ count: sql<number>`count(*)::int` })
         .from(jobs)
-        .where(and(eq(jobs.companyId, companyId), inArray(jobs.status, ['new', 'scheduled', 'in_progress']))),
+        .where(
+          and(
+            eq(jobs.companyId, companyId),
+            inArray(jobs.status, ['new', 'scheduled', 'in_progress']),
+          ),
+        ),
     ]);
 
     const signals: Array<{
@@ -696,19 +927,25 @@ export class ProcurementService {
       context: Record<string, unknown>;
     }> = [];
 
-    for (const signal of stockSignals.filter((row) =>
-      ['low_stock', 'zero_stock', 'inventory_risk'].includes(row.signalType),
-    ).slice(0, 8)) {
+    for (const signal of stockSignals
+      .filter((row) => ['low_stock', 'zero_stock', 'inventory_risk'].includes(row.signalType))
+      .slice(0, 8)) {
       signals.push({
         recommendationType: signal.signalType === 'zero_stock' ? 'inventory_risk' : 'low_stock',
         title: `Reorder — ${signal.itemName}`,
         description: signal.description,
         priority: signal.priority,
-        context: { itemId: signal.itemId, itemSku: signal.itemSku, quantityOnHand: signal.quantityOnHand },
+        context: {
+          itemId: signal.itemId,
+          itemSku: signal.itemSku,
+          quantityOnHand: signal.quantityOnHand,
+        },
       });
     }
 
-    for (const signal of stockSignals.filter((row) => row.signalType === 'slow_moving').slice(0, 4)) {
+    for (const signal of stockSignals
+      .filter((row) => row.signalType === 'slow_moving')
+      .slice(0, 4)) {
       signals.push({
         recommendationType: 'slow_moving',
         title: `Slow-moving — ${signal.itemName}`,
@@ -718,7 +955,9 @@ export class ProcurementService {
       });
     }
 
-    for (const signal of stockSignals.filter((row) => row.signalType === 'fast_moving').slice(0, 4)) {
+    for (const signal of stockSignals
+      .filter((row) => row.signalType === 'fast_moving')
+      .slice(0, 4)) {
       signals.push({
         recommendationType: 'fast_moving',
         title: `Fast-moving — ${signal.itemName}`,
@@ -900,9 +1139,7 @@ function toSupplierActivitySummary(
     subject: row.subject,
     body: row.body,
     authorUserId: row.authorUserId,
-    authorName: row.author
-      ? `${row.author.firstName} ${row.author.lastName}`.trim()
-      : null,
+    authorName: row.author ? `${row.author.firstName} ${row.author.lastName}`.trim() : null,
     occurredAt: row.occurredAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
   };
@@ -914,6 +1151,8 @@ function toPurchaseOrderSummary(
     createdBy: typeof users.$inferSelect | null;
     approvedBy: typeof users.$inferSelect | null;
     items: Array<typeof purchaseOrderItems.$inferSelect>;
+    job?: { jobNumber: string | null } | null;
+    destinationLocation?: { name: string } | null;
   },
 ): PurchaseOrderSummary {
   return {
@@ -925,6 +1164,13 @@ function toPurchaseOrderSummary(
     notes: row.notes,
     totalCostCents: row.totalCostCents,
     itemCount: row.items.length,
+    jobId: row.jobId,
+    jobNumber: row.job?.jobNumber ?? null,
+    jobReference: row.jobReference,
+    destinationLocationId: row.destinationLocationId,
+    destinationLocationName: row.destinationLocation?.name ?? null,
+    deliveryStatus: (row.deliveryStatus as PurchaseOrderSummary['deliveryStatus']) ?? 'not_started',
+    cancelReason: row.cancelReason,
     createdByUserId: row.createdByUserId,
     createdByName: row.createdBy
       ? `${row.createdBy.firstName} ${row.createdBy.lastName}`.trim()
@@ -953,6 +1199,8 @@ function toPurchaseOrderDetail(
         inventoryItem: { name: string } | null;
       }
     >;
+    job?: { jobNumber: string | null } | null;
+    destinationLocation?: { name: string } | null;
   },
 ): PurchaseOrderDetail {
   return {
@@ -963,6 +1211,7 @@ function toPurchaseOrderDetail(
       inventoryItemName: item.inventoryItem?.name ?? null,
       description: item.description,
       quantity: item.quantity,
+      quantityReceived: item.quantityReceived,
       unitCostCents: item.unitCostCents,
       lineTotalCents: item.lineTotalCents,
     })),

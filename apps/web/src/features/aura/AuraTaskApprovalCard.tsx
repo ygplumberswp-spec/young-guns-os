@@ -102,10 +102,20 @@ export function AuraTaskApprovalCard({ task, accessToken, onUpdated }: AuraTaskA
             <Button type="button" disabled={isBusy} onClick={() => void handleApprove()}>
               Approve
             </Button>
-            <Button type="button" variant="secondary" disabled={isBusy} onClick={() => setIsEditing(true)}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isBusy}
+              onClick={() => setIsEditing(true)}
+            >
               Edit
             </Button>
-            <Button type="button" variant="ghost" disabled={isBusy} onClick={() => void handleReject()}>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isBusy}
+              onClick={() => void handleReject()}
+            >
               Cancel
             </Button>
           </>

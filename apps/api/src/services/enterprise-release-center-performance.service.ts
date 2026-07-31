@@ -73,7 +73,8 @@ export class EnterpriseReleaseCenterPerformanceService {
     opportunities.push({
       type: 'frontend_bundle',
       severity: 'info',
-      recommendation: 'Review web bundle size via production build output; consider code-splitting for large dashboards.',
+      recommendation:
+        'Review web bundle size via production build output; consider code-splitting for large dashboards.',
     });
 
     const snapshotKey = `perf_${Date.now()}`;
@@ -100,7 +101,9 @@ export class EnterpriseReleaseCenterPerformanceService {
   }
 }
 
-function toSnapshotSummary(row: typeof rcPerformanceSnapshots.$inferSelect): RcPerformanceSnapshotSummary {
+function toSnapshotSummary(
+  row: typeof rcPerformanceSnapshots.$inferSelect,
+): RcPerformanceSnapshotSummary {
   return {
     id: row.id,
     snapshotKey: row.snapshotKey,
@@ -110,7 +113,9 @@ function toSnapshotSummary(row: typeof rcPerformanceSnapshots.$inferSelect): RcP
     aiLatencyMs: row.aiLatencyMs,
     searchIndexCount: row.searchIndexCount,
     dashboardLoadMs: row.dashboardLoadMs,
-    optimizationOpportunities: (row.optimizationOpportunities ?? []) as Array<Record<string, unknown>>,
+    optimizationOpportunities: (row.optimizationOpportunities ?? []) as Array<
+      Record<string, unknown>
+    >,
     capturedAt: row.capturedAt.toISOString(),
   };
 }

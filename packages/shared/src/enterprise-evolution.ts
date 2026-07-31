@@ -38,12 +38,7 @@ export type EvolutionRecommendationCategory =
 export type EvolutionRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
 export type EvolutionOptimizationStatus =
-  | 'suggested'
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'deployed'
-  | 'rolled_back';
+  'suggested' | 'pending_approval' | 'approved' | 'rejected' | 'deployed' | 'rolled_back';
 
 export type EvolutionTimelineEventType =
   | 'system_improvement'

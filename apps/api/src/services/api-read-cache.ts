@@ -46,7 +46,11 @@ class ApiReadCacheStore {
 
 export const apiReadCache = new ApiReadCacheStore();
 
-export function buildTenantCacheKey(companyId: string, namespace: string, suffix = 'default'): string {
+export function buildTenantCacheKey(
+  companyId: string,
+  namespace: string,
+  suffix = 'default',
+): string {
   return `${companyId}:${namespace}:${suffix}`;
 }
 

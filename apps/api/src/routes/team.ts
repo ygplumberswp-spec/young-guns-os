@@ -10,6 +10,10 @@ const createInviteSchema = z.object({
   roleId: z.string().uuid(),
 });
 
+const updateMemberRoleSchema = z.object({
+  roleId: z.string().uuid(),
+});
+
 type TeamRouterDeps = {
   teamService: TeamService;
   jwtSecret: string;
@@ -33,12 +37,17 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
   });
 
   router.get('/roles', requireAnyPermission('users:read', 'users:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const roles = await teamService.listRoles(companyId);
+    const auth = getAuth(req);
+    const roles = await teamService.listRoles(auth.companyId);
+    const actor = {
+      roleName: auth.roleName,
+      permissions: auth.permissions,
+    };
     res.json({
       data: {
         roles,
         assignableRoles: teamService.getAssignableRoles(roles),
+        manuallyAssignableRoles: teamService.getManuallyAssignableRoles(roles, actor),
       },
     });
   });
@@ -81,7 +90,10 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
     const auth = getAuth(req);
 
     try {
-      await teamService.revokeInvite({ companyId: auth.companyId, userId: auth.userId }, req.params.inviteId as string);
+      await teamService.revokeInvite(
+        { companyId: auth.companyId, userId: auth.userId },
+        req.params.inviteId as string,
+      );
       res.json({ data: { success: true } });
     } catch (error) {
       handleTeamError(res, error);
@@ -92,32 +104,72 @@ export function createTeamRouter({ teamService, jwtSecret, authService }: TeamRo
     isActive: z.boolean(),
   });
 
-  router.patch('/members/:memberId/status', requireAnyPermission('users:manage'), async (req, res) => {
-    const auth = getAuth(req);
-    const parsed = updateMemberStatusSchema.safeParse(req.body);
+  router.patch(
+    '/members/:memberId/status',
+    requireAnyPermission('users:manage'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = updateMemberStatusSchema.safeParse(req.body);
 
-    if (!parsed.success) {
-      res.status(400).json({
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid member status payload',
-          details: parsed.error.flatten(),
-        },
-      });
-      return;
-    }
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid member status payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
 
-    try {
-      const member = await teamService.updateMemberStatus(
-        { companyId: auth.companyId, userId: auth.userId },
-        req.params.memberId as string,
-        parsed.data.isActive,
-      );
-      res.json({ data: { member } });
-    } catch (error) {
-      handleTeamError(res, error);
-    }
-  });
+      try {
+        const member = await teamService.updateMemberStatus(
+          { companyId: auth.companyId, userId: auth.userId },
+          req.params.memberId as string,
+          parsed.data.isActive,
+        );
+        res.json({ data: { member } });
+      } catch (error) {
+        handleTeamError(res, error);
+      }
+    },
+  );
+
+  router.patch(
+    '/members/:memberId/role',
+    requireAnyPermission('users:manage', '*'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = updateMemberRoleSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid member role payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const member = await teamService.updateMemberRole(
+          {
+            companyId: auth.companyId,
+            userId: auth.userId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          req.params.memberId as string,
+          parsed.data.roleId,
+        );
+        res.json({ data: { member } });
+      } catch (error) {
+        handleTeamError(res, error);
+      }
+    },
+  );
 
   return router;
 }
@@ -131,7 +183,10 @@ function handleTeamError(res: import('express').Response, error: unknown) {
           ? 409
           : error.code === 'INVITE_NOT_FOUND' || error.code === 'MEMBER_NOT_FOUND'
             ? 404
-            : error.code === 'SELF_LOCKOUT' || error.code === 'LAST_OWNER'
+            : error.code === 'SELF_LOCKOUT' ||
+                error.code === 'LAST_OWNER' ||
+                error.code === 'SELF_PROMOTION' ||
+                error.code === 'ROLE_ASSIGN_FORBIDDEN'
               ? 403
               : 400;
 

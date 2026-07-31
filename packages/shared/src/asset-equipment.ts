@@ -1,13 +1,8 @@
 export type AssetType =
-  | 'vehicle'
-  | 'machinery'
-  | 'tool'
-  | 'equipment'
-  | 'office_asset'
-  | 'it_equipment'
-  | 'rented_asset';
+  'vehicle' | 'machinery' | 'tool' | 'equipment' | 'office_asset' | 'it_equipment' | 'rented_asset';
 
-export type AssetStatus = 'active' | 'inactive' | 'maintenance' | 'retired' | 'disposed' | 'out_of_service';
+export type AssetStatus =
+  'active' | 'inactive' | 'maintenance' | 'retired' | 'disposed' | 'out_of_service';
 
 export type AssetCondition = 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
 
@@ -23,21 +18,12 @@ export type AssetLifecycleEventType =
   | 'disposal';
 
 export type AssetScheduleType =
-  | 'recurring'
-  | 'usage_based'
-  | 'inspection_reminder'
-  | 'warranty_reminder'
-  | 'service_interval';
+  'recurring' | 'usage_based' | 'inspection_reminder' | 'warranty_reminder' | 'service_interval';
 
 export type AssetMaintenanceType = 'planned' | 'emergency' | 'corrective' | 'preventative';
 
 export type AssetMaintenanceStatus =
-  | 'scheduled'
-  | 'pending_approval'
-  | 'approved'
-  | 'in_progress'
-  | 'completed'
-  | 'cancelled';
+  'scheduled' | 'pending_approval' | 'approved' | 'in_progress' | 'completed' | 'cancelled';
 
 export type AssetInspectionType = 'safety' | 'vehicle' | 'equipment' | 'toolbox' | 'compliance';
 
@@ -45,11 +31,13 @@ export type AssetInspectionStatus = 'scheduled' | 'in_progress' | 'passed' | 'fa
 
 export type AssetCalibrationStatus = 'valid' | 'expiring' | 'expired' | 'not_required';
 
-export type AssetCostType = 'maintenance' | 'repair' | 'downtime' | 'replacement' | 'warranty_recovery';
+export type AssetCostType =
+  'maintenance' | 'repair' | 'downtime' | 'replacement' | 'warranty_recovery';
 
 export type AssetActionType = 'maintenance_action' | 'replacement_recommendation';
 
-export type AssetActionStatus = 'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
+export type AssetActionStatus =
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type AssetEquipmentSummary = {
   id: string;

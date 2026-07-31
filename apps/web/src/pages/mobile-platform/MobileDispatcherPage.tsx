@@ -34,7 +34,10 @@ export function MobileDispatcherPage() {
         const data = await fetchMobileDispatcherWorkspace(accessToken);
         if (!cancelled) setWorkspace(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load dispatcher workspace');
+        if (!cancelled)
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load dispatcher workspace',
+          );
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -48,7 +51,10 @@ export function MobileDispatcherPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Dispatcher Workspace" description="You do not have permission to view the dispatcher workspace." />
+        <PageHeader
+          title="Dispatcher Workspace"
+          description="You do not have permission to view the dispatcher workspace."
+        />
       </div>
     );
   }
@@ -89,7 +95,10 @@ export function MobileDispatcherPage() {
 
           <Panel title="Technician Status">
             {workspace.technicianStatuses.length === 0 ? (
-              <EmptyState title="No technicians" description="Technician status appears when team members are registered." />
+              <EmptyState
+                title="No technicians"
+                description="Technician status appears when team members are registered."
+              />
             ) : (
               <div className="data-list">
                 {workspace.technicianStatuses.map((tech) => (
@@ -97,8 +106,8 @@ export function MobileDispatcherPage() {
                     <strong>{tech.userName}</strong>
                     <span className="status-pill">{tech.assignedJobCount} job(s)</span>
                     <p>
-                      Device: {tech.deviceStatus ? formatDeviceStatus(tech.deviceStatus) : 'none'} · Last sync:{' '}
-                      {tech.lastSyncAt ?? 'never'}
+                      Device: {tech.deviceStatus ? formatDeviceStatus(tech.deviceStatus) : 'none'} ·
+                      Last sync: {tech.lastSyncAt ?? 'never'}
                     </p>
                   </div>
                 ))}

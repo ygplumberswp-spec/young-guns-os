@@ -1,6 +1,8 @@
 import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { inventoryItems } from './inventory-items';
+import { inventoryLocations } from './inventory-locations';
+import { jobs } from './jobs';
 import { users } from './users';
 
 export const supplierStatusEnum = pgEnum('supplier_status', ['active', 'inactive']);
@@ -88,8 +90,18 @@ export const purchaseOrders = pgTable('purchase_orders', {
   status: purchaseOrderStatusEnum('status').notNull().default('draft'),
   notes: text('notes'),
   totalCostCents: integer('total_cost_cents').notNull().default(0),
+  jobId: uuid('job_id').references(() => jobs.id, { onDelete: 'set null' }),
+  jobReference: text('job_reference'),
+  destinationLocationId: uuid('destination_location_id').references(() => inventoryLocations.id, {
+    onDelete: 'set null',
+  }),
+  deliveryStatus: text('delivery_status').notNull().default('not_started'),
+  clientActionId: text('client_action_id'),
+  cancelReason: text('cancel_reason'),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   orderedAt: timestamp('ordered_at', { withTimezone: true }),
   receivedAt: timestamp('received_at', { withTimezone: true }),
@@ -112,6 +124,7 @@ export const purchaseOrderItems = pgTable('purchase_order_items', {
   }),
   description: text('description').notNull(),
   quantity: integer('quantity').notNull().default(1),
+  quantityReceived: integer('quantity_received').notNull().default(0),
   unitCostCents: integer('unit_cost_cents').notNull().default(0),
   lineTotalCents: integer('line_total_cents').notNull().default(0),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

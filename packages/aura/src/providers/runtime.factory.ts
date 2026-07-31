@@ -81,5 +81,8 @@ export function createRuntimeAuraProvider(config: RuntimeProviderConfig): AuraPr
     });
   }
 
-  throw new AuraProviderError('PROVIDER_UNSUPPORTED', `Unsupported runtime provider: ${providerKey}`);
+  throw new AuraProviderError(
+    'PROVIDER_UNSUPPORTED',
+    `Unsupported runtime provider: ${providerKey}`,
+  );
 }

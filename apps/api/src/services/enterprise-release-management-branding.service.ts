@@ -44,9 +44,10 @@ export class EnterpriseReleaseManagementBrandingService {
       {
         key: 'splash_screen',
         severity: mobileBranding.splashScreenUrl || mobileBranding.splashColor ? 'info' : 'warning',
-        message: mobileBranding.splashScreenUrl || mobileBranding.splashColor
-          ? 'Splash screen configuration present in mobile branding.'
-          : 'Splash screen not configured — verify splash assets for mobile launch.',
+        message:
+          mobileBranding.splashScreenUrl || mobileBranding.splashColor
+            ? 'Splash screen configuration present in mobile branding.'
+            : 'Splash screen not configured — verify splash assets for mobile launch.',
       },
       {
         key: 'colors',
@@ -58,9 +59,10 @@ export class EnterpriseReleaseManagementBrandingService {
       {
         key: 'typography',
         severity: portalBranding.fontFamily || loginBranding.fontFamily ? 'info' : 'warning',
-        message: portalBranding.fontFamily || loginBranding.fontFamily
-          ? 'Custom typography configured in branding profile.'
-          : 'Typography using defaults — verify font consistency across platforms.',
+        message:
+          portalBranding.fontFamily || loginBranding.fontFamily
+            ? 'Custom typography configured in branding profile.'
+            : 'Typography using defaults — verify font consistency across platforms.',
       },
       {
         key: 'white_label_branding',
@@ -84,7 +86,8 @@ export class EnterpriseReleaseManagementBrandingService {
     ];
 
     const warningCount = findings.filter((f) => f.severity === 'warning').length;
-    const status: RlmValidationStatus = warningCount > 4 ? 'warning' : warningCount > 0 ? 'warning' : 'passed';
+    const status: RlmValidationStatus =
+      warningCount > 4 ? 'warning' : warningCount > 0 ? 'warning' : 'passed';
 
     const [created] = await this.db
       .insert(rlmBrandingReviews)

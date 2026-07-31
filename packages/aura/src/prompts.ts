@@ -659,7 +659,9 @@ function formatAutomationContext(context: AuraGenerateContext): string | null {
   );
 
   if (automation.focusedWorkflow) {
-    lines.push(`- Focused workflow: ${automation.focusedWorkflow.name} (${automation.focusedWorkflow.status})`);
+    lines.push(
+      `- Focused workflow: ${automation.focusedWorkflow.name} (${automation.focusedWorkflow.status})`,
+    );
 
     if (automation.focusedWorkflow.description) {
       lines.push(`  Description: ${automation.focusedWorkflow.description}`);
@@ -756,7 +758,9 @@ function formatAgentsContext(context: AuraGenerateContext): string | null {
   }
 
   if (agents.registry.length > 0) {
-    lines.push('- Agent registry (operational agents require user approval before executing write actions):');
+    lines.push(
+      '- Agent registry (operational agents require user approval before executing write actions):',
+    );
 
     for (const entry of agents.registry) {
       lines.push(
@@ -1816,14 +1820,18 @@ function formatMarketingContext(context: AuraGenerateContext): string | null {
   if (marketing.topSegments.length > 0) {
     lines.push('- Top segments:');
     for (const segment of marketing.topSegments.slice(0, 5)) {
-      lines.push(`  - ${segment.name} (${segment.customerCount} customers, ${segment.segmentType})`);
+      lines.push(
+        `  - ${segment.name} (${segment.customerCount} customers, ${segment.segmentType})`,
+      );
     }
   }
 
   if (marketing.topRecommendations.length > 0) {
     lines.push('- Top recommendations:');
     for (const recommendation of marketing.topRecommendations.slice(0, 5)) {
-      lines.push(`  - [${recommendation.priority}] ${recommendation.title} (${recommendation.recommendationType})`);
+      lines.push(
+        `  - [${recommendation.priority}] ${recommendation.title} (${recommendation.recommendationType})`,
+      );
     }
   }
 
@@ -1995,7 +2003,9 @@ function formatProcurementContext(context: AuraGenerateContext): string | null {
   if (procurement.stockSignals.length > 0) {
     lines.push('- Stock signals:');
     for (const signal of procurement.stockSignals.slice(0, 5)) {
-      lines.push(`  - [${signal.priority}] ${signal.itemName} (${signal.itemSku}): ${signal.description}`);
+      lines.push(
+        `  - [${signal.priority}] ${signal.itemName} (${signal.itemSku}): ${signal.description}`,
+      );
     }
   }
 
@@ -2160,10 +2170,16 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     aiOrchestrationSection ? 'AI Orchestration & Multi-Model Intelligence' : null,
     dispatchIntelligenceSection ? 'AI Receptionist, Call Centre & Intelligent Dispatch' : null,
     fleetIntelligenceSection ? 'Fleet Intelligence & GPS Analytics' : null,
-    personalCommunicationsSection ? 'Personal Communications Intelligence & WhatsApp Business Assistant' : null,
+    personalCommunicationsSection
+      ? 'Personal Communications Intelligence & WhatsApp Business Assistant'
+      : null,
     securitySection ? 'Enterprise Security, Zero-Trust & Compliance Platform' : null,
-    integrationPlatformSection ? 'Enterprise Integration Hub, API Gateway & Universal Connector Platform' : null,
-    enterpriseAnalyticsSection ? 'Enterprise Analytics, Data Warehouse & Business Intelligence Platform' : null,
+    integrationPlatformSection
+      ? 'Enterprise Integration Hub, API Gateway & Universal Connector Platform'
+      : null,
+    enterpriseAnalyticsSection
+      ? 'Enterprise Analytics, Data Warehouse & Business Intelligence Platform'
+      : null,
     enterpriseAutomationStudioSection
       ? 'Enterprise Automation Studio, Workflow Designer & AI Process Orchestration Platform'
       : null,
@@ -2194,9 +2210,7 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     searchIntelligenceSection
       ? 'Enterprise Global Search, Universal Timeline & Cross-Module Activity Intelligence'
       : null,
-    migrationIntelligenceSection
-      ? 'Enterprise Data Import, Export & Migration Platform'
-      : null,
+    migrationIntelligenceSection ? 'Enterprise Data Import, Export & Migration Platform' : null,
     integrationHubSection ? 'Integration Hub' : null,
     integrationApiManagementSection ? 'Integration API Management' : null,
     xeroAccountingSection ? 'Xero Accounting' : null,
@@ -2260,7 +2274,9 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     (financeSection ? `Finance context:\n${financeSection}\n\n` : '') +
     (financeIntelligenceSection ? `Finance intelligence:\n${financeIntelligenceSection}\n\n` : '') +
     (knowledgeSection ? `Knowledge & learning:\n${knowledgeSection}\n\n` : '') +
-    (businessIntelligenceSection ? `Business intelligence:\n${businessIntelligenceSection}\n\n` : '') +
+    (businessIntelligenceSection
+      ? `Business intelligence:\n${businessIntelligenceSection}\n\n`
+      : '') +
     (inventorySection ? `Inventory context:\n${inventorySection}\n\n` : '') +
     (fleetSection ? `Fleet context:\n${fleetSection}\n\n` : '') +
     (communicationsSection ? `Communications context:\n${communicationsSection}\n\n` : '') +
@@ -2282,9 +2298,15 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
       ? `Communications intelligence:\n${communicationsIntelligenceSection}\n\n`
       : '') +
     (assetEquipmentSection ? `Asset & equipment intelligence:\n${assetEquipmentSection}\n\n` : '') +
-    (aiOrchestrationSection ? `AI orchestration & multi-model intelligence:\n${aiOrchestrationSection}\n\n` : '') +
-    (dispatchIntelligenceSection ? `Dispatch & call centre intelligence:\n${dispatchIntelligenceSection}\n\n` : '') +
-    (fleetIntelligenceSection ? `Fleet intelligence & GPS analytics:\n${fleetIntelligenceSection}\n\n` : '') +
+    (aiOrchestrationSection
+      ? `AI orchestration & multi-model intelligence:\n${aiOrchestrationSection}\n\n`
+      : '') +
+    (dispatchIntelligenceSection
+      ? `Dispatch & call centre intelligence:\n${dispatchIntelligenceSection}\n\n`
+      : '') +
+    (fleetIntelligenceSection
+      ? `Fleet intelligence & GPS analytics:\n${fleetIntelligenceSection}\n\n`
+      : '') +
     (personalCommunicationsSection
       ? `Personal communications intelligence:\n${personalCommunicationsSection}\n\n`
       : '') +
@@ -2329,12 +2351,8 @@ export function buildSystemPrompt(context: AuraGenerateContext): string {
     (notificationIntelligenceSection
       ? `Enterprise notification center:\n${notificationIntelligenceSection}\n\n`
       : '') +
-    (platformHealthSection
-      ? `Enterprise platform health:\n${platformHealthSection}\n\n`
-      : '') +
-    (launchReadinessSection
-      ? `Enterprise launch readiness:\n${launchReadinessSection}\n\n`
-      : '') +
+    (platformHealthSection ? `Enterprise platform health:\n${platformHealthSection}\n\n` : '') +
+    (launchReadinessSection ? `Enterprise launch readiness:\n${launchReadinessSection}\n\n` : '') +
     (releaseCandidateSection
       ? `Enterprise release candidate:\n${releaseCandidateSection}\n\n`
       : '') +

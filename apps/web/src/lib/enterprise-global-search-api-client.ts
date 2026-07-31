@@ -10,10 +10,15 @@ import type {
 } from '@titan/shared';
 import { request } from './api-client';
 
-export async function fetchGlobalSearchDashboard(accessToken: string): Promise<EnterpriseGlobalSearchDashboard> {
-  const data = await request<{ dashboard: EnterpriseGlobalSearchDashboard }>('/enterprise-global-search/dashboard', {
-    accessToken,
-  });
+export async function fetchGlobalSearchDashboard(
+  accessToken: string,
+): Promise<EnterpriseGlobalSearchDashboard> {
+  const data = await request<{ dashboard: EnterpriseGlobalSearchDashboard }>(
+    '/enterprise-global-search/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -21,11 +26,14 @@ export async function runGlobalSearch(
   accessToken: string,
   input: GsGlobalSearchRequest,
 ): Promise<GsSearchResultSummary[]> {
-  const data = await request<{ results: GsSearchResultSummary[] }>('/enterprise-global-search/search', {
-    accessToken,
-    method: 'POST',
-    body: input,
-  });
+  const data = await request<{ results: GsSearchResultSummary[] }>(
+    '/enterprise-global-search/search',
+    {
+      accessToken,
+      method: 'POST',
+      body: input,
+    },
+  );
   return data.results;
 }
 
@@ -86,24 +94,35 @@ export async function syncSearchAlerts(accessToken: string): Promise<GsSearchAle
 }
 
 export async function captureGlobalSearchAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-global-search/analytics/capture', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-global-search/analytics/capture',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.analytics;
 }
 
 export async function refreshSearchIndex(accessToken: string) {
-  const data = await request<{ indexedCount: number }>('/enterprise-global-search/search-index/refresh', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ indexedCount: number }>(
+    '/enterprise-global-search/search-index/refresh',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data;
 }
 
-export async function fetchGlobalSearchAuditLogs(accessToken: string): Promise<GsAuditLogSummary[]> {
-  const data = await request<{ auditLogs: GsAuditLogSummary[] }>('/enterprise-global-search/audit-logs', {
-    accessToken,
-  });
+export async function fetchGlobalSearchAuditLogs(
+  accessToken: string,
+): Promise<GsAuditLogSummary[]> {
+  const data = await request<{ auditLogs: GsAuditLogSummary[] }>(
+    '/enterprise-global-search/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }

@@ -45,7 +45,12 @@ export const fpForecastTypeEnum = pgEnum('fp_forecast_type', [
   'custom',
 ]);
 
-export const fpAdapterStatusEnum = pgEnum('fp_adapter_status', ['active', 'inactive', 'testing', 'error']);
+export const fpAdapterStatusEnum = pgEnum('fp_adapter_status', [
+  'active',
+  'inactive',
+  'testing',
+  'error',
+]);
 
 export const fpAccountingProviderTypeEnum = pgEnum('fp_accounting_provider_type', [
   'xero',
@@ -81,7 +86,12 @@ export const fpBankingProviderTypeEnum = pgEnum('fp_banking_provider_type', [
 
 export const fpAlertSeverityEnum = pgEnum('fp_alert_severity', ['info', 'warning', 'critical']);
 
-export const fpAlertStatusEnum = pgEnum('fp_alert_status', ['open', 'acknowledged', 'resolved', 'dismissed']);
+export const fpAlertStatusEnum = pgEnum('fp_alert_status', [
+  'open',
+  'acknowledged',
+  'resolved',
+  'dismissed',
+]);
 
 export const fpTargetStatusEnum = pgEnum('fp_target_status', [
   'draft',
@@ -98,16 +108,28 @@ export const fpPlatformConfig = pgTable('fp_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  financeStandards: jsonb('finance_standards').$type<Record<string, unknown>>().notNull().default({}),
+  financeStandards: jsonb('finance_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   providerAdapterTemplates: jsonb('provider_adapter_templates')
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  currencyStandards: jsonb('currency_standards').$type<Record<string, unknown>>().notNull().default({}),
-  planningTemplates: jsonb('planning_templates').$type<Record<string, unknown>>().notNull().default({}),
+  currencyStandards: jsonb('currency_standards')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  planningTemplates: jsonb('planning_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   kpiTemplates: jsonb('kpi_templates').$type<Record<string, unknown>>().notNull().default({}),
   riskThresholds: jsonb('risk_thresholds').$type<Record<string, unknown>>().notNull().default({}),
-  allocationMethods: jsonb('allocation_methods').$type<Record<string, unknown>>().notNull().default({}),
+  allocationMethods: jsonb('allocation_methods')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -150,7 +172,9 @@ export const fpBudgets = pgTable('fp_budgets', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   entityId: uuid('entity_id').references(() => fpEntities.id, { onDelete: 'set null' }),
-  categoryId: uuid('category_id').references(() => fpPlanningCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => fpPlanningCategories.id, {
+    onDelete: 'set null',
+  }),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   budgetPeriod: fpBudgetPeriodEnum('budget_period').notNull().default('annual'),
@@ -181,7 +205,9 @@ export const fpBudgetVersions = pgTable('fp_budget_versions', {
   assumptions: text('assumptions'),
   notes: text('notes'),
   totalAmountCents: integer('total_amount_cents'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -194,7 +220,9 @@ export const fpBudgetLines = pgTable('fp_budget_lines', {
   budgetId: uuid('budget_id')
     .notNull()
     .references(() => fpBudgets.id, { onDelete: 'cascade' }),
-  budgetVersionId: uuid('budget_version_id').references(() => fpBudgetVersions.id, { onDelete: 'set null' }),
+  budgetVersionId: uuid('budget_version_id').references(() => fpBudgetVersions.id, {
+    onDelete: 'set null',
+  }),
   lineKey: text('line_key').notNull(),
   description: text('description').notNull(),
   department: text('department'),
@@ -310,7 +338,10 @@ export const fpScenarios = pgTable('fp_scenarios', {
   marginImpactPercent: numeric('margin_impact_percent', { precision: 7, scale: 2 }),
   workingCapitalImpactCents: integer('working_capital_impact_cents'),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
-  baselineComparison: jsonb('baseline_comparison').$type<Record<string, unknown>>().notNull().default({}),
+  baselineComparison: jsonb('baseline_comparison')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -349,7 +380,10 @@ export const fpFinancialTargets = pgTable('fp_financial_targets', {
   unit: text('unit'),
   currency: text('currency'),
   progressPercent: numeric('progress_percent', { precision: 7, scale: 2 }),
-  supportingRecords: jsonb('supporting_records').$type<Record<string, unknown>>().notNull().default({}),
+  supportingRecords: jsonb('supporting_records')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -367,7 +401,9 @@ export const fpFinancialAlerts = pgTable('fp_financial_alerts', {
   sourceModule: text('source_module'),
   sourceEntityId: uuid('source_entity_id'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
-  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  acknowledgedByUserId: uuid('acknowledged_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   acknowledgedAt: timestamp('acknowledged_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -427,7 +463,10 @@ export const fpProfitabilitySnapshots = pgTable('fp_profitability_snapshots', {
   marginPercent: numeric('margin_percent', { precision: 7, scale: 2 }),
   allocationMethod: text('allocation_method'),
   formula: text('formula'),
-  sourceTransactions: jsonb('source_transactions').$type<Record<string, unknown>>().notNull().default({}),
+  sourceTransactions: jsonb('source_transactions')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   exceptions: jsonb('exceptions').$type<unknown[]>().notNull().default([]),
   dataFreshness: timestamp('data_freshness', { withTimezone: true }),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
@@ -446,7 +485,9 @@ export const fpPlanningActionDrafts = pgTable('fp_planning_action_drafts', {
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

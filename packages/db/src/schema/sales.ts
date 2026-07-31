@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { jobs } from './jobs';
@@ -102,7 +111,9 @@ export const salesActivities = pgTable('sales_activities', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  opportunityId: uuid('opportunity_id').references(() => salesOpportunities.id, { onDelete: 'set null' }),
+  opportunityId: uuid('opportunity_id').references(() => salesOpportunities.id, {
+    onDelete: 'set null',
+  }),
   customerId: uuid('customer_id')
     .notNull()
     .references(() => customers.id, { onDelete: 'restrict' }),

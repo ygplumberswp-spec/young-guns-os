@@ -6,13 +6,7 @@ import type { PortalAccessPermission } from './portal.js';
 import type { PortalAppointmentSummary } from './portal-experience.js';
 
 export type CxBookingStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'confirmed'
-  | 'rejected'
-  | 'cancelled'
-  | 'completed';
+  'draft' | 'pending_approval' | 'approved' | 'confirmed' | 'rejected' | 'cancelled' | 'completed';
 
 export type CxBookingType = 'standard' | 'emergency' | 'reschedule' | 'cancellation';
 
@@ -55,8 +49,11 @@ export type CxCustomerPropertySummary = {
   propertyName: string;
   addressLine1: string | null;
   addressLine2: string | null;
+  suburb: string | null;
   city: string | null;
+  province: string | null;
   postalCode: string | null;
+  unitNumber: string | null;
   isPrimary: boolean;
   createdAt: string;
 };
@@ -232,8 +229,11 @@ export type CreateCxCustomerPropertyRequest = {
   propertyName: string;
   addressLine1?: string;
   addressLine2?: string;
+  suburb?: string;
   city?: string;
+  province?: string;
   postalCode?: string;
+  unitNumber?: string;
   isPrimary?: boolean;
 };
 

@@ -72,8 +72,14 @@ export const dipPlatformConfig = pgTable('dip_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   ocrPolicy: jsonb('ocr_policy').$type<Record<string, unknown>>().notNull().default({}),
-  classificationPolicy: jsonb('classification_policy').$type<Record<string, unknown>>().notNull().default({}),
-  extractionPolicy: jsonb('extraction_policy').$type<Record<string, unknown>>().notNull().default({}),
+  classificationPolicy: jsonb('classification_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  extractionPolicy: jsonb('extraction_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   reviewPolicy: jsonb('review_policy').$type<Record<string, unknown>>().notNull().default({}),
   searchPolicy: jsonb('search_policy').$type<Record<string, unknown>>().notNull().default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
@@ -119,7 +125,9 @@ export const dipOcrJobs = pgTable('dip_ocr_jobs', {
   providerKey: text('provider_key'),
   sourceKey: text('source_key'),
   status: dipOcrJobStatusEnum('status').notNull().default('pending'),
-  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   errorMessage: text('error_message'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -168,7 +176,9 @@ export const dipClassificationRecords = pgTable('dip_classification_records', {
   classificationKey: dipClassificationKeyEnum('classification_key').notNull(),
   confidenceScore: real('confidence_score'),
   manuallyCorrected: boolean('manually_corrected').notNull().default(false),
-  correctedByUserId: uuid('corrected_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  correctedByUserId: uuid('corrected_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -195,7 +205,9 @@ export const dipExtractionRecords = pgTable('dip_extraction_records', {
   documentId: uuid('document_id')
     .notNull()
     .references(() => documents.id, { onDelete: 'cascade' }),
-  templateId: uuid('template_id').references(() => dipExtractionTemplates.id, { onDelete: 'set null' }),
+  templateId: uuid('template_id').references(() => dipExtractionTemplates.id, {
+    onDelete: 'set null',
+  }),
   extractedFields: jsonb('extracted_fields').$type<Record<string, unknown>>().notNull().default({}),
   confidenceScore: real('confidence_score'),
   workflowStatus: dipWorkflowStatusEnum('workflow_status').notNull().default('draft'),

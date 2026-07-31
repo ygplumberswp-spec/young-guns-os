@@ -78,21 +78,96 @@ const BUILT_IN_INDUSTRY_PACKS: Array<{
   description: string;
   industryCategory: string;
 }> = [
-  { packKey: 'plumbing', name: 'Plumbing', description: 'Plumbing workflows, inspections, compliance, and trade templates.', industryCategory: 'plumbing' },
-  { packKey: 'electrical', name: 'Electrical', description: 'Electrical compliance, certificates, and installation templates.', industryCategory: 'electrical' },
-  { packKey: 'hvac', name: 'HVAC', description: 'HVAC maintenance, service, and equipment intelligence templates.', industryCategory: 'hvac' },
-  { packKey: 'fire_protection', name: 'Fire Protection', description: 'Fire compliance frameworks, inspections, and certificates.', industryCategory: 'fire_protection' },
-  { packKey: 'solar', name: 'Solar', description: 'Solar installation, maintenance, and compliance templates.', industryCategory: 'solar' },
-  { packKey: 'security_systems', name: 'Security Systems', description: 'Security installation, monitoring, and service templates.', industryCategory: 'security_systems' },
-  { packKey: 'facilities_management', name: 'Facilities Management', description: 'Facilities maintenance, inspections, and asset templates.', industryCategory: 'facilities_management' },
-  { packKey: 'refrigeration', name: 'Refrigeration', description: 'Refrigeration service, equipment catalogs, and compliance.', industryCategory: 'refrigeration' },
-  { packKey: 'mechanical_services', name: 'Mechanical Services', description: 'Mechanical maintenance, repairs, and project templates.', industryCategory: 'mechanical_services' },
-  { packKey: 'cleaning_services', name: 'Cleaning Services', description: 'Cleaning checklists, labour templates, and scheduling workflows.', industryCategory: 'cleaning_services' },
-  { packKey: 'landscaping', name: 'Landscaping', description: 'Landscaping projects, seasonal maintenance, and quote templates.', industryCategory: 'landscaping' },
-  { packKey: 'pest_control', name: 'Pest Control', description: 'Pest control inspections, treatments, and compliance documentation.', industryCategory: 'pest_control' },
-  { packKey: 'general_contractors', name: 'General Contractors', description: 'Multi-trade project templates, quotes, and completion certificates.', industryCategory: 'general_contractors' },
-  { packKey: 'property_maintenance', name: 'Property Maintenance', description: 'Property maintenance workflows, SLAs, and reporting templates.', industryCategory: 'property_maintenance' },
-  { packKey: 'custom_pack_builder', name: 'Custom Industry Pack Builder', description: 'Build custom industry packs via App Builder without modifying core code.', industryCategory: 'custom' },
+  {
+    packKey: 'plumbing',
+    name: 'Plumbing',
+    description: 'Plumbing workflows, inspections, compliance, and trade templates.',
+    industryCategory: 'plumbing',
+  },
+  {
+    packKey: 'electrical',
+    name: 'Electrical',
+    description: 'Electrical compliance, certificates, and installation templates.',
+    industryCategory: 'electrical',
+  },
+  {
+    packKey: 'hvac',
+    name: 'HVAC',
+    description: 'HVAC maintenance, service, and equipment intelligence templates.',
+    industryCategory: 'hvac',
+  },
+  {
+    packKey: 'fire_protection',
+    name: 'Fire Protection',
+    description: 'Fire compliance frameworks, inspections, and certificates.',
+    industryCategory: 'fire_protection',
+  },
+  {
+    packKey: 'solar',
+    name: 'Solar',
+    description: 'Solar installation, maintenance, and compliance templates.',
+    industryCategory: 'solar',
+  },
+  {
+    packKey: 'security_systems',
+    name: 'Security Systems',
+    description: 'Security installation, monitoring, and service templates.',
+    industryCategory: 'security_systems',
+  },
+  {
+    packKey: 'facilities_management',
+    name: 'Facilities Management',
+    description: 'Facilities maintenance, inspections, and asset templates.',
+    industryCategory: 'facilities_management',
+  },
+  {
+    packKey: 'refrigeration',
+    name: 'Refrigeration',
+    description: 'Refrigeration service, equipment catalogs, and compliance.',
+    industryCategory: 'refrigeration',
+  },
+  {
+    packKey: 'mechanical_services',
+    name: 'Mechanical Services',
+    description: 'Mechanical maintenance, repairs, and project templates.',
+    industryCategory: 'mechanical_services',
+  },
+  {
+    packKey: 'cleaning_services',
+    name: 'Cleaning Services',
+    description: 'Cleaning checklists, labour templates, and scheduling workflows.',
+    industryCategory: 'cleaning_services',
+  },
+  {
+    packKey: 'landscaping',
+    name: 'Landscaping',
+    description: 'Landscaping projects, seasonal maintenance, and quote templates.',
+    industryCategory: 'landscaping',
+  },
+  {
+    packKey: 'pest_control',
+    name: 'Pest Control',
+    description: 'Pest control inspections, treatments, and compliance documentation.',
+    industryCategory: 'pest_control',
+  },
+  {
+    packKey: 'general_contractors',
+    name: 'General Contractors',
+    description: 'Multi-trade project templates, quotes, and completion certificates.',
+    industryCategory: 'general_contractors',
+  },
+  {
+    packKey: 'property_maintenance',
+    name: 'Property Maintenance',
+    description: 'Property maintenance workflows, SLAs, and reporting templates.',
+    industryCategory: 'property_maintenance',
+  },
+  {
+    packKey: 'custom_pack_builder',
+    name: 'Custom Industry Pack Builder',
+    description: 'Build custom industry packs via App Builder without modifying core code.',
+    industryCategory: 'custom',
+  },
 ];
 
 type IndustryPackDeps = {
@@ -210,7 +285,10 @@ export class EnterpriseIndustryPackService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateIpPlatformConfigRequest): Promise<IpPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateIpPlatformConfigRequest,
+  ): Promise<IpPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(ipPlatformConfig)
@@ -254,7 +332,10 @@ export class EnterpriseIndustryPackService {
     return results;
   }
 
-  async installPack(scope: StaffScope, input: InstallIpPackRequest): Promise<IpPackInstallationSummary> {
+  async installPack(
+    scope: StaffScope,
+    input: InstallIpPackRequest,
+  ): Promise<IpPackInstallationSummary> {
     const pack = await this.deps.db.query.ipPackCatalog.findFirst({
       where: eq(ipPackCatalog.id, input.packCatalogId),
     });
@@ -286,7 +367,9 @@ export class EnterpriseIndustryPackService {
         })
         .where(eq(ipPackInstallations.id, existing.id))
         .returning();
-      await this.recordAudit(scope, 'pack_installed', 'pack_installation', updated!.id, { packKey: pack.packKey });
+      await this.recordAudit(scope, 'pack_installed', 'pack_installation', updated!.id, {
+        packKey: pack.packKey,
+      });
       return toPackInstallationSummary(updated!, pack);
     }
 
@@ -302,7 +385,9 @@ export class EnterpriseIndustryPackService {
         config: input.config ?? {},
       })
       .returning();
-    await this.recordAudit(scope, 'pack_installed', 'pack_installation', created!.id, { packKey: pack.packKey });
+    await this.recordAudit(scope, 'pack_installed', 'pack_installation', created!.id, {
+      packKey: pack.packKey,
+    });
     return toPackInstallationSummary(created!, pack);
   }
 
@@ -320,7 +405,10 @@ export class EnterpriseIndustryPackService {
     return toPackInstallationSummary(updated!, pack!);
   }
 
-  async uninstallPack(scope: StaffScope, installationId: string): Promise<IpPackInstallationSummary> {
+  async uninstallPack(
+    scope: StaffScope,
+    installationId: string,
+  ): Promise<IpPackInstallationSummary> {
     const installation = await this.ensureInstallation(scope.companyId, installationId);
     const pack = await this.deps.db.query.ipPackCatalog.findFirst({
       where: eq(ipPackCatalog.id, installation.packCatalogId),
@@ -334,7 +422,10 @@ export class EnterpriseIndustryPackService {
     return toPackInstallationSummary(updated!, pack!);
   }
 
-  async createCustomPack(scope: StaffScope, input: CreateIpPackCatalogRequest): Promise<IpPackCatalogSummary> {
+  async createCustomPack(
+    scope: StaffScope,
+    input: CreateIpPackCatalogRequest,
+  ): Promise<IpPackCatalogSummary> {
     const [created] = await this.deps.db
       .insert(ipPackCatalog)
       .values({
@@ -353,21 +444,29 @@ export class EnterpriseIndustryPackService {
         workflowStatus: 'draft',
       })
       .returning();
-    await this.recordAudit(scope, 'custom_pack_created', 'pack_catalog', created!.id, { packKey: input.packKey });
+    await this.recordAudit(scope, 'custom_pack_created', 'pack_catalog', created!.id, {
+      packKey: input.packKey,
+    });
     return toPackCatalogSummary(created!);
   }
 
   async listTemplates(companyId: string, templateType?: string): Promise<IpTemplateSummary[]> {
     const rows = await this.deps.db.query.ipTemplates.findMany({
       where: templateType
-        ? and(eq(ipTemplates.companyId, companyId), eq(ipTemplates.templateType, templateType as never))
+        ? and(
+            eq(ipTemplates.companyId, companyId),
+            eq(ipTemplates.templateType, templateType as never),
+          )
         : eq(ipTemplates.companyId, companyId),
       orderBy: [desc(ipTemplates.createdAt)],
     });
     return rows.map(toTemplateSummary);
   }
 
-  async createTemplate(scope: StaffScope, input: CreateIpTemplateRequest): Promise<IpTemplateSummary> {
+  async createTemplate(
+    scope: StaffScope,
+    input: CreateIpTemplateRequest,
+  ): Promise<IpTemplateSummary> {
     const [created] = await this.deps.db
       .insert(ipTemplates)
       .values({
@@ -381,7 +480,9 @@ export class EnterpriseIndustryPackService {
         workflowStatus: 'draft',
       })
       .returning();
-    await this.recordAudit(scope, 'template_created', 'template', created!.id, { templateType: input.templateType });
+    await this.recordAudit(scope, 'template_created', 'template', created!.id, {
+      templateType: input.templateType,
+    });
     return toTemplateSummary(created!);
   }
 
@@ -412,14 +513,25 @@ export class EnterpriseIndustryPackService {
         workflowStatus: 'draft',
       })
       .returning();
-    await this.recordAudit(scope, 'compliance_framework_created', 'compliance_framework', created!.id);
+    await this.recordAudit(
+      scope,
+      'compliance_framework_created',
+      'compliance_framework',
+      created!.id,
+    );
     return toComplianceFrameworkSummary(created!);
   }
 
-  async listComplianceRequirements(companyId: string, frameworkId?: string): Promise<IpComplianceRequirementSummary[]> {
+  async listComplianceRequirements(
+    companyId: string,
+    frameworkId?: string,
+  ): Promise<IpComplianceRequirementSummary[]> {
     const rows = await this.deps.db.query.ipComplianceRequirements.findMany({
       where: frameworkId
-        ? and(eq(ipComplianceRequirements.companyId, companyId), eq(ipComplianceRequirements.frameworkId, frameworkId))
+        ? and(
+            eq(ipComplianceRequirements.companyId, companyId),
+            eq(ipComplianceRequirements.frameworkId, frameworkId),
+          )
         : eq(ipComplianceRequirements.companyId, companyId),
       orderBy: [desc(ipComplianceRequirements.createdAt)],
     });
@@ -443,7 +555,12 @@ export class EnterpriseIndustryPackService {
         config: input.config ?? {},
       })
       .returning();
-    await this.recordAudit(scope, 'compliance_requirement_created', 'compliance_requirement', created!.id);
+    await this.recordAudit(
+      scope,
+      'compliance_requirement_created',
+      'compliance_requirement',
+      created!.id,
+    );
     return toComplianceRequirementSummary(created!);
   }
 
@@ -455,7 +572,10 @@ export class EnterpriseIndustryPackService {
     return rows.map(toCertificateSummary);
   }
 
-  async createCertificate(scope: StaffScope, input: CreateIpCertificateRequest): Promise<IpCertificateSummary> {
+  async createCertificate(
+    scope: StaffScope,
+    input: CreateIpCertificateRequest,
+  ): Promise<IpCertificateSummary> {
     if (!input.sourceWorkReference?.trim()) {
       throw new EnterpriseIndustryPackError(
         'VALIDATION_ERROR',
@@ -604,7 +724,10 @@ export class EnterpriseIndustryPackService {
     return rows.map(toAssetTypeSummary);
   }
 
-  async createAssetType(scope: StaffScope, input: CreateIpAssetTypeRequest): Promise<IpAssetTypeSummary> {
+  async createAssetType(
+    scope: StaffScope,
+    input: CreateIpAssetTypeRequest,
+  ): Promise<IpAssetTypeSummary> {
     const [created] = await this.deps.db
       .insert(ipAssetTypes)
       .values({
@@ -621,17 +744,26 @@ export class EnterpriseIndustryPackService {
     return toAssetTypeSummary(created!);
   }
 
-  async listPackExtensions(companyId: string, packCatalogId?: string): Promise<IpPackExtensionSummary[]> {
+  async listPackExtensions(
+    companyId: string,
+    packCatalogId?: string,
+  ): Promise<IpPackExtensionSummary[]> {
     const rows = await this.deps.db.query.ipPackExtensions.findMany({
       where: packCatalogId
-        ? and(eq(ipPackExtensions.companyId, companyId), eq(ipPackExtensions.packCatalogId, packCatalogId))
+        ? and(
+            eq(ipPackExtensions.companyId, companyId),
+            eq(ipPackExtensions.packCatalogId, packCatalogId),
+          )
         : eq(ipPackExtensions.companyId, companyId),
       orderBy: [desc(ipPackExtensions.createdAt)],
     });
     return rows.map(toPackExtensionSummary);
   }
 
-  async createPackExtension(scope: StaffScope, input: CreateIpPackExtensionRequest): Promise<IpPackExtensionSummary> {
+  async createPackExtension(
+    scope: StaffScope,
+    input: CreateIpPackExtensionRequest,
+  ): Promise<IpPackExtensionSummary> {
     const [created] = await this.deps.db
       .insert(ipPackExtensions)
       .values({
@@ -699,14 +831,15 @@ export class EnterpriseIndustryPackService {
 
   async captureAnalytics(scope: StaffScope): Promise<IpAnalyticsSummary> {
     const companyId = scope.companyId;
-    const [jobsStats, financeStats, installations, templates, certificates, frameworks] = await Promise.all([
-      this.deps.jobsService.getStats(companyId),
-      this.deps.financeService.getStats(companyId),
-      this.listInstalledPacks(companyId),
-      this.listTemplates(companyId),
-      this.listCertificates(companyId),
-      this.listComplianceFrameworks(companyId),
-    ]);
+    const [jobsStats, financeStats, installations, templates, certificates, frameworks] =
+      await Promise.all([
+        this.deps.jobsService.getStats(companyId),
+        this.deps.financeService.getStats(companyId),
+        this.listInstalledPacks(companyId),
+        this.listTemplates(companyId),
+        this.listCertificates(companyId),
+        this.listComplianceFrameworks(companyId),
+      ]);
 
     const metrics: Record<string, unknown> = {
       installedPackCount: installations.filter((i) => i.status === 'installed').length,
@@ -740,16 +873,27 @@ export class EnterpriseIndustryPackService {
     ]);
 
     const activePackCount = installations.filter((i) => i.status === 'installed').length;
-    const pendingCertificateCount = certificates.filter((c) => c.status === 'pending_approval').length;
-    const openComplianceAlertCount = alerts.filter((a) => a.alertType.includes('compliance')).length;
-    const openCertificateAlertCount = alerts.filter((a) => a.alertType.includes('certificate')).length;
+    const pendingCertificateCount = certificates.filter(
+      (c) => c.status === 'pending_approval',
+    ).length;
+    const openComplianceAlertCount = alerts.filter((a) =>
+      a.alertType.includes('compliance'),
+    ).length;
+    const openCertificateAlertCount = alerts.filter((a) =>
+      a.alertType.includes('certificate'),
+    ).length;
 
     const alertMessages: string[] = [];
-    if (openComplianceAlertCount > 0) alertMessages.push(`${openComplianceAlertCount} compliance alert(s)`);
-    if (openCertificateAlertCount > 0) alertMessages.push(`${openCertificateAlertCount} certificate alert(s)`);
-    if (pendingCertificateCount > 0) alertMessages.push(`${pendingCertificateCount} certificate(s) pending approval`);
+    if (openComplianceAlertCount > 0)
+      alertMessages.push(`${openComplianceAlertCount} compliance alert(s)`);
+    if (openCertificateAlertCount > 0)
+      alertMessages.push(`${openCertificateAlertCount} certificate alert(s)`);
+    if (pendingCertificateCount > 0)
+      alertMessages.push(`${pendingCertificateCount} certificate(s) pending approval`);
     if (frameworks.filter((f) => f.workflowStatus === 'draft').length > 0) {
-      alertMessages.push(`${frameworks.filter((f) => f.workflowStatus === 'draft').length} draft compliance framework(s)`);
+      alertMessages.push(
+        `${frameworks.filter((f) => f.workflowStatus === 'draft').length} draft compliance framework(s)`,
+      );
     }
 
     return {
@@ -770,14 +914,20 @@ export class EnterpriseIndustryPackService {
   ): Promise<IpIndustryAlertSummary[]> {
     const rows = await this.deps.db.query.ipIndustryAlerts.findMany({
       where: filters?.status
-        ? and(eq(ipIndustryAlerts.companyId, companyId), eq(ipIndustryAlerts.status, filters.status as never))
+        ? and(
+            eq(ipIndustryAlerts.companyId, companyId),
+            eq(ipIndustryAlerts.status, filters.status as never),
+          )
         : eq(ipIndustryAlerts.companyId, companyId),
       orderBy: [desc(ipIndustryAlerts.createdAt)],
     });
     return rows.map(toIndustryAlertSummary);
   }
 
-  async acknowledgeIndustryAlert(scope: StaffScope, alertId: string): Promise<IpIndustryAlertSummary> {
+  async acknowledgeIndustryAlert(
+    scope: StaffScope,
+    alertId: string,
+  ): Promise<IpIndustryAlertSummary> {
     await this.ensureIndustryAlert(scope.companyId, alertId);
     const [updated] = await this.deps.db
       .update(ipIndustryAlerts)
@@ -788,7 +938,10 @@ export class EnterpriseIndustryPackService {
     return toIndustryAlertSummary(updated!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateIpIndustryActionDraftRequest): Promise<IpActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateIpIndustryActionDraftRequest,
+  ): Promise<IpActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(ipActionDrafts)
       .values({
@@ -814,7 +967,10 @@ export class EnterpriseIndustryPackService {
     return rows.map(toActionDraftSummary);
   }
 
-  async listAuditLogs(companyId: string, limit = 100): Promise<import('@titan/shared').IpAuditLogSummary[]> {
+  async listAuditLogs(
+    companyId: string,
+    limit = 100,
+  ): Promise<import('@titan/shared').IpAuditLogSummary[]> {
     const rows = await this.deps.db.query.ipAuditLogs.findMany({
       where: eq(ipAuditLogs.companyId, companyId),
       orderBy: [desc(ipAuditLogs.createdAt)],
@@ -861,16 +1017,16 @@ export class EnterpriseIndustryPackService {
     });
     if (existing) return existing;
 
-    const [created] = await this.deps.db
-      .insert(ipPlatformConfig)
-      .values({ companyId })
-      .returning();
+    const [created] = await this.deps.db.insert(ipPlatformConfig).values({ companyId }).returning();
     return created!;
   }
 
   private async ensureInstallation(companyId: string, installationId: string) {
     const row = await this.deps.db.query.ipPackInstallations.findFirst({
-      where: and(eq(ipPackInstallations.id, installationId), eq(ipPackInstallations.companyId, companyId)),
+      where: and(
+        eq(ipPackInstallations.id, installationId),
+        eq(ipPackInstallations.companyId, companyId),
+      ),
     });
     if (!row) throw new EnterpriseIndustryPackError('NOT_FOUND', 'Pack installation not found');
     return row;
@@ -878,7 +1034,10 @@ export class EnterpriseIndustryPackService {
 
   private async ensureComplianceFramework(companyId: string, frameworkId: string) {
     const row = await this.deps.db.query.ipComplianceFrameworks.findFirst({
-      where: and(eq(ipComplianceFrameworks.id, frameworkId), eq(ipComplianceFrameworks.companyId, companyId)),
+      where: and(
+        eq(ipComplianceFrameworks.id, frameworkId),
+        eq(ipComplianceFrameworks.companyId, companyId),
+      ),
     });
     if (!row) throw new EnterpriseIndustryPackError('NOT_FOUND', 'Compliance framework not found');
     return row;
@@ -985,7 +1144,9 @@ function resolveIndustryHealthStatus(input: {
   return 'healthy';
 }
 
-function toPlatformConfigSummary(row: typeof ipPlatformConfig.$inferSelect): IpPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof ipPlatformConfig.$inferSelect,
+): IpPlatformConfigSummary {
   return {
     marketplacePolicy: row.marketplacePolicy ?? {},
     compliancePolicy: row.compliancePolicy ?? {},
@@ -1042,7 +1203,9 @@ function toTemplateSummary(row: typeof ipTemplates.$inferSelect): IpTemplateSumm
   };
 }
 
-function toComplianceFrameworkSummary(row: typeof ipComplianceFrameworks.$inferSelect): IpComplianceFrameworkSummary {
+function toComplianceFrameworkSummary(
+  row: typeof ipComplianceFrameworks.$inferSelect,
+): IpComplianceFrameworkSummary {
   return {
     id: row.id,
     packCatalogId: row.packCatalogId,
@@ -1089,7 +1252,9 @@ function toCertificateSummary(row: typeof ipCertificates.$inferSelect): IpCertif
   };
 }
 
-function toKnowledgeArticleSummary(row: typeof ipKnowledgeArticles.$inferSelect): IpKnowledgeArticleSummary {
+function toKnowledgeArticleSummary(
+  row: typeof ipKnowledgeArticles.$inferSelect,
+): IpKnowledgeArticleSummary {
   return {
     id: row.id,
     packCatalogId: row.packCatalogId,
@@ -1103,7 +1268,9 @@ function toKnowledgeArticleSummary(row: typeof ipKnowledgeArticles.$inferSelect)
   };
 }
 
-function toEquipmentCatalogSummary(row: typeof ipEquipmentCatalog.$inferSelect): IpEquipmentCatalogSummary {
+function toEquipmentCatalogSummary(
+  row: typeof ipEquipmentCatalog.$inferSelect,
+): IpEquipmentCatalogSummary {
   return {
     id: row.id,
     packCatalogId: row.packCatalogId,
@@ -1116,7 +1283,9 @@ function toEquipmentCatalogSummary(row: typeof ipEquipmentCatalog.$inferSelect):
   };
 }
 
-function toMaterialLibrarySummary(row: typeof ipMaterialLibraries.$inferSelect): IpMaterialLibrarySummary {
+function toMaterialLibrarySummary(
+  row: typeof ipMaterialLibraries.$inferSelect,
+): IpMaterialLibrarySummary {
   return {
     id: row.id,
     packCatalogId: row.packCatalogId,

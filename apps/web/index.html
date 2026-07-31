@@ -3,9 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/titan-mobile-icon.svg" type="image/svg+xml" />
     <title>TITAN — AI Business Operating System</title>
+    <meta name="titan-env" content="%VITE_APP_ENV%" />
   </head>
-  <body>
+  <body data-titan-env="%VITE_APP_ENV%">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

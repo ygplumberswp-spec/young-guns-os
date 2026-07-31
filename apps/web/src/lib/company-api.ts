@@ -7,6 +7,7 @@ import {
   setCachedCompanyProfile,
   setInflightCompanyProfileRequest,
 } from './company-profile-cache';
+import { resolveApiBase } from './runtime-env';
 
 export async function fetchCompanyProfile(accessToken: string): Promise<CompanyProfile> {
   const cached = getCachedCompanyProfile(accessToken);
@@ -61,7 +62,7 @@ export async function fetchCompanyMediaStatus(accessToken: string) {
 }
 
 export function companyMediaUrl(fileId: string): string {
-  return `/api/v1/company/media/${fileId}`;
+  return `${resolveApiBase()}/company/media/${fileId}`;
 }
 
 export async function uploadCompanyMedia(

@@ -51,7 +51,10 @@ export class AgentOrchestrationService {
     return summaries;
   }
 
-  async getOrchestration(companyId: string, orchestrationId: string): Promise<OrchestrationDetail | null> {
+  async getOrchestration(
+    companyId: string,
+    orchestrationId: string,
+  ): Promise<OrchestrationDetail | null> {
     const row = await this.db.query.agentOrchestrations.findFirst({
       where: and(
         eq(agentOrchestrations.id, orchestrationId),
@@ -124,13 +127,22 @@ export class AgentOrchestrationService {
       .update(agentOrchestrations)
       .set({
         ...(input.name !== undefined ? { name: input.name.trim() } : {}),
-        ...(input.description !== undefined ? { description: input.description?.trim() || null } : {}),
+        ...(input.description !== undefined
+          ? { description: input.description?.trim() || null }
+          : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.requiresApproval !== undefined ? { requiresApproval: input.requiresApproval } : {}),
+        ...(input.requiresApproval !== undefined
+          ? { requiresApproval: input.requiresApproval }
+          : {}),
         ...(input.config !== undefined ? { config: input.config } : {}),
         updatedAt: new Date(),
       })
-      .where(and(eq(agentOrchestrations.id, orchestrationId), eq(agentOrchestrations.companyId, companyId)));
+      .where(
+        and(
+          eq(agentOrchestrations.id, orchestrationId),
+          eq(agentOrchestrations.companyId, companyId),
+        ),
+      );
 
     const detail = await this.getOrchestration(companyId, orchestrationId);
     if (!detail) {
@@ -216,7 +228,10 @@ export class AgentOrchestrationService {
 
   async getRun(companyId: string, runId: string): Promise<OrchestrationRunDetail | null> {
     const row = await this.db.query.agentOrchestrationRuns.findFirst({
-      where: and(eq(agentOrchestrationRuns.id, runId), eq(agentOrchestrationRuns.companyId, companyId)),
+      where: and(
+        eq(agentOrchestrationRuns.id, runId),
+        eq(agentOrchestrationRuns.companyId, companyId),
+      ),
       with: { orchestration: true },
     });
 
@@ -225,7 +240,10 @@ export class AgentOrchestrationService {
     const [steps, logs] = await Promise.all([
       this.db.query.agentOrchestrationRunSteps.findMany({
         where: eq(agentOrchestrationRunSteps.runId, runId),
-        orderBy: [asc(agentOrchestrationRunSteps.sortOrder), asc(agentOrchestrationRunSteps.createdAt)],
+        orderBy: [
+          asc(agentOrchestrationRunSteps.sortOrder),
+          asc(agentOrchestrationRunSteps.createdAt),
+        ],
       }),
       this.db.query.agentOrchestrationLogs.findMany({
         where: eq(agentOrchestrationLogs.runId, runId),
@@ -272,7 +290,10 @@ export class AgentOrchestrationService {
 
   async listLogs(companyId: string, runId: string): Promise<OrchestrationLogSummary[]> {
     const rows = await this.db.query.agentOrchestrationLogs.findMany({
-      where: and(eq(agentOrchestrationLogs.companyId, companyId), eq(agentOrchestrationLogs.runId, runId)),
+      where: and(
+        eq(agentOrchestrationLogs.companyId, companyId),
+        eq(agentOrchestrationLogs.runId, runId),
+      ),
       orderBy: [asc(agentOrchestrationLogs.createdAt)],
       limit: 200,
     });
@@ -283,7 +304,10 @@ export class AgentOrchestrationService {
   async buildAuraContext(companyId: string): Promise<OrchestrationAuraContext> {
     const [activeOrchestrations, activeRuns, pendingApprovals, recentRuns] = await Promise.all([
       this.db.query.agentOrchestrations.findMany({
-        where: and(eq(agentOrchestrations.companyId, companyId), eq(agentOrchestrations.status, 'active')),
+        where: and(
+          eq(agentOrchestrations.companyId, companyId),
+          eq(agentOrchestrations.status, 'active'),
+        ),
       }),
       this.db.query.agentOrchestrationRuns.findMany({
         where: and(

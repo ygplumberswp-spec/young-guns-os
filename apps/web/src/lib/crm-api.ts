@@ -1,9 +1,12 @@
 import type {
   CreateCustomerActivityRequest,
+  CreateCustomerPropertyRequest,
   CreateCustomerRequest,
   CrmStats,
   CustomerDetail,
+  CustomerPropertySummary,
   CustomerSummary,
+  UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
 import { request } from './api-client';
@@ -20,7 +23,10 @@ export async function fetchCustomers(accessToken: string): Promise<CustomerSumma
   return data.customers;
 }
 
-export async function fetchCustomer(accessToken: string, customerId: string): Promise<CustomerDetail> {
+export async function fetchCustomer(
+  accessToken: string,
+  customerId: string,
+): Promise<CustomerDetail> {
   const data = await request<{ customer: CustomerDetail }>(`/crm/customers/${customerId}`, {
     accessToken,
   });
@@ -70,4 +76,40 @@ export async function addCustomerActivity(
   );
 
   return data.customer;
+}
+
+export async function fetchCustomerProperties(
+  accessToken: string,
+  customerId: string,
+): Promise<CustomerPropertySummary[]> {
+  const data = await request<{ properties: CustomerPropertySummary[] }>(
+    `/crm/customers/${customerId}/properties`,
+    { accessToken },
+  );
+  return data.properties;
+}
+
+export async function createCustomerProperty(
+  accessToken: string,
+  customerId: string,
+  body: CreateCustomerPropertyRequest,
+): Promise<CustomerPropertySummary> {
+  const data = await request<{ property: CustomerPropertySummary }>(
+    `/crm/customers/${customerId}/properties`,
+    { method: 'POST', accessToken, body },
+  );
+  return data.property;
+}
+
+export async function updateCustomerProperty(
+  accessToken: string,
+  customerId: string,
+  propertyId: string,
+  body: UpdateCustomerPropertyRequest,
+): Promise<CustomerPropertySummary> {
+  const data = await request<{ property: CustomerPropertySummary }>(
+    `/crm/customers/${customerId}/properties/${propertyId}`,
+    { method: 'PATCH', accessToken, body },
+  );
+  return data.property;
 }

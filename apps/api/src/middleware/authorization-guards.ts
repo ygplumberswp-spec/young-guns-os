@@ -1,15 +1,17 @@
 import type { NextFunction, Request, Response } from 'express';
 import {
-  isPlatformOwner,
+  canAccessTenant,
+  hasUnrestrictedCompanyAccess,
+  isPlatformOwnerRole,
   isTechnicianRole,
   type StaffIdentity,
 } from '@titan/auth';
 import type { DatabaseClient } from '@titan/db';
-import { jobs, securityAuditLogs } from '@titan/db';
-import { and, eq } from 'drizzle-orm';
+import { securityAuditLogs } from '@titan/db';
 import type { AuthenticatedRequest } from './auth.js';
 import type { PortalAuthenticatedRequest } from './portal-auth.js';
 import { getActiveEnRouteTracking } from '../lib/tracking-privacy.js';
+import { userHasJobAccess } from '../services/job-execution.service.js';
 
 type GuardIdentity = StaffIdentity & {
   userId: string;
@@ -66,6 +68,7 @@ function forbidden(res: Response, message = 'You do not have permission to perfo
   });
 }
 
+/** Requires canonical Platform Owner (cross-tenant), not Company Owner / legacy Owner. */
 export function createRequirePlatformOwner(db: DatabaseClient) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const identity = getStaffIdentity(req);
@@ -73,7 +76,7 @@ export function createRequirePlatformOwner(db: DatabaseClient) {
       res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
       return;
     }
-    if (!isPlatformOwner(identity)) {
+    if (!isPlatformOwnerRole(identity)) {
       await recordAuthorizationFailure(db, {
         companyId: identity.companyId,
         userId: identity.userId,
@@ -83,7 +86,7 @@ export function createRequirePlatformOwner(db: DatabaseClient) {
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
       });
-      forbidden(res, 'Platform owner access required');
+      forbidden(res, 'Platform Owner access required');
       return;
     }
     next();
@@ -97,7 +100,7 @@ export function createDenyTechnicianFromOwnerModules(db: DatabaseClient) {
       res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
       return;
     }
-    if (isPlatformOwner(identity)) {
+    if (hasUnrestrictedCompanyAccess(identity)) {
       next();
       return;
     }
@@ -118,14 +121,17 @@ export function createDenyTechnicianFromOwnerModules(db: DatabaseClient) {
   };
 }
 
-export function createRequireAssignedJob(db: DatabaseClient, resolveJobId: (req: Request) => string) {
+export function createRequireAssignedJob(
+  db: DatabaseClient,
+  resolveJobId: (req: Request) => string,
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const identity = getStaffIdentity(req);
     if (!identity) {
       res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
       return;
     }
-    if (isPlatformOwner(identity)) {
+    if (hasUnrestrictedCompanyAccess(identity)) {
       next();
       return;
     }
@@ -135,12 +141,9 @@ export function createRequireAssignedJob(db: DatabaseClient, resolveJobId: (req:
     }
 
     const jobId = resolveJobId(req);
-    const job = await db.query.jobs.findFirst({
-      where: and(eq(jobs.id, jobId), eq(jobs.companyId, identity.companyId)),
-      columns: { id: true, assignedUserId: true },
-    });
+    const hasAccess = await userHasJobAccess(db, identity.companyId, jobId, identity.userId);
 
-    if (!job || job.assignedUserId !== identity.userId) {
+    if (!hasAccess) {
       await recordAuthorizationFailure(db, {
         companyId: identity.companyId,
         userId: identity.userId,
@@ -160,11 +163,20 @@ export function createRequireAssignedJob(db: DatabaseClient, resolveJobId: (req:
   };
 }
 
-export function createRequireCustomerOwnership(db: DatabaseClient, resolveCustomerId: (req: Request) => string | undefined) {
+/**
+ * Client ownership via stable portal JWT customerId — never email fallback.
+ * When a customerId appears in the path/query, it must match the portal principal.
+ */
+export function createRequireCustomerOwnership(
+  db: DatabaseClient,
+  resolveCustomerId: (req: Request) => string | undefined,
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const portalAuth = (req as PortalAuthenticatedRequest).portalAuth;
     if (!portalAuth) {
-      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Portal authentication required' } });
+      res
+        .status(401)
+        .json({ error: { code: 'UNAUTHORIZED', message: 'Portal authentication required' } });
       return;
     }
 
@@ -188,20 +200,57 @@ export function createRequireCustomerOwnership(db: DatabaseClient, resolveCustom
   };
 }
 
+/**
+ * When a route exposes :companyId (platform APIs), enforce tenant match unless Platform Owner.
+ */
+export function createRequireTenantCompanyParam(
+  db: DatabaseClient,
+  resolveCompanyId: (req: Request) => string | undefined,
+) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const identity = getStaffIdentity(req);
+    if (!identity) {
+      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
+      return;
+    }
+
+    const targetCompanyId = resolveCompanyId(req);
+    if (!targetCompanyId) {
+      next();
+      return;
+    }
+
+    if (!canAccessTenant(identity, targetCompanyId)) {
+      await recordAuthorizationFailure(db, {
+        companyId: identity.companyId,
+        userId: identity.userId,
+        sessionId: identity.sessionId,
+        action: 'tenant_scope_denied',
+        entityType: 'company',
+        entityId: targetCompanyId,
+        metadata: { path: req.path, roleName: identity.roleName },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+      forbidden(res, 'You cannot access another company');
+      return;
+    }
+
+    next();
+  };
+}
+
 export async function assertAssignedTechnician(
   db: DatabaseClient,
   identity: GuardIdentity,
   jobId: string,
 ): Promise<void> {
-  if (isPlatformOwner(identity)) return;
+  if (hasUnrestrictedCompanyAccess(identity)) return;
   if (!isTechnicianRole(identity)) return;
 
-  const job = await db.query.jobs.findFirst({
-    where: and(eq(jobs.id, jobId), eq(jobs.companyId, identity.companyId)),
-    columns: { assignedUserId: true },
-  });
+  const hasAccess = await userHasJobAccess(db, identity.companyId, jobId, identity.userId);
 
-  if (!job || job.assignedUserId !== identity.userId) {
+  if (!hasAccess) {
     throw new AuthorizationGuardError('FORBIDDEN', 'Job is not assigned to you');
   }
 }

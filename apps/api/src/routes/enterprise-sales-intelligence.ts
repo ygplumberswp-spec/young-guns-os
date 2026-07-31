@@ -249,7 +249,11 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseSalesIntelligenceError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -258,7 +262,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -269,7 +276,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
     'sales:read',
     'leads:read',
   );
-  const requireWrite = requireAnyPermission('sales_intelligence:write', 'sales_intelligence:manage');
+  const requireWrite = requireAnyPermission(
+    'sales_intelligence:write',
+    'sales_intelligence:manage',
+  );
   const requireManage = requireAnyPermission('sales_intelligence:manage', 'platform:manage');
 
   router.get('/dashboard', requireStaffAuth, requireRead, async (req, res) => {
@@ -285,7 +295,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/revenue-monitoring', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const revenueMonitoring = await deps.enterpriseSalesIntelligenceService.getRevenueMonitoring(auth.companyId);
+      const revenueMonitoring = await deps.enterpriseSalesIntelligenceService.getRevenueMonitoring(
+        auth.companyId,
+      );
       res.json({ data: { revenueMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -308,7 +320,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseSalesIntelligenceService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseSalesIntelligenceService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -318,7 +332,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
@@ -335,7 +351,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/categories', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const categories = await deps.enterpriseSalesIntelligenceService.listCategories(auth.companyId);
+      const categories = await deps.enterpriseSalesIntelligenceService.listCategories(
+        auth.companyId,
+      );
       res.json({ data: { categories } });
     } catch (error) {
       handleError(error, res);
@@ -349,7 +367,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const category = await deps.enterpriseSalesIntelligenceService.createCategory(staffScope(req), parsed.data);
+      const category = await deps.enterpriseSalesIntelligenceService.createCategory(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { category } });
     } catch (error) {
       handleError(error, res);
@@ -359,7 +380,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/territories', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const territories = await deps.enterpriseSalesIntelligenceService.listTerritories(auth.companyId);
+      const territories = await deps.enterpriseSalesIntelligenceService.listTerritories(
+        auth.companyId,
+      );
       res.json({ data: { territories } });
     } catch (error) {
       handleError(error, res);
@@ -373,7 +396,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const territory = await deps.enterpriseSalesIntelligenceService.createTerritory(staffScope(req), parsed.data);
+      const territory = await deps.enterpriseSalesIntelligenceService.createTerritory(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { territory } });
     } catch (error) {
       handleError(error, res);
@@ -397,7 +423,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const team = await deps.enterpriseSalesIntelligenceService.createSalesTeam(staffScope(req), parsed.data);
+      const team = await deps.enterpriseSalesIntelligenceService.createSalesTeam(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { team } });
     } catch (error) {
       handleError(error, res);
@@ -421,7 +450,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const pipeline = await deps.enterpriseSalesIntelligenceService.createPipeline(staffScope(req), parsed.data);
+      const pipeline = await deps.enterpriseSalesIntelligenceService.createPipeline(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { pipeline } });
     } catch (error) {
       handleError(error, res);
@@ -444,28 +476,39 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/lead-deduplication/candidates', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const candidates = await deps.enterpriseSalesIntelligenceService.listLeadDeduplicationCandidates(
-        auth.companyId,
-      );
+      const candidates =
+        await deps.enterpriseSalesIntelligenceService.listLeadDeduplicationCandidates(
+          auth.companyId,
+        );
       res.json({ data: { candidates } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/lead-deduplication/approve-merge', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = leadMergeSchema.safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lead merge request' } });
-      return;
-    }
-    try {
-      const result = await deps.enterpriseSalesIntelligenceService.approveLeadMerge(staffScope(req), parsed.data);
-      res.json({ data: { result } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/lead-deduplication/approve-merge',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      const parsed = leadMergeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lead merge request' } });
+        return;
+      }
+      try {
+        const result = await deps.enterpriseSalesIntelligenceService.approveLeadMerge(
+          staffScope(req),
+          parsed.data,
+        );
+        res.json({ data: { result } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/playbooks', requireStaffAuth, requireRead, async (req, res) => {
     try {
@@ -484,7 +527,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const playbook = await deps.enterpriseSalesIntelligenceService.createPlaybook(staffScope(req), parsed.data);
+      const playbook = await deps.enterpriseSalesIntelligenceService.createPlaybook(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { playbook } });
     } catch (error) {
       handleError(error, res);
@@ -508,29 +554,39 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const forecast = await deps.enterpriseSalesIntelligenceService.createForecast(staffScope(req), parsed.data);
+      const forecast = await deps.enterpriseSalesIntelligenceService.createForecast(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { forecast } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/forecasts/:forecastId/snapshots', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const snapshot = await deps.enterpriseSalesIntelligenceService.captureForecastSnapshot(
-        staffScope(req),
-        getRouteParam(req.params.forecastId),
-      );
-      res.status(201).json({ data: { snapshot } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/forecasts/:forecastId/snapshots',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const snapshot = await deps.enterpriseSalesIntelligenceService.captureForecastSnapshot(
+          staffScope(req),
+          getRouteParam(req.params.forecastId),
+        );
+        res.status(201).json({ data: { snapshot } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/targets', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const targets = await deps.enterpriseSalesIntelligenceService.listSalesTargets(auth.companyId);
+      const targets = await deps.enterpriseSalesIntelligenceService.listSalesTargets(
+        auth.companyId,
+      );
       res.json({ data: { targets } });
     } catch (error) {
       handleError(error, res);
@@ -540,11 +596,16 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/targets', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = salesTargetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sales target' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sales target' } });
       return;
     }
     try {
-      const target = await deps.enterpriseSalesIntelligenceService.createSalesTarget(staffScope(req), parsed.data);
+      const target = await deps.enterpriseSalesIntelligenceService.createSalesTarget(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { target } });
     } catch (error) {
       handleError(error, res);
@@ -568,7 +629,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const account = await deps.enterpriseSalesIntelligenceService.createAccount(staffScope(req), parsed.data);
+      const account = await deps.enterpriseSalesIntelligenceService.createAccount(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { account } });
     } catch (error) {
       handleError(error, res);
@@ -578,7 +642,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/account-plans', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = accountPlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid account plan' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid account plan' } });
       return;
     }
     try {
@@ -609,7 +675,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const renewal = await deps.enterpriseSalesIntelligenceService.createRenewal(staffScope(req), parsed.data);
+      const renewal = await deps.enterpriseSalesIntelligenceService.createRenewal(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { renewal } });
     } catch (error) {
       handleError(error, res);
@@ -619,7 +688,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/growth/snapshots', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const snapshots = await deps.enterpriseSalesIntelligenceService.listCustomerGrowthSnapshots(auth.companyId);
+      const snapshots = await deps.enterpriseSalesIntelligenceService.listCustomerGrowthSnapshots(
+        auth.companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -629,7 +700,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/growth/snapshots', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = growthSnapshotSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid growth snapshot request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid growth snapshot request' } });
       return;
     }
     try {
@@ -646,7 +719,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/retention/snapshots', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const snapshots = await deps.enterpriseSalesIntelligenceService.listRetentionRiskSnapshots(auth.companyId);
+      const snapshots = await deps.enterpriseSalesIntelligenceService.listRetentionRiskSnapshots(
+        auth.companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -656,7 +731,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/retention/snapshots', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = retentionSnapshotSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid retention snapshot request' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid retention snapshot request' },
+      });
       return;
     }
     try {
@@ -683,11 +760,16 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/pricing/rules', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = pricingRuleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid pricing rule' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid pricing rule' } });
       return;
     }
     try {
-      const rule = await deps.enterpriseSalesIntelligenceService.createPricingRule(staffScope(req), parsed.data);
+      const rule = await deps.enterpriseSalesIntelligenceService.createPricingRule(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { rule } });
     } catch (error) {
       handleError(error, res);
@@ -697,7 +779,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/discounts/policies', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const policies = await deps.enterpriseSalesIntelligenceService.listDiscountPolicies(auth.companyId);
+      const policies = await deps.enterpriseSalesIntelligenceService.listDiscountPolicies(
+        auth.companyId,
+      );
       res.json({ data: { policies } });
     } catch (error) {
       handleError(error, res);
@@ -707,11 +791,16 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/discounts/policies', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = discountPolicySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discount policy' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discount policy' } });
       return;
     }
     try {
-      const policy = await deps.enterpriseSalesIntelligenceService.createDiscountPolicy(staffScope(req), parsed.data);
+      const policy = await deps.enterpriseSalesIntelligenceService.createDiscountPolicy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { policy } });
     } catch (error) {
       handleError(error, res);
@@ -721,7 +810,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/discounts/requests', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const requests = await deps.enterpriseSalesIntelligenceService.listDiscountRequests(auth.companyId);
+      const requests = await deps.enterpriseSalesIntelligenceService.listDiscountRequests(
+        auth.companyId,
+      );
       res.json({ data: { requests } });
     } catch (error) {
       handleError(error, res);
@@ -731,7 +822,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/discounts/requests', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = discountRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discount request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discount request' } });
       return;
     }
     try {
@@ -745,58 +838,82 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
     }
   });
 
-  router.post('/discounts/requests/:requestId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const request = await deps.enterpriseSalesIntelligenceService.submitDiscountRequestForReview(
-        staffScope(req),
-        getRouteParam(req.params.requestId),
-      );
-      res.json({ data: { request } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/discounts/requests/:requestId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const request =
+          await deps.enterpriseSalesIntelligenceService.submitDiscountRequestForReview(
+            staffScope(req),
+            getRouteParam(req.params.requestId),
+          );
+        res.json({ data: { request } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/discounts/requests/:requestId/submit-for-approval', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const request = await deps.enterpriseSalesIntelligenceService.submitDiscountRequestForApproval(
-        staffScope(req),
-        getRouteParam(req.params.requestId),
-      );
-      res.json({ data: { request } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/discounts/requests/:requestId/submit-for-approval',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const request =
+          await deps.enterpriseSalesIntelligenceService.submitDiscountRequestForApproval(
+            staffScope(req),
+            getRouteParam(req.params.requestId),
+          );
+        res.json({ data: { request } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/discounts/requests/:requestId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const request = await deps.enterpriseSalesIntelligenceService.approveDiscountRequest(
-        staffScope(req),
-        getRouteParam(req.params.requestId),
-      );
-      res.json({ data: { request } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/discounts/requests/:requestId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const request = await deps.enterpriseSalesIntelligenceService.approveDiscountRequest(
+          staffScope(req),
+          getRouteParam(req.params.requestId),
+        );
+        res.json({ data: { request } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/discounts/requests/:requestId/execute', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const request = await deps.enterpriseSalesIntelligenceService.executeDiscountRequest(
-        staffScope(req),
-        getRouteParam(req.params.requestId),
-      );
-      res.json({ data: { request } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/discounts/requests/:requestId/execute',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const request = await deps.enterpriseSalesIntelligenceService.executeDiscountRequest(
+          staffScope(req),
+          getRouteParam(req.params.requestId),
+        );
+        res.json({ data: { request } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/commissions/plans', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const plans = await deps.enterpriseSalesIntelligenceService.listCommissionPlans(auth.companyId);
+      const plans = await deps.enterpriseSalesIntelligenceService.listCommissionPlans(
+        auth.companyId,
+      );
       res.json({ data: { plans } });
     } catch (error) {
       handleError(error, res);
@@ -806,11 +923,16 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/commissions/plans', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = commissionPlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid commission plan' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid commission plan' } });
       return;
     }
     try {
-      const plan = await deps.enterpriseSalesIntelligenceService.createCommissionPlan(staffScope(req), parsed.data);
+      const plan = await deps.enterpriseSalesIntelligenceService.createCommissionPlan(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { plan } });
     } catch (error) {
       handleError(error, res);
@@ -820,7 +942,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/commissions/entries', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const entries = await deps.enterpriseSalesIntelligenceService.listCommissionEntries(auth.companyId);
+      const entries = await deps.enterpriseSalesIntelligenceService.listCommissionEntries(
+        auth.companyId,
+      );
       res.json({ data: { entries } });
     } catch (error) {
       handleError(error, res);
@@ -830,7 +954,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/qualification', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = qualificationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid qualification request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid qualification request' } });
       return;
     }
     try {
@@ -847,7 +973,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/win-loss', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const records = await deps.enterpriseSalesIntelligenceService.listWinLossRecords(auth.companyId);
+      const records = await deps.enterpriseSalesIntelligenceService.listWinLossRecords(
+        auth.companyId,
+      );
       res.json({ data: { records } });
     } catch (error) {
       handleError(error, res);
@@ -857,11 +985,16 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/win-loss', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = winLossSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid win/loss record' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid win/loss record' } });
       return;
     }
     try {
-      const record = await deps.enterpriseSalesIntelligenceService.createWinLossRecord(staffScope(req), parsed.data);
+      const record = await deps.enterpriseSalesIntelligenceService.createWinLossRecord(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(error, res);
@@ -871,7 +1004,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/revenue-leakage', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const findings = await deps.enterpriseSalesIntelligenceService.listRevenueLeakageFindings(auth.companyId);
+      const findings = await deps.enterpriseSalesIntelligenceService.listRevenueLeakageFindings(
+        auth.companyId,
+      );
       res.json({ data: { findings } });
     } catch (error) {
       handleError(error, res);
@@ -880,7 +1015,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
 
   router.post('/revenue-leakage/sync', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const findings = await deps.enterpriseSalesIntelligenceService.syncRevenueLeakageFindings(staffScope(req));
+      const findings = await deps.enterpriseSalesIntelligenceService.syncRevenueLeakageFindings(
+        staffScope(req),
+      );
       res.json({ data: { findings } });
     } catch (error) {
       handleError(error, res);
@@ -904,7 +1041,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const partner = await deps.enterpriseSalesIntelligenceService.createPartner(staffScope(req), parsed.data);
+      const partner = await deps.enterpriseSalesIntelligenceService.createPartner(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { partner } });
     } catch (error) {
       handleError(error, res);
@@ -938,7 +1078,10 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const tender = await deps.enterpriseSalesIntelligenceService.createTender(staffScope(req), parsed.data);
+      const tender = await deps.enterpriseSalesIntelligenceService.createTender(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { tender } });
     } catch (error) {
       handleError(error, res);
@@ -948,7 +1091,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/crm/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseSalesIntelligenceService.listCrmProviders(auth.companyId);
+      const providers = await deps.enterpriseSalesIntelligenceService.listCrmProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -958,34 +1103,46 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/crm/providers', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = crmProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid CRM provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid CRM provider' } });
       return;
     }
     try {
-      const provider = await deps.enterpriseSalesIntelligenceService.createCrmProvider(staffScope(req), parsed.data);
+      const provider = await deps.enterpriseSalesIntelligenceService.createCrmProvider(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/crm/providers/:providerId/test', requireStaffAuth, requireManage, async (req, res) => {
-    try {
-      const provider = await deps.enterpriseSalesIntelligenceService.testCrmProvider(
-        staffScope(req),
-        getRouteParam(req.params.providerId),
-      );
-      res.json({ data: { provider } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/crm/providers/:providerId/test',
+    requireStaffAuth,
+    requireManage,
+    async (req, res) => {
+      try {
+        const provider = await deps.enterpriseSalesIntelligenceService.testCrmProvider(
+          staffScope(req),
+          getRouteParam(req.params.providerId),
+        );
+        res.json({ data: { provider } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/alerts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const alerts = await deps.enterpriseSalesIntelligenceService.listSalesAlerts(auth.companyId, { status });
+      const alerts = await deps.enterpriseSalesIntelligenceService.listSalesAlerts(auth.companyId, {
+        status,
+      });
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -1003,7 +1160,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
 
   router.post('/analytics/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseSalesIntelligenceService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseSalesIntelligenceService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -1013,7 +1172,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.get('/analytics/latest', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const analytics = await deps.enterpriseSalesIntelligenceService.getLatestAnalytics(auth.companyId);
+      const analytics = await deps.enterpriseSalesIntelligenceService.getLatestAnalytics(
+        auth.companyId,
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -1023,7 +1184,9 @@ export function createEnterpriseSalesIntelligenceRouter(deps: RouterDeps): Route
   router.post('/sales-drafts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = salesDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sales action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sales action draft' } });
       return;
     }
     try {

@@ -1,6 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
-import { formatMoney, type AssetEquipmentSummary, type AssetExecutiveDashboard } from '@titan/shared';
+import {
+  formatMoney,
+  type AssetEquipmentSummary,
+  type AssetExecutiveDashboard,
+} from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import {
   AssetEquipmentApiClientError,
@@ -38,9 +42,15 @@ export function AssetEquipmentPage() {
   const [activeTab, setActiveTab] = useState<AssetTab>('dashboard');
   const [dashboard, setDashboard] = useState<AssetExecutiveDashboard | null>(null);
   const [assets, setAssets] = useState<AssetEquipmentSummary[]>([]);
-  const [records, setRecords] = useState<Awaited<ReturnType<typeof fetchAssetMaintenanceRecords>>>([]);
-  const [schedules, setSchedules] = useState<Awaited<ReturnType<typeof fetchAssetMaintenanceSchedules>>>([]);
-  const [inspections, setInspections] = useState<Awaited<ReturnType<typeof fetchAssetInspections>>>([]);
+  const [records, setRecords] = useState<Awaited<ReturnType<typeof fetchAssetMaintenanceRecords>>>(
+    [],
+  );
+  const [schedules, setSchedules] = useState<
+    Awaited<ReturnType<typeof fetchAssetMaintenanceSchedules>>
+  >([]);
+  const [inspections, setInspections] = useState<Awaited<ReturnType<typeof fetchAssetInspections>>>(
+    [],
+  );
   const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchAssetActions>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,14 +64,15 @@ export function AssetEquipmentPage() {
 
   async function loadPage() {
     if (!accessToken) return;
-    const [dashboardData, assetRows, recordRows, scheduleRows, inspectionRows, actionRows] = await Promise.all([
-      fetchAssetEquipmentDashboard(accessToken),
-      fetchAssetRegister(accessToken),
-      fetchAssetMaintenanceRecords(accessToken),
-      fetchAssetMaintenanceSchedules(accessToken),
-      fetchAssetInspections(accessToken),
-      fetchAssetActions(accessToken),
-    ]);
+    const [dashboardData, assetRows, recordRows, scheduleRows, inspectionRows, actionRows] =
+      await Promise.all([
+        fetchAssetEquipmentDashboard(accessToken),
+        fetchAssetRegister(accessToken),
+        fetchAssetMaintenanceRecords(accessToken),
+        fetchAssetMaintenanceSchedules(accessToken),
+        fetchAssetInspections(accessToken),
+        fetchAssetActions(accessToken),
+      ]);
     setDashboard(dashboardData);
     setAssets(assetRows);
     setRecords(recordRows);
@@ -83,7 +94,9 @@ export function AssetEquipmentPage() {
         await loadPage();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to load asset data');
+          setError(
+            err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to load asset data',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -112,7 +125,9 @@ export function AssetEquipmentPage() {
       setSuccess('Asset registered.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to create asset');
+      setError(
+        err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to create asset',
+      );
     }
   }
 
@@ -134,7 +149,9 @@ export function AssetEquipmentPage() {
       setSuccess('Maintenance action drafted for approval.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to create action');
+      setError(
+        err instanceof AssetEquipmentApiClientError ? err.message : 'Unable to create action',
+      );
     }
   }
 
@@ -195,7 +212,11 @@ export function AssetEquipmentPage() {
             <StatCard label="Total downtime (hrs)" value={String(analytics.totalDowntimeHours)} />
             <StatCard
               label="Average asset age"
-              value={analytics.averageAssetAgeYears != null ? `${analytics.averageAssetAgeYears} yrs` : 'N/A'}
+              value={
+                analytics.averageAssetAgeYears != null
+                  ? `${analytics.averageAssetAgeYears} yrs`
+                  : 'N/A'
+              }
             />
           </div>
 
@@ -238,7 +259,10 @@ export function AssetEquipmentPage() {
       {activeTab === 'register' ? (
         <>
           {canManage ? (
-            <Panel title="Register asset" description="Links to real fleet vehicles optionally — no demo records.">
+            <Panel
+              title="Register asset"
+              description="Links to real fleet vehicles optionally — no demo records."
+            >
               <form className="form-grid" onSubmit={(event) => void handleCreateAsset(event)}>
                 <Input
                   label="Asset name"
@@ -253,7 +277,10 @@ export function AssetEquipmentPage() {
 
           <Panel title="Asset register">
             {assets.length === 0 ? (
-              <EmptyState title="No assets" description="Assets appear when registered against real records." />
+              <EmptyState
+                title="No assets"
+                description="Assets appear when registered against real records."
+              />
             ) : (
               <ul className="portal-list">
                 {assets.map((asset) => (
@@ -275,14 +302,18 @@ export function AssetEquipmentPage() {
       {activeTab === 'maintenance' ? (
         <Panel title="Maintenance records">
           {records.length === 0 ? (
-            <EmptyState title="No maintenance records" description="Records require approval before execution." />
+            <EmptyState
+              title="No maintenance records"
+              description="Records require approval before execution."
+            />
           ) : (
             <ul className="portal-list">
               {records.map((record) => (
                 <li key={record.id}>
                   <strong>{record.title}</strong>
                   <span>
-                    {record.assetName ?? 'Unknown asset'} · {record.maintenanceType} · {record.status}
+                    {record.assetName ?? 'Unknown asset'} · {record.maintenanceType} ·{' '}
+                    {record.status}
                   </span>
                   <span>{record.description ?? 'No description'}</span>
                 </li>
@@ -295,7 +326,10 @@ export function AssetEquipmentPage() {
       {activeTab === 'schedules' ? (
         <Panel title="Preventative maintenance schedules">
           {schedules.length === 0 ? (
-            <EmptyState title="No schedules" description="Schedules generate recommendations only." />
+            <EmptyState
+              title="No schedules"
+              description="Schedules generate recommendations only."
+            />
           ) : (
             <ul className="portal-list">
               {schedules.map((schedule) => (
@@ -315,7 +349,10 @@ export function AssetEquipmentPage() {
       {activeTab === 'inspections' ? (
         <Panel title="Inspection history">
           {inspections.length === 0 ? (
-            <EmptyState title="No inspections" description="Inspections appear when recorded against real assets." />
+            <EmptyState
+              title="No inspections"
+              description="Inspections appear when recorded against real assets."
+            />
           ) : (
             <ul className="portal-list">
               {inspections.map((inspection) => (
@@ -336,7 +373,10 @@ export function AssetEquipmentPage() {
       {activeTab === 'actions' ? (
         <>
           {canManage ? (
-            <Panel title="Draft maintenance action" description="Draft → Approval → Execution. No automatic scheduling.">
+            <Panel
+              title="Draft maintenance action"
+              description="Draft → Approval → Execution. No automatic scheduling."
+            >
               <form className="form-grid" onSubmit={(event) => void handleCreateAction(event)}>
                 <Input
                   label="Subject"
@@ -357,7 +397,10 @@ export function AssetEquipmentPage() {
 
           <Panel title="Pending and historical actions">
             {actions.length === 0 ? (
-              <EmptyState title="No actions" description="Asset actions are drafted for manager approval." />
+              <EmptyState
+                title="No actions"
+                description="Asset actions are drafted for manager approval."
+              />
             ) : (
               <ul className="portal-list">
                 {actions.map((action) => (

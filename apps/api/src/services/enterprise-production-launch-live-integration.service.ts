@@ -48,9 +48,15 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
     return rows.map(toRunSummary);
   }
 
-  async getRunDetail(companyId: string, runId: string): Promise<PlLiveIntegrationVerificationRunDetailSummary | null> {
+  async getRunDetail(
+    companyId: string,
+    runId: string,
+  ): Promise<PlLiveIntegrationVerificationRunDetailSummary | null> {
     const run = await this.deps.db.query.plLiveIntegrationVerificationRuns.findFirst({
-      where: and(eq(plLiveIntegrationVerificationRuns.companyId, companyId), eq(plLiveIntegrationVerificationRuns.id, runId)),
+      where: and(
+        eq(plLiveIntegrationVerificationRuns.companyId, companyId),
+        eq(plLiveIntegrationVerificationRuns.id, runId),
+      ),
     });
     if (!run) return null;
     const results = await this.deps.db.query.plLiveIntegrationVerificationResults.findMany({
@@ -60,7 +66,9 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
     return { ...toRunSummary(run), results: results.map(toResultSummary) };
   }
 
-  async runLiveIntegrationVerification(scope: StaffScope): Promise<PlLiveIntegrationVerificationRunDetailSummary> {
+  async runLiveIntegrationVerification(
+    scope: StaffScope,
+  ): Promise<PlLiveIntegrationVerificationRunDetailSummary> {
     const runKey = `live_${Date.now()}`;
     const [run] = await this.deps.db
       .insert(plLiveIntegrationVerificationRuns)
@@ -123,7 +131,8 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
       }
     }
 
-    const status: PlValidationStatus = failedCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
+    const status: PlValidationStatus =
+      failedCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
     const [updated] = await this.deps.db
       .update(plLiveIntegrationVerificationRuns)
       .set({
@@ -152,7 +161,12 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
           });
           const xero = connections.filter((c) => c.provider?.toLowerCase().includes('xero'));
           if (xero.length === 0) {
-            return { status: 'warning', severity: 'warning', message: 'No Xero connection configured.', recommendation: 'Configure Xero via Universal Connector Platform.' };
+            return {
+              status: 'warning',
+              severity: 'warning',
+              message: 'No Xero connection configured.',
+              recommendation: 'Configure Xero via Universal Connector Platform.',
+            };
           }
           const errors = xero.filter((c) => c.status === 'error');
           return {
@@ -165,7 +179,7 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
       },
       {
         providerKey: 'email',
-        providerName: 'Email (Gmail / Microsoft 365)',
+        providerName: 'Email (SMTP)',
         category: 'email',
         run: async (companyId) => {
           const adapters = await this.deps.db.query.ucProviderAdapters.findMany({
@@ -223,10 +237,16 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
             where: eq(integrationConnections.companyId, companyId),
           });
           const payments = connections.filter((c) =>
-            ['stripe', 'payfast', 'paypal', 'payment'].some((p) => c.provider?.toLowerCase().includes(p)),
+            ['stripe', 'payfast', 'paypal', 'payment'].some((p) =>
+              c.provider?.toLowerCase().includes(p),
+            ),
           );
           return {
-            status: payments.some((c) => c.status === 'connected') ? 'passed' : payments.length > 0 ? 'warning' : 'warning',
+            status: payments.some((c) => c.status === 'connected')
+              ? 'passed'
+              : payments.length > 0
+                ? 'warning'
+                : 'warning',
             severity: 'info',
             message: `${payments.length} payment integration(s) configured.`,
           };
@@ -240,11 +260,16 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
           const connections = await this.deps.db.query.integrationConnections.findMany({
             where: eq(integrationConnections.companyId, companyId),
           });
-          const cartrack = connections.filter((c) => c.provider?.toLowerCase().includes('cartrack'));
+          const cartrack = connections.filter((c) =>
+            c.provider?.toLowerCase().includes('cartrack'),
+          );
           return {
             status: cartrack.some((c) => c.status === 'connected') ? 'passed' : 'warning',
             severity: 'info',
-            message: cartrack.length === 0 ? 'No Cartrack integration configured.' : `${cartrack.length} Cartrack connection(s).`,
+            message:
+              cartrack.length === 0
+                ? 'No Cartrack integration configured.'
+                : `${cartrack.length} Cartrack connection(s).`,
           };
         },
       },
@@ -253,7 +278,8 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
         providerName: 'AI Providers',
         category: 'ai',
         run: async (companyId) => {
-          const hasProviders = await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
+          const hasProviders =
+            await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
           return {
             status: hasProviders ? 'passed' : 'failed',
             severity: hasProviders ? 'info' : 'high',
@@ -266,7 +292,8 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
         providerName: 'Universal Connector Platform',
         category: 'connectors',
         run: async (companyId) => {
-          const monitoring = await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
+          const monitoring =
+            await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
           return {
             status: monitoring.errorServiceCount === 0 ? 'passed' : 'failed',
             severity: monitoring.errorServiceCount === 0 ? 'info' : 'high',
@@ -283,11 +310,16 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
           const adapters = await this.deps.db.query.ucProviderAdapters.findMany({
             where: eq(ucProviderAdapters.companyId, companyId),
           });
-          const storage = adapters.filter((a) => a.providerKey.includes('storage') || a.providerKey.includes('s3'));
+          const storage = adapters.filter(
+            (a) => a.providerKey.includes('storage') || a.providerKey.includes('s3'),
+          );
           return {
             status: storage.length > 0 ? 'passed' : 'warning',
             severity: 'info',
-            message: storage.length > 0 ? `${storage.length} storage adapter(s).` : 'Verify object storage configuration for documents and media.',
+            message:
+              storage.length > 0
+                ? `${storage.length} storage adapter(s).`
+                : 'Verify object storage configuration for documents and media.',
           };
         },
       },
@@ -295,7 +327,9 @@ export class EnterpriseProductionLaunchLiveIntegrationService {
   }
 }
 
-function toRunSummary(row: typeof plLiveIntegrationVerificationRuns.$inferSelect): PlLiveIntegrationVerificationRunSummary {
+function toRunSummary(
+  row: typeof plLiveIntegrationVerificationRuns.$inferSelect,
+): PlLiveIntegrationVerificationRunSummary {
   return {
     id: row.id,
     runKey: row.runKey,
@@ -310,7 +344,9 @@ function toRunSummary(row: typeof plLiveIntegrationVerificationRuns.$inferSelect
   };
 }
 
-function toResultSummary(row: typeof plLiveIntegrationVerificationResults.$inferSelect): PlLiveIntegrationVerificationResultSummary {
+function toResultSummary(
+  row: typeof plLiveIntegrationVerificationResults.$inferSelect,
+): PlLiveIntegrationVerificationResultSummary {
   return {
     id: row.id,
     verificationRunId: row.verificationRunId,

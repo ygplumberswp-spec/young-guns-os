@@ -62,7 +62,9 @@ export function createAnalyticsRouter({
   router.get('/dashboard', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -78,7 +80,9 @@ export function createAnalyticsRouter({
   router.get('/trends', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -94,7 +98,9 @@ export function createAnalyticsRouter({
   router.get('/profitability', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -110,7 +116,9 @@ export function createAnalyticsRouter({
   router.get('/technicians', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -126,7 +134,9 @@ export function createAnalyticsRouter({
   router.get('/customers', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -142,7 +152,9 @@ export function createAnalyticsRouter({
   router.get('/finance', requireRead, async (req, res) => {
     const parsed = rangeQuerySchema.safeParse(req.query);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
       return;
     }
 
@@ -181,7 +193,11 @@ export function createAnalyticsRouter({
     const parsed = generateReportSchema.safeParse(req.body);
     if (!parsed.success) {
       res.status(400).json({
-        error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload', details: parsed.error.flatten() },
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid report payload',
+          details: parsed.error.flatten(),
+        },
       });
       return;
     }

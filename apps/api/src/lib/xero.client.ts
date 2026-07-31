@@ -32,11 +32,25 @@ export type XeroQuoteRecord = {
 export type XeroInvoiceRecord = {
   invoiceId: string;
   invoiceNumber: string | null;
+  contactId: string | null;
+  contactName: string | null;
   status: string | null;
   amountDue: number;
   amountPaid: number;
   total: number;
   currencyCode: string | null;
+  issueDate: string | null;
+  dueDate: string | null;
+  raw: Record<string, unknown>;
+};
+
+export type XeroBankTransactionRecord = {
+  bankTransactionId: string;
+  amount: number;
+  currencyCode: string | null;
+  date: string | null;
+  reference: string | null;
+  description: string | null;
   raw: Record<string, unknown>;
 };
 
@@ -52,19 +66,37 @@ export type XeroPaymentRecord = {
 type XeroClientOptions = {
   tenantId: string;
   getAccessToken: () => Promise<string>;
+  /** Per-request timeout for Xero HTTP calls. Default 20s. */
+  requestTimeoutMs?: number;
 };
 
 const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
+export const XERO_REQUEST_TIMEOUT_MS = 20_000;
+
+function timeoutSignal(timeoutMs: number): AbortSignal {
+  if (typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(timeoutMs);
+  }
+
+  const controller = new AbortController();
+  setTimeout(
+    () => controller.abort(new DOMException('Xero request timed out', 'TimeoutError')),
+    timeoutMs,
+  );
+  return controller.signal;
+}
 
 export class XeroClient {
   private readonly tenantId: string;
   private readonly getAccessToken: () => Promise<string>;
+  private readonly requestTimeoutMs: number;
   private cachedAccessToken: string | null = null;
   private cachedSalesAccountCode: string | null = null;
 
-  constructor({ tenantId, getAccessToken }: XeroClientOptions) {
+  constructor({ tenantId, getAccessToken, requestTimeoutMs }: XeroClientOptions) {
     this.tenantId = tenantId.trim();
     this.getAccessToken = getAccessToken;
+    this.requestTimeoutMs = requestTimeoutMs ?? XERO_REQUEST_TIMEOUT_MS;
   }
 
   async testConnection(): Promise<XeroOrganisationRecord> {
@@ -106,9 +138,7 @@ export class XeroClient {
         {
           Name: input.name,
           EmailAddress: input.email ?? undefined,
-          Phones: input.phone
-            ? [{ PhoneType: 'DEFAULT', PhoneNumber: input.phone }]
-            : undefined,
+          Phones: input.phone ? [{ PhoneType: 'DEFAULT', PhoneNumber: input.phone }] : undefined,
         },
       ],
     });
@@ -136,9 +166,7 @@ export class XeroClient {
           ContactID: contactId,
           Name: input.name,
           EmailAddress: input.email ?? undefined,
-          Phones: input.phone
-            ? [{ PhoneType: 'DEFAULT', PhoneNumber: input.phone }]
-            : undefined,
+          Phones: input.phone ? [{ PhoneType: 'DEFAULT', PhoneNumber: input.phone }] : undefined,
         },
       ],
     });
@@ -250,6 +278,41 @@ export class XeroClient {
     return extractPayments(payload);
   }
 
+  async listContacts(): Promise<XeroContactRecord[]> {
+    const contacts: XeroContactRecord[] = [];
+    let page = 1;
+
+    while (page <= 50) {
+      const payload = await this.apiRequest('GET', `/Contacts?page=${page}`);
+      const batch = extractContacts(payload);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      contacts.push(...batch);
+
+      if (batch.length < 100) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return contacts;
+  }
+
+  async listInvoices(): Promise<XeroInvoiceRecord[]> {
+    const where = encodeURIComponent('Type=="ACCREC"');
+    const payload = await this.apiRequest('GET', `/Invoices?where=${where}`);
+    return extractInvoices(payload);
+  }
+
+  async listBankTransactions(): Promise<XeroBankTransactionRecord[]> {
+    const payload = await this.apiRequest('GET', '/BankTransactions');
+    return extractBankTransactions(payload);
+  }
+
   private async getDefaultSalesAccountCode(): Promise<string> {
     if (this.cachedSalesAccountCode) {
       return this.cachedSalesAccountCode;
@@ -288,8 +351,21 @@ export class XeroClient {
           'xero-tenant-id': this.tenantId,
         },
         body: body ? JSON.stringify(body) : undefined,
+        signal: timeoutSignal(this.requestTimeoutMs),
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        (error.name === 'TimeoutError' ||
+          error.name === 'AbortError' ||
+          /timed out/i.test(error.message))
+      ) {
+        throw new XeroError(
+          'TIMEOUT',
+          `Xero request timed out after ${this.requestTimeoutMs}ms (${method} ${path.split('?')[0]})`,
+        );
+      }
+
       throw new XeroError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Xero API',
@@ -334,7 +410,11 @@ function extractOrganisations(payload: unknown): XeroOrganisationRecord[] {
       }
 
       const organisation = row as Record<string, unknown>;
-      const organisationId = pickString(organisation, ['OrganisationID', 'organisationID', 'organisationId']);
+      const organisationId = pickString(organisation, [
+        'OrganisationID',
+        'organisationID',
+        'organisationId',
+      ]);
       const name = pickString(organisation, ['Name', 'name']);
 
       if (!organisationId || !name) {
@@ -435,18 +515,65 @@ function extractInvoices(payload: unknown): XeroInvoiceRecord[] {
         return null;
       }
 
+      const contact =
+        invoice.Contact && typeof invoice.Contact === 'object'
+          ? (invoice.Contact as Record<string, unknown>)
+          : null;
+
       return {
         invoiceId,
         invoiceNumber: pickString(invoice, ['InvoiceNumber', 'invoiceNumber']),
+        contactId: contact ? pickString(contact, ['ContactID', 'contactID', 'contactId']) : null,
+        contactName: contact ? pickString(contact, ['Name', 'name']) : null,
         status: pickString(invoice, ['Status', 'status']),
         amountDue: pickNumber(invoice, ['AmountDue', 'amountDue']) ?? 0,
         amountPaid: pickNumber(invoice, ['AmountPaid', 'amountPaid']) ?? 0,
         total: pickNumber(invoice, ['Total', 'total']) ?? 0,
         currencyCode: pickString(invoice, ['CurrencyCode', 'currencyCode']),
+        issueDate: pickString(invoice, ['Date', 'date']),
+        dueDate: pickString(invoice, ['DueDate', 'dueDate']),
         raw: invoice,
       } satisfies XeroInvoiceRecord;
     })
     .filter((row): row is XeroInvoiceRecord => row !== null);
+}
+
+function extractBankTransactions(payload: unknown): XeroBankTransactionRecord[] {
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const record = payload as Record<string, unknown>;
+  const rows = Array.isArray(record.BankTransactions) ? record.BankTransactions : [];
+
+  return rows
+    .map((row) => {
+      if (!row || typeof row !== 'object') {
+        return null;
+      }
+
+      const transaction = row as Record<string, unknown>;
+      const bankTransactionId = pickString(transaction, [
+        'BankTransactionID',
+        'bankTransactionID',
+        'bankTransactionId',
+      ]);
+
+      if (!bankTransactionId) {
+        return null;
+      }
+
+      return {
+        bankTransactionId,
+        amount: pickNumber(transaction, ['Total', 'total']) ?? 0,
+        currencyCode: pickString(transaction, ['CurrencyCode', 'currencyCode']),
+        date: pickString(transaction, ['Date', 'date']),
+        reference: pickString(transaction, ['Reference', 'reference']),
+        description: pickString(transaction, ['Reference', 'reference']),
+        raw: transaction,
+      } satisfies XeroBankTransactionRecord;
+    })
+    .filter((row): row is XeroBankTransactionRecord => row !== null);
 }
 
 function extractPayments(payload: unknown): XeroPaymentRecord[] {
@@ -470,9 +597,10 @@ function extractPayments(payload: unknown): XeroPaymentRecord[] {
         return null;
       }
 
-      const invoice = payment.Invoice && typeof payment.Invoice === 'object'
-        ? (payment.Invoice as Record<string, unknown>)
-        : null;
+      const invoice =
+        payment.Invoice && typeof payment.Invoice === 'object'
+          ? (payment.Invoice as Record<string, unknown>)
+          : null;
 
       return {
         paymentId,

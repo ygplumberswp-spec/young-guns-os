@@ -6,7 +6,14 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
-const callTypeSchema = z.enum(['inbound', 'outbound', 'missed', 'transferred', 'voicemail', 'callback']);
+const callTypeSchema = z.enum([
+  'inbound',
+  'outbound',
+  'missed',
+  'transferred',
+  'voicemail',
+  'callback',
+]);
 const callOutcomeSchema = z.enum([
   'answered',
   'missed',
@@ -17,7 +24,15 @@ const callOutcomeSchema = z.enum([
   'callback_requested',
 ]);
 const sentimentSchema = z.enum(['positive', 'neutral', 'negative', 'mixed']);
-const channelSchema = z.enum(['phone', 'whatsapp', 'email', 'sms', 'portal', 'support', 'internal']);
+const channelSchema = z.enum([
+  'phone',
+  'whatsapp',
+  'email',
+  'sms',
+  'portal',
+  'support',
+  'internal',
+]);
 const sourceTypeSchema = z.enum([
   'voice_session',
   'whatsapp_message',
@@ -151,7 +166,9 @@ export function createCommunicationsIntelligenceRouter({
   router.get('/timeline', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const customerId = typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
-    const timeline = await communicationsIntelligenceService.buildTimeline(companyId, { customerId });
+    const timeline = await communicationsIntelligenceService.buildTimeline(companyId, {
+      customerId,
+    });
     res.json({ data: { timeline } });
   });
 
@@ -164,11 +181,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/calls/intelligence', requireWrite, async (req, res) => {
     const parsed = callIntelligenceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid call intelligence payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid call intelligence payload' },
+      });
       return;
     }
     try {
-      const call = await communicationsIntelligenceService.createCallIntelligence(getAuth(req), parsed.data);
+      const call = await communicationsIntelligenceService.createCallIntelligence(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { call } });
     } catch (error) {
       handleError(res, error);
@@ -184,11 +206,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/recordings', requireWrite, async (req, res) => {
     const parsed = recordingSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid recording payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid recording payload' } });
       return;
     }
     try {
-      const recording = await communicationsIntelligenceService.createRecording(getAuth(req), parsed.data);
+      const recording = await communicationsIntelligenceService.createRecording(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { recording } });
     } catch (error) {
       handleError(res, error);
@@ -203,8 +230,12 @@ export function createCommunicationsIntelligenceRouter({
 
   router.get('/insights/:sourceType/:sourceId', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const sourceType = Array.isArray(req.params.sourceType) ? req.params.sourceType[0] : req.params.sourceType;
-    const sourceId = Array.isArray(req.params.sourceId) ? req.params.sourceId[0] : req.params.sourceId;
+    const sourceType = Array.isArray(req.params.sourceType)
+      ? req.params.sourceType[0]
+      : req.params.sourceType;
+    const sourceId = Array.isArray(req.params.sourceId)
+      ? req.params.sourceId[0]
+      : req.params.sourceId;
     const insight = await communicationsIntelligenceService.getConversationSummary(
       companyId,
       sourceType,
@@ -216,11 +247,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/insights', requireWrite, async (req, res) => {
     const parsed = insightSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insight payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid insight payload' } });
       return;
     }
     try {
-      const insight = await communicationsIntelligenceService.createConversationInsight(getAuth(req), parsed.data);
+      const insight = await communicationsIntelligenceService.createConversationInsight(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { insight } });
     } catch (error) {
       handleError(res, error);
@@ -236,11 +272,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/email-threads', requireWrite, async (req, res) => {
     const parsed = emailThreadSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid email thread payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid email thread payload' } });
       return;
     }
     try {
-      const thread = await communicationsIntelligenceService.createEmailThread(getAuth(req), parsed.data);
+      const thread = await communicationsIntelligenceService.createEmailThread(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { thread } });
     } catch (error) {
       handleError(res, error);
@@ -256,11 +297,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/sms', requireWrite, async (req, res) => {
     const parsed = smsRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid SMS record payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid SMS record payload' } });
       return;
     }
     try {
-      const record = await communicationsIntelligenceService.createSmsRecord(getAuth(req), parsed.data);
+      const record = await communicationsIntelligenceService.createSmsRecord(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(res, error);
@@ -277,11 +323,16 @@ export function createCommunicationsIntelligenceRouter({
   router.post('/drafts', requireWrite, async (req, res) => {
     const parsed = draftActionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid draft payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid draft payload' } });
       return;
     }
     try {
-      const draft = await communicationsIntelligenceService.createDraftAction(getAuth(req), parsed.data);
+      const draft = await communicationsIntelligenceService.createDraftAction(
+        getAuth(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { draft } });
     } catch (error) {
       handleError(res, error);
@@ -290,7 +341,8 @@ export function createCommunicationsIntelligenceRouter({
 
   router.get('/aura/context', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const context = await communicationsIntelligenceService.buildCommunicationsIntelligenceAuraContext(companyId);
+    const context =
+      await communicationsIntelligenceService.buildCommunicationsIntelligenceAuraContext(companyId);
     res.json({ data: { context } });
   });
 
@@ -299,8 +351,7 @@ export function createCommunicationsIntelligenceRouter({
 
 function handleError(res: import('express').Response, error: unknown) {
   if (error instanceof CommunicationsIntelligenceError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }

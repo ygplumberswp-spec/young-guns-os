@@ -48,7 +48,9 @@ export async function fetchCustomerPortalAccess(
   accessToken: string,
   customerId: string,
 ): Promise<CustomerPortalAccessSummary> {
-  return request<CustomerPortalAccessSummary>(`/portal/customers/${customerId}/access`, { accessToken });
+  return request<CustomerPortalAccessSummary>(`/portal/customers/${customerId}/access`, {
+    accessToken,
+  });
 }
 
 export async function createCustomerPortalInvite(
@@ -78,9 +80,12 @@ export async function revokePortalUserAccess(
   accessToken: string,
   portalUserId: string,
 ): Promise<PortalUserDetail> {
-  const data = await request<{ user: PortalUserDetail }>(`/portal/users/${portalUserId}/revoke-access`, {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ user: PortalUserDetail }>(
+    `/portal/users/${portalUserId}/revoke-access`,
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.user;
 }

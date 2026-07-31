@@ -110,7 +110,10 @@ export class BusinessIntegrationsService {
     const tenantId = connection.config.tenantId;
 
     if (!tenantId) {
-      throw new BusinessIntegrationsError('CONFIG_ERROR', 'Xero tenant ID is missing from connection config');
+      throw new BusinessIntegrationsError(
+        'CONFIG_ERROR',
+        'Xero tenant ID is missing from connection config',
+      );
     }
 
     if (!this.xeroOAuthService) {
@@ -222,7 +225,10 @@ export class BusinessIntegrationsService {
     }
 
     if (!Number.isInteger(port) || port < 1 || port > 65535) {
-      throw new BusinessIntegrationsError('VALIDATION_ERROR', 'SMTP port must be between 1 and 65535');
+      throw new BusinessIntegrationsError(
+        'VALIDATION_ERROR',
+        'SMTP port must be between 1 and 65535',
+      );
     }
 
     const connection = await this.getOrCreateConnection(companyId, 'email');
@@ -245,7 +251,10 @@ export class BusinessIntegrationsService {
         .update(integrationConnections)
         .set({
           status: 'connected',
-          credentialsEncrypted: encryptEmailCredentials({ username, password }, this.encryptionKey!),
+          credentialsEncrypted: encryptEmailCredentials(
+            { username, password },
+            this.encryptionKey!,
+          ),
           config: { host, port, secure, fromEmail, fromName: fromName ?? undefined },
           connectedAt: new Date(),
           lastError: null,
@@ -284,7 +293,10 @@ export class BusinessIntegrationsService {
       jobType: 'manual',
     });
 
-    const credentials = decryptEmailCredentials(connection.credentialsEncrypted!, this.encryptionKey!);
+    const credentials = decryptEmailCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
     const host = connection.config.host;
     const port = connection.config.port;
     const secure = connection.config.secure ?? false;
@@ -447,7 +459,10 @@ export class BusinessIntegrationsService {
       jobType: 'manual',
     });
 
-    const credentials = decryptYocoCredentials(connection.credentialsEncrypted!, this.encryptionKey!);
+    const credentials = decryptYocoCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
     const environment = connection.config.environment ?? 'test';
 
     try {

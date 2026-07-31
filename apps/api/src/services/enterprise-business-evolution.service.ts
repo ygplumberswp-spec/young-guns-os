@@ -90,7 +90,10 @@ import type { LeadsService } from './leads.service.js';
 import type { MarketingService } from './marketing.service.js';
 
 export class EnterpriseBusinessEvolutionError extends Error {
-  constructor(public readonly code: string, message: string) {
+  constructor(
+    public readonly code: string,
+    message: string,
+  ) {
     super(message);
     this.name = 'EnterpriseBusinessEvolutionError';
   }
@@ -123,9 +126,12 @@ type CreateBevPatternRequest = {
 };
 
 type UpdateBevPatternRequest = Partial<CreateBevPatternRequest> & { learningStage?: string };
-type UpdateBevObservationRequest = Partial<CreateBevObservationRequest> & { learningStage?: string };
+type UpdateBevObservationRequest = Partial<CreateBevObservationRequest> & {
+  learningStage?: string;
+};
 type UpdateBevOutcomeRequest = Partial<CreateBevOutcomeRequest> & { learningStage?: string };
-type UpdateBevContinuousImprovementItemRequest = Partial<CreateBevContinuousImprovementItemRequest> & { workflowStatus?: string };
+type UpdateBevContinuousImprovementItemRequest =
+  Partial<CreateBevContinuousImprovementItemRequest> & { workflowStatus?: string };
 type CreateBevStrategicRoadmapItemRequest = {
   themeKey: string;
   title: string;
@@ -167,7 +173,9 @@ type CreateBevAgentImprovementRequest = {
   performanceAfter?: Record<string, unknown>;
   rollbackVersionLabel?: string;
 };
-type UpdateBevAgentImprovementRequest = Partial<CreateBevAgentImprovementRequest> & { workflowStatus?: string };
+type UpdateBevAgentImprovementRequest = Partial<CreateBevAgentImprovementRequest> & {
+  workflowStatus?: string;
+};
 type CreateBevPromptPolicyVersionRequest = {
   policyType: string;
   policyKey: string;
@@ -179,7 +187,9 @@ type CreateBevPromptPolicyVersionRequest = {
   performanceBefore?: Record<string, unknown>;
   performanceAfter?: Record<string, unknown>;
 };
-type UpdateBevPromptPolicyVersionRequest = Partial<CreateBevPromptPolicyVersionRequest> & { workflowStatus?: string };
+type UpdateBevPromptPolicyVersionRequest = Partial<CreateBevPromptPolicyVersionRequest> & {
+  workflowStatus?: string;
+};
 type CreateBevAiEvaluationRequest = {
   evaluationKey: string;
   evaluationType: string;
@@ -188,7 +198,9 @@ type CreateBevAiEvaluationRequest = {
   summary?: string;
   evaluatedAt?: string;
 };
-type UpdateBevAiEvaluationRequest = Partial<CreateBevAiEvaluationRequest> & { workflowStatus?: string };
+type UpdateBevAiEvaluationRequest = Partial<CreateBevAiEvaluationRequest> & {
+  workflowStatus?: string;
+};
 type CreateBevKnowledgeReinforcementRequest = {
   lessonTitle: string;
   lessonContent: string;
@@ -254,7 +266,8 @@ export class EnterpriseBusinessEvolutionService {
   constructor(private readonly deps: BusinessEvolutionDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseBusinessEvolutionDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       legacyEvolution,
@@ -293,7 +306,8 @@ export class EnterpriseBusinessEvolutionService {
     const activeExperimentCount = experiments.filter((e) =>
       ['approved', 'scheduled', 'active'].includes(e.workflowStatus),
     ).length;
-    const overallLearningConfidence = analytics?.overallLearningConfidence ?? computeLearningConfidence(patterns);
+    const overallLearningConfidence =
+      analytics?.overallLearningConfidence ?? computeLearningConfidence(patterns);
 
     return {
       summary: `${observations.length} observation(s), ${patterns.length} pattern(s), ${openRecommendationCount} open recommendation(s), ${alerts.length} open alert(s).`,
@@ -323,15 +337,28 @@ export class EnterpriseBusinessEvolutionService {
   }
 
   async getEvolutionMonitoring(companyId: string): Promise<BevEvolutionMonitoringSummary> {
-    const [alerts, experiments, recommendations, lessons, missionControl, automationMonitoring, knowledgeContext, workforceDashboard, cxDashboard, serviceDeliveryDashboard, aiQuality] =
-      await Promise.all([
+    const [
+      alerts,
+      experiments,
+      recommendations,
+      lessons,
+      missionControl,
+      automationMonitoring,
+      knowledgeContext,
+      workforceDashboard,
+      cxDashboard,
+      serviceDeliveryDashboard,
+      aiQuality,
+    ] = await Promise.all([
       this.listEvolutionAlerts(companyId, { status: 'open' }),
       this.listExperiments(companyId),
       this.listRecommendations(companyId),
       this.listKnowledgeReinforcements(companyId),
       this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId),
       this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
-      this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId).catch(() => null),
+      this.deps.enterpriseKnowledgeGraphService
+        .buildKnowledgeGraphAuraContext(companyId)
+        .catch(() => null),
       this.deps.enterpriseWorkforceIntelligenceService.getDashboard(companyId).catch(() => null),
       this.deps.enterpriseCustomerExperienceService.getDashboard(companyId).catch(() => null),
       this.deps.enterpriseServiceDeliveryService.getDashboard(companyId).catch(() => null),
@@ -339,20 +366,28 @@ export class EnterpriseBusinessEvolutionService {
     ]);
 
     const activeExperimentCount = experiments.filter((e) => e.workflowStatus === 'active').length;
-    const pendingRecommendationCount = recommendations.filter((r) => r.workflowStatus === 'created').length;
+    const pendingRecommendationCount = recommendations.filter(
+      (r) => r.workflowStatus === 'created',
+    ).length;
     const validatedLessonCount = lessons.filter((l) => l.learningStage === 'validated').length;
     const alertsList: string[] = [];
     if (alerts.length > 0) alertsList.push(`${alerts.length} open evolution alert(s)`);
     if (activeExperimentCount > 0) alertsList.push(`${activeExperimentCount} active experiment(s)`);
-    if (pendingRecommendationCount > 0) alertsList.push(`${pendingRecommendationCount} pending recommendation(s)`);
-    if (missionControl.criticalAlertCount > 0) alertsList.push(`${missionControl.criticalAlertCount} critical mission control alert(s)`);
-    if (automationMonitoring.failedCount > 0) alertsList.push(`${automationMonitoring.failedCount} failed workflow run(s)`);
-    if (knowledgeContext && knowledgeContext.entityCount > 0) alertsList.push(`${knowledgeContext.entityCount} knowledge graph entit(ies)`);
+    if (pendingRecommendationCount > 0)
+      alertsList.push(`${pendingRecommendationCount} pending recommendation(s)`);
+    if (missionControl.criticalAlertCount > 0)
+      alertsList.push(`${missionControl.criticalAlertCount} critical mission control alert(s)`);
+    if (automationMonitoring.failedCount > 0)
+      alertsList.push(`${automationMonitoring.failedCount} failed workflow run(s)`);
+    if (knowledgeContext && knowledgeContext.entityCount > 0)
+      alertsList.push(`${knowledgeContext.entityCount} knowledge graph entit(ies)`);
     if (workforceDashboard && workforceDashboard.pendingLeaveCount > 0) {
       alertsList.push(`${workforceDashboard.pendingLeaveCount} pending leave application(s)`);
     }
     if (cxDashboard && cxDashboard.pendingApprovalBookingCount > 0) {
-      alertsList.push(`${cxDashboard.pendingApprovalBookingCount} pending customer booking approval(s)`);
+      alertsList.push(
+        `${cxDashboard.pendingApprovalBookingCount} pending customer booking approval(s)`,
+      );
     }
     if (serviceDeliveryDashboard && serviceDeliveryDashboard.openCallbackCount > 0) {
       alertsList.push(`${serviceDeliveryDashboard.openCallbackCount} open service callback(s)`);
@@ -374,21 +409,27 @@ export class EnterpriseBusinessEvolutionService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateBevPlatformConfigRequest): Promise<BevPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateBevPlatformConfigRequest,
+  ): Promise<BevPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(bevPlatformConfig)
       .set({
         learningGovernance: input.learningGovernance ?? existing.learningGovernance,
-        experimentSafetyDefaults: input.experimentSafetyDefaults ?? existing.experimentSafetyDefaults,
+        experimentSafetyDefaults:
+          input.experimentSafetyDefaults ?? existing.experimentSafetyDefaults,
         evaluationTemplates: input.evaluationTemplates ?? existing.evaluationTemplates,
         aggregationThresholds: input.aggregationThresholds ?? existing.aggregationThresholds,
         crossTenantPrivacyRules: input.crossTenantPrivacyRules ?? existing.crossTenantPrivacyRules,
-        agentImprovementStandards: input.agentImprovementStandards ?? existing.agentImprovementStandards,
+        agentImprovementStandards:
+          input.agentImprovementStandards ?? existing.agentImprovementStandards,
         autonomousAllowlist: input.autonomousAllowlist ?? existing.autonomousAllowlist,
         rollbackRequirements: input.rollbackRequirements ?? existing.rollbackRequirements,
         auditRetentionDays: input.auditRetentionDays ?? existing.auditRetentionDays,
-        recommendationThresholds: input.recommendationThresholds ?? existing.recommendationThresholds,
+        recommendationThresholds:
+          input.recommendationThresholds ?? existing.recommendationThresholds,
         learningScope: input.learningScope ?? existing.learningScope,
         dataSources: input.dataSources ?? existing.dataSources,
         updatedAt: new Date(),
@@ -402,34 +443,41 @@ export class EnterpriseBusinessEvolutionService {
   async syncObservations(scope: StaffScope): Promise<BevObservationSummary[]> {
     const companyId = scope.companyId;
     const syncedAt = new Date().toISOString();
-    const [completedJobs, failedWorkflows, agentTaskRows, openIncidents, learningEvents, existing] = await Promise.all([
-      this.deps.db.query.jobs.findMany({
-        where: and(eq(jobs.companyId, companyId), eq(jobs.status, 'completed')),
-        orderBy: [desc(jobs.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.workflowRuns.findMany({
-        where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'failed')),
-        orderBy: [desc(workflowRuns.completedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.agentTasks.findMany({
-        where: and(eq(agentTasks.companyId, companyId), inArray(agentTasks.status, ['executed', 'rejected'])),
-        orderBy: [desc(agentTasks.updatedAt)],
-        limit: 30,
-      }),
-      this.deps.db.query.itoIncidents.findMany({
-        where: and(eq(itoIncidents.companyId, companyId), inArray(itoIncidents.status, ['open', 'investigating'])),
-        orderBy: [desc(itoIncidents.createdAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.evolutionLearningEvents.findMany({
-        where: eq(evolutionLearningEvents.companyId, companyId),
-        orderBy: [desc(evolutionLearningEvents.createdAt)],
-        limit: 20,
-      }),
-      this.listObservations(companyId),
-    ]);
+    const [completedJobs, failedWorkflows, agentTaskRows, openIncidents, learningEvents, existing] =
+      await Promise.all([
+        this.deps.db.query.jobs.findMany({
+          where: and(eq(jobs.companyId, companyId), eq(jobs.status, 'completed')),
+          orderBy: [desc(jobs.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.workflowRuns.findMany({
+          where: and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'failed')),
+          orderBy: [desc(workflowRuns.completedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.agentTasks.findMany({
+          where: and(
+            eq(agentTasks.companyId, companyId),
+            inArray(agentTasks.status, ['executed', 'rejected']),
+          ),
+          orderBy: [desc(agentTasks.updatedAt)],
+          limit: 30,
+        }),
+        this.deps.db.query.itoIncidents.findMany({
+          where: and(
+            eq(itoIncidents.companyId, companyId),
+            inArray(itoIncidents.status, ['open', 'investigating']),
+          ),
+          orderBy: [desc(itoIncidents.createdAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.evolutionLearningEvents.findMany({
+          where: eq(evolutionLearningEvents.companyId, companyId),
+          orderBy: [desc(evolutionLearningEvents.createdAt)],
+          limit: 20,
+        }),
+        this.listObservations(companyId),
+      ]);
 
     for (const job of completedJobs) {
       const observationKey = `job:completed:${job.id}`;
@@ -469,12 +517,18 @@ export class EnterpriseBusinessEvolutionService {
         await this.createObservation(scope, {
           observationKey,
           sourceModule: 'agents',
-          observationType: task.status === 'executed' ? 'agent_task_executed' : 'agent_task_rejected',
+          observationType:
+            task.status === 'executed' ? 'agent_task_executed' : 'agent_task_rejected',
           title: `${task.status === 'executed' ? 'Executed' : 'Rejected'} agent task: ${task.taskType}`,
           description: task.preview.slice(0, 500),
           sourceEntityType: 'agent_task',
           sourceEntityId: task.id,
-          evidence: { agentKey: task.agentKey, taskType: task.taskType, status: task.status, syncedAt },
+          evidence: {
+            agentKey: task.agentKey,
+            taskType: task.taskType,
+            status: task.status,
+            syncedAt,
+          },
         });
       }
     }
@@ -522,16 +576,23 @@ export class EnterpriseBusinessEvolutionService {
 
   async detectPatterns(scope: StaffScope): Promise<BevPatternSummary[]> {
     const companyId = scope.companyId;
-    const [observations, jobsStats, leadsStats, marketingStats, financeStats, automationMonitoring, twinDashboard] =
-      await Promise.all([
-        this.listObservations(companyId),
-        this.deps.jobsService.getStats(companyId),
-        this.deps.leadsService.getStats(companyId),
-        this.deps.marketingService.getStats(companyId),
-        this.deps.financeService.getStats(companyId),
-        this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
-        this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(companyId),
-      ]);
+    const [
+      observations,
+      jobsStats,
+      leadsStats,
+      marketingStats,
+      financeStats,
+      automationMonitoring,
+      twinDashboard,
+    ] = await Promise.all([
+      this.listObservations(companyId),
+      this.deps.jobsService.getStats(companyId),
+      this.deps.leadsService.getStats(companyId),
+      this.deps.marketingService.getStats(companyId),
+      this.deps.financeService.getStats(companyId),
+      this.deps.enterpriseAutomationStudioService.getMonitoringSummary(companyId),
+      this.deps.enterpriseDigitalTwinService.getExecutiveDashboard(companyId),
+    ]);
 
     const existing = await this.listPatterns(companyId);
     const created: BevPatternSummary[] = [];
@@ -564,7 +625,9 @@ export class EnterpriseBusinessEvolutionService {
       }
     }
 
-    const rejectedAgentObs = observations.filter((o) => o.observationType === 'agent_task_rejected');
+    const rejectedAgentObs = observations.filter(
+      (o) => o.observationType === 'agent_task_rejected',
+    );
     if (rejectedAgentObs.length >= 2) {
       const patternKey = 'agent_correction_cluster';
       if (!existing.some((p) => p.patternKey === patternKey)) {
@@ -587,7 +650,11 @@ export class EnterpriseBusinessEvolutionService {
       }
     }
 
-    if (jobsStats.activeCount > 0 && jobsStats.totalCount > 0 && jobsStats.activeCount / jobsStats.totalCount > 0.6) {
+    if (
+      jobsStats.activeCount > 0 &&
+      jobsStats.totalCount > 0 &&
+      jobsStats.activeCount / jobsStats.totalCount > 0.6
+    ) {
       const patternKey = 'job_completion_backlog';
       if (!existing.some((p) => p.patternKey === patternKey)) {
         created.push(
@@ -605,7 +672,10 @@ export class EnterpriseBusinessEvolutionService {
       }
     }
 
-    if (leadsStats.activeLeadCount > 5 && leadsStats.convertedLeadCount < leadsStats.activeLeadCount) {
+    if (
+      leadsStats.activeLeadCount > 5 &&
+      leadsStats.convertedLeadCount < leadsStats.activeLeadCount
+    ) {
       const patternKey = 'lead_conversion_gap';
       if (!existing.some((p) => p.patternKey === patternKey)) {
         created.push(
@@ -653,7 +723,10 @@ export class EnterpriseBusinessEvolutionService {
             frequency: automationMonitoring.failedCount,
             businessImpact: 'Process reliability degradation',
             affectedModules: { modules: ['automation'] },
-            evidence: { automationMonitoring: automationMonitoring as unknown as Record<string, unknown>, syncedAt },
+            evidence: {
+              automationMonitoring: automationMonitoring as unknown as Record<string, unknown>,
+              syncedAt,
+            },
           }),
         );
       }
@@ -671,36 +744,51 @@ export class EnterpriseBusinessEvolutionService {
             frequency: 1,
             businessImpact: 'Cross-domain business risk elevation',
             affectedModules: { modules: ['digital_twin'] },
-            evidence: { riskIndicators: twinDashboard.riskIndicators as unknown as Record<string, unknown>, syncedAt },
+            evidence: {
+              riskIndicators: twinDashboard.riskIndicators as unknown as Record<string, unknown>,
+              syncedAt,
+            },
           }),
         );
       }
     }
 
-    await this.recordAudit(scope, 'patterns_detected', undefined, undefined, { createdCount: created.length });
+    await this.recordAudit(scope, 'patterns_detected', undefined, undefined, {
+      createdCount: created.length,
+    });
     return [...existing, ...created];
   }
 
   async syncEvolutionAlerts(scope: StaffScope): Promise<BevEvolutionAlertSummary[]> {
     const companyId = scope.companyId;
-    const [failedExperiments, rejectedRecommendations, negativeOutcomes, existingOpen] = await Promise.all([
-      this.deps.db.query.bevExperiments.findMany({
-        where: and(eq(bevExperiments.companyId, companyId), eq(bevExperiments.workflowStatus, 'rejected')),
-        orderBy: [desc(bevExperiments.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.bevRecommendations.findMany({
-        where: and(eq(bevRecommendations.companyId, companyId), eq(bevRecommendations.workflowStatus, 'rejected')),
-        orderBy: [desc(bevRecommendations.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.bevOutcomes.findMany({
-        where: and(eq(bevOutcomes.companyId, companyId), sql`${bevOutcomes.financialImpactCents} < 0`),
-        orderBy: [desc(bevOutcomes.measuredAt)],
-        limit: 20,
-      }),
-      this.listEvolutionAlerts(companyId, { status: 'open' }),
-    ]);
+    const [failedExperiments, rejectedRecommendations, negativeOutcomes, existingOpen] =
+      await Promise.all([
+        this.deps.db.query.bevExperiments.findMany({
+          where: and(
+            eq(bevExperiments.companyId, companyId),
+            eq(bevExperiments.workflowStatus, 'rejected'),
+          ),
+          orderBy: [desc(bevExperiments.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.bevRecommendations.findMany({
+          where: and(
+            eq(bevRecommendations.companyId, companyId),
+            eq(bevRecommendations.workflowStatus, 'rejected'),
+          ),
+          orderBy: [desc(bevRecommendations.updatedAt)],
+          limit: 20,
+        }),
+        this.deps.db.query.bevOutcomes.findMany({
+          where: and(
+            eq(bevOutcomes.companyId, companyId),
+            sql`${bevOutcomes.financialImpactCents} < 0`,
+          ),
+          orderBy: [desc(bevOutcomes.measuredAt)],
+          limit: 20,
+        }),
+        this.listEvolutionAlerts(companyId, { status: 'open' }),
+      ]);
 
     for (const experiment of failedExperiments) {
       const alertType = `failed_experiment:${experiment.id}`;
@@ -729,7 +817,10 @@ export class EnterpriseBusinessEvolutionService {
           title: `Rejected recommendation: ${recommendation.title}`,
           description: recommendation.description,
           sourceModule: 'business_evolution',
-          context: { recommendationId: recommendation.id, workflowStatus: recommendation.workflowStatus },
+          context: {
+            recommendationId: recommendation.id,
+            workflowStatus: recommendation.workflowStatus,
+          },
         });
       }
     }
@@ -761,7 +852,9 @@ export class EnterpriseBusinessEvolutionService {
 
   async captureAnalytics(scope: StaffScope): Promise<BevAnalyticsSummary> {
     const dashboard = await this.getDashboard(scope.companyId);
-    const analyticsDashboard = await this.deps.analyticsService.getDashboard(scope.companyId).catch(() => null);
+    const analyticsDashboard = await this.deps.analyticsService
+      .getDashboard(scope.companyId)
+      .catch(() => null);
     const [created] = await this.deps.db
       .insert(bevAnalyticsSnapshots)
       .values({
@@ -807,7 +900,9 @@ export class EnterpriseBusinessEvolutionService {
       const total = agentTasksForKey.length;
       const executed = agentTasksForKey.filter((t) => t.status === 'executed').length;
       const rejected = agentTasksForKey.filter((t) => t.status === 'rejected').length;
-      const approved = agentTasksForKey.filter((t) => t.status === 'approved' || t.status === 'executed').length;
+      const approved = agentTasksForKey.filter(
+        (t) => t.status === 'approved' || t.status === 'executed',
+      ).length;
       const [created] = await this.deps.db
         .insert(bevAgentPerformanceSnapshots)
         .values({
@@ -827,11 +922,15 @@ export class EnterpriseBusinessEvolutionService {
       snapshots.push(toAgentPerformanceSnapshotSummary(created!));
     }
 
-    await this.recordAudit(scope, 'agent_performance_captured', undefined, undefined, { agentCount: snapshots.length });
+    await this.recordAudit(scope, 'agent_performance_captured', undefined, undefined, {
+      agentCount: snapshots.length,
+    });
     return snapshots;
   }
 
-  async listAgentPerformanceSnapshots(companyId: string): Promise<BevAgentPerformanceSnapshotSummary[]> {
+  async listAgentPerformanceSnapshots(
+    companyId: string,
+  ): Promise<BevAgentPerformanceSnapshotSummary[]> {
     const rows = await this.deps.db.query.bevAgentPerformanceSnapshots.findMany({
       where: eq(bevAgentPerformanceSnapshots.companyId, companyId),
       orderBy: [desc(bevAgentPerformanceSnapshots.capturedAt)],
@@ -874,21 +973,28 @@ export class EnterpriseBusinessEvolutionService {
         })),
       };
       const failedSteps = steps.filter((s) => s.status === 'failed');
-      const reworkLoops = steps.filter((s) => s.status === 'skipped' || s.status === 'awaiting_approval');
+      const reworkLoops = steps.filter(
+        (s) => s.status === 'skipped' || s.status === 'awaiting_approval',
+      );
 
       const row = await this.createProcessMiningResult(scope, {
         processKey,
         title: `Process path: ${run.triggerEvent}`,
         actualPath,
         expectedPath: { workflowId: run.workflowId, stepCount: steps.length },
-        bottlenecks: { failedStepCount: failedSteps.length, failedSteps: failedSteps.map((s) => s.id) },
+        bottlenecks: {
+          failedStepCount: failedSteps.length,
+          failedSteps: failedSteps.map((s) => s.id),
+        },
         reworkLoops: { count: reworkLoops.length, stepIds: reworkLoops.map((s) => s.id) },
         deviations: { status: run.status, errorMessage: run.errorMessage },
       });
       created.push(row);
     }
 
-    await this.recordAudit(scope, 'process_mining_synced', undefined, undefined, { createdCount: created.length });
+    await this.recordAudit(scope, 'process_mining_synced', undefined, undefined, {
+      createdCount: created.length,
+    });
     return [...existing, ...created];
   }
 
@@ -896,15 +1002,27 @@ export class EnterpriseBusinessEvolutionService {
     scope: StaffScope,
     input: ExecuteBevSafeOptimizationRequest,
   ): Promise<ExecuteSafeOptimizationResult> {
-    if (!SAFE_OPTIMIZATION_KEYS.includes(input.optimizationKey as (typeof SAFE_OPTIMIZATION_KEYS)[number])) {
-      throw new EnterpriseBusinessEvolutionError('VALIDATION_ERROR', 'Only configured low-risk optimizations are allowed');
+    if (
+      !SAFE_OPTIMIZATION_KEYS.includes(
+        input.optimizationKey as (typeof SAFE_OPTIMIZATION_KEYS)[number],
+      )
+    ) {
+      throw new EnterpriseBusinessEvolutionError(
+        'VALIDATION_ERROR',
+        'Only configured low-risk optimizations are allowed',
+      );
     }
 
     const config = await this.getPlatformConfig(scope.companyId);
-    const allowlist = (config.autonomousAllowlist.allowlist as Array<{ optimizationKey: string; riskLevel: string }> | undefined) ?? [];
+    const allowlist =
+      (config.autonomousAllowlist.allowlist as
+        Array<{ optimizationKey: string; riskLevel: string }> | undefined) ?? [];
     const allowed = allowlist.find((entry) => entry.optimizationKey === input.optimizationKey);
     if (allowed && allowed.riskLevel !== 'low') {
-      throw new EnterpriseBusinessEvolutionError('VALIDATION_ERROR', 'Only configured low-risk optimizations are allowed');
+      throw new EnterpriseBusinessEvolutionError(
+        'VALIDATION_ERROR',
+        'Only configured low-risk optimizations are allowed',
+      );
     }
 
     let output: Record<string, unknown> = {};
@@ -946,7 +1064,9 @@ export class EnterpriseBusinessEvolutionService {
       output = { aggregationThresholds: nextThresholds };
       verified = true;
     } else if (input.optimizationKey === 'provider_health_reroute') {
-      const resilience = await this.deps.enterpriseItOperationsService.getAiResilienceStatus(scope.companyId);
+      const resilience = await this.deps.enterpriseItOperationsService.getAiResilienceStatus(
+        scope.companyId,
+      );
       output = { resilience };
       verified = resilience.providers.length > 0;
     }
@@ -967,11 +1087,17 @@ export class EnterpriseBusinessEvolutionService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'safe_optimization_executed', 'bev_autonomous_optimization', optimization!.id, {
-      optimizationKey: input.optimizationKey,
-      verified,
-      output,
-    });
+    await this.recordAudit(
+      scope,
+      'safe_optimization_executed',
+      'bev_autonomous_optimization',
+      optimization!.id,
+      {
+        optimizationKey: input.optimizationKey,
+        verified,
+        output,
+      },
+    );
 
     return {
       optimizationId: optimization!.id,
@@ -1013,7 +1139,10 @@ export class EnterpriseBusinessEvolutionService {
         eventType,
         decisionReason: typeof data.decisionReason === 'string' ? data.decisionReason : null,
         reviewingUserId: scope.userId,
-        implementationOwnerUserId: typeof data.implementationOwnerUserId === 'string' ? data.implementationOwnerUserId : null,
+        implementationOwnerUserId:
+          typeof data.implementationOwnerUserId === 'string'
+            ? data.implementationOwnerUserId
+            : null,
         expectedOutcome: typeof data.expectedOutcome === 'string' ? data.expectedOutcome : null,
         actualOutcome: typeof data.actualOutcome === 'string' ? data.actualOutcome : null,
         variance: typeof data.variance === 'string' ? data.variance : null,
@@ -1021,13 +1150,25 @@ export class EnterpriseBusinessEvolutionService {
         metadata: data,
       })
       .returning();
-    await this.recordAudit(scope, 'recommendation_event_recorded', 'bev_recommendation', recommendationId, { eventType });
+    await this.recordAudit(
+      scope,
+      'recommendation_event_recorded',
+      'bev_recommendation',
+      recommendationId,
+      { eventType },
+    );
     return toRecommendationEventSummary(created!);
   }
 
-  async acknowledgeEvolutionAlert(scope: StaffScope, alertId: string): Promise<BevEvolutionAlertSummary> {
+  async acknowledgeEvolutionAlert(
+    scope: StaffScope,
+    alertId: string,
+  ): Promise<BevEvolutionAlertSummary> {
     const row = await this.deps.db.query.bevEvolutionAlerts.findFirst({
-      where: and(eq(bevEvolutionAlerts.companyId, scope.companyId), eq(bevEvolutionAlerts.id, alertId)),
+      where: and(
+        eq(bevEvolutionAlerts.companyId, scope.companyId),
+        eq(bevEvolutionAlerts.id, alertId),
+      ),
     });
     if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Evolution alert not found');
     const [updated] = await this.deps.db
@@ -1047,11 +1188,17 @@ export class EnterpriseBusinessEvolutionService {
     return row ? toAnalyticsSummary(row) : null;
   }
 
-  async createObservation(scope: StaffScope, input: CreateBevObservationRequest): Promise<BevObservationSummary> {
-    const [created] = await this.deps.db.insert(bevObservations).values({
-      companyId: scope.companyId,
-      ...mapCreateObservationInput(input),
-    }).returning();
+  async createObservation(
+    scope: StaffScope,
+    input: CreateBevObservationRequest,
+  ): Promise<BevObservationSummary> {
+    const [created] = await this.deps.db
+      .insert(bevObservations)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateObservationInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'observation_created', 'bev_observation', created!.id);
     return toObservationSummary(created!);
   }
@@ -1069,22 +1216,36 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toObservationSummary(row) : null;
   }
-  async updateObservation(scope: StaffScope, id: string, input: UpdateBevObservationRequest): Promise<BevObservationSummary> {
+  async updateObservation(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevObservationRequest,
+  ): Promise<BevObservationSummary> {
     await this.ensureObservation(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevObservations).set({
-      ...mapUpdateObservationInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevObservations.companyId, scope.companyId), eq(bevObservations.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevObservations)
+      .set({
+        ...mapUpdateObservationInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevObservations.companyId, scope.companyId), eq(bevObservations.id, id)))
+      .returning();
     await this.recordAudit(scope, 'observation_updated', 'bev_observation', id);
     return toObservationSummary(updated!);
   }
 
-  async createPattern(scope: StaffScope, input: CreateBevPatternRequest): Promise<BevPatternSummary> {
-    const [created] = await this.deps.db.insert(bevPatterns).values({
-      companyId: scope.companyId,
-      ...mapCreatePatternInput(input),
-      dataFreshnessAt: new Date(),
-    }).returning();
+  async createPattern(
+    scope: StaffScope,
+    input: CreateBevPatternRequest,
+  ): Promise<BevPatternSummary> {
+    const [created] = await this.deps.db
+      .insert(bevPatterns)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreatePatternInput(input),
+        dataFreshnessAt: new Date(),
+      })
+      .returning();
     await this.recordAudit(scope, 'pattern_created', 'bev_pattern', created!.id);
     return toPatternSummary(created!);
   }
@@ -1102,21 +1263,35 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toPatternSummary(row) : null;
   }
-  async updatePattern(scope: StaffScope, id: string, input: UpdateBevPatternRequest): Promise<BevPatternSummary> {
+  async updatePattern(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevPatternRequest,
+  ): Promise<BevPatternSummary> {
     await this.ensurePattern(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevPatterns).set({
-      ...mapUpdatePatternInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevPatterns.companyId, scope.companyId), eq(bevPatterns.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevPatterns)
+      .set({
+        ...mapUpdatePatternInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevPatterns.companyId, scope.companyId), eq(bevPatterns.id, id)))
+      .returning();
     await this.recordAudit(scope, 'pattern_updated', 'bev_pattern', id);
     return toPatternSummary(updated!);
   }
 
-  async createHypothesis(scope: StaffScope, input: CreateBevHypothesisRequest): Promise<BevHypothesisSummary> {
-    const [created] = await this.deps.db.insert(bevHypotheses).values({
-      companyId: scope.companyId,
-      ...mapCreateHypothesisInput(input),
-    }).returning();
+  async createHypothesis(
+    scope: StaffScope,
+    input: CreateBevHypothesisRequest,
+  ): Promise<BevHypothesisSummary> {
+    const [created] = await this.deps.db
+      .insert(bevHypotheses)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateHypothesisInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'hypothesis_created', 'bev_hypothesis', created!.id);
     return toHypothesisSummary(created!);
   }
@@ -1134,21 +1309,35 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toHypothesisSummary(row) : null;
   }
-  async updateHypothesis(scope: StaffScope, id: string, input: UpdateBevHypothesisRequest): Promise<BevHypothesisSummary> {
+  async updateHypothesis(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevHypothesisRequest,
+  ): Promise<BevHypothesisSummary> {
     await this.ensureHypothesis(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevHypotheses).set({
-      ...mapUpdateHypothesisInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevHypotheses.companyId, scope.companyId), eq(bevHypotheses.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevHypotheses)
+      .set({
+        ...mapUpdateHypothesisInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevHypotheses.companyId, scope.companyId), eq(bevHypotheses.id, id)))
+      .returning();
     await this.recordAudit(scope, 'hypothesis_updated', 'bev_hypothesis', id);
     return toHypothesisSummary(updated!);
   }
 
-  async createRecommendation(scope: StaffScope, input: CreateBevRecommendationRequest): Promise<BevRecommendationSummary> {
-    const [created] = await this.deps.db.insert(bevRecommendations).values({
-      companyId: scope.companyId,
-      ...mapCreateRecommendationInput(input),
-    }).returning();
+  async createRecommendation(
+    scope: StaffScope,
+    input: CreateBevRecommendationRequest,
+  ): Promise<BevRecommendationSummary> {
+    const [created] = await this.deps.db
+      .insert(bevRecommendations)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateRecommendationInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'recommendation_created', 'bev_recommendation', created!.id);
     return toRecommendationSummary(created!);
   }
@@ -1166,21 +1355,35 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toRecommendationSummary(row) : null;
   }
-  async updateRecommendation(scope: StaffScope, id: string, input: UpdateBevRecommendationRequest): Promise<BevRecommendationSummary> {
+  async updateRecommendation(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevRecommendationRequest,
+  ): Promise<BevRecommendationSummary> {
     await this.ensureRecommendation(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevRecommendations).set({
-      ...mapUpdateRecommendationInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevRecommendations.companyId, scope.companyId), eq(bevRecommendations.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevRecommendations)
+      .set({
+        ...mapUpdateRecommendationInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevRecommendations.companyId, scope.companyId), eq(bevRecommendations.id, id)))
+      .returning();
     await this.recordAudit(scope, 'recommendation_updated', 'bev_recommendation', id);
     return toRecommendationSummary(updated!);
   }
 
-  async createExperiment(scope: StaffScope, input: CreateBevExperimentRequest): Promise<BevExperimentSummary> {
-    const [created] = await this.deps.db.insert(bevExperiments).values({
-      companyId: scope.companyId,
-      ...mapCreateExperimentInput(input),
-    }).returning();
+  async createExperiment(
+    scope: StaffScope,
+    input: CreateBevExperimentRequest,
+  ): Promise<BevExperimentSummary> {
+    const [created] = await this.deps.db
+      .insert(bevExperiments)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateExperimentInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'experiment_created', 'bev_experiment', created!.id);
     return toExperimentSummary(created!);
   }
@@ -1198,21 +1401,35 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toExperimentSummary(row) : null;
   }
-  async updateExperiment(scope: StaffScope, id: string, input: UpdateBevExperimentRequest): Promise<BevExperimentSummary> {
+  async updateExperiment(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevExperimentRequest,
+  ): Promise<BevExperimentSummary> {
     await this.ensureExperiment(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevExperiments).set({
-      ...mapUpdateExperimentInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevExperiments.companyId, scope.companyId), eq(bevExperiments.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevExperiments)
+      .set({
+        ...mapUpdateExperimentInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevExperiments.companyId, scope.companyId), eq(bevExperiments.id, id)))
+      .returning();
     await this.recordAudit(scope, 'experiment_updated', 'bev_experiment', id);
     return toExperimentSummary(updated!);
   }
 
-  async createOutcome(scope: StaffScope, input: CreateBevOutcomeRequest): Promise<BevOutcomeSummary> {
-    const [created] = await this.deps.db.insert(bevOutcomes).values({
-      companyId: scope.companyId,
-      ...mapCreateOutcomeInput(input),
-    }).returning();
+  async createOutcome(
+    scope: StaffScope,
+    input: CreateBevOutcomeRequest,
+  ): Promise<BevOutcomeSummary> {
+    const [created] = await this.deps.db
+      .insert(bevOutcomes)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateOutcomeInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'outcome_created', 'bev_outcome', created!.id);
     return toOutcomeSummary(created!);
   }
@@ -1230,26 +1447,40 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toOutcomeSummary(row) : null;
   }
-  async updateOutcome(scope: StaffScope, id: string, input: UpdateBevOutcomeRequest): Promise<BevOutcomeSummary> {
+  async updateOutcome(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevOutcomeRequest,
+  ): Promise<BevOutcomeSummary> {
     await this.ensureOutcome(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevOutcomes).set({
-      ...mapUpdateOutcomeInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevOutcomes.companyId, scope.companyId), eq(bevOutcomes.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevOutcomes)
+      .set({
+        ...mapUpdateOutcomeInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevOutcomes.companyId, scope.companyId), eq(bevOutcomes.id, id)))
+      .returning();
     await this.recordAudit(scope, 'outcome_updated', 'bev_outcome', id);
     return toOutcomeSummary(updated!);
   }
 
-  async createUserFeedback(scope: StaffScope, input: CreateBevUserFeedbackRequest): Promise<BevUserFeedbackSummary> {
-    const [created] = await this.deps.db.insert(bevUserFeedback).values({
-      companyId: scope.companyId,
-      targetType: input.targetType,
-      targetId: input.targetId,
-      feedbackRating: input.feedbackRating as typeof bevUserFeedback.$inferInsert.feedbackRating,
-      feedbackText: input.feedbackText ?? null,
-      submittedByUserId: scope.userId,
-      metadata: input.metadata ?? {},
-    }).returning();
+  async createUserFeedback(
+    scope: StaffScope,
+    input: CreateBevUserFeedbackRequest,
+  ): Promise<BevUserFeedbackSummary> {
+    const [created] = await this.deps.db
+      .insert(bevUserFeedback)
+      .values({
+        companyId: scope.companyId,
+        targetType: input.targetType,
+        targetId: input.targetId,
+        feedbackRating: input.feedbackRating as typeof bevUserFeedback.$inferInsert.feedbackRating,
+        feedbackText: input.feedbackText ?? null,
+        submittedByUserId: scope.userId,
+        metadata: input.metadata ?? {},
+      })
+      .returning();
     await this.recordAudit(scope, 'user_feedback_created', 'bev_user_feedback', created!.id);
     return toUserFeedbackSummary(created!);
   }
@@ -1272,14 +1503,24 @@ export class EnterpriseBusinessEvolutionService {
     scope: StaffScope,
     input: CreateBevContinuousImprovementItemRequest,
   ): Promise<BevContinuousImprovementItemSummary> {
-    const [created] = await this.deps.db.insert(bevContinuousImprovementItems).values({
-      companyId: scope.companyId,
-      ...mapCreateContinuousImprovementItemInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'continuous_improvement_created', 'bev_continuous_improvement_item', created!.id);
+    const [created] = await this.deps.db
+      .insert(bevContinuousImprovementItems)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateContinuousImprovementItemInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'continuous_improvement_created',
+      'bev_continuous_improvement_item',
+      created!.id,
+    );
     return toContinuousImprovementItemSummary(created!);
   }
-  async listContinuousImprovementItems(companyId: string): Promise<BevContinuousImprovementItemSummary[]> {
+  async listContinuousImprovementItems(
+    companyId: string,
+  ): Promise<BevContinuousImprovementItemSummary[]> {
     const rows = await this.deps.db.query.bevContinuousImprovementItems.findMany({
       where: eq(bevContinuousImprovementItems.companyId, companyId),
       orderBy: [desc(bevContinuousImprovementItems.createdAt)],
@@ -1287,9 +1528,15 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toContinuousImprovementItemSummary);
   }
-  async getContinuousImprovementItem(companyId: string, id: string): Promise<BevContinuousImprovementItemSummary | null> {
+  async getContinuousImprovementItem(
+    companyId: string,
+    id: string,
+  ): Promise<BevContinuousImprovementItemSummary | null> {
     const row = await this.deps.db.query.bevContinuousImprovementItems.findFirst({
-      where: and(eq(bevContinuousImprovementItems.companyId, companyId), eq(bevContinuousImprovementItems.id, id)),
+      where: and(
+        eq(bevContinuousImprovementItems.companyId, companyId),
+        eq(bevContinuousImprovementItems.id, id),
+      ),
     });
     return row ? toContinuousImprovementItemSummary(row) : null;
   }
@@ -1299,20 +1546,45 @@ export class EnterpriseBusinessEvolutionService {
     input: UpdateBevContinuousImprovementItemRequest,
   ): Promise<BevContinuousImprovementItemSummary> {
     await this.ensureContinuousImprovementItem(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevContinuousImprovementItems).set({
-      ...mapUpdateContinuousImprovementItemInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevContinuousImprovementItems.companyId, scope.companyId), eq(bevContinuousImprovementItems.id, id))).returning();
-    await this.recordAudit(scope, 'continuous_improvement_updated', 'bev_continuous_improvement_item', id);
+    const [updated] = await this.deps.db
+      .update(bevContinuousImprovementItems)
+      .set({
+        ...mapUpdateContinuousImprovementItemInput(input),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bevContinuousImprovementItems.companyId, scope.companyId),
+          eq(bevContinuousImprovementItems.id, id),
+        ),
+      )
+      .returning();
+    await this.recordAudit(
+      scope,
+      'continuous_improvement_updated',
+      'bev_continuous_improvement_item',
+      id,
+    );
     return toContinuousImprovementItemSummary(updated!);
   }
 
-  async createStrategicRoadmapItem(scope: StaffScope, input: CreateBevStrategicRoadmapItemRequest): Promise<BevStrategicRoadmapItemSummary> {
-    const [created] = await this.deps.db.insert(bevStrategicRoadmapItems).values({
-      companyId: scope.companyId,
-      ...mapCreateStrategicRoadmapItemInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'roadmap_item_created', 'bev_strategic_roadmap_item', created!.id);
+  async createStrategicRoadmapItem(
+    scope: StaffScope,
+    input: CreateBevStrategicRoadmapItemRequest,
+  ): Promise<BevStrategicRoadmapItemSummary> {
+    const [created] = await this.deps.db
+      .insert(bevStrategicRoadmapItems)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateStrategicRoadmapItemInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'roadmap_item_created',
+      'bev_strategic_roadmap_item',
+      created!.id,
+    );
     return toStrategicRoadmapItemSummary(created!);
   }
   async listStrategicRoadmapItems(companyId: string): Promise<BevStrategicRoadmapItemSummary[]> {
@@ -1323,28 +1595,58 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toStrategicRoadmapItemSummary);
   }
-  async getStrategicRoadmapItem(companyId: string, id: string): Promise<BevStrategicRoadmapItemSummary | null> {
+  async getStrategicRoadmapItem(
+    companyId: string,
+    id: string,
+  ): Promise<BevStrategicRoadmapItemSummary | null> {
     const row = await this.deps.db.query.bevStrategicRoadmapItems.findFirst({
-      where: and(eq(bevStrategicRoadmapItems.companyId, companyId), eq(bevStrategicRoadmapItems.id, id)),
+      where: and(
+        eq(bevStrategicRoadmapItems.companyId, companyId),
+        eq(bevStrategicRoadmapItems.id, id),
+      ),
     });
     return row ? toStrategicRoadmapItemSummary(row) : null;
   }
-  async updateStrategicRoadmapItem(scope: StaffScope, id: string, input: UpdateBevStrategicRoadmapItemRequest): Promise<BevStrategicRoadmapItemSummary> {
+  async updateStrategicRoadmapItem(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevStrategicRoadmapItemRequest,
+  ): Promise<BevStrategicRoadmapItemSummary> {
     await this.ensureStrategicRoadmapItem(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevStrategicRoadmapItems).set({
-      ...mapUpdateStrategicRoadmapItemInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevStrategicRoadmapItems.companyId, scope.companyId), eq(bevStrategicRoadmapItems.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevStrategicRoadmapItems)
+      .set({
+        ...mapUpdateStrategicRoadmapItemInput(input),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bevStrategicRoadmapItems.companyId, scope.companyId),
+          eq(bevStrategicRoadmapItems.id, id),
+        ),
+      )
+      .returning();
     await this.recordAudit(scope, 'roadmap_item_updated', 'bev_strategic_roadmap_item', id);
     return toStrategicRoadmapItemSummary(updated!);
   }
 
-  async createMaturityAssessment(scope: StaffScope, input: CreateBevMaturityAssessmentRequest): Promise<BevMaturityAssessmentSummary> {
-    const [created] = await this.deps.db.insert(bevMaturityAssessments).values({
-      companyId: scope.companyId,
-      ...mapCreateMaturityAssessmentInput(input, scope),
-    }).returning();
-    await this.recordAudit(scope, 'maturity_assessment_created', 'bev_maturity_assessment', created!.id);
+  async createMaturityAssessment(
+    scope: StaffScope,
+    input: CreateBevMaturityAssessmentRequest,
+  ): Promise<BevMaturityAssessmentSummary> {
+    const [created] = await this.deps.db
+      .insert(bevMaturityAssessments)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateMaturityAssessmentInput(input, scope),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'maturity_assessment_created',
+      'bev_maturity_assessment',
+      created!.id,
+    );
     return toMaturityAssessmentSummary(created!);
   }
   async listMaturityAssessments(companyId: string): Promise<BevMaturityAssessmentSummary[]> {
@@ -1355,28 +1657,58 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toMaturityAssessmentSummary);
   }
-  async getMaturityAssessment(companyId: string, id: string): Promise<BevMaturityAssessmentSummary | null> {
+  async getMaturityAssessment(
+    companyId: string,
+    id: string,
+  ): Promise<BevMaturityAssessmentSummary | null> {
     const row = await this.deps.db.query.bevMaturityAssessments.findFirst({
-      where: and(eq(bevMaturityAssessments.companyId, companyId), eq(bevMaturityAssessments.id, id)),
+      where: and(
+        eq(bevMaturityAssessments.companyId, companyId),
+        eq(bevMaturityAssessments.id, id),
+      ),
     });
     return row ? toMaturityAssessmentSummary(row) : null;
   }
-  async updateMaturityAssessment(scope: StaffScope, id: string, input: UpdateBevMaturityAssessmentRequest): Promise<BevMaturityAssessmentSummary> {
+  async updateMaturityAssessment(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevMaturityAssessmentRequest,
+  ): Promise<BevMaturityAssessmentSummary> {
     await this.ensureMaturityAssessment(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevMaturityAssessments).set({
-      ...mapUpdateMaturityAssessmentInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevMaturityAssessments.companyId, scope.companyId), eq(bevMaturityAssessments.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevMaturityAssessments)
+      .set({
+        ...mapUpdateMaturityAssessmentInput(input),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bevMaturityAssessments.companyId, scope.companyId),
+          eq(bevMaturityAssessments.id, id),
+        ),
+      )
+      .returning();
     await this.recordAudit(scope, 'maturity_assessment_updated', 'bev_maturity_assessment', id);
     return toMaturityAssessmentSummary(updated!);
   }
 
-  async createAgentImprovement(scope: StaffScope, input: CreateBevAgentImprovementRequest): Promise<BevAgentImprovementSummary> {
-    const [created] = await this.deps.db.insert(bevAgentImprovements).values({
-      companyId: scope.companyId,
-      ...mapCreateAgentImprovementInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'agent_improvement_created', 'bev_agent_improvement', created!.id);
+  async createAgentImprovement(
+    scope: StaffScope,
+    input: CreateBevAgentImprovementRequest,
+  ): Promise<BevAgentImprovementSummary> {
+    const [created] = await this.deps.db
+      .insert(bevAgentImprovements)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateAgentImprovementInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'agent_improvement_created',
+      'bev_agent_improvement',
+      created!.id,
+    );
     return toAgentImprovementSummary(created!);
   }
   async listAgentImprovements(companyId: string): Promise<BevAgentImprovementSummary[]> {
@@ -1387,28 +1719,52 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toAgentImprovementSummary);
   }
-  async getAgentImprovement(companyId: string, id: string): Promise<BevAgentImprovementSummary | null> {
+  async getAgentImprovement(
+    companyId: string,
+    id: string,
+  ): Promise<BevAgentImprovementSummary | null> {
     const row = await this.deps.db.query.bevAgentImprovements.findFirst({
       where: and(eq(bevAgentImprovements.companyId, companyId), eq(bevAgentImprovements.id, id)),
     });
     return row ? toAgentImprovementSummary(row) : null;
   }
-  async updateAgentImprovement(scope: StaffScope, id: string, input: UpdateBevAgentImprovementRequest): Promise<BevAgentImprovementSummary> {
+  async updateAgentImprovement(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevAgentImprovementRequest,
+  ): Promise<BevAgentImprovementSummary> {
     await this.ensureAgentImprovement(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevAgentImprovements).set({
-      ...mapUpdateAgentImprovementInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevAgentImprovements.companyId, scope.companyId), eq(bevAgentImprovements.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevAgentImprovements)
+      .set({
+        ...mapUpdateAgentImprovementInput(input),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(bevAgentImprovements.companyId, scope.companyId), eq(bevAgentImprovements.id, id)),
+      )
+      .returning();
     await this.recordAudit(scope, 'agent_improvement_updated', 'bev_agent_improvement', id);
     return toAgentImprovementSummary(updated!);
   }
 
-  async createPromptPolicyVersion(scope: StaffScope, input: CreateBevPromptPolicyVersionRequest): Promise<BevPromptPolicyVersionSummary> {
-    const [created] = await this.deps.db.insert(bevPromptPolicyVersions).values({
-      companyId: scope.companyId,
-      ...mapCreatePromptPolicyVersionInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'prompt_policy_version_created', 'bev_prompt_policy_version', created!.id);
+  async createPromptPolicyVersion(
+    scope: StaffScope,
+    input: CreateBevPromptPolicyVersionRequest,
+  ): Promise<BevPromptPolicyVersionSummary> {
+    const [created] = await this.deps.db
+      .insert(bevPromptPolicyVersions)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreatePromptPolicyVersionInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'prompt_policy_version_created',
+      'bev_prompt_policy_version',
+      created!.id,
+    );
     return toPromptPolicyVersionSummary(created!);
   }
   async listPromptPolicyVersions(companyId: string): Promise<BevPromptPolicyVersionSummary[]> {
@@ -1419,27 +1775,52 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toPromptPolicyVersionSummary);
   }
-  async getPromptPolicyVersion(companyId: string, id: string): Promise<BevPromptPolicyVersionSummary | null> {
+  async getPromptPolicyVersion(
+    companyId: string,
+    id: string,
+  ): Promise<BevPromptPolicyVersionSummary | null> {
     const row = await this.deps.db.query.bevPromptPolicyVersions.findFirst({
-      where: and(eq(bevPromptPolicyVersions.companyId, companyId), eq(bevPromptPolicyVersions.id, id)),
+      where: and(
+        eq(bevPromptPolicyVersions.companyId, companyId),
+        eq(bevPromptPolicyVersions.id, id),
+      ),
     });
     return row ? toPromptPolicyVersionSummary(row) : null;
   }
-  async updatePromptPolicyVersion(scope: StaffScope, id: string, input: UpdateBevPromptPolicyVersionRequest): Promise<BevPromptPolicyVersionSummary> {
+  async updatePromptPolicyVersion(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevPromptPolicyVersionRequest,
+  ): Promise<BevPromptPolicyVersionSummary> {
     await this.ensurePromptPolicyVersion(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevPromptPolicyVersions).set({
-      ...mapUpdatePromptPolicyVersionInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevPromptPolicyVersions.companyId, scope.companyId), eq(bevPromptPolicyVersions.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevPromptPolicyVersions)
+      .set({
+        ...mapUpdatePromptPolicyVersionInput(input),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bevPromptPolicyVersions.companyId, scope.companyId),
+          eq(bevPromptPolicyVersions.id, id),
+        ),
+      )
+      .returning();
     await this.recordAudit(scope, 'prompt_policy_version_updated', 'bev_prompt_policy_version', id);
     return toPromptPolicyVersionSummary(updated!);
   }
 
-  async createAiEvaluation(scope: StaffScope, input: CreateBevAiEvaluationRequest): Promise<BevAiEvaluationSummary> {
-    const [created] = await this.deps.db.insert(bevAiEvaluations).values({
-      companyId: scope.companyId,
-      ...mapCreateAiEvaluationInput(input),
-    }).returning();
+  async createAiEvaluation(
+    scope: StaffScope,
+    input: CreateBevAiEvaluationRequest,
+  ): Promise<BevAiEvaluationSummary> {
+    const [created] = await this.deps.db
+      .insert(bevAiEvaluations)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateAiEvaluationInput(input),
+      })
+      .returning();
     await this.recordAudit(scope, 'ai_evaluation_created', 'bev_ai_evaluation', created!.id);
     return toAiEvaluationSummary(created!);
   }
@@ -1457,25 +1838,46 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toAiEvaluationSummary(row) : null;
   }
-  async updateAiEvaluation(scope: StaffScope, id: string, input: UpdateBevAiEvaluationRequest): Promise<BevAiEvaluationSummary> {
+  async updateAiEvaluation(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevAiEvaluationRequest,
+  ): Promise<BevAiEvaluationSummary> {
     await this.ensureAiEvaluation(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevAiEvaluations).set({
-      ...mapUpdateAiEvaluationInput(input),
-      updatedAt: new Date(),
-    }).where(and(eq(bevAiEvaluations.companyId, scope.companyId), eq(bevAiEvaluations.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevAiEvaluations)
+      .set({
+        ...mapUpdateAiEvaluationInput(input),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevAiEvaluations.companyId, scope.companyId), eq(bevAiEvaluations.id, id)))
+      .returning();
     await this.recordAudit(scope, 'ai_evaluation_updated', 'bev_ai_evaluation', id);
     return toAiEvaluationSummary(updated!);
   }
 
-  async createKnowledgeReinforcement(scope: StaffScope, input: CreateBevKnowledgeReinforcementRequest): Promise<BevKnowledgeReinforcementSummary> {
-    const [created] = await this.deps.db.insert(bevKnowledgeReinforcements).values({
-      companyId: scope.companyId,
-      ...mapCreateKnowledgeReinforcementInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'knowledge_reinforcement_created', 'bev_knowledge_reinforcement', created!.id);
+  async createKnowledgeReinforcement(
+    scope: StaffScope,
+    input: CreateBevKnowledgeReinforcementRequest,
+  ): Promise<BevKnowledgeReinforcementSummary> {
+    const [created] = await this.deps.db
+      .insert(bevKnowledgeReinforcements)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateKnowledgeReinforcementInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'knowledge_reinforcement_created',
+      'bev_knowledge_reinforcement',
+      created!.id,
+    );
     return toKnowledgeReinforcementSummary(created!);
   }
-  async listKnowledgeReinforcements(companyId: string): Promise<BevKnowledgeReinforcementSummary[]> {
+  async listKnowledgeReinforcements(
+    companyId: string,
+  ): Promise<BevKnowledgeReinforcementSummary[]> {
     const rows = await this.deps.db.query.bevKnowledgeReinforcements.findMany({
       where: eq(bevKnowledgeReinforcements.companyId, companyId),
       orderBy: [desc(bevKnowledgeReinforcements.createdAt)],
@@ -1483,28 +1885,63 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toKnowledgeReinforcementSummary);
   }
-  async getKnowledgeReinforcement(companyId: string, id: string): Promise<BevKnowledgeReinforcementSummary | null> {
+  async getKnowledgeReinforcement(
+    companyId: string,
+    id: string,
+  ): Promise<BevKnowledgeReinforcementSummary | null> {
     const row = await this.deps.db.query.bevKnowledgeReinforcements.findFirst({
-      where: and(eq(bevKnowledgeReinforcements.companyId, companyId), eq(bevKnowledgeReinforcements.id, id)),
+      where: and(
+        eq(bevKnowledgeReinforcements.companyId, companyId),
+        eq(bevKnowledgeReinforcements.id, id),
+      ),
     });
     return row ? toKnowledgeReinforcementSummary(row) : null;
   }
-  async updateKnowledgeReinforcement(scope: StaffScope, id: string, input: UpdateBevKnowledgeReinforcementRequest): Promise<BevKnowledgeReinforcementSummary> {
+  async updateKnowledgeReinforcement(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevKnowledgeReinforcementRequest,
+  ): Promise<BevKnowledgeReinforcementSummary> {
     await this.ensureKnowledgeReinforcement(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevKnowledgeReinforcements).set({
-      ...mapUpdateKnowledgeReinforcementInput(input, scope),
-      updatedAt: new Date(),
-    }).where(and(eq(bevKnowledgeReinforcements.companyId, scope.companyId), eq(bevKnowledgeReinforcements.id, id))).returning();
-    await this.recordAudit(scope, 'knowledge_reinforcement_updated', 'bev_knowledge_reinforcement', id);
+    const [updated] = await this.deps.db
+      .update(bevKnowledgeReinforcements)
+      .set({
+        ...mapUpdateKnowledgeReinforcementInput(input, scope),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(bevKnowledgeReinforcements.companyId, scope.companyId),
+          eq(bevKnowledgeReinforcements.id, id),
+        ),
+      )
+      .returning();
+    await this.recordAudit(
+      scope,
+      'knowledge_reinforcement_updated',
+      'bev_knowledge_reinforcement',
+      id,
+    );
     return toKnowledgeReinforcementSummary(updated!);
   }
 
-  async createProcessMiningResult(scope: StaffScope, input: CreateBevProcessMiningResultRequest): Promise<BevProcessMiningResultSummary> {
-    const [created] = await this.deps.db.insert(bevProcessMiningResults).values({
-      companyId: scope.companyId,
-      ...mapCreateProcessMiningResultInput(input),
-    }).returning();
-    await this.recordAudit(scope, 'process_mining_result_created', 'bev_process_mining_result', created!.id);
+  async createProcessMiningResult(
+    scope: StaffScope,
+    input: CreateBevProcessMiningResultRequest,
+  ): Promise<BevProcessMiningResultSummary> {
+    const [created] = await this.deps.db
+      .insert(bevProcessMiningResults)
+      .values({
+        companyId: scope.companyId,
+        ...mapCreateProcessMiningResultInput(input),
+      })
+      .returning();
+    await this.recordAudit(
+      scope,
+      'process_mining_result_created',
+      'bev_process_mining_result',
+      created!.id,
+    );
     return toProcessMiningResultSummary(created!);
   }
   async listProcessMiningResults(companyId: string): Promise<BevProcessMiningResultSummary[]> {
@@ -1515,43 +1952,73 @@ export class EnterpriseBusinessEvolutionService {
     });
     return rows.map(toProcessMiningResultSummary);
   }
-  async getProcessMiningResult(companyId: string, id: string): Promise<BevProcessMiningResultSummary | null> {
+  async getProcessMiningResult(
+    companyId: string,
+    id: string,
+  ): Promise<BevProcessMiningResultSummary | null> {
     const row = await this.deps.db.query.bevProcessMiningResults.findFirst({
-      where: and(eq(bevProcessMiningResults.companyId, companyId), eq(bevProcessMiningResults.id, id)),
+      where: and(
+        eq(bevProcessMiningResults.companyId, companyId),
+        eq(bevProcessMiningResults.id, id),
+      ),
     });
     return row ? toProcessMiningResultSummary(row) : null;
   }
-  async updateProcessMiningResult(scope: StaffScope, id: string, input: UpdateBevProcessMiningResultRequest): Promise<BevProcessMiningResultSummary> {
+  async updateProcessMiningResult(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevProcessMiningResultRequest,
+  ): Promise<BevProcessMiningResultSummary> {
     await this.ensureProcessMiningResult(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevProcessMiningResults).set({
-      ...mapUpdateProcessMiningResultInput(input),
-    }).where(and(eq(bevProcessMiningResults.companyId, scope.companyId), eq(bevProcessMiningResults.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevProcessMiningResults)
+      .set({
+        ...mapUpdateProcessMiningResultInput(input),
+      })
+      .where(
+        and(
+          eq(bevProcessMiningResults.companyId, scope.companyId),
+          eq(bevProcessMiningResults.id, id),
+        ),
+      )
+      .returning();
     await this.recordAudit(scope, 'process_mining_result_updated', 'bev_process_mining_result', id);
     return toProcessMiningResultSummary(updated!);
   }
 
-  async createEvolutionAlert(scope: StaffScope, input: CreateBevEvolutionAlertRequest): Promise<BevEvolutionAlertSummary> {
-    const [created] = await this.deps.db.insert(bevEvolutionAlerts).values({
-      companyId: scope.companyId,
-      alertType: input.alertType,
-      severity: (input.severity ?? 'warning') as typeof bevEvolutionAlerts.$inferInsert.severity,
-      status: 'open',
-      title: input.title.trim(),
-      description: input.description ?? null,
-      sourceModule: input.sourceModule ?? null,
-      incidentId: input.incidentId ?? null,
-      context: input.context ?? {},
-    }).returning();
+  async createEvolutionAlert(
+    scope: StaffScope,
+    input: CreateBevEvolutionAlertRequest,
+  ): Promise<BevEvolutionAlertSummary> {
+    const [created] = await this.deps.db
+      .insert(bevEvolutionAlerts)
+      .values({
+        companyId: scope.companyId,
+        alertType: input.alertType,
+        severity: (input.severity ?? 'warning') as typeof bevEvolutionAlerts.$inferInsert.severity,
+        status: 'open',
+        title: input.title.trim(),
+        description: input.description ?? null,
+        sourceModule: input.sourceModule ?? null,
+        incidentId: input.incidentId ?? null,
+        context: input.context ?? {},
+      })
+      .returning();
     await this.recordAudit(scope, 'evolution_alert_created', 'bev_evolution_alert', created!.id);
     return toEvolutionAlertSummary(created!);
   }
-  async listEvolutionAlerts(companyId: string, filters?: { status?: string }): Promise<BevEvolutionAlertSummary[]> {
+  async listEvolutionAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<BevEvolutionAlertSummary[]> {
     const rows = await this.deps.db.query.bevEvolutionAlerts.findMany({
       where: eq(bevEvolutionAlerts.companyId, companyId),
       orderBy: [desc(bevEvolutionAlerts.createdAt)],
       limit: 100,
     });
-    return (filters?.status ? rows.filter((r) => r.status === filters.status) : rows).map(toEvolutionAlertSummary);
+    return (filters?.status ? rows.filter((r) => r.status === filters.status) : rows).map(
+      toEvolutionAlertSummary,
+    );
   }
   async getEvolutionAlert(companyId: string, id: string): Promise<BevEvolutionAlertSummary | null> {
     const row = await this.deps.db.query.bevEvolutionAlerts.findFirst({
@@ -1559,33 +2026,51 @@ export class EnterpriseBusinessEvolutionService {
     });
     return row ? toEvolutionAlertSummary(row) : null;
   }
-  async updateEvolutionAlert(scope: StaffScope, id: string, input: UpdateBevEvolutionAlertRequest): Promise<BevEvolutionAlertSummary> {
+  async updateEvolutionAlert(
+    scope: StaffScope,
+    id: string,
+    input: UpdateBevEvolutionAlertRequest,
+  ): Promise<BevEvolutionAlertSummary> {
     await this.ensureEvolutionAlert(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevEvolutionAlerts).set({
-      ...(input.alertType !== undefined ? { alertType: input.alertType } : {}),
-      ...(input.severity !== undefined ? { severity: input.severity as typeof bevEvolutionAlerts.$inferInsert.severity } : {}),
-      ...(input.status !== undefined ? { status: input.status as typeof bevEvolutionAlerts.$inferInsert.status } : {}),
-      ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-      ...(input.description !== undefined ? { description: input.description ?? null } : {}),
-      ...(input.sourceModule !== undefined ? { sourceModule: input.sourceModule ?? null } : {}),
-      ...(input.incidentId !== undefined ? { incidentId: input.incidentId ?? null } : {}),
-      ...(input.context !== undefined ? { context: input.context } : {}),
-      updatedAt: new Date(),
-    }).where(and(eq(bevEvolutionAlerts.companyId, scope.companyId), eq(bevEvolutionAlerts.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevEvolutionAlerts)
+      .set({
+        ...(input.alertType !== undefined ? { alertType: input.alertType } : {}),
+        ...(input.severity !== undefined
+          ? { severity: input.severity as typeof bevEvolutionAlerts.$inferInsert.severity }
+          : {}),
+        ...(input.status !== undefined
+          ? { status: input.status as typeof bevEvolutionAlerts.$inferInsert.status }
+          : {}),
+        ...(input.title !== undefined ? { title: input.title.trim() } : {}),
+        ...(input.description !== undefined ? { description: input.description ?? null } : {}),
+        ...(input.sourceModule !== undefined ? { sourceModule: input.sourceModule ?? null } : {}),
+        ...(input.incidentId !== undefined ? { incidentId: input.incidentId ?? null } : {}),
+        ...(input.context !== undefined ? { context: input.context } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevEvolutionAlerts.companyId, scope.companyId), eq(bevEvolutionAlerts.id, id)))
+      .returning();
     await this.recordAudit(scope, 'evolution_alert_updated', 'bev_evolution_alert', id);
     return toEvolutionAlertSummary(updated!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateBevEvolutionActionDraftRequest): Promise<BevActionDraftSummary> {
-    const [created] = await this.deps.db.insert(bevActionDrafts).values({
-      companyId: scope.companyId,
-      draftType: input.draftType.trim(),
-      title: input.title.trim(),
-      content: input.content.trim(),
-      sourceRecords: input.sourceRecords ?? {},
-      aiGenerated: input.aiGenerated ?? false,
-      workflowStatus: 'draft',
-    }).returning();
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateBevEvolutionActionDraftRequest,
+  ): Promise<BevActionDraftSummary> {
+    const [created] = await this.deps.db
+      .insert(bevActionDrafts)
+      .values({
+        companyId: scope.companyId,
+        draftType: input.draftType.trim(),
+        title: input.title.trim(),
+        content: input.content.trim(),
+        sourceRecords: input.sourceRecords ?? {},
+        aiGenerated: input.aiGenerated ?? false,
+        workflowStatus: 'draft',
+      })
+      .returning();
     await this.recordAudit(scope, 'action_draft_created', 'bev_action_draft', created!.id);
     return toActionDraftSummary(created!);
   }
@@ -1609,15 +2094,24 @@ export class EnterpriseBusinessEvolutionService {
     input: Partial<CreateBevEvolutionActionDraftRequest> & { workflowStatus?: string },
   ): Promise<BevActionDraftSummary> {
     await this.ensureActionDraft(scope.companyId, id);
-    const [updated] = await this.deps.db.update(bevActionDrafts).set({
-      ...(input.draftType !== undefined ? { draftType: input.draftType.trim() } : {}),
-      ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-      ...(input.content !== undefined ? { content: input.content.trim() } : {}),
-      ...(input.sourceRecords !== undefined ? { sourceRecords: input.sourceRecords } : {}),
-      ...(input.aiGenerated !== undefined ? { aiGenerated: input.aiGenerated } : {}),
-      ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevActionDrafts.$inferInsert.workflowStatus } : {}),
-      updatedAt: new Date(),
-    }).where(and(eq(bevActionDrafts.companyId, scope.companyId), eq(bevActionDrafts.id, id))).returning();
+    const [updated] = await this.deps.db
+      .update(bevActionDrafts)
+      .set({
+        ...(input.draftType !== undefined ? { draftType: input.draftType.trim() } : {}),
+        ...(input.title !== undefined ? { title: input.title.trim() } : {}),
+        ...(input.content !== undefined ? { content: input.content.trim() } : {}),
+        ...(input.sourceRecords !== undefined ? { sourceRecords: input.sourceRecords } : {}),
+        ...(input.aiGenerated !== undefined ? { aiGenerated: input.aiGenerated } : {}),
+        ...(input.workflowStatus !== undefined
+          ? {
+              workflowStatus:
+                input.workflowStatus as typeof bevActionDrafts.$inferInsert.workflowStatus,
+            }
+          : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(bevActionDrafts.companyId, scope.companyId), eq(bevActionDrafts.id, id)))
+      .returning();
     await this.recordAudit(scope, 'action_draft_updated', 'bev_action_draft', id);
     return toActionDraftSummary(updated!);
   }
@@ -1642,7 +2136,10 @@ export class EnterpriseBusinessEvolutionService {
       where: eq(bevPlatformConfig.companyId, companyId),
     });
     if (existing) return existing;
-    const [created] = await this.deps.db.insert(bevPlatformConfig).values({ companyId }).returning();
+    const [created] = await this.deps.db
+      .insert(bevPlatformConfig)
+      .values({ companyId })
+      .returning();
     return created!;
   }
 
@@ -1707,37 +2204,57 @@ export class EnterpriseBusinessEvolutionService {
   }
   private async ensureContinuousImprovementItem(companyId: string, id: string) {
     const row = await this.deps.db.query.bevContinuousImprovementItems.findFirst({
-      where: and(eq(bevContinuousImprovementItems.companyId, companyId), eq(bevContinuousImprovementItems.id, id)),
+      where: and(
+        eq(bevContinuousImprovementItems.companyId, companyId),
+        eq(bevContinuousImprovementItems.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Continuous improvement item not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError(
+        'NOT_FOUND',
+        'Continuous improvement item not found',
+      );
     return row;
   }
   private async ensureStrategicRoadmapItem(companyId: string, id: string) {
     const row = await this.deps.db.query.bevStrategicRoadmapItems.findFirst({
-      where: and(eq(bevStrategicRoadmapItems.companyId, companyId), eq(bevStrategicRoadmapItems.id, id)),
+      where: and(
+        eq(bevStrategicRoadmapItems.companyId, companyId),
+        eq(bevStrategicRoadmapItems.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Strategic roadmap item not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Strategic roadmap item not found');
     return row;
   }
   private async ensureMaturityAssessment(companyId: string, id: string) {
     const row = await this.deps.db.query.bevMaturityAssessments.findFirst({
-      where: and(eq(bevMaturityAssessments.companyId, companyId), eq(bevMaturityAssessments.id, id)),
+      where: and(
+        eq(bevMaturityAssessments.companyId, companyId),
+        eq(bevMaturityAssessments.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Maturity assessment not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Maturity assessment not found');
     return row;
   }
   private async ensureAgentImprovement(companyId: string, id: string) {
     const row = await this.deps.db.query.bevAgentImprovements.findFirst({
       where: and(eq(bevAgentImprovements.companyId, companyId), eq(bevAgentImprovements.id, id)),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Agent improvement not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Agent improvement not found');
     return row;
   }
   private async ensurePromptPolicyVersion(companyId: string, id: string) {
     const row = await this.deps.db.query.bevPromptPolicyVersions.findFirst({
-      where: and(eq(bevPromptPolicyVersions.companyId, companyId), eq(bevPromptPolicyVersions.id, id)),
+      where: and(
+        eq(bevPromptPolicyVersions.companyId, companyId),
+        eq(bevPromptPolicyVersions.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Prompt policy version not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Prompt policy version not found');
     return row;
   }
   private async ensureAiEvaluation(companyId: string, id: string) {
@@ -1749,16 +2266,24 @@ export class EnterpriseBusinessEvolutionService {
   }
   private async ensureKnowledgeReinforcement(companyId: string, id: string) {
     const row = await this.deps.db.query.bevKnowledgeReinforcements.findFirst({
-      where: and(eq(bevKnowledgeReinforcements.companyId, companyId), eq(bevKnowledgeReinforcements.id, id)),
+      where: and(
+        eq(bevKnowledgeReinforcements.companyId, companyId),
+        eq(bevKnowledgeReinforcements.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Knowledge reinforcement not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Knowledge reinforcement not found');
     return row;
   }
   private async ensureProcessMiningResult(companyId: string, id: string) {
     const row = await this.deps.db.query.bevProcessMiningResults.findFirst({
-      where: and(eq(bevProcessMiningResults.companyId, companyId), eq(bevProcessMiningResults.id, id)),
+      where: and(
+        eq(bevProcessMiningResults.companyId, companyId),
+        eq(bevProcessMiningResults.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Process mining result not found');
+    if (!row)
+      throw new EnterpriseBusinessEvolutionError('NOT_FOUND', 'Process mining result not found');
     return row;
   }
   private async ensureEvolutionAlert(companyId: string, id: string) {
@@ -1792,13 +2317,19 @@ function computeLearningConfidence(patterns: BevPatternSummary[]): string {
 
 function jsonArray(value: Record<string, unknown> | unknown, key = 'items'): string[] {
   if (Array.isArray(value)) return value.map(String);
-  if (value && typeof value === 'object' && Array.isArray((value as Record<string, unknown>)[key])) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    Array.isArray((value as Record<string, unknown>)[key])
+  ) {
     return ((value as Record<string, unknown>)[key] as unknown[]).map(String);
   }
   return [];
 }
 
-function toPlatformConfigSummary(row: typeof bevPlatformConfig.$inferSelect): BevPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof bevPlatformConfig.$inferSelect,
+): BevPlatformConfigSummary {
   return {
     learningGovernance: row.learningGovernance,
     experimentSafetyDefaults: row.experimentSafetyDefaults,
@@ -1855,7 +2386,8 @@ function mapCreateObservationInput(input: CreateBevObservationRequest) {
     observationType: input.observationType.trim(),
     title: input.title.trim(),
     description: input.description ?? null,
-    learningStage: (input.learningStage ?? 'observed') as typeof bevObservations.$inferInsert.learningStage,
+    learningStage: (input.learningStage ??
+      'observed') as typeof bevObservations.$inferInsert.learningStage,
     sourceEntityType: input.sourceEntityType ?? null,
     sourceEntityId: input.sourceEntityId ?? null,
     evidence: input.evidence ?? {},
@@ -1871,12 +2403,18 @@ function mapUpdateObservationInput(input: UpdateBevObservationRequest) {
     ...(input.observationType !== undefined ? { observationType: input.observationType } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
-    ...(input.learningStage !== undefined ? { learningStage: input.learningStage as typeof bevObservations.$inferInsert.learningStage } : {}),
-    ...(input.sourceEntityType !== undefined ? { sourceEntityType: input.sourceEntityType ?? null } : {}),
+    ...(input.learningStage !== undefined
+      ? { learningStage: input.learningStage as typeof bevObservations.$inferInsert.learningStage }
+      : {}),
+    ...(input.sourceEntityType !== undefined
+      ? { sourceEntityType: input.sourceEntityType ?? null }
+      : {}),
     ...(input.sourceEntityId !== undefined ? { sourceEntityId: input.sourceEntityId ?? null } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
-    ...(input.observedAt !== undefined ? { observedAt: parseOptionalDate(input.observedAt) ?? new Date() } : {}),
+    ...(input.observedAt !== undefined
+      ? { observedAt: parseOptionalDate(input.observedAt) ?? new Date() }
+      : {}),
   };
 }
 
@@ -1908,7 +2446,8 @@ function mapCreatePatternInput(input: CreateBevPatternRequest) {
     patternKey: input.patternKey.trim(),
     title: input.title.trim(),
     description: input.description ?? null,
-    learningStage: (input.learningStage ?? 'analyzed') as typeof bevPatterns.$inferInsert.learningStage,
+    learningStage: (input.learningStage ??
+      'analyzed') as typeof bevPatterns.$inferInsert.learningStage,
     confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null,
     frequency: input.frequency ?? 0,
     businessImpact: input.businessImpact ?? null,
@@ -1926,16 +2465,24 @@ function mapUpdatePatternInput(input: UpdateBevPatternRequest) {
     ...(input.patternKey !== undefined ? { patternKey: input.patternKey.trim() } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
-    ...(input.learningStage !== undefined ? { learningStage: input.learningStage as typeof bevPatterns.$inferInsert.learningStage } : {}),
-    ...(input.confidenceScore !== undefined ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null } : {}),
+    ...(input.learningStage !== undefined
+      ? { learningStage: input.learningStage as typeof bevPatterns.$inferInsert.learningStage }
+      : {}),
+    ...(input.confidenceScore !== undefined
+      ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null }
+      : {}),
     ...(input.frequency !== undefined ? { frequency: input.frequency } : {}),
     ...(input.businessImpact !== undefined ? { businessImpact: input.businessImpact ?? null } : {}),
     ...(input.affectedModules !== undefined ? { affectedModules: input.affectedModules } : {}),
     ...(input.possibleCauses !== undefined ? { possibleCauses: input.possibleCauses } : {}),
     ...(input.limitations !== undefined ? { limitations: input.limitations } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
-    ...(input.timePeriodStart !== undefined ? { timePeriodStart: parseOptionalDate(input.timePeriodStart) } : {}),
-    ...(input.timePeriodEnd !== undefined ? { timePeriodEnd: parseOptionalDate(input.timePeriodEnd) } : {}),
+    ...(input.timePeriodStart !== undefined
+      ? { timePeriodStart: parseOptionalDate(input.timePeriodStart) }
+      : {}),
+    ...(input.timePeriodEnd !== undefined
+      ? { timePeriodEnd: parseOptionalDate(input.timePeriodEnd) }
+      : {}),
   };
 }
 
@@ -1979,22 +2526,40 @@ function mapUpdateHypothesisInput(input: UpdateBevHypothesisRequest) {
   return {
     ...(input.hypothesisKey !== undefined ? { hypothesisKey: input.hypothesisKey.trim() } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
-    ...(input.problemStatement !== undefined ? { problemStatement: input.problemStatement ?? null } : {}),
+    ...(input.problemStatement !== undefined
+      ? { problemStatement: input.problemStatement ?? null }
+      : {}),
     ...(input.proposedChange !== undefined ? { proposedChange: input.proposedChange ?? null } : {}),
-    ...(input.expectedOutcome !== undefined ? { expectedOutcome: input.expectedOutcome ?? null } : {}),
-    ...(input.supportingEvidence !== undefined ? { supportingEvidence: input.supportingEvidence } : {}),
-    ...(input.riskLevel !== undefined ? { riskLevel: input.riskLevel as typeof bevHypotheses.$inferInsert.riskLevel } : {}),
+    ...(input.expectedOutcome !== undefined
+      ? { expectedOutcome: input.expectedOutcome ?? null }
+      : {}),
+    ...(input.supportingEvidence !== undefined
+      ? { supportingEvidence: input.supportingEvidence }
+      : {}),
+    ...(input.riskLevel !== undefined
+      ? { riskLevel: input.riskLevel as typeof bevHypotheses.$inferInsert.riskLevel }
+      : {}),
     ...(input.affectedUsers !== undefined ? { affectedUsers: input.affectedUsers } : {}),
-    ...(input.requiredApprovals !== undefined ? { requiredApprovals: input.requiredApprovals } : {}),
-    ...(input.measurementMethod !== undefined ? { measurementMethod: input.measurementMethod ?? null } : {}),
-    ...(input.successCriteria !== undefined ? { successCriteria: input.successCriteria ?? null } : {}),
+    ...(input.requiredApprovals !== undefined
+      ? { requiredApprovals: input.requiredApprovals }
+      : {}),
+    ...(input.measurementMethod !== undefined
+      ? { measurementMethod: input.measurementMethod ?? null }
+      : {}),
+    ...(input.successCriteria !== undefined
+      ? { successCriteria: input.successCriteria ?? null }
+      : {}),
     ...(input.rollbackPlan !== undefined ? { rollbackPlan: input.rollbackPlan ?? null } : {}),
     ...(input.patternId !== undefined ? { patternId: input.patternId ?? null } : {}),
-    ...(input.learningStage !== undefined ? { learningStage: input.learningStage as typeof bevHypotheses.$inferInsert.learningStage } : {}),
+    ...(input.learningStage !== undefined
+      ? { learningStage: input.learningStage as typeof bevHypotheses.$inferInsert.learningStage }
+      : {}),
   };
 }
 
-function toRecommendationSummary(row: typeof bevRecommendations.$inferSelect): BevRecommendationSummary {
+function toRecommendationSummary(
+  row: typeof bevRecommendations.$inferSelect,
+): BevRecommendationSummary {
   return {
     id: row.id,
     recommendationKey: row.recommendationKey,
@@ -2040,27 +2605,48 @@ function mapCreateRecommendationInput(input: CreateBevRecommendationRequest) {
 
 function mapUpdateRecommendationInput(input: UpdateBevRecommendationRequest) {
   return {
-    ...(input.recommendationKey !== undefined ? { recommendationKey: input.recommendationKey.trim() } : {}),
+    ...(input.recommendationKey !== undefined
+      ? { recommendationKey: input.recommendationKey.trim() }
+      : {}),
     ...(input.category !== undefined ? { category: input.category.trim() } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
-    ...(input.expectedBenefit !== undefined ? { expectedBenefit: input.expectedBenefit ?? null } : {}),
+    ...(input.expectedBenefit !== undefined
+      ? { expectedBenefit: input.expectedBenefit ?? null }
+      : {}),
     ...(input.expectedCost !== undefined ? { expectedCost: input.expectedCost ?? null } : {}),
-    ...(input.confidenceScore !== undefined ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null } : {}),
+    ...(input.confidenceScore !== undefined
+      ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null }
+      : {}),
     ...(input.requiredEffort !== undefined ? { requiredEffort: input.requiredEffort ?? null } : {}),
-    ...(input.riskLevel !== undefined ? { riskLevel: input.riskLevel as typeof bevRecommendations.$inferInsert.riskLevel } : {}),
+    ...(input.riskLevel !== undefined
+      ? { riskLevel: input.riskLevel as typeof bevRecommendations.$inferInsert.riskLevel }
+      : {}),
     ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
-    ...(input.supportingEvidence !== undefined ? { supportingEvidence: input.supportingEvidence } : {}),
-    ...(input.recommendedOwnerUserId !== undefined ? { recommendedOwnerUserId: input.recommendedOwnerUserId ?? null } : {}),
+    ...(input.supportingEvidence !== undefined
+      ? { supportingEvidence: input.supportingEvidence }
+      : {}),
+    ...(input.recommendedOwnerUserId !== undefined
+      ? { recommendedOwnerUserId: input.recommendedOwnerUserId ?? null }
+      : {}),
     ...(input.approvalRequired !== undefined ? { approvalRequired: input.approvalRequired } : {}),
-    ...(input.measurementPlan !== undefined ? { measurementPlan: input.measurementPlan ?? null } : {}),
+    ...(input.measurementPlan !== undefined
+      ? { measurementPlan: input.measurementPlan ?? null }
+      : {}),
     ...(input.rollbackPlan !== undefined ? { rollbackPlan: input.rollbackPlan ?? null } : {}),
     ...(input.hypothesisId !== undefined ? { hypothesisId: input.hypothesisId ?? null } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevRecommendations.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevRecommendations.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
-function toRecommendationEventSummary(row: typeof bevRecommendationEvents.$inferSelect): BevRecommendationEventSummary {
+function toRecommendationEventSummary(
+  row: typeof bevRecommendationEvents.$inferSelect,
+): BevRecommendationEventSummary {
   return {
     id: row.id,
     recommendationId: row.recommendationId,
@@ -2133,23 +2719,41 @@ function mapUpdateExperimentInput(input: UpdateBevExperimentRequest) {
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
     ...(input.experimentType !== undefined ? { experimentType: input.experimentType } : {}),
-    ...(input.riskLevel !== undefined ? { riskLevel: input.riskLevel as typeof bevExperiments.$inferInsert.riskLevel } : {}),
+    ...(input.riskLevel !== undefined
+      ? { riskLevel: input.riskLevel as typeof bevExperiments.$inferInsert.riskLevel }
+      : {}),
     ...(input.controlGroup !== undefined ? { controlGroup: input.controlGroup } : {}),
     ...(input.testGroup !== undefined ? { testGroup: input.testGroup } : {}),
     ...(input.eligibleRecords !== undefined ? { eligibleRecords: input.eligibleRecords } : {}),
     ...(input.exclusions !== undefined ? { exclusions: input.exclusions } : {}),
     ...(input.successMetrics !== undefined ? { successMetrics: input.successMetrics } : {}),
-    ...(input.failureThresholds !== undefined ? { failureThresholds: input.failureThresholds } : {}),
+    ...(input.failureThresholds !== undefined
+      ? { failureThresholds: input.failureThresholds }
+      : {}),
     ...(input.stopConditions !== undefined ? { stopConditions: input.stopConditions } : {}),
-    ...(input.spendingLimitCents !== undefined ? { spendingLimitCents: input.spendingLimitCents ?? null } : {}),
+    ...(input.spendingLimitCents !== undefined
+      ? { spendingLimitCents: input.spendingLimitCents ?? null }
+      : {}),
     ...(input.safetyControls !== undefined ? { safetyControls: input.safetyControls } : {}),
     ...(input.hypothesisId !== undefined ? { hypothesisId: input.hypothesisId ?? null } : {}),
-    ...(input.recommendationId !== undefined ? { recommendationId: input.recommendationId ?? null } : {}),
-    ...(input.scheduledStartAt !== undefined ? { scheduledStartAt: parseOptionalDate(input.scheduledStartAt) } : {}),
-    ...(input.scheduledEndAt !== undefined ? { scheduledEndAt: parseOptionalDate(input.scheduledEndAt) } : {}),
+    ...(input.recommendationId !== undefined
+      ? { recommendationId: input.recommendationId ?? null }
+      : {}),
+    ...(input.scheduledStartAt !== undefined
+      ? { scheduledStartAt: parseOptionalDate(input.scheduledStartAt) }
+      : {}),
+    ...(input.scheduledEndAt !== undefined
+      ? { scheduledEndAt: parseOptionalDate(input.scheduledEndAt) }
+      : {}),
     ...(input.startedAt !== undefined ? { startedAt: parseOptionalDate(input.startedAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevExperiments.$inferInsert.workflowStatus } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus: input.workflowStatus as typeof bevExperiments.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
@@ -2164,7 +2768,8 @@ function toOutcomeSummary(row: typeof bevOutcomes.$inferSelect): BevOutcomeSumma
     customerImpact: row.customerImpact,
     workforceImpact: row.workforceImpact,
     complianceImpact: row.complianceImpact,
-    statisticalConfidence: row.statisticalConfidence != null ? String(row.statisticalConfidence) : null,
+    statisticalConfidence:
+      row.statisticalConfidence != null ? String(row.statisticalConfidence) : null,
     learningStage: row.learningStage,
     measuredAt: row.measuredAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
@@ -2185,8 +2790,10 @@ function mapCreateOutcomeInput(input: CreateBevOutcomeRequest) {
     workforceImpact: input.workforceImpact ?? null,
     complianceImpact: input.complianceImpact ?? null,
     sideEffects: input.sideEffects ?? {},
-    statisticalConfidence: input.statisticalConfidence != null ? String(input.statisticalConfidence) : null,
-    learningStage: (input.learningStage ?? 'measured') as typeof bevOutcomes.$inferInsert.learningStage,
+    statisticalConfidence:
+      input.statisticalConfidence != null ? String(input.statisticalConfidence) : null,
+    learningStage: (input.learningStage ??
+      'measured') as typeof bevOutcomes.$inferInsert.learningStage,
     measuredAt: parseOptionalDate(input.measuredAt) ?? new Date(),
   };
 }
@@ -2194,20 +2801,39 @@ function mapCreateOutcomeInput(input: CreateBevOutcomeRequest) {
 function mapUpdateOutcomeInput(input: UpdateBevOutcomeRequest) {
   return {
     ...(input.experimentId !== undefined ? { experimentId: input.experimentId ?? null } : {}),
-    ...(input.recommendationId !== undefined ? { recommendationId: input.recommendationId ?? null } : {}),
+    ...(input.recommendationId !== undefined
+      ? { recommendationId: input.recommendationId ?? null }
+      : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.baselineMetrics !== undefined ? { baselineMetrics: input.baselineMetrics } : {}),
     ...(input.afterMetrics !== undefined ? { afterMetrics: input.afterMetrics } : {}),
     ...(input.controlMetrics !== undefined ? { controlMetrics: input.controlMetrics } : {}),
-    ...(input.operationalImpact !== undefined ? { operationalImpact: input.operationalImpact ?? null } : {}),
-    ...(input.financialImpactCents !== undefined ? { financialImpactCents: input.financialImpactCents ?? null } : {}),
+    ...(input.operationalImpact !== undefined
+      ? { operationalImpact: input.operationalImpact ?? null }
+      : {}),
+    ...(input.financialImpactCents !== undefined
+      ? { financialImpactCents: input.financialImpactCents ?? null }
+      : {}),
     ...(input.customerImpact !== undefined ? { customerImpact: input.customerImpact ?? null } : {}),
-    ...(input.workforceImpact !== undefined ? { workforceImpact: input.workforceImpact ?? null } : {}),
-    ...(input.complianceImpact !== undefined ? { complianceImpact: input.complianceImpact ?? null } : {}),
+    ...(input.workforceImpact !== undefined
+      ? { workforceImpact: input.workforceImpact ?? null }
+      : {}),
+    ...(input.complianceImpact !== undefined
+      ? { complianceImpact: input.complianceImpact ?? null }
+      : {}),
     ...(input.sideEffects !== undefined ? { sideEffects: input.sideEffects } : {}),
-    ...(input.statisticalConfidence !== undefined ? { statisticalConfidence: input.statisticalConfidence != null ? String(input.statisticalConfidence) : null } : {}),
-    ...(input.learningStage !== undefined ? { learningStage: input.learningStage as typeof bevOutcomes.$inferInsert.learningStage } : {}),
-    ...(input.measuredAt !== undefined ? { measuredAt: parseOptionalDate(input.measuredAt) ?? new Date() } : {}),
+    ...(input.statisticalConfidence !== undefined
+      ? {
+          statisticalConfidence:
+            input.statisticalConfidence != null ? String(input.statisticalConfidence) : null,
+        }
+      : {}),
+    ...(input.learningStage !== undefined
+      ? { learningStage: input.learningStage as typeof bevOutcomes.$inferInsert.learningStage }
+      : {}),
+    ...(input.measuredAt !== undefined
+      ? { measuredAt: parseOptionalDate(input.measuredAt) ?? new Date() }
+      : {}),
   };
 }
 
@@ -2223,7 +2849,9 @@ function toUserFeedbackSummary(row: typeof bevUserFeedback.$inferSelect): BevUse
   };
 }
 
-function toContinuousImprovementItemSummary(row: typeof bevContinuousImprovementItems.$inferSelect): BevContinuousImprovementItemSummary {
+function toContinuousImprovementItemSummary(
+  row: typeof bevContinuousImprovementItems.$inferSelect,
+): BevContinuousImprovementItemSummary {
   return {
     id: row.id,
     itemKey: row.itemKey,
@@ -2259,13 +2887,22 @@ function mapUpdateContinuousImprovementItemInput(input: UpdateBevContinuousImpro
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
     ...(input.priority !== undefined ? { priority: input.priority } : {}),
     ...(input.ownerUserId !== undefined ? { ownerUserId: input.ownerUserId ?? null } : {}),
-    ...(input.expectedBenefit !== undefined ? { expectedBenefit: input.expectedBenefit ?? null } : {}),
+    ...(input.expectedBenefit !== undefined
+      ? { expectedBenefit: input.expectedBenefit ?? null }
+      : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevContinuousImprovementItems.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevContinuousImprovementItems.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
-function toStrategicRoadmapItemSummary(row: typeof bevStrategicRoadmapItems.$inferSelect): BevStrategicRoadmapItemSummary {
+function toStrategicRoadmapItemSummary(
+  row: typeof bevStrategicRoadmapItems.$inferSelect,
+): BevStrategicRoadmapItemSummary {
   return {
     id: row.id,
     themeKey: row.themeKey,
@@ -2306,13 +2943,24 @@ function mapUpdateStrategicRoadmapItemInput(input: UpdateBevStrategicRoadmapItem
     ...(input.expectedOutcomes !== undefined ? { expectedOutcomes: input.expectedOutcomes } : {}),
     ...(input.dependencies !== undefined ? { dependencies: input.dependencies } : {}),
     ...(input.milestones !== undefined ? { milestones: input.milestones } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevStrategicRoadmapItems.$inferInsert.workflowStatus } : {}),
-    ...(input.progressPercent !== undefined ? { progressPercent: input.progressPercent != null ? String(input.progressPercent) : null } : {}),
-    ...(input.benefitRealizedCents !== undefined ? { benefitRealizedCents: input.benefitRealizedCents ?? null } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevStrategicRoadmapItems.$inferInsert.workflowStatus,
+        }
+      : {}),
+    ...(input.progressPercent !== undefined
+      ? { progressPercent: input.progressPercent != null ? String(input.progressPercent) : null }
+      : {}),
+    ...(input.benefitRealizedCents !== undefined
+      ? { benefitRealizedCents: input.benefitRealizedCents ?? null }
+      : {}),
   };
 }
 
-function toMaturityAssessmentSummary(row: typeof bevMaturityAssessments.$inferSelect): BevMaturityAssessmentSummary {
+function toMaturityAssessmentSummary(
+  row: typeof bevMaturityAssessments.$inferSelect,
+): BevMaturityAssessmentSummary {
   return {
     id: row.id,
     frameworkKey: row.frameworkKey,
@@ -2326,7 +2974,10 @@ function toMaturityAssessmentSummary(row: typeof bevMaturityAssessments.$inferSe
   };
 }
 
-function mapCreateMaturityAssessmentInput(input: CreateBevMaturityAssessmentRequest, scope: StaffScope) {
+function mapCreateMaturityAssessmentInput(
+  input: CreateBevMaturityAssessmentRequest,
+  scope: StaffScope,
+) {
   return {
     frameworkKey: input.frameworkKey.trim(),
     domain: input.domain.trim(),
@@ -2347,15 +2998,21 @@ function mapUpdateMaturityAssessmentInput(input: UpdateBevMaturityAssessmentRequ
     ...(input.domain !== undefined ? { domain: input.domain.trim() } : {}),
     ...(input.criteria !== undefined ? { criteria: input.criteria } : {}),
     ...(input.evidence !== undefined ? { evidence: input.evidence } : {}),
-    ...(input.score !== undefined ? { score: input.score != null ? String(input.score) : null } : {}),
+    ...(input.score !== undefined
+      ? { score: input.score != null ? String(input.score) : null }
+      : {}),
     ...(input.scoringMethod !== undefined ? { scoringMethod: input.scoringMethod ?? null } : {}),
-    ...(input.confidenceScore !== undefined ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null } : {}),
+    ...(input.confidenceScore !== undefined
+      ? { confidenceScore: input.confidenceScore != null ? String(input.confidenceScore) : null }
+      : {}),
     ...(input.gaps !== undefined ? { gaps: input.gaps } : {}),
     ...(input.recommendedSteps !== undefined ? { recommendedSteps: input.recommendedSteps } : {}),
   };
 }
 
-function toAgentImprovementSummary(row: typeof bevAgentImprovements.$inferSelect): BevAgentImprovementSummary {
+function toAgentImprovementSummary(
+  row: typeof bevAgentImprovements.$inferSelect,
+): BevAgentImprovementSummary {
   return {
     id: row.id,
     agentKey: row.agentKey,
@@ -2396,16 +3053,31 @@ function mapUpdateAgentImprovementInput(input: UpdateBevAgentImprovementRequest)
     ...(input.description !== undefined ? { description: input.description ?? null } : {}),
     ...(input.versionLabel !== undefined ? { versionLabel: input.versionLabel ?? null } : {}),
     ...(input.changeReason !== undefined ? { changeReason: input.changeReason ?? null } : {}),
-    ...(input.securityReviewRequired !== undefined ? { securityReviewRequired: input.securityReviewRequired } : {}),
-    ...(input.stagingTestRequired !== undefined ? { stagingTestRequired: input.stagingTestRequired } : {}),
-    ...(input.performanceBefore !== undefined ? { performanceBefore: input.performanceBefore } : {}),
+    ...(input.securityReviewRequired !== undefined
+      ? { securityReviewRequired: input.securityReviewRequired }
+      : {}),
+    ...(input.stagingTestRequired !== undefined
+      ? { stagingTestRequired: input.stagingTestRequired }
+      : {}),
+    ...(input.performanceBefore !== undefined
+      ? { performanceBefore: input.performanceBefore }
+      : {}),
     ...(input.performanceAfter !== undefined ? { performanceAfter: input.performanceAfter } : {}),
-    ...(input.rollbackVersionLabel !== undefined ? { rollbackVersionLabel: input.rollbackVersionLabel ?? null } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevAgentImprovements.$inferInsert.workflowStatus } : {}),
+    ...(input.rollbackVersionLabel !== undefined
+      ? { rollbackVersionLabel: input.rollbackVersionLabel ?? null }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevAgentImprovements.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
-function toPromptPolicyVersionSummary(row: typeof bevPromptPolicyVersions.$inferSelect): BevPromptPolicyVersionSummary {
+function toPromptPolicyVersionSummary(
+  row: typeof bevPromptPolicyVersions.$inferSelect,
+): BevPromptPolicyVersionSummary {
   return {
     id: row.id,
     policyType: row.policyType,
@@ -2441,11 +3113,22 @@ function mapUpdatePromptPolicyVersionInput(input: UpdateBevPromptPolicyVersionRe
     ...(input.versionLabel !== undefined ? { versionLabel: input.versionLabel.trim() } : {}),
     ...(input.content !== undefined ? { content: input.content } : {}),
     ...(input.changeReason !== undefined ? { changeReason: input.changeReason ?? null } : {}),
-    ...(input.effectiveAt !== undefined ? { effectiveAt: parseOptionalDate(input.effectiveAt) } : {}),
-    ...(input.rollbackVersionLabel !== undefined ? { rollbackVersionLabel: input.rollbackVersionLabel ?? null } : {}),
-    ...(input.performanceBefore !== undefined ? { performanceBefore: input.performanceBefore } : {}),
+    ...(input.effectiveAt !== undefined
+      ? { effectiveAt: parseOptionalDate(input.effectiveAt) }
+      : {}),
+    ...(input.rollbackVersionLabel !== undefined
+      ? { rollbackVersionLabel: input.rollbackVersionLabel ?? null }
+      : {}),
+    ...(input.performanceBefore !== undefined
+      ? { performanceBefore: input.performanceBefore }
+      : {}),
     ...(input.performanceAfter !== undefined ? { performanceAfter: input.performanceAfter } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevPromptPolicyVersions.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevPromptPolicyVersions.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
@@ -2480,12 +3163,21 @@ function mapUpdateAiEvaluationInput(input: UpdateBevAiEvaluationRequest) {
     ...(input.datasetRef !== undefined ? { datasetRef: input.datasetRef ?? null } : {}),
     ...(input.metrics !== undefined ? { metrics: input.metrics } : {}),
     ...(input.summary !== undefined ? { summary: input.summary ?? null } : {}),
-    ...(input.evaluatedAt !== undefined ? { evaluatedAt: parseOptionalDate(input.evaluatedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof bevAiEvaluations.$inferInsert.workflowStatus } : {}),
+    ...(input.evaluatedAt !== undefined
+      ? { evaluatedAt: parseOptionalDate(input.evaluatedAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof bevAiEvaluations.$inferInsert.workflowStatus,
+        }
+      : {}),
   };
 }
 
-function toKnowledgeReinforcementSummary(row: typeof bevKnowledgeReinforcements.$inferSelect): BevKnowledgeReinforcementSummary {
+function toKnowledgeReinforcementSummary(
+  row: typeof bevKnowledgeReinforcements.$inferSelect,
+): BevKnowledgeReinforcementSummary {
   return {
     id: row.id,
     lessonTitle: row.lessonTitle,
@@ -2505,24 +3197,43 @@ function mapCreateKnowledgeReinforcementInput(input: CreateBevKnowledgeReinforce
     knowledgeNodeRef: input.knowledgeNodeRef ?? null,
     linkedEntities: input.linkedEntities ?? {},
     sourceOutcomeId: input.sourceOutcomeId ?? null,
-    learningStage: (input.learningStage ?? 'validated') as typeof bevKnowledgeReinforcements.$inferInsert.learningStage,
+    learningStage: (input.learningStage ??
+      'validated') as typeof bevKnowledgeReinforcements.$inferInsert.learningStage,
   };
 }
 
-function mapUpdateKnowledgeReinforcementInput(input: UpdateBevKnowledgeReinforcementRequest, scope: StaffScope) {
+function mapUpdateKnowledgeReinforcementInput(
+  input: UpdateBevKnowledgeReinforcementRequest,
+  scope: StaffScope,
+) {
   return {
     ...(input.lessonTitle !== undefined ? { lessonTitle: input.lessonTitle.trim() } : {}),
     ...(input.lessonContent !== undefined ? { lessonContent: input.lessonContent } : {}),
-    ...(input.knowledgeNodeRef !== undefined ? { knowledgeNodeRef: input.knowledgeNodeRef ?? null } : {}),
+    ...(input.knowledgeNodeRef !== undefined
+      ? { knowledgeNodeRef: input.knowledgeNodeRef ?? null }
+      : {}),
     ...(input.linkedEntities !== undefined ? { linkedEntities: input.linkedEntities } : {}),
-    ...(input.sourceOutcomeId !== undefined ? { sourceOutcomeId: input.sourceOutcomeId ?? null } : {}),
-    ...(input.learningStage !== undefined ? { learningStage: input.learningStage as typeof bevKnowledgeReinforcements.$inferInsert.learningStage } : {}),
-    ...(input.validatedAt !== undefined ? { validatedAt: parseOptionalDate(input.validatedAt) } : {}),
-    ...(input.validatedByUserId !== undefined ? { validatedByUserId: input.validatedByUserId ?? scope.userId } : {}),
+    ...(input.sourceOutcomeId !== undefined
+      ? { sourceOutcomeId: input.sourceOutcomeId ?? null }
+      : {}),
+    ...(input.learningStage !== undefined
+      ? {
+          learningStage:
+            input.learningStage as typeof bevKnowledgeReinforcements.$inferInsert.learningStage,
+        }
+      : {}),
+    ...(input.validatedAt !== undefined
+      ? { validatedAt: parseOptionalDate(input.validatedAt) }
+      : {}),
+    ...(input.validatedByUserId !== undefined
+      ? { validatedByUserId: input.validatedByUserId ?? scope.userId }
+      : {}),
   };
 }
 
-function toProcessMiningResultSummary(row: typeof bevProcessMiningResults.$inferSelect): BevProcessMiningResultSummary {
+function toProcessMiningResultSummary(
+  row: typeof bevProcessMiningResults.$inferSelect,
+): BevProcessMiningResultSummary {
   return {
     id: row.id,
     processKey: row.processKey,
@@ -2555,7 +3266,9 @@ function mapUpdateProcessMiningResultInput(input: UpdateBevProcessMiningResultRe
   };
 }
 
-function toEvolutionAlertSummary(row: typeof bevEvolutionAlerts.$inferSelect): BevEvolutionAlertSummary {
+function toEvolutionAlertSummary(
+  row: typeof bevEvolutionAlerts.$inferSelect,
+): BevEvolutionAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,
@@ -2581,7 +3294,9 @@ function toActionDraftSummary(row: typeof bevActionDrafts.$inferSelect): BevActi
   };
 }
 
-function toAgentPerformanceSnapshotSummary(row: typeof bevAgentPerformanceSnapshots.$inferSelect): BevAgentPerformanceSnapshotSummary {
+function toAgentPerformanceSnapshotSummary(
+  row: typeof bevAgentPerformanceSnapshots.$inferSelect,
+): BevAgentPerformanceSnapshotSummary {
   return {
     id: row.id,
     agentKey: row.agentKey,
@@ -2611,4 +3326,3 @@ function toAuditLogSummary(row: typeof bevAuditLogs.$inferSelect): BevAuditLogSu
     createdAt: row.createdAt.toISOString(),
   };
 }
-

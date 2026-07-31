@@ -91,17 +91,18 @@ export async function setAgentProfileTools(
   profileId: string,
   body: SetAgentProfileToolsRequest,
 ): Promise<AgentProfileDetail> {
-  const data = await request<{ profile: AgentProfileDetail }>(`/agents/profiles/${profileId}/tools`, {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+  const data = await request<{ profile: AgentProfileDetail }>(
+    `/agents/profiles/${profileId}/tools`,
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.profile;
 }
 
-export async function fetchAgentExecutions(
-  accessToken: string,
-): Promise<AgentExecutionSummary[]> {
+export async function fetchAgentExecutions(accessToken: string): Promise<AgentExecutionSummary[]> {
   const data = await request<{ executions: AgentExecutionSummary[] }>('/agents/executions', {
     accessToken,
   });

@@ -6,8 +6,11 @@
   "scripts": {
     "dev": "node --watch --env-file=.env --import tsx src/index.ts",
     "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/index.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "start": "node --import tsx src/index.ts",
+    "start:worker": "node --import tsx src/bin/worker.ts",
+    "start:scheduler": "node --import tsx src/bin/scheduler.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test src/lib/tenant-scope.test.ts src/lib/n8n-signing.test.ts src/lib/env-flags.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts"
   },
   "dependencies": {
     "@titan/aura": "workspace:*",
@@ -20,6 +23,7 @@
     "express": "catalog:",
     "pino": "catalog:",
     "pino-http": "^10.4.0",
+    "tsx": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -27,7 +31,6 @@
     "@types/cors": "^2.8.18",
     "@types/express": "^5.0.2",
     "@types/node": "catalog:",
-    "tsx": "catalog:",
     "typescript": "catalog:"
   }
 }

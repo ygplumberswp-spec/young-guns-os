@@ -1,5 +1,9 @@
 import { and, eq } from 'drizzle-orm';
-import type { RlmDocCategory, RlmDocumentationArtifactSummary, RlmValidationStatus } from '@titan/shared';
+import type {
+  RlmDocCategory,
+  RlmDocumentationArtifactSummary,
+  RlmValidationStatus,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { rlmDocumentationArtifacts } from '@titan/db';
 
@@ -111,7 +115,12 @@ const DOC_TEMPLATES: Array<{
     docKey: 'version_history',
     docCategory: 'version_history',
     title: 'Version History',
-    sections: ['Version numbering scheme', 'v1.0.0 milestone summary', 'Migration history', 'Deprecation policy'],
+    sections: [
+      'Version numbering scheme',
+      'v1.0.0 milestone summary',
+      'Migration history',
+      'Deprecation policy',
+    ],
   },
 ];
 
@@ -130,7 +139,10 @@ export class EnterpriseReleaseManagementDocumentationService {
   async ensureDocumentationArtifacts(companyId: string): Promise<void> {
     for (const doc of DOC_TEMPLATES) {
       const existing = await this.db.query.rlmDocumentationArtifacts.findFirst({
-        where: and(eq(rlmDocumentationArtifacts.companyId, companyId), eq(rlmDocumentationArtifacts.docKey, doc.docKey)),
+        where: and(
+          eq(rlmDocumentationArtifacts.companyId, companyId),
+          eq(rlmDocumentationArtifacts.docKey, doc.docKey),
+        ),
       });
       if (existing) continue;
 
@@ -185,7 +197,9 @@ export class EnterpriseReleaseManagementDocumentationService {
   }
 }
 
-function toSummary(row: typeof rlmDocumentationArtifacts.$inferSelect): RlmDocumentationArtifactSummary {
+function toSummary(
+  row: typeof rlmDocumentationArtifacts.$inferSelect,
+): RlmDocumentationArtifactSummary {
   return {
     id: row.id,
     docKey: row.docKey,

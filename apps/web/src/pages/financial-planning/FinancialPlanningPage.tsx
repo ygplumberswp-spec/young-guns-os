@@ -54,11 +54,23 @@ export function FinancialPlanningPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessFinancialPlanning(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageFinancialPlanning(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessFinancialPlanning(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageFinancialPlanning(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -78,7 +90,11 @@ export function FinancialPlanningPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load financial planning dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load financial planning dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -109,7 +125,10 @@ export function FinancialPlanningPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Financial Planning" description="You do not have permission to view financial planning." />
+        <PageHeader
+          title="Financial Planning"
+          description="You do not have permission to view financial planning."
+        />
       </div>
     );
   }
@@ -137,7 +156,8 @@ export function FinancialPlanningPage() {
     { id: 'assistant', label: 'AI Assistant' },
   ];
 
-  const jobSnapshots = dashboard?.recentProfitabilitySnapshots.filter((s) => s.dimensionType === 'job') ?? [];
+  const jobSnapshots =
+    dashboard?.recentProfitabilitySnapshots.filter((s) => s.dimensionType === 'job') ?? [];
   const customerSnapshots =
     dashboard?.recentProfitabilitySnapshots.filter((s) => s.dimensionType === 'customer') ?? [];
   const supplierSnapshots =
@@ -195,18 +215,25 @@ export function FinancialPlanningPage() {
           </div>
           <Panel
             title="Financial Monitoring"
-            description={dashboard.financialMonitoring.alerts.join(' · ') || 'No active alerts from real data'}
+            description={
+              dashboard.financialMonitoring.alerts.join(' · ') || 'No active alerts from real data'
+            }
           >
             <p>{dashboard.summary}</p>
             {dashboard.cashShortageWarning ? (
-              <p className="form-error">Cash shortage warning based on real receivables and payables.</p>
+              <p className="form-error">
+                Cash shortage warning based on real receivables and payables.
+              </p>
             ) : null}
             {canWrite ? (
               <div className="panel-actions">
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureFinancialAnalytics(accessToken!), 'Analytics captured from real data.')
+                    void runAction(
+                      () => captureFinancialAnalytics(accessToken!),
+                      'Analytics captured from real data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -215,7 +242,10 @@ export function FinancialPlanningPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncFinancialAlerts(accessToken!), 'Financial alerts synced from real records.')
+                    void runAction(
+                      () => syncFinancialAlerts(accessToken!),
+                      'Financial alerts synced from real records.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -229,26 +259,41 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'budgets' ? (
         <Panel title="Budgets" description="Draft → Review → Approval → Active">
           {dashboard.recentBudgets.length === 0 ? (
-            <EmptyState title="No budgets" description="Budgets appear when created in the financial planning workspace." />
+            <EmptyState
+              title="No budgets"
+              description="Budgets appear when created in the financial planning workspace."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentBudgets.map((b) => (
                 <li key={b.id}>
                   <strong>{b.title}</strong> — {formatBudgetStatus(b.status)} ({b.workflowStatus})
-                  {b.totalAmountCents != null ? ` · ${formatCurrency(b.totalAmountCents, b.currency)}` : ''}
+                  {b.totalAmountCents != null
+                    ? ` · ${formatCurrency(b.totalAmountCents, b.currency)}`
+                    : ''}
                   {canWrite && b.workflowStatus === 'pending_approval' ? (
                     <>
                       <Button
                         variant="secondary"
                         disabled={isWorking}
-                        onClick={() => void runAction(() => approveBudget(accessToken!, b.id), 'Budget approved.')}
+                        onClick={() =>
+                          void runAction(
+                            () => approveBudget(accessToken!, b.id),
+                            'Budget approved.',
+                          )
+                        }
                       >
                         Approve
                       </Button>
                       <Button
                         variant="secondary"
                         disabled={isWorking}
-                        onClick={() => void runAction(() => activateBudget(accessToken!, b.id), 'Budget activated.')}
+                        onClick={() =>
+                          void runAction(
+                            () => activateBudget(accessToken!, b.id),
+                            'Budget activated.',
+                          )
+                        }
                       >
                         Activate
                       </Button>
@@ -262,9 +307,15 @@ export function FinancialPlanningPage() {
       ) : null}
 
       {dashboard && activeTab === 'forecasts' ? (
-        <Panel title="Rolling Forecasts" description="Base, optimistic, conservative, and custom scenarios">
+        <Panel
+          title="Rolling Forecasts"
+          description="Base, optimistic, conservative, and custom scenarios"
+        >
           {dashboard.recentForecasts.length === 0 ? (
-            <EmptyState title="No forecasts" description="Forecasts are generated from real revenue, pipeline, and operational data." />
+            <EmptyState
+              title="No forecasts"
+              description="Forecasts are generated from real revenue, pipeline, and operational data."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentForecasts.map((f) => (
@@ -279,14 +330,21 @@ export function FinancialPlanningPage() {
       ) : null}
 
       {dashboard && activeTab === 'cashflow' ? (
-        <Panel title="Cash Flow" description="Forward-looking view from real invoices, payments, and commitments">
+        <Panel
+          title="Cash Flow"
+          description="Forward-looking view from real invoices, payments, and commitments"
+        >
           {dashboard.recentCashFlowProjections.length === 0 ? (
-            <EmptyState title="No projections" description="Generate cash-flow projections from real tenant records." />
+            <EmptyState
+              title="No projections"
+              description="Generate cash-flow projections from real tenant records."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentCashFlowProjections.map((p) => (
                 <li key={p.id}>
-                  {p.projectionDate}: closing {formatCurrency(p.closingBalanceCents, dashboard.currency)}
+                  {p.projectionDate}: closing{' '}
+                  {formatCurrency(p.closingBalanceCents, dashboard.currency)}
                   {p.cashRunwayDays != null ? ` · runway ${p.cashRunwayDays} days` : ''}
                 </li>
               ))}
@@ -296,7 +354,10 @@ export function FinancialPlanningPage() {
             <Button
               disabled={isWorking}
               onClick={() =>
-                void runAction(() => generateCashFlowProjection(accessToken!), 'Cash-flow projection generated.')
+                void runAction(
+                  () => generateCashFlowProjection(accessToken!),
+                  'Cash-flow projection generated.',
+                )
               }
             >
               Generate Projection
@@ -311,7 +372,8 @@ export function FinancialPlanningPage() {
           <ul className="simple-list">
             {dashboard.receivables.collectionPriorities.slice(0, 10).map((item) => (
               <li key={item.invoiceId}>
-                {item.customerName} — {formatCurrency(item.amountDueCents, dashboard.currency)} ({item.priority})
+                {item.customerName} — {formatCurrency(item.amountDueCents, dashboard.currency)} (
+                {item.priority})
               </li>
             ))}
           </ul>
@@ -324,7 +386,8 @@ export function FinancialPlanningPage() {
           <ul className="simple-list">
             {dashboard.payables.paymentPriorities.slice(0, 10).map((item, index) => (
               <li key={`${item.supplierName}-${index}`}>
-                {item.supplierName} — {formatCurrency(item.amountCents, dashboard.currency)} ({item.priority})
+                {item.supplierName} — {formatCurrency(item.amountCents, dashboard.currency)} (
+                {item.priority})
               </li>
             ))}
           </ul>
@@ -335,7 +398,10 @@ export function FinancialPlanningPage() {
         <Panel title="Treasury">
           <p>{dashboard.treasuryAccountCount} treasury account(s) configured.</p>
           {dashboard.treasuryAccountCount === 0 ? (
-            <EmptyState title="No treasury accounts" description="Connect banking providers and register treasury accounts." />
+            <EmptyState
+              title="No treasury accounts"
+              description="Connect banking providers and register treasury accounts."
+            />
           ) : null}
         </Panel>
       ) : null}
@@ -344,17 +410,31 @@ export function FinancialPlanningPage() {
         <Panel title="Working Capital">
           <p>{dashboard.workingCapital.summary}</p>
           <ul className="simple-list">
-            <li>Receivables: {formatCurrency(dashboard.workingCapital.receivablesCents, dashboard.currency)}</li>
-            <li>Payables: {formatCurrency(dashboard.workingCapital.payablesCents, dashboard.currency)}</li>
-            <li>Inventory: {formatCurrency(dashboard.workingCapital.inventoryValueCents, dashboard.currency)}</li>
+            <li>
+              Receivables:{' '}
+              {formatCurrency(dashboard.workingCapital.receivablesCents, dashboard.currency)}
+            </li>
+            <li>
+              Payables: {formatCurrency(dashboard.workingCapital.payablesCents, dashboard.currency)}
+            </li>
+            <li>
+              Inventory:{' '}
+              {formatCurrency(dashboard.workingCapital.inventoryValueCents, dashboard.currency)}
+            </li>
           </ul>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'profitability' ? (
-        <Panel title="Profitability" description="Source transactions, allocation method, and formula shown per snapshot">
+        <Panel
+          title="Profitability"
+          description="Source transactions, allocation method, and formula shown per snapshot"
+        >
           {dashboard.recentProfitabilitySnapshots.length === 0 ? (
-            <EmptyState title="No profitability snapshots" description="Capture profitability from real job and customer data." />
+            <EmptyState
+              title="No profitability snapshots"
+              description="Capture profitability from real job and customer data."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentProfitabilitySnapshots.map((s) => (
@@ -371,11 +451,17 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'jobs' ? (
         <Panel title="Job Profitability">
           {jobSnapshots.length === 0 ? (
-            <EmptyState title="No job profitability data" description="Job margins appear when jobs have invoiced revenue and cost data." />
+            <EmptyState
+              title="No job profitability data"
+              description="Job margins appear when jobs have invoiced revenue and cost data."
+            />
           ) : (
             <ul className="simple-list">
               {jobSnapshots.map((s) => (
-                <li key={s.id}>{s.dimensionName}: {formatCurrency(s.grossProfitCents, dashboard.currency)} gross profit</li>
+                <li key={s.id}>
+                  {s.dimensionName}: {formatCurrency(s.grossProfitCents, dashboard.currency)} gross
+                  profit
+                </li>
               ))}
             </ul>
           )}
@@ -385,11 +471,17 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'customers' ? (
         <Panel title="Customer Profitability">
           {customerSnapshots.length === 0 ? (
-            <EmptyState title="No customer profitability data" description="Customer margins appear from real revenue and cost-to-serve data." />
+            <EmptyState
+              title="No customer profitability data"
+              description="Customer margins appear from real revenue and cost-to-serve data."
+            />
           ) : (
             <ul className="simple-list">
               {customerSnapshots.map((s) => (
-                <li key={s.id}>{s.dimensionName}: {formatCurrency(s.grossProfitCents, dashboard.currency)} gross profit</li>
+                <li key={s.id}>
+                  {s.dimensionName}: {formatCurrency(s.grossProfitCents, dashboard.currency)} gross
+                  profit
+                </li>
               ))}
             </ul>
           )}
@@ -399,11 +491,17 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'suppliers' ? (
         <Panel title="Supplier Cost Intelligence">
           {supplierSnapshots.length === 0 ? (
-            <EmptyState title="No supplier cost snapshots" description="Supplier cost analysis uses procurement and finance records." />
+            <EmptyState
+              title="No supplier cost snapshots"
+              description="Supplier cost analysis uses procurement and finance records."
+            />
           ) : (
             <ul className="simple-list">
               {supplierSnapshots.map((s) => (
-                <li key={s.id}>{s.dimensionName}: {formatCurrency(s.directCostCents, dashboard.currency)} direct cost</li>
+                <li key={s.id}>
+                  {s.dimensionName}: {formatCurrency(s.directCostCents, dashboard.currency)} direct
+                  cost
+                </li>
               ))}
             </ul>
           )}
@@ -411,8 +509,14 @@ export function FinancialPlanningPage() {
       ) : null}
 
       {dashboard && activeTab === 'workforce' ? (
-        <Panel title="Workforce Cost Intelligence" description="Confidential pay data restricted to authorized roles">
-          <p>Workforce cost analysis integrates with Enterprise Workforce Intelligence. No fake labour costs.</p>
+        <Panel
+          title="Workforce Cost Intelligence"
+          description="Confidential pay data restricted to authorized roles"
+        >
+          <p>
+            Workforce cost analysis integrates with Enterprise Workforce Intelligence. No fake
+            labour costs.
+          </p>
         </Panel>
       ) : null}
 
@@ -425,7 +529,10 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'scenarios' ? (
         <Panel title="Scenario Planning" description="All scenarios are marked as simulations">
           {dashboard.recentScenarios.length === 0 ? (
-            <EmptyState title="No scenarios" description="Create scenarios with explicit assumptions for simulation." />
+            <EmptyState
+              title="No scenarios"
+              description="Create scenarios with explicit assumptions for simulation."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentScenarios.map((s) => (
@@ -447,7 +554,10 @@ export function FinancialPlanningPage() {
       {dashboard && activeTab === 'alerts' ? (
         <Panel title="Financial Alerts">
           {dashboard.recentAlerts.length === 0 ? (
-            <EmptyState title="No alerts" description="Alerts are generated from real financial monitoring only." />
+            <EmptyState
+              title="No alerts"
+              description="Alerts are generated from real financial monitoring only."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentAlerts.map((a) => (
@@ -461,10 +571,13 @@ export function FinancialPlanningPage() {
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="Accounting & Banking Providers" description="Vendor-agnostic — Xero, QuickBooks, Sage, open banking, and more">
+        <Panel
+          title="Accounting & Banking Providers"
+          description="Vendor-agnostic — Xero, QuickBooks, Sage, open banking, and more"
+        >
           <p>
-            {dashboard.accountingProviderCount} accounting provider(s), {dashboard.bankingProviderCount} banking
-            provider(s).
+            {dashboard.accountingProviderCount} accounting provider(s),{' '}
+            {dashboard.bankingProviderCount} banking provider(s).
           </p>
         </Panel>
       ) : null}
@@ -474,22 +587,42 @@ export function FinancialPlanningPage() {
           <ul className="simple-list">
             <li>Platform owner tenant: {dashboard.isPlatformOwner ? 'Yes' : 'No'}</li>
             <li>Currency: {dashboard.currency}</li>
-            <li>KPI templates: {Object.keys(dashboard.platformConfig.kpiTemplates ?? {}).length}</li>
-            <li>Allocation methods configured: {Object.keys(dashboard.platformConfig.allocationMethods ?? {}).length > 0 ? 'Yes' : 'No'}</li>
+            <li>
+              KPI templates: {Object.keys(dashboard.platformConfig.kpiTemplates ?? {}).length}
+            </li>
+            <li>
+              Allocation methods configured:{' '}
+              {Object.keys(dashboard.platformConfig.allocationMethods ?? {}).length > 0
+                ? 'Yes'
+                : 'No'}
+            </li>
           </ul>
         </Panel>
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Financial Planning Agent" description="Recommendations and drafts only — no autonomous financial transactions">
+        <Panel
+          title="AURA Financial Planning Agent"
+          description="Recommendations and drafts only — no autonomous financial transactions"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'financial_planning' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(
+                content,
+                'financial_planning' as import('@titan/shared').AgentKey,
+              )
+            }
             placeholder="Ask about cash flow, budgets, forecasts, profitability, or working capital…"
           />
         </Panel>

@@ -71,7 +71,8 @@ export class EnterpriseProductionReadinessService {
   constructor(private readonly deps: ProductionReadinessDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseProductionReadinessDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       systemHealth,
       performance,
@@ -100,7 +101,9 @@ export class EnterpriseProductionReadinessService {
       this.getPlatformConfig(companyId),
     ]);
 
-    const unhealthyCount = systemHealth.filter((m) => m.status === 'unhealthy' || m.status === 'degraded').length;
+    const unhealthyCount = systemHealth.filter(
+      (m) => m.status === 'unhealthy' || m.status === 'degraded',
+    ).length;
     const overallHealthStatus = resolveOverallHealth(systemHealth);
 
     return {
@@ -151,7 +154,13 @@ export class EnterpriseProductionReadinessService {
     const [failedWorkflows] = await this.deps.db
       .select({ value: count() })
       .from(workflowRuns)
-      .where(and(eq(workflowRuns.companyId, companyId), eq(workflowRuns.status, 'failed'), gte(workflowRuns.startedAt, monthStart)));
+      .where(
+        and(
+          eq(workflowRuns.companyId, companyId),
+          eq(workflowRuns.status, 'failed'),
+          gte(workflowRuns.startedAt, monthStart),
+        ),
+      );
 
     const [pendingQueue] = await this.deps.db
       .select({ value: count() })
@@ -161,14 +170,21 @@ export class EnterpriseProductionReadinessService {
     const [pendingAutomation] = await this.deps.db
       .select({ value: count() })
       .from(automationQueueJobs)
-      .where(and(eq(automationQueueJobs.companyId, companyId), eq(automationQueueJobs.status, 'pending')));
+      .where(
+        and(
+          eq(automationQueueJobs.companyId, companyId),
+          eq(automationQueueJobs.status, 'pending'),
+        ),
+      );
 
     const [latencyRow] = await this.deps.db
       .select({
         avgLatency: sql<number>`coalesce(avg((metadata->>'latencyMs')::int), 0)`,
       })
       .from(aiUsageRecords)
-      .where(and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)));
+      .where(
+        and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, monthStart)),
+      );
 
     const queueDepth = Number(pendingQueue?.value ?? 0) + Number(pendingAutomation?.value ?? 0);
     const mem = process.memoryUsage();
@@ -192,7 +208,8 @@ export class EnterpriseProductionReadinessService {
       apiP95LatencyMs: row!.apiP95LatencyMs,
       slowEndpointCount: row!.slowEndpointCount,
       dbPoolUsagePercent: row!.dbPoolUsagePercent != null ? Number(row!.dbPoolUsagePercent) : null,
-      cacheHitRatePercent: row!.cacheHitRatePercent != null ? Number(row!.cacheHitRatePercent) : null,
+      cacheHitRatePercent:
+        row!.cacheHitRatePercent != null ? Number(row!.cacheHitRatePercent) : null,
       queueDepth: row!.queueDepth,
       workerThroughputPerMinute: row!.workerThroughputPerMinute,
       backgroundJobFailureCount: row!.backgroundJobFailureCount,
@@ -214,7 +231,14 @@ export class EnterpriseProductionReadinessService {
     const warningCount = checks.filter((c) => c.status === 'warning').length;
     const criticalCount = checks.filter((c) => c.status === 'critical').length;
     const unknownCount = checks.filter((c) => c.status === 'unknown').length;
-    const overallStatus = criticalCount > 0 ? 'critical' : warningCount > 0 ? 'warning' : readyCount > 0 ? 'ready' : 'unknown';
+    const overallStatus =
+      criticalCount > 0
+        ? 'critical'
+        : warningCount > 0
+          ? 'warning'
+          : readyCount > 0
+            ? 'ready'
+            : 'unknown';
 
     const [run] = await this.deps.db
       .insert(opsReadinessCheckRuns)
@@ -311,7 +335,9 @@ export class EnterpriseProductionReadinessService {
       });
     }
 
-    for (const check of dashboard.latestReadinessRun?.checks.filter((c) => c.status === 'critical') ?? []) {
+    for (const check of dashboard.latestReadinessRun?.checks.filter(
+      (c) => c.status === 'critical',
+    ) ?? []) {
       candidates.push({
         title: check.title,
         description: check.description,
@@ -354,7 +380,10 @@ export class EnterpriseProductionReadinessService {
 
   async triggerBackupRun(scope: StaffScope, policyId: string) {
     const policy = await this.deps.db.query.opsBackupPolicies.findFirst({
-      where: and(eq(opsBackupPolicies.id, policyId), eq(opsBackupPolicies.companyId, scope.companyId)),
+      where: and(
+        eq(opsBackupPolicies.id, policyId),
+        eq(opsBackupPolicies.companyId, scope.companyId),
+      ),
     });
     if (!policy) {
       throw new EnterpriseProductionReadinessError('NOT_FOUND', 'Backup policy not found');
@@ -473,13 +502,17 @@ export class EnterpriseProductionReadinessService {
       unhealthyModuleCount: dashboard.systemHealth.filter((m) => m.status !== 'healthy').length,
       queueDepth: dashboard.performance?.queueDepth ?? 0,
       backupPolicyCount: dashboard.backupPolicies.length,
-      pendingMaintenanceActionCount: dashboard.maintenanceActions.filter((a) => a.status === 'pending_approval').length,
+      pendingMaintenanceActionCount: dashboard.maintenanceActions.filter(
+        (a) => a.status === 'pending_approval',
+      ).length,
       readinessStatus: dashboard.latestReadinessRun?.overallStatus ?? null,
     };
   }
 
   private async buildLiveHealthSignals(companyId: string): Promise<OpsServiceHealthSummary[]> {
-    const dbHealthy = this.deps.databaseUrl ? await checkDbConnection(this.deps.databaseUrl) : false;
+    const dbHealthy = this.deps.databaseUrl
+      ? await checkDbConnection(this.deps.databaseUrl)
+      : false;
     const now = new Date().toISOString();
 
     const [
@@ -493,7 +526,12 @@ export class EnterpriseProductionReadinessService {
       this.deps.db
         .select({ value: count() })
         .from(integrationConnections)
-        .where(and(eq(integrationConnections.companyId, companyId), eq(integrationConnections.status, 'error'))),
+        .where(
+          and(
+            eq(integrationConnections.companyId, companyId),
+            eq(integrationConnections.status, 'error'),
+          ),
+        ),
       this.deps.db
         .select({ value: count() })
         .from(aiProviders)
@@ -518,7 +556,12 @@ export class EnterpriseProductionReadinessService {
       this.deps.db
         .select({ value: count() })
         .from(automationQueueJobs)
-        .where(and(eq(automationQueueJobs.companyId, companyId), eq(automationQueueJobs.status, 'failed'))),
+        .where(
+          and(
+            eq(automationQueueJobs.companyId, companyId),
+            eq(automationQueueJobs.status, 'failed'),
+          ),
+        ),
     ]);
 
     const integrationErrors = Number(errorIntegrations[0]?.value ?? 0);
@@ -555,7 +598,12 @@ export class EnterpriseProductionReadinessService {
     return OPS_SERVICE_MODULES.map((moduleKey) => ({
       moduleKey,
       status: moduleStatus(moduleKey),
-      availabilityPercent: moduleStatus(moduleKey) === 'healthy' ? 100 : moduleStatus(moduleKey) === 'degraded' ? 95 : 0,
+      availabilityPercent:
+        moduleStatus(moduleKey) === 'healthy'
+          ? 100
+          : moduleStatus(moduleKey) === 'degraded'
+            ? 95
+            : 0,
       latencyMs: null,
       errorRatePercent: null,
       throughputPerMinute: null,
@@ -581,7 +629,9 @@ export class EnterpriseProductionReadinessService {
     checks.push({
       checkKey: 'database_configured',
       title: 'Database configuration',
-      description: this.deps.databaseUrl ? 'DATABASE_URL is configured.' : 'DATABASE_URL is not configured.',
+      description: this.deps.databaseUrl
+        ? 'DATABASE_URL is configured.'
+        : 'DATABASE_URL is not configured.',
       status: this.deps.databaseUrl ? 'ready' : 'critical',
       category: 'infrastructure',
     });
@@ -607,7 +657,12 @@ export class EnterpriseProductionReadinessService {
     const [errorIntegrations] = await this.deps.db
       .select({ value: count() })
       .from(integrationConnections)
-      .where(and(eq(integrationConnections.companyId, companyId), eq(integrationConnections.status, 'error')));
+      .where(
+        and(
+          eq(integrationConnections.companyId, companyId),
+          eq(integrationConnections.status, 'error'),
+        ),
+      );
 
     checks.push({
       checkKey: 'integration_health',
@@ -620,7 +675,8 @@ export class EnterpriseProductionReadinessService {
       category: 'integrations',
     });
 
-    const hasProviders = await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
+    const hasProviders =
+      await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
     checks.push({
       checkKey: 'ai_provider_availability',
       title: 'AI provider availability',
@@ -640,7 +696,11 @@ export class EnterpriseProductionReadinessService {
         policies.length > 0
           ? `${policies.length} backup policy/policies defined.`
           : 'No backup policies configured.',
-      status: policies.some((p) => p.isEnabled) ? 'ready' : policies.length > 0 ? 'warning' : 'warning',
+      status: policies.some((p) => p.isEnabled)
+        ? 'ready'
+        : policies.length > 0
+          ? 'warning'
+          : 'warning',
       category: 'disaster_recovery',
     });
 
@@ -651,7 +711,11 @@ export class EnterpriseProductionReadinessService {
         runs.length > 0
           ? `Latest backup run: ${runs[0]!.status} at ${runs[0]!.startedAt}.`
           : 'No backup runs recorded yet.',
-      status: runs.some((r) => r.status === 'completed' || r.status === 'verified') ? 'ready' : runs.length > 0 ? 'warning' : 'unknown',
+      status: runs.some((r) => r.status === 'completed' || r.status === 'verified')
+        ? 'ready'
+        : runs.length > 0
+          ? 'warning'
+          : 'unknown',
       category: 'disaster_recovery',
     });
 
@@ -685,7 +749,9 @@ export class EnterpriseProductionReadinessService {
     return checks;
   }
 
-  private async getAiProviderMonitoring(companyId: string): Promise<OpsAiProviderMonitoringSummary[]> {
+  private async getAiProviderMonitoring(
+    companyId: string,
+  ): Promise<OpsAiProviderMonitoringSummary[]> {
     const [resilience, costAnalytics, providers] = await Promise.all([
       this.deps.aiProviderResilienceService.getResilienceStatus(companyId),
       this.deps.aiOrchestrationService.getCostAnalytics(companyId),
@@ -695,7 +761,10 @@ export class EnterpriseProductionReadinessService {
     const monthStart = new Date();
     monthStart.setUTCDate(1);
     const failovers = await this.deps.db.query.aiFailoverEvents.findMany({
-      where: and(eq(aiFailoverEvents.companyId, companyId), gte(aiFailoverEvents.loggedAt, monthStart)),
+      where: and(
+        eq(aiFailoverEvents.companyId, companyId),
+        gte(aiFailoverEvents.loggedAt, monthStart),
+      ),
     });
 
     return resilience.providers.map((provider) => {
@@ -710,7 +779,12 @@ export class EnterpriseProductionReadinessService {
         healthStatus: provider.healthStatus,
         isEnabled: provider.isEnabled,
         averageLatencyMs: provider.averageLatencyMs,
-        errorRatePercent: provider.healthStatus === 'unhealthy' ? 100 : provider.healthStatus === 'degraded' ? 25 : 0,
+        errorRatePercent:
+          provider.healthStatus === 'unhealthy'
+            ? 100
+            : provider.healthStatus === 'degraded'
+              ? 25
+              : 0,
         rateLimitEvents: failovers.filter((f) => f.reason === 'rate_limit').length,
         failoverCount,
         queueDepth: resilience.pendingQueueCount,
@@ -815,7 +889,9 @@ export class EnterpriseProductionReadinessService {
 
     let backupFreshnessHours: number | null = null;
     if (latest?.startedAt) {
-      backupFreshnessHours = Math.round((Date.now() - new Date(latest.startedAt).getTime()) / 3600000);
+      backupFreshnessHours = Math.round(
+        (Date.now() - new Date(latest.startedAt).getTime()) / 3600000,
+      );
     }
 
     return {
@@ -843,7 +919,10 @@ export class EnterpriseProductionReadinessService {
 
   private async getReadinessRun(runId: string, companyId: string) {
     const run = await this.deps.db.query.opsReadinessCheckRuns.findFirst({
-      where: and(eq(opsReadinessCheckRuns.id, runId), eq(opsReadinessCheckRuns.companyId, companyId)),
+      where: and(
+        eq(opsReadinessCheckRuns.id, runId),
+        eq(opsReadinessCheckRuns.companyId, companyId),
+      ),
     });
     if (!run) {
       throw new EnterpriseProductionReadinessError('NOT_FOUND', 'Readiness run not found');

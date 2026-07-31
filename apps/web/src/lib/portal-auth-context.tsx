@@ -81,9 +81,8 @@ export function PortalAuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    const scope =
-      user ?
-        {
+    const scope = user
+      ? {
           tenantId: user.companyId,
           actorId: user.id,
           actorKind: 'portal' as const,

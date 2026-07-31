@@ -17,7 +17,15 @@ const opportunityTypeSchema = z.enum([
   'custom',
 ]);
 const opportunitySourceSchema = z.enum(['manual', 'detected', 'quote', 'job', 'customer']);
-const activityTypeSchema = z.enum(['call', 'email', 'meeting', 'follow_up', 'quote_sent', 'note', 'other']);
+const activityTypeSchema = z.enum([
+  'call',
+  'email',
+  'meeting',
+  'follow_up',
+  'quote_sent',
+  'note',
+  'other',
+]);
 const recommendationStatusSchema = z.enum(['pending', 'accepted', 'dismissed', 'completed']);
 
 const createStageSchema = z.object({
@@ -118,7 +126,9 @@ export function createSalesRouter({
   router.post('/pipeline/stages', requireWrite, async (req, res) => {
     const parsed = createStageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid stage payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid stage payload' } });
       return;
     }
 
@@ -134,7 +144,9 @@ export function createSalesRouter({
   router.patch('/pipeline/stages/:id', requireWrite, async (req, res) => {
     const parsed = updateStageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid stage payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid stage payload' } });
       return;
     }
 
@@ -166,7 +178,9 @@ export function createSalesRouter({
   router.post('/opportunities', requireWrite, async (req, res) => {
     const parsed = createOpportunitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid opportunity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid opportunity payload' } });
       return;
     }
 
@@ -182,7 +196,9 @@ export function createSalesRouter({
   router.patch('/opportunities/:id', requireWrite, async (req, res) => {
     const parsed = updateOpportunitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid opportunity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid opportunity payload' } });
       return;
     }
 
@@ -210,7 +226,9 @@ export function createSalesRouter({
   router.post('/activities', requireWrite, async (req, res) => {
     const parsed = createActivitySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid activity payload' } });
       return;
     }
 

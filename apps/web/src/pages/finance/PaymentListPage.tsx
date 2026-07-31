@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, PAYMENT_METHOD_OPTIONS, type PaymentSummary } from '@titan/shared';
@@ -14,14 +14,19 @@ function formatMethod(method: PaymentSummary['method']): string {
 
 export function PaymentListPage() {
   const { accessToken, user } = useAuth();
+  const [q, setQ] = useState('');
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
 
-  const { data: payments, error, isLoading } = useStaffCachedQuery({
-    queryKey: 'finance/payments',
+  const {
+    data: payments,
+    error,
+    isLoading,
+  } = useStaffCachedQuery({
+    queryKey: `finance/payments:${q.trim()}`,
     enabled: canView,
-    fetcher: async () => fetchPayments(accessToken!),
+    fetcher: async () => fetchPayments(accessToken!, { q: q.trim() || undefined }),
   });
 
   if (!canView) {
@@ -47,22 +52,32 @@ export function PaymentListPage() {
       />
       <FinanceNav />
 
-      <PageLoadState
-        isLoading={isLoading}
-        error={error}
-        isEmpty={(payments?.length ?? 0) === 0}
-        emptyTitle="No payments yet"
-        emptyDescription="Record a payment against an invoice to track revenue."
-        emptyAction={
-          canWrite ? (
-            <Link href="/finance/payments/new">
-              <Button>Record payment</Button>
-            </Link>
-          ) : undefined
-        }
-        loadingLabel="Loading payments…"
-      >
-        <Panel title="Payments">
+      <Panel title="Payments">
+        <div className="finance-toolbar">
+          <input
+            className="titan-input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search reference or notes…"
+            aria-label="Search payments"
+          />
+        </div>
+
+        <PageLoadState
+          isLoading={isLoading}
+          error={error}
+          isEmpty={(payments?.length ?? 0) === 0}
+          emptyTitle={q ? 'No matching payments' : 'No payments yet'}
+          emptyDescription="Record a payment against an invoice to track revenue."
+          emptyAction={
+            canWrite ? (
+              <Link href="/finance/payments/new">
+                <Button>Record payment</Button>
+              </Link>
+            ) : undefined
+          }
+          loadingLabel="Loading payments…"
+        >
           <div className="finance-table-wrap">
             <table className="finance-table">
               <thead>
@@ -79,10 +94,16 @@ export function PaymentListPage() {
                 {(payments ?? []).map((payment) => (
                   <tr key={payment.id}>
                     <td>
-                      {payment.invoiceNumber} · {payment.invoiceTitle}
+                      <Link href={`/finance/invoices/${payment.invoiceId}`} className="finance-link">
+                        {payment.invoiceNumber} · {payment.invoiceTitle}
+                      </Link>
                     </td>
                     <td>{payment.customerName}</td>
-                    <td>{formatMoney(payment.amountCents, payment.currency)}</td>
+                    <td className="tabular-nums">
+                      <Link href={`/finance/payments/${payment.id}`} className="finance-link">
+                        {formatMoney(payment.amountCents, payment.currency)}
+                      </Link>
+                    </td>
                     <td>{formatMethod(payment.method)}</td>
                     <td>{payment.reference ?? '—'}</td>
                     <td>{new Date(payment.paidAt).toLocaleString()}</td>
@@ -91,8 +112,8 @@ export function PaymentListPage() {
               </tbody>
             </table>
           </div>
-        </Panel>
-      </PageLoadState>
+        </PageLoadState>
+      </Panel>
     </div>
   );
 }

@@ -283,7 +283,13 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseMarketingIntelligenceError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : error.code === 'SEND_PATH_NOT_IMPLEMENTED'
+            ? 501
+            : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -292,7 +298,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -302,13 +311,18 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
     'marketing_intelligence:manage',
     'marketing:read',
   );
-  const requireWrite = requireAnyPermission('marketing_intelligence:write', 'marketing_intelligence:manage');
+  const requireWrite = requireAnyPermission(
+    'marketing_intelligence:write',
+    'marketing_intelligence:manage',
+  );
   const requireManage = requireAnyPermission('marketing_intelligence:manage', 'platform:manage');
 
   router.get('/dashboard', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const dashboard = await deps.enterpriseMarketingIntelligenceService.getDashboard(auth.companyId);
+      const dashboard = await deps.enterpriseMarketingIntelligenceService.getDashboard(
+        auth.companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -318,7 +332,8 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/campaign-monitoring', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const campaignMonitoring = await deps.enterpriseMarketingIntelligenceService.getCampaignMonitoring(auth.companyId);
+      const campaignMonitoring =
+        await deps.enterpriseMarketingIntelligenceService.getCampaignMonitoring(auth.companyId);
       res.json({ data: { campaignMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -328,7 +343,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/portal', requirePortalAuth, async (req, res) => {
     try {
       const portalAuth = getPortalAuth(req);
-      const summary = await deps.enterpriseMarketingIntelligenceService.getPortalMarketingSummary(portalAuth.companyId);
+      const summary = await deps.enterpriseMarketingIntelligenceService.getPortalMarketingSummary(
+        portalAuth.companyId,
+      );
       res.json({ data: { summary } });
     } catch (error) {
       handleError(error, res);
@@ -338,7 +355,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseMarketingIntelligenceService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseMarketingIntelligenceService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -348,11 +367,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
-      const platformConfig = await deps.enterpriseMarketingIntelligenceService.updatePlatformConfig(staffScope(req), parsed.data);
+      const platformConfig = await deps.enterpriseMarketingIntelligenceService.updatePlatformConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -362,7 +386,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/marketing-campaigns', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const campaigns = await deps.enterpriseMarketingIntelligenceService.listMarketingCampaigns(auth.companyId);
+      const campaigns = await deps.enterpriseMarketingIntelligenceService.listMarketingCampaigns(
+        auth.companyId,
+      );
       res.json({ data: { campaigns } });
     } catch (error) {
       handleError(error, res);
@@ -372,18 +398,21 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/marketing-segments', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const segments = await deps.enterpriseMarketingIntelligenceService.listMarketingSegments(auth.companyId);
+      const segments = await deps.enterpriseMarketingIntelligenceService.listMarketingSegments(
+        auth.companyId,
+      );
       res.json({ data: { segments } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-
   router.get('/strategies', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const strategies = await deps.enterpriseMarketingIntelligenceService.listStrategies(auth.companyId);
+      const strategies = await deps.enterpriseMarketingIntelligenceService.listStrategies(
+        auth.companyId,
+      );
       res.json({ data: { strategies } });
     } catch (error) {
       handleError(error, res);
@@ -397,7 +426,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const strategy = await deps.enterpriseMarketingIntelligenceService.createStrategy(staffScope(req), parsed.data);
+      const strategy = await deps.enterpriseMarketingIntelligenceService.createStrategy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { strategy } });
     } catch (error) {
       handleError(error, res);
@@ -421,7 +453,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const brand = await deps.enterpriseMarketingIntelligenceService.createBrand(staffScope(req), parsed.data);
+      const brand = await deps.enterpriseMarketingIntelligenceService.createBrand(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { brand } });
     } catch (error) {
       handleError(error, res);
@@ -431,7 +466,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/brand-assets', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const brandAssets = await deps.enterpriseMarketingIntelligenceService.listBrandAssets(auth.companyId);
+      const brandAssets = await deps.enterpriseMarketingIntelligenceService.listBrandAssets(
+        auth.companyId,
+      );
       res.json({ data: { brandAssets } });
     } catch (error) {
       handleError(error, res);
@@ -445,7 +482,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const brandAsset = await deps.enterpriseMarketingIntelligenceService.createBrandAsset(staffScope(req), parsed.data);
+      const brandAsset = await deps.enterpriseMarketingIntelligenceService.createBrandAsset(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { brandAsset } });
     } catch (error) {
       handleError(error, res);
@@ -455,7 +495,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/audiences', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const audiences = await deps.enterpriseMarketingIntelligenceService.listAudiences(auth.companyId);
+      const audiences = await deps.enterpriseMarketingIntelligenceService.listAudiences(
+        auth.companyId,
+      );
       res.json({ data: { audiences } });
     } catch (error) {
       handleError(error, res);
@@ -469,7 +511,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const audience = await deps.enterpriseMarketingIntelligenceService.createAudience(staffScope(req), parsed.data);
+      const audience = await deps.enterpriseMarketingIntelligenceService.createAudience(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { audience } });
     } catch (error) {
       handleError(error, res);
@@ -479,7 +524,8 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/suppression-lists', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const suppressionLists = await deps.enterpriseMarketingIntelligenceService.listSuppressionLists(auth.companyId);
+      const suppressionLists =
+        await deps.enterpriseMarketingIntelligenceService.listSuppressionLists(auth.companyId);
       res.json({ data: { suppressionLists } });
     } catch (error) {
       handleError(error, res);
@@ -489,11 +535,17 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/suppression-lists', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = suppressionListSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid suppression list' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid suppression list' } });
       return;
     }
     try {
-      const suppressionList = await deps.enterpriseMarketingIntelligenceService.createSuppressionList(staffScope(req), parsed.data);
+      const suppressionList =
+        await deps.enterpriseMarketingIntelligenceService.createSuppressionList(
+          staffScope(req),
+          parsed.data,
+        );
       res.status(201).json({ data: { suppressionList } });
     } catch (error) {
       handleError(error, res);
@@ -503,7 +555,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/campaign-plans', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const campaignPlans = await deps.enterpriseMarketingIntelligenceService.listCampaignPlans(auth.companyId);
+      const campaignPlans = await deps.enterpriseMarketingIntelligenceService.listCampaignPlans(
+        auth.companyId,
+      );
       res.json({ data: { campaignPlans } });
     } catch (error) {
       handleError(error, res);
@@ -513,11 +567,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/campaign-plans', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = campaignPlanSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign plan' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid campaign plan' } });
       return;
     }
     try {
-      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.createCampaignPlan(staffScope(req), parsed.data);
+      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.createCampaignPlan(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { campaignPlan } });
     } catch (error) {
       handleError(error, res);
@@ -527,7 +586,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/content-items', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const contentItems = await deps.enterpriseMarketingIntelligenceService.listContentItems(auth.companyId);
+      const contentItems = await deps.enterpriseMarketingIntelligenceService.listContentItems(
+        auth.companyId,
+      );
       res.json({ data: { contentItems } });
     } catch (error) {
       handleError(error, res);
@@ -537,11 +598,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/content-items', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = contentItemSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid content item' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid content item' } });
       return;
     }
     try {
-      const contentItem = await deps.enterpriseMarketingIntelligenceService.createContentItem(staffScope(req), parsed.data);
+      const contentItem = await deps.enterpriseMarketingIntelligenceService.createContentItem(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { contentItem } });
     } catch (error) {
       handleError(error, res);
@@ -551,7 +617,8 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/creative-requests', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const creativeRequests = await deps.enterpriseMarketingIntelligenceService.listCreativeRequests(auth.companyId);
+      const creativeRequests =
+        await deps.enterpriseMarketingIntelligenceService.listCreativeRequests(auth.companyId);
       res.json({ data: { creativeRequests } });
     } catch (error) {
       handleError(error, res);
@@ -561,11 +628,17 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/creative-requests', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = creativeRequestSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid creative request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid creative request' } });
       return;
     }
     try {
-      const creativeRequest = await deps.enterpriseMarketingIntelligenceService.createCreativeRequest(staffScope(req), parsed.data);
+      const creativeRequest =
+        await deps.enterpriseMarketingIntelligenceService.createCreativeRequest(
+          staffScope(req),
+          parsed.data,
+        );
       res.status(201).json({ data: { creativeRequest } });
     } catch (error) {
       handleError(error, res);
@@ -575,7 +648,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/social-accounts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const socialAccounts = await deps.enterpriseMarketingIntelligenceService.listSocialAccounts(auth.companyId);
+      const socialAccounts = await deps.enterpriseMarketingIntelligenceService.listSocialAccounts(
+        auth.companyId,
+      );
       res.json({ data: { socialAccounts } });
     } catch (error) {
       handleError(error, res);
@@ -585,11 +660,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/social-accounts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = socialAccountSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid social account' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid social account' } });
       return;
     }
     try {
-      const socialAccount = await deps.enterpriseMarketingIntelligenceService.createSocialAccount(staffScope(req), parsed.data);
+      const socialAccount = await deps.enterpriseMarketingIntelligenceService.createSocialAccount(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { socialAccount } });
     } catch (error) {
       handleError(error, res);
@@ -599,7 +679,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/social-posts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const socialPosts = await deps.enterpriseMarketingIntelligenceService.listSocialPosts(auth.companyId);
+      const socialPosts = await deps.enterpriseMarketingIntelligenceService.listSocialPosts(
+        auth.companyId,
+      );
       res.json({ data: { socialPosts } });
     } catch (error) {
       handleError(error, res);
@@ -613,7 +695,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const socialPost = await deps.enterpriseMarketingIntelligenceService.createSocialPost(staffScope(req), parsed.data);
+      const socialPost = await deps.enterpriseMarketingIntelligenceService.createSocialPost(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { socialPost } });
     } catch (error) {
       handleError(error, res);
@@ -637,7 +722,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const review = await deps.enterpriseMarketingIntelligenceService.createReview(staffScope(req), parsed.data);
+      const review = await deps.enterpriseMarketingIntelligenceService.createReview(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -647,7 +735,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/ad-accounts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const adAccounts = await deps.enterpriseMarketingIntelligenceService.listAdAccounts(auth.companyId);
+      const adAccounts = await deps.enterpriseMarketingIntelligenceService.listAdAccounts(
+        auth.companyId,
+      );
       res.json({ data: { adAccounts } });
     } catch (error) {
       handleError(error, res);
@@ -661,7 +751,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const adAccount = await deps.enterpriseMarketingIntelligenceService.createAdAccount(staffScope(req), parsed.data);
+      const adAccount = await deps.enterpriseMarketingIntelligenceService.createAdAccount(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { adAccount } });
     } catch (error) {
       handleError(error, res);
@@ -671,7 +764,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/ad-campaigns', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const adCampaigns = await deps.enterpriseMarketingIntelligenceService.listAdCampaigns(auth.companyId);
+      const adCampaigns = await deps.enterpriseMarketingIntelligenceService.listAdCampaigns(
+        auth.companyId,
+      );
       res.json({ data: { adCampaigns } });
     } catch (error) {
       handleError(error, res);
@@ -685,7 +780,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const adCampaign = await deps.enterpriseMarketingIntelligenceService.createAdCampaign(staffScope(req), parsed.data);
+      const adCampaign = await deps.enterpriseMarketingIntelligenceService.createAdCampaign(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { adCampaign } });
     } catch (error) {
       handleError(error, res);
@@ -695,7 +793,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/ad-budgets', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const adBudgets = await deps.enterpriseMarketingIntelligenceService.listAdBudgets(auth.companyId);
+      const adBudgets = await deps.enterpriseMarketingIntelligenceService.listAdBudgets(
+        auth.companyId,
+      );
       res.json({ data: { adBudgets } });
     } catch (error) {
       handleError(error, res);
@@ -709,7 +809,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const adBudget = await deps.enterpriseMarketingIntelligenceService.createAdBudget(staffScope(req), parsed.data);
+      const adBudget = await deps.enterpriseMarketingIntelligenceService.createAdBudget(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { adBudget } });
     } catch (error) {
       handleError(error, res);
@@ -719,7 +822,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/seo-keywords', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const seoKeywords = await deps.enterpriseMarketingIntelligenceService.listSeoKeywords(auth.companyId);
+      const seoKeywords = await deps.enterpriseMarketingIntelligenceService.listSeoKeywords(
+        auth.companyId,
+      );
       res.json({ data: { seoKeywords } });
     } catch (error) {
       handleError(error, res);
@@ -733,7 +838,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const seoKeyword = await deps.enterpriseMarketingIntelligenceService.createSeoKeyword(staffScope(req), parsed.data);
+      const seoKeyword = await deps.enterpriseMarketingIntelligenceService.createSeoKeyword(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { seoKeyword } });
     } catch (error) {
       handleError(error, res);
@@ -743,7 +851,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/local-presence', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const profiles = await deps.enterpriseMarketingIntelligenceService.listLocalPresenceProfiles(auth.companyId);
+      const profiles = await deps.enterpriseMarketingIntelligenceService.listLocalPresenceProfiles(
+        auth.companyId,
+      );
       res.json({ data: { profiles } });
     } catch (error) {
       handleError(error, res);
@@ -753,11 +863,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/local-presence', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = localPresenceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid local presence profile' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid local presence profile' } });
       return;
     }
     try {
-      const profile = await deps.enterpriseMarketingIntelligenceService.createLocalPresenceProfile(staffScope(req), parsed.data);
+      const profile = await deps.enterpriseMarketingIntelligenceService.createLocalPresenceProfile(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { profile } });
     } catch (error) {
       handleError(error, res);
@@ -767,7 +882,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/websites', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const websites = await deps.enterpriseMarketingIntelligenceService.listWebsites(auth.companyId);
+      const websites = await deps.enterpriseMarketingIntelligenceService.listWebsites(
+        auth.companyId,
+      );
       res.json({ data: { websites } });
     } catch (error) {
       handleError(error, res);
@@ -781,7 +898,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const website = await deps.enterpriseMarketingIntelligenceService.createWebsite(staffScope(req), parsed.data);
+      const website = await deps.enterpriseMarketingIntelligenceService.createWebsite(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { website } });
     } catch (error) {
       handleError(error, res);
@@ -791,7 +911,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/landing-pages', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const landingPages = await deps.enterpriseMarketingIntelligenceService.listLandingPages(auth.companyId);
+      const landingPages = await deps.enterpriseMarketingIntelligenceService.listLandingPages(
+        auth.companyId,
+      );
       res.json({ data: { landingPages } });
     } catch (error) {
       handleError(error, res);
@@ -801,11 +923,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/landing-pages', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = landingPageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid landing page' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid landing page' } });
       return;
     }
     try {
-      const landingPage = await deps.enterpriseMarketingIntelligenceService.createLandingPage(staffScope(req), parsed.data);
+      const landingPage = await deps.enterpriseMarketingIntelligenceService.createLandingPage(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { landingPage } });
     } catch (error) {
       handleError(error, res);
@@ -815,7 +942,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/email-campaigns', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const emailCampaigns = await deps.enterpriseMarketingIntelligenceService.listEmailCampaigns(auth.companyId);
+      const emailCampaigns = await deps.enterpriseMarketingIntelligenceService.listEmailCampaigns(
+        auth.companyId,
+      );
       res.json({ data: { emailCampaigns } });
     } catch (error) {
       handleError(error, res);
@@ -825,11 +954,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/email-campaigns', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = emailCampaignSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid email campaign' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid email campaign' } });
       return;
     }
     try {
-      const emailCampaign = await deps.enterpriseMarketingIntelligenceService.createEmailCampaign(staffScope(req), parsed.data);
+      const emailCampaign = await deps.enterpriseMarketingIntelligenceService.createEmailCampaign(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { emailCampaign } });
     } catch (error) {
       handleError(error, res);
@@ -839,7 +973,8 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/messaging-campaigns', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const messagingCampaigns = await deps.enterpriseMarketingIntelligenceService.listMessagingCampaigns(auth.companyId);
+      const messagingCampaigns =
+        await deps.enterpriseMarketingIntelligenceService.listMessagingCampaigns(auth.companyId);
       res.json({ data: { messagingCampaigns } });
     } catch (error) {
       handleError(error, res);
@@ -849,11 +984,17 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/messaging-campaigns', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = messagingCampaignSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid messaging campaign' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid messaging campaign' } });
       return;
     }
     try {
-      const messagingCampaign = await deps.enterpriseMarketingIntelligenceService.createMessagingCampaign(staffScope(req), parsed.data);
+      const messagingCampaign =
+        await deps.enterpriseMarketingIntelligenceService.createMessagingCampaign(
+          staffScope(req),
+          parsed.data,
+        );
       res.status(201).json({ data: { messagingCampaign } });
     } catch (error) {
       handleError(error, res);
@@ -863,7 +1004,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/customer-journeys', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const journeys = await deps.enterpriseMarketingIntelligenceService.listCustomerJourneys(auth.companyId);
+      const journeys = await deps.enterpriseMarketingIntelligenceService.listCustomerJourneys(
+        auth.companyId,
+      );
       res.json({ data: { journeys } });
     } catch (error) {
       handleError(error, res);
@@ -873,11 +1016,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/customer-journeys', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = customerJourneySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid customer journey' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid customer journey' } });
       return;
     }
     try {
-      const journey = await deps.enterpriseMarketingIntelligenceService.createCustomerJourney(staffScope(req), parsed.data);
+      const journey = await deps.enterpriseMarketingIntelligenceService.createCustomerJourney(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { journey } });
     } catch (error) {
       handleError(error, res);
@@ -887,7 +1035,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/attribution-records', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const records = await deps.enterpriseMarketingIntelligenceService.listAttributionRecords(auth.companyId);
+      const records = await deps.enterpriseMarketingIntelligenceService.listAttributionRecords(
+        auth.companyId,
+      );
       res.json({ data: { records } });
     } catch (error) {
       handleError(error, res);
@@ -897,11 +1047,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/attribution-records', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = attributionRecordSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attribution record' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid attribution record' } });
       return;
     }
     try {
-      const record = await deps.enterpriseMarketingIntelligenceService.createAttributionRecord(staffScope(req), parsed.data);
+      const record = await deps.enterpriseMarketingIntelligenceService.createAttributionRecord(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(error, res);
@@ -911,7 +1066,8 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/referral-campaigns', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const referralCampaigns = await deps.enterpriseMarketingIntelligenceService.listReferralCampaigns(auth.companyId);
+      const referralCampaigns =
+        await deps.enterpriseMarketingIntelligenceService.listReferralCampaigns(auth.companyId);
       res.json({ data: { referralCampaigns } });
     } catch (error) {
       handleError(error, res);
@@ -921,11 +1077,17 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/referral-campaigns', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = referralCampaignSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid referral campaign' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid referral campaign' } });
       return;
     }
     try {
-      const referralCampaign = await deps.enterpriseMarketingIntelligenceService.createReferralCampaign(staffScope(req), parsed.data);
+      const referralCampaign =
+        await deps.enterpriseMarketingIntelligenceService.createReferralCampaign(
+          staffScope(req),
+          parsed.data,
+        );
       res.status(201).json({ data: { referralCampaign } });
     } catch (error) {
       handleError(error, res);
@@ -935,7 +1097,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/calendar-events', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const events = await deps.enterpriseMarketingIntelligenceService.listCalendarEvents(auth.companyId);
+      const events = await deps.enterpriseMarketingIntelligenceService.listCalendarEvents(
+        auth.companyId,
+      );
       res.json({ data: { events } });
     } catch (error) {
       handleError(error, res);
@@ -945,11 +1109,16 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/calendar-events', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = calendarEventSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid calendar event' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid calendar event' } });
       return;
     }
     try {
-      const event = await deps.enterpriseMarketingIntelligenceService.createCalendarEvent(staffScope(req), parsed.data);
+      const event = await deps.enterpriseMarketingIntelligenceService.createCalendarEvent(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { event } });
     } catch (error) {
       handleError(error, res);
@@ -959,7 +1128,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/experiments', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const experiments = await deps.enterpriseMarketingIntelligenceService.listExperiments(auth.companyId);
+      const experiments = await deps.enterpriseMarketingIntelligenceService.listExperiments(
+        auth.companyId,
+      );
       res.json({ data: { experiments } });
     } catch (error) {
       handleError(error, res);
@@ -973,7 +1144,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const experiment = await deps.enterpriseMarketingIntelligenceService.createExperiment(staffScope(req), parsed.data);
+      const experiment = await deps.enterpriseMarketingIntelligenceService.createExperiment(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { experiment } });
     } catch (error) {
       handleError(error, res);
@@ -983,7 +1157,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/market-intelligence', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const records = await deps.enterpriseMarketingIntelligenceService.listMarketIntelligenceRecords(auth.companyId);
+      const records =
+        await deps.enterpriseMarketingIntelligenceService.listMarketIntelligenceRecords(
+          auth.companyId,
+        );
       res.json({ data: { records } });
     } catch (error) {
       handleError(error, res);
@@ -993,11 +1170,17 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/market-intelligence', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = marketIntelligenceSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid market intelligence record' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid market intelligence record' },
+      });
       return;
     }
     try {
-      const record = await deps.enterpriseMarketingIntelligenceService.createMarketIntelligenceRecord(staffScope(req), parsed.data);
+      const record =
+        await deps.enterpriseMarketingIntelligenceService.createMarketIntelligenceRecord(
+          staffScope(req),
+          parsed.data,
+        );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(error, res);
@@ -1007,7 +1190,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseMarketingIntelligenceService.listProviders(auth.companyId);
+      const providers = await deps.enterpriseMarketingIntelligenceService.listProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -1021,7 +1206,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       return;
     }
     try {
-      const provider = await deps.enterpriseMarketingIntelligenceService.createProvider(staffScope(req), parsed.data);
+      const provider = await deps.enterpriseMarketingIntelligenceService.createProvider(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
@@ -1031,7 +1219,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/roi-snapshots', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const snapshots = await deps.enterpriseMarketingIntelligenceService.listRoiSnapshots(auth.companyId);
+      const snapshots = await deps.enterpriseMarketingIntelligenceService.listRoiSnapshots(
+        auth.companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -1041,100 +1231,144 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/roi-snapshots', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = roiSnapshotSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid ROI snapshot' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid ROI snapshot' } });
       return;
     }
     try {
-      const snapshot = await deps.enterpriseMarketingIntelligenceService.createRoiSnapshot(staffScope(req), parsed.data);
+      const snapshot = await deps.enterpriseMarketingIntelligenceService.createRoiSnapshot(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/campaign-plans/:planId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.submitCampaignPlanForReview(
-        staffScope(req),
-        getRouteParam(req.params.planId),
-      );
-      res.json({ data: { campaignPlan } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/campaign-plans/:planId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const campaignPlan =
+          await deps.enterpriseMarketingIntelligenceService.submitCampaignPlanForReview(
+            staffScope(req),
+            getRouteParam(req.params.planId),
+          );
+        res.json({ data: { campaignPlan } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/campaign-plans/:planId/submit-for-approval', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.submitCampaignPlanForApproval(
-        staffScope(req),
-        getRouteParam(req.params.planId),
-      );
-      res.json({ data: { campaignPlan } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/campaign-plans/:planId/submit-for-approval',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const campaignPlan =
+          await deps.enterpriseMarketingIntelligenceService.submitCampaignPlanForApproval(
+            staffScope(req),
+            getRouteParam(req.params.planId),
+          );
+        res.json({ data: { campaignPlan } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/campaign-plans/:planId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.approveCampaignPlan(
-        staffScope(req),
-        getRouteParam(req.params.planId),
-      );
-      res.json({ data: { campaignPlan } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/campaign-plans/:planId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const campaignPlan = await deps.enterpriseMarketingIntelligenceService.approveCampaignPlan(
+          staffScope(req),
+          getRouteParam(req.params.planId),
+        );
+        res.json({ data: { campaignPlan } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/campaign-plans/:planId/execute', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const campaignPlan = await deps.enterpriseMarketingIntelligenceService.executeCampaignPlan(
-        staffScope(req),
-        getRouteParam(req.params.planId),
-      );
-      res.json({ data: { campaignPlan } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/campaign-plans/:planId/execute',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const campaignPlan = await deps.enterpriseMarketingIntelligenceService.executeCampaignPlan(
+          staffScope(req),
+          getRouteParam(req.params.planId),
+        );
+        res.json({ data: { campaignPlan } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/content-items/:contentId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const contentItem = await deps.enterpriseMarketingIntelligenceService.submitContentItemForReview(
-        staffScope(req),
-        getRouteParam(req.params.contentId),
-      );
-      res.json({ data: { contentItem } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/content-items/:contentId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const contentItem =
+          await deps.enterpriseMarketingIntelligenceService.submitContentItemForReview(
+            staffScope(req),
+            getRouteParam(req.params.contentId),
+          );
+        res.json({ data: { contentItem } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/content-items/:contentId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const contentItem = await deps.enterpriseMarketingIntelligenceService.approveContentItem(
-        staffScope(req),
-        getRouteParam(req.params.contentId),
-      );
-      res.json({ data: { contentItem } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/content-items/:contentId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const contentItem = await deps.enterpriseMarketingIntelligenceService.approveContentItem(
+          staffScope(req),
+          getRouteParam(req.params.contentId),
+        );
+        res.json({ data: { contentItem } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/social-posts/:postId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const socialPost = await deps.enterpriseMarketingIntelligenceService.submitSocialPostForReview(
-        staffScope(req),
-        getRouteParam(req.params.postId),
-      );
-      res.json({ data: { socialPost } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/social-posts/:postId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const socialPost =
+          await deps.enterpriseMarketingIntelligenceService.submitSocialPostForReview(
+            staffScope(req),
+            getRouteParam(req.params.postId),
+          );
+        res.json({ data: { socialPost } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/social-posts/:postId/approve', requireStaffAuth, requireWrite, async (req, res) => {
     try {
@@ -1160,50 +1394,73 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
     }
   });
 
-  router.post('/email-campaigns/:campaignId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const emailCampaign = await deps.enterpriseMarketingIntelligenceService.submitEmailCampaignForReview(
-        staffScope(req),
-        getRouteParam(req.params.campaignId),
-      );
-      res.json({ data: { emailCampaign } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/email-campaigns/:campaignId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const emailCampaign =
+          await deps.enterpriseMarketingIntelligenceService.submitEmailCampaignForReview(
+            staffScope(req),
+            getRouteParam(req.params.campaignId),
+          );
+        res.json({ data: { emailCampaign } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/email-campaigns/:campaignId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const emailCampaign = await deps.enterpriseMarketingIntelligenceService.approveEmailCampaign(
-        staffScope(req),
-        getRouteParam(req.params.campaignId),
-      );
-      res.json({ data: { emailCampaign } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/email-campaigns/:campaignId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const emailCampaign =
+          await deps.enterpriseMarketingIntelligenceService.approveEmailCampaign(
+            staffScope(req),
+            getRouteParam(req.params.campaignId),
+          );
+        res.json({ data: { emailCampaign } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/email-campaigns/:campaignId/execute', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const emailCampaign = await deps.enterpriseMarketingIntelligenceService.executeEmailCampaign(
-        staffScope(req),
-        getRouteParam(req.params.campaignId),
-      );
-      res.json({ data: { emailCampaign } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/email-campaigns/:campaignId/execute',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const emailCampaign =
+          await deps.enterpriseMarketingIntelligenceService.executeEmailCampaign(
+            staffScope(req),
+            getRouteParam(req.params.campaignId),
+          );
+        res.json({ data: { emailCampaign } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/reviews/respond', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = reviewResponseSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review response' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid review response' } });
       return;
     }
     try {
-      const review = await deps.enterpriseMarketingIntelligenceService.submitReviewResponse(staffScope(req), parsed.data);
+      const review = await deps.enterpriseMarketingIntelligenceService.submitReviewResponse(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -1226,7 +1483,10 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const alerts = await deps.enterpriseMarketingIntelligenceService.listMarketingAlerts(auth.companyId, { status });
+      const alerts = await deps.enterpriseMarketingIntelligenceService.listMarketingAlerts(
+        auth.companyId,
+        { status },
+      );
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -1235,7 +1495,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
 
   router.post('/alerts/sync', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const alerts = await deps.enterpriseMarketingIntelligenceService.syncMarketingAlerts(staffScope(req));
+      const alerts = await deps.enterpriseMarketingIntelligenceService.syncMarketingAlerts(
+        staffScope(req),
+      );
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -1244,7 +1506,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
 
   router.post('/analytics/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseMarketingIntelligenceService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseMarketingIntelligenceService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -1254,7 +1518,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.get('/analytics/latest', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const analytics = await deps.enterpriseMarketingIntelligenceService.getLatestAnalytics(auth.companyId);
+      const analytics = await deps.enterpriseMarketingIntelligenceService.getLatestAnalytics(
+        auth.companyId,
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -1264,7 +1530,9 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
   router.post('/marketing-drafts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = marketingDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid marketing action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid marketing action draft' } });
       return;
     }
     try {
@@ -1277,7 +1545,6 @@ export function createEnterpriseMarketingIntelligenceRouter(deps: RouterDeps): R
       handleError(error, res);
     }
   });
-
 
   return router;
 }

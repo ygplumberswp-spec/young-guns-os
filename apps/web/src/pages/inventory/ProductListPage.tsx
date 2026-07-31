@@ -18,7 +18,11 @@ export function ProductListPage() {
   const canView = useMemo(() => (user ? canAccessInventory(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageInventory(user.permissions) : false), [user]);
 
-  const { data: items, error, isLoading } = useCachedQuery({
+  const {
+    data: items,
+    error,
+    isLoading,
+  } = useCachedQuery({
     queryKey: 'inventory/items',
     accessToken,
     enabled: canView,

@@ -40,11 +40,7 @@ export type MissionControlCommandActionType =
   | 'executive_briefing';
 
 export type MissionControlCommandActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type MissionControlRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 

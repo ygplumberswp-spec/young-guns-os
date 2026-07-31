@@ -43,7 +43,9 @@ export function DocumentListPage() {
     }
 
     void loadDocuments();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {

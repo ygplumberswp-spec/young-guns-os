@@ -22,9 +22,12 @@ import type {
 export { ApiClientError as EnterpriseAppBuilderApiClientError };
 
 export async function fetchAppBuilderDashboard(accessToken: string) {
-  const data = await request<{ dashboard: EnterpriseAppBuilderDashboard }>('/enterprise-app-builder/dashboard', {
-    accessToken,
-  });
+  const data = await request<{ dashboard: EnterpriseAppBuilderDashboard }>(
+    '/enterprise-app-builder/dashboard',
+    {
+      accessToken,
+    },
+  );
   return data.dashboard;
 }
 
@@ -116,7 +119,11 @@ export async function deployApprovedFeature(accessToken: string, featureRequestI
   return data.deployment;
 }
 
-export async function rollbackDeployment(accessToken: string, deploymentId: string, reason?: string) {
+export async function rollbackDeployment(
+  accessToken: string,
+  deploymentId: string,
+  reason?: string,
+) {
   const data = await request<{ rollback: AbRollbackSummary }>(
     `/enterprise-app-builder/deployments/${deploymentId}/rollbacks`,
     { method: 'POST', accessToken, body: reason ? { reason } : undefined },
@@ -173,9 +180,12 @@ export async function fetchAbDatabaseChangePlans(accessToken: string) {
 }
 
 export async function fetchAbTestRuns(accessToken: string) {
-  const data = await request<{ testRuns: AbTestRunSummary[] }>('/enterprise-app-builder/test-runs', {
-    accessToken,
-  });
+  const data = await request<{ testRuns: AbTestRunSummary[] }>(
+    '/enterprise-app-builder/test-runs',
+    {
+      accessToken,
+    },
+  );
   return data.testRuns;
 }
 
@@ -196,16 +206,22 @@ export async function fetchAbApprovalRecords(accessToken: string) {
 }
 
 export async function fetchAbDeployments(accessToken: string) {
-  const data = await request<{ deployments: AbDeploymentSummary[] }>('/enterprise-app-builder/deployments', {
-    accessToken,
-  });
+  const data = await request<{ deployments: AbDeploymentSummary[] }>(
+    '/enterprise-app-builder/deployments',
+    {
+      accessToken,
+    },
+  );
   return data.deployments;
 }
 
 export async function fetchAbRollbacks(accessToken: string) {
-  const data = await request<{ rollbacks: AbRollbackSummary[] }>('/enterprise-app-builder/rollbacks', {
-    accessToken,
-  });
+  const data = await request<{ rollbacks: AbRollbackSummary[] }>(
+    '/enterprise-app-builder/rollbacks',
+    {
+      accessToken,
+    },
+  );
   return data.rollbacks;
 }
 
@@ -242,8 +258,11 @@ export async function fetchAbActionDrafts(accessToken: string) {
 }
 
 export async function fetchAbAuditLogs(accessToken: string) {
-  const data = await request<{ auditLogs: AbAuditLogSummary[] }>('/enterprise-app-builder/audit-logs', {
-    accessToken,
-  });
+  const data = await request<{ auditLogs: AbAuditLogSummary[] }>(
+    '/enterprise-app-builder/audit-logs',
+    {
+      accessToken,
+    },
+  );
   return data.auditLogs;
 }

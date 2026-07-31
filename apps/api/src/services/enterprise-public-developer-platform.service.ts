@@ -58,58 +58,298 @@ export class EnterprisePublicDeveloperPlatformError extends Error {
 type StaffScope = { companyId: string; userId: string };
 
 const SYSTEM_API_VERSIONS = [
-  { versionKey: 'v1', title: 'TITAN Public API v1', basePath: '/api/v1', description: 'Current stable public API version.' },
+  {
+    versionKey: 'v1',
+    title: 'TITAN Public API v1',
+    basePath: '/api/v1',
+    description: 'Current stable public API version.',
+  },
 ];
 
-const SYSTEM_API_SCOPES: Array<{ scopeKey: string; name: string; resourceType: string; description: string }> = [
-  { scopeKey: 'customers:read', name: 'Read customers', resourceType: 'customers', description: 'Read customer records.' },
-  { scopeKey: 'customers:write', name: 'Write customers', resourceType: 'customers', description: 'Create and update customers.' },
-  { scopeKey: 'jobs:read', name: 'Read jobs', resourceType: 'jobs', description: 'Read job records.' },
-  { scopeKey: 'jobs:write', name: 'Write jobs', resourceType: 'jobs', description: 'Create and update jobs.' },
-  { scopeKey: 'quotes:read', name: 'Read quotes', resourceType: 'quotes', description: 'Read quote records.' },
-  { scopeKey: 'quotes:write', name: 'Write quotes', resourceType: 'quotes', description: 'Create and update quotes.' },
-  { scopeKey: 'invoices:read', name: 'Read invoices', resourceType: 'invoices', description: 'Read invoice records.' },
-  { scopeKey: 'invoices:write', name: 'Write invoices', resourceType: 'invoices', description: 'Create and update invoices.' },
-  { scopeKey: 'payments:read', name: 'Read payments', resourceType: 'payments', description: 'Read payment records.' },
-  { scopeKey: 'payments:write', name: 'Write payments', resourceType: 'payments', description: 'Create and update payments.' },
-  { scopeKey: 'inventory:read', name: 'Read inventory', resourceType: 'inventory', description: 'Read inventory records.' },
-  { scopeKey: 'inventory:write', name: 'Write inventory', resourceType: 'inventory', description: 'Update inventory records.' },
-  { scopeKey: 'fleet:read', name: 'Read fleet', resourceType: 'fleet', description: 'Read fleet records.' },
-  { scopeKey: 'fleet:write', name: 'Write fleet', resourceType: 'fleet', description: 'Update fleet records.' },
-  { scopeKey: 'assets:read', name: 'Read assets', resourceType: 'assets', description: 'Read asset records.' },
-  { scopeKey: 'assets:write', name: 'Write assets', resourceType: 'assets', description: 'Update asset records.' },
-  { scopeKey: 'technicians:read', name: 'Read technicians', resourceType: 'technicians', description: 'Read technician records.' },
-  { scopeKey: 'technicians:write', name: 'Write technicians', resourceType: 'technicians', description: 'Update technician records.' },
-  { scopeKey: 'scheduling:read', name: 'Read scheduling', resourceType: 'scheduling', description: 'Read scheduling records.' },
-  { scopeKey: 'scheduling:write', name: 'Write scheduling', resourceType: 'scheduling', description: 'Update scheduling records.' },
-  { scopeKey: 'communications:read', name: 'Read communications', resourceType: 'communications', description: 'Read communication records.' },
-  { scopeKey: 'communications:write', name: 'Write communications', resourceType: 'communications', description: 'Send communications.' },
-  { scopeKey: 'documents:read', name: 'Read documents', resourceType: 'documents', description: 'Read document records.' },
-  { scopeKey: 'documents:write', name: 'Write documents', resourceType: 'documents', description: 'Upload documents.' },
-  { scopeKey: 'reports:read', name: 'Read reports', resourceType: 'reports', description: 'Read report data.' },
-  { scopeKey: 'ai_agents:read', name: 'Read AI agents', resourceType: 'ai_agents', description: 'Read AI agent runs and tasks.' },
-  { scopeKey: 'automations:read', name: 'Read automations', resourceType: 'automations', description: 'Read automation workflows.' },
-  { scopeKey: 'automations:write', name: 'Write automations', resourceType: 'automations', description: 'Manage automation workflows.' },
-  { scopeKey: 'webhooks:read', name: 'Read webhooks', resourceType: 'webhooks', description: 'Read webhook subscriptions.' },
-  { scopeKey: 'webhooks:write', name: 'Write webhooks', resourceType: 'webhooks', description: 'Manage webhook subscriptions.' },
+const SYSTEM_API_SCOPES: Array<{
+  scopeKey: string;
+  name: string;
+  resourceType: string;
+  description: string;
+}> = [
+  {
+    scopeKey: 'customers:read',
+    name: 'Read customers',
+    resourceType: 'customers',
+    description: 'Read customer records.',
+  },
+  {
+    scopeKey: 'customers:write',
+    name: 'Write customers',
+    resourceType: 'customers',
+    description: 'Create and update customers.',
+  },
+  {
+    scopeKey: 'jobs:read',
+    name: 'Read jobs',
+    resourceType: 'jobs',
+    description: 'Read job records.',
+  },
+  {
+    scopeKey: 'jobs:write',
+    name: 'Write jobs',
+    resourceType: 'jobs',
+    description: 'Create and update jobs.',
+  },
+  {
+    scopeKey: 'quotes:read',
+    name: 'Read quotes',
+    resourceType: 'quotes',
+    description: 'Read quote records.',
+  },
+  {
+    scopeKey: 'quotes:write',
+    name: 'Write quotes',
+    resourceType: 'quotes',
+    description: 'Create and update quotes.',
+  },
+  {
+    scopeKey: 'invoices:read',
+    name: 'Read invoices',
+    resourceType: 'invoices',
+    description: 'Read invoice records.',
+  },
+  {
+    scopeKey: 'invoices:write',
+    name: 'Write invoices',
+    resourceType: 'invoices',
+    description: 'Create and update invoices.',
+  },
+  {
+    scopeKey: 'payments:read',
+    name: 'Read payments',
+    resourceType: 'payments',
+    description: 'Read payment records.',
+  },
+  {
+    scopeKey: 'payments:write',
+    name: 'Write payments',
+    resourceType: 'payments',
+    description: 'Create and update payments.',
+  },
+  {
+    scopeKey: 'inventory:read',
+    name: 'Read inventory',
+    resourceType: 'inventory',
+    description: 'Read inventory records.',
+  },
+  {
+    scopeKey: 'inventory:write',
+    name: 'Write inventory',
+    resourceType: 'inventory',
+    description: 'Update inventory records.',
+  },
+  {
+    scopeKey: 'fleet:read',
+    name: 'Read fleet',
+    resourceType: 'fleet',
+    description: 'Read fleet records.',
+  },
+  {
+    scopeKey: 'fleet:write',
+    name: 'Write fleet',
+    resourceType: 'fleet',
+    description: 'Update fleet records.',
+  },
+  {
+    scopeKey: 'assets:read',
+    name: 'Read assets',
+    resourceType: 'assets',
+    description: 'Read asset records.',
+  },
+  {
+    scopeKey: 'assets:write',
+    name: 'Write assets',
+    resourceType: 'assets',
+    description: 'Update asset records.',
+  },
+  {
+    scopeKey: 'technicians:read',
+    name: 'Read technicians',
+    resourceType: 'technicians',
+    description: 'Read technician records.',
+  },
+  {
+    scopeKey: 'technicians:write',
+    name: 'Write technicians',
+    resourceType: 'technicians',
+    description: 'Update technician records.',
+  },
+  {
+    scopeKey: 'scheduling:read',
+    name: 'Read scheduling',
+    resourceType: 'scheduling',
+    description: 'Read scheduling records.',
+  },
+  {
+    scopeKey: 'scheduling:write',
+    name: 'Write scheduling',
+    resourceType: 'scheduling',
+    description: 'Update scheduling records.',
+  },
+  {
+    scopeKey: 'communications:read',
+    name: 'Read communications',
+    resourceType: 'communications',
+    description: 'Read communication records.',
+  },
+  {
+    scopeKey: 'communications:write',
+    name: 'Write communications',
+    resourceType: 'communications',
+    description: 'Send communications.',
+  },
+  {
+    scopeKey: 'documents:read',
+    name: 'Read documents',
+    resourceType: 'documents',
+    description: 'Read document records.',
+  },
+  {
+    scopeKey: 'documents:write',
+    name: 'Write documents',
+    resourceType: 'documents',
+    description: 'Upload documents.',
+  },
+  {
+    scopeKey: 'reports:read',
+    name: 'Read reports',
+    resourceType: 'reports',
+    description: 'Read report data.',
+  },
+  {
+    scopeKey: 'ai_agents:read',
+    name: 'Read AI agents',
+    resourceType: 'ai_agents',
+    description: 'Read AI agent runs and tasks.',
+  },
+  {
+    scopeKey: 'automations:read',
+    name: 'Read automations',
+    resourceType: 'automations',
+    description: 'Read automation workflows.',
+  },
+  {
+    scopeKey: 'automations:write',
+    name: 'Write automations',
+    resourceType: 'automations',
+    description: 'Manage automation workflows.',
+  },
+  {
+    scopeKey: 'webhooks:read',
+    name: 'Read webhooks',
+    resourceType: 'webhooks',
+    description: 'Read webhook subscriptions.',
+  },
+  {
+    scopeKey: 'webhooks:write',
+    name: 'Write webhooks',
+    resourceType: 'webhooks',
+    description: 'Manage webhook subscriptions.',
+  },
 ];
 
-const SYSTEM_WEBHOOK_EVENTS: Array<{ eventKey: string; name: string; category: string; description: string }> = [
-  { eventKey: 'customer.created', name: 'Customer created', category: 'crm', description: 'A customer record was created.' },
-  { eventKey: 'lead.created', name: 'Lead created', category: 'sales', description: 'A lead record was created.' },
-  { eventKey: 'quote.accepted', name: 'Quote accepted', category: 'finance', description: 'A quote was accepted.' },
-  { eventKey: 'job.booked', name: 'Job booked', category: 'operations', description: 'A job was booked.' },
-  { eventKey: 'job.started', name: 'Job started', category: 'operations', description: 'A job was started.' },
-  { eventKey: 'job.completed', name: 'Job completed', category: 'operations', description: 'A job was completed.' },
-  { eventKey: 'invoice.created', name: 'Invoice created', category: 'finance', description: 'An invoice was created.' },
-  { eventKey: 'invoice.paid', name: 'Invoice paid', category: 'finance', description: 'An invoice was paid.' },
-  { eventKey: 'payment.failed', name: 'Payment failed', category: 'finance', description: 'A payment failed.' },
-  { eventKey: 'inventory.updated', name: 'Inventory updated', category: 'inventory', description: 'Inventory was updated.' },
-  { eventKey: 'asset.serviced', name: 'Asset serviced', category: 'assets', description: 'An asset was serviced.' },
-  { eventKey: 'technician.assigned', name: 'Technician assigned', category: 'operations', description: 'A technician was assigned.' },
-  { eventKey: 'vehicle.event', name: 'Vehicle event', category: 'fleet', description: 'A vehicle event occurred.' },
-  { eventKey: 'automation.completed', name: 'Automation completed', category: 'automation', description: 'An automation workflow completed.' },
-  { eventKey: 'ai_task.completed', name: 'AI task completed', category: 'ai', description: 'An AI agent task completed.' },
+const SYSTEM_WEBHOOK_EVENTS: Array<{
+  eventKey: string;
+  name: string;
+  category: string;
+  description: string;
+}> = [
+  {
+    eventKey: 'customer.created',
+    name: 'Customer created',
+    category: 'crm',
+    description: 'A customer record was created.',
+  },
+  {
+    eventKey: 'lead.created',
+    name: 'Lead created',
+    category: 'sales',
+    description: 'A lead record was created.',
+  },
+  {
+    eventKey: 'quote.accepted',
+    name: 'Quote accepted',
+    category: 'finance',
+    description: 'A quote was accepted.',
+  },
+  {
+    eventKey: 'job.booked',
+    name: 'Job booked',
+    category: 'operations',
+    description: 'A job was booked.',
+  },
+  {
+    eventKey: 'job.started',
+    name: 'Job started',
+    category: 'operations',
+    description: 'A job was started.',
+  },
+  {
+    eventKey: 'job.completed',
+    name: 'Job completed',
+    category: 'operations',
+    description: 'A job was completed.',
+  },
+  {
+    eventKey: 'invoice.created',
+    name: 'Invoice created',
+    category: 'finance',
+    description: 'An invoice was created.',
+  },
+  {
+    eventKey: 'invoice.paid',
+    name: 'Invoice paid',
+    category: 'finance',
+    description: 'An invoice was paid.',
+  },
+  {
+    eventKey: 'payment.failed',
+    name: 'Payment failed',
+    category: 'finance',
+    description: 'A payment failed.',
+  },
+  {
+    eventKey: 'inventory.updated',
+    name: 'Inventory updated',
+    category: 'inventory',
+    description: 'Inventory was updated.',
+  },
+  {
+    eventKey: 'asset.serviced',
+    name: 'Asset serviced',
+    category: 'assets',
+    description: 'An asset was serviced.',
+  },
+  {
+    eventKey: 'technician.assigned',
+    name: 'Technician assigned',
+    category: 'operations',
+    description: 'A technician was assigned.',
+  },
+  {
+    eventKey: 'vehicle.event',
+    name: 'Vehicle event',
+    category: 'fleet',
+    description: 'A vehicle event occurred.',
+  },
+  {
+    eventKey: 'automation.completed',
+    name: 'Automation completed',
+    category: 'automation',
+    description: 'An automation workflow completed.',
+  },
+  {
+    eventKey: 'ai_task.completed',
+    name: 'AI task completed',
+    category: 'ai',
+    description: 'An AI agent task completed.',
+  },
 ];
 
 type PublicDeveloperDeps = {
@@ -176,7 +416,9 @@ export class EnterprisePublicDeveloperPlatformService {
       this.getDeveloperMonitoring(companyId),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const overallApiHealthStatus = resolveApiHealthStatus({
       openAlertCount: alerts.length,
@@ -204,7 +446,9 @@ export class EnterprisePublicDeveloperPlatformService {
         : [],
       webhookDeadLetter: legacyDeveloperPlatform ? await this.listWebhookDeadLetter(companyId) : [],
       recentAlerts: alerts.slice(0, 10),
-      recentSdkGenerations: await this.listSdkGenerationRecords(companyId).then((r) => r.slice(0, 10)),
+      recentSdkGenerations: await this.listSdkGenerationRecords(companyId).then((r) =>
+        r.slice(0, 10),
+      ),
     };
   }
 
@@ -225,7 +469,10 @@ export class EnterprisePublicDeveloperPlatformService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdatePdpPlatformConfigRequest): Promise<PdpPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdatePdpPlatformConfigRequest,
+  ): Promise<PdpPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(pdpPlatformConfig)
@@ -248,7 +495,10 @@ export class EnterprisePublicDeveloperPlatformService {
     return toSandboxConfigSummary(await this.ensureSandboxConfig(companyId));
   }
 
-  async updateSandboxConfig(scope: StaffScope, input: UpdatePdpSandboxConfigRequest): Promise<PdpSandboxConfigSummary> {
+  async updateSandboxConfig(
+    scope: StaffScope,
+    input: UpdatePdpSandboxConfigRequest,
+  ): Promise<PdpSandboxConfigSummary> {
     const existing = await this.ensureSandboxConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(pdpSandboxConfig)
@@ -301,7 +551,10 @@ export class EnterprisePublicDeveloperPlatformService {
     return rows.map(toRateLimitPolicySummary);
   }
 
-  async createRateLimitPolicy(scope: StaffScope, input: CreatePdpRateLimitPolicyRequest): Promise<PdpRateLimitPolicySummary> {
+  async createRateLimitPolicy(
+    scope: StaffScope,
+    input: CreatePdpRateLimitPolicyRequest,
+  ): Promise<PdpRateLimitPolicySummary> {
     const [created] = await this.deps.db
       .insert(pdpRateLimitPolicies)
       .values({
@@ -319,10 +572,16 @@ export class EnterprisePublicDeveloperPlatformService {
     return toRateLimitPolicySummary(created!);
   }
 
-  async generateSdk(scope: StaffScope, input: GeneratePdpSdkRequest): Promise<PdpSdkGenerationRecordSummary> {
-    const sdk = await this.deps.enterpriseDeveloperPlatformService.generateSdkPackage(scope.companyId, {
-      language: input.language,
-    });
+  async generateSdk(
+    scope: StaffScope,
+    input: GeneratePdpSdkRequest,
+  ): Promise<PdpSdkGenerationRecordSummary> {
+    const sdk = await this.deps.enterpriseDeveloperPlatformService.generateSdkPackage(
+      scope.companyId,
+      {
+        language: input.language,
+      },
+    );
     const [record] = await this.deps.db
       .insert(pdpSdkGenerationRecords)
       .values({
@@ -335,7 +594,9 @@ export class EnterprisePublicDeveloperPlatformService {
         manifest: sdk.manifest,
       })
       .returning();
-    await this.recordAudit(scope, 'sdk_generated', 'sdk_generation_record', record!.id, { language: input.language });
+    await this.recordAudit(scope, 'sdk_generated', 'sdk_generation_record', record!.id, {
+      language: input.language,
+    });
     return toSdkGenerationRecordSummary(record!);
   }
 
@@ -449,8 +710,10 @@ export class EnterprisePublicDeveloperPlatformService {
 
     const alertMessages: string[] = [];
     if (deadLetter.length > 0) alertMessages.push(`${deadLetter.length} webhook failure(s)`);
-    if (legacy.analytics.apiErrorCount > 0) alertMessages.push(`${legacy.analytics.apiErrorCount} API error(s)`);
-    if (legacy.apiHealth.status !== 'healthy') alertMessages.push(`API health: ${legacy.apiHealth.status}`);
+    if (legacy.analytics.apiErrorCount > 0)
+      alertMessages.push(`${legacy.analytics.apiErrorCount} API error(s)`);
+    if (legacy.apiHealth.status !== 'healthy')
+      alertMessages.push(`API health: ${legacy.apiHealth.status}`);
 
     return {
       apiKeyCount: apiKeys.length,
@@ -463,17 +726,26 @@ export class EnterprisePublicDeveloperPlatformService {
     };
   }
 
-  async listDeveloperAlerts(companyId: string, filters?: { status?: string }): Promise<PdpDeveloperAlertSummary[]> {
+  async listDeveloperAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<PdpDeveloperAlertSummary[]> {
     const rows = await this.deps.db.query.pdpDeveloperAlerts.findMany({
       where: filters?.status
-        ? and(eq(pdpDeveloperAlerts.companyId, companyId), eq(pdpDeveloperAlerts.status, filters.status as never))
+        ? and(
+            eq(pdpDeveloperAlerts.companyId, companyId),
+            eq(pdpDeveloperAlerts.status, filters.status as never),
+          )
         : eq(pdpDeveloperAlerts.companyId, companyId),
       orderBy: [desc(pdpDeveloperAlerts.createdAt)],
     });
     return rows.map(toDeveloperAlertSummary);
   }
 
-  async acknowledgeDeveloperAlert(scope: StaffScope, alertId: string): Promise<PdpDeveloperAlertSummary> {
+  async acknowledgeDeveloperAlert(
+    scope: StaffScope,
+    alertId: string,
+  ): Promise<PdpDeveloperAlertSummary> {
     await this.ensureDeveloperAlert(scope.companyId, alertId);
     const [updated] = await this.deps.db
       .update(pdpDeveloperAlerts)
@@ -484,7 +756,10 @@ export class EnterprisePublicDeveloperPlatformService {
     return toDeveloperAlertSummary(updated!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreatePdpActionDraftRequest): Promise<PdpActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreatePdpActionDraftRequest,
+  ): Promise<PdpActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(pdpActionDrafts)
       .values({
@@ -538,7 +813,10 @@ export class EnterprisePublicDeveloperPlatformService {
   private async ensureSystemCatalog() {
     for (const version of SYSTEM_API_VERSIONS) {
       const existing = await this.deps.db.query.pdpApiVersions.findFirst({
-        where: and(isNull(pdpApiVersions.companyId), eq(pdpApiVersions.versionKey, version.versionKey)),
+        where: and(
+          isNull(pdpApiVersions.companyId),
+          eq(pdpApiVersions.versionKey, version.versionKey),
+        ),
       });
       if (existing) continue;
       await this.deps.db.insert(pdpApiVersions).values({
@@ -569,7 +847,10 @@ export class EnterprisePublicDeveloperPlatformService {
 
     for (const event of SYSTEM_WEBHOOK_EVENTS) {
       const existing = await this.deps.db.query.pdpWebhookEventTypes.findFirst({
-        where: and(isNull(pdpWebhookEventTypes.companyId), eq(pdpWebhookEventTypes.eventKey, event.eventKey)),
+        where: and(
+          isNull(pdpWebhookEventTypes.companyId),
+          eq(pdpWebhookEventTypes.eventKey, event.eventKey),
+        ),
       });
       if (existing) continue;
       await this.deps.db.insert(pdpWebhookEventTypes).values({
@@ -588,7 +869,10 @@ export class EnterprisePublicDeveloperPlatformService {
       where: eq(pdpPlatformConfig.companyId, companyId),
     });
     if (existing) return existing;
-    const [created] = await this.deps.db.insert(pdpPlatformConfig).values({ companyId }).returning();
+    const [created] = await this.deps.db
+      .insert(pdpPlatformConfig)
+      .values({ companyId })
+      .returning();
     return created!;
   }
 
@@ -605,7 +889,8 @@ export class EnterprisePublicDeveloperPlatformService {
     const row = await this.deps.db.query.pdpDeveloperAlerts.findFirst({
       where: and(eq(pdpDeveloperAlerts.id, alertId), eq(pdpDeveloperAlerts.companyId, companyId)),
     });
-    if (!row) throw new EnterprisePublicDeveloperPlatformError('NOT_FOUND', 'Developer alert not found');
+    if (!row)
+      throw new EnterprisePublicDeveloperPlatformError('NOT_FOUND', 'Developer alert not found');
     return row;
   }
 
@@ -627,7 +912,12 @@ export class EnterprisePublicDeveloperPlatformService {
 
   private async upsertDeveloperAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description: string;
+    },
   ): Promise<PdpDeveloperAlertSummary> {
     const existing = await this.deps.db.query.pdpDeveloperAlerts.findFirst({
       where: and(
@@ -639,7 +929,12 @@ export class EnterprisePublicDeveloperPlatformService {
     if (existing) {
       const [updated] = await this.deps.db
         .update(pdpDeveloperAlerts)
-        .set({ title: input.title, description: input.description, severity: input.severity, updatedAt: new Date() })
+        .set({
+          title: input.title,
+          description: input.description,
+          severity: input.severity,
+          updatedAt: new Date(),
+        })
         .where(eq(pdpDeveloperAlerts.id, existing.id))
         .returning();
       return toDeveloperAlertSummary(updated!);
@@ -683,11 +978,14 @@ function resolveApiHealthStatus(input: {
   apiHealth: string;
 }): string {
   if (input.openAlertCount > 3 || input.webhookFailureCount > 5) return 'critical';
-  if (input.openAlertCount > 0 || input.webhookFailureCount > 0 || input.apiHealth !== 'healthy') return 'degraded';
+  if (input.openAlertCount > 0 || input.webhookFailureCount > 0 || input.apiHealth !== 'healthy')
+    return 'degraded';
   return 'healthy';
 }
 
-function toPlatformConfigSummary(row: typeof pdpPlatformConfig.$inferSelect): PdpPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof pdpPlatformConfig.$inferSelect,
+): PdpPlatformConfigSummary {
   return {
     apiPolicy: row.apiPolicy ?? {},
     webhookPolicy: row.webhookPolicy ?? {},
@@ -698,7 +996,9 @@ function toPlatformConfigSummary(row: typeof pdpPlatformConfig.$inferSelect): Pd
   };
 }
 
-function toSandboxConfigSummary(row: typeof pdpSandboxConfig.$inferSelect): PdpSandboxConfigSummary {
+function toSandboxConfigSummary(
+  row: typeof pdpSandboxConfig.$inferSelect,
+): PdpSandboxConfigSummary {
   return {
     enabled: row.enabled,
     sandboxBaseUrl: row.sandboxBaseUrl,
@@ -734,7 +1034,9 @@ function toApiScopeSummary(row: typeof pdpApiScopes.$inferSelect): PdpApiScopeSu
   };
 }
 
-function toWebhookEventTypeSummary(row: typeof pdpWebhookEventTypes.$inferSelect): PdpWebhookEventTypeSummary {
+function toWebhookEventTypeSummary(
+  row: typeof pdpWebhookEventTypes.$inferSelect,
+): PdpWebhookEventTypeSummary {
   return {
     id: row.id,
     eventKey: row.eventKey,
@@ -745,7 +1047,9 @@ function toWebhookEventTypeSummary(row: typeof pdpWebhookEventTypes.$inferSelect
   };
 }
 
-function toRateLimitPolicySummary(row: typeof pdpRateLimitPolicies.$inferSelect): PdpRateLimitPolicySummary {
+function toRateLimitPolicySummary(
+  row: typeof pdpRateLimitPolicies.$inferSelect,
+): PdpRateLimitPolicySummary {
   return {
     id: row.id,
     policyKey: row.policyKey,
@@ -758,7 +1062,9 @@ function toRateLimitPolicySummary(row: typeof pdpRateLimitPolicies.$inferSelect)
   };
 }
 
-function toSdkGenerationRecordSummary(row: typeof pdpSdkGenerationRecords.$inferSelect): PdpSdkGenerationRecordSummary {
+function toSdkGenerationRecordSummary(
+  row: typeof pdpSdkGenerationRecords.$inferSelect,
+): PdpSdkGenerationRecordSummary {
   return {
     id: row.id,
     language: row.language,
@@ -781,7 +1087,9 @@ function toApiStatusSummary(row: typeof pdpApiStatusSnapshots.$inferSelect): Pdp
   };
 }
 
-function toDeveloperAlertSummary(row: typeof pdpDeveloperAlerts.$inferSelect): PdpDeveloperAlertSummary {
+function toDeveloperAlertSummary(
+  row: typeof pdpDeveloperAlerts.$inferSelect,
+): PdpDeveloperAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,

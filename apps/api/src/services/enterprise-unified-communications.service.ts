@@ -60,7 +60,8 @@ export class EnterpriseUnifiedCommunicationsService {
   constructor(private readonly deps: UnifiedCommsDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseUnifiedCommunicationsDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       providerAdapters,
@@ -128,7 +129,8 @@ export class EnterpriseUnifiedCommunicationsService {
     return {
       customerId,
       customerName: customer.name,
-      timeline: timeline.length > 0 ? timeline : customerTimeline.map((e) => this.commIntelToTimeline(e)),
+      timeline:
+        timeline.length > 0 ? timeline : customerTimeline.map((e) => this.commIntelToTimeline(e)),
       recentCalls: timeline.filter((e) => e.entryType === 'call').length,
       recentWhatsapp: timeline.filter((e) => e.entryType === 'whatsapp').length,
       recentEmail: timeline.filter((e) => e.entryType === 'email').length,
@@ -137,9 +139,12 @@ export class EnterpriseUnifiedCommunicationsService {
   }
 
   async syncTimelineFromModules(companyId: string): Promise<UcTimelineEntrySummary[]> {
-    const commTimeline = await this.deps.communicationsIntelligenceService.buildTimeline(companyId, {
-      limit: 100,
-    });
+    const commTimeline = await this.deps.communicationsIntelligenceService.buildTimeline(
+      companyId,
+      {
+        limit: 100,
+      },
+    );
 
     const created: UcTimelineEntrySummary[] = [];
     for (const entry of commTimeline) {
@@ -154,7 +159,9 @@ export class EnterpriseUnifiedCommunicationsService {
         continue;
       }
 
-      const entryType = mapChannelToEntryType(entry.channel) as typeof ucTimelineIndex.$inferInsert.entryType;
+      const entryType = mapChannelToEntryType(
+        entry.channel,
+      ) as typeof ucTimelineIndex.$inferInsert.entryType;
       const [row] = await this.deps.db
         .insert(ucTimelineIndex)
         .values({
@@ -195,11 +202,20 @@ export class EnterpriseUnifiedCommunicationsService {
       })
       .returning();
 
-    await this.logAudit(scope, 'provider_adapter_created', 'uc_provider_adapter', created!.id, input.channel);
+    await this.logAudit(
+      scope,
+      'provider_adapter_created',
+      'uc_provider_adapter',
+      created!.id,
+      input.channel,
+    );
     return this.toAdapterSummary(created!);
   }
 
-  async testProviderAdapter(scope: StaffScope, adapterId: string): Promise<UcProviderAdapterSummary> {
+  async testProviderAdapter(
+    scope: StaffScope,
+    adapterId: string,
+  ): Promise<UcProviderAdapterSummary> {
     const adapter = await this.ensureAdapter(scope.companyId, adapterId);
 
     let status = 'failed';
@@ -236,7 +252,10 @@ export class EnterpriseUnifiedCommunicationsService {
     return this.toAdapterSummary(updated!);
   }
 
-  async disableProviderAdapter(scope: StaffScope, adapterId: string): Promise<UcProviderAdapterSummary> {
+  async disableProviderAdapter(
+    scope: StaffScope,
+    adapterId: string,
+  ): Promise<UcProviderAdapterSummary> {
     const adapter = await this.ensureAdapter(scope.companyId, adapterId);
     const [updated] = await this.deps.db
       .update(ucProviderAdapters)
@@ -244,7 +263,13 @@ export class EnterpriseUnifiedCommunicationsService {
       .where(eq(ucProviderAdapters.id, adapter.id))
       .returning();
 
-    await this.logAudit(scope, 'provider_adapter_disabled', 'uc_provider_adapter', adapter.id, adapter.channel);
+    await this.logAudit(
+      scope,
+      'provider_adapter_disabled',
+      'uc_provider_adapter',
+      adapter.id,
+      adapter.channel,
+    );
     return this.toAdapterSummary(updated!);
   }
 
@@ -267,7 +292,12 @@ export class EnterpriseUnifiedCommunicationsService {
       })
       .returning();
 
-    await this.logAudit(scope, 'outbound_campaign_created', 'uc_outbound_call_campaign', created!.id);
+    await this.logAudit(
+      scope,
+      'outbound_campaign_created',
+      'uc_outbound_call_campaign',
+      created!.id,
+    );
     return this.toCampaignSummary(created!);
   }
 
@@ -284,7 +314,10 @@ export class EnterpriseUnifiedCommunicationsService {
           ),
         })
       : await this.deps.db.query.ucProviderAdapters.findFirst({
-          where: and(eq(ucProviderAdapters.companyId, scope.companyId), eq(ucProviderAdapters.status, 'active')),
+          where: and(
+            eq(ucProviderAdapters.companyId, scope.companyId),
+            eq(ucProviderAdapters.status, 'active'),
+          ),
         });
 
     const [created] = await this.deps.db
@@ -304,12 +337,18 @@ export class EnterpriseUnifiedCommunicationsService {
       })
       .returning();
 
-    await this.logAudit(scope, 'dispatch_notification_queued', 'uc_dispatch_notification', created!.id);
+    await this.logAudit(
+      scope,
+      'dispatch_notification_queued',
+      'uc_dispatch_notification',
+      created!.id,
+    );
     return this.toDispatchSummary(created!);
   }
 
   async captureAnalytics(companyId: string): Promise<UcAnalyticsSummary> {
-    const intelligence = await this.deps.communicationsIntelligenceService.getAnalyticsDashboard(companyId);
+    const intelligence =
+      await this.deps.communicationsIntelligenceService.getAnalyticsDashboard(companyId);
     const voiceSessions = await this.deps.voiceService.getCallHistory(companyId);
 
     const answered = voiceSessions.filter((s) => s.status === 'completed').length;
@@ -327,7 +366,10 @@ export class EnterpriseUnifiedCommunicationsService {
         companyId,
         callsAnswered: answered,
         callsMissed: missed,
-        aiResolutionRate: total > 0 ? String(Math.round((answered / Math.max(voiceSessions.length, 1)) * 100)) : null,
+        aiResolutionRate:
+          total > 0
+            ? String(Math.round((answered / Math.max(voiceSessions.length, 1)) * 100))
+            : null,
         humanTransferRate: null,
         channelUsage,
         providerPerformance: {},
@@ -373,7 +415,9 @@ export class EnterpriseUnifiedCommunicationsService {
     };
   }
 
-  private async getVoiceReceptionistSummary(companyId: string): Promise<UcVoiceReceptionistSummary> {
+  private async getVoiceReceptionistSummary(
+    companyId: string,
+  ): Promise<UcVoiceReceptionistSummary> {
     const [stats, sessions, followUps] = await Promise.all([
       this.deps.voiceService.getStats(companyId),
       this.deps.voiceService.getCallHistory(companyId),
@@ -395,7 +439,10 @@ export class EnterpriseUnifiedCommunicationsService {
   ): Promise<UcTimelineEntrySummary[]> {
     const rows = await this.deps.db.query.ucTimelineIndex.findMany({
       where: options.customerId
-        ? and(eq(ucTimelineIndex.companyId, companyId), eq(ucTimelineIndex.customerId, options.customerId))
+        ? and(
+            eq(ucTimelineIndex.companyId, companyId),
+            eq(ucTimelineIndex.customerId, options.customerId),
+          )
         : eq(ucTimelineIndex.companyId, companyId),
       orderBy: [desc(ucTimelineIndex.occurredAt)],
       limit: options.limit ?? 50,
@@ -420,7 +467,9 @@ export class EnterpriseUnifiedCommunicationsService {
     return rows.map((row) => this.toCampaignSummary(row));
   }
 
-  private async listDispatchNotifications(companyId: string): Promise<UcDispatchNotificationSummary[]> {
+  private async listDispatchNotifications(
+    companyId: string,
+  ): Promise<UcDispatchNotificationSummary[]> {
     const rows = await this.deps.db.query.ucDispatchNotifications.findMany({
       where: eq(ucDispatchNotifications.companyId, companyId),
       orderBy: [desc(ucDispatchNotifications.createdAt)],
@@ -456,7 +505,8 @@ export class EnterpriseUnifiedCommunicationsService {
     const adapter = await this.deps.db.query.ucProviderAdapters.findFirst({
       where: and(eq(ucProviderAdapters.id, adapterId), eq(ucProviderAdapters.companyId, companyId)),
     });
-    if (!adapter) throw new EnterpriseUnifiedCommunicationsError('NOT_FOUND', 'Provider adapter not found');
+    if (!adapter)
+      throw new EnterpriseUnifiedCommunicationsError('NOT_FOUND', 'Provider adapter not found');
     return adapter;
   }
 
@@ -513,7 +563,9 @@ export class EnterpriseUnifiedCommunicationsService {
     return email?.connectionStatus === 'connected';
   }
 
-  private toPlatformConfigSummary(row: typeof ucPlatformConfig.$inferSelect): UcPlatformConfigSummary {
+  private toPlatformConfigSummary(
+    row: typeof ucPlatformConfig.$inferSelect,
+  ): UcPlatformConfigSummary {
     return {
       globalPolicies: row.globalPolicies ?? {},
       aiVoiceSettings: row.aiVoiceSettings ?? {},
@@ -558,10 +610,12 @@ export class EnterpriseUnifiedCommunicationsService {
     return {
       callsAnswered: row.callsAnswered,
       callsMissed: row.callsMissed,
-      avgResponseTimeSeconds: row.avgResponseTimeSeconds != null ? Number(row.avgResponseTimeSeconds) : null,
+      avgResponseTimeSeconds:
+        row.avgResponseTimeSeconds != null ? Number(row.avgResponseTimeSeconds) : null,
       aiResolutionRate: row.aiResolutionRate != null ? Number(row.aiResolutionRate) : null,
       humanTransferRate: row.humanTransferRate != null ? Number(row.humanTransferRate) : null,
-      bookingConversionRate: row.bookingConversionRate != null ? Number(row.bookingConversionRate) : null,
+      bookingConversionRate:
+        row.bookingConversionRate != null ? Number(row.bookingConversionRate) : null,
       leadConversionRate: row.leadConversionRate != null ? Number(row.leadConversionRate) : null,
       customerSatisfactionScore:
         row.customerSatisfactionScore != null ? Number(row.customerSatisfactionScore) : null,
@@ -571,7 +625,9 @@ export class EnterpriseUnifiedCommunicationsService {
     };
   }
 
-  private toCampaignSummary(row: typeof ucOutboundCallCampaigns.$inferSelect): UcOutboundCampaignSummary {
+  private toCampaignSummary(
+    row: typeof ucOutboundCallCampaigns.$inferSelect,
+  ): UcOutboundCampaignSummary {
     return {
       id: row.id,
       campaignType: row.campaignType,
@@ -583,7 +639,9 @@ export class EnterpriseUnifiedCommunicationsService {
     };
   }
 
-  private toDispatchSummary(row: typeof ucDispatchNotifications.$inferSelect): UcDispatchNotificationSummary {
+  private toDispatchSummary(
+    row: typeof ucDispatchNotifications.$inferSelect,
+  ): UcDispatchNotificationSummary {
     return {
       id: row.id,
       jobId: row.jobId,

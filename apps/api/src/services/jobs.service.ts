@@ -1,15 +1,34 @@
-import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, ilike, inArray, lt, or, sql } from 'drizzle-orm';
 import type {
   CreateJobRequest,
   JobDetail,
+  JobDocumentLink,
   JobsStats,
   JobSummary,
   UpdateJobRequest,
 } from '@titan/shared';
+import {
+  buildJobAddressDisplay,
+  generateJobTitle,
+  isPlaceholderEmail,
+  isValidEmailAddress,
+  isValidSaMobile,
+  normalizeSaMobile,
+  requireJobAddress,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customers, jobs, users } from '@titan/db';
+import {
+  customers,
+  cxCustomerProperties,
+  documents,
+  jobs,
+  securityAuditLogs,
+  users,
+} from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import { upsertPrimaryCrewMember } from './job-execution.service.js';
+import { allocateJobNumber } from './job-number.js';
 
 const ACTIVE_JOB_STATUSES = ['new', 'scheduled', 'in_progress'] as const;
 
@@ -22,6 +41,11 @@ export class JobsError extends Error {
     this.name = 'JobsError';
   }
 }
+
+export type JobActor = {
+  userId: string;
+  companyId: string;
+};
 
 export type AuraJobsContext = {
   totalCount: number;
@@ -55,14 +79,74 @@ export type AuraJobsContext = {
 export class JobsService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listJobs(companyId: string): Promise<JobSummary[]> {
-    const rows = await this.db.query.jobs.findMany({
-      where: eq(jobs.companyId, companyId),
-      with: { customer: true, assignedUser: true },
-      orderBy: [desc(jobs.updatedAt)],
-    });
+  async listJobs(companyId: string, search?: string | null): Promise<JobSummary[]> {
+    const q = search?.trim();
 
-    return rows.map(toJobSummary);
+    if (!q) {
+      const rows = await this.db.query.jobs.findMany({
+        where: eq(jobs.companyId, companyId),
+        with: { customer: true, assignedUser: true },
+        orderBy: [desc(jobs.updatedAt)],
+      });
+      return rows.map(toJobSummary);
+    }
+
+    const pattern = `%${escapeLike(q)}%`;
+    const normalizedMobile = normalizeSaMobile(q);
+    const mobileDigits = (normalizedMobile ?? q).replace(/\D/g, '');
+    const mobileDigitPattern =
+      mobileDigits.length >= 9 ? `%${escapeLike(mobileDigits.slice(-9))}%` : null;
+    const mobileMatchers = [
+      ...(normalizedMobile
+        ? [
+            ilike(jobs.snapshotSiteContactMobile, `%${escapeLike(normalizedMobile)}%`),
+            ilike(customers.phone, `%${escapeLike(normalizedMobile)}%`),
+          ]
+        : []),
+      ...(mobileDigitPattern
+        ? [
+            ilike(jobs.snapshotSiteContactMobile, mobileDigitPattern),
+            ilike(customers.phone, mobileDigitPattern),
+          ]
+        : []),
+    ];
+    const rows = await this.db
+      .select({
+        job: jobs,
+        customer: customers,
+        assignedUser: users,
+      })
+      .from(jobs)
+      .innerJoin(customers, eq(jobs.customerId, customers.id))
+      .leftJoin(users, eq(jobs.assignedUserId, users.id))
+      .where(
+        and(
+          eq(jobs.companyId, companyId),
+          or(
+            ilike(jobs.jobNumber, pattern),
+            ilike(customers.name, pattern),
+            ilike(jobs.title, pattern),
+            ilike(jobs.jobType, pattern),
+            ilike(jobs.snapshotStreet, pattern),
+            ilike(jobs.snapshotSuburb, pattern),
+            ilike(jobs.snapshotCity, pattern),
+            ilike(jobs.snapshotPostalCode, pattern),
+            ilike(jobs.snapshotSiteContactMobile, pattern),
+            ilike(jobs.snapshotSiteContactName, pattern),
+            ilike(customers.phone, pattern),
+            ...mobileMatchers,
+          ),
+        ),
+      )
+      .orderBy(desc(jobs.updatedAt));
+
+    return rows.map((row) =>
+      toJobSummary({
+        ...row.job,
+        customer: row.customer,
+        assignedUser: row.assignedUser,
+      }),
+    );
   }
 
   async getJob(companyId: string, jobId: string): Promise<JobDetail | null> {
@@ -75,46 +159,298 @@ export class JobsService {
       return null;
     }
 
-    return toJobDetail(job);
+    const docs = await this.db.query.documents.findMany({
+      where: and(eq(documents.companyId, companyId), eq(documents.jobId, jobId)),
+      orderBy: [desc(documents.createdAt)],
+    });
+
+    return toJobDetail(job, docs.map(toJobDocumentLink));
   }
 
-  async createJob(companyId: string, input: CreateJobRequest): Promise<JobDetail> {
-    const title = input.title.trim();
+  async createJob(actor: JobActor, input: CreateJobRequest): Promise<JobDetail> {
+    const companyId = actor.companyId;
+    const customer = await this.db.query.customers.findFirst({
+      where: and(eq(customers.id, input.customerId), eq(customers.companyId, companyId)),
+    });
 
-    if (!title) {
-      throw new JobsError('VALIDATION_ERROR', 'Job title is required');
+    if (!customer) {
+      throw new JobsError('CUSTOMER_NOT_FOUND', 'Customer not found for this company');
     }
 
-    await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const jobType = input.jobType?.trim();
+    if (!jobType) {
+      throw new JobsError('VALIDATION_ERROR', 'Job type is required');
+    }
+
+    const description = input.description?.trim();
+    if (!description) {
+      throw new JobsError('VALIDATION_ERROR', 'Work / problem description is required');
+    }
+
+    const siteContactName = input.siteContact?.name?.trim();
+    if (!siteContactName) {
+      throw new JobsError('VALIDATION_ERROR', 'Site contact name is required');
+    }
+
+    const siteMobile = normalizeSaMobile(input.siteContact?.mobile);
+    if (!siteMobile || !isValidSaMobile(input.siteContact?.mobile)) {
+      throw new JobsError(
+        'VALIDATION_ERROR',
+        'Site contact mobile must be a valid South African mobile number',
+      );
+    }
+
+    const siteEmailRaw = input.siteContact?.email?.trim() || null;
+    if (siteEmailRaw && !isValidEmailAddress(siteEmailRaw)) {
+      throw new JobsError('VALIDATION_ERROR', 'Site contact email is invalid');
+    }
 
     if (input.assignedUserId) {
       await this.ensureAssigneeBelongsToCompany(companyId, input.assignedUserId);
     }
 
-    const scheduledAt = parseOptionalDate(input.scheduledAt);
+    const scheduledAt = parseOptionalDate(input.preferredAppointmentAt);
     const scheduledEndAt = parseOptionalDate(input.scheduledEndAt);
-
     if (scheduledAt && scheduledEndAt) {
       validateScheduleRange(scheduledAt, scheduledEndAt);
     }
 
-    const [created] = await this.db
-      .insert(jobs)
-      .values({
-        companyId,
-        customerId: input.customerId,
-        title,
-        description: normalizeOptionalText(input.description),
-        status: input.status ?? 'new',
-        scheduledAt,
-        scheduledEndAt,
-        assignedUserId: input.assignedUserId ?? null,
-        notes: normalizeOptionalText(input.notes),
-      })
-      .returning();
+    let propertyId: string | null = input.propertyId ?? null;
+    let address = input.address ? requireJobAddressSafe(input.address) : null;
 
-    if (!created) {
-      throw new JobsError('CREATE_FAILED', 'Unable to create job');
+    if (input.newProperty) {
+      const newAddr = requireJobAddressSafe(input.newProperty);
+      const propertyName =
+        input.newProperty.propertyName?.trim() ||
+        `${newAddr.suburb} — ${newAddr.street}`.slice(0, 200);
+
+      const [createdProperty] = await this.db
+        .insert(cxCustomerProperties)
+        .values({
+          companyId,
+          customerId: customer.id,
+          propertyName,
+          addressLine1: newAddr.street,
+          addressLine2: newAddr.unit,
+          suburb: newAddr.suburb,
+          city: newAddr.city,
+          province: newAddr.province,
+          postalCode: newAddr.postalCode,
+          unitNumber: newAddr.unit,
+          isPrimary: input.newProperty.isPrimary ?? false,
+        })
+        .returning();
+
+      if (!createdProperty) {
+        throw new JobsError('CREATE_FAILED', 'Unable to create property');
+      }
+
+      propertyId = createdProperty.id;
+      address = newAddr;
+    } else if (propertyId) {
+      const property = await this.db.query.cxCustomerProperties.findFirst({
+        where: and(
+          eq(cxCustomerProperties.id, propertyId),
+          eq(cxCustomerProperties.companyId, companyId),
+          eq(cxCustomerProperties.customerId, customer.id),
+        ),
+      });
+
+      if (!property) {
+        throw new JobsError('PROPERTY_NOT_FOUND', 'Property not found for this customer');
+      }
+
+      if (!address) {
+        address = requireJobAddressSafe({
+          street: property.addressLine1 ?? '',
+          suburb: property.suburb ?? '',
+          city: property.city ?? '',
+          province: property.province ?? '',
+          postalCode: property.postalCode ?? '',
+          unit: property.unitNumber ?? property.addressLine2,
+        });
+      }
+
+      if (input.updateVerifiedPropertyDetails) {
+        await this.db
+          .update(cxCustomerProperties)
+          .set({
+            addressLine1: address.street,
+            addressLine2: address.unit,
+            suburb: address.suburb,
+            city: address.city,
+            province: address.province,
+            postalCode: address.postalCode,
+            unitNumber: address.unit,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(cxCustomerProperties.id, property.id),
+              eq(cxCustomerProperties.companyId, companyId),
+            ),
+          );
+
+        await this.db.insert(securityAuditLogs).values({
+          companyId,
+          category: 'crm',
+          action: 'verified_property_details_updated',
+          entityType: 'cx_customer_property',
+          entityId: property.id,
+          userId: actor.userId,
+          metadata: {
+            customerId: customer.id,
+            street: address.street,
+            suburb: address.suburb,
+            city: address.city,
+            source: 'job_create',
+          },
+        });
+      }
+    }
+
+    if (!address) {
+      throw new JobsError('VALIDATION_ERROR', 'Existing property or new site address is required');
+    }
+
+    if (input.updateVerifiedCustomerDetails) {
+      const customerUpdates: Partial<typeof customers.$inferInsert> = {
+        updatedAt: new Date(),
+      };
+
+      if (!input.siteContactDiffersFromCustomer) {
+        customerUpdates.phone = siteMobile;
+        if (siteEmailRaw) {
+          customerUpdates.email = siteEmailRaw;
+        }
+        if (siteContactName) {
+          customerUpdates.name = siteContactName;
+        }
+      } else if (siteMobile && !customer.phone) {
+        customerUpdates.phone = siteMobile;
+      }
+
+      await this.db
+        .update(customers)
+        .set(customerUpdates)
+        .where(and(eq(customers.id, customer.id), eq(customers.companyId, companyId)));
+
+      await this.db.insert(securityAuditLogs).values({
+        companyId,
+        category: 'crm',
+        action: 'verified_customer_details_updated',
+        entityType: 'customer',
+        entityId: customer.id,
+        userId: actor.userId,
+        metadata: {
+          phone: customerUpdates.phone ?? null,
+          email: customerUpdates.email ?? null,
+          name: customerUpdates.name ?? null,
+          source: 'job_create',
+          explicitConsent: true,
+        },
+      });
+    }
+
+    const title = generateJobTitle({
+      jobType,
+      suburb: address.suburb,
+      street: address.street,
+      customerOrSiteContactName: siteContactName || customer.name,
+    });
+
+    const priority = input.priority ?? 'normal';
+    const status = scheduledAt ? 'scheduled' : 'new';
+
+    const created = await this.db.transaction(async (tx) => {
+      const jobNumber = await allocateJobNumber(tx, companyId);
+
+      const [row] = await tx
+        .insert(jobs)
+        .values({
+          companyId,
+          customerId: customer.id,
+          propertyId,
+          jobNumber,
+          title,
+          jobType,
+          description,
+          status,
+          priority,
+          scheduledAt,
+          scheduledEndAt,
+          assignedUserId: input.assignedUserId ?? null,
+          notes: normalizeOptionalText(input.notes),
+          customerVisibleNotes: normalizeOptionalText(input.customerVisibleNotes),
+          accessInstructions: normalizeOptionalText(input.accessInstructions),
+          siteContactDiffers: Boolean(input.siteContactDiffersFromCustomer),
+          snapshotStreet: address.street,
+          snapshotSuburb: address.suburb,
+          snapshotCity: address.city,
+          snapshotProvince: address.province,
+          snapshotPostalCode: address.postalCode,
+          snapshotUnit: address.unit,
+          snapshotSiteContactName: siteContactName,
+          snapshotSiteContactMobile: siteMobile,
+          snapshotSiteContactEmail: siteEmailRaw,
+          snapshotCustomerName: customer.name,
+        })
+        .returning();
+
+      if (!row) {
+        throw new JobsError('CREATE_FAILED', 'Unable to create job');
+      }
+
+      if (input.documents?.length) {
+        for (const doc of input.documents) {
+          const docTitle = doc.title?.trim();
+          const fileName = doc.fileName?.trim();
+          if (!docTitle || !fileName) {
+            throw new JobsError('VALIDATION_ERROR', 'Document title and file name are required');
+          }
+
+          await tx.insert(documents).values({
+            companyId,
+            customerId: customer.id,
+            jobId: row.id,
+            uploadedByUserId: actor.userId,
+            title: docTitle,
+            fileName,
+            fileType: normalizeOptionalText(doc.fileType),
+            fileSizeBytes: doc.fileSizeBytes ?? null,
+          });
+        }
+      }
+
+      await tx.insert(securityAuditLogs).values({
+        companyId,
+        category: 'crm',
+        action: 'job_created',
+        entityType: 'job',
+        entityId: row.id,
+        userId: actor.userId,
+        metadata: {
+          jobNumber,
+          customerId: customer.id,
+          propertyId,
+          jobType,
+          priority,
+          siteContactDiffers: Boolean(input.siteContactDiffersFromCustomer),
+          updateVerifiedCustomerDetails: Boolean(input.updateVerifiedCustomerDetails),
+          updateVerifiedPropertyDetails: Boolean(input.updateVerifiedPropertyDetails),
+        },
+      });
+
+      return row;
+    });
+
+    if (input.assignedUserId) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId: created.id,
+        userId: input.assignedUserId,
+        assignedByUserId: actor.userId,
+      });
     }
 
     const jobDetail = (await this.getJob(companyId, created.id))!;
@@ -127,6 +463,7 @@ export class JobsService {
       payload: {
         job: {
           id: created.id,
+          jobNumber: created.jobNumber,
           status: created.status,
           customerId: created.customerId,
           scheduledAt: created.scheduledAt?.toISOString() ?? null,
@@ -176,16 +513,18 @@ export class JobsService {
 
     if (input.title !== undefined) {
       const title = input.title.trim();
-
       if (!title) {
         throw new JobsError('VALIDATION_ERROR', 'Job title is required');
       }
-
       updates.title = title;
     }
 
     if (input.customerId !== undefined) {
       updates.customerId = input.customerId;
+    }
+
+    if (input.jobType !== undefined) {
+      updates.jobType = normalizeOptionalText(input.jobType);
     }
 
     if (input.description !== undefined) {
@@ -194,6 +533,10 @@ export class JobsService {
 
     if (input.status !== undefined) {
       updates.status = input.status;
+    }
+
+    if (input.priority !== undefined) {
+      updates.priority = input.priority;
     }
 
     if (input.scheduledAt !== undefined) {
@@ -216,6 +559,14 @@ export class JobsService {
       updates.notes = normalizeOptionalText(input.notes);
     }
 
+    if (input.customerVisibleNotes !== undefined) {
+      updates.customerVisibleNotes = normalizeOptionalText(input.customerVisibleNotes);
+    }
+
+    if (input.accessInstructions !== undefined) {
+      updates.accessInstructions = normalizeOptionalText(input.accessInstructions);
+    }
+
     const [updated] = await this.db
       .update(jobs)
       .set(updates)
@@ -224,6 +575,15 @@ export class JobsService {
 
     if (!updated) {
       throw new JobsError('UPDATE_FAILED', 'Unable to update job');
+    }
+
+    if (input.assignedUserId) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId,
+        userId: input.assignedUserId,
+        assignedByUserId: null,
+      });
     }
 
     const jobPayload = {
@@ -281,15 +641,57 @@ export class JobsService {
         const [activeRow] = await this.db
           .select({ count: sql<number>`count(*)::int` })
           .from(jobs)
-          .where(and(eq(jobs.companyId, companyId), inArray(jobs.status, [...ACTIVE_JOB_STATUSES])));
+          .where(
+            and(eq(jobs.companyId, companyId), inArray(jobs.status, [...ACTIVE_JOB_STATUSES])),
+          );
+
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 1);
+
+        const [todayRow] = await this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobs)
+          .where(
+            and(
+              eq(jobs.companyId, companyId),
+              inArray(jobs.status, ['scheduled', 'in_progress']),
+              gte(jobs.scheduledAt, start),
+              lt(jobs.scheduledAt, end),
+            ),
+          );
 
         return {
           totalCount: totalRow?.count ?? 0,
           activeCount: activeRow?.count ?? 0,
+          todayScheduledCount: todayRow?.count ?? 0,
         };
       },
       CACHE_TTLS.stats,
     );
+  }
+
+  /** UX-012 — today's scheduled/in-progress jobs for dashboard Upcoming Work. */
+  async listTodaysScheduledJobs(companyId: string, limit = 20): Promise<JobSummary[]> {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const rows = await this.db.query.jobs.findMany({
+      where: and(
+        eq(jobs.companyId, companyId),
+        inArray(jobs.status, ['scheduled', 'in_progress']),
+        gte(jobs.scheduledAt, start),
+        lt(jobs.scheduledAt, end),
+      ),
+      with: { customer: true, assignedUser: true },
+      orderBy: [jobs.scheduledAt],
+      limit,
+    });
+
+    return rows.map((row) => toJobSummary(row));
   }
 
   async buildAuraContext(companyId: string, jobId?: string): Promise<AuraJobsContext> {
@@ -344,7 +746,10 @@ export class JobsService {
     };
   }
 
-  private async ensureCustomerBelongsToCompany(companyId: string, customerId: string): Promise<void> {
+  private async ensureCustomerBelongsToCompany(
+    companyId: string,
+    customerId: string,
+  ): Promise<void> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -371,12 +776,28 @@ type JobWithRelations = typeof jobs.$inferSelect & {
 };
 
 function toJobSummary(job: JobWithRelations): JobSummary {
+  const addressDisplay =
+    buildJobAddressDisplay({
+      street: job.snapshotStreet,
+      suburb: job.snapshotSuburb,
+      city: job.snapshotCity,
+      province: job.snapshotProvince,
+      postalCode: job.snapshotPostalCode,
+      unit: job.snapshotUnit,
+    }) ?? null;
+
   return {
     id: job.id,
+    jobNumber: job.jobNumber ?? null,
     customerId: job.customerId,
-    customerName: job.customer?.name ?? 'Unknown',
+    customerName: job.snapshotCustomerName ?? job.customer?.name ?? 'Unknown',
+    propertyId: job.propertyId ?? null,
     title: job.title,
+    jobType: job.jobType ?? null,
+    priority: job.priority ?? 'normal',
     status: job.status,
+    addressDisplay,
+    siteContactMobile: job.snapshotSiteContactMobile ?? null,
     scheduledAt: job.scheduledAt ? job.scheduledAt.toISOString() : null,
     scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
     assignedUserId: job.assignedUserId,
@@ -388,12 +809,62 @@ function toJobSummary(job: JobWithRelations): JobSummary {
   };
 }
 
-function toJobDetail(job: JobWithRelations): JobDetail {
+function toJobDetail(job: JobWithRelations, docs: JobDocumentLink[]): JobDetail {
+  const summary = toJobSummary(job);
+  const email = job.snapshotSiteContactEmail ?? null;
+
   return {
-    ...toJobSummary(job),
+    ...summary,
     description: job.description,
     notes: job.notes,
+    customerVisibleNotes: job.customerVisibleNotes ?? null,
+    accessInstructions: job.accessInstructions ?? null,
+    address: {
+      street: job.snapshotStreet ?? null,
+      suburb: job.snapshotSuburb ?? null,
+      city: job.snapshotCity ?? null,
+      province: job.snapshotProvince ?? null,
+      postalCode: job.snapshotPostalCode ?? null,
+      unit: job.snapshotUnit ?? null,
+      display: summary.addressDisplay,
+    },
+    siteContact: {
+      name: job.snapshotSiteContactName ?? null,
+      mobile: job.snapshotSiteContactMobile ?? null,
+      email,
+      emailIsPlaceholder: email ? isPlaceholderEmail(email) : false,
+      differsFromCustomer: job.siteContactDiffers ?? false,
+    },
+    documents: docs,
   };
+}
+
+function toJobDocumentLink(doc: typeof documents.$inferSelect): JobDocumentLink {
+  return {
+    id: doc.id,
+    title: doc.title,
+    fileName: doc.fileName,
+    fileType: doc.fileType,
+    createdAt: doc.createdAt.toISOString(),
+  };
+}
+
+function requireJobAddressSafe(address: {
+  street?: string | null;
+  suburb?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postalCode?: string | null;
+  unit?: string | null;
+}) {
+  try {
+    return requireJobAddress(address);
+  } catch (error) {
+    throw new JobsError(
+      'VALIDATION_ERROR',
+      error instanceof Error ? error.message : 'Invalid site address',
+    );
+  }
 }
 
 function normalizeOptionalText(value: string | null | undefined): string | null {
@@ -419,4 +890,8 @@ function validateScheduleRange(start: Date, end: Date | null): void {
   if (end && end <= start) {
     throw new JobsError('VALIDATION_ERROR', 'Scheduled end must be after start');
   }
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }

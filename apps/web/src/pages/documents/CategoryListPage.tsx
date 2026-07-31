@@ -6,10 +6,7 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchDocumentCategories } from '../../lib/documents-api';
 import { useAuth } from '../../lib/auth-context';
 import { DocumentsNav } from '../../features/documents/DocumentsNav';
-import {
-  canAccessDocuments,
-  canManageDocuments,
-} from '../../features/documents/utils';
+import { canAccessDocuments, canManageDocuments } from '../../features/documents/utils';
 
 export function CategoryListPage() {
   const { accessToken, user } = useAuth();
@@ -42,13 +39,18 @@ export function CategoryListPage() {
     }
 
     void loadCategories();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   if (!canView) {
     return (
       <div className="documents-page">
-        <PageHeader title="Categories" description="You do not have permission to view documents." />
+        <PageHeader
+          title="Categories"
+          description="You do not have permission to view documents."
+        />
       </div>
     );
   }

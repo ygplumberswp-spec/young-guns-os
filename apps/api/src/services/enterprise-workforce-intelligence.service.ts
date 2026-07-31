@@ -89,7 +89,8 @@ export class EnterpriseWorkforceIntelligenceService {
   constructor(private readonly deps: WorkforceIntelligenceDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseWorkforceIntelligenceDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       profiles,
@@ -159,7 +160,8 @@ export class EnterpriseWorkforceIntelligenceService {
 
     const now = new Date();
     const complianceRisks = certs.filter(
-      (c) => c.expiresAt != null && new Date(c.expiresAt) <= new Date(now.getTime() + 30 * 86400000),
+      (c) =>
+        c.expiresAt != null && new Date(c.expiresAt) <= new Date(now.getTime() + 30 * 86400000),
     );
 
     return {
@@ -173,16 +175,23 @@ export class EnterpriseWorkforceIntelligenceService {
   }
 
   async getSelfService(scope: StaffScope): Promise<WiSelfServiceSummary> {
-    const [profile, allSkills, allCerts, allTraining, timesheets, leaveBalances, leaveApplications] =
-      await Promise.all([
-        this.getProfileForUser(scope.companyId, scope.userId),
-        this.deps.workforceService.listSkills(scope.companyId),
-        this.deps.workforceService.listCertifications(scope.companyId),
-        this.deps.workforceService.listTraining(scope.companyId),
-        this.listTimesheets(scope.companyId, { userId: scope.userId }),
-        this.listLeaveBalances(scope.companyId, scope.userId),
-        this.listLeaveApplications(scope.companyId, { userId: scope.userId }),
-      ]);
+    const [
+      profile,
+      allSkills,
+      allCerts,
+      allTraining,
+      timesheets,
+      leaveBalances,
+      leaveApplications,
+    ] = await Promise.all([
+      this.getProfileForUser(scope.companyId, scope.userId),
+      this.deps.workforceService.listSkills(scope.companyId),
+      this.deps.workforceService.listCertifications(scope.companyId),
+      this.deps.workforceService.listTraining(scope.companyId),
+      this.listTimesheets(scope.companyId, { userId: scope.userId }),
+      this.listLeaveBalances(scope.companyId, scope.userId),
+      this.listLeaveApplications(scope.companyId, { userId: scope.userId }),
+    ]);
 
     return {
       profile,
@@ -205,7 +214,10 @@ export class EnterpriseWorkforceIntelligenceService {
     if (!user) return null;
 
     const profile = await this.deps.db.query.wiWorkforceProfiles.findFirst({
-      where: and(eq(wiWorkforceProfiles.companyId, companyId), eq(wiWorkforceProfiles.userId, userId)),
+      where: and(
+        eq(wiWorkforceProfiles.companyId, companyId),
+        eq(wiWorkforceProfiles.userId, userId),
+      ),
     });
 
     const certs = (await this.deps.workforceService.listCertifications(companyId)).filter(
@@ -220,7 +232,9 @@ export class EnterpriseWorkforceIntelligenceService {
       technicianName: `${user.firstName} ${user.lastName}`.trim(),
       jobTitle: profile?.jobTitle ?? null,
       qualifications: publicQualifications,
-      profileSummary: profile?.jobTitle ? `${profile.jobTitle}${profile.department ? ` — ${profile.department}` : ''}` : null,
+      profileSummary: profile?.jobTitle
+        ? `${profile.jobTitle}${profile.department ? ` — ${profile.department}` : ''}`
+        : null,
     };
   }
 
@@ -250,7 +264,8 @@ export class EnterpriseWorkforceIntelligenceService {
         firstTimeFixRate: perf?.firstTimeFixRate ?? null,
         customerSatisfactionAvg: perf?.customerSatisfactionAvg ?? null,
         trainingGaps,
-        availabilityStatus: profile.lifecycleStage === 'active' ? 'available' : profile.lifecycleStage,
+        availabilityStatus:
+          profile.lifecycleStage === 'active' ? 'available' : profile.lifecycleStage,
       });
     }
 
@@ -267,7 +282,9 @@ export class EnterpriseWorkforceIntelligenceService {
 
     const activeTechnicians = profiles.filter((p) => p.lifecycleStage === 'active').length;
     const scheduledJobCount = performance.technicians.reduce((sum, t) => sum + t.jobsAssigned, 0);
-    const overtimeWarningCount = performance.technicians.filter((t) => t.workloadScore >= 85).length;
+    const overtimeWarningCount = performance.technicians.filter(
+      (t) => t.workloadScore >= 85,
+    ).length;
     const now = new Date();
     const certificationGapCount = certs.filter(
       (c) => c.expiresAt != null && new Date(c.expiresAt) <= now,
@@ -279,7 +296,8 @@ export class EnterpriseWorkforceIntelligenceService {
       pendingLeaveCount: pendingLeave.length,
       overtimeWarningCount,
       certificationGapCount,
-      standbyCoverageGaps: overtimeWarningCount > 0 ? ['High workload detected — review standby roster'] : [],
+      standbyCoverageGaps:
+        overtimeWarningCount > 0 ? ['High workload detected — review standby roster'] : [],
     };
   }
 
@@ -297,7 +315,8 @@ export class EnterpriseWorkforceIntelligenceService {
       .update(wiPlatformConfig)
       .set({
         globalPolicies: input.globalPolicies ?? existing.globalPolicies,
-        providerAdapterTemplates: input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
+        providerAdapterTemplates:
+          input.providerAdapterTemplates ?? existing.providerAdapterTemplates,
         jurisdictionTemplates: input.jurisdictionTemplates ?? existing.jurisdictionTemplates,
         leavePolicyDefaults: input.leavePolicyDefaults ?? existing.leavePolicyDefaults,
         performanceRules: input.performanceRules ?? existing.performanceRules,
@@ -351,7 +370,10 @@ export class EnterpriseWorkforceIntelligenceService {
       ),
     });
     if (existing) {
-      throw new EnterpriseWorkforceIntelligenceError('CONFLICT', 'Workforce profile already exists for this user');
+      throw new EnterpriseWorkforceIntelligenceError(
+        'CONFLICT',
+        'Workforce profile already exists for this user',
+      );
     }
 
     const [created] = await this.deps.db
@@ -433,7 +455,8 @@ export class EnterpriseWorkforceIntelligenceService {
 
   async testProvider(scope: StaffScope, providerId: string): Promise<WiProviderAdapterSummary> {
     const provider = await this.ensureProvider(scope.companyId, providerId);
-    const testStatus = provider.endpointUrl || provider.credentialsVaultKey ? 'success' : 'pending_configuration';
+    const testStatus =
+      provider.endpointUrl || provider.credentialsVaultKey ? 'success' : 'pending_configuration';
     const testMessage =
       testStatus === 'success'
         ? 'Connectivity test completed — configure credentials and endpoint for live sync.'
@@ -489,11 +512,19 @@ export class EnterpriseWorkforceIntelligenceService {
         );
     }
 
-    await this.recordAudit(scope, 'lifecycle_stage_created', 'wi_lifecycle_stage_history', created!.id);
+    await this.recordAudit(
+      scope,
+      'lifecycle_stage_created',
+      'wi_lifecycle_stage_history',
+      created!.id,
+    );
     return toLifecycleSummary(created!);
   }
 
-  async listLifecycleHistory(companyId: string, userId?: string): Promise<WiLifecycleStageHistorySummary[]> {
+  async listLifecycleHistory(
+    companyId: string,
+    userId?: string,
+  ): Promise<WiLifecycleStageHistorySummary[]> {
     const rows = await this.deps.db.query.wiLifecycleStageHistory.findMany({
       where: userId
         ? and(
@@ -507,7 +538,10 @@ export class EnterpriseWorkforceIntelligenceService {
     return rows.map(toLifecycleSummary);
   }
 
-  async createTimesheet(scope: StaffScope, input: CreateWiTimesheetRequest): Promise<WiTimesheetSummary> {
+  async createTimesheet(
+    scope: StaffScope,
+    input: CreateWiTimesheetRequest,
+  ): Promise<WiTimesheetSummary> {
     const userId = input.userId ?? scope.userId;
     await this.ensureUser(scope.companyId, userId);
 
@@ -539,7 +573,10 @@ export class EnterpriseWorkforceIntelligenceService {
   async approveTimesheet(scope: StaffScope, timesheetId: string): Promise<WiTimesheetSummary> {
     const timesheet = await this.ensureTimesheet(scope.companyId, timesheetId);
     if (timesheet.status === 'approved') {
-      throw new EnterpriseWorkforceIntelligenceError('VALIDATION_ERROR', 'Timesheet is already approved');
+      throw new EnterpriseWorkforceIntelligenceError(
+        'VALIDATION_ERROR',
+        'Timesheet is already approved',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -603,7 +640,10 @@ export class EnterpriseWorkforceIntelligenceService {
       updatedAt: new Date(),
     };
 
-    await this.deps.db.update(wiTimesheets).set(updateValues).where(eq(wiTimesheets.id, timesheetId));
+    await this.deps.db
+      .update(wiTimesheets)
+      .set(updateValues)
+      .where(eq(wiTimesheets.id, timesheetId));
 
     await this.recordAudit(scope, 'timesheet_corrected', 'wi_timesheet', timesheetId, {
       fieldName: input.fieldName,
@@ -636,7 +676,10 @@ export class EnterpriseWorkforceIntelligenceService {
   ): Promise<WiTimesheetSummary[]> {
     const conditions = [eq(wiTimesheets.companyId, companyId)];
     if (filters?.userId) conditions.push(eq(wiTimesheets.userId, filters.userId));
-    if (filters?.status) conditions.push(eq(wiTimesheets.status, filters.status as typeof wiTimesheets.$inferSelect.status));
+    if (filters?.status)
+      conditions.push(
+        eq(wiTimesheets.status, filters.status as typeof wiTimesheets.$inferSelect.status),
+      );
 
     const rows = await this.deps.db.query.wiTimesheets.findMany({
       where: and(...conditions),
@@ -723,7 +766,10 @@ export class EnterpriseWorkforceIntelligenceService {
     return this.getLeaveApplicationSummary(scope.companyId, created!.id);
   }
 
-  async approveLeaveApplication(scope: StaffScope, applicationId: string): Promise<WiLeaveApplicationSummary> {
+  async approveLeaveApplication(
+    scope: StaffScope,
+    applicationId: string,
+  ): Promise<WiLeaveApplicationSummary> {
     const application = await this.ensureLeaveApplication(scope.companyId, applicationId);
 
     const [updated] = await this.deps.db
@@ -737,7 +783,12 @@ export class EnterpriseWorkforceIntelligenceService {
       .where(eq(wiLeaveApplications.id, applicationId))
       .returning();
 
-    await this.recordAudit(scope, 'leave_application_approved', 'wi_leave_application', applicationId);
+    await this.recordAudit(
+      scope,
+      'leave_application_approved',
+      'wi_leave_application',
+      applicationId,
+    );
 
     const balanceDays = Number(application.daysRequested);
     const existingBalance = await this.deps.db.query.wiLeaveBalances.findFirst({
@@ -768,7 +819,13 @@ export class EnterpriseWorkforceIntelligenceService {
   ): Promise<WiLeaveApplicationSummary[]> {
     const conditions = [eq(wiLeaveApplications.companyId, companyId)];
     if (filters?.userId) conditions.push(eq(wiLeaveApplications.userId, filters.userId));
-    if (filters?.status) conditions.push(eq(wiLeaveApplications.status, filters.status as typeof wiLeaveApplications.$inferSelect.status));
+    if (filters?.status)
+      conditions.push(
+        eq(
+          wiLeaveApplications.status,
+          filters.status as typeof wiLeaveApplications.$inferSelect.status,
+        ),
+      );
 
     const rows = await this.deps.db.query.wiLeaveApplications.findMany({
       where: and(...conditions),
@@ -842,7 +899,10 @@ export class EnterpriseWorkforceIntelligenceService {
     return toPayrollPeriodSummary(created!);
   }
 
-  async preparePayroll(scope: StaffScope, payrollPeriodId: string): Promise<WiPayrollPreparationSummary> {
+  async preparePayroll(
+    scope: StaffScope,
+    payrollPeriodId: string,
+  ): Promise<WiPayrollPreparationSummary> {
     const period = await this.ensurePayrollPeriod(scope.companyId, payrollPeriodId);
 
     const approvedTimesheets = await this.deps.db.query.wiTimesheets.findMany({
@@ -893,7 +953,10 @@ export class EnterpriseWorkforceIntelligenceService {
     return this.getPayrollPreparationSummary(scope.companyId, batch!.id);
   }
 
-  async approvePayrollBatch(scope: StaffScope, batchId: string): Promise<WiPayrollPreparationSummary> {
+  async approvePayrollBatch(
+    scope: StaffScope,
+    batchId: string,
+  ): Promise<WiPayrollPreparationSummary> {
     const batch = await this.ensurePayrollBatch(scope.companyId, batchId);
     if (batch.exceptionCount > 0) {
       throw new EnterpriseWorkforceIntelligenceError(
@@ -913,7 +976,12 @@ export class EnterpriseWorkforceIntelligenceService {
       .where(eq(wiPayrollPreparationBatches.id, batchId))
       .returning();
 
-    await this.recordAudit(scope, 'payroll_batch_approved', 'wi_payroll_preparation_batch', batchId);
+    await this.recordAudit(
+      scope,
+      'payroll_batch_approved',
+      'wi_payroll_preparation_batch',
+      batchId,
+    );
     return this.getPayrollPreparationSummary(scope.companyId, updated!.id);
   }
 
@@ -969,8 +1037,12 @@ export class EnterpriseWorkforceIntelligenceService {
     }));
   }
 
-  async captureTechnicianPerformance(scope: StaffScope): Promise<WiTechnicianPerformanceSnapshotSummary[]> {
-    const insights = await this.deps.workforceService.getTechnicianPerformanceInsights(scope.companyId);
+  async captureTechnicianPerformance(
+    scope: StaffScope,
+  ): Promise<WiTechnicianPerformanceSnapshotSummary[]> {
+    const insights = await this.deps.workforceService.getTechnicianPerformanceInsights(
+      scope.companyId,
+    );
     const snapshots: WiTechnicianPerformanceSnapshotSummary[] = [];
 
     for (const insight of insights) {
@@ -1019,7 +1091,9 @@ export class EnterpriseWorkforceIntelligenceService {
     return snapshots;
   }
 
-  async listTechnicianPerformance(companyId: string): Promise<WiTechnicianPerformanceSnapshotSummary[]> {
+  async listTechnicianPerformance(
+    companyId: string,
+  ): Promise<WiTechnicianPerformanceSnapshotSummary[]> {
     const rows = await this.deps.db.query.wiTechnicianPerformanceSnapshots.findMany({
       where: eq(wiTechnicianPerformanceSnapshots.companyId, companyId),
       orderBy: [desc(wiTechnicianPerformanceSnapshots.capturedAt)],
@@ -1098,7 +1172,8 @@ export class EnterpriseWorkforceIntelligenceService {
 
     const now = new Date();
     const certificationRiskCount = certs.filter(
-      (c) => c.expiresAt != null && new Date(c.expiresAt) <= new Date(now.getTime() + 30 * 86400000),
+      (c) =>
+        c.expiresAt != null && new Date(c.expiresAt) <= new Date(now.getTime() + 30 * 86400000),
     ).length;
 
     const [created] = await this.deps.db
@@ -1107,7 +1182,8 @@ export class EnterpriseWorkforceIntelligenceService {
         companyId: scope.companyId,
         headcount: profiles.length,
         contractorCount: contractors.length,
-        absenceRate: profiles.length > 0 ? String((pendingLeave.length / profiles.length) * 100) : null,
+        absenceRate:
+          profiles.length > 0 ? String((pendingLeave.length / profiles.length) * 100) : null,
         certificationRiskCount,
         payrollExceptionCount: payrollExceptions.length,
         metrics: {
@@ -1141,16 +1217,28 @@ export class EnterpriseWorkforceIntelligenceService {
     };
   }
 
-  private async getProfileForUser(companyId: string, userId: string): Promise<WiWorkforceProfileSummary | null> {
+  private async getProfileForUser(
+    companyId: string,
+    userId: string,
+  ): Promise<WiWorkforceProfileSummary | null> {
     const row = await this.deps.db.query.wiWorkforceProfiles.findFirst({
-      where: and(eq(wiWorkforceProfiles.companyId, companyId), eq(wiWorkforceProfiles.userId, userId)),
+      where: and(
+        eq(wiWorkforceProfiles.companyId, companyId),
+        eq(wiWorkforceProfiles.userId, userId),
+      ),
     });
     return row ? this.buildProfileSummary(companyId, row) : null;
   }
 
-  private async getProfileSummary(companyId: string, profileId: string): Promise<WiWorkforceProfileSummary> {
+  private async getProfileSummary(
+    companyId: string,
+    profileId: string,
+  ): Promise<WiWorkforceProfileSummary> {
     const row = await this.deps.db.query.wiWorkforceProfiles.findFirst({
-      where: and(eq(wiWorkforceProfiles.companyId, companyId), eq(wiWorkforceProfiles.id, profileId)),
+      where: and(
+        eq(wiWorkforceProfiles.companyId, companyId),
+        eq(wiWorkforceProfiles.id, profileId),
+      ),
     });
     if (!row) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Profile not found');
     return this.buildProfileSummary(companyId, row);
@@ -1163,7 +1251,9 @@ export class EnterpriseWorkforceIntelligenceService {
     const [user, category, manager] = await Promise.all([
       this.deps.db.query.users.findFirst({ where: eq(users.id, row.userId) }),
       row.categoryId
-        ? this.deps.db.query.wiWorkforceCategories.findFirst({ where: eq(wiWorkforceCategories.id, row.categoryId) })
+        ? this.deps.db.query.wiWorkforceCategories.findFirst({
+            where: eq(wiWorkforceCategories.id, row.categoryId),
+          })
         : Promise.resolve(null),
       row.managerUserId
         ? this.deps.db.query.users.findFirst({ where: eq(users.id, row.managerUserId) })
@@ -1192,7 +1282,10 @@ export class EnterpriseWorkforceIntelligenceService {
     };
   }
 
-  private async getTimesheetSummary(companyId: string, timesheetId: string): Promise<WiTimesheetSummary> {
+  private async getTimesheetSummary(
+    companyId: string,
+    timesheetId: string,
+  ): Promise<WiTimesheetSummary> {
     const row = await this.deps.db.query.wiTimesheets.findFirst({
       where: and(eq(wiTimesheets.companyId, companyId), eq(wiTimesheets.id, timesheetId)),
     });
@@ -1227,9 +1320,13 @@ export class EnterpriseWorkforceIntelligenceService {
     applicationId: string,
   ): Promise<WiLeaveApplicationSummary> {
     const row = await this.deps.db.query.wiLeaveApplications.findFirst({
-      where: and(eq(wiLeaveApplications.companyId, companyId), eq(wiLeaveApplications.id, applicationId)),
+      where: and(
+        eq(wiLeaveApplications.companyId, companyId),
+        eq(wiLeaveApplications.id, applicationId),
+      ),
     });
-    if (!row) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave application not found');
+    if (!row)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave application not found');
 
     const user = await this.deps.db.query.users.findFirst({ where: eq(users.id, row.userId) });
     const category = await this.deps.db.query.wiLeaveCategories.findFirst({
@@ -1259,7 +1356,8 @@ export class EnterpriseWorkforceIntelligenceService {
         eq(wiPayrollPreparationBatches.id, batchId),
       ),
     });
-    if (!row) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll batch not found');
+    if (!row)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll batch not found');
 
     const period = await this.deps.db.query.wiPayrollPeriods.findFirst({
       where: eq(wiPayrollPeriods.id, row.payrollPeriodId),
@@ -1284,10 +1382,7 @@ export class EnterpriseWorkforceIntelligenceService {
     });
     if (existing) return existing;
 
-    const [created] = await this.deps.db
-      .insert(wiPlatformConfig)
-      .values({ companyId })
-      .returning();
+    const [created] = await this.deps.db.insert(wiPlatformConfig).values({ companyId }).returning();
     return created!;
   }
 
@@ -1300,9 +1395,13 @@ export class EnterpriseWorkforceIntelligenceService {
 
   private async ensureProvider(companyId: string, providerId: string) {
     const provider = await this.deps.db.query.wiProviderAdapters.findFirst({
-      where: and(eq(wiProviderAdapters.companyId, companyId), eq(wiProviderAdapters.id, providerId)),
+      where: and(
+        eq(wiProviderAdapters.companyId, companyId),
+        eq(wiProviderAdapters.id, providerId),
+      ),
     });
-    if (!provider) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Provider adapter not found');
+    if (!provider)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Provider adapter not found');
     return provider;
   }
 
@@ -1310,7 +1409,8 @@ export class EnterpriseWorkforceIntelligenceService {
     const timesheet = await this.deps.db.query.wiTimesheets.findFirst({
       where: and(eq(wiTimesheets.companyId, companyId), eq(wiTimesheets.id, timesheetId)),
     });
-    if (!timesheet) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Timesheet not found');
+    if (!timesheet)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Timesheet not found');
     return timesheet;
   }
 
@@ -1318,7 +1418,8 @@ export class EnterpriseWorkforceIntelligenceService {
     const category = await this.deps.db.query.wiLeaveCategories.findFirst({
       where: and(eq(wiLeaveCategories.companyId, companyId), eq(wiLeaveCategories.id, categoryId)),
     });
-    if (!category) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave category not found');
+    if (!category)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave category not found');
   }
 
   private async ensureLeaveApplication(companyId: string, applicationId: string) {
@@ -1328,7 +1429,8 @@ export class EnterpriseWorkforceIntelligenceService {
         eq(wiLeaveApplications.id, applicationId),
       ),
     });
-    if (!application) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave application not found');
+    if (!application)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Leave application not found');
     return application;
   }
 
@@ -1336,7 +1438,8 @@ export class EnterpriseWorkforceIntelligenceService {
     const period = await this.deps.db.query.wiPayrollPeriods.findFirst({
       where: and(eq(wiPayrollPeriods.companyId, companyId), eq(wiPayrollPeriods.id, periodId)),
     });
-    if (!period) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll period not found');
+    if (!period)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll period not found');
     return period;
   }
 
@@ -1347,7 +1450,8 @@ export class EnterpriseWorkforceIntelligenceService {
         eq(wiPayrollPreparationBatches.id, batchId),
       ),
     });
-    if (!batch) throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll batch not found');
+    if (!batch)
+      throw new EnterpriseWorkforceIntelligenceError('NOT_FOUND', 'Payroll batch not found');
     return batch;
   }
 
@@ -1369,7 +1473,9 @@ export class EnterpriseWorkforceIntelligenceService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof wiPlatformConfig.$inferSelect): WiPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof wiPlatformConfig.$inferSelect,
+): WiPlatformConfigSummary {
   return {
     globalPolicies: row.globalPolicies,
     providerAdapterTemplates: row.providerAdapterTemplates,
@@ -1381,7 +1487,9 @@ function toPlatformConfigSummary(row: typeof wiPlatformConfig.$inferSelect): WiP
   };
 }
 
-function toCategorySummary(row: typeof wiWorkforceCategories.$inferSelect): WiWorkforceCategorySummary {
+function toCategorySummary(
+  row: typeof wiWorkforceCategories.$inferSelect,
+): WiWorkforceCategorySummary {
   return {
     id: row.id,
     name: row.name,
@@ -1408,7 +1516,9 @@ function toProviderSummary(row: typeof wiProviderAdapters.$inferSelect): WiProvi
   };
 }
 
-function toLifecycleSummary(row: typeof wiLifecycleStageHistory.$inferSelect): WiLifecycleStageHistorySummary {
+function toLifecycleSummary(
+  row: typeof wiLifecycleStageHistory.$inferSelect,
+): WiLifecycleStageHistorySummary {
   return {
     id: row.id,
     userId: row.userId,
@@ -1421,7 +1531,9 @@ function toLifecycleSummary(row: typeof wiLifecycleStageHistory.$inferSelect): W
   };
 }
 
-function toLeaveCategorySummary(row: typeof wiLeaveCategories.$inferSelect): WiLeaveCategorySummary {
+function toLeaveCategorySummary(
+  row: typeof wiLeaveCategories.$inferSelect,
+): WiLeaveCategorySummary {
   return {
     id: row.id,
     name: row.name,

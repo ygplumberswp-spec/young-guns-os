@@ -10,17 +10,17 @@ import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/c
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
 
-  const canView = useMemo(
-    () => (user ? canAccessCrm(user.permissions) : false),
-    [user],
-  );
+  const canView = useMemo(() => (user ? canAccessCrm(user.permissions) : false), [user]);
 
-  const canWrite = useMemo(
-    () => (user ? canManageCustomers(user.permissions) : false),
-    [user],
-  );
+  const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
 
-  const { data: customers, error, isLoading, isStale, refetch } = useStaffCachedQuery({
+  const {
+    data: customers,
+    error,
+    isLoading,
+    isStale,
+    refetch,
+  } = useStaffCachedQuery({
     queryKey: 'crm/customers',
     enabled: canView,
     fetcher: async () => fetchCustomers(accessToken!),

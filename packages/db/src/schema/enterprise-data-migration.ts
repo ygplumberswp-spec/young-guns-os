@@ -13,7 +13,12 @@ import { companies } from './companies';
 import { users } from './users';
 
 export const dmAlertSeverityEnum = pgEnum('dm_alert_severity', ['info', 'warning', 'critical']);
-export const dmAlertStatusEnum = pgEnum('dm_alert_status', ['open', 'acknowledged', 'resolved', 'dismissed']);
+export const dmAlertStatusEnum = pgEnum('dm_alert_status', [
+  'open',
+  'acknowledged',
+  'resolved',
+  'dismissed',
+]);
 export const dmSourceFormatEnum = pgEnum('dm_source_format', ['csv', 'excel', 'json', 'xml']);
 export const dmEntityTypeEnum = pgEnum('dm_entity_type', [
   'customer',
@@ -77,7 +82,11 @@ export const dmDuplicateActionEnum = pgEnum('dm_duplicate_action', [
   'create_new',
   'pending',
 ]);
-export const dmValidationSeverityEnum = pgEnum('dm_validation_severity', ['error', 'warning', 'info']);
+export const dmValidationSeverityEnum = pgEnum('dm_validation_severity', [
+  'error',
+  'warning',
+  'info',
+]);
 export const dmRollbackStatusEnum = pgEnum('dm_rollback_status', [
   'available',
   'pending',
@@ -100,7 +109,10 @@ export const dmPlatformConfig = pgTable('dm_platform_config', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   importPolicy: jsonb('import_policy').$type<Record<string, unknown>>().notNull().default({}),
   exportPolicy: jsonb('export_policy').$type<Record<string, unknown>>().notNull().default({}),
-  validationPolicy: jsonb('validation_policy').$type<Record<string, unknown>>().notNull().default({}),
+  validationPolicy: jsonb('validation_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   duplicatePolicy: jsonb('duplicate_policy').$type<Record<string, unknown>>().notNull().default({}),
   rollbackPolicy: jsonb('rollback_policy').$type<Record<string, unknown>>().notNull().default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
@@ -121,16 +133,24 @@ export const dmImportJobs = pgTable('dm_import_jobs', {
   status: dmImportStatusEnum('status').notNull().default('draft'),
   fileName: text('file_name'),
   fileContent: text('file_content'),
-  detectedStructure: jsonb('detected_structure').$type<Record<string, unknown>>().notNull().default({}),
+  detectedStructure: jsonb('detected_structure')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   fieldMappings: jsonb('field_mappings').$type<Record<string, string>>().notNull().default({}),
-  validationSummary: jsonb('validation_summary').$type<Record<string, unknown>>().notNull().default({}),
+  validationSummary: jsonb('validation_summary')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   previewRows: jsonb('preview_rows').$type<Record<string, unknown>[]>().notNull().default([]),
   importedCount: integer('imported_count').notNull().default(0),
   failedCount: integer('failed_count').notNull().default(0),
   skippedCount: integer('skipped_count').notNull().default(0),
   rollbackStatus: dmRollbackStatusEnum('rollback_status').notNull().default('unavailable'),
   requiresApproval: boolean('requires_approval').notNull().default(true),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   errorMessage: text('error_message'),
@@ -208,7 +228,9 @@ export const dmDuplicateReviews = pgTable('dm_duplicate_reviews', {
   existingEntityId: uuid('existing_entity_id'),
   proposedAction: dmDuplicateActionEnum('proposed_action').notNull().default('pending'),
   resolvedAction: dmDuplicateActionEnum('resolved_action'),
-  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedByUserId: uuid('resolved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -264,7 +286,9 @@ export const dmRollbackRequests = pgTable('dm_rollback_requests', {
   reason: text('reason'),
   recordsAffected: integer('records_affected').notNull().default(0),
   requiresApproval: boolean('requires_approval').notNull().default(true),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   errorMessage: text('error_message'),

@@ -4,14 +4,10 @@ import { customers } from './customers';
 import { portalUsers } from './portal-users';
 import { users } from './users';
 
-export const customerSupportConversationStatusEnum = pgEnum('customer_support_conversation_status', [
-  'open',
-  'in_progress',
-  'waiting_customer',
-  'escalated',
-  'resolved',
-  'closed',
-]);
+export const customerSupportConversationStatusEnum = pgEnum(
+  'customer_support_conversation_status',
+  ['open', 'in_progress', 'waiting_customer', 'escalated', 'resolved', 'closed'],
+);
 
 export const customerSupportChannelEnum = pgEnum('customer_support_channel', [
   'portal',
@@ -36,12 +32,10 @@ export const customerSupportEscalationStatusEnum = pgEnum('customer_support_esca
   'dismissed',
 ]);
 
-export const customerSupportEscalationPriorityEnum = pgEnum('customer_support_escalation_priority', [
-  'low',
-  'medium',
-  'high',
-  'urgent',
-]);
+export const customerSupportEscalationPriorityEnum = pgEnum(
+  'customer_support_escalation_priority',
+  ['low', 'medium', 'high', 'urgent'],
+);
 
 export const customerSupportSentimentEnum = pgEnum('customer_support_sentiment', [
   'positive',

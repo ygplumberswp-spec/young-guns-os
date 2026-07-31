@@ -74,7 +74,10 @@ export class AnalyticsService {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  async getDashboard(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<AnalyticsDashboard> {
+  async getDashboard(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<AnalyticsDashboard> {
     const range = resolveRange(query);
     const currency = (await this.financeService.getStats(companyId)).currency;
     const fleetStats = await this.fleetService.getStats(companyId);
@@ -97,10 +100,17 @@ export class AnalyticsService {
       this.countNewCustomers(companyId, range.from, range.to),
       this.countNewCustomers(companyId, range.previousFrom, range.previousTo),
       this.db.query.invoices.findMany({
-        where: and(eq(invoices.companyId, companyId), gte(invoices.createdAt, range.from), lte(invoices.createdAt, range.to)),
+        where: and(
+          eq(invoices.companyId, companyId),
+          gte(invoices.createdAt, range.from),
+          lte(invoices.createdAt, range.to),
+        ),
       }),
       this.db.query.invoices.findMany({
-        where: and(eq(invoices.companyId, companyId), inArray(invoices.status, ['sent', 'partial', 'overdue'])),
+        where: and(
+          eq(invoices.companyId, companyId),
+          inArray(invoices.status, ['sent', 'partial', 'overdue']),
+        ),
       }),
     ]);
 
@@ -108,14 +118,20 @@ export class AnalyticsService {
     const activeJobs = currentJobs.filter((job) =>
       ['new', 'scheduled', 'in_progress'].includes(job.status),
     ).length;
-    const scheduledJobs = currentJobs.filter((job) => job.status === 'scheduled' || job.scheduledAt).length;
+    const scheduledJobs = currentJobs.filter(
+      (job) => job.status === 'scheduled' || job.scheduledAt,
+    ).length;
 
     const totalCustomers = await this.db.query.customers.findMany({
       where: eq(customers.companyId, companyId),
     });
 
     const paymentRows = await this.db.query.payments.findMany({
-      where: and(eq(payments.companyId, companyId), gte(payments.paidAt, range.from), lte(payments.paidAt, range.to)),
+      where: and(
+        eq(payments.companyId, companyId),
+        gte(payments.paidAt, range.from),
+        lte(payments.paidAt, range.to),
+      ),
     });
 
     const outstandingTotal = outstandingRows.reduce(
@@ -155,7 +171,8 @@ export class AnalyticsService {
       },
       invoicePerformance: {
         created: invoiceRows.length,
-        sent: invoiceRows.filter((row) => row.status !== 'draft' && row.status !== 'cancelled').length,
+        sent: invoiceRows.filter((row) => row.status !== 'draft' && row.status !== 'cancelled')
+          .length,
         paid: invoiceRows.filter((row) => row.status === 'paid').length,
         overdue: invoiceRows.filter((row) => row.status === 'overdue').length,
         totalInvoicedCents: invoiceRows.reduce((sum, row) => sum + row.amountCents, 0),
@@ -180,18 +197,33 @@ export class AnalyticsService {
     };
   }
 
-  async getTrends(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<AnalyticsTrends> {
+  async getTrends(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<AnalyticsTrends> {
     const range = resolveRange(query);
 
     const [jobRows, paymentRows, customerRows] = await Promise.all([
       this.db.query.jobs.findMany({
-        where: and(eq(jobs.companyId, companyId), gte(jobs.createdAt, range.from), lte(jobs.createdAt, range.to)),
+        where: and(
+          eq(jobs.companyId, companyId),
+          gte(jobs.createdAt, range.from),
+          lte(jobs.createdAt, range.to),
+        ),
       }),
       this.db.query.payments.findMany({
-        where: and(eq(payments.companyId, companyId), gte(payments.paidAt, range.from), lte(payments.paidAt, range.to)),
+        where: and(
+          eq(payments.companyId, companyId),
+          gte(payments.paidAt, range.from),
+          lte(payments.paidAt, range.to),
+        ),
       }),
       this.db.query.customers.findMany({
-        where: and(eq(customers.companyId, companyId), gte(customers.createdAt, range.from), lte(customers.createdAt, range.to)),
+        where: and(
+          eq(customers.companyId, companyId),
+          gte(customers.createdAt, range.from),
+          lte(customers.createdAt, range.to),
+        ),
       }),
     ]);
 
@@ -205,12 +237,19 @@ export class AnalyticsService {
     };
   }
 
-  async getProfitability(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<JobProfitabilityAnalytics> {
+  async getProfitability(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<JobProfitabilityAnalytics> {
     const range = resolveRange(query);
     const currency = (await this.financeService.getStats(companyId)).currency;
 
     const jobRows = await this.db.query.jobs.findMany({
-      where: and(eq(jobs.companyId, companyId), gte(jobs.createdAt, range.from), lte(jobs.createdAt, range.to)),
+      where: and(
+        eq(jobs.companyId, companyId),
+        gte(jobs.createdAt, range.from),
+        lte(jobs.createdAt, range.to),
+      ),
       with: { customer: true },
     });
 
@@ -229,7 +268,11 @@ export class AnalyticsService {
       const materialCostCents = null;
       const labourCostCents = null;
       const costTrackingAvailable = false;
-      const estimatedProfitCents = costTrackingAvailable ? null : revenueCents > 0 ? revenueCents : null;
+      const estimatedProfitCents = costTrackingAvailable
+        ? null
+        : revenueCents > 0
+          ? revenueCents
+          : null;
       const marginPercent =
         estimatedProfitCents !== null && revenueCents > 0
           ? Math.round((estimatedProfitCents / revenueCents) * 100)
@@ -251,7 +294,9 @@ export class AnalyticsService {
     });
 
     const totalRevenue = records.reduce((sum, row) => sum + row.revenueCents, 0);
-    const margins = records.filter((row) => row.marginPercent !== null).map((row) => row.marginPercent!);
+    const margins = records
+      .filter((row) => row.marginPercent !== null)
+      .map((row) => row.marginPercent!);
 
     return {
       range: { from: range.from.toISOString(), to: range.to.toISOString() },
@@ -261,7 +306,9 @@ export class AnalyticsService {
         revenueCents: totalRevenue,
         estimatedProfitCents: totalRevenue > 0 ? totalRevenue : null,
         averageMarginPercent:
-          margins.length > 0 ? Math.round(margins.reduce((a, b) => a + b, 0) / margins.length) : null,
+          margins.length > 0
+            ? Math.round(margins.reduce((a, b) => a + b, 0) / margins.length)
+            : null,
       },
     };
   }
@@ -273,7 +320,11 @@ export class AnalyticsService {
     const range = resolveRange(query);
 
     const jobRows = await this.db.query.jobs.findMany({
-      where: and(eq(jobs.companyId, companyId), gte(jobs.createdAt, range.from), lte(jobs.createdAt, range.to)),
+      where: and(
+        eq(jobs.companyId, companyId),
+        gte(jobs.createdAt, range.from),
+        lte(jobs.createdAt, range.to),
+      ),
       with: { assignedUser: true },
     });
 
@@ -315,40 +366,58 @@ export class AnalyticsService {
         jobsCompleted: entry.completed,
         jobsAssigned: entry.assigned,
         averageCompletionHours:
-          entry.hourSamples > 0 ? Math.round((entry.totalHours / entry.hourSamples) * 10) / 10 : null,
+          entry.hourSamples > 0
+            ? Math.round((entry.totalHours / entry.hourSamples) * 10) / 10
+            : null,
         workloadScore: entry.assigned,
         customerRatingsAvailable: false as const,
       })),
     };
   }
 
-  async getCustomerAnalytics(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<CustomerAnalytics> {
+  async getCustomerAnalytics(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<CustomerAnalytics> {
     const range = resolveRange(query);
 
-    const [customerRows, quoteRows, activityCountRow, invoiceRows, paymentRows] = await Promise.all([
-      this.db.query.customers.findMany({ where: eq(customers.companyId, companyId) }),
-      this.db.query.quotes.findMany({
-        where: and(eq(quotes.companyId, companyId), gte(quotes.createdAt, range.from), lte(quotes.createdAt, range.to)),
-      }),
-      this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(customerActivities)
-        .where(
-          and(
-            eq(customerActivities.companyId, companyId),
-            gte(customerActivities.createdAt, range.from),
-            lte(customerActivities.createdAt, range.to),
+    const [customerRows, quoteRows, activityCountRow, invoiceRows, paymentRows] = await Promise.all(
+      [
+        this.db.query.customers.findMany({ where: eq(customers.companyId, companyId) }),
+        this.db.query.quotes.findMany({
+          where: and(
+            eq(quotes.companyId, companyId),
+            gte(quotes.createdAt, range.from),
+            lte(quotes.createdAt, range.to),
           ),
-        ),
-      this.db.query.invoices.findMany({
-        where: and(eq(invoices.companyId, companyId), inArray(invoices.status, ['sent', 'partial', 'overdue'])),
-        with: { customer: true },
-      }),
-      this.db.query.payments.findMany({
-        where: and(eq(payments.companyId, companyId), gte(payments.paidAt, range.from), lte(payments.paidAt, range.to)),
-        with: { invoice: { with: { customer: true } } },
-      }),
-    ]);
+        }),
+        this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(customerActivities)
+          .where(
+            and(
+              eq(customerActivities.companyId, companyId),
+              gte(customerActivities.createdAt, range.from),
+              lte(customerActivities.createdAt, range.to),
+            ),
+          ),
+        this.db.query.invoices.findMany({
+          where: and(
+            eq(invoices.companyId, companyId),
+            inArray(invoices.status, ['sent', 'partial', 'overdue']),
+          ),
+          with: { customer: true },
+        }),
+        this.db.query.payments.findMany({
+          where: and(
+            eq(payments.companyId, companyId),
+            gte(payments.paidAt, range.from),
+            lte(payments.paidAt, range.to),
+          ),
+          with: { invoice: { with: { customer: true } } },
+        }),
+      ],
+    );
 
     const newCustomers = customerRows.filter(
       (row) => row.createdAt >= range.from && row.createdAt <= range.to,
@@ -361,7 +430,9 @@ export class AnalyticsService {
       .groupBy(jobs.customerId);
 
     const repeatCustomers = jobCounts.filter((row) => row.count > 1).length;
-    const quotesSent = quoteRows.filter((row) => row.status === 'sent' || row.status === 'accepted').length;
+    const quotesSent = quoteRows.filter(
+      (row) => row.status === 'sent' || row.status === 'accepted',
+    ).length;
     const quotesAccepted = quoteRows.filter((row) => row.status === 'accepted').length;
 
     const revenueByCustomer = new Map<string, { name: string; cents: number }>();
@@ -398,16 +469,26 @@ export class AnalyticsService {
     };
   }
 
-  async getFinanceAnalytics(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<FinanceAnalytics> {
+  async getFinanceAnalytics(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<FinanceAnalytics> {
     const range = resolveRange(query);
     const currency = (await this.financeService.getStats(companyId)).currency;
 
     const [paymentRows, invoiceRows, currentRevenue, previousRevenue] = await Promise.all([
       this.db.query.payments.findMany({
-        where: and(eq(payments.companyId, companyId), gte(payments.paidAt, range.from), lte(payments.paidAt, range.to)),
+        where: and(
+          eq(payments.companyId, companyId),
+          gte(payments.paidAt, range.from),
+          lte(payments.paidAt, range.to),
+        ),
       }),
       this.db.query.invoices.findMany({
-        where: and(eq(invoices.companyId, companyId), inArray(invoices.status, ['sent', 'partial', 'overdue', 'paid'])),
+        where: and(
+          eq(invoices.companyId, companyId),
+          inArray(invoices.status, ['sent', 'partial', 'overdue', 'paid']),
+        ),
         with: { customer: true },
       }),
       this.sumPayments(companyId, range.from, range.to),
@@ -418,7 +499,9 @@ export class AnalyticsService {
       (row) => row.createdAt >= range.from && row.createdAt <= range.to,
     );
 
-    const outstanding = invoiceRows.filter((row) => ['sent', 'partial', 'overdue'].includes(row.status));
+    const outstanding = invoiceRows.filter((row) =>
+      ['sent', 'partial', 'overdue'].includes(row.status),
+    );
 
     const now = new Date();
 
@@ -571,7 +654,10 @@ export class AnalyticsService {
     }
   }
 
-  async buildAuraContext(companyId: string, query: AnalyticsDashboardQuery = {}): Promise<AuraAnalyticsContext> {
+  async buildAuraContext(
+    companyId: string,
+    query: AnalyticsDashboardQuery = {},
+  ): Promise<AuraAnalyticsContext> {
     const dashboard = await this.getDashboard(companyId, query);
 
     return {
@@ -594,17 +680,26 @@ export class AnalyticsService {
 
     switch (reportType) {
       case 'revenue':
-        return { dashboard: await this.getDashboard(companyId, query), trends: await this.getTrends(companyId, query) };
+        return {
+          dashboard: await this.getDashboard(companyId, query),
+          trends: await this.getTrends(companyId, query),
+        };
       case 'customer':
         return { customer: await this.getCustomerAnalytics(companyId, query) };
       case 'job_performance':
-        return { dashboard: await this.getDashboard(companyId, query), profitability: await this.getProfitability(companyId, query) };
+        return {
+          dashboard: await this.getDashboard(companyId, query),
+          profitability: await this.getProfitability(companyId, query),
+        };
       case 'technician_performance':
         return { technicians: await this.getTechnicianPerformance(companyId, query) };
       case 'finance':
         return { finance: await this.getFinanceAnalytics(companyId, query) };
       case 'fleet':
-        return { fleet: await this.fleetService.getStats(companyId), vehicles: await this.fleetService.listVehicles(companyId) };
+        return {
+          fleet: await this.fleetService.getStats(companyId),
+          vehicles: await this.fleetService.listVehicles(companyId),
+        };
       case 'inventory':
         return {
           inventory: await this.inventoryService.getStats(companyId),
@@ -620,7 +715,13 @@ export class AnalyticsService {
     const [row] = await this.db
       .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
       .from(payments)
-      .where(and(eq(payments.companyId, companyId), gte(payments.paidAt, from), lte(payments.paidAt, to)));
+      .where(
+        and(
+          eq(payments.companyId, companyId),
+          gte(payments.paidAt, from),
+          lte(payments.paidAt, to),
+        ),
+      );
 
     return row?.total ?? 0;
   }
@@ -635,12 +736,21 @@ export class AnalyticsService {
     const [row] = await this.db
       .select({ count: sql<number>`count(*)::int` })
       .from(customers)
-      .where(and(eq(customers.companyId, companyId), gte(customers.createdAt, from), lte(customers.createdAt, to)));
+      .where(
+        and(
+          eq(customers.companyId, companyId),
+          gte(customers.createdAt, from),
+          lte(customers.createdAt, to),
+        ),
+      );
 
     return row?.count ?? 0;
   }
 
-  private async buildCustomerTrend(companyId: string, range: ResolvedRange): Promise<AnalyticsTrendPoint[]> {
+  private async buildCustomerTrend(
+    companyId: string,
+    range: ResolvedRange,
+  ): Promise<AnalyticsTrendPoint[]> {
     const rows = await this.db.query.customers.findMany({
       where: and(
         eq(customers.companyId, companyId),

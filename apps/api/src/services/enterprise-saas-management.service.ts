@@ -76,13 +76,25 @@ export class EnterpriseSaasManagementError extends Error {
 
 type StaffScope = { companyId: string; userId: string };
 
-const SYSTEM_ACCOUNT_TYPES: Array<{ accountTypeKey: SmAccountTypeSummary['accountTypeKey']; name: string; description: string }> = [
+const SYSTEM_ACCOUNT_TYPES: Array<{
+  accountTypeKey: SmAccountTypeSummary['accountTypeKey'];
+  name: string;
+  description: string;
+}> = [
   { accountTypeKey: 'trial', name: 'Trial', description: 'Trial account with limited access.' },
   { accountTypeKey: 'active', name: 'Active', description: 'Active paying subscription.' },
   { accountTypeKey: 'suspended', name: 'Suspended', description: 'Suspended account.' },
   { accountTypeKey: 'cancelled', name: 'Cancelled', description: 'Cancelled subscription.' },
-  { accountTypeKey: 'expired_trial', name: 'Expired Trial', description: 'Trial period has expired.' },
-  { accountTypeKey: 'enterprise', name: 'Enterprise', description: 'Enterprise account with custom terms.' },
+  {
+    accountTypeKey: 'expired_trial',
+    name: 'Expired Trial',
+    description: 'Trial period has expired.',
+  },
+  {
+    accountTypeKey: 'enterprise',
+    name: 'Enterprise',
+    description: 'Enterprise account with custom terms.',
+  },
   { accountTypeKey: 'lifetime', name: 'Lifetime', description: 'Lifetime license account.' },
   { accountTypeKey: 'internal', name: 'Internal', description: 'Internal TITAN account.' },
 ];
@@ -102,19 +114,31 @@ export class EnterpriseSaasManagementService {
     return this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
   }
 
-  async provisionTenant(scope: StaffScope, input: Parameters<EnterpriseSaasPlatformService['provisionTenant']>[1]) {
+  async provisionTenant(
+    scope: StaffScope,
+    input: Parameters<EnterpriseSaasPlatformService['provisionTenant']>[1],
+  ) {
     return this.deps.enterpriseSaasPlatformService.provisionTenant(scope, input);
   }
 
-  async createPlan(scope: StaffScope, input: Parameters<EnterpriseSaasPlatformService['createPlan']>[1]) {
+  async createPlan(
+    scope: StaffScope,
+    input: Parameters<EnterpriseSaasPlatformService['createPlan']>[1],
+  ) {
     return this.deps.enterpriseSaasPlatformService.createPlan(scope, input);
   }
 
-  async upgradePlan(scope: StaffScope, input: Parameters<EnterpriseSaasPlatformService['upgradePlan']>[1]) {
+  async upgradePlan(
+    scope: StaffScope,
+    input: Parameters<EnterpriseSaasPlatformService['upgradePlan']>[1],
+  ) {
     return this.deps.enterpriseSaasPlatformService.upgradePlan(scope, input);
   }
 
-  async downgradePlan(scope: StaffScope, input: Parameters<EnterpriseSaasPlatformService['downgradePlan']>[1]) {
+  async downgradePlan(
+    scope: StaffScope,
+    input: Parameters<EnterpriseSaasPlatformService['downgradePlan']>[1],
+  ) {
     return this.deps.enterpriseSaasPlatformService.downgradePlan(scope, input);
   }
 
@@ -160,7 +184,9 @@ export class EnterpriseSaasManagementService {
       this.listNotifications(companyId, { limit: 10 }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const isPlatformOwner = legacySaasPlatform?.isPlatformOwner ?? false;
     const tenants = legacySaasPlatform?.tenants ?? [];
@@ -230,7 +256,10 @@ export class EnterpriseSaasManagementService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateSmPlatformConfigRequest): Promise<SmPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateSmPlatformConfigRequest,
+  ): Promise<SmPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(smPlatformConfig)
@@ -280,7 +309,14 @@ export class EnterpriseSaasManagementService {
         status: 'pending',
       })
       .returning();
-    await this.recordLicenseHistory(scope, created!.id, 'created', null, 'pending', 'License created');
+    await this.recordLicenseHistory(
+      scope,
+      created!.id,
+      'created',
+      null,
+      'pending',
+      'License created',
+    );
     await this.recordAudit(scope, 'license_created', 'license', created!.id);
     return toLicenseSummary(created!);
   }
@@ -292,7 +328,14 @@ export class EnterpriseSaasManagementService {
       .set({ status: 'active', activatedAt: new Date(), updatedAt: new Date() })
       .where(eq(smLicenseRecords.id, license.id))
       .returning();
-    await this.recordLicenseHistory(scope, license.id, 'activated', license.status, 'active', 'License activated');
+    await this.recordLicenseHistory(
+      scope,
+      license.id,
+      'activated',
+      license.status,
+      'active',
+      'License activated',
+    );
     await this.recordAudit(scope, 'license_activated', 'license', license.id);
     return toLicenseSummary(updated!);
   }
@@ -304,14 +347,27 @@ export class EnterpriseSaasManagementService {
       .set({ status: 'suspended', updatedAt: new Date() })
       .where(eq(smLicenseRecords.id, license.id))
       .returning();
-    await this.recordLicenseHistory(scope, license.id, 'suspended', license.status, 'suspended', 'License suspended');
+    await this.recordLicenseHistory(
+      scope,
+      license.id,
+      'suspended',
+      license.status,
+      'suspended',
+      'License suspended',
+    );
     return toLicenseSummary(updated!);
   }
 
-  async listLicenseHistory(companyId: string, licenseId: string): Promise<SmLicenseHistorySummary[]> {
+  async listLicenseHistory(
+    companyId: string,
+    licenseId: string,
+  ): Promise<SmLicenseHistorySummary[]> {
     await this.ensureLicense(companyId, licenseId);
     const rows = await this.deps.db.query.smLicenseHistory.findMany({
-      where: and(eq(smLicenseHistory.companyId, companyId), eq(smLicenseHistory.licenseId, licenseId)),
+      where: and(
+        eq(smLicenseHistory.companyId, companyId),
+        eq(smLicenseHistory.licenseId, licenseId),
+      ),
       orderBy: [desc(smLicenseHistory.createdAt)],
     });
     return rows.map(toLicenseHistorySummary);
@@ -325,7 +381,10 @@ export class EnterpriseSaasManagementService {
     return rows.map(toPaymentProviderSummary);
   }
 
-  async createPaymentProvider(scope: StaffScope, input: CreateSmPaymentProviderRequest): Promise<SmPaymentProviderSummary> {
+  async createPaymentProvider(
+    scope: StaffScope,
+    input: CreateSmPaymentProviderRequest,
+  ): Promise<SmPaymentProviderSummary> {
     const [created] = await this.deps.db
       .insert(smPaymentProviderConfigs)
       .values({
@@ -350,7 +409,10 @@ export class EnterpriseSaasManagementService {
     return rows.map(toBillingPolicySummary);
   }
 
-  async createBillingPolicy(scope: StaffScope, input: CreateSmBillingPolicyRequest): Promise<SmBillingPolicySummary> {
+  async createBillingPolicy(
+    scope: StaffScope,
+    input: CreateSmBillingPolicyRequest,
+  ): Promise<SmBillingPolicySummary> {
     const [created] = await this.deps.db
       .insert(smBillingPolicies)
       .values({
@@ -425,9 +487,15 @@ export class EnterpriseSaasManagementService {
     return toAddOnSummary(created!);
   }
 
-  async listTenantAddOns(companyId: string, targetCompanyId: string): Promise<SmTenantAddOnSummary[]> {
+  async listTenantAddOns(
+    companyId: string,
+    targetCompanyId: string,
+  ): Promise<SmTenantAddOnSummary[]> {
     const rows = await this.deps.db.query.smTenantAddOns.findMany({
-      where: and(eq(smTenantAddOns.companyId, companyId), eq(smTenantAddOns.targetCompanyId, targetCompanyId)),
+      where: and(
+        eq(smTenantAddOns.companyId, companyId),
+        eq(smTenantAddOns.targetCompanyId, targetCompanyId),
+      ),
       orderBy: [desc(smTenantAddOns.purchasedAt)],
     });
     const summaries: SmTenantAddOnSummary[] = [];
@@ -472,7 +540,10 @@ export class EnterpriseSaasManagementService {
     return summaries;
   }
 
-  async createPartner(scope: StaffScope, input: CreateSmPartnerAccountRequest): Promise<SmPartnerAccountSummary> {
+  async createPartner(
+    scope: StaffScope,
+    input: CreateSmPartnerAccountRequest,
+  ): Promise<SmPartnerAccountSummary> {
     const [created] = await this.deps.db
       .insert(smPartnerAccounts)
       .values({
@@ -506,7 +577,10 @@ export class EnterpriseSaasManagementService {
     return rows.map(toUsageThresholdSummary);
   }
 
-  async createUsageThreshold(scope: StaffScope, input: CreateSmUsageThresholdRequest): Promise<SmUsageThresholdSummary> {
+  async createUsageThreshold(
+    scope: StaffScope,
+    input: CreateSmUsageThresholdRequest,
+  ): Promise<SmUsageThresholdSummary> {
     const [created] = await this.deps.db
       .insert(smUsageThresholds)
       .values({
@@ -550,7 +624,12 @@ export class EnterpriseSaasManagementService {
         config: input.config ?? {},
       })
       .returning();
-    await this.recordAudit(scope, 'feature_access_rule_created', 'feature_access_rule', created!.id);
+    await this.recordAudit(
+      scope,
+      'feature_access_rule_created',
+      'feature_access_rule',
+      created!.id,
+    );
     return {
       id: created!.id,
       featureKey: created!.featureKey,
@@ -561,7 +640,10 @@ export class EnterpriseSaasManagementService {
     };
   }
 
-  async listNotifications(companyId: string, filters?: { limit?: number }): Promise<SmNotificationSummary[]> {
+  async listNotifications(
+    companyId: string,
+    filters?: { limit?: number },
+  ): Promise<SmNotificationSummary[]> {
     const rows = await this.deps.db.query.smNotifications.findMany({
       where: eq(smNotifications.companyId, companyId),
       orderBy: [desc(smNotifications.createdAt)],
@@ -668,7 +750,12 @@ export class EnterpriseSaasManagementService {
     const [packCount] = await this.deps.db
       .select({ value: count() })
       .from(ipPackInstallations)
-      .where(and(eq(ipPackInstallations.companyId, scope.companyId), eq(ipPackInstallations.status, 'installed')));
+      .where(
+        and(
+          eq(ipPackInstallations.companyId, scope.companyId),
+          eq(ipPackInstallations.status, 'installed'),
+        ),
+      );
 
     const metrics: Record<string, unknown> = {
       isPlatformOwner: legacy.isPlatformOwner,
@@ -695,7 +782,10 @@ export class EnterpriseSaasManagementService {
     return toAnalyticsSummary(snapshot!);
   }
 
-  async captureUsageSnapshot(scope: StaffScope, targetCompanyId?: string): Promise<SmUsageMonitoringSummary> {
+  async captureUsageSnapshot(
+    scope: StaffScope,
+    targetCompanyId?: string,
+  ): Promise<SmUsageMonitoringSummary> {
     const targetId = targetCompanyId ?? scope.companyId;
     const legacy = await this.getPlatformDashboard(targetId);
     const monitoring = await this.buildUsageMetrics(targetId, legacy.usage);
@@ -710,7 +800,8 @@ export class EnterpriseSaasManagementService {
 
   async getBillingHealth(companyId: string): Promise<SmBillingHealthSummary> {
     const legacy = await this.getPlatformDashboard(companyId).catch(() => null);
-    const failedPaymentCount = legacy?.billingRecords.filter((r) => r.status === 'failed').length ?? 0;
+    const failedPaymentCount =
+      legacy?.billingRecords.filter((r) => r.status === 'failed').length ?? 0;
     const pendingRenewalCount =
       legacy?.subscription?.status === 'active' && legacy.subscription.currentPeriodEnd ? 1 : 0;
     const openAlerts = await this.listSaasAlerts(companyId, { status: 'open' });
@@ -744,10 +835,16 @@ export class EnterpriseSaasManagementService {
     return this.buildUsageMetrics(companyId, usage);
   }
 
-  async listSaasAlerts(companyId: string, filters?: { status?: string }): Promise<SmSaasAlertSummary[]> {
+  async listSaasAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<SmSaasAlertSummary[]> {
     const rows = await this.deps.db.query.smSaasAlerts.findMany({
       where: filters?.status
-        ? and(eq(smSaasAlerts.companyId, companyId), eq(smSaasAlerts.status, filters.status as never))
+        ? and(
+            eq(smSaasAlerts.companyId, companyId),
+            eq(smSaasAlerts.status, filters.status as never),
+          )
         : eq(smSaasAlerts.companyId, companyId),
       orderBy: [desc(smSaasAlerts.createdAt)],
     });
@@ -765,7 +862,10 @@ export class EnterpriseSaasManagementService {
     return toSaasAlertSummary(updated!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateSmActionDraftRequest): Promise<SmActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateSmActionDraftRequest,
+  ): Promise<SmActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(smActionDrafts)
       .values({
@@ -793,7 +893,13 @@ export class EnterpriseSaasManagementService {
 
   private async buildUsageMetrics(
     companyId: string,
-    usage: { userCount: number; storageBytes: number; apiRequestCount: number; aiUsageCount: number; integrationCount: number },
+    usage: {
+      userCount: number;
+      storageBytes: number;
+      apiRequestCount: number;
+      aiUsageCount: number;
+      integrationCount: number;
+    },
   ): Promise<SmUsageMonitoringSummary> {
     const [automationCount] = await this.deps.db
       .select({ value: count() })
@@ -806,7 +912,12 @@ export class EnterpriseSaasManagementService {
     const [packCount] = await this.deps.db
       .select({ value: count() })
       .from(ipPackInstallations)
-      .where(and(eq(ipPackInstallations.companyId, companyId), eq(ipPackInstallations.status, 'installed')));
+      .where(
+        and(
+          eq(ipPackInstallations.companyId, companyId),
+          eq(ipPackInstallations.status, 'installed'),
+        ),
+      );
 
     const thresholds = await this.listUsageThresholds(companyId);
     const alerts: string[] = [];
@@ -981,7 +1092,9 @@ export class EnterpriseSaasManagementService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof smPlatformConfig.$inferSelect): SmPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof smPlatformConfig.$inferSelect,
+): SmPlatformConfigSummary {
   return {
     billingPolicy: row.billingPolicy ?? {},
     provisioningPolicy: row.provisioningPolicy ?? {},
@@ -1018,7 +1131,9 @@ function toLicenseSummary(row: typeof smLicenseRecords.$inferSelect): SmLicenseS
   };
 }
 
-function toLicenseHistorySummary(row: typeof smLicenseHistory.$inferSelect): SmLicenseHistorySummary {
+function toLicenseHistorySummary(
+  row: typeof smLicenseHistory.$inferSelect,
+): SmLicenseHistorySummary {
   return {
     id: row.id,
     licenseId: row.licenseId,
@@ -1030,7 +1145,9 @@ function toLicenseHistorySummary(row: typeof smLicenseHistory.$inferSelect): SmL
   };
 }
 
-function toPaymentProviderSummary(row: typeof smPaymentProviderConfigs.$inferSelect): SmPaymentProviderSummary {
+function toPaymentProviderSummary(
+  row: typeof smPaymentProviderConfigs.$inferSelect,
+): SmPaymentProviderSummary {
   return {
     id: row.id,
     providerKey: row.providerKey,
@@ -1041,7 +1158,9 @@ function toPaymentProviderSummary(row: typeof smPaymentProviderConfigs.$inferSel
   };
 }
 
-function toBillingPolicySummary(row: typeof smBillingPolicies.$inferSelect): SmBillingPolicySummary {
+function toBillingPolicySummary(
+  row: typeof smBillingPolicies.$inferSelect,
+): SmBillingPolicySummary {
   return {
     id: row.id,
     policyKey: row.policyKey,
@@ -1079,7 +1198,9 @@ function toAddOnSummary(row: typeof smAddOnCatalog.$inferSelect): SmAddOnSummary
   };
 }
 
-function toPartnerCommissionSummary(row: typeof smPartnerCommissions.$inferSelect): SmPartnerCommissionSummary {
+function toPartnerCommissionSummary(
+  row: typeof smPartnerCommissions.$inferSelect,
+): SmPartnerCommissionSummary {
   return {
     id: row.id,
     partnerAccountId: row.partnerAccountId,
@@ -1092,7 +1213,9 @@ function toPartnerCommissionSummary(row: typeof smPartnerCommissions.$inferSelec
   };
 }
 
-function toUsageThresholdSummary(row: typeof smUsageThresholds.$inferSelect): SmUsageThresholdSummary {
+function toUsageThresholdSummary(
+  row: typeof smUsageThresholds.$inferSelect,
+): SmUsageThresholdSummary {
   return {
     id: row.id,
     targetCompanyId: row.targetCompanyId,

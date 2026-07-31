@@ -94,7 +94,9 @@ export function AgentProfileDetailPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, profileId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -178,7 +180,10 @@ export function AgentProfileDetailPage() {
   if (!profile) {
     return (
       <div className="agents-page">
-        <PageHeader title="Profile not found" description="This agent profile could not be found." />
+        <PageHeader
+          title="Profile not found"
+          description="This agent profile could not be found."
+        />
         <Link href="/aura/agents" className="agents-link">
           Back to dashboard
         </Link>
@@ -217,7 +222,12 @@ export function AgentProfileDetailPage() {
 
       {isEditing && canWrite ? (
         <form className="agents-form" onSubmit={(event) => void handleSubmit(event)}>
-          <Input label="Profile name" value={name} onChange={(e) => setName(e.target.value)} required />
+          <Input
+            label="Profile name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
           <label className="titan-input-group">
             <span className="titan-input-label">Description</span>
             <textarea

@@ -1,10 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
-import {
-  COMMUNICATION_CHANNEL_OPTIONS,
-  type CommunicationChannel,
-} from '@titan/shared';
+import { COMMUNICATION_CHANNEL_OPTIONS, type CommunicationChannel } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createMessageTemplate } from '../../lib/communications-api';
 import { useAuth } from '../../lib/auth-context';
@@ -64,19 +61,36 @@ export function TemplateCreatePage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       <form className="communications-form" onSubmit={(event) => void handleSubmit(event)}>
-        <Input label="Template name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <Input
+          label="Template name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
         <label className="titan-input-group">
           <span className="titan-input-label">Channel</span>
-          <select className="titan-input" value={channel} onChange={(e) => setChannel(e.target.value as CommunicationChannel)}>
+          <select
+            className="titan-input"
+            value={channel}
+            onChange={(e) => setChannel(e.target.value as CommunicationChannel)}
+          >
             {COMMUNICATION_CHANNEL_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
             ))}
           </select>
         </label>
         <Input label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
         <label className="titan-input-group">
           <span className="titan-input-label">Body</span>
-          <textarea className="titan-input communications-textarea" rows={6} value={body} onChange={(e) => setBody(e.target.value)} required />
+          <textarea
+            className="titan-input communications-textarea"
+            rows={6}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            required
+          />
         </label>
         <Button type="submit" disabled={isSaving || !name.trim() || !body.trim()}>
           {isSaving ? 'Creating…' : 'Create template'}

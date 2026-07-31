@@ -1,3 +1,9 @@
+import {
+  isTimeoutError,
+  providerTimeoutSignal,
+  PROVIDER_REQUEST_TIMEOUT_MS,
+} from './http-timeout.js';
+
 export class CartrackError extends Error {
   constructor(
     public readonly code: string,
@@ -67,8 +73,15 @@ export class CartrackClient {
           Authorization: this.authorization,
           Accept: 'application/json',
         },
+        signal: providerTimeoutSignal(),
       });
     } catch (error) {
+      if (isTimeoutError(error)) {
+        throw new CartrackError(
+          'TIMEOUT',
+          `Cartrack request timed out after ${PROVIDER_REQUEST_TIMEOUT_MS}ms`,
+        );
+      }
       throw new CartrackError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Cartrack API',
@@ -176,8 +189,9 @@ function parseVehicleStatusRecords(payload: unknown): CartrackVehicleStatusRecor
       }
 
       const recordedAt =
-        parseDate(pickString(record, ['updated_location_ts', 'event_ts', 'recorded_at', 'timestamp'])) ??
-        new Date();
+        parseDate(
+          pickString(record, ['updated_location_ts', 'event_ts', 'recorded_at', 'timestamp']),
+        ) ?? new Date();
 
       return {
         externalVehicleId,

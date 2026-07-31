@@ -13,24 +13,34 @@ export function PortalDocumentsPage() {
     if (!accessToken) return;
     void fetchCxPortalDocuments(accessToken)
       .then(setDocumentCentre)
-      .catch((err) => setError(err instanceof PortalApiClientError ? err.message : 'Unable to load documents'));
+      .catch((err) =>
+        setError(err instanceof PortalApiClientError ? err.message : 'Unable to load documents'),
+      );
   }, [accessToken]);
 
   return (
     <div className="portal-page">
-      <PageHeader title="Documents" description="Download invoices, quotations, certificates, and job documents." />
+      <PageHeader
+        title="Documents"
+        description="Download invoices, quotations, certificates, and job documents."
+      />
       {error ? <p className="form-error">{error}</p> : null}
       {!documentCentre ? (
         <p className="page-muted">Loading documents…</p>
       ) : documentCentre.documents.length === 0 ? (
-        <EmptyState title="No documents" description="Documents shared with your account will appear here." />
+        <EmptyState
+          title="No documents shared yet"
+          description="When the office shares invoices, quotations, certificates, or job documents with your account, they will appear here. This list is empty because none are linked yet — not because the page failed to load."
+        />
       ) : (
         <Panel title="Your documents">
           <ul className="portal-list">
             {documentCentre.documents.map((doc) => (
               <li key={doc.id}>
                 <strong>{doc.title}</strong>
-                <span>{doc.accessType.replace(/_/g, ' ')} · v{doc.version}</span>
+                <span>
+                  {doc.accessType.replace(/_/g, ' ')} · v{doc.version}
+                </span>
                 {doc.fileName ? <span>{doc.fileName}</span> : null}
               </li>
             ))}

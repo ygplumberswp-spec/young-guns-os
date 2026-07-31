@@ -1,4 +1,14 @@
-import { boolean, integer, jsonb, numeric, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  numeric,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { jobs } from './jobs';
 import { users } from './users';
@@ -79,7 +89,10 @@ export const mobilePlatformConfig = pgTable('mobile_platform_config', {
   biometricLoginRequired: boolean('biometric_login_required').notNull().default(false),
   pwaEnabled: boolean('pwa_enabled').notNull().default(true),
   backgroundSyncEnabled: boolean('background_sync_enabled').notNull().default(true),
-  notificationPolicies: jsonb('notification_policies').$type<Record<string, unknown>>().notNull().default({}),
+  notificationPolicies: jsonb('notification_policies')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   mobilePolicies: jsonb('mobile_policies').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

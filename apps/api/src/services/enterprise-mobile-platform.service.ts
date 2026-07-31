@@ -64,7 +64,8 @@ export class EnterpriseMobilePlatformService {
   constructor(private readonly deps: MobilePlatformDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseMobilePlatformDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       devices,
@@ -107,23 +108,32 @@ export class EnterpriseMobilePlatformService {
   }
 
   async getDispatcherWorkspace(companyId: string): Promise<MobileDispatcherWorkspace> {
-    const [dispatchDashboard, fleetProviders, fleetContext, technicianUsers, deviceRows, syncStates] =
-      await Promise.all([
-        this.deps.dispatchIntelligenceService.getOperationsDashboard(companyId),
-        this.listFleetProviders(companyId),
-        this.deps.integrationsService.buildFleetTrackingContext(companyId),
-        this.deps.db.query.users.findMany({
-          where: eq(users.companyId, companyId),
-          columns: { id: true, firstName: true, lastName: true },
-          limit: 100,
-        }),
-        this.deps.db.query.mobileDevices.findMany({
-          where: and(eq(mobileDevices.companyId, companyId), eq(mobileDevices.status, 'active')),
-        }),
-        this.deps.db.query.mobileSyncState.findMany({
-          where: and(eq(mobileSyncState.companyId, companyId), eq(mobileSyncState.scope, 'technician')),
-        }),
-      ]);
+    const [
+      dispatchDashboard,
+      fleetProviders,
+      fleetContext,
+      technicianUsers,
+      deviceRows,
+      syncStates,
+    ] = await Promise.all([
+      this.deps.dispatchIntelligenceService.getOperationsDashboard(companyId),
+      this.listFleetProviders(companyId),
+      this.deps.integrationsService.buildFleetTrackingContext(companyId),
+      this.deps.db.query.users.findMany({
+        where: eq(users.companyId, companyId),
+        columns: { id: true, firstName: true, lastName: true },
+        limit: 100,
+      }),
+      this.deps.db.query.mobileDevices.findMany({
+        where: and(eq(mobileDevices.companyId, companyId), eq(mobileDevices.status, 'active')),
+      }),
+      this.deps.db.query.mobileSyncState.findMany({
+        where: and(
+          eq(mobileSyncState.companyId, companyId),
+          eq(mobileSyncState.scope, 'technician'),
+        ),
+      }),
+    ]);
 
     const vehicleCount = await this.deps.db
       .select({ value: count() })
@@ -148,8 +158,7 @@ export class EnterpriseMobilePlatformService {
     const activeProvider = fleetProviders.find((p) => p.isActive)?.providerType ?? null;
 
     const technicianStatuses = technicianUsers.map((user) => {
-      const jobCount =
-        assignedJobCounts.find((row) => row.assignedUserId === user.id)?.value ?? 0;
+      const jobCount = assignedJobCounts.find((row) => row.assignedUserId === user.id)?.value ?? 0;
       const device = deviceRows.find((d) => d.userId === user.id);
       const syncState = syncStates.find((s) => s.userId === user.id);
       return {
@@ -187,9 +196,15 @@ export class EnterpriseMobilePlatformService {
     };
   }
 
-  async registerDevice(scope: StaffScope, input: RegisterMobileDeviceRequest): Promise<MobileDeviceSummary> {
+  async registerDevice(
+    scope: StaffScope,
+    input: RegisterMobileDeviceRequest,
+  ): Promise<MobileDeviceSummary> {
     const existing = await this.deps.db.query.mobileDevices.findFirst({
-      where: and(eq(mobileDevices.companyId, scope.companyId), eq(mobileDevices.deviceKey, input.deviceKey)),
+      where: and(
+        eq(mobileDevices.companyId, scope.companyId),
+        eq(mobileDevices.deviceKey, input.deviceKey),
+      ),
     });
 
     if (existing) {
@@ -248,7 +263,10 @@ export class EnterpriseMobilePlatformService {
     return this.toDeviceSummary(updated!);
   }
 
-  async registerPushToken(scope: StaffScope, input: RegisterMobilePushTokenRequest): Promise<{ id: string }> {
+  async registerPushToken(
+    scope: StaffScope,
+    input: RegisterMobilePushTokenRequest,
+  ): Promise<{ id: string }> {
     await this.ensureDevice(scope.companyId, input.deviceId);
     const [created] = await this.deps.db
       .insert(mobilePushTokens)
@@ -264,7 +282,10 @@ export class EnterpriseMobilePlatformService {
     return { id: created!.id };
   }
 
-  async createMediaAsset(scope: StaffScope, input: CreateMobileMediaAssetRequest): Promise<MobileMediaAssetSummary> {
+  async createMediaAsset(
+    scope: StaffScope,
+    input: CreateMobileMediaAssetRequest,
+  ): Promise<MobileMediaAssetSummary> {
     const [created] = await this.deps.db
       .insert(mobileMediaAssets)
       .values({
@@ -293,7 +314,10 @@ export class EnterpriseMobilePlatformService {
 
   async processSyncWithHistory(scope: StaffScope, deviceId?: string, triggerType = 'manual') {
     const startedAt = new Date();
-    const result = await this.deps.mobileSyncService.processStaffSyncQueue(scope.companyId, scope.userId);
+    const result = await this.deps.mobileSyncService.processStaffSyncQueue(
+      scope.companyId,
+      scope.userId,
+    );
 
     const status =
       result.failed > 0 && result.processed === 0
@@ -324,7 +348,13 @@ export class EnterpriseMobilePlatformService {
       deviceId,
     );
 
-    await this.logAudit(scope, 'sync_processed', 'mobile_sync_history', history!.id, result as unknown as Record<string, unknown>);
+    await this.logAudit(
+      scope,
+      'sync_processed',
+      'mobile_sync_history',
+      history!.id,
+      result as unknown as Record<string, unknown>,
+    );
     return { history: this.toSyncHistorySummary(history!), result };
   }
 
@@ -350,8 +380,14 @@ export class EnterpriseMobilePlatformService {
         .select({ value: count() })
         .from(mobileDevices)
         .where(and(eq(mobileDevices.companyId, companyId), eq(mobileDevices.status, 'active'))),
-      this.deps.db.select({ value: count() }).from(mobileDevices).where(eq(mobileDevices.companyId, companyId)),
-      this.deps.db.select({ value: count() }).from(vehicles).where(eq(vehicles.companyId, companyId)),
+      this.deps.db
+        .select({ value: count() })
+        .from(mobileDevices)
+        .where(eq(mobileDevices.companyId, companyId)),
+      this.deps.db
+        .select({ value: count() })
+        .from(vehicles)
+        .where(eq(vehicles.companyId, companyId)),
       this.deps.db
         .select({ value: count() })
         .from(mobileMediaAssets)
@@ -361,7 +397,8 @@ export class EnterpriseMobilePlatformService {
     const durations = completedJobs
       .filter((j) => j.createdAt && j.updatedAt)
       .map((j) => (j.updatedAt.getTime() - j.createdAt.getTime()) / 60000);
-    const avgJobDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
+    const avgJobDuration =
+      durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : null;
 
     const syncHealthScore =
       Number(syncFailures[0]?.value ?? 0) === 0
@@ -370,13 +407,16 @@ export class EnterpriseMobilePlatformService {
     const deviceHealthScore =
       Number(totalDevices[0]?.value ?? 0) === 0
         ? null
-        : Math.round((Number(activeDevices[0]?.value ?? 0) / Number(totalDevices[0]?.value ?? 1)) * 100);
+        : Math.round(
+            (Number(activeDevices[0]?.value ?? 0) / Number(totalDevices[0]?.value ?? 1)) * 100,
+          );
 
     const [snapshot] = await this.deps.db
       .insert(mobileFieldIntelligenceSnapshots)
       .values({
         companyId,
-        technicianProductivityScore: completedJobs.length > 0 ? String(Math.min(100, completedJobs.length * 2)) : null,
+        technicianProductivityScore:
+          completedJobs.length > 0 ? String(Math.min(100, completedJobs.length * 2)) : null,
         travelEfficiencyScore: null,
         avgJobDurationMinutes: avgJobDuration != null ? String(Math.round(avgJobDuration)) : null,
         firstTimeFixRate: null,
@@ -417,13 +457,23 @@ export class EnterpriseMobilePlatformService {
       })
       .returning();
 
-    await this.logAudit(scope, 'fleet_provider_created', 'mobile_fleet_tracking_provider', created!.id);
+    await this.logAudit(
+      scope,
+      'fleet_provider_created',
+      'mobile_fleet_tracking_provider',
+      created!.id,
+    );
     return this.toFleetProviderSummary(created!);
   }
 
-  async testFleetProvider(scope: StaffScope, providerId: string): Promise<MobileFleetTrackingProviderSummary> {
+  async testFleetProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<MobileFleetTrackingProviderSummary> {
     const provider = await this.ensureFleetProvider(scope.companyId, providerId);
-    const fleetContext = await this.deps.integrationsService.buildFleetTrackingContext(scope.companyId);
+    const fleetContext = await this.deps.integrationsService.buildFleetTrackingContext(
+      scope.companyId,
+    );
 
     let status = 'failed';
     let message = 'Provider connectivity test failed — configure credentials and endpoint.';
@@ -460,7 +510,8 @@ export class EnterpriseMobilePlatformService {
       .set({
         offlineRetentionDays: input.offlineRetentionDays ?? existing.offlineRetentionDays,
         syncFrequencyMinutes: input.syncFrequencyMinutes ?? existing.syncFrequencyMinutes,
-        pushNotificationsEnabled: input.pushNotificationsEnabled ?? existing.pushNotificationsEnabled,
+        pushNotificationsEnabled:
+          input.pushNotificationsEnabled ?? existing.pushNotificationsEnabled,
         biometricLoginRequired: input.biometricLoginRequired ?? existing.biometricLoginRequired,
         pwaEnabled: input.pwaEnabled ?? existing.pwaEnabled,
         backgroundSyncEnabled: input.backgroundSyncEnabled ?? existing.backgroundSyncEnabled,
@@ -477,7 +528,8 @@ export class EnterpriseMobilePlatformService {
 
   async buildAuraContext(scope: StaffScope): Promise<EnterpriseMobilePlatformAuraContext> {
     const dashboard = await this.getDashboard(scope.companyId);
-    const workforceContext = await this.deps.mobileWorkforceService.buildWorkforceAuraContext(scope);
+    const workforceContext =
+      await this.deps.mobileWorkforceService.buildWorkforceAuraContext(scope);
 
     return {
       summary: `${workforceContext.summary} ${dashboard.activeDeviceCount} active device(s), ${dashboard.pendingSyncQueueCount} pending sync item(s).`,
@@ -541,7 +593,10 @@ export class EnterpriseMobilePlatformService {
     }));
   }
 
-  private async listSyncHistory(companyId: string, limit: number): Promise<MobileSyncHistorySummary[]> {
+  private async listSyncHistory(
+    companyId: string,
+    limit: number,
+  ): Promise<MobileSyncHistorySummary[]> {
     const rows = await this.deps.db.query.mobileSyncHistory.findMany({
       where: eq(mobileSyncHistory.companyId, companyId),
       orderBy: [desc(mobileSyncHistory.startedAt)],
@@ -550,7 +605,9 @@ export class EnterpriseMobilePlatformService {
     return rows.map((row) => this.toSyncHistorySummary(row));
   }
 
-  private async listFleetProviders(companyId: string): Promise<MobileFleetTrackingProviderSummary[]> {
+  private async listFleetProviders(
+    companyId: string,
+  ): Promise<MobileFleetTrackingProviderSummary[]> {
     const rows = await this.deps.db.query.mobileFleetTrackingProviders.findMany({
       where: eq(mobileFleetTrackingProviders.companyId, companyId),
       orderBy: [desc(mobileFleetTrackingProviders.createdAt)],
@@ -558,7 +615,10 @@ export class EnterpriseMobilePlatformService {
     return rows.map((row) => this.toFleetProviderSummary(row));
   }
 
-  private async listRecentMediaAssets(companyId: string, limit: number): Promise<MobileMediaAssetSummary[]> {
+  private async listRecentMediaAssets(
+    companyId: string,
+    limit: number,
+  ): Promise<MobileMediaAssetSummary[]> {
     const rows = await this.deps.db.query.mobileMediaAssets.findMany({
       where: eq(mobileMediaAssets.companyId, companyId),
       orderBy: [desc(mobileMediaAssets.createdAt)],
@@ -567,7 +627,9 @@ export class EnterpriseMobilePlatformService {
     return rows.map((row) => this.toMediaSummary(row));
   }
 
-  private async getLatestFieldIntelligence(companyId: string): Promise<MobileFieldIntelligenceSummary | null> {
+  private async getLatestFieldIntelligence(
+    companyId: string,
+  ): Promise<MobileFieldIntelligenceSummary | null> {
     const row = await this.deps.db.query.mobileFieldIntelligenceSnapshots.findFirst({
       where: eq(mobileFieldIntelligenceSnapshots.companyId, companyId),
       orderBy: [desc(mobileFieldIntelligenceSnapshots.capturedAt)],
@@ -587,7 +649,12 @@ export class EnterpriseMobilePlatformService {
     const [row] = await this.deps.db
       .select({ value: count() })
       .from(mobileSyncConflicts)
-      .where(and(eq(mobileSyncConflicts.companyId, companyId), eq(mobileSyncConflicts.status, 'pending')));
+      .where(
+        and(
+          eq(mobileSyncConflicts.companyId, companyId),
+          eq(mobileSyncConflicts.status, 'pending'),
+        ),
+      );
     return Number(row?.value ?? 0);
   }
 
@@ -644,7 +711,9 @@ export class EnterpriseMobilePlatformService {
     };
   }
 
-  private toPlatformConfigSummary(row: typeof mobilePlatformConfig.$inferSelect): MobilePlatformConfigSummary {
+  private toPlatformConfigSummary(
+    row: typeof mobilePlatformConfig.$inferSelect,
+  ): MobilePlatformConfigSummary {
     return {
       offlineRetentionDays: row.offlineRetentionDays,
       syncFrequencyMinutes: row.syncFrequencyMinutes,
@@ -657,7 +726,9 @@ export class EnterpriseMobilePlatformService {
     };
   }
 
-  private toSyncHistorySummary(row: typeof mobileSyncHistory.$inferSelect): MobileSyncHistorySummary {
+  private toSyncHistorySummary(
+    row: typeof mobileSyncHistory.$inferSelect,
+  ): MobileSyncHistorySummary {
     return {
       id: row.id,
       userId: row.userId,
@@ -711,15 +782,20 @@ export class EnterpriseMobilePlatformService {
     row: typeof mobileFieldIntelligenceSnapshots.$inferSelect,
   ): MobileFieldIntelligenceSummary {
     return {
-      technicianProductivityScore: row.technicianProductivityScore != null ? Number(row.technicianProductivityScore) : null,
-      travelEfficiencyScore: row.travelEfficiencyScore != null ? Number(row.travelEfficiencyScore) : null,
-      avgJobDurationMinutes: row.avgJobDurationMinutes != null ? Number(row.avgJobDurationMinutes) : null,
+      technicianProductivityScore:
+        row.technicianProductivityScore != null ? Number(row.technicianProductivityScore) : null,
+      travelEfficiencyScore:
+        row.travelEfficiencyScore != null ? Number(row.travelEfficiencyScore) : null,
+      avgJobDurationMinutes:
+        row.avgJobDurationMinutes != null ? Number(row.avgJobDurationMinutes) : null,
       firstTimeFixRate: row.firstTimeFixRate != null ? Number(row.firstTimeFixRate) : null,
       offlineUsageCount: row.offlineUsageCount,
       syncHealthScore: row.syncHealthScore != null ? Number(row.syncHealthScore) : null,
       deviceHealthScore: row.deviceHealthScore != null ? Number(row.deviceHealthScore) : null,
-      fleetUtilizationPercent: row.fleetUtilizationPercent != null ? Number(row.fleetUtilizationPercent) : null,
-      safetyComplianceScore: row.safetyComplianceScore != null ? Number(row.safetyComplianceScore) : null,
+      fleetUtilizationPercent:
+        row.fleetUtilizationPercent != null ? Number(row.fleetUtilizationPercent) : null,
+      safetyComplianceScore:
+        row.safetyComplianceScore != null ? Number(row.safetyComplianceScore) : null,
       capturedAt: row.capturedAt.toISOString(),
     };
   }

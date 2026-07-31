@@ -19,7 +19,9 @@ export const workflows = pgTable('workflows', {
     .references(() => users.id, { onDelete: 'no action' }),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   updatedByUserId: uuid('updated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   name: text('name').notNull(),
   description: text('description'),
   category: text('category'),

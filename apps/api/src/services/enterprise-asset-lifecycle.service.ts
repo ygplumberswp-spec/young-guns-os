@@ -73,7 +73,8 @@ export class EnterpriseAssetLifecycleService {
   constructor(private readonly deps: AssetLifecycleDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseAssetLifecycleDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       assets,
@@ -150,7 +151,9 @@ export class EnterpriseAssetLifecycleService {
       recentReadings,
       openAlertCount: openAlerts.length,
       thresholdBreaches: openAlerts.filter((a) =>
-        ['high_temperature', 'low_pressure', 'abnormal_flow', 'vibration_anomaly'].includes(a.alertType),
+        ['high_temperature', 'low_pressure', 'abnormal_flow', 'vibration_anomaly'].includes(
+          a.alertType,
+        ),
       ).length,
     };
   }
@@ -182,7 +185,10 @@ export class EnterpriseAssetLifecycleService {
     return toPlatformConfigSummary(updated!);
   }
 
-  async createCategory(scope: StaffScope, input: CreateAlAssetCategoryRequest): Promise<AlAssetCategorySummary> {
+  async createCategory(
+    scope: StaffScope,
+    input: CreateAlAssetCategoryRequest,
+  ): Promise<AlAssetCategorySummary> {
     const [created] = await this.deps.db
       .insert(alAssetCategories)
       .values({
@@ -209,7 +215,10 @@ export class EnterpriseAssetLifecycleService {
     scope: StaffScope,
     input: CreateAlAssetRegistryProfileRequest,
   ): Promise<AlAssetRegistryProfileSummary> {
-    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(scope.companyId, input.assetId);
+    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(
+      scope.companyId,
+      input.assetId,
+    );
     if (!asset) {
       throw new EnterpriseAssetLifecycleError('NOT_FOUND', 'Asset not found');
     }
@@ -234,7 +243,12 @@ export class EnterpriseAssetLifecycleService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'registry_profile_created', 'al_asset_registry_profile', created!.id);
+    await this.recordAudit(
+      scope,
+      'registry_profile_created',
+      'al_asset_registry_profile',
+      created!.id,
+    );
     return toRegistryProfileSummary(created!);
   }
 
@@ -262,7 +276,10 @@ export class EnterpriseAssetLifecycleService {
     return toIotProviderSummary(created!);
   }
 
-  async testIotProvider(scope: StaffScope, providerId: string): Promise<AlIotProviderAdapterSummary> {
+  async testIotProvider(
+    scope: StaffScope,
+    providerId: string,
+  ): Promise<AlIotProviderAdapterSummary> {
     const provider = await this.getIotProviderOrThrow(scope.companyId, providerId);
     const testStatus = provider.endpointUrl ? 'success' : 'skipped';
     const testMessage = provider.endpointUrl
@@ -285,7 +302,10 @@ export class EnterpriseAssetLifecycleService {
     return toIotProviderSummary(updated!);
   }
 
-  async createIotDevice(scope: StaffScope, input: CreateAlIotDeviceRequest): Promise<AlIotDeviceSummary> {
+  async createIotDevice(
+    scope: StaffScope,
+    input: CreateAlIotDeviceRequest,
+  ): Promise<AlIotDeviceSummary> {
     const [created] = await this.deps.db
       .insert(alIotDevices)
       .values({
@@ -303,9 +323,16 @@ export class EnterpriseAssetLifecycleService {
     return (await this.getIotDevice(scope.companyId, created!.id))!;
   }
 
-  async mapDeviceToAsset(scope: StaffScope, deviceId: string, assetId: string): Promise<AlIotDeviceSummary> {
+  async mapDeviceToAsset(
+    scope: StaffScope,
+    deviceId: string,
+    assetId: string,
+  ): Promise<AlIotDeviceSummary> {
     const device = await this.getIotDeviceOrThrow(scope.companyId, deviceId);
-    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(scope.companyId, assetId);
+    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(
+      scope.companyId,
+      assetId,
+    );
     if (!asset) {
       throw new EnterpriseAssetLifecycleError('NOT_FOUND', 'Asset not found');
     }
@@ -320,7 +347,10 @@ export class EnterpriseAssetLifecycleService {
     return (await this.getIotDevice(scope.companyId, updated!.id))!;
   }
 
-  async ingestTelemetry(scope: StaffScope, input: IngestAlTelemetryRequest): Promise<AlTelemetryReadingSummary> {
+  async ingestTelemetry(
+    scope: StaffScope,
+    input: IngestAlTelemetryRequest,
+  ): Promise<AlTelemetryReadingSummary> {
     const device = await this.getIotDeviceOrThrow(scope.companyId, input.deviceId);
 
     const [reading] = await this.deps.db
@@ -357,7 +387,8 @@ export class EnterpriseAssetLifecycleService {
     scope: StaffScope,
     input: CreateAlLifecycleStageRequest,
   ): Promise<AlLifecycleStageHistorySummary> {
-    const requiresApproval = input.requiresApproval ?? ['decommissioning', 'disposal'].includes(input.stage);
+    const requiresApproval =
+      input.requiresApproval ?? ['decommissioning', 'disposal'].includes(input.stage);
     const status = requiresApproval ? 'pending_approval' : 'executed';
 
     const [created] = await this.deps.db
@@ -387,14 +418,25 @@ export class EnterpriseAssetLifecycleService {
         );
     }
 
-    await this.recordAudit(scope, 'lifecycle_stage_created', 'al_lifecycle_stage_history', created!.id);
+    await this.recordAudit(
+      scope,
+      'lifecycle_stage_created',
+      'al_lifecycle_stage_history',
+      created!.id,
+    );
     return toLifecycleSummary(created!);
   }
 
-  async approveLifecycleStage(scope: StaffScope, historyId: string): Promise<AlLifecycleStageHistorySummary> {
+  async approveLifecycleStage(
+    scope: StaffScope,
+    historyId: string,
+  ): Promise<AlLifecycleStageHistorySummary> {
     const row = await this.getLifecycleHistoryOrThrow(scope.companyId, historyId);
     if (row.status !== 'pending_approval') {
-      throw new EnterpriseAssetLifecycleError('VALIDATION_ERROR', 'Lifecycle stage is not pending approval');
+      throw new EnterpriseAssetLifecycleError(
+        'VALIDATION_ERROR',
+        'Lifecycle stage is not pending approval',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -403,14 +445,25 @@ export class EnterpriseAssetLifecycleService {
       .where(eq(alLifecycleStageHistory.id, historyId))
       .returning();
 
-    await this.recordAudit(scope, 'lifecycle_stage_approved', 'al_lifecycle_stage_history', historyId);
+    await this.recordAudit(
+      scope,
+      'lifecycle_stage_approved',
+      'al_lifecycle_stage_history',
+      historyId,
+    );
     return toLifecycleSummary(updated!);
   }
 
-  async executeLifecycleStage(scope: StaffScope, historyId: string): Promise<AlLifecycleStageHistorySummary> {
+  async executeLifecycleStage(
+    scope: StaffScope,
+    historyId: string,
+  ): Promise<AlLifecycleStageHistorySummary> {
     const row = await this.getLifecycleHistoryOrThrow(scope.companyId, historyId);
     if (!['approved', 'pending_approval'].includes(row.status)) {
-      throw new EnterpriseAssetLifecycleError('VALIDATION_ERROR', 'Lifecycle stage cannot be executed');
+      throw new EnterpriseAssetLifecycleError(
+        'VALIDATION_ERROR',
+        'Lifecycle stage cannot be executed',
+      );
     }
 
     const [updated] = await this.deps.db
@@ -429,7 +482,12 @@ export class EnterpriseAssetLifecycleService {
         ),
       );
 
-    await this.recordAudit(scope, 'lifecycle_stage_executed', 'al_lifecycle_stage_history', historyId);
+    await this.recordAudit(
+      scope,
+      'lifecycle_stage_executed',
+      'al_lifecycle_stage_history',
+      historyId,
+    );
     return toLifecycleSummary(updated!);
   }
 
@@ -521,7 +579,10 @@ export class EnterpriseAssetLifecycleService {
     scope: StaffScope,
     assetId: string,
   ): Promise<AlPredictiveAssessmentSummary> {
-    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(scope.companyId, assetId);
+    const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(
+      scope.companyId,
+      assetId,
+    );
     if (!asset) {
       throw new EnterpriseAssetLifecycleError('NOT_FOUND', 'Asset not found');
     }
@@ -543,12 +604,17 @@ export class EnterpriseAssetLifecycleService {
         limit: 50,
       }),
       this.deps.db.query.alAssetAlerts.findMany({
-        where: and(eq(alAssetAlerts.companyId, scope.companyId), eq(alAssetAlerts.assetId, assetId)),
+        where: and(
+          eq(alAssetAlerts.companyId, scope.companyId),
+          eq(alAssetAlerts.assetId, assetId),
+        ),
         limit: 10,
       }),
     ]);
 
-    const emergencyCount = maintenanceRecords.filter((r) => r.maintenanceType === 'emergency').length;
+    const emergencyCount = maintenanceRecords.filter(
+      (r) => r.maintenanceType === 'emergency',
+    ).length;
     const openAlertCount = alerts.filter((a) => a.status === 'open').length;
     const telemetryCount = telemetry.length;
 
@@ -571,8 +637,10 @@ export class EnterpriseAssetLifecycleService {
           failureRiskScore >= 50
             ? 'Schedule preventive maintenance inspection based on maintenance history and telemetry.'
             : 'Continue monitoring — no immediate maintenance required.',
-        inspectionRecommendation: openAlertCount > 0 ? 'Review open alerts and inspect affected components.' : null,
-        partsRecommendation: emergencyCount > 2 ? 'Review frequently replaced parts from maintenance history.' : null,
+        inspectionRecommendation:
+          openAlertCount > 0 ? 'Review open alerts and inspect affected components.' : null,
+        partsRecommendation:
+          emergencyCount > 2 ? 'Review frequently replaced parts from maintenance history.' : null,
         confidenceScore: String(confidenceScore),
         supportingEvidence: {
           emergencyMaintenanceCount: emergencyCount,
@@ -584,7 +652,12 @@ export class EnterpriseAssetLifecycleService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'predictive_assessment_generated', 'al_predictive_assessment', created!.id);
+    await this.recordAudit(
+      scope,
+      'predictive_assessment_generated',
+      'al_predictive_assessment',
+      created!.id,
+    );
     return toPredictiveSummary(created!);
   }
 
@@ -611,11 +684,16 @@ export class EnterpriseAssetLifecycleService {
     return toWorkOrderDraftSummary(created!);
   }
 
-  async approveWorkOrderDraft(scope: StaffScope, draftId: string): Promise<AlWorkOrderDraftSummary> {
+  async approveWorkOrderDraft(
+    scope: StaffScope,
+    draftId: string,
+  ): Promise<AlWorkOrderDraftSummary> {
     const [updated] = await this.deps.db
       .update(alWorkOrderDrafts)
       .set({ status: 'approved', updatedAt: new Date() })
-      .where(and(eq(alWorkOrderDrafts.id, draftId), eq(alWorkOrderDrafts.companyId, scope.companyId)))
+      .where(
+        and(eq(alWorkOrderDrafts.id, draftId), eq(alWorkOrderDrafts.companyId, scope.companyId)),
+      )
       .returning();
 
     if (!updated) {
@@ -654,7 +732,8 @@ export class EnterpriseAssetLifecycleService {
 
     const predictiveRiskAvg =
       predictiveRows.length > 0
-        ? predictiveRows.reduce((sum, p) => sum + (p.failureRiskScore ?? 0), 0) / predictiveRows.length
+        ? predictiveRows.reduce((sum, p) => sum + (p.failureRiskScore ?? 0), 0) /
+          predictiveRows.length
         : null;
 
     const [snapshot] = await this.deps.db
@@ -679,7 +758,10 @@ export class EnterpriseAssetLifecycleService {
     return toAnalyticsSummary(snapshot!);
   }
 
-  async listCustomerAssets(companyId: string, customerId: string): Promise<AlCustomerAssetSummary[]> {
+  async listCustomerAssets(
+    companyId: string,
+    customerId: string,
+  ): Promise<AlCustomerAssetSummary[]> {
     const profiles = await this.deps.db.query.alAssetRegistryProfiles.findMany({
       where: and(
         eq(alAssetRegistryProfiles.companyId, companyId),
@@ -689,7 +771,10 @@ export class EnterpriseAssetLifecycleService {
 
     const summaries: AlCustomerAssetSummary[] = [];
     for (const profile of profiles) {
-      const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(companyId, profile.assetId);
+      const asset = await this.deps.assetEquipmentIntelligenceService.getAsset(
+        companyId,
+        profile.assetId,
+      );
       if (!asset) continue;
 
       const [warranty, alertCount] = await Promise.all([
@@ -837,7 +922,7 @@ export class EnterpriseAssetLifecycleService {
     input: IngestAlTelemetryRequest,
   ) {
     const thresholds = device.thresholdConfig as Record<string, { min?: number; max?: number }>;
-    const fieldKey = input.field === 'custom' ? input.customFieldName ?? 'custom' : input.field;
+    const fieldKey = input.field === 'custom' ? (input.customFieldName ?? 'custom') : input.field;
     const threshold = thresholds[fieldKey];
     if (!threshold) return;
 
@@ -879,7 +964,9 @@ export class EnterpriseAssetLifecycleService {
 
     return assets.map((asset) => ({
       ...asset,
-      profile: profileMap.has(asset.id) ? toRegistryProfileSummary(profileMap.get(asset.id)!) : null,
+      profile: profileMap.has(asset.id)
+        ? toRegistryProfileSummary(profileMap.get(asset.id)!)
+        : null,
     }));
   }
 
@@ -911,7 +998,10 @@ export class EnterpriseAssetLifecycleService {
     return summaries;
   }
 
-  private async getIotDevice(companyId: string, deviceId: string): Promise<AlIotDeviceSummary | null> {
+  private async getIotDevice(
+    companyId: string,
+    deviceId: string,
+  ): Promise<AlIotDeviceSummary | null> {
     const row = await this.deps.db.query.alIotDevices.findFirst({
       where: and(eq(alIotDevices.id, deviceId), eq(alIotDevices.companyId, companyId)),
     });
@@ -936,7 +1026,10 @@ export class EnterpriseAssetLifecycleService {
     };
   }
 
-  private async listRecentTelemetry(companyId: string, limit: number): Promise<AlTelemetryReadingSummary[]> {
+  private async listRecentTelemetry(
+    companyId: string,
+    limit: number,
+  ): Promise<AlTelemetryReadingSummary[]> {
     const rows = await this.deps.db.query.alTelemetryReadings.findMany({
       where: eq(alTelemetryReadings.companyId, companyId),
       orderBy: [desc(alTelemetryReadings.recordedAt)],
@@ -961,7 +1054,9 @@ export class EnterpriseAssetLifecycleService {
     return rows.map(toAlertSummary);
   }
 
-  private async listMaintenanceDue(companyId: string): Promise<AlPreventiveMaintenanceDueSummary[]> {
+  private async listMaintenanceDue(
+    companyId: string,
+  ): Promise<AlPreventiveMaintenanceDueSummary[]> {
     const rows = await this.deps.db.query.alPreventiveMaintenanceDue.findMany({
       where: and(
         eq(alPreventiveMaintenanceDue.companyId, companyId),
@@ -973,7 +1068,9 @@ export class EnterpriseAssetLifecycleService {
     return rows.map(toMaintenanceDueSummary);
   }
 
-  private async listPredictiveAssessments(companyId: string): Promise<AlPredictiveAssessmentSummary[]> {
+  private async listPredictiveAssessments(
+    companyId: string,
+  ): Promise<AlPredictiveAssessmentSummary[]> {
     const rows = await this.deps.db.query.alPredictiveAssessments.findMany({
       where: eq(alPredictiveAssessments.companyId, companyId),
       orderBy: [desc(alPredictiveAssessments.createdAt)],
@@ -1036,7 +1133,10 @@ export class EnterpriseAssetLifecycleService {
 
   private async getIotProviderOrThrow(companyId: string, providerId: string) {
     const provider = await this.deps.db.query.alIotProviderAdapters.findFirst({
-      where: and(eq(alIotProviderAdapters.id, providerId), eq(alIotProviderAdapters.companyId, companyId)),
+      where: and(
+        eq(alIotProviderAdapters.id, providerId),
+        eq(alIotProviderAdapters.companyId, companyId),
+      ),
     });
     if (!provider) throw new EnterpriseAssetLifecycleError('NOT_FOUND', 'IoT provider not found');
     return provider;
@@ -1052,7 +1152,10 @@ export class EnterpriseAssetLifecycleService {
 
   private async getLifecycleHistoryOrThrow(companyId: string, historyId: string) {
     const row = await this.deps.db.query.alLifecycleStageHistory.findFirst({
-      where: and(eq(alLifecycleStageHistory.id, historyId), eq(alLifecycleStageHistory.companyId, companyId)),
+      where: and(
+        eq(alLifecycleStageHistory.id, historyId),
+        eq(alLifecycleStageHistory.companyId, companyId),
+      ),
     });
     if (!row) throw new EnterpriseAssetLifecycleError('NOT_FOUND', 'Lifecycle history not found');
     return row;
@@ -1076,7 +1179,9 @@ export class EnterpriseAssetLifecycleService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof alPlatformConfig.$inferSelect): AlPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof alPlatformConfig.$inferSelect,
+): AlPlatformConfigSummary {
   return {
     globalPolicies: row.globalPolicies,
     iotAdapterTemplates: row.iotAdapterTemplates,
@@ -1096,7 +1201,9 @@ function toCategorySummary(row: typeof alAssetCategories.$inferSelect): AlAssetC
   };
 }
 
-function toRegistryProfileSummary(row: typeof alAssetRegistryProfiles.$inferSelect): AlAssetRegistryProfileSummary {
+function toRegistryProfileSummary(
+  row: typeof alAssetRegistryProfiles.$inferSelect,
+): AlAssetRegistryProfileSummary {
   return {
     id: row.id,
     assetId: row.assetId,
@@ -1116,7 +1223,9 @@ function toRegistryProfileSummary(row: typeof alAssetRegistryProfiles.$inferSele
   };
 }
 
-function toIotProviderSummary(row: typeof alIotProviderAdapters.$inferSelect): AlIotProviderAdapterSummary {
+function toIotProviderSummary(
+  row: typeof alIotProviderAdapters.$inferSelect,
+): AlIotProviderAdapterSummary {
   return {
     id: row.id,
     providerType: row.providerType,
@@ -1131,7 +1240,9 @@ function toIotProviderSummary(row: typeof alIotProviderAdapters.$inferSelect): A
   };
 }
 
-function toTelemetrySummary(row: typeof alTelemetryReadings.$inferSelect): AlTelemetryReadingSummary {
+function toTelemetrySummary(
+  row: typeof alTelemetryReadings.$inferSelect,
+): AlTelemetryReadingSummary {
   return {
     id: row.id,
     deviceId: row.deviceId,
@@ -1162,7 +1273,9 @@ function toAlertSummary(row: typeof alAssetAlerts.$inferSelect): AlAssetAlertSum
   };
 }
 
-function toLifecycleSummary(row: typeof alLifecycleStageHistory.$inferSelect): AlLifecycleStageHistorySummary {
+function toLifecycleSummary(
+  row: typeof alLifecycleStageHistory.$inferSelect,
+): AlLifecycleStageHistorySummary {
   return {
     id: row.id,
     assetId: row.assetId,
@@ -1190,7 +1303,9 @@ function toMaintenanceDueSummary(
   };
 }
 
-function toPredictiveSummary(row: typeof alPredictiveAssessments.$inferSelect): AlPredictiveAssessmentSummary {
+function toPredictiveSummary(
+  row: typeof alPredictiveAssessments.$inferSelect,
+): AlPredictiveAssessmentSummary {
   return {
     id: row.id,
     assetId: row.assetId,
@@ -1206,7 +1321,9 @@ function toPredictiveSummary(row: typeof alPredictiveAssessments.$inferSelect): 
   };
 }
 
-function toWorkOrderDraftSummary(row: typeof alWorkOrderDrafts.$inferSelect): AlWorkOrderDraftSummary {
+function toWorkOrderDraftSummary(
+  row: typeof alWorkOrderDrafts.$inferSelect,
+): AlWorkOrderDraftSummary {
   return {
     id: row.id,
     assetId: row.assetId,

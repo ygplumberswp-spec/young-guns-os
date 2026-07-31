@@ -9,19 +9,10 @@ export type DeveloperExtensionType =
   | 'automation';
 
 export type DeveloperExtensionStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'installed'
-  | 'disabled'
-  | 'rejected';
+  'draft' | 'pending_approval' | 'approved' | 'installed' | 'disabled' | 'rejected';
 
 export type DeveloperMarketplaceStatus =
-  | 'draft'
-  | 'pending_review'
-  | 'published'
-  | 'rejected'
-  | 'archived';
+  'draft' | 'pending_review' | 'published' | 'rejected' | 'archived';
 
 export type DeveloperTokenType = 'api_key' | 'personal_token' | 'service_account';
 
@@ -36,11 +27,7 @@ export type DeveloperPlatformActionType =
   | 'integration_guide';
 
 export type DeveloperPlatformActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type DeveloperExtensionSummary = {
   id: string;

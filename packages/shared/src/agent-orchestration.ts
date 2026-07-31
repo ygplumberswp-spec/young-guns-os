@@ -4,20 +4,10 @@ import type { BusinessEventType } from './automation.js';
 export type OrchestrationStatus = 'draft' | 'active' | 'paused';
 
 export type OrchestrationRunStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'awaiting_approval'
-  | 'cancelled';
+  'pending' | 'running' | 'completed' | 'failed' | 'awaiting_approval' | 'cancelled';
 
 export type OrchestrationStepStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'skipped'
-  | 'awaiting_approval';
+  'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'awaiting_approval';
 
 export type OrchestrationStepMode = 'sequential' | 'parallel';
 
@@ -31,15 +21,17 @@ export const ORCHESTRATION_STATUS_OPTIONS: Array<{ value: OrchestrationStatus; l
   { value: 'paused', label: 'Paused' },
 ];
 
-export const ORCHESTRATION_RUN_STATUS_OPTIONS: Array<{ value: OrchestrationRunStatus; label: string }> =
-  [
-    { value: 'pending', label: 'Pending' },
-    { value: 'running', label: 'Running' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'failed', label: 'Failed' },
-    { value: 'awaiting_approval', label: 'Awaiting approval' },
-    { value: 'cancelled', label: 'Cancelled' },
-  ];
+export const ORCHESTRATION_RUN_STATUS_OPTIONS: Array<{
+  value: OrchestrationRunStatus;
+  label: string;
+}> = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'running', label: 'Running' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'awaiting_approval', label: 'Awaiting approval' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
 
 export const ORCHESTRATION_EVENT_OPTIONS: Array<{ value: BusinessEventType; label: string }> = [
   { value: 'customer.created', label: 'New customer created' },

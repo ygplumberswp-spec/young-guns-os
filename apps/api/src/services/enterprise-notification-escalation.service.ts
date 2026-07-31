@@ -8,12 +8,18 @@ type StaffScope = { companyId: string; userId: string };
 export class EnterpriseNotificationEscalationService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listEscalations(companyId: string, options?: { status?: string }): Promise<NcEscalationSummary[]> {
+  async listEscalations(
+    companyId: string,
+    options?: { status?: string },
+  ): Promise<NcEscalationSummary[]> {
     const rows = await this.db.query.ncEscalations.findMany({
       where: options?.status
         ? and(
             eq(ncEscalations.companyId, companyId),
-            eq(ncEscalations.status, options.status as typeof ncEscalations.status.enumValues[number]),
+            eq(
+              ncEscalations.status,
+              options.status as (typeof ncEscalations.status.enumValues)[number],
+            ),
           )
         : eq(ncEscalations.companyId, companyId),
       orderBy: [desc(ncEscalations.createdAt)],
@@ -47,7 +53,10 @@ export class EnterpriseNotificationEscalationService {
     return toEscalationSummary(created);
   }
 
-  async acknowledgeEscalation(scope: StaffScope, escalationId: string): Promise<NcEscalationSummary> {
+  async acknowledgeEscalation(
+    scope: StaffScope,
+    escalationId: string,
+  ): Promise<NcEscalationSummary> {
     const [updated] = await this.db
       .update(ncEscalations)
       .set({

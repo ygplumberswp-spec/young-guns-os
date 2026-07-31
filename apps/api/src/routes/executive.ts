@@ -45,7 +45,11 @@ export function createExecutiveRouter({
 }: ExecutiveRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('executive:read', 'executive:write', 'intelligence:read');
+  const requireRead = requireAnyPermission(
+    'executive:read',
+    'executive:write',
+    'intelligence:read',
+  );
   const requireWrite = requireAnyPermission('executive:write');
 
   router.use(requireAuth);
@@ -104,7 +108,9 @@ export function createExecutiveRouter({
   router.patch('/alerts/:id', requireWrite, async (req, res) => {
     const parsed = updateAlertSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid alert payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid alert payload' } });
       return;
     }
 
@@ -168,7 +174,9 @@ export function createExecutiveRouter({
   router.post('/reports/generate', requireWrite, async (req, res) => {
     const parsed = generateReportSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid report payload' } });
       return;
     }
 

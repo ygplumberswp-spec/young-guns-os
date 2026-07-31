@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
-import { AI_NAME, APP_NAME } from '@titan/shared';
+import { AI_NAME } from '@titan/shared';
 import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
@@ -11,6 +11,8 @@ import { prefetchNavIntent } from '../lib/route-prefetch-registry';
 import { useStaffPreloadContext } from '../lib/preload-coordinator';
 import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
 import { NavIcon } from '../components/NavIcon';
+import { TitanWordmark } from '../brand/TitanWordmark';
+import { StagingBadge } from '../components/StagingBadge';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -73,8 +75,12 @@ export function AppLayout({ children }: AppLayoutProps) {
               Menu
             </button>
             <div className="app-header__brand">
-              <span className="brand">{APP_NAME}</span>
-              <span className="brand-sub">powered by {AI_NAME}</span>
+              <TitanWordmark variant="compact" className="app-header__wordmark" />
+              <StagingBadge />
+              <span className="brand-sub">
+                Powered by <span className="brand-sub__accent">{AI_NAME}</span>
+              </span>
+              <span className="brand-credit">Built by Young Guns Plumbing</span>
             </div>
           </div>
           <div className="app-header__user">
@@ -136,9 +142,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <nav className="app-nav" aria-label="Main navigation">
             {groupedNavItems.map(({ group, items }) => (
               <div key={group.id} className="app-nav__group">
-                {!sidebarCollapsed ? (
-                  <p className="app-nav__group-label">{group.label}</p>
-                ) : null}
+                {!sidebarCollapsed ? <p className="app-nav__group-label">{group.label}</p> : null}
                 {items.map((item) => {
                   const isActive =
                     activeLocation === item.href ||

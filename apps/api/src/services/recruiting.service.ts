@@ -67,7 +67,10 @@ export class RecruitingService {
     return rows.map((row) => toCandidateSummary(row, row.applications.length));
   }
 
-  async getCandidate(companyId: string, candidateId: string): Promise<RecruitingCandidateDetail | null> {
+  async getCandidate(
+    companyId: string,
+    candidateId: string,
+  ): Promise<RecruitingCandidateDetail | null> {
     const row = await this.db.query.recruitingCandidates.findFirst({
       where: and(
         eq(recruitingCandidates.id, candidateId),

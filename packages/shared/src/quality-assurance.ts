@@ -23,7 +23,8 @@ export type QualityActionType =
   | 'material_recovery'
   | 'payroll_recommendation';
 
-export type QualityActionStatus = 'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
+export type QualityActionStatus =
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type QualityComebackSummary = {
   id: string;
@@ -168,7 +169,12 @@ export type QualitySupplierIntelligence = {
   totalDefectCount: number;
   recurringDefectCount: number;
   warrantyClaimCount: number;
-  topSuppliers: Array<{ supplierId: string; name: string; defectCount: number; replacementCount: number }>;
+  topSuppliers: Array<{
+    supplierId: string;
+    name: string;
+    defectCount: number;
+    replacementCount: number;
+  }>;
 };
 
 export type QualityAuraContext = {

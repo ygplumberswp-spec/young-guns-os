@@ -1,6 +1,8 @@
-export type RlmValidationStatus = 'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
+export type RlmValidationStatus =
+  'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
 
-export type RlmReleaseStatus = 'not_ready' | 'blocked' | 'warning' | 'ready' | 'released' | 'unknown';
+export type RlmReleaseStatus =
+  'not_ready' | 'blocked' | 'warning' | 'ready' | 'released' | 'unknown';
 
 export type RlmStorePlatform = 'apple_app_store' | 'google_play_store';
 

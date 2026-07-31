@@ -1,8 +1,9 @@
-export type XeroSyncScope = 'organisation' | 'customers' | 'quotes' | 'invoices' | 'payments';
+export type XeroSyncScope =
+  'organisation' | 'customers' | 'quotes' | 'invoices' | 'payments' | 'import';
 
 export type XeroSyncEntityStatus = 'pending' | 'synced' | 'failed' | 'out_of_sync';
 
-export type XeroSyncEntityType = 'customer' | 'quote' | 'invoice' | 'payment';
+export type XeroSyncEntityType = 'customer' | 'quote' | 'invoice' | 'payment' | 'bank_transaction';
 
 export type XeroEntitySyncStats = {
   syncedCount: number;
@@ -26,6 +27,29 @@ export type XeroSyncStatusResponse = {
   unpaidInvoiceCount: number;
   customersWithOutstandingCount: number;
   currency: string;
+};
+
+export type XeroImportEntityCounts = {
+  createdCount: number;
+  updatedCount: number;
+  pulledCount: number;
+  failedCount: number;
+  skippedCount: number;
+};
+
+export type XeroImportStage = 'contacts' | 'invoices' | 'payments' | 'bank_transactions';
+
+export type XeroImportSyncResult = {
+  success: boolean;
+  message: string;
+  syncedAt: string | null;
+  contacts: XeroImportEntityCounts;
+  invoices: XeroImportEntityCounts;
+  payments: XeroImportEntityCounts;
+  bankTransactions: XeroImportEntityCounts;
+  failedStage?: XeroImportStage | null;
+  completedStages?: XeroImportStage[];
+  syncJobId?: string;
 };
 
 export type XeroEntitySyncResult = {

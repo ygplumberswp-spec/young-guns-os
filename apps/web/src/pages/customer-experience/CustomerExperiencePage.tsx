@@ -23,7 +23,8 @@ import {
   formatReviewType,
 } from '../../features/customer-experience/utils';
 
-type CustomerExperienceTab = 'overview' | 'bookings' | 'reviews' | 'loyalty' | 'analytics' | 'settings' | 'assistant';
+type CustomerExperienceTab =
+  'overview' | 'bookings' | 'reviews' | 'loyalty' | 'analytics' | 'settings' | 'assistant';
 
 export function CustomerExperiencePage() {
   const { accessToken, user } = useAuth();
@@ -34,11 +35,23 @@ export function CustomerExperiencePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessCustomerExperience(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageCustomerExperience(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessCustomerExperience(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageCustomerExperience(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -58,7 +71,11 @@ export function CustomerExperiencePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load customer experience dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load customer experience dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -89,7 +106,10 @@ export function CustomerExperiencePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Customer Experience" description="You do not have permission to view customer experience." />
+        <PageHeader
+          title="Customer Experience"
+          description="You do not have permission to view customer experience."
+        />
       </div>
     );
   }
@@ -118,7 +138,12 @@ export function CustomerExperiencePage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => captureCustomerExperienceAnalytics(accessToken!), 'Analytics captured')}
+                onClick={() =>
+                  void runAction(
+                    () => captureCustomerExperienceAnalytics(accessToken!),
+                    'Analytics captured',
+                  )
+                }
               >
                 Capture analytics
               </Button>
@@ -153,19 +178,31 @@ export function CustomerExperiencePage() {
             <div className="stat-grid">
               <StatCard label="Portal users" value={String(dashboard.portalUserCount)} />
               <StatCard label="Active bookings" value={String(dashboard.activeBookingCount)} />
-              <StatCard label="Pending approval" value={String(dashboard.pendingApprovalBookingCount)} />
+              <StatCard
+                label="Pending approval"
+                value={String(dashboard.pendingApprovalBookingCount)}
+              />
               <StatCard label="Open reviews" value={String(dashboard.openReviewCount)} />
               <StatCard label="Referrals" value={String(dashboard.referralCount)} />
               <StatCard label="Loyalty programs" value={String(dashboard.loyaltyProgramCount)} />
-              <StatCard label="Tracking" value={dashboard.trackingEnabled ? 'Enabled' : 'Disabled'} />
+              <StatCard
+                label="Tracking"
+                value={dashboard.trackingEnabled ? 'Enabled' : 'Disabled'}
+              />
               <StatCard label="PWA" value={dashboard.pwaEnabled ? 'Enabled' : 'Disabled'} />
             </div>
           ) : null}
 
           {activeTab === 'bookings' ? (
-            <Panel title="Appointment bookings" description="Draft → Approval → Confirmation workflow">
+            <Panel
+              title="Appointment bookings"
+              description="Draft → Approval → Confirmation workflow"
+            >
               {dashboard.recentBookings.length === 0 ? (
-                <EmptyState title="No bookings" description="Bookings appear when customers submit requests through the portal." />
+                <EmptyState
+                  title="No bookings"
+                  description="Bookings appear when customers submit requests through the portal."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentBookings.map((booking) => (
@@ -183,20 +220,27 @@ export function CustomerExperiencePage() {
                             size="sm"
                             disabled={isWorking}
                             onClick={() =>
-                              void runAction(() => approveCustomerBooking(accessToken!, booking.id), 'Booking approved')
+                              void runAction(
+                                () => approveCustomerBooking(accessToken!, booking.id),
+                                'Booking approved',
+                              )
                             }
                           >
                             Approve
                           </Button>
                         </div>
                       ) : null}
-                      {canWrite && (booking.status === 'approved' || booking.status === 'pending_approval') ? (
+                      {canWrite &&
+                      (booking.status === 'approved' || booking.status === 'pending_approval') ? (
                         <Button
                           size="sm"
                           variant="secondary"
                           disabled={isWorking}
                           onClick={() =>
-                            void runAction(() => confirmCustomerBooking(accessToken!, booking.id), 'Booking confirmed')
+                            void runAction(
+                              () => confirmCustomerBooking(accessToken!, booking.id),
+                              'Booking confirmed',
+                            )
                           }
                         >
                           Confirm
@@ -210,9 +254,15 @@ export function CustomerExperiencePage() {
           ) : null}
 
           {activeTab === 'reviews' ? (
-            <Panel title="Reviews & feedback" description="Customer-submitted ratings and feedback only">
+            <Panel
+              title="Reviews & feedback"
+              description="Customer-submitted ratings and feedback only"
+            >
               {dashboard.recentReviews.length === 0 ? (
-                <EmptyState title="No reviews" description="Reviews appear when customers submit feedback through the portal." />
+                <EmptyState
+                  title="No reviews"
+                  description="Reviews appear when customers submit feedback through the portal."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentReviews.map((review) => (
@@ -231,7 +281,10 @@ export function CustomerExperiencePage() {
                           disabled={isWorking}
                           onClick={() =>
                             void runAction(
-                              () => updateCustomerReviewStatus(accessToken!, review.id, { status: 'acknowledged' }),
+                              () =>
+                                updateCustomerReviewStatus(accessToken!, review.id, {
+                                  status: 'acknowledged',
+                                }),
                               'Review acknowledged',
                             )
                           }
@@ -247,10 +300,16 @@ export function CustomerExperiencePage() {
           ) : null}
 
           {activeTab === 'loyalty' ? (
-            <Panel title="Loyalty & referrals" description="Business-configurable loyalty tiers and referral tracking">
+            <Panel
+              title="Loyalty & referrals"
+              description="Business-configurable loyalty tiers and referral tracking"
+            >
               <p className="page-muted">{dashboard.referralCount} referral(s) tracked.</p>
               {dashboard.recentReferrals.length === 0 ? (
-                <EmptyState title="No referrals" description="Referrals appear when customers invite others through the portal." />
+                <EmptyState
+                  title="No referrals"
+                  description="Referrals appear when customers invite others through the portal."
+                />
               ) : (
                 <div className="data-list">
                   {dashboard.recentReferrals.map((referral) => (
@@ -265,10 +324,19 @@ export function CustomerExperiencePage() {
           ) : null}
 
           {activeTab === 'analytics' ? (
-            <Panel title="Customer analytics" description="Metrics from real portal and mobile activity only">
+            <Panel
+              title="Customer analytics"
+              description="Metrics from real portal and mobile activity only"
+            >
               <div className="stat-grid">
-                <StatCard label="Portal usage" value={String(dashboard.analytics.portalUsageCount)} />
-                <StatCard label="Mobile usage" value={String(dashboard.analytics.mobileUsageCount)} />
+                <StatCard
+                  label="Portal usage"
+                  value={String(dashboard.analytics.portalUsageCount)}
+                />
+                <StatCard
+                  label="Mobile usage"
+                  value={String(dashboard.analytics.mobileUsageCount)}
+                />
                 <StatCard
                   label="Booking conversion"
                   value={
@@ -317,15 +385,28 @@ export function CustomerExperiencePage() {
           ) : null}
 
           {activeTab === 'assistant' ? (
-            <Panel title="AURA Customer Experience Agent" description="Recommendations only — approval required for actions">
+            <Panel
+              title="AURA Customer Experience Agent"
+              description="Recommendations only — approval required for actions"
+            >
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'customer_experience' as import('@titan/shared').AgentKey)}
+                onSend={(content) =>
+                  void sendAgentMessage(
+                    content,
+                    'customer_experience' as import('@titan/shared').AgentKey,
+                  )
+                }
                 placeholder="Ask about bookings, documents, tracking, loyalty, or customer engagement…"
               />
             </Panel>

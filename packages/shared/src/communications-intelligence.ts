@@ -1,6 +1,8 @@
-export type CommIntelChannel = 'phone' | 'whatsapp' | 'email' | 'sms' | 'portal' | 'support' | 'internal';
+export type CommIntelChannel =
+  'phone' | 'whatsapp' | 'email' | 'sms' | 'portal' | 'support' | 'internal';
 
-export type CommIntelCallType = 'inbound' | 'outbound' | 'missed' | 'transferred' | 'voicemail' | 'callback';
+export type CommIntelCallType =
+  'inbound' | 'outbound' | 'missed' | 'transferred' | 'voicemail' | 'callback';
 
 export type CommIntelCallOutcome =
   | 'answered'
@@ -24,7 +26,8 @@ export type CommIntelSmsStatus = 'sent' | 'delivered' | 'failed' | 'replied';
 
 export type CommIntelDraftType = 'customer_reply' | 'follow_up';
 
-export type CommIntelDraftStatus = 'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
+export type CommIntelDraftStatus =
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type CommIntelRecordingSummary = {
   id: string;
@@ -140,7 +143,11 @@ export type CommIntelAnalyticsDashboard = {
   totalCommunications: number;
   missedCallCount: number;
   averageResponseMinutes: number | null;
-  customerSatisfactionTrend: Array<{ period: string; positiveCount: number; negativeCount: number }>;
+  customerSatisfactionTrend: Array<{
+    period: string;
+    positiveCount: number;
+    negativeCount: number;
+  }>;
   channelUsage: Array<{ channel: CommIntelChannel; count: number }>;
   communicationVolumeTrend: Array<{ period: string; count: number }>;
   supportResponsePerformance: {

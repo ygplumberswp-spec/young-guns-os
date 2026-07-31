@@ -23,7 +23,10 @@ export class EnterpriseLaunchCenterDeploymentValidationService {
     return rows.map(toValidationSummary);
   }
 
-  async runPostDeploymentValidation(scope: StaffScope, goLiveWizardId?: string): Promise<LncDeploymentValidationSummary> {
+  async runPostDeploymentValidation(
+    scope: StaffScope,
+    goLiveWizardId?: string,
+  ): Promise<LncDeploymentValidationSummary> {
     const validationKey = `validation_${Date.now()}`;
     const [scan, productionDashboard, deployments] = await Promise.all([
       this.readinessService.runReadinessScan(scope),
@@ -36,9 +39,21 @@ export class EnterpriseLaunchCenterDeploymentValidationService {
     ]);
 
     const checks = [
-      { key: 'readiness_scan', passed: scan.overallStatus === 'ready' || scan.overallStatus === 'warning', message: `Readiness: ${scan.overallStatus}` },
-      { key: 'api_health', passed: productionDashboard.overallHealthStatus !== 'unhealthy', message: `Ops health: ${productionDashboard.overallHealthStatus}` },
-      { key: 'deployment_records', passed: deployments.length >= 0, message: `${deployments.length} deployment record(s) on file.` },
+      {
+        key: 'readiness_scan',
+        passed: scan.overallStatus === 'ready' || scan.overallStatus === 'warning',
+        message: `Readiness: ${scan.overallStatus}`,
+      },
+      {
+        key: 'api_health',
+        passed: productionDashboard.overallHealthStatus !== 'unhealthy',
+        message: `Ops health: ${productionDashboard.overallHealthStatus}`,
+      },
+      {
+        key: 'deployment_records',
+        passed: deployments.length >= 0,
+        message: `${deployments.length} deployment record(s) on file.`,
+      },
     ];
 
     const passedCheckCount = checks.filter((c) => c.passed).length;
@@ -58,7 +73,11 @@ export class EnterpriseLaunchCenterDeploymentValidationService {
         deploymentRecordId: latestDeployment?.id ?? null,
         passedCheckCount,
         failedCheckCount,
-        report: { checks, scanId: scan.id, note: 'Post-deployment validation — no automatic rollback or deployment actions taken.' },
+        report: {
+          checks,
+          scanId: scan.id,
+          note: 'Post-deployment validation — no automatic rollback or deployment actions taken.',
+        },
         validatedAt: new Date(),
       })
       .returning();
@@ -66,15 +85,26 @@ export class EnterpriseLaunchCenterDeploymentValidationService {
     if (goLiveWizardId) {
       await this.db
         .update(lncGoLiveWizardSteps)
-        .set({ status: status === 'validated' ? 'passed' : 'failed', completedAt: new Date(), updatedAt: new Date() })
-        .where(and(eq(lncGoLiveWizardSteps.goLiveWizardId, goLiveWizardId), eq(lncGoLiveWizardSteps.stepKey, 'post_deployment_validation')));
+        .set({
+          status: status === 'validated' ? 'passed' : 'failed',
+          completedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(lncGoLiveWizardSteps.goLiveWizardId, goLiveWizardId),
+            eq(lncGoLiveWizardSteps.stepKey, 'post_deployment_validation'),
+          ),
+        );
     }
 
     return toValidationSummary(created!);
   }
 }
 
-function toValidationSummary(row: typeof lncDeploymentValidations.$inferSelect): LncDeploymentValidationSummary {
+function toValidationSummary(
+  row: typeof lncDeploymentValidations.$inferSelect,
+): LncDeploymentValidationSummary {
   return {
     id: row.id,
     goLiveWizardId: row.goLiveWizardId,

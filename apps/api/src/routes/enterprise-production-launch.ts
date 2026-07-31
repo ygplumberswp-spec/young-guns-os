@@ -74,16 +74,30 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('production_launch:read', 'production_launch:manage', 'ops:read', 'release_center:read');
-  const requireWrite = requireAnyPermission('production_launch:write', 'production_launch:manage', 'ops:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'production_launch:read',
+    'production_launch:manage',
+    'ops:read',
+    'release_center:read',
+  );
+  const requireWrite = requireAnyPermission(
+    'production_launch:write',
+    'production_launch:manage',
+    'ops:manage',
+  );
   const requireManage = requireAnyPermission('production_launch:manage', 'ops:manage');
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterpriseProductionLaunchService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterpriseProductionLaunchService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -92,7 +106,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseProductionLaunchService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseProductionLaunchService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -102,7 +118,10 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseProductionLaunchService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseProductionLaunchService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -111,7 +130,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/environment-review/run', requireWrite, async (req, res) => {
     try {
-      const review = await deps.enterpriseProductionLaunchService.runEnvironmentReview(staffScope(req));
+      const review = await deps.enterpriseProductionLaunchService.runEnvironmentReview(
+        staffScope(req),
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -120,7 +141,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/domain-security-review/run', requireWrite, async (req, res) => {
     try {
-      const review = await deps.enterpriseProductionLaunchService.runDomainSecurityReview(staffScope(req));
+      const review = await deps.enterpriseProductionLaunchService.runDomainSecurityReview(
+        staffScope(req),
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -129,7 +152,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/live-integration-verification/run', requireWrite, async (req, res) => {
     try {
-      const run = await deps.enterpriseProductionLaunchService.runLiveIntegrationVerification(staffScope(req));
+      const run = await deps.enterpriseProductionLaunchService.runLiveIntegrationVerification(
+        staffScope(req),
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -138,7 +163,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.get('/live-integration-verification/runs', requireRead, async (req, res) => {
     try {
-      const runs = await deps.enterpriseProductionLaunchService.listLiveIntegrationRuns(getAuth(req).companyId);
+      const runs = await deps.enterpriseProductionLaunchService.listLiveIntegrationRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { runs } });
     } catch (error) {
       handleError(error, res);
@@ -159,7 +186,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/commercial-readiness/run', requireWrite, async (req, res) => {
     try {
-      const review = await deps.enterpriseProductionLaunchService.runCommercialReadinessReview(staffScope(req));
+      const review = await deps.enterpriseProductionLaunchService.runCommercialReadinessReview(
+        staffScope(req),
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -168,7 +197,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/mobile-production-review/run', requireWrite, async (req, res) => {
     try {
-      const review = await deps.enterpriseProductionLaunchService.runMobileProductionReview(staffScope(req));
+      const review = await deps.enterpriseProductionLaunchService.runMobileProductionReview(
+        staffScope(req),
+      );
       res.json({ data: { review } });
     } catch (error) {
       handleError(error, res);
@@ -177,7 +208,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.get('/deployment-runs', requireRead, async (req, res) => {
     try {
-      const runs = await deps.enterpriseProductionLaunchService.listDeploymentRuns(getAuth(req).companyId);
+      const runs = await deps.enterpriseProductionLaunchService.listDeploymentRuns(
+        getAuth(req).companyId,
+      );
       res.json({ data: { runs } });
     } catch (error) {
       handleError(error, res);
@@ -187,7 +220,10 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
   router.post('/deployment-runs', requireWrite, async (req, res) => {
     try {
       const input = deploymentRunSchema.parse(req.body ?? {});
-      const run = await deps.enterpriseProductionLaunchService.createDeploymentRun(staffScope(req), input);
+      const run = await deps.enterpriseProductionLaunchService.createDeploymentRun(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -270,7 +306,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.get('/go-live/wizards', requireRead, async (req, res) => {
     try {
-      const wizards = await deps.enterpriseProductionLaunchService.listGoLiveWizards(getAuth(req).companyId);
+      const wizards = await deps.enterpriseProductionLaunchService.listGoLiveWizards(
+        getAuth(req).companyId,
+      );
       res.json({ data: { wizards } });
     } catch (error) {
       handleError(error, res);
@@ -280,7 +318,10 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
   router.post('/go-live/wizards', requireWrite, async (req, res) => {
     try {
       const input = goLiveWizardSchema.parse(req.body);
-      const wizard = await deps.enterpriseProductionLaunchService.createGoLiveWizard(staffScope(req), input);
+      const wizard = await deps.enterpriseProductionLaunchService.createGoLiveWizard(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { wizard } });
     } catch (error) {
       handleError(error, res);
@@ -330,7 +371,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/platform-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const platformAlerts = await deps.enterpriseProductionLaunchService.syncPlatformAlerts(staffScope(req));
+      const platformAlerts = await deps.enterpriseProductionLaunchService.syncPlatformAlerts(
+        staffScope(req),
+      );
       res.json({ data: { platformAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -339,7 +382,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseProductionLaunchService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseProductionLaunchService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -348,7 +393,9 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseProductionLaunchService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseProductionLaunchService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);
@@ -358,7 +405,10 @@ export function createEnterpriseProductionLaunchRouter(deps: RouterDeps): Router
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const draft = await deps.enterpriseProductionLaunchService.createActionDraft(staffScope(req), input);
+      const draft = await deps.enterpriseProductionLaunchService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { draft } });
     } catch (error) {
       handleError(error, res);

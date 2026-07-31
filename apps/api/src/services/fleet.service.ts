@@ -160,7 +160,7 @@ export class FleetService {
         assignedUserId:
           input.assignedUserId === undefined
             ? existing.assignedUserId
-            : input.assignedUserId ?? null,
+            : (input.assignedUserId ?? null),
         notes: input.notes === undefined ? existing.notes : normalizeOptionalText(input.notes),
         updatedAt: new Date(),
       })

@@ -3,3 +3,9 @@ dist
 build
 pnpm-lock.yaml
 .git
+.pnpm-store
+coverage
+test-results
+playwright-report
+diagnostic-output
+TITAN_FULL_TEST_REPORT.md

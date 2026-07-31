@@ -46,11 +46,7 @@ export type AiPromptVersionStatus = 'draft' | 'pending_approval' | 'published' |
 
 export type AiConfigurationActionType = 'prompt_update' | 'provider_configuration';
 export type AiConfigurationActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type AiFailoverReason =
   | 'provider_unavailable'
@@ -63,12 +59,7 @@ export type AiFailoverReason =
 export type AiAccessMode = 'platform_managed' | 'tenant_credentials' | 'hybrid';
 
 export type AiMemoryContextType =
-  | 'business'
-  | 'customer'
-  | 'job'
-  | 'finance'
-  | 'executive'
-  | 'workflow';
+  'business' | 'customer' | 'job' | 'finance' | 'executive' | 'workflow';
 
 export type AiProviderRegistryEntry = {
   providerKey: AiProviderKey;
@@ -96,14 +87,27 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
         modelKey: 'gpt-4o',
         displayName: 'GPT-4o',
         contextWindow: 128000,
-        capabilities: ['max_context', 'multimodal', 'structured_output', 'function_calling', 'streaming', 'vision'],
+        capabilities: [
+          'max_context',
+          'multimodal',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'vision',
+        ],
         multimodal: true,
       },
       {
         modelKey: 'gpt-4o-mini',
         displayName: 'GPT-4o Mini',
         contextWindow: 128000,
-        capabilities: ['max_context', 'structured_output', 'function_calling', 'streaming', 'vision'],
+        capabilities: [
+          'max_context',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'vision',
+        ],
         multimodal: true,
       },
     ],
@@ -120,7 +124,14 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
         modelKey: 'gemini-2.0-flash',
         displayName: 'Gemini 2.0 Flash',
         contextWindow: 1048576,
-        capabilities: ['max_context', 'multimodal', 'structured_output', 'function_calling', 'streaming', 'vision'],
+        capabilities: [
+          'max_context',
+          'multimodal',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'vision',
+        ],
         multimodal: true,
       },
     ],
@@ -137,7 +148,14 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
         modelKey: 'claude-3-5-sonnet-latest',
         displayName: 'Claude 3.5 Sonnet',
         contextWindow: 200000,
-        capabilities: ['max_context', 'structured_output', 'function_calling', 'streaming', 'reasoning', 'vision'],
+        capabilities: [
+          'max_context',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'reasoning',
+          'vision',
+        ],
         multimodal: true,
       },
     ],
@@ -171,7 +189,13 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
         modelKey: 'gpt-4o',
         displayName: 'Azure GPT-4o',
         contextWindow: 128000,
-        capabilities: ['max_context', 'structured_output', 'function_calling', 'streaming', 'vision'],
+        capabilities: [
+          'max_context',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'vision',
+        ],
         multimodal: true,
       },
     ],
@@ -221,7 +245,13 @@ export const AI_PROVIDER_REGISTRY: AiProviderRegistryEntry[] = [
         modelKey: 'mistral-large-latest',
         displayName: 'Mistral Large',
         contextWindow: 128000,
-        capabilities: ['max_context', 'structured_output', 'function_calling', 'streaming', 'reasoning'],
+        capabilities: [
+          'max_context',
+          'structured_output',
+          'function_calling',
+          'streaming',
+          'reasoning',
+        ],
         multimodal: false,
       },
       {
@@ -290,7 +320,12 @@ export type AiRoutingRuleSummary = {
   primaryProviderKey: AiProviderKey | null;
   primaryModelId: string | null;
   primaryModelKey: string | null;
-  fallbackChain: Array<{ providerId?: string; modelId?: string; providerKey?: AiProviderKey; modelKey?: string }>;
+  fallbackChain: Array<{
+    providerId?: string;
+    modelId?: string;
+    providerKey?: AiProviderKey;
+    modelKey?: string;
+  }>;
   priorityOrder: number;
   weight: number;
   isEnabled: boolean;

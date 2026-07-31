@@ -56,7 +56,12 @@ export const lcSignatureProviderTypeEnum = pgEnum('lc_signature_provider_type', 
   'custom',
 ]);
 
-export const lcAdapterStatusEnum = pgEnum('lc_adapter_status', ['active', 'inactive', 'testing', 'error']);
+export const lcAdapterStatusEnum = pgEnum('lc_adapter_status', [
+  'active',
+  'inactive',
+  'testing',
+  'error',
+]);
 
 export const lcSignatureRequestStatusEnum = pgEnum('lc_signature_request_status', [
   'draft',
@@ -171,11 +176,20 @@ export const lcPlatformConfig = pgTable('lc_platform_config', {
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  jurisdictionTemplates: jsonb('jurisdiction_templates').$type<Record<string, unknown>>().notNull().default({}),
+  jurisdictionTemplates: jsonb('jurisdiction_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   riskMethodology: jsonb('risk_methodology').$type<Record<string, unknown>>().notNull().default({}),
-  retentionTemplates: jsonb('retention_templates').$type<Record<string, unknown>>().notNull().default({}),
+  retentionTemplates: jsonb('retention_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   privacyDefaults: jsonb('privacy_defaults').$type<Record<string, unknown>>().notNull().default({}),
-  clauseLibraryTemplates: jsonb('clause_library_templates').$type<Record<string, unknown>>().notNull().default({}),
+  clauseLibraryTemplates: jsonb('clause_library_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -217,7 +231,9 @@ export const lcContracts = pgTable('lc_contracts', {
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   categoryId: uuid('category_id').references(() => lcLegalCategories.id, { onDelete: 'set null' }),
-  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, { onDelete: 'set null' }),
+  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, {
+    onDelete: 'set null',
+  }),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   title: text('title').notNull(),
   contractNumber: text('contract_number'),
@@ -256,7 +272,9 @@ export const lcContractLifecycleHistory = pgTable('lc_contract_lifecycle_history
   workflowStatus: lcWorkflowStatusEnum('workflow_status').notNull().default('executed'),
   title: text('title').notNull(),
   description: text('description'),
-  responsibleUserId: uuid('responsible_user_id').references(() => users.id, { onDelete: 'set null' }),
+  responsibleUserId: uuid('responsible_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
@@ -271,7 +289,9 @@ export const lcContractTemplates = pgTable('lc_contract_templates', {
   name: text('name').notNull(),
   templateKey: text('template_key').notNull(),
   description: text('description'),
-  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, { onDelete: 'set null' }),
+  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, {
+    onDelete: 'set null',
+  }),
   version: text('version').notNull().default('1.0'),
   isApproved: boolean('is_approved').notNull().default(false),
   content: text('content'),
@@ -290,7 +310,9 @@ export const lcClauseLibrary = pgTable('lc_clause_library', {
   clauseKey: text('clause_key').notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(),
-  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, { onDelete: 'set null' }),
+  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, {
+    onDelete: 'set null',
+  }),
   isMandatory: boolean('is_mandatory').notNull().default(false),
   isRestricted: boolean('is_restricted').notNull().default(false),
   isApproved: boolean('is_approved').notNull().default(false),
@@ -316,7 +338,10 @@ export const lcSignatureProviderAdapters = pgTable('lc_signature_provider_adapte
   isPrimary: boolean('is_primary').notNull().default(false),
   endpointUrl: text('endpoint_url'),
   credentialsVaultKey: text('credentials_vault_key'),
-  signerRoleMappings: jsonb('signer_role_mappings').$type<Record<string, unknown>>().notNull().default({}),
+  signerRoleMappings: jsonb('signer_role_mappings')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   fieldMappings: jsonb('field_mappings').$type<Record<string, unknown>>().notNull().default({}),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   lastTestAt: timestamp('last_test_at', { withTimezone: true }),
@@ -360,12 +385,19 @@ export const lcContractIntelligenceAnalyses = pgTable('lc_contract_intelligence_
   summary: text('summary'),
   confidenceScore: numeric('confidence_score', { precision: 5, scale: 2 }),
   sourceSections: jsonb('source_sections').$type<Record<string, unknown>[]>().notNull().default([]),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   limitations: text('limitations'),
   requiresHumanReview: boolean('requires_human_review').notNull().default(true),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
-  disclaimer: text('disclaimer').notNull().default('AI-generated analysis — not legal advice. Requires professional review.'),
+  disclaimer: text('disclaimer')
+    .notNull()
+    .default('AI-generated analysis — not legal advice. Requires professional review.'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -396,7 +428,9 @@ export const lcComplianceFrameworks = pgTable('lc_compliance_frameworks', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   frameworkKey: text('framework_key').notNull(),
-  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, { onDelete: 'set null' }),
+  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, {
+    onDelete: 'set null',
+  }),
   description: text('description'),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   isActive: boolean('is_active').notNull().default(true),
@@ -409,7 +443,9 @@ export const lcComplianceRecords = pgTable('lc_compliance_records', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  frameworkId: uuid('framework_id').references(() => lcComplianceFrameworks.id, { onDelete: 'set null' }),
+  frameworkId: uuid('framework_id').references(() => lcComplianceFrameworks.id, {
+    onDelete: 'set null',
+  }),
   recordKey: text('record_key').notNull(),
   title: text('title').notNull(),
   description: text('description'),
@@ -443,7 +479,10 @@ export const lcRiskRegister = pgTable('lc_risk_register', {
   treatmentPlan: text('treatment_plan'),
   dueDate: date('due_date'),
   reviewDate: date('review_date'),
-  scoringMethodology: jsonb('scoring_methodology').$type<Record<string, unknown>>().notNull().default({}),
+  scoringMethodology: jsonb('scoring_methodology')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   linkedMetadata: jsonb('linked_metadata').$type<Record<string, unknown>>().notNull().default({}),
   workflowStatus: lcWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -520,7 +559,9 @@ export const lcLegalMatters = pgTable('lc_legal_matters', {
   description: text('description'),
   status: lcLegalMatterStatusEnum('status').notNull().default('open'),
   priority: text('priority').notNull().default('medium'),
-  responsibleUserId: uuid('responsible_user_id').references(() => users.id, { onDelete: 'set null' }),
+  responsibleUserId: uuid('responsible_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   externalAdviser: text('external_adviser'),
   counterpartyName: text('counterparty_name'),
   deadlineDate: date('deadline_date'),
@@ -617,7 +658,9 @@ export const lcRetentionSchedules = pgTable('lc_retention_schedules', {
   name: text('name').notNull(),
   recordCategory: text('record_category').notNull(),
   retentionDays: integer('retention_days').notNull(),
-  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, { onDelete: 'set null' }),
+  jurisdictionId: uuid('jurisdiction_id').references(() => lcJurisdictions.id, {
+    onDelete: 'set null',
+  }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   isActive: boolean('is_active').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -635,7 +678,10 @@ export const lcLegalHolds = pgTable('lc_legal_holds', {
   workflowStatus: lcWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   startDate: date('start_date'),
   endDate: date('end_date'),
-  affectedRecordRefs: jsonb('affected_record_refs').$type<Record<string, unknown>[]>().notNull().default([]),
+  affectedRecordRefs: jsonb('affected_record_refs')
+    .$type<Record<string, unknown>[]>()
+    .notNull()
+    .default([]),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -651,7 +697,10 @@ export const lcEvidenceRecords = pgTable('lc_evidence_records', {
   sourceRef: text('source_ref'),
   documentId: uuid('document_id'),
   integrityHash: text('integrity_hash'),
-  chainOfCustody: jsonb('chain_of_custody').$type<Record<string, unknown>[]>().notNull().default([]),
+  chainOfCustody: jsonb('chain_of_custody')
+    .$type<Record<string, unknown>[]>()
+    .notNull()
+    .default([]),
   linkedEntityType: text('linked_entity_type'),
   linkedEntityId: uuid('linked_entity_id'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
@@ -671,7 +720,9 @@ export const lcLegalActionDrafts = pgTable('lc_legal_action_drafts', {
   aiGenerated: boolean('ai_generated').notNull().default(false),
   disclaimer: text('disclaimer'),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  reviewedByUserId: uuid('reviewed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

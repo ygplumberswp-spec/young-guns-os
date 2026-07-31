@@ -27,7 +27,10 @@ export const rlmReleaseStatusEnum = pgEnum('rlm_release_status', [
   'released',
   'unknown',
 ]);
-export const rlmStorePlatformEnum = pgEnum('rlm_store_platform', ['apple_app_store', 'google_play_store']);
+export const rlmStorePlatformEnum = pgEnum('rlm_store_platform', [
+  'apple_app_store',
+  'google_play_store',
+]);
 export const rlmDocCategoryEnum = pgEnum('rlm_doc_category', [
   'system_overview',
   'administrator_guide',
@@ -46,7 +49,11 @@ export const rlmChecklistStatusEnum = pgEnum('rlm_checklist_status', [
   'skipped',
   'manual',
 ]);
-export const rlmPlatformAlertSeverityEnum = pgEnum('rlm_platform_alert_severity', ['info', 'warning', 'critical']);
+export const rlmPlatformAlertSeverityEnum = pgEnum('rlm_platform_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
 export const rlmPlatformAlertStatusEnum = pgEnum('rlm_platform_alert_status', [
   'open',
   'acknowledged',
@@ -61,9 +68,15 @@ export const rlmPlatformConfig = pgTable('rlm_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   releasePolicy: jsonb('release_policy').$type<Record<string, unknown>>().notNull().default({}),
-  documentationPolicy: jsonb('documentation_policy').$type<Record<string, unknown>>().notNull().default({}),
+  documentationPolicy: jsonb('documentation_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   mobilePolicy: jsonb('mobile_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -153,10 +166,22 @@ export const rlmVersionRecords = pgTable('rlm_version_records', {
   versionName: text('version_name').notNull().default('TITAN Business OS v1.0.0'),
   status: rlmReleaseStatusEnum('status').notNull().default('unknown'),
   releaseNotes: jsonb('release_notes').$type<Record<string, unknown>>().notNull().default({}),
-  featureSummary: jsonb('feature_summary').$type<Array<Record<string, unknown>>>().notNull().default([]),
-  breakingChanges: jsonb('breaking_changes').$type<Array<Record<string, unknown>>>().notNull().default([]),
-  migrationNotes: jsonb('migration_notes').$type<Array<Record<string, unknown>>>().notNull().default([]),
-  knownLimitations: jsonb('known_limitations').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  featureSummary: jsonb('feature_summary')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
+  breakingChanges: jsonb('breaking_changes')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
+  migrationNotes: jsonb('migration_notes')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
+  knownLimitations: jsonb('known_limitations')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   publishedAt: timestamp('published_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

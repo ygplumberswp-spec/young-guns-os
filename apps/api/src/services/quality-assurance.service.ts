@@ -89,7 +89,10 @@ export class QualityAssuranceService {
     return row ? toComebackSummary(row) : null;
   }
 
-  async createComeback(scope: StaffScope, input: CreateQualityComebackRequest): Promise<QualityComebackSummary> {
+  async createComeback(
+    scope: StaffScope,
+    input: CreateQualityComebackRequest,
+  ): Promise<QualityComebackSummary> {
     const originalJob = await this.jobsService.getJob(scope.companyId, input.originalJobId);
 
     if (!originalJob) {
@@ -313,7 +316,8 @@ export class QualityAssuranceService {
     const recovery = input.supplierRecoveryCents ?? 0;
     const total = labour + material + travel;
     const companyLoss = Math.max(0, total + warranty - recovery);
-    const currency = input.currency ?? (await this.financeService.getStats(scope.companyId)).currency;
+    const currency =
+      input.currency ?? (await this.financeService.getStats(scope.companyId)).currency;
 
     const [created] = await this.db
       .insert(qualityCostEntries)
@@ -335,10 +339,16 @@ export class QualityAssuranceService {
     return toCostSummary(created!);
   }
 
-  async listCostEntries(companyId: string, comebackId?: string): Promise<QualityCostEntrySummary[]> {
+  async listCostEntries(
+    companyId: string,
+    comebackId?: string,
+  ): Promise<QualityCostEntrySummary[]> {
     const rows = await this.db.query.qualityCostEntries.findMany({
       where: comebackId
-        ? and(eq(qualityCostEntries.companyId, companyId), eq(qualityCostEntries.comebackId, comebackId))
+        ? and(
+            eq(qualityCostEntries.companyId, companyId),
+            eq(qualityCostEntries.comebackId, comebackId),
+          )
         : eq(qualityCostEntries.companyId, companyId),
       orderBy: [desc(qualityCostEntries.createdAt)],
       limit: 100,
@@ -421,7 +431,9 @@ export class QualityAssuranceService {
       const warrantyRate =
         stats.completed > 0 ? Math.round((stats.warranties / stats.completed) * 1000) / 10 : null;
       const qualityScore =
-        ftfr != null ? Math.max(0, Math.min(100, Math.round(ftfr - (comebackRate ?? 0) * 0.5))) : null;
+        ftfr != null
+          ? Math.max(0, Math.min(100, Math.round(ftfr - (comebackRate ?? 0) * 0.5)))
+          : null;
 
       return {
         technicianId,
@@ -441,7 +453,9 @@ export class QualityAssuranceService {
     const yearlyTrends = buildTrends(comebackRows, warrantyRows, costRows, 'year');
 
     return {
-      technicians: technicians.sort((a, b) => (b.averageQualityScore ?? 0) - (a.averageQualityScore ?? 0)),
+      technicians: technicians.sort(
+        (a, b) => (b.averageQualityScore ?? 0) - (a.averageQualityScore ?? 0),
+      ),
       monthlyTrends,
       yearlyTrends,
       customerSatisfactionAvailable: false,
@@ -460,7 +474,10 @@ export class QualityAssuranceService {
       where: eq(qualityWarrantyClaims.companyId, companyId),
     });
 
-    const supplierCounts = new Map<string, { name: string; defects: number; replacements: number }>();
+    const supplierCounts = new Map<
+      string,
+      { name: string; defects: number; replacements: number }
+    >();
     for (const row of rows) {
       if (!row.supplierId) continue;
       const entry = supplierCounts.get(row.supplierId) ?? {
@@ -531,12 +548,18 @@ export class QualityAssuranceService {
     return rows.map(toActionSummary);
   }
 
-  async createAction(scope: StaffScope, input: CreateQualityActionRequest): Promise<QualityActionSummary> {
+  async createAction(
+    scope: StaffScope,
+    input: CreateQualityActionRequest,
+  ): Promise<QualityActionSummary> {
     const subject = input.subject.trim();
     const recommendation = input.recommendation.trim();
 
     if (!subject || !recommendation) {
-      throw new QualityAssuranceError('VALIDATION_ERROR', 'Subject and recommendation are required');
+      throw new QualityAssuranceError(
+        'VALIDATION_ERROR',
+        'Subject and recommendation are required',
+      );
     }
 
     const [created] = await this.db
@@ -588,7 +611,8 @@ export class QualityAssuranceService {
       this.getTechnicianIntelligence(companyId),
     ]);
 
-    const currency = costRows[0]?.currency ?? (await this.financeService.getStats(companyId)).currency;
+    const currency =
+      costRows[0]?.currency ?? (await this.financeService.getStats(companyId)).currency;
     const comebackCostCents = costRows.reduce((sum, row) => sum + row.totalComebackCostCents, 0);
     const warrantyCostCents = costRows.reduce((sum, row) => sum + row.warrantyCostCents, 0);
     const companyLossCents = costRows.reduce((sum, row) => sum + row.companyLossCents, 0);
@@ -611,7 +635,10 @@ export class QualityAssuranceService {
     }
 
     const supplierIntel = await this.getSupplierIntelligence(companyId);
-    const completedCount = techIntel.technicians.reduce((sum, row) => sum + row.completedJobCount, 0);
+    const completedCount = techIntel.technicians.reduce(
+      (sum, row) => sum + row.completedJobCount,
+      0,
+    );
     const comebackCount = comebackRows.length;
     const ftfr =
       completedCount > 0
@@ -634,8 +661,10 @@ export class QualityAssuranceService {
       supplierRecoveryCents,
       currency,
       firstTimeFixRatePercent: ftfr,
-      openComebackCount: comebackRows.filter((row) => !['closed', 'cancelled'].includes(row.status)).length,
-      openWarrantyCount: warrantyRows.filter((row) => !['closed', 'cancelled'].includes(row.status)).length,
+      openComebackCount: comebackRows.filter((row) => !['closed', 'cancelled'].includes(row.status))
+        .length,
+      openWarrantyCount: warrantyRows.filter((row) => !['closed', 'cancelled'].includes(row.status))
+        .length,
       monthlyQualityScore: avgScore,
       technicianRankings: techIntel.technicians.slice(0, 10).map((row) => ({
         technicianId: row.technicianId,

@@ -3,11 +3,7 @@ import type { AgentKey } from './agents.js';
 export type AgentRunStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 export type AgentTaskStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type AgentTaskType =
   | 'create_customer_note'
@@ -379,7 +375,10 @@ export const AGENT_TASK_TYPE_OPTIONS: Array<{ value: AgentTaskType; label: strin
   { value: 'draft_fp_forecast_commentary', label: 'Draft forecast commentary' },
   { value: 'draft_fp_profitability_report', label: 'Draft profitability report' },
   { value: 'draft_fp_payment_plan_proposal', label: 'Draft payment plan proposal' },
-  { value: 'draft_fp_supplier_payment_recommendation', label: 'Draft supplier payment recommendation' },
+  {
+    value: 'draft_fp_supplier_payment_recommendation',
+    label: 'Draft supplier payment recommendation',
+  },
   { value: 'draft_fp_executive_financial_summary', label: 'Draft executive financial summary' },
   { value: 'draft_fp_variance_analysis', label: 'Draft variance analysis' },
   { value: 'draft_si_lead_reply', label: 'Draft lead reply' },

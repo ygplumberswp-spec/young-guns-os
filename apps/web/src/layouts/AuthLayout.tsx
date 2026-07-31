@@ -1,32 +1,39 @@
 import { type ReactNode } from 'react';
-import { AI_NAME, APP_NAME } from '@titan/shared';
+import { AI_NAME } from '@titan/shared';
+import { TitanWordmark } from '../brand/TitanWordmark';
+import { StagingBadge } from '../components/StagingBadge';
 
 type AuthLayoutProps = {
   children: ReactNode;
+  /** Optional banner above the card (session expired, success, etc.) */
+  banner?: ReactNode;
+  attribution?: 'created' | 'built';
 };
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+export function AuthLayout({
+  children,
+  banner,
+  attribution = 'created',
+}: AuthLayoutProps) {
+  const credit =
+    attribution === 'built'
+      ? 'Built by Young Guns Plumbing'
+      : 'Created by Young Guns Plumbing';
+
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '1.5rem',
-        backgroundColor: '#f8fafc',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '24rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h1 className="brand" style={{ fontSize: '1.5rem' }}>
-            {APP_NAME}
-          </h1>
-          <p style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: '#64748b' }}>
-            Powered by {AI_NAME} AI
+    <div className="auth-stage">
+      <div className="auth-stage__glow" aria-hidden="true" />
+      <div className="auth-stage__inner">
+        <header className="auth-stage__brand">
+          <TitanWordmark variant="hero" className="auth-stage__wordmark" />
+          <p className="auth-stage__powered">
+            Powered by <span className="auth-stage__powered-accent">{AI_NAME}</span>
           </p>
-        </div>
-        {children}
+          <StagingBadge />
+        </header>
+        {banner}
+        <div className="auth-stage__card">{children}</div>
+        <p className="auth-stage__credit">{credit}</p>
       </div>
     </div>
   );

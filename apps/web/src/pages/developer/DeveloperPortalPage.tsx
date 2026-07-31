@@ -60,7 +60,9 @@ export function DeveloperPortalPage() {
   const [dashboard, setDashboard] = useState<EnterprisePublicDeveloperDashboard | null>(null);
   const [apiScopes, setApiScopes] = useState<PdpApiScopeSummary[]>([]);
   const [webhookEventTypes, setWebhookEventTypes] = useState<PdpWebhookEventTypeSummary[]>([]);
-  const [apiKeys, setApiKeys] = useState<Array<{ id: string; name: string; keyPrefix: string; status: string }>>([]);
+  const [apiKeys, setApiKeys] = useState<
+    Array<{ id: string; name: string; keyPrefix: string; status: string }>
+  >([]);
   const [oauthApps, setOauthApps] = useState<DeveloperOauthApplicationSummary[]>([]);
   const [webhookDeliveries, setWebhookDeliveries] = useState<
     Awaited<ReturnType<typeof fetchPublicWebhookDeliveries>>
@@ -68,18 +70,32 @@ export function DeveloperPortalPage() {
   const [rateLimitPolicies, setRateLimitPolicies] = useState<PdpRateLimitPolicySummary[]>([]);
   const [auditLogs, setAuditLogs] = useState<PdpAuditLogSummary[]>([]);
   const [sandboxConfig, setSandboxConfig] = useState<PdpSandboxConfigSummary | null>(null);
-  const [selectedSdkLanguage, setSelectedSdkLanguage] = useState<'typescript' | 'javascript' | 'python'>('typescript');
+  const [selectedSdkLanguage, setSelectedSdkLanguage] = useState<
+    'typescript' | 'javascript' | 'python'
+  >('typescript');
   const [isLoading, setIsLoading] = useState(true);
   const [isSupplementaryLoading, setIsSupplementaryLoading] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessPublicDeveloper(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManagePublicDeveloper(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessPublicDeveloper(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManagePublicDeveloper(user.permissions) : false),
+    [user],
+  );
 
   const tabs: Array<{ id: DeveloperPortalTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
@@ -216,7 +232,12 @@ export function DeveloperPortalPage() {
               <Button
                 variant="secondary"
                 disabled={isWorking}
-                onClick={() => void runAction(() => syncDeveloperAlerts(accessToken!), 'Developer alerts synced.')}
+                onClick={() =>
+                  void runAction(
+                    () => syncDeveloperAlerts(accessToken!),
+                    'Developer alerts synced.',
+                  )
+                }
               >
                 Sync Alerts
               </Button>
@@ -236,7 +257,10 @@ export function DeveloperPortalPage() {
                 variant="secondary"
                 disabled={isWorking}
                 onClick={() =>
-                  void runAction(() => capturePublicApiStatus(accessToken!), 'API status snapshot captured.')
+                  void runAction(
+                    () => capturePublicApiStatus(accessToken!),
+                    'API status snapshot captured.',
+                  )
                 }
               >
                 Capture API Status
@@ -271,14 +295,26 @@ export function DeveloperPortalPage() {
           {activeTab === 'overview' ? (
             <>
               <div className="stat-grid">
-                <StatCard label="API Health" value={formatStatus(dashboard.overallApiHealthStatus)} />
+                <StatCard
+                  label="API Health"
+                  value={formatStatus(dashboard.overallApiHealthStatus)}
+                />
                 <StatCard label="API Versions" value={String(dashboard.apiVersionCount)} />
                 <StatCard label="API Scopes" value={String(dashboard.apiScopeCount)} />
                 <StatCard label="Webhook Events" value={String(dashboard.webhookEventTypeCount)} />
-                <StatCard label="API Keys" value={String(dashboard.developerMonitoring.apiKeyCount)} />
-                <StatCard label="Webhook Subscriptions" value={String(dashboard.developerMonitoring.webhookSubscriptionCount)} />
+                <StatCard
+                  label="API Keys"
+                  value={String(dashboard.developerMonitoring.apiKeyCount)}
+                />
+                <StatCard
+                  label="Webhook Subscriptions"
+                  value={String(dashboard.developerMonitoring.webhookSubscriptionCount)}
+                />
                 <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
-                <StatCard label="Sandbox" value={dashboard.developerMonitoring.sandboxEnabled ? 'Enabled' : 'Disabled'} />
+                <StatCard
+                  label="Sandbox"
+                  value={dashboard.developerMonitoring.sandboxEnabled ? 'Enabled' : 'Disabled'}
+                />
               </div>
               <Panel title="Platform Summary">
                 <p>{dashboard.summary}</p>
@@ -317,7 +353,10 @@ export function DeveloperPortalPage() {
                   label="API Status"
                   value={formatStatus(legacy?.apiHealth.status ?? dashboard.overallApiHealthStatus)}
                 />
-                <StatCard label="Scopes Loaded" value={String(apiScopes.length || dashboard.apiScopeCount)} />
+                <StatCard
+                  label="Scopes Loaded"
+                  value={String(apiScopes.length || dashboard.apiScopeCount)}
+                />
               </div>
               <Panel title="API Explorer">
                 {isSupplementaryLoading ? <p>Loading scopes…</p> : null}
@@ -436,7 +475,10 @@ export function DeveloperPortalPage() {
             <>
               <Panel title="Webhook Subscriptions">
                 {dashboard.webhookSubscriptions.length === 0 ? (
-                  <EmptyState title="No subscriptions" description="No webhook subscriptions configured yet." />
+                  <EmptyState
+                    title="No subscriptions"
+                    description="No webhook subscriptions configured yet."
+                  />
                 ) : (
                   <div className="data-list">
                     {dashboard.webhookSubscriptions.map((subscription) => (
@@ -464,7 +506,10 @@ export function DeveloperPortalPage() {
               </Panel>
               <Panel title="Delivery History">
                 {webhookDeliveries.length === 0 ? (
-                  <EmptyState title="No deliveries" description="Webhook delivery history appears when events are dispatched." />
+                  <EmptyState
+                    title="No deliveries"
+                    description="Webhook delivery history appears when events are dispatched."
+                  />
                 ) : (
                   <div className="data-list">
                     {webhookDeliveries.map((delivery) => (
@@ -503,7 +548,9 @@ export function DeveloperPortalPage() {
                       className="titan-input"
                       value={selectedSdkLanguage}
                       onChange={(event) =>
-                        setSelectedSdkLanguage(event.target.value as 'typescript' | 'javascript' | 'python')
+                        setSelectedSdkLanguage(
+                          event.target.value as 'typescript' | 'javascript' | 'python',
+                        )
                       }
                     >
                       <option value="typescript">TypeScript</option>
@@ -561,8 +608,14 @@ export function DeveloperPortalPage() {
                 <div className="stat-grid">
                   <StatCard label="API Requests" value={String(legacy.analytics.apiRequestCount)} />
                   <StatCard label="API Errors" value={String(legacy.analytics.apiErrorCount)} />
-                  <StatCard label="Webhook Deliveries" value={String(legacy.analytics.webhookDeliveryCount)} />
-                  <StatCard label="Webhook Failures" value={String(legacy.analytics.webhookFailureCount)} />
+                  <StatCard
+                    label="Webhook Deliveries"
+                    value={String(legacy.analytics.webhookDeliveryCount)}
+                  />
+                  <StatCard
+                    label="Webhook Failures"
+                    value={String(legacy.analytics.webhookFailureCount)}
+                  />
                 </div>
               ) : (
                 <EmptyState
@@ -593,7 +646,10 @@ export function DeveloperPortalPage() {
             <Panel title="Audit Logs">
               {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
               {auditLogs.length === 0 ? (
-                <EmptyState title="No audit logs" description="Platform actions are recorded for complete auditability." />
+                <EmptyState
+                  title="No audit logs"
+                  description="Platform actions are recorded for complete auditability."
+                />
               ) : (
                 <div className="data-list">
                   {auditLogs.map((log) => (
@@ -638,14 +694,19 @@ export function DeveloperPortalPage() {
                 {sandboxConfig ? (
                   <>
                     <p>Sandbox {sandboxConfig.enabled ? 'enabled' : 'disabled'}</p>
-                    {sandboxConfig.sandboxBaseUrl ? <p>Base URL: {sandboxConfig.sandboxBaseUrl}</p> : null}
+                    {sandboxConfig.sandboxBaseUrl ? (
+                      <p>Base URL: {sandboxConfig.sandboxBaseUrl}</p>
+                    ) : null}
                     {canWrite ? (
                       <Button
                         variant="secondary"
                         disabled={isWorking}
                         onClick={() =>
                           void runAction(
-                            () => updatePublicSandboxConfig(accessToken!, { enabled: !sandboxConfig.enabled }),
+                            () =>
+                              updatePublicSandboxConfig(accessToken!, {
+                                enabled: !sandboxConfig.enabled,
+                              }),
                             `Sandbox mode ${sandboxConfig.enabled ? 'disabled' : 'enabled'}.`,
                           )
                         }
@@ -677,12 +738,20 @@ export function DeveloperPortalPage() {
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
               {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+                <AuraTaskApprovalCard
+                  key={task.id}
+                  task={task}
+                  accessToken={accessToken ?? ''}
+                  onUpdated={updateTask}
+                />
               ))}
               <AuraComposer
                 disabled={isSending}
                 onSend={(content) =>
-                  void sendAgentMessage(content, 'developer_platform' as import('@titan/shared').AgentKey)
+                  void sendAgentMessage(
+                    content,
+                    'developer_platform' as import('@titan/shared').AgentKey,
+                  )
                 }
                 placeholder="Ask about API scopes, webhooks, SDKs, integration issues…"
               />

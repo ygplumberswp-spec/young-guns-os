@@ -42,9 +42,18 @@ export const wiProviderTypeEnum = pgEnum('wi_provider_type', [
   'custom',
 ]);
 
-export const wiAdapterStatusEnum = pgEnum('wi_adapter_status', ['active', 'inactive', 'testing', 'error']);
+export const wiAdapterStatusEnum = pgEnum('wi_adapter_status', [
+  'active',
+  'inactive',
+  'testing',
+  'error',
+]);
 
-export const wiSyncDirectionEnum = pgEnum('wi_sync_direction', ['inbound', 'outbound', 'bidirectional']);
+export const wiSyncDirectionEnum = pgEnum('wi_sync_direction', [
+  'inbound',
+  'outbound',
+  'bidirectional',
+]);
 
 export const wiLifecycleStageEnum = pgEnum('wi_lifecycle_stage', [
   'candidate',
@@ -80,7 +89,12 @@ export const wiTimesheetStatusEnum = pgEnum('wi_timesheet_status', [
   'corrected',
 ]);
 
-export const wiLeaveStatusEnum = pgEnum('wi_leave_status', ['pending', 'approved', 'rejected', 'cancelled']);
+export const wiLeaveStatusEnum = pgEnum('wi_leave_status', [
+  'pending',
+  'approved',
+  'rejected',
+  'cancelled',
+]);
 
 export const wiPayrollPrepStatusEnum = pgEnum('wi_payroll_prep_status', [
   'draft',
@@ -132,9 +146,18 @@ export const wiPlatformConfig = pgTable('wi_platform_config', {
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  jurisdictionTemplates: jsonb('jurisdiction_templates').$type<Record<string, unknown>>().notNull().default({}),
-  leavePolicyDefaults: jsonb('leave_policy_defaults').$type<Record<string, unknown>>().notNull().default({}),
-  performanceRules: jsonb('performance_rules').$type<Record<string, unknown>>().notNull().default({}),
+  jurisdictionTemplates: jsonb('jurisdiction_templates')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  leavePolicyDefaults: jsonb('leave_policy_defaults')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  performanceRules: jsonb('performance_rules')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   privacyPolicies: jsonb('privacy_policies').$type<Record<string, unknown>>().notNull().default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -163,7 +186,9 @@ export const wiWorkforceProfiles = pgTable('wi_workforce_profiles', {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => wiWorkforceCategories.id, { onDelete: 'set null' }),
+  categoryId: uuid('category_id').references(() => wiWorkforceCategories.id, {
+    onDelete: 'set null',
+  }),
   customCategoryName: text('custom_category_name'),
   employeeNumber: text('employee_number'),
   employmentType: text('employment_type'),
@@ -175,14 +200,20 @@ export const wiWorkforceProfiles = pgTable('wi_workforce_profiles', {
   contractStatus: text('contract_status'),
   workingHours: jsonb('working_hours').$type<Record<string, unknown>>().notNull().default({}),
   contactDetails: jsonb('contact_details').$type<Record<string, unknown>>().notNull().default({}),
-  emergencyContact: jsonb('emergency_contact').$type<Record<string, unknown>>().notNull().default({}),
+  emergencyContact: jsonb('emergency_contact')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   assignedVehicleId: uuid('assigned_vehicle_id'),
   assignedTools: jsonb('assigned_tools').$type<string[]>().notNull().default([]),
   assignedEquipment: jsonb('assigned_equipment').$type<string[]>().notNull().default([]),
   payrollProviderRef: text('payroll_provider_ref'),
   accountingProviderRef: text('accounting_provider_ref'),
   lifecycleStage: wiLifecycleStageEnum('lifecycle_stage').notNull().default('active'),
-  jurisdictionConfig: jsonb('jurisdiction_config').$type<Record<string, unknown>>().notNull().default({}),
+  jurisdictionConfig: jsonb('jurisdiction_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   documentIds: jsonb('document_ids').$type<string[]>().notNull().default([]),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -205,9 +236,18 @@ export const wiProviderAdapters = pgTable('wi_provider_adapters', {
   syncDirection: wiSyncDirectionEnum('sync_direction').notNull().default('bidirectional'),
   syncFrequencyMinutes: integer('sync_frequency_minutes'),
   fieldMappings: jsonb('field_mappings').$type<Record<string, unknown>>().notNull().default({}),
-  leaveTypeMappings: jsonb('leave_type_mappings').$type<Record<string, unknown>>().notNull().default({}),
-  earningCodeMappings: jsonb('earning_code_mappings').$type<Record<string, unknown>>().notNull().default({}),
-  deductionCodeMappings: jsonb('deduction_code_mappings').$type<Record<string, unknown>>().notNull().default({}),
+  leaveTypeMappings: jsonb('leave_type_mappings')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  earningCodeMappings: jsonb('earning_code_mappings')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  deductionCodeMappings: jsonb('deduction_code_mappings')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   lastTestAt: timestamp('last_test_at', { withTimezone: true }),
   lastTestStatus: text('last_test_status'),
@@ -247,7 +287,9 @@ export const wiLifecycleStageHistory = pgTable('wi_lifecycle_stage_history', {
   title: text('title').notNull(),
   description: text('description'),
   effectiveDate: date('effective_date'),
-  responsibleUserId: uuid('responsible_user_id').references(() => users.id, { onDelete: 'set null' }),
+  responsibleUserId: uuid('responsible_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   documentIds: jsonb('document_ids').$type<string[]>().notNull().default([]),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   occurredAt: timestamp('occurred_at', { withTimezone: true }).notNull().defaultNow(),
@@ -284,7 +326,9 @@ export const wiOnboardingTasks = pgTable('wi_onboarding_tasks', {
   title: text('title').notNull(),
   description: text('description'),
   status: wiOnboardingTaskStatusEnum('status').notNull().default('pending'),
-  responsibleUserId: uuid('responsible_user_id').references(() => users.id, { onDelete: 'set null' }),
+  responsibleUserId: uuid('responsible_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   dueAt: timestamp('due_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
@@ -313,7 +357,9 @@ export const wiTimesheets = pgTable('wi_timesheets', {
   clockInAt: timestamp('clock_in_at', { withTimezone: true }),
   clockOutAt: timestamp('clock_out_at', { withTimezone: true }),
   gpsMetadata: jsonb('gps_metadata').$type<Record<string, unknown>>().notNull().default({}),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -425,12 +471,17 @@ export const wiPayrollPreparationBatches = pgTable('wi_payroll_preparation_batch
     onDelete: 'set null',
   }),
   status: wiPayrollPrepStatusEnum('status').notNull().default('draft'),
-  validationSummary: jsonb('validation_summary').$type<Record<string, unknown>>().notNull().default({}),
+  validationSummary: jsonb('validation_summary')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   exceptionCount: integer('exception_count').notNull().default(0),
   earningsTotalCents: integer('earnings_total_cents').notNull().default(0),
   deductionsTotalCents: integer('deductions_total_cents').notNull().default(0),
   currency: text('currency').notNull().default('USD'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   exportedAt: timestamp('exported_at', { withTimezone: true }),
   exportReference: text('export_reference'),
@@ -449,7 +500,10 @@ export const wiPayrollExportLogs = pgTable('wi_payroll_export_logs', {
     .references(() => wiPayrollPreparationBatches.id, { onDelete: 'cascade' }),
   status: text('status').notNull(),
   message: text('message'),
-  providerResponse: jsonb('provider_response').$type<Record<string, unknown>>().notNull().default({}),
+  providerResponse: jsonb('provider_response')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -490,7 +544,10 @@ export const wiTechnicianPerformanceSnapshots = pgTable('wi_technician_performan
   customerSatisfactionAvg: numeric('customer_satisfaction_avg', { precision: 5, scale: 2 }),
   revenueContributionCents: integer('revenue_contribution_cents'),
   grossMarginContributionCents: integer('gross_margin_contribution_cents'),
-  supportingEvidence: jsonb('supporting_evidence').$type<Record<string, unknown>>().notNull().default({}),
+  supportingEvidence: jsonb('supporting_evidence')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   explanation: text('explanation'),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });

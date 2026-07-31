@@ -74,17 +74,25 @@ export class FleetIntelligenceService {
   ) {}
 
   async getExecutiveDashboard(companyId: string): Promise<FleetExecutiveDashboard> {
-    const [stats, tracking, costs, performance, costAnalytics, recommendations, pendingActions, totalKm] =
-      await Promise.all([
-        this.fleetService.getStats(companyId),
-        this.integrationsService.buildFleetTrackingContext(companyId),
-        this.getCostAnalytics(companyId),
-        this.getPerformanceAnalytics(companyId),
-        this.getCostAnalytics(companyId),
-        this.listRecommendations(companyId),
-        this.listActions(companyId, 'pending_approval'),
-        this.computeTotalKilometres(companyId),
-      ]);
+    const [
+      stats,
+      tracking,
+      costs,
+      performance,
+      costAnalytics,
+      recommendations,
+      pendingActions,
+      totalKm,
+    ] = await Promise.all([
+      this.fleetService.getStats(companyId),
+      this.integrationsService.buildFleetTrackingContext(companyId),
+      this.getCostAnalytics(companyId),
+      this.getPerformanceAnalytics(companyId),
+      this.getCostAnalytics(companyId),
+      this.listRecommendations(companyId),
+      this.listActions(companyId, 'pending_approval'),
+      this.computeTotalKilometres(companyId),
+    ]);
 
     const activeVehicles = stats.availableCount + stats.inUseCount;
     const utilizationPercent =
@@ -253,10 +261,11 @@ export class FleetIntelligenceService {
         totalTrips: trips.length,
         drivingHours: Math.round(totalDrivingMinutes / 60),
         idleHours: Math.round(totalIdleMinutes / 60),
-        averageTripDistanceKm:
-          trips.length > 0 ? Math.round(totalKm / trips.length) : null,
+        averageTripDistanceKm: trips.length > 0 ? Math.round(totalKm / trips.length) : null,
         averageTripDurationMinutes:
-          trips.length > 0 ? Math.round((totalDrivingMinutes + totalIdleMinutes) / trips.length) : null,
+          trips.length > 0
+            ? Math.round((totalDrivingMinutes + totalIdleMinutes) / trips.length)
+            : null,
         vehicleSummaries,
         exportMetadata,
       })
@@ -421,7 +430,8 @@ export class FleetIntelligenceService {
       const vehiclePoints = pointsByVehicle.get(vehicle.id) ?? [];
       const trips = segmentTrips(vehiclePoints);
       const totalKm = trips.reduce((sum, trip) => sum + trip.distanceKm, 0);
-      const operatingHours = trips.reduce((sum, trip) => sum + trip.drivingMinutes + trip.idleMinutes, 0) / 60;
+      const operatingHours =
+        trips.reduce((sum, trip) => sum + trip.drivingMinutes + trip.idleMinutes, 0) / 60;
 
       const daySpan =
         vehiclePoints.length >= 2
@@ -573,12 +583,15 @@ export class FleetIntelligenceService {
       withUtilization.sort((a, b) => (a.utilizationPercent ?? 0) - (b.utilizationPercent ?? 0))[0]
         ?.vehicleName ?? null;
     const highestOperatingCostVehicle =
-      costAnalytics.costByVehicle.sort((a, b) => b.amountCents - a.amountCents)[0]?.vehicleName ?? null;
+      costAnalytics.costByVehicle.sort((a, b) => b.amountCents - a.amountCents)[0]?.vehicleName ??
+      null;
 
     const totalGpsPoints = utilization.reduce((sum, row) => sum + row.gpsPointCount, 0);
     const totalJobs = utilization.reduce((sum, row) => sum + row.jobsCompleted, 0);
     const travelEfficiencyScore =
-      totalGpsPoints > 0 && totalJobs > 0 ? Math.min(100, Math.round((totalJobs / totalGpsPoints) * 1000)) : null;
+      totalGpsPoints > 0 && totalJobs > 0
+        ? Math.min(100, Math.round((totalJobs / totalGpsPoints) * 1000))
+        : null;
 
     return {
       bestPerformingVehicle,
@@ -699,7 +712,9 @@ export class FleetIntelligenceService {
       });
     }
 
-    const overloaded = schedulingContext.assigneeWorkload.filter((row) => row.scheduledJobCount >= 6).slice(0, 2);
+    const overloaded = schedulingContext.assigneeWorkload
+      .filter((row) => row.scheduledJobCount >= 6)
+      .slice(0, 2);
     for (const assignee of overloaded) {
       const [created] = await this.db
         .insert(fleetRecommendations)
@@ -773,12 +788,18 @@ export class FleetIntelligenceService {
     }));
   }
 
-  async createAction(scope: StaffScope, input: CreateFleetActionRequest): Promise<FleetActionSummary> {
+  async createAction(
+    scope: StaffScope,
+    input: CreateFleetActionRequest,
+  ): Promise<FleetActionSummary> {
     const subject = input.subject.trim();
     const recommendation = input.recommendation.trim();
 
     if (!subject || !recommendation) {
-      throw new FleetIntelligenceError('VALIDATION_ERROR', 'Subject and recommendation are required');
+      throw new FleetIntelligenceError(
+        'VALIDATION_ERROR',
+        'Subject and recommendation are required',
+      );
     }
 
     if (input.vehicleId) {
@@ -817,7 +838,9 @@ export class FleetIntelligenceService {
     return actions.find((item) => item.id === created!.id)!;
   }
 
-  async buildFleetIntelligenceAuraContext(companyId: string): Promise<FleetIntelligenceAuraContext> {
+  async buildFleetIntelligenceAuraContext(
+    companyId: string,
+  ): Promise<FleetIntelligenceAuraContext> {
     const dashboard = await this.getExecutiveDashboard(companyId);
     return {
       summary: dashboard.summary,
@@ -924,8 +947,7 @@ function buildTripSegment(vehicleId: string | null, points: GpsPoint[]): TripSeg
     const current = points[index]!;
     distanceKm += haversineKm(prev.latitude, prev.longitude, current.latitude, current.longitude);
 
-    const deltaMinutes =
-      (current.recordedAt.getTime() - prev.recordedAt.getTime()) / (1000 * 60);
+    const deltaMinutes = (current.recordedAt.getTime() - prev.recordedAt.getTime()) / (1000 * 60);
     const speed = current.speedKmh ?? 0;
 
     if (speed > (maxSpeedKmh ?? 0)) {

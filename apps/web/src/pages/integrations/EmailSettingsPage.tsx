@@ -10,10 +10,7 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import {
-  canAccessIntegrations,
-  canManageIntegrations,
-} from '../../features/integrations/utils';
+import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
 
 export function EmailSettingsPage() {
@@ -67,7 +64,9 @@ export function EmailSettingsPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken, canView]);
 
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
@@ -187,7 +186,11 @@ export function EmailSettingsPage() {
               </div>
               <div>
                 <dt>Last sync</dt>
-                <dd>{connection.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'}</dd>
+                <dd>
+                  {connection.lastSyncAt
+                    ? new Date(connection.lastSyncAt).toLocaleString()
+                    : 'Never'}
+                </dd>
               </div>
             </dl>
           </Panel>
@@ -196,13 +199,32 @@ export function EmailSettingsPage() {
             <>
               <Panel title="SMTP credentials">
                 <form className="integrations-form" onSubmit={(event) => void handleConnect(event)}>
-                  <Input label="SMTP host" value={host} onChange={(e) => setHost(e.target.value)} required />
-                  <Input label="SMTP port" value={port} onChange={(e) => setPort(e.target.value)} required />
+                  <Input
+                    label="SMTP host"
+                    value={host}
+                    onChange={(e) => setHost(e.target.value)}
+                    required
+                  />
+                  <Input
+                    label="SMTP port"
+                    value={port}
+                    onChange={(e) => setPort(e.target.value)}
+                    required
+                  />
                   <label className="integrations-checkbox">
-                    <input type="checkbox" checked={secure} onChange={(e) => setSecure(e.target.checked)} />
+                    <input
+                      type="checkbox"
+                      checked={secure}
+                      onChange={(e) => setSecure(e.target.checked)}
+                    />
                     Use TLS (typically port 465)
                   </label>
-                  <Input label="Username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+                  <Input
+                    label="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                  />
                   <Input
                     label="Password"
                     type="password"
@@ -217,13 +239,22 @@ export function EmailSettingsPage() {
                     onChange={(e) => setFromEmail(e.target.value)}
                     required
                   />
-                  <Input label="From name" value={fromName} onChange={(e) => setFromName(e.target.value)} />
+                  <Input
+                    label="From name"
+                    value={fromName}
+                    onChange={(e) => setFromName(e.target.value)}
+                  />
                   <div className="integrations-form__actions">
                     <Button type="submit" disabled={isSaving}>
                       {isSaving ? 'Connecting…' : 'Save & connect'}
                     </Button>
                     {connection.hasCredentials ? (
-                      <Button type="button" variant="ghost" disabled={isSaving} onClick={() => void handleDisconnect()}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={isSaving}
+                        onClick={() => void handleDisconnect()}
+                      >
                         Disconnect
                       </Button>
                     ) : null}
@@ -234,7 +265,8 @@ export function EmailSettingsPage() {
               {connection.status === 'connected' ? (
                 <Panel title="Verify connection">
                   <p className="page-muted">
-                    Sync re-authenticates against your SMTP server and records the verification result.
+                    Sync re-authenticates against your SMTP server and records the verification
+                    result.
                   </p>
                   <Button onClick={() => void handleSync()} disabled={isSyncing}>
                     {isSyncing ? 'Verifying…' : 'Verify SMTP'}

@@ -130,7 +130,8 @@ export class EnterpriseServiceDeliveryService {
   constructor(private readonly deps: ServiceDeliveryDeps) {}
 
   async getDashboard(companyId: string): Promise<EnterpriseServiceDeliveryDashboard> {
-    const isPlatformOwner = await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
+    const isPlatformOwner =
+      await this.deps.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId);
     const [
       platformConfig,
       jobStats,
@@ -163,7 +164,9 @@ export class EnterpriseServiceDeliveryService {
       this.deps.financeService.getStats(companyId),
     ]);
 
-    const openPromiseCount = promises.filter((row) => !row.fulfilledAt && row.workflowStatus !== 'cancelled').length;
+    const openPromiseCount = promises.filter(
+      (row) => !row.fulfilledAt && row.workflowStatus !== 'cancelled',
+    ).length;
     const slaBreachCount = slaRecords.filter((row) => row.breachedAt && !row.metAt).length;
 
     return {
@@ -178,8 +181,12 @@ export class EnterpriseServiceDeliveryService {
       slaRecordCount: slaRecords.length,
       slaBreachCount,
       inspectionCount: inspections.length,
-      openDefectCount: defects.filter((row) => !['executed', 'cancelled'].includes(row.workflowStatus)).length,
-      openCallbackCount: callbacks.filter((row) => !['executed', 'cancelled'].includes(row.workflowStatus)).length,
+      openDefectCount: defects.filter(
+        (row) => !['executed', 'cancelled'].includes(row.workflowStatus),
+      ).length,
+      openCallbackCount: callbacks.filter(
+        (row) => !['executed', 'cancelled'].includes(row.workflowStatus),
+      ).length,
       openAlertCount: alerts.length,
       currency: financeStats.currency,
       analytics,
@@ -196,17 +203,31 @@ export class EnterpriseServiceDeliveryService {
 
   async getServiceMonitoring(companyId: string): Promise<SdServiceMonitoringSummary> {
     const now = Date.now();
-    const [slaRecords, inspections, callbacks, promises, defects, correctiveActions, qualityComebacks, qualityWarranty] =
-      await Promise.all([
-        this.deps.db.query.sdSlaRecords.findMany({ where: eq(sdSlaRecords.companyId, companyId) }),
-        this.deps.db.query.sdInspections.findMany({ where: eq(sdInspections.companyId, companyId) }),
-        this.deps.db.query.sdCallbackRecords.findMany({ where: eq(sdCallbackRecords.companyId, companyId) }),
-        this.deps.db.query.sdServicePromises.findMany({ where: eq(sdServicePromises.companyId, companyId) }),
-        this.deps.db.query.sdDefects.findMany({ where: eq(sdDefects.companyId, companyId) }),
-        this.deps.db.query.sdCorrectiveActions.findMany({ where: eq(sdCorrectiveActions.companyId, companyId) }),
-        this.deps.qualityAssuranceService.listComebacks(companyId),
-        this.deps.qualityAssuranceService.listWarrantyClaims(companyId),
-      ]);
+    const [
+      slaRecords,
+      inspections,
+      callbacks,
+      promises,
+      defects,
+      correctiveActions,
+      qualityComebacks,
+      qualityWarranty,
+    ] = await Promise.all([
+      this.deps.db.query.sdSlaRecords.findMany({ where: eq(sdSlaRecords.companyId, companyId) }),
+      this.deps.db.query.sdInspections.findMany({ where: eq(sdInspections.companyId, companyId) }),
+      this.deps.db.query.sdCallbackRecords.findMany({
+        where: eq(sdCallbackRecords.companyId, companyId),
+      }),
+      this.deps.db.query.sdServicePromises.findMany({
+        where: eq(sdServicePromises.companyId, companyId),
+      }),
+      this.deps.db.query.sdDefects.findMany({ where: eq(sdDefects.companyId, companyId) }),
+      this.deps.db.query.sdCorrectiveActions.findMany({
+        where: eq(sdCorrectiveActions.companyId, companyId),
+      }),
+      this.deps.qualityAssuranceService.listComebacks(companyId),
+      this.deps.qualityAssuranceService.listWarrantyClaims(companyId),
+    ]);
 
     const slaBreachCount = slaRecords.filter((row) => row.breachedAt && !row.metAt).length;
     const overdueInspectionCount = inspections.filter((row) => {
@@ -214,12 +235,16 @@ export class EnterpriseServiceDeliveryService {
       const dueAt = (row.config as { dueAt?: string }).dueAt;
       return dueAt ? new Date(dueAt).getTime() < now : false;
     }).length;
-    const openCallbackCount = callbacks.filter((row) => !['executed', 'cancelled'].includes(row.workflowStatus)).length;
+    const openCallbackCount = callbacks.filter(
+      (row) => !['executed', 'cancelled'].includes(row.workflowStatus),
+    ).length;
     const promiseBreachCount = promises.filter((row) => {
       if (row.fulfilledAt || row.workflowStatus === 'cancelled') return false;
       return row.dueAt ? row.dueAt.getTime() < now : false;
     }).length;
-    const openDefectCount = defects.filter((row) => !['executed', 'cancelled'].includes(row.workflowStatus)).length;
+    const openDefectCount = defects.filter(
+      (row) => !['executed', 'cancelled'].includes(row.workflowStatus),
+    ).length;
     const pendingCorrectiveActionCount = correctiveActions.filter((row) =>
       ['draft', 'review', 'pending_approval', 'approved'].includes(row.workflowStatus),
     ).length;
@@ -230,9 +255,14 @@ export class EnterpriseServiceDeliveryService {
     if (openCallbackCount > 0) alerts.push(`${openCallbackCount} open callback(s)`);
     if (promiseBreachCount > 0) alerts.push(`${promiseBreachCount} breached service promise(s)`);
     if (openDefectCount > 0) alerts.push(`${openDefectCount} open defect(s)`);
-    if (pendingCorrectiveActionCount > 0) alerts.push(`${pendingCorrectiveActionCount} pending corrective action(s)`);
-    const openQualityComebacks = qualityComebacks.filter((row) => !['closed', 'cancelled'].includes(row.status)).length;
-    const openQualityWarranty = qualityWarranty.filter((row) => !['closed', 'cancelled'].includes(row.status)).length;
+    if (pendingCorrectiveActionCount > 0)
+      alerts.push(`${pendingCorrectiveActionCount} pending corrective action(s)`);
+    const openQualityComebacks = qualityComebacks.filter(
+      (row) => !['closed', 'cancelled'].includes(row.status),
+    ).length;
+    const openQualityWarranty = qualityWarranty.filter(
+      (row) => !['closed', 'cancelled'].includes(row.status),
+    ).length;
     if (openQualityComebacks > 0) alerts.push(`${openQualityComebacks} open quality comeback(s)`);
     if (openQualityWarranty > 0) alerts.push(`${openQualityWarranty} open warranty claim(s)`);
 
@@ -247,7 +277,10 @@ export class EnterpriseServiceDeliveryService {
     };
   }
 
-  async getPortalServiceSummary(companyId: string, customerId?: string): Promise<SdPortalServiceSummary> {
+  async getPortalServiceSummary(
+    companyId: string,
+    customerId?: string,
+  ): Promise<SdPortalServiceSummary> {
     const [jobStats, promises, callbacks, warrantyRecords, acceptances] = await Promise.all([
       this.deps.jobsService.getStats(companyId),
       this.listServicePromises(companyId),
@@ -256,14 +289,26 @@ export class EnterpriseServiceDeliveryService {
       this.listCustomerAcceptances(companyId),
     ]);
 
-    const filteredPromises = customerId ? promises.filter((row) => (row as { customerId?: string }).customerId === customerId) : promises;
+    const filteredPromises = customerId
+      ? promises.filter((row) => (row as { customerId?: string }).customerId === customerId)
+      : promises;
     const filteredCallbacks = callbacks;
-    const filteredWarranty = customerId ? warrantyRecords.filter((row) => row.customerId === customerId) : warrantyRecords;
-    const filteredAcceptances = customerId ? acceptances.filter((row) => row.customerId === customerId) : acceptances;
+    const filteredWarranty = customerId
+      ? warrantyRecords.filter((row) => row.customerId === customerId)
+      : warrantyRecords;
+    const filteredAcceptances = customerId
+      ? acceptances.filter((row) => row.customerId === customerId)
+      : acceptances;
 
-    const openPromiseCount = filteredPromises.filter((row) => !row.fulfilledAt && row.workflowStatus !== 'cancelled').length;
-    const openCallbackCount = filteredCallbacks.filter((row) => !['executed', 'cancelled'].includes(row.workflowStatus)).length;
-    const pendingAcceptanceCount = filteredAcceptances.filter((row) => row.workflowStatus !== 'executed').length;
+    const openPromiseCount = filteredPromises.filter(
+      (row) => !row.fulfilledAt && row.workflowStatus !== 'cancelled',
+    ).length;
+    const openCallbackCount = filteredCallbacks.filter(
+      (row) => !['executed', 'cancelled'].includes(row.workflowStatus),
+    ).length;
+    const pendingAcceptanceCount = filteredAcceptances.filter(
+      (row) => row.workflowStatus !== 'executed',
+    ).length;
 
     return {
       activeJobCount: jobStats.activeCount,
@@ -299,7 +344,10 @@ export class EnterpriseServiceDeliveryService {
     return toPlatformConfigSummary(row);
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateSdPlatformConfigRequest): Promise<SdPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateSdPlatformConfigRequest,
+  ): Promise<SdPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(sdPlatformConfig)
@@ -320,7 +368,10 @@ export class EnterpriseServiceDeliveryService {
     return toPlatformConfigSummary(updated!);
   }
 
-  async createServicePromise(scope: StaffScope, input: CreateSdServicePromiseRequest): Promise<SdServicePromiseSummary> {
+  async createServicePromise(
+    scope: StaffScope,
+    input: CreateSdServicePromiseRequest,
+  ): Promise<SdServicePromiseSummary> {
     const [created] = await this.deps.db
       .insert(sdServicePromises)
       .values({
@@ -349,7 +400,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toServicePromiseSummary(row) : null;
   }
 
-  async updateServicePromise(scope: StaffScope, id: string, input: UpdateSdServicePromiseRequest): Promise<SdServicePromiseSummary> {
+  async updateServicePromise(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdServicePromiseRequest,
+  ): Promise<SdServicePromiseSummary> {
     await this.ensureServicePromise(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdServicePromises)
@@ -361,7 +416,10 @@ export class EnterpriseServiceDeliveryService {
     return toServicePromiseSummary(updated!);
   }
 
-  async createSlaFramework(scope: StaffScope, input: CreateSdSlaFrameworkRequest): Promise<SdSlaFrameworkSummary> {
+  async createSlaFramework(
+    scope: StaffScope,
+    input: CreateSdSlaFrameworkRequest,
+  ): Promise<SdSlaFrameworkSummary> {
     const [created] = await this.deps.db
       .insert(sdSlaFrameworks)
       .values({
@@ -390,7 +448,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toSlaFrameworkSummary(row) : null;
   }
 
-  async updateSlaFramework(scope: StaffScope, id: string, input: UpdateSdSlaFrameworkRequest): Promise<SdSlaFrameworkSummary> {
+  async updateSlaFramework(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdSlaFrameworkRequest,
+  ): Promise<SdSlaFrameworkSummary> {
     await this.ensureSlaFramework(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdSlaFrameworks)
@@ -402,7 +464,10 @@ export class EnterpriseServiceDeliveryService {
     return toSlaFrameworkSummary(updated!);
   }
 
-  async createSlaRecord(scope: StaffScope, input: CreateSdSlaRecordRequest): Promise<SdSlaRecordSummary> {
+  async createSlaRecord(
+    scope: StaffScope,
+    input: CreateSdSlaRecordRequest,
+  ): Promise<SdSlaRecordSummary> {
     const [created] = await this.deps.db
       .insert(sdSlaRecords)
       .values({
@@ -431,7 +496,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toSlaRecordSummary(row) : null;
   }
 
-  async updateSlaRecord(scope: StaffScope, id: string, input: UpdateSdSlaRecordRequest): Promise<SdSlaRecordSummary> {
+  async updateSlaRecord(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdSlaRecordRequest,
+  ): Promise<SdSlaRecordSummary> {
     await this.ensureSlaRecord(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdSlaRecords)
@@ -443,7 +512,10 @@ export class EnterpriseServiceDeliveryService {
     return toSlaRecordSummary(updated!);
   }
 
-  async createInspectionTemplate(scope: StaffScope, input: CreateSdInspectionTemplateRequest): Promise<SdInspectionTemplateSummary> {
+  async createInspectionTemplate(
+    scope: StaffScope,
+    input: CreateSdInspectionTemplateRequest,
+  ): Promise<SdInspectionTemplateSummary> {
     const [created] = await this.deps.db
       .insert(sdInspectionTemplates)
       .values({
@@ -452,7 +524,12 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'inspection_template_created', 'sd_inspection_template', created!.id);
+    await this.recordAudit(
+      scope,
+      'inspection_template_created',
+      'sd_inspection_template',
+      created!.id,
+    );
     return toInspectionTemplateSummary(created!);
   }
 
@@ -465,26 +542,38 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toInspectionTemplateSummary);
   }
 
-  async getInspectionTemplate(companyId: string, id: string): Promise<SdInspectionTemplateSummary | null> {
+  async getInspectionTemplate(
+    companyId: string,
+    id: string,
+  ): Promise<SdInspectionTemplateSummary | null> {
     const row = await this.deps.db.query.sdInspectionTemplates.findFirst({
       where: and(eq(sdInspectionTemplates.companyId, companyId), eq(sdInspectionTemplates.id, id)),
     });
     return row ? toInspectionTemplateSummary(row) : null;
   }
 
-  async updateInspectionTemplate(scope: StaffScope, id: string, input: UpdateSdInspectionTemplateRequest): Promise<SdInspectionTemplateSummary> {
+  async updateInspectionTemplate(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdInspectionTemplateRequest,
+  ): Promise<SdInspectionTemplateSummary> {
     await this.ensureInspectionTemplate(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdInspectionTemplates)
       .set({ ...mapUpdateInspectionTemplateInput(input), updatedAt: new Date() })
-      .where(and(eq(sdInspectionTemplates.companyId, scope.companyId), eq(sdInspectionTemplates.id, id)))
+      .where(
+        and(eq(sdInspectionTemplates.companyId, scope.companyId), eq(sdInspectionTemplates.id, id)),
+      )
       .returning();
 
     await this.recordAudit(scope, 'inspection_template_updated', 'sd_inspection_template', id);
     return toInspectionTemplateSummary(updated!);
   }
 
-  async createInspection(scope: StaffScope, input: CreateSdInspectionRequest): Promise<SdInspectionSummary> {
+  async createInspection(
+    scope: StaffScope,
+    input: CreateSdInspectionRequest,
+  ): Promise<SdInspectionSummary> {
     const [created] = await this.deps.db
       .insert(sdInspections)
       .values({
@@ -513,7 +602,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toInspectionSummary(row) : null;
   }
 
-  async updateInspection(scope: StaffScope, id: string, input: UpdateSdInspectionRequest): Promise<SdInspectionSummary> {
+  async updateInspection(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdInspectionRequest,
+  ): Promise<SdInspectionSummary> {
     await this.ensureInspection(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdInspections)
@@ -525,7 +618,10 @@ export class EnterpriseServiceDeliveryService {
     return toInspectionSummary(updated!);
   }
 
-  async createQaInspection(scope: StaffScope, input: CreateSdQaInspectionRequest): Promise<SdQaInspectionSummary> {
+  async createQaInspection(
+    scope: StaffScope,
+    input: CreateSdQaInspectionRequest,
+  ): Promise<SdQaInspectionSummary> {
     const [created] = await this.deps.db
       .insert(sdQaInspections)
       .values({
@@ -554,7 +650,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toQaInspectionSummary(row) : null;
   }
 
-  async updateQaInspection(scope: StaffScope, id: string, input: UpdateSdQaInspectionRequest): Promise<SdQaInspectionSummary> {
+  async updateQaInspection(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdQaInspectionRequest,
+  ): Promise<SdQaInspectionSummary> {
     await this.ensureQaInspection(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdQaInspections)
@@ -595,7 +695,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toDefectSummary(row) : null;
   }
 
-  async updateDefect(scope: StaffScope, id: string, input: UpdateSdDefectRequest): Promise<SdDefectSummary> {
+  async updateDefect(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdDefectRequest,
+  ): Promise<SdDefectSummary> {
     await this.ensureDefect(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdDefects)
@@ -607,7 +711,10 @@ export class EnterpriseServiceDeliveryService {
     return toDefectSummary(updated!);
   }
 
-  async createNonConformance(scope: StaffScope, input: CreateSdNonConformanceRequest): Promise<SdNonConformanceSummary> {
+  async createNonConformance(
+    scope: StaffScope,
+    input: CreateSdNonConformanceRequest,
+  ): Promise<SdNonConformanceSummary> {
     const [created] = await this.deps.db
       .insert(sdNonConformances)
       .values({
@@ -636,7 +743,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toNonConformanceSummary(row) : null;
   }
 
-  async updateNonConformance(scope: StaffScope, id: string, input: UpdateSdNonConformanceRequest): Promise<SdNonConformanceSummary> {
+  async updateNonConformance(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdNonConformanceRequest,
+  ): Promise<SdNonConformanceSummary> {
     await this.ensureNonConformance(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdNonConformances)
@@ -648,7 +759,10 @@ export class EnterpriseServiceDeliveryService {
     return toNonConformanceSummary(updated!);
   }
 
-  async createCorrectiveAction(scope: StaffScope, input: CreateSdCorrectiveActionRequest): Promise<SdCorrectiveActionSummary> {
+  async createCorrectiveAction(
+    scope: StaffScope,
+    input: CreateSdCorrectiveActionRequest,
+  ): Promise<SdCorrectiveActionSummary> {
     const [created] = await this.deps.db
       .insert(sdCorrectiveActions)
       .values({
@@ -670,26 +784,38 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toCorrectiveActionSummary);
   }
 
-  async getCorrectiveAction(companyId: string, id: string): Promise<SdCorrectiveActionSummary | null> {
+  async getCorrectiveAction(
+    companyId: string,
+    id: string,
+  ): Promise<SdCorrectiveActionSummary | null> {
     const row = await this.deps.db.query.sdCorrectiveActions.findFirst({
       where: and(eq(sdCorrectiveActions.companyId, companyId), eq(sdCorrectiveActions.id, id)),
     });
     return row ? toCorrectiveActionSummary(row) : null;
   }
 
-  async updateCorrectiveAction(scope: StaffScope, id: string, input: UpdateSdCorrectiveActionRequest): Promise<SdCorrectiveActionSummary> {
+  async updateCorrectiveAction(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdCorrectiveActionRequest,
+  ): Promise<SdCorrectiveActionSummary> {
     await this.ensureCorrectiveAction(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdCorrectiveActions)
       .set({ ...mapUpdateCorrectiveActionInput(input), updatedAt: new Date() })
-      .where(and(eq(sdCorrectiveActions.companyId, scope.companyId), eq(sdCorrectiveActions.id, id)))
+      .where(
+        and(eq(sdCorrectiveActions.companyId, scope.companyId), eq(sdCorrectiveActions.id, id)),
+      )
       .returning();
 
     await this.recordAudit(scope, 'corrective_action_updated', 'sd_corrective_action', id);
     return toCorrectiveActionSummary(updated!);
   }
 
-  async createPreventiveAction(scope: StaffScope, input: CreateSdPreventiveActionRequest): Promise<SdPreventiveActionSummary> {
+  async createPreventiveAction(
+    scope: StaffScope,
+    input: CreateSdPreventiveActionRequest,
+  ): Promise<SdPreventiveActionSummary> {
     const [created] = await this.deps.db
       .insert(sdPreventiveActions)
       .values({
@@ -711,26 +837,38 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toPreventiveActionSummary);
   }
 
-  async getPreventiveAction(companyId: string, id: string): Promise<SdPreventiveActionSummary | null> {
+  async getPreventiveAction(
+    companyId: string,
+    id: string,
+  ): Promise<SdPreventiveActionSummary | null> {
     const row = await this.deps.db.query.sdPreventiveActions.findFirst({
       where: and(eq(sdPreventiveActions.companyId, companyId), eq(sdPreventiveActions.id, id)),
     });
     return row ? toPreventiveActionSummary(row) : null;
   }
 
-  async updatePreventiveAction(scope: StaffScope, id: string, input: UpdateSdPreventiveActionRequest): Promise<SdPreventiveActionSummary> {
+  async updatePreventiveAction(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdPreventiveActionRequest,
+  ): Promise<SdPreventiveActionSummary> {
     await this.ensurePreventiveAction(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdPreventiveActions)
       .set({ ...mapUpdatePreventiveActionInput(input), updatedAt: new Date() })
-      .where(and(eq(sdPreventiveActions.companyId, scope.companyId), eq(sdPreventiveActions.id, id)))
+      .where(
+        and(eq(sdPreventiveActions.companyId, scope.companyId), eq(sdPreventiveActions.id, id)),
+      )
       .returning();
 
     await this.recordAudit(scope, 'preventive_action_updated', 'sd_preventive_action', id);
     return toPreventiveActionSummary(updated!);
   }
 
-  async createFirstTimeFixAnalysis(scope: StaffScope, input: CreateSdFirstTimeFixAnalysisRequest): Promise<SdFirstTimeFixAnalysisSummary> {
+  async createFirstTimeFixAnalysis(
+    scope: StaffScope,
+    input: CreateSdFirstTimeFixAnalysisRequest,
+  ): Promise<SdFirstTimeFixAnalysisSummary> {
     const [created] = await this.deps.db
       .insert(sdFirstTimeFixAnalyses)
       .values({
@@ -739,7 +877,12 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'first_time_fix_analysis_created', 'sd_first_time_fix_analysis', created!.id);
+    await this.recordAudit(
+      scope,
+      'first_time_fix_analysis_created',
+      'sd_first_time_fix_analysis',
+      created!.id,
+    );
     return toFirstTimeFixAnalysisSummary(created!);
   }
 
@@ -752,14 +895,23 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toFirstTimeFixAnalysisSummary);
   }
 
-  async getFirstTimeFixAnalysis(companyId: string, id: string): Promise<SdFirstTimeFixAnalysisSummary | null> {
+  async getFirstTimeFixAnalysis(
+    companyId: string,
+    id: string,
+  ): Promise<SdFirstTimeFixAnalysisSummary | null> {
     const row = await this.deps.db.query.sdFirstTimeFixAnalyses.findFirst({
-      where: and(eq(sdFirstTimeFixAnalyses.companyId, companyId), eq(sdFirstTimeFixAnalyses.id, id)),
+      where: and(
+        eq(sdFirstTimeFixAnalyses.companyId, companyId),
+        eq(sdFirstTimeFixAnalyses.id, id),
+      ),
     });
     return row ? toFirstTimeFixAnalysisSummary(row) : null;
   }
 
-  async createCustomerAcceptance(scope: StaffScope, input: CreateSdCustomerAcceptanceRequest): Promise<SdCustomerAcceptanceSummary> {
+  async createCustomerAcceptance(
+    scope: StaffScope,
+    input: CreateSdCustomerAcceptanceRequest,
+  ): Promise<SdCustomerAcceptanceSummary> {
     const [created] = await this.deps.db
       .insert(sdCustomerAcceptances)
       .values({
@@ -768,7 +920,12 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'customer_acceptance_created', 'sd_customer_acceptance', created!.id);
+    await this.recordAudit(
+      scope,
+      'customer_acceptance_created',
+      'sd_customer_acceptance',
+      created!.id,
+    );
     return toCustomerAcceptanceSummary(created!);
   }
 
@@ -781,26 +938,38 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toCustomerAcceptanceSummary);
   }
 
-  async getCustomerAcceptance(companyId: string, id: string): Promise<SdCustomerAcceptanceSummary | null> {
+  async getCustomerAcceptance(
+    companyId: string,
+    id: string,
+  ): Promise<SdCustomerAcceptanceSummary | null> {
     const row = await this.deps.db.query.sdCustomerAcceptances.findFirst({
       where: and(eq(sdCustomerAcceptances.companyId, companyId), eq(sdCustomerAcceptances.id, id)),
     });
     return row ? toCustomerAcceptanceSummary(row) : null;
   }
 
-  async updateCustomerAcceptance(scope: StaffScope, id: string, input: UpdateSdCustomerAcceptanceRequest): Promise<SdCustomerAcceptanceSummary> {
+  async updateCustomerAcceptance(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdCustomerAcceptanceRequest,
+  ): Promise<SdCustomerAcceptanceSummary> {
     await this.ensureCustomerAcceptance(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdCustomerAcceptances)
       .set({ ...mapUpdateCustomerAcceptanceInput(input), updatedAt: new Date() })
-      .where(and(eq(sdCustomerAcceptances.companyId, scope.companyId), eq(sdCustomerAcceptances.id, id)))
+      .where(
+        and(eq(sdCustomerAcceptances.companyId, scope.companyId), eq(sdCustomerAcceptances.id, id)),
+      )
       .returning();
 
     await this.recordAudit(scope, 'customer_acceptance_updated', 'sd_customer_acceptance', id);
     return toCustomerAcceptanceSummary(updated!);
   }
 
-  async createWarrantyRecord(scope: StaffScope, input: CreateSdWarrantyRecordRequest): Promise<SdWarrantyRecordSummary> {
+  async createWarrantyRecord(
+    scope: StaffScope,
+    input: CreateSdWarrantyRecordRequest,
+  ): Promise<SdWarrantyRecordSummary> {
     const [created] = await this.deps.db
       .insert(sdWarrantyRecords)
       .values({
@@ -829,7 +998,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toWarrantyRecordSummary(row) : null;
   }
 
-  async updateWarrantyRecord(scope: StaffScope, id: string, input: UpdateSdWarrantyRecordRequest): Promise<SdWarrantyRecordSummary> {
+  async updateWarrantyRecord(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdWarrantyRecordRequest,
+  ): Promise<SdWarrantyRecordSummary> {
     await this.ensureWarrantyRecord(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdWarrantyRecords)
@@ -841,7 +1014,10 @@ export class EnterpriseServiceDeliveryService {
     return toWarrantyRecordSummary(updated!);
   }
 
-  async createWarrantyClaimTracking(scope: StaffScope, input: CreateSdWarrantyClaimTrackingRequest): Promise<SdWarrantyClaimTrackingSummary> {
+  async createWarrantyClaimTracking(
+    scope: StaffScope,
+    input: CreateSdWarrantyClaimTrackingRequest,
+  ): Promise<SdWarrantyClaimTrackingSummary> {
     const [created] = await this.deps.db
       .insert(sdWarrantyClaimTrackings)
       .values({
@@ -850,7 +1026,12 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'warranty_claim_tracking_created', 'sd_warranty_claim_tracking', created!.id);
+    await this.recordAudit(
+      scope,
+      'warranty_claim_tracking_created',
+      'sd_warranty_claim_tracking',
+      created!.id,
+    );
     return toWarrantyClaimTrackingSummary(created!);
   }
 
@@ -863,26 +1044,49 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toWarrantyClaimTrackingSummary);
   }
 
-  async getWarrantyClaimTracking(companyId: string, id: string): Promise<SdWarrantyClaimTrackingSummary | null> {
+  async getWarrantyClaimTracking(
+    companyId: string,
+    id: string,
+  ): Promise<SdWarrantyClaimTrackingSummary | null> {
     const row = await this.deps.db.query.sdWarrantyClaimTrackings.findFirst({
-      where: and(eq(sdWarrantyClaimTrackings.companyId, companyId), eq(sdWarrantyClaimTrackings.id, id)),
+      where: and(
+        eq(sdWarrantyClaimTrackings.companyId, companyId),
+        eq(sdWarrantyClaimTrackings.id, id),
+      ),
     });
     return row ? toWarrantyClaimTrackingSummary(row) : null;
   }
 
-  async updateWarrantyClaimTracking(scope: StaffScope, id: string, input: UpdateSdWarrantyClaimTrackingRequest): Promise<SdWarrantyClaimTrackingSummary> {
+  async updateWarrantyClaimTracking(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdWarrantyClaimTrackingRequest,
+  ): Promise<SdWarrantyClaimTrackingSummary> {
     await this.ensureWarrantyClaimTracking(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdWarrantyClaimTrackings)
       .set({ ...mapUpdateWarrantyClaimTrackingInput(input), updatedAt: new Date() })
-      .where(and(eq(sdWarrantyClaimTrackings.companyId, scope.companyId), eq(sdWarrantyClaimTrackings.id, id)))
+      .where(
+        and(
+          eq(sdWarrantyClaimTrackings.companyId, scope.companyId),
+          eq(sdWarrantyClaimTrackings.id, id),
+        ),
+      )
       .returning();
 
-    await this.recordAudit(scope, 'warranty_claim_tracking_updated', 'sd_warranty_claim_tracking', id);
+    await this.recordAudit(
+      scope,
+      'warranty_claim_tracking_updated',
+      'sd_warranty_claim_tracking',
+      id,
+    );
     return toWarrantyClaimTrackingSummary(updated!);
   }
 
-  async createCallbackRecord(scope: StaffScope, input: CreateSdCallbackRecordRequest): Promise<SdCallbackRecordSummary> {
+  async createCallbackRecord(
+    scope: StaffScope,
+    input: CreateSdCallbackRecordRequest,
+  ): Promise<SdCallbackRecordSummary> {
     const [created] = await this.deps.db
       .insert(sdCallbackRecords)
       .values({
@@ -911,7 +1115,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toCallbackRecordSummary(row) : null;
   }
 
-  async updateCallbackRecord(scope: StaffScope, id: string, input: UpdateSdCallbackRecordRequest): Promise<SdCallbackRecordSummary> {
+  async updateCallbackRecord(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdCallbackRecordRequest,
+  ): Promise<SdCallbackRecordSummary> {
     await this.ensureCallbackRecord(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdCallbackRecords)
@@ -923,7 +1131,10 @@ export class EnterpriseServiceDeliveryService {
     return toCallbackRecordSummary(updated!);
   }
 
-  async createContinuousImprovementInitiative(scope: StaffScope, input: CreateSdContinuousImprovementInitiativeRequest): Promise<SdContinuousImprovementInitiativeSummary> {
+  async createContinuousImprovementInitiative(
+    scope: StaffScope,
+    input: CreateSdContinuousImprovementInitiativeRequest,
+  ): Promise<SdContinuousImprovementInitiativeSummary> {
     const [created] = await this.deps.db
       .insert(sdContinuousImprovementInitiatives)
       .values({
@@ -932,11 +1143,18 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'continuous_improvement_initiative_created', 'sd_continuous_improvement_initiative', created!.id);
+    await this.recordAudit(
+      scope,
+      'continuous_improvement_initiative_created',
+      'sd_continuous_improvement_initiative',
+      created!.id,
+    );
     return toContinuousImprovementInitiativeSummary(created!);
   }
 
-  async listContinuousImprovementInitiatives(companyId: string): Promise<SdContinuousImprovementInitiativeSummary[]> {
+  async listContinuousImprovementInitiatives(
+    companyId: string,
+  ): Promise<SdContinuousImprovementInitiativeSummary[]> {
     const rows = await this.deps.db.query.sdContinuousImprovementInitiatives.findMany({
       where: eq(sdContinuousImprovementInitiatives.companyId, companyId),
       orderBy: [desc(sdContinuousImprovementInitiatives.createdAt)],
@@ -945,26 +1163,49 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toContinuousImprovementInitiativeSummary);
   }
 
-  async getContinuousImprovementInitiative(companyId: string, id: string): Promise<SdContinuousImprovementInitiativeSummary | null> {
+  async getContinuousImprovementInitiative(
+    companyId: string,
+    id: string,
+  ): Promise<SdContinuousImprovementInitiativeSummary | null> {
     const row = await this.deps.db.query.sdContinuousImprovementInitiatives.findFirst({
-      where: and(eq(sdContinuousImprovementInitiatives.companyId, companyId), eq(sdContinuousImprovementInitiatives.id, id)),
+      where: and(
+        eq(sdContinuousImprovementInitiatives.companyId, companyId),
+        eq(sdContinuousImprovementInitiatives.id, id),
+      ),
     });
     return row ? toContinuousImprovementInitiativeSummary(row) : null;
   }
 
-  async updateContinuousImprovementInitiative(scope: StaffScope, id: string, input: UpdateSdContinuousImprovementInitiativeRequest): Promise<SdContinuousImprovementInitiativeSummary> {
+  async updateContinuousImprovementInitiative(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdContinuousImprovementInitiativeRequest,
+  ): Promise<SdContinuousImprovementInitiativeSummary> {
     await this.ensureContinuousImprovementInitiative(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdContinuousImprovementInitiatives)
       .set({ ...mapUpdateContinuousImprovementInitiativeInput(input), updatedAt: new Date() })
-      .where(and(eq(sdContinuousImprovementInitiatives.companyId, scope.companyId), eq(sdContinuousImprovementInitiatives.id, id)))
+      .where(
+        and(
+          eq(sdContinuousImprovementInitiatives.companyId, scope.companyId),
+          eq(sdContinuousImprovementInitiatives.id, id),
+        ),
+      )
       .returning();
 
-    await this.recordAudit(scope, 'continuous_improvement_initiative_updated', 'sd_continuous_improvement_initiative', id);
+    await this.recordAudit(
+      scope,
+      'continuous_improvement_initiative_updated',
+      'sd_continuous_improvement_initiative',
+      id,
+    );
     return toContinuousImprovementInitiativeSummary(updated!);
   }
 
-  async createHandoverRecord(scope: StaffScope, input: CreateSdHandoverRecordRequest): Promise<SdHandoverRecordSummary> {
+  async createHandoverRecord(
+    scope: StaffScope,
+    input: CreateSdHandoverRecordRequest,
+  ): Promise<SdHandoverRecordSummary> {
     const [created] = await this.deps.db
       .insert(sdHandoverRecords)
       .values({
@@ -993,7 +1234,11 @@ export class EnterpriseServiceDeliveryService {
     return row ? toHandoverRecordSummary(row) : null;
   }
 
-  async updateHandoverRecord(scope: StaffScope, id: string, input: UpdateSdHandoverRecordRequest): Promise<SdHandoverRecordSummary> {
+  async updateHandoverRecord(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdHandoverRecordRequest,
+  ): Promise<SdHandoverRecordSummary> {
     await this.ensureHandoverRecord(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdHandoverRecords)
@@ -1005,7 +1250,10 @@ export class EnterpriseServiceDeliveryService {
     return toHandoverRecordSummary(updated!);
   }
 
-  async createVariationRecord(scope: StaffScope, input: CreateSdVariationRecordRequest): Promise<SdVariationRecordSummary> {
+  async createVariationRecord(
+    scope: StaffScope,
+    input: CreateSdVariationRecordRequest,
+  ): Promise<SdVariationRecordSummary> {
     const [created] = await this.deps.db
       .insert(sdVariationRecords)
       .values({
@@ -1027,14 +1275,21 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toVariationRecordSummary);
   }
 
-  async getVariationRecord(companyId: string, id: string): Promise<SdVariationRecordSummary | null> {
+  async getVariationRecord(
+    companyId: string,
+    id: string,
+  ): Promise<SdVariationRecordSummary | null> {
     const row = await this.deps.db.query.sdVariationRecords.findFirst({
       where: and(eq(sdVariationRecords.companyId, companyId), eq(sdVariationRecords.id, id)),
     });
     return row ? toVariationRecordSummary(row) : null;
   }
 
-  async updateVariationRecord(scope: StaffScope, id: string, input: UpdateSdVariationRecordRequest): Promise<SdVariationRecordSummary> {
+  async updateVariationRecord(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdVariationRecordRequest,
+  ): Promise<SdVariationRecordSummary> {
     await this.ensureVariationRecord(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdVariationRecords)
@@ -1046,7 +1301,10 @@ export class EnterpriseServiceDeliveryService {
     return toVariationRecordSummary(updated!);
   }
 
-  async createCompletionCertificate(scope: StaffScope, input: CreateSdCompletionCertificateRequest): Promise<SdCompletionCertificateSummary> {
+  async createCompletionCertificate(
+    scope: StaffScope,
+    input: CreateSdCompletionCertificateRequest,
+  ): Promise<SdCompletionCertificateSummary> {
     const [created] = await this.deps.db
       .insert(sdCompletionCertificates)
       .values({
@@ -1055,7 +1313,12 @@ export class EnterpriseServiceDeliveryService {
       })
       .returning();
 
-    await this.recordAudit(scope, 'completion_certificate_created', 'sd_completion_certificate', created!.id);
+    await this.recordAudit(
+      scope,
+      'completion_certificate_created',
+      'sd_completion_certificate',
+      created!.id,
+    );
     return toCompletionCertificateSummary(created!);
   }
 
@@ -1068,29 +1331,52 @@ export class EnterpriseServiceDeliveryService {
     return rows.map(toCompletionCertificateSummary);
   }
 
-  async getCompletionCertificate(companyId: string, id: string): Promise<SdCompletionCertificateSummary | null> {
+  async getCompletionCertificate(
+    companyId: string,
+    id: string,
+  ): Promise<SdCompletionCertificateSummary | null> {
     const row = await this.deps.db.query.sdCompletionCertificates.findFirst({
-      where: and(eq(sdCompletionCertificates.companyId, companyId), eq(sdCompletionCertificates.id, id)),
+      where: and(
+        eq(sdCompletionCertificates.companyId, companyId),
+        eq(sdCompletionCertificates.id, id),
+      ),
     });
     return row ? toCompletionCertificateSummary(row) : null;
   }
 
-  async updateCompletionCertificate(scope: StaffScope, id: string, input: UpdateSdCompletionCertificateRequest): Promise<SdCompletionCertificateSummary> {
+  async updateCompletionCertificate(
+    scope: StaffScope,
+    id: string,
+    input: UpdateSdCompletionCertificateRequest,
+  ): Promise<SdCompletionCertificateSummary> {
     await this.ensureCompletionCertificate(scope.companyId, id);
     const [updated] = await this.deps.db
       .update(sdCompletionCertificates)
       .set({ ...mapUpdateCompletionCertificateInput(input), updatedAt: new Date() })
-      .where(and(eq(sdCompletionCertificates.companyId, scope.companyId), eq(sdCompletionCertificates.id, id)))
+      .where(
+        and(
+          eq(sdCompletionCertificates.companyId, scope.companyId),
+          eq(sdCompletionCertificates.id, id),
+        ),
+      )
       .returning();
 
-    await this.recordAudit(scope, 'completion_certificate_updated', 'sd_completion_certificate', id);
+    await this.recordAudit(
+      scope,
+      'completion_certificate_updated',
+      'sd_completion_certificate',
+      id,
+    );
     return toCompletionCertificateSummary(updated!);
   }
 
   async submitInspection(scope: StaffScope, inspectionId: string): Promise<SdInspectionSummary> {
     const inspection = await this.ensureInspection(scope.companyId, inspectionId);
     if (inspection.inspectionStatus !== 'draft' && inspection.inspectionStatus !== 'in_progress') {
-      throw new EnterpriseServiceDeliveryError('VALIDATION_ERROR', 'Inspection must be draft or in progress to submit');
+      throw new EnterpriseServiceDeliveryError(
+        'VALIDATION_ERROR',
+        'Inspection must be draft or in progress to submit',
+      );
     }
     const [updated] = await this.deps.db
       .update(sdInspections)
@@ -1104,7 +1390,10 @@ export class EnterpriseServiceDeliveryService {
   async approveInspection(scope: StaffScope, inspectionId: string): Promise<SdInspectionSummary> {
     const inspection = await this.ensureInspection(scope.companyId, inspectionId);
     if (inspection.inspectionStatus !== 'review') {
-      throw new EnterpriseServiceDeliveryError('VALIDATION_ERROR', 'Inspection must be in review to approve');
+      throw new EnterpriseServiceDeliveryError(
+        'VALIDATION_ERROR',
+        'Inspection must be in review to approve',
+      );
     }
     const [updated] = await this.deps.db
       .update(sdInspections)
@@ -1118,7 +1407,10 @@ export class EnterpriseServiceDeliveryService {
   async completeInspection(scope: StaffScope, inspectionId: string): Promise<SdInspectionSummary> {
     const inspection = await this.ensureInspection(scope.companyId, inspectionId);
     if (inspection.inspectionStatus !== 'approved') {
-      throw new EnterpriseServiceDeliveryError('VALIDATION_ERROR', 'Inspection must be approved to complete');
+      throw new EnterpriseServiceDeliveryError(
+        'VALIDATION_ERROR',
+        'Inspection must be approved to complete',
+      );
     }
     const [updated] = await this.deps.db
       .update(sdInspections)
@@ -1129,10 +1421,16 @@ export class EnterpriseServiceDeliveryService {
     return toInspectionSummary(updated!);
   }
 
-  async approveCorrectiveAction(scope: StaffScope, actionId: string): Promise<SdCorrectiveActionSummary> {
+  async approveCorrectiveAction(
+    scope: StaffScope,
+    actionId: string,
+  ): Promise<SdCorrectiveActionSummary> {
     const action = await this.ensureCorrectiveAction(scope.companyId, actionId);
     if (action.workflowStatus !== 'pending_approval') {
-      throw new EnterpriseServiceDeliveryError('VALIDATION_ERROR', 'Corrective action must be pending approval');
+      throw new EnterpriseServiceDeliveryError(
+        'VALIDATION_ERROR',
+        'Corrective action must be pending approval',
+      );
     }
     const [updated] = await this.deps.db
       .update(sdCorrectiveActions)
@@ -1143,10 +1441,16 @@ export class EnterpriseServiceDeliveryService {
     return toCorrectiveActionSummary(updated!);
   }
 
-  async listServiceAlerts(companyId: string, filters?: { status?: string }): Promise<SdServiceAlertSummary[]> {
+  async listServiceAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<SdServiceAlertSummary[]> {
     const rows = await this.deps.db.query.sdServiceAlerts.findMany({
       where: filters?.status
-        ? and(eq(sdServiceAlerts.companyId, companyId), eq(sdServiceAlerts.status, filters.status as 'open'))
+        ? and(
+            eq(sdServiceAlerts.companyId, companyId),
+            eq(sdServiceAlerts.status, filters.status as 'open'),
+          )
         : eq(sdServiceAlerts.companyId, companyId),
       orderBy: [desc(sdServiceAlerts.createdAt)],
       limit: 100,
@@ -1160,12 +1464,48 @@ export class EnterpriseServiceDeliveryService {
     const syncedAt = new Date();
 
     const alertDefinitions = [
-      { alertType: 'sla_breach', severity: 'critical', title: 'SLA breaches', description: `${monitoring.slaBreachCount} SLA breach(es) detected.`, active: monitoring.slaBreachCount > 0 },
-      { alertType: 'overdue_inspection', severity: 'warning', title: 'Overdue inspections', description: `${monitoring.overdueInspectionCount} overdue inspection(s).`, active: monitoring.overdueInspectionCount > 0 },
-      { alertType: 'open_callback', severity: 'warning', title: 'Open callbacks', description: `${monitoring.openCallbackCount} open callback(s).`, active: monitoring.openCallbackCount > 0 },
-      { alertType: 'promise_breach', severity: 'critical', title: 'Breached service promises', description: `${monitoring.promiseBreachCount} breached service promise(s).`, active: monitoring.promiseBreachCount > 0 },
-      { alertType: 'open_defect', severity: 'warning', title: 'Open defects', description: `${monitoring.openDefectCount} open defect(s).`, active: monitoring.openDefectCount > 0 },
-      { alertType: 'pending_corrective_action', severity: 'warning', title: 'Pending corrective actions', description: `${monitoring.pendingCorrectiveActionCount} pending corrective action(s).`, active: monitoring.pendingCorrectiveActionCount > 0 },
+      {
+        alertType: 'sla_breach',
+        severity: 'critical',
+        title: 'SLA breaches',
+        description: `${monitoring.slaBreachCount} SLA breach(es) detected.`,
+        active: monitoring.slaBreachCount > 0,
+      },
+      {
+        alertType: 'overdue_inspection',
+        severity: 'warning',
+        title: 'Overdue inspections',
+        description: `${monitoring.overdueInspectionCount} overdue inspection(s).`,
+        active: monitoring.overdueInspectionCount > 0,
+      },
+      {
+        alertType: 'open_callback',
+        severity: 'warning',
+        title: 'Open callbacks',
+        description: `${monitoring.openCallbackCount} open callback(s).`,
+        active: monitoring.openCallbackCount > 0,
+      },
+      {
+        alertType: 'promise_breach',
+        severity: 'critical',
+        title: 'Breached service promises',
+        description: `${monitoring.promiseBreachCount} breached service promise(s).`,
+        active: monitoring.promiseBreachCount > 0,
+      },
+      {
+        alertType: 'open_defect',
+        severity: 'warning',
+        title: 'Open defects',
+        description: `${monitoring.openDefectCount} open defect(s).`,
+        active: monitoring.openDefectCount > 0,
+      },
+      {
+        alertType: 'pending_corrective_action',
+        severity: 'warning',
+        title: 'Pending corrective actions',
+        description: `${monitoring.pendingCorrectiveActionCount} pending corrective action(s).`,
+        active: monitoring.pendingCorrectiveActionCount > 0,
+      },
     ] as const;
 
     for (const definition of alertDefinitions) {
@@ -1381,9 +1721,13 @@ export class EnterpriseServiceDeliveryService {
 
   private async ensureWarrantyClaimTracking(companyId: string, id: string) {
     const row = await this.deps.db.query.sdWarrantyClaimTrackings.findFirst({
-      where: and(eq(sdWarrantyClaimTrackings.companyId, companyId), eq(sdWarrantyClaimTrackings.id, id)),
+      where: and(
+        eq(sdWarrantyClaimTrackings.companyId, companyId),
+        eq(sdWarrantyClaimTrackings.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseServiceDeliveryError('NOT_FOUND', 'WarrantyClaimTracking not found');
+    if (!row)
+      throw new EnterpriseServiceDeliveryError('NOT_FOUND', 'WarrantyClaimTracking not found');
     return row;
   }
 
@@ -1397,9 +1741,16 @@ export class EnterpriseServiceDeliveryService {
 
   private async ensureContinuousImprovementInitiative(companyId: string, id: string) {
     const row = await this.deps.db.query.sdContinuousImprovementInitiatives.findFirst({
-      where: and(eq(sdContinuousImprovementInitiatives.companyId, companyId), eq(sdContinuousImprovementInitiatives.id, id)),
+      where: and(
+        eq(sdContinuousImprovementInitiatives.companyId, companyId),
+        eq(sdContinuousImprovementInitiatives.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseServiceDeliveryError('NOT_FOUND', 'ContinuousImprovementInitiative not found');
+    if (!row)
+      throw new EnterpriseServiceDeliveryError(
+        'NOT_FOUND',
+        'ContinuousImprovementInitiative not found',
+      );
     return row;
   }
 
@@ -1421,9 +1772,13 @@ export class EnterpriseServiceDeliveryService {
 
   private async ensureCompletionCertificate(companyId: string, id: string) {
     const row = await this.deps.db.query.sdCompletionCertificates.findFirst({
-      where: and(eq(sdCompletionCertificates.companyId, companyId), eq(sdCompletionCertificates.id, id)),
+      where: and(
+        eq(sdCompletionCertificates.companyId, companyId),
+        eq(sdCompletionCertificates.id, id),
+      ),
     });
-    if (!row) throw new EnterpriseServiceDeliveryError('NOT_FOUND', 'CompletionCertificate not found');
+    if (!row)
+      throw new EnterpriseServiceDeliveryError('NOT_FOUND', 'CompletionCertificate not found');
     return row;
   }
 
@@ -1444,7 +1799,9 @@ export class EnterpriseServiceDeliveryService {
     });
   }
 }
-function toPlatformConfigSummary(row: typeof sdPlatformConfig.$inferSelect): SdPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof sdPlatformConfig.$inferSelect,
+): SdPlatformConfigSummary {
   return {
     serviceStandards: row.serviceStandards,
     promiseTemplates: row.promiseTemplates,
@@ -1478,69 +1835,252 @@ function toAnalyticsSummary(row: typeof sdAnalyticsSnapshots.$inferSelect): SdAn
     slaBreachCount: row.slaBreachCount,
     openDefectCount: row.openDefectCount,
     openCallbackCount: row.openCallbackCount,
-    firstTimeFixRatePercent: row.firstTimeFixRatePercent != null ? String(row.firstTimeFixRatePercent) : null,
+    firstTimeFixRatePercent:
+      row.firstTimeFixRatePercent != null ? String(row.firstTimeFixRatePercent) : null,
     openAlertCount: row.openAlertCount,
     currency: row.currency,
     capturedAt: row.capturedAt.toISOString(),
   };
 }
 
-function toServicePromiseSummary(row: typeof sdServicePromises.$inferSelect): SdServicePromiseSummary {
-  return { id: row.id, jobId: row.jobId, promiseType: row.promiseType, title: row.title, description: row.description, workflowStatus: row.workflowStatus, promisedAt: row.promisedAt?.toISOString() ?? null, dueAt: row.dueAt?.toISOString() ?? null, fulfilledAt: row.fulfilledAt?.toISOString() ?? null, ownerUserId: row.ownerUserId };
+function toServicePromiseSummary(
+  row: typeof sdServicePromises.$inferSelect,
+): SdServicePromiseSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    promiseType: row.promiseType,
+    title: row.title,
+    description: row.description,
+    workflowStatus: row.workflowStatus,
+    promisedAt: row.promisedAt?.toISOString() ?? null,
+    dueAt: row.dueAt?.toISOString() ?? null,
+    fulfilledAt: row.fulfilledAt?.toISOString() ?? null,
+    ownerUserId: row.ownerUserId,
+  };
 }
 function toSlaFrameworkSummary(row: typeof sdSlaFrameworks.$inferSelect): SdSlaFrameworkSummary {
-  return { id: row.id, name: row.name, frameworkKey: row.frameworkKey, slaType: row.slaType, targetMinutes: row.targetMinutes, warningThresholdMinutes: row.warningThresholdMinutes, isActive: row.isActive };
+  return {
+    id: row.id,
+    name: row.name,
+    frameworkKey: row.frameworkKey,
+    slaType: row.slaType,
+    targetMinutes: row.targetMinutes,
+    warningThresholdMinutes: row.warningThresholdMinutes,
+    isActive: row.isActive,
+  };
 }
 function toSlaRecordSummary(row: typeof sdSlaRecords.$inferSelect): SdSlaRecordSummary {
-  return { id: row.id, jobId: row.jobId, frameworkId: row.frameworkId, slaType: row.slaType, targetAt: row.targetAt?.toISOString() ?? null, breachedAt: row.breachedAt?.toISOString() ?? null, metAt: row.metAt?.toISOString() ?? null, breachMinutes: row.breachMinutes };
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    frameworkId: row.frameworkId,
+    slaType: row.slaType,
+    targetAt: row.targetAt?.toISOString() ?? null,
+    breachedAt: row.breachedAt?.toISOString() ?? null,
+    metAt: row.metAt?.toISOString() ?? null,
+    breachMinutes: row.breachMinutes,
+  };
 }
-function toInspectionTemplateSummary(row: typeof sdInspectionTemplates.$inferSelect): SdInspectionTemplateSummary {
-  return { id: row.id, name: row.name, templateKey: row.templateKey, description: row.description, isActive: row.isActive };
+function toInspectionTemplateSummary(
+  row: typeof sdInspectionTemplates.$inferSelect,
+): SdInspectionTemplateSummary {
+  return {
+    id: row.id,
+    name: row.name,
+    templateKey: row.templateKey,
+    description: row.description,
+    isActive: row.isActive,
+  };
 }
 function toInspectionSummary(row: typeof sdInspections.$inferSelect): SdInspectionSummary {
-  return { id: row.id, jobId: row.jobId, templateId: row.templateId, inspectionStatus: row.inspectionStatus, inspectorUserId: row.inspectorUserId, completedAt: row.completedAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    templateId: row.templateId,
+    inspectionStatus: row.inspectionStatus,
+    inspectorUserId: row.inspectorUserId,
+    completedAt: row.completedAt?.toISOString() ?? null,
+  };
 }
 function toQaInspectionSummary(row: typeof sdQaInspections.$inferSelect): SdQaInspectionSummary {
-  return { id: row.id, jobId: row.jobId, inspectionId: row.inspectionId, qaScore: row.qaScore != null ? String(row.qaScore) : null, workflowStatus: row.workflowStatus, reviewerUserId: row.reviewerUserId, reviewedAt: row.reviewedAt?.toISOString() ?? null };
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    inspectionId: row.inspectionId,
+    qaScore: row.qaScore != null ? String(row.qaScore) : null,
+    workflowStatus: row.workflowStatus,
+    reviewerUserId: row.reviewerUserId,
+    reviewedAt: row.reviewedAt?.toISOString() ?? null,
+  };
 }
 function toDefectSummary(row: typeof sdDefects.$inferSelect): SdDefectSummary {
-  return { id: row.id, jobId: row.jobId, inspectionId: row.inspectionId, defectType: row.defectType, severity: row.severity, description: row.description, workflowStatus: row.workflowStatus, reportedByUserId: row.reportedByUserId };
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    inspectionId: row.inspectionId,
+    defectType: row.defectType,
+    severity: row.severity,
+    description: row.description,
+    workflowStatus: row.workflowStatus,
+    reportedByUserId: row.reportedByUserId,
+  };
 }
-function toNonConformanceSummary(row: typeof sdNonConformances.$inferSelect): SdNonConformanceSummary {
-  return { id: row.id, jobId: row.jobId, defectId: row.defectId, ncNumber: row.ncNumber, title: row.title, description: row.description, workflowStatus: row.workflowStatus, ownerUserId: row.ownerUserId };
+function toNonConformanceSummary(
+  row: typeof sdNonConformances.$inferSelect,
+): SdNonConformanceSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    defectId: row.defectId,
+    ncNumber: row.ncNumber,
+    title: row.title,
+    description: row.description,
+    workflowStatus: row.workflowStatus,
+    ownerUserId: row.ownerUserId,
+  };
 }
-function toCorrectiveActionSummary(row: typeof sdCorrectiveActions.$inferSelect): SdCorrectiveActionSummary {
-  return { id: row.id, jobId: row.jobId, nonConformanceId: row.nonConformanceId, title: row.title, actionType: row.actionType, workflowStatus: row.workflowStatus, assignedUserId: row.assignedUserId, dueAt: row.dueAt?.toISOString() ?? null, completedAt: row.completedAt?.toISOString() ?? null };
+function toCorrectiveActionSummary(
+  row: typeof sdCorrectiveActions.$inferSelect,
+): SdCorrectiveActionSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    nonConformanceId: row.nonConformanceId,
+    title: row.title,
+    actionType: row.actionType,
+    workflowStatus: row.workflowStatus,
+    assignedUserId: row.assignedUserId,
+    dueAt: row.dueAt?.toISOString() ?? null,
+    completedAt: row.completedAt?.toISOString() ?? null,
+  };
 }
-function toPreventiveActionSummary(row: typeof sdPreventiveActions.$inferSelect): SdPreventiveActionSummary {
-  return { id: row.id, correctiveActionId: row.correctiveActionId, title: row.title, workflowStatus: row.workflowStatus, assignedUserId: row.assignedUserId, dueAt: row.dueAt?.toISOString() ?? null, completedAt: row.completedAt?.toISOString() ?? null };
+function toPreventiveActionSummary(
+  row: typeof sdPreventiveActions.$inferSelect,
+): SdPreventiveActionSummary {
+  return {
+    id: row.id,
+    correctiveActionId: row.correctiveActionId,
+    title: row.title,
+    workflowStatus: row.workflowStatus,
+    assignedUserId: row.assignedUserId,
+    dueAt: row.dueAt?.toISOString() ?? null,
+    completedAt: row.completedAt?.toISOString() ?? null,
+  };
 }
-function toFirstTimeFixAnalysisSummary(row: typeof sdFirstTimeFixAnalyses.$inferSelect): SdFirstTimeFixAnalysisSummary {
-  return { id: row.id, jobId: row.jobId, technicianUserId: row.technicianUserId, fixedFirstTime: row.fixedFirstTime, rootCause: row.rootCause, capturedAt: row.capturedAt.toISOString() };
+function toFirstTimeFixAnalysisSummary(
+  row: typeof sdFirstTimeFixAnalyses.$inferSelect,
+): SdFirstTimeFixAnalysisSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    technicianUserId: row.technicianUserId,
+    fixedFirstTime: row.fixedFirstTime,
+    rootCause: row.rootCause,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
-function toCustomerAcceptanceSummary(row: typeof sdCustomerAcceptances.$inferSelect): SdCustomerAcceptanceSummary {
-  return { id: row.id, jobId: row.jobId, customerId: row.customerId, workflowStatus: row.workflowStatus, signatureRef: row.signatureRef, notes: row.notes, acceptedAt: row.acceptedAt?.toISOString() ?? null };
+function toCustomerAcceptanceSummary(
+  row: typeof sdCustomerAcceptances.$inferSelect,
+): SdCustomerAcceptanceSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    customerId: row.customerId,
+    workflowStatus: row.workflowStatus,
+    signatureRef: row.signatureRef,
+    notes: row.notes,
+    acceptedAt: row.acceptedAt?.toISOString() ?? null,
+  };
 }
-function toWarrantyRecordSummary(row: typeof sdWarrantyRecords.$inferSelect): SdWarrantyRecordSummary {
-  return { id: row.id, jobId: row.jobId, customerId: row.customerId, warrantyType: row.warrantyType, startDate: row.startDate, endDate: row.endDate };
+function toWarrantyRecordSummary(
+  row: typeof sdWarrantyRecords.$inferSelect,
+): SdWarrantyRecordSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    customerId: row.customerId,
+    warrantyType: row.warrantyType,
+    startDate: row.startDate,
+    endDate: row.endDate,
+  };
 }
-function toWarrantyClaimTrackingSummary(row: typeof sdWarrantyClaimTrackings.$inferSelect): SdWarrantyClaimTrackingSummary {
-  return { id: row.id, warrantyRecordId: row.warrantyRecordId, jobId: row.jobId, claimNumber: row.claimNumber, workflowStatus: row.workflowStatus, description: row.description, resolvedAt: row.resolvedAt?.toISOString() ?? null };
+function toWarrantyClaimTrackingSummary(
+  row: typeof sdWarrantyClaimTrackings.$inferSelect,
+): SdWarrantyClaimTrackingSummary {
+  return {
+    id: row.id,
+    warrantyRecordId: row.warrantyRecordId,
+    jobId: row.jobId,
+    claimNumber: row.claimNumber,
+    workflowStatus: row.workflowStatus,
+    description: row.description,
+    resolvedAt: row.resolvedAt?.toISOString() ?? null,
+  };
 }
-function toCallbackRecordSummary(row: typeof sdCallbackRecords.$inferSelect): SdCallbackRecordSummary {
-  return { id: row.id, jobId: row.jobId, originalJobId: row.originalJobId, callbackReason: row.callbackReason, workflowStatus: row.workflowStatus, assignedUserId: row.assignedUserId, scheduledAt: row.scheduledAt?.toISOString() ?? null, completedAt: row.completedAt?.toISOString() ?? null };
+function toCallbackRecordSummary(
+  row: typeof sdCallbackRecords.$inferSelect,
+): SdCallbackRecordSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    originalJobId: row.originalJobId,
+    callbackReason: row.callbackReason,
+    workflowStatus: row.workflowStatus,
+    assignedUserId: row.assignedUserId,
+    scheduledAt: row.scheduledAt?.toISOString() ?? null,
+    completedAt: row.completedAt?.toISOString() ?? null,
+  };
 }
-function toContinuousImprovementInitiativeSummary(row: typeof sdContinuousImprovementInitiatives.$inferSelect): SdContinuousImprovementInitiativeSummary {
-  return { id: row.id, title: row.title, initiativeKey: row.initiativeKey, workflowStatus: row.workflowStatus, ownerUserId: row.ownerUserId, targetDate: row.targetDate };
+function toContinuousImprovementInitiativeSummary(
+  row: typeof sdContinuousImprovementInitiatives.$inferSelect,
+): SdContinuousImprovementInitiativeSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    initiativeKey: row.initiativeKey,
+    workflowStatus: row.workflowStatus,
+    ownerUserId: row.ownerUserId,
+    targetDate: row.targetDate,
+  };
 }
-function toHandoverRecordSummary(row: typeof sdHandoverRecords.$inferSelect): SdHandoverRecordSummary {
-  return { id: row.id, jobId: row.jobId, handoverType: row.handoverType, workflowStatus: row.workflowStatus, handedOverByUserId: row.handedOverByUserId, receivedByUserId: row.receivedByUserId, handoverAt: row.handoverAt?.toISOString() ?? null };
+function toHandoverRecordSummary(
+  row: typeof sdHandoverRecords.$inferSelect,
+): SdHandoverRecordSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    handoverType: row.handoverType,
+    workflowStatus: row.workflowStatus,
+    handedOverByUserId: row.handedOverByUserId,
+    receivedByUserId: row.receivedByUserId,
+    handoverAt: row.handoverAt?.toISOString() ?? null,
+  };
 }
-function toVariationRecordSummary(row: typeof sdVariationRecords.$inferSelect): SdVariationRecordSummary {
-  return { id: row.id, jobId: row.jobId, variationType: row.variationType, description: row.description, workflowStatus: row.workflowStatus, approvedByUserId: row.approvedByUserId, approvedAt: row.approvedAt?.toISOString() ?? null };
+function toVariationRecordSummary(
+  row: typeof sdVariationRecords.$inferSelect,
+): SdVariationRecordSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    variationType: row.variationType,
+    description: row.description,
+    workflowStatus: row.workflowStatus,
+    approvedByUserId: row.approvedByUserId,
+    approvedAt: row.approvedAt?.toISOString() ?? null,
+  };
 }
-function toCompletionCertificateSummary(row: typeof sdCompletionCertificates.$inferSelect): SdCompletionCertificateSummary {
-  return { id: row.id, jobId: row.jobId, certificateNumber: row.certificateNumber, workflowStatus: row.workflowStatus, issuedAt: row.issuedAt?.toISOString() ?? null, issuedByUserId: row.issuedByUserId };
+function toCompletionCertificateSummary(
+  row: typeof sdCompletionCertificates.$inferSelect,
+): SdCompletionCertificateSummary {
+  return {
+    id: row.id,
+    jobId: row.jobId,
+    certificateNumber: row.certificateNumber,
+    workflowStatus: row.workflowStatus,
+    issuedAt: row.issuedAt?.toISOString() ?? null,
+    issuedByUserId: row.issuedByUserId,
+  };
 }
 
 function parseOptionalDate(value?: string | null): Date | null {
@@ -1566,13 +2106,22 @@ function mapCreateServicePromiseInput(input: CreateSdServicePromiseRequest, scop
 function mapUpdateServicePromiseInput(input: UpdateSdServicePromiseRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
-    ...(input.promiseType !== undefined ? { promiseType: input.promiseType as typeof sdServicePromises.$inferInsert.promiseType } : {}),
+    ...(input.promiseType !== undefined
+      ? { promiseType: input.promiseType as typeof sdServicePromises.$inferInsert.promiseType }
+      : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description?.trim() ?? null } : {}),
     ...(input.promisedAt !== undefined ? { promisedAt: parseOptionalDate(input.promisedAt) } : {}),
     ...(input.dueAt !== undefined ? { dueAt: parseOptionalDate(input.dueAt) } : {}),
-    ...(input.fulfilledAt !== undefined ? { fulfilledAt: parseOptionalDate(input.fulfilledAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdServicePromises.$inferInsert.workflowStatus } : {}),
+    ...(input.fulfilledAt !== undefined
+      ? { fulfilledAt: parseOptionalDate(input.fulfilledAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdServicePromises.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
@@ -1592,9 +2141,13 @@ function mapUpdateSlaFrameworkInput(input: UpdateSdSlaFrameworkRequest) {
   return {
     ...(input.name !== undefined ? { name: input.name.trim() } : {}),
     ...(input.frameworkKey !== undefined ? { frameworkKey: input.frameworkKey.trim() } : {}),
-    ...(input.slaType !== undefined ? { slaType: input.slaType as typeof sdSlaFrameworks.$inferInsert.slaType } : {}),
+    ...(input.slaType !== undefined
+      ? { slaType: input.slaType as typeof sdSlaFrameworks.$inferInsert.slaType }
+      : {}),
     ...(input.targetMinutes !== undefined ? { targetMinutes: input.targetMinutes ?? null } : {}),
-    ...(input.warningThresholdMinutes !== undefined ? { warningThresholdMinutes: input.warningThresholdMinutes ?? null } : {}),
+    ...(input.warningThresholdMinutes !== undefined
+      ? { warningThresholdMinutes: input.warningThresholdMinutes ?? null }
+      : {}),
     ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
@@ -1614,7 +2167,9 @@ function mapUpdateSlaRecordInput(input: UpdateSdSlaRecordRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
     ...(input.frameworkId !== undefined ? { frameworkId: input.frameworkId ?? null } : {}),
-    ...(input.slaType !== undefined ? { slaType: input.slaType as typeof sdSlaRecords.$inferInsert.slaType } : {}),
+    ...(input.slaType !== undefined
+      ? { slaType: input.slaType as typeof sdSlaRecords.$inferInsert.slaType }
+      : {}),
     ...(input.targetAt !== undefined ? { targetAt: parseOptionalDate(input.targetAt) } : {}),
     ...(input.breachedAt !== undefined ? { breachedAt: parseOptionalDate(input.breachedAt) } : {}),
     ...(input.metAt !== undefined ? { metAt: parseOptionalDate(input.metAt) } : {}),
@@ -1624,7 +2179,13 @@ function mapUpdateSlaRecordInput(input: UpdateSdSlaRecordRequest) {
 }
 
 function mapCreateInspectionTemplateInput(input: CreateSdInspectionTemplateRequest) {
-  return { name: input.name.trim(), templateKey: input.templateKey.trim(), description: input.description?.trim() ?? null, checklist: input.checklist ?? {}, config: input.config ?? {} };
+  return {
+    name: input.name.trim(),
+    templateKey: input.templateKey.trim(),
+    description: input.description?.trim() ?? null,
+    checklist: input.checklist ?? {},
+    config: input.config ?? {},
+  };
 }
 
 function mapUpdateInspectionTemplateInput(input: UpdateSdInspectionTemplateRequest) {
@@ -1639,7 +2200,14 @@ function mapUpdateInspectionTemplateInput(input: UpdateSdInspectionTemplateReque
 }
 
 function mapCreateInspectionInput(input: CreateSdInspectionRequest, scope: StaffScope) {
-  return { jobId: input.jobId ?? null, templateId: input.templateId ?? null, inspectorUserId: scope.userId, findings: input.findings ?? {}, config: input.config ?? {}, inspectionStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    templateId: input.templateId ?? null,
+    inspectorUserId: scope.userId,
+    findings: input.findings ?? {},
+    config: input.config ?? {},
+    inspectionStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateInspectionInput(input: UpdateSdInspectionRequest) {
@@ -1647,28 +2215,57 @@ function mapUpdateInspectionInput(input: UpdateSdInspectionRequest) {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
     ...(input.templateId !== undefined ? { templateId: input.templateId ?? null } : {}),
     ...(input.findings !== undefined ? { findings: input.findings } : {}),
-    ...(input.inspectionStatus !== undefined ? { inspectionStatus: input.inspectionStatus as typeof sdInspections.$inferInsert.inspectionStatus } : {}),
+    ...(input.inspectionStatus !== undefined
+      ? {
+          inspectionStatus:
+            input.inspectionStatus as typeof sdInspections.$inferInsert.inspectionStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateQaInspectionInput(input: CreateSdQaInspectionRequest, scope: StaffScope) {
-  return { jobId: input.jobId ?? null, inspectionId: input.inspectionId ?? null, qaScore: input.qaScore != null ? String(input.qaScore) : null, reviewerUserId: scope.userId, notes: input.notes?.trim() ?? null, config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    inspectionId: input.inspectionId ?? null,
+    qaScore: input.qaScore != null ? String(input.qaScore) : null,
+    reviewerUserId: scope.userId,
+    notes: input.notes?.trim() ?? null,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateQaInspectionInput(input: UpdateSdQaInspectionRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
     ...(input.inspectionId !== undefined ? { inspectionId: input.inspectionId ?? null } : {}),
-    ...(input.qaScore !== undefined ? { qaScore: input.qaScore != null ? String(input.qaScore) : null } : {}),
+    ...(input.qaScore !== undefined
+      ? { qaScore: input.qaScore != null ? String(input.qaScore) : null }
+      : {}),
     ...(input.notes !== undefined ? { notes: input.notes?.trim() ?? null } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdQaInspections.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdQaInspections.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateDefectInput(input: CreateSdDefectRequest, scope: StaffScope) {
-  return { jobId: input.jobId ?? null, inspectionId: input.inspectionId ?? null, defectType: input.defectType.trim(), severity: (input.severity ?? 'warning') as typeof sdDefects.$inferInsert.severity, description: input.description.trim(), reportedByUserId: scope.userId, config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    inspectionId: input.inspectionId ?? null,
+    defectType: input.defectType.trim(),
+    severity: (input.severity ?? 'warning') as typeof sdDefects.$inferInsert.severity,
+    description: input.description.trim(),
+    reportedByUserId: scope.userId,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateDefectInput(input: UpdateSdDefectRequest) {
@@ -1676,15 +2273,28 @@ function mapUpdateDefectInput(input: UpdateSdDefectRequest) {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
     ...(input.inspectionId !== undefined ? { inspectionId: input.inspectionId ?? null } : {}),
     ...(input.defectType !== undefined ? { defectType: input.defectType.trim() } : {}),
-    ...(input.severity !== undefined ? { severity: input.severity as typeof sdDefects.$inferInsert.severity } : {}),
+    ...(input.severity !== undefined
+      ? { severity: input.severity as typeof sdDefects.$inferInsert.severity }
+      : {}),
     ...(input.description !== undefined ? { description: input.description.trim() } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdDefects.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? { workflowStatus: input.workflowStatus as typeof sdDefects.$inferInsert.workflowStatus }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateNonConformanceInput(input: CreateSdNonConformanceRequest, scope: StaffScope) {
-  return { jobId: input.jobId ?? null, defectId: input.defectId ?? null, ncNumber: input.ncNumber?.trim() ?? null, title: input.title.trim(), description: input.description?.trim() ?? null, ownerUserId: scope.userId, config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    defectId: input.defectId ?? null,
+    ncNumber: input.ncNumber?.trim() ?? null,
+    title: input.title.trim(),
+    description: input.description?.trim() ?? null,
+    ownerUserId: scope.userId,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateNonConformanceInput(input: UpdateSdNonConformanceRequest) {
@@ -1694,67 +2304,135 @@ function mapUpdateNonConformanceInput(input: UpdateSdNonConformanceRequest) {
     ...(input.ncNumber !== undefined ? { ncNumber: input.ncNumber?.trim() ?? null } : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description?.trim() ?? null } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdNonConformances.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdNonConformances.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateCorrectiveActionInput(input: CreateSdCorrectiveActionRequest) {
-  return { jobId: input.jobId ?? null, nonConformanceId: input.nonConformanceId ?? null, title: input.title.trim(), actionType: input.actionType.trim(), assignedUserId: input.assignedUserId ?? null, dueAt: parseOptionalDate(input.dueAt), config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    nonConformanceId: input.nonConformanceId ?? null,
+    title: input.title.trim(),
+    actionType: input.actionType.trim(),
+    assignedUserId: input.assignedUserId ?? null,
+    dueAt: parseOptionalDate(input.dueAt),
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateCorrectiveActionInput(input: UpdateSdCorrectiveActionRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId ?? null } : {}),
-    ...(input.nonConformanceId !== undefined ? { nonConformanceId: input.nonConformanceId ?? null } : {}),
+    ...(input.nonConformanceId !== undefined
+      ? { nonConformanceId: input.nonConformanceId ?? null }
+      : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.actionType !== undefined ? { actionType: input.actionType.trim() } : {}),
     ...(input.assignedUserId !== undefined ? { assignedUserId: input.assignedUserId ?? null } : {}),
     ...(input.dueAt !== undefined ? { dueAt: parseOptionalDate(input.dueAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdCorrectiveActions.$inferInsert.workflowStatus } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdCorrectiveActions.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreatePreventiveActionInput(input: CreateSdPreventiveActionRequest) {
-  return { correctiveActionId: input.correctiveActionId ?? null, title: input.title.trim(), assignedUserId: input.assignedUserId ?? null, dueAt: parseOptionalDate(input.dueAt), config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    correctiveActionId: input.correctiveActionId ?? null,
+    title: input.title.trim(),
+    assignedUserId: input.assignedUserId ?? null,
+    dueAt: parseOptionalDate(input.dueAt),
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdatePreventiveActionInput(input: UpdateSdPreventiveActionRequest) {
   return {
-    ...(input.correctiveActionId !== undefined ? { correctiveActionId: input.correctiveActionId ?? null } : {}),
+    ...(input.correctiveActionId !== undefined
+      ? { correctiveActionId: input.correctiveActionId ?? null }
+      : {}),
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.assignedUserId !== undefined ? { assignedUserId: input.assignedUserId ?? null } : {}),
     ...(input.dueAt !== undefined ? { dueAt: parseOptionalDate(input.dueAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdPreventiveActions.$inferInsert.workflowStatus } : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdPreventiveActions.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateFirstTimeFixAnalysisInput(input: CreateSdFirstTimeFixAnalysisRequest) {
-  return { jobId: input.jobId, technicianUserId: input.technicianUserId ?? null, fixedFirstTime: input.fixedFirstTime ?? true, rootCause: input.rootCause?.trim() ?? null, analysis: input.analysis ?? {}, config: input.config ?? {} };
+  return {
+    jobId: input.jobId,
+    technicianUserId: input.technicianUserId ?? null,
+    fixedFirstTime: input.fixedFirstTime ?? true,
+    rootCause: input.rootCause?.trim() ?? null,
+    analysis: input.analysis ?? {},
+    config: input.config ?? {},
+  };
 }
 
 function mapCreateCustomerAcceptanceInput(input: CreateSdCustomerAcceptanceRequest) {
-  return { jobId: input.jobId, customerId: input.customerId, signatureRef: input.signatureRef?.trim() ?? null, notes: input.notes?.trim() ?? null, config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId,
+    customerId: input.customerId,
+    signatureRef: input.signatureRef?.trim() ?? null,
+    notes: input.notes?.trim() ?? null,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateCustomerAcceptanceInput(input: UpdateSdCustomerAcceptanceRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
     ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
-    ...(input.signatureRef !== undefined ? { signatureRef: input.signatureRef?.trim() ?? null } : {}),
+    ...(input.signatureRef !== undefined
+      ? { signatureRef: input.signatureRef?.trim() ?? null }
+      : {}),
     ...(input.notes !== undefined ? { notes: input.notes?.trim() ?? null } : {}),
     ...(input.acceptedAt !== undefined ? { acceptedAt: parseOptionalDate(input.acceptedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdCustomerAcceptances.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdCustomerAcceptances.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateWarrantyRecordInput(input: CreateSdWarrantyRecordRequest) {
-  return { jobId: input.jobId, customerId: input.customerId, warrantyType: input.warrantyType.trim(), startDate: input.startDate ?? null, endDate: input.endDate ?? null, terms: input.terms ?? {}, config: input.config ?? {} };
+  return {
+    jobId: input.jobId,
+    customerId: input.customerId,
+    warrantyType: input.warrantyType.trim(),
+    startDate: input.startDate ?? null,
+    endDate: input.endDate ?? null,
+    terms: input.terms ?? {},
+    config: input.config ?? {},
+  };
 }
 
 function mapUpdateWarrantyRecordInput(input: UpdateSdWarrantyRecordRequest) {
@@ -1770,7 +2448,14 @@ function mapUpdateWarrantyRecordInput(input: UpdateSdWarrantyRecordRequest) {
 }
 
 function mapCreateWarrantyClaimTrackingInput(input: CreateSdWarrantyClaimTrackingRequest) {
-  return { warrantyRecordId: input.warrantyRecordId, jobId: input.jobId ?? null, claimNumber: input.claimNumber?.trim() ?? null, description: input.description?.trim() ?? null, config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    warrantyRecordId: input.warrantyRecordId,
+    jobId: input.jobId ?? null,
+    claimNumber: input.claimNumber?.trim() ?? null,
+    description: input.description?.trim() ?? null,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateWarrantyClaimTrackingInput(input: UpdateSdWarrantyClaimTrackingRequest) {
@@ -1780,13 +2465,26 @@ function mapUpdateWarrantyClaimTrackingInput(input: UpdateSdWarrantyClaimTrackin
     ...(input.claimNumber !== undefined ? { claimNumber: input.claimNumber?.trim() ?? null } : {}),
     ...(input.description !== undefined ? { description: input.description?.trim() ?? null } : {}),
     ...(input.resolvedAt !== undefined ? { resolvedAt: parseOptionalDate(input.resolvedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdWarrantyClaimTrackings.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdWarrantyClaimTrackings.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateCallbackRecordInput(input: CreateSdCallbackRecordRequest) {
-  return { jobId: input.jobId ?? null, originalJobId: input.originalJobId ?? null, callbackReason: input.callbackReason.trim(), assignedUserId: input.assignedUserId ?? null, scheduledAt: parseOptionalDate(input.scheduledAt), config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId ?? null,
+    originalJobId: input.originalJobId ?? null,
+    callbackReason: input.callbackReason.trim(),
+    assignedUserId: input.assignedUserId ?? null,
+    scheduledAt: parseOptionalDate(input.scheduledAt),
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateCallbackRecordInput(input: UpdateSdCallbackRecordRequest) {
@@ -1795,45 +2493,94 @@ function mapUpdateCallbackRecordInput(input: UpdateSdCallbackRecordRequest) {
     ...(input.originalJobId !== undefined ? { originalJobId: input.originalJobId ?? null } : {}),
     ...(input.callbackReason !== undefined ? { callbackReason: input.callbackReason.trim() } : {}),
     ...(input.assignedUserId !== undefined ? { assignedUserId: input.assignedUserId ?? null } : {}),
-    ...(input.scheduledAt !== undefined ? { scheduledAt: parseOptionalDate(input.scheduledAt) } : {}),
-    ...(input.completedAt !== undefined ? { completedAt: parseOptionalDate(input.completedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdCallbackRecords.$inferInsert.workflowStatus } : {}),
+    ...(input.scheduledAt !== undefined
+      ? { scheduledAt: parseOptionalDate(input.scheduledAt) }
+      : {}),
+    ...(input.completedAt !== undefined
+      ? { completedAt: parseOptionalDate(input.completedAt) }
+      : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdCallbackRecords.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
-function mapCreateContinuousImprovementInitiativeInput(input: CreateSdContinuousImprovementInitiativeRequest, scope: StaffScope) {
-  return { title: input.title.trim(), initiativeKey: input.initiativeKey.trim(), ownerUserId: scope.userId, targetDate: input.targetDate ?? null, config: input.config ?? {}, workflowStatus: 'draft' as const };
+function mapCreateContinuousImprovementInitiativeInput(
+  input: CreateSdContinuousImprovementInitiativeRequest,
+  scope: StaffScope,
+) {
+  return {
+    title: input.title.trim(),
+    initiativeKey: input.initiativeKey.trim(),
+    ownerUserId: scope.userId,
+    targetDate: input.targetDate ?? null,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
-function mapUpdateContinuousImprovementInitiativeInput(input: UpdateSdContinuousImprovementInitiativeRequest) {
+function mapUpdateContinuousImprovementInitiativeInput(
+  input: UpdateSdContinuousImprovementInitiativeRequest,
+) {
   return {
     ...(input.title !== undefined ? { title: input.title.trim() } : {}),
     ...(input.initiativeKey !== undefined ? { initiativeKey: input.initiativeKey.trim() } : {}),
     ...(input.targetDate !== undefined ? { targetDate: input.targetDate ?? null } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdContinuousImprovementInitiatives.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdContinuousImprovementInitiatives.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateHandoverRecordInput(input: CreateSdHandoverRecordRequest, scope: StaffScope) {
-  return { jobId: input.jobId, handoverType: input.handoverType.trim(), handedOverByUserId: input.handedOverByUserId ?? scope.userId, receivedByUserId: input.receivedByUserId ?? null, handoverAt: parseOptionalDate(input.handoverAt), config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId,
+    handoverType: input.handoverType.trim(),
+    handedOverByUserId: input.handedOverByUserId ?? scope.userId,
+    receivedByUserId: input.receivedByUserId ?? null,
+    handoverAt: parseOptionalDate(input.handoverAt),
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateHandoverRecordInput(input: UpdateSdHandoverRecordRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
     ...(input.handoverType !== undefined ? { handoverType: input.handoverType.trim() } : {}),
-    ...(input.handedOverByUserId !== undefined ? { handedOverByUserId: input.handedOverByUserId ?? null } : {}),
-    ...(input.receivedByUserId !== undefined ? { receivedByUserId: input.receivedByUserId ?? null } : {}),
+    ...(input.handedOverByUserId !== undefined
+      ? { handedOverByUserId: input.handedOverByUserId ?? null }
+      : {}),
+    ...(input.receivedByUserId !== undefined
+      ? { receivedByUserId: input.receivedByUserId ?? null }
+      : {}),
     ...(input.handoverAt !== undefined ? { handoverAt: parseOptionalDate(input.handoverAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdHandoverRecords.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdHandoverRecords.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
 function mapCreateVariationRecordInput(input: CreateSdVariationRecordRequest) {
-  return { jobId: input.jobId, variationType: input.variationType.trim(), description: input.description.trim(), config: input.config ?? {}, workflowStatus: 'draft' as const };
+  return {
+    jobId: input.jobId,
+    variationType: input.variationType.trim(),
+    description: input.description.trim(),
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateVariationRecordInput(input: UpdateSdVariationRecordRequest) {
@@ -1842,21 +2589,42 @@ function mapUpdateVariationRecordInput(input: UpdateSdVariationRecordRequest) {
     ...(input.variationType !== undefined ? { variationType: input.variationType.trim() } : {}),
     ...(input.description !== undefined ? { description: input.description.trim() } : {}),
     ...(input.approvedAt !== undefined ? { approvedAt: parseOptionalDate(input.approvedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdVariationRecords.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdVariationRecords.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }
 
-function mapCreateCompletionCertificateInput(input: CreateSdCompletionCertificateRequest, scope: StaffScope) {
-  return { jobId: input.jobId, certificateNumber: input.certificateNumber?.trim() ?? null, issuedByUserId: scope.userId, config: input.config ?? {}, workflowStatus: 'draft' as const };
+function mapCreateCompletionCertificateInput(
+  input: CreateSdCompletionCertificateRequest,
+  scope: StaffScope,
+) {
+  return {
+    jobId: input.jobId,
+    certificateNumber: input.certificateNumber?.trim() ?? null,
+    issuedByUserId: scope.userId,
+    config: input.config ?? {},
+    workflowStatus: 'draft' as const,
+  };
 }
 
 function mapUpdateCompletionCertificateInput(input: UpdateSdCompletionCertificateRequest) {
   return {
     ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
-    ...(input.certificateNumber !== undefined ? { certificateNumber: input.certificateNumber?.trim() ?? null } : {}),
+    ...(input.certificateNumber !== undefined
+      ? { certificateNumber: input.certificateNumber?.trim() ?? null }
+      : {}),
     ...(input.issuedAt !== undefined ? { issuedAt: parseOptionalDate(input.issuedAt) } : {}),
-    ...(input.workflowStatus !== undefined ? { workflowStatus: input.workflowStatus as typeof sdCompletionCertificates.$inferInsert.workflowStatus } : {}),
+    ...(input.workflowStatus !== undefined
+      ? {
+          workflowStatus:
+            input.workflowStatus as typeof sdCompletionCertificates.$inferInsert.workflowStatus,
+        }
+      : {}),
     ...(input.config !== undefined ? { config: input.config } : {}),
   };
 }

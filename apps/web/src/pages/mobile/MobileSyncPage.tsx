@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button, PageHeader, Panel } from '@titan/ui';
 import type { MobileSyncProcessResult } from '@titan/shared';
 import {
@@ -6,6 +6,12 @@ import {
   fetchMobileOfflineBundle,
   processMobileSync,
 } from '../../lib/mobile-api-client';
+import {
+  clearSyncedAndExpiredActions,
+  flushOfflineQueue,
+  listOfflineActions,
+  type OfflineQueuedAction,
+} from '../../lib/mobile-offline-queue';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
@@ -15,6 +21,11 @@ export function MobileSyncPage() {
   const [result, setResult] = useState<MobileSyncProcessResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [localActions, setLocalActions] = useState<OfflineQueuedAction[]>([]);
+  const [flushSummary, setFlushSummary] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator === 'undefined' ? true : navigator.onLine,
+  );
 
   const bundleQuery = useStaffCachedQuery({
     queryKey: 'mobile/offline-bundle',
@@ -25,6 +36,34 @@ export function MobileSyncPage() {
 
   const bundle = bundleQuery.data;
 
+  const refreshLocal = useCallback(async () => {
+    setLocalActions(await listOfflineActions());
+  }, []);
+
+  useEffect(() => {
+    void refreshLocal();
+    function onOnline() {
+      setIsOnline(true);
+      if (!accessToken) return;
+      void flushOfflineQueue(accessToken).then(async (summary) => {
+        setFlushSummary(
+          `Auto-sync: ${summary.synced} synced, ${summary.duplicate} duplicate, ${summary.failed} failed`,
+        );
+        await refreshLocal();
+        await bundleQuery.refetch();
+      });
+    }
+    function onOffline() {
+      setIsOnline(false);
+    }
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, [accessToken, refreshLocal, bundleQuery]);
+
   async function handleProcessSync() {
     if (!accessToken) return;
     setIsProcessing(true);
@@ -32,36 +71,74 @@ export function MobileSyncPage() {
     try {
       const syncResult = await processMobileSync(accessToken);
       setResult(syncResult);
+      const flush = await flushOfflineQueue(accessToken);
+      setFlushSummary(
+        `Technician flush: ${flush.synced} synced, ${flush.duplicate} duplicate, ${flush.failed} failed`,
+      );
+      await clearSyncedAndExpiredActions();
+      await refreshLocal();
       await bundleQuery.refetch();
     } catch (err) {
-      setActionError(err instanceof MobileApiClientError ? err.message : 'Unable to process sync queue');
+      setActionError(
+        err instanceof MobileApiClientError ? err.message : 'Unable to process sync queue',
+      );
     } finally {
       setIsProcessing(false);
     }
   }
+
+  const pendingCount = localActions.filter((a) => a.status !== 'synced').length;
 
   return (
     <div className="portal-page">
       <PageHeader
         title="Offline synchronization"
         description={
-          bundle?.syncState.lastSyncedAt
-            ? `Last synced ${new Date(bundle.syncState.lastSyncedAt).toLocaleString()}`
-            : 'Review cached jobs and process the sync queue.'
+          isOnline
+            ? bundle?.syncState.lastSyncedAt
+              ? `Online · last synced ${new Date(bundle.syncState.lastSyncedAt).toLocaleString()}`
+              : 'Online · review queued technician actions and process sync'
+            : 'Offline · actions stay Pending until reconnection'
         }
       />
 
-      <Panel title="Process sync">
-        <Button disabled={isProcessing} onClick={() => void handleProcessSync()}>
-          {isProcessing ? 'Processing…' : 'Process sync queue'}
+      <Panel title="Technician offline queue" description={`${pendingCount} unsynced action(s)`}>
+        <p className="page-muted">
+          States: Offline, Pending sync, Synced, Failed. Automatic flush runs on reconnect; use
+          manual retry for failures. Idempotent via clientActionId.
+        </p>
+        <Button disabled={isProcessing || !accessToken} onClick={() => void handleProcessSync()}>
+          {isProcessing ? 'Syncing…' : 'Process sync + flush offline queue'}
         </Button>
+        {flushSummary ? (
+          <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+            {flushSummary}
+          </p>
+        ) : null}
         {result ? (
           <p className="page-muted" style={{ marginTop: '0.75rem' }}>
-            Processed {result.processed}, failed {result.failed}, retried {result.retried}, conflicts{' '}
-            {result.conflicts}
+            Observability queue: processed {result.processed}, failed {result.failed}, retried{' '}
+            {result.retried}, conflicts {result.conflicts}
           </p>
         ) : null}
         {actionError ? <p className="form-error">{actionError}</p> : null}
+        {localActions.length === 0 ? (
+          <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+            No local offline actions stored.
+          </p>
+        ) : (
+          <ul className="portal-list" style={{ marginTop: '0.75rem' }}>
+            {localActions.map((item) => (
+              <li key={item.id}>
+                <strong>{item.actionType}</strong>
+                <span>
+                  {item.status} · job {item.jobId.slice(0, 8)}…
+                  {item.errorMessage ? ` · ${item.errorMessage}` : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </Panel>
 
       <AnalyticsTabPanel
@@ -93,9 +170,9 @@ export function MobileSyncPage() {
               )}
             </Panel>
 
-            <Panel title="Sync queue" description={`${bundle.queue.length} pending item(s)`}>
+            <Panel title="Server sync queue" description={`${bundle.queue.length} pending item(s)`}>
               {bundle.queue.length === 0 ? (
-                <p className="page-muted">Sync queue is empty.</p>
+                <p className="page-muted">Server sync queue is empty.</p>
               ) : (
                 <ul className="portal-list">
                   {bundle.queue.map((item) => (
@@ -108,7 +185,10 @@ export function MobileSyncPage() {
               )}
             </Panel>
 
-            <Panel title="Conflicts" description={`${bundle.conflicts.length} unresolved conflict(s)`}>
+            <Panel
+              title="Conflicts"
+              description={`${bundle.conflicts.length} unresolved conflict(s)`}
+            >
               {bundle.conflicts.length === 0 ? (
                 <p className="page-muted">No sync conflicts.</p>
               ) : (

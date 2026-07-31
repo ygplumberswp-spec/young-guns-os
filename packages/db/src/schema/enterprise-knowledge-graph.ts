@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 
@@ -72,12 +81,10 @@ export const knowledgeGraphActionStatusEnum = pgEnum('knowledge_graph_action_sta
   'cancelled',
 ]);
 
-export const knowledgeGraphRecommendationStatusEnum = pgEnum('knowledge_graph_recommendation_status', [
-  'pending',
-  'accepted',
-  'dismissed',
-  'completed',
-]);
+export const knowledgeGraphRecommendationStatusEnum = pgEnum(
+  'knowledge_graph_recommendation_status',
+  ['pending', 'accepted', 'dismissed', 'completed'],
+);
 
 export const knowledgeGraphEntities = pgTable('knowledge_graph_entities', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -156,7 +163,9 @@ export const knowledgeSemanticIndex = pgTable('knowledge_semantic_index', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   entityType: knowledgeGraphEntityTypeEnum('entity_type').notNull(),
   sourceEntityId: uuid('source_entity_id').notNull(),
-  graphEntityId: uuid('graph_entity_id').references(() => knowledgeGraphEntities.id, { onDelete: 'set null' }),
+  graphEntityId: uuid('graph_entity_id').references(() => knowledgeGraphEntities.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   searchableText: text('searchable_text').notNull(),
   keywords: jsonb('keywords').$type<string[]>().notNull().default([]),

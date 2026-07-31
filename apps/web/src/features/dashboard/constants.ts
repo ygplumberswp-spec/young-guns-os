@@ -5,7 +5,7 @@ export type DashboardMetric = {
   hint: string;
 };
 
-/** Zero-value metrics — real counts will replace these when modules ship. */
+/** UX-012 — KPI definitions shown on home (wired to live stats APIs). */
 export const DASHBOARD_METRICS: DashboardMetric[] = [
   {
     id: 'customers',
@@ -20,6 +20,12 @@ export const DASHBOARD_METRICS: DashboardMetric[] = [
     hint: 'New, scheduled, and in progress',
   },
   {
+    id: 'jobs-today',
+    label: 'Jobs Today',
+    value: '0',
+    hint: 'Scheduled or in progress today',
+  },
+  {
     id: 'open-quotes',
     label: 'Open Quotes',
     value: '0',
@@ -31,35 +37,28 @@ export const DASHBOARD_METRICS: DashboardMetric[] = [
     value: '—',
     hint: 'Payments received this month',
   },
-];
-
-export type DashboardEmptyPanel = {
-  id: string;
-  title: string;
-  description: string;
-  emptyTitle: string;
-  emptyDescription: string;
-  actionLabel?: string;
-  actionHref?: string;
-};
-
-export const DASHBOARD_EMPTY_PANELS: DashboardEmptyPanel[] = [
   {
-    id: 'recent-activity',
-    title: 'Recent Activity',
-    description: 'Latest updates across your business',
-    emptyTitle: 'No activity yet',
-    emptyDescription: 'Customer, job and finance updates will appear here as you work.',
-    actionLabel: 'Add customer',
-    actionHref: '/crm',
+    id: 'outstanding',
+    label: 'Outstanding AR',
+    value: '—',
+    hint: 'Open invoice balances (total − paid)',
   },
   {
-    id: 'upcoming-work',
-    title: 'Upcoming Work',
-    description: 'Scheduled jobs and tasks',
-    emptyTitle: 'Nothing scheduled',
-    emptyDescription: 'Scheduled jobs and tasks will appear here once assigned.',
-    actionLabel: 'Schedule job',
-    actionHref: '/scheduling',
+    id: 'stock-alerts',
+    label: 'Stock Alerts',
+    value: '0',
+    hint: 'Items at or below reorder level',
+  },
+  {
+    id: 'fleet',
+    label: 'Fleet In Use',
+    value: '0',
+    hint: 'Vehicles currently in use',
+  },
+  {
+    id: 'leads',
+    label: 'Active Leads',
+    value: '0',
+    hint: 'Open leads in the pipeline',
   },
 ];

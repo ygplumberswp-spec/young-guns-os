@@ -1,14 +1,22 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, or, sql } from 'drizzle-orm';
+import { isTechnicianRole } from '@titan/auth';
 import type {
+  CommunicationChannel,
+  CommunicationDeliveryState,
   CommunicationSummary,
   CommunicationsStats,
+  CommunicationVisibility,
   CreateCommunicationRequest,
   CreateMessageTemplateRequest,
   MessageTemplateSummary,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { communications, customers, messageTemplates, users } from '@titan/db';
+import { communications, customers, jobs, messageTemplates, users } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
+import {
+  getJobIdsForUserIncludingCrew,
+  userHasJobAccess,
+} from './job-execution.service.js';
 
 export class CommunicationsError extends Error {
   constructor(
@@ -51,19 +59,55 @@ export type AuraCommunicationsContext = {
 type TenantScope = {
   companyId: string;
   userId: string;
+  roleName?: string;
+  permissions?: string[];
 };
 
 export class CommunicationsService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listMessages(companyId: string): Promise<CommunicationSummary[]> {
+  async listMessages(scope: TenantScope | string): Promise<CommunicationSummary[]> {
+    const companyId = typeof scope === 'string' ? scope : scope.companyId;
+    const technicianScoped =
+      typeof scope !== 'string' &&
+      Boolean(scope.roleName) &&
+      isTechnicianRole({
+        roleName: scope.roleName!,
+        permissions: scope.permissions ?? [],
+      });
+
+    let whereClause = eq(communications.companyId, companyId);
+
+    if (technicianScoped && typeof scope !== 'string') {
+      const jobIds = await getJobIdsForUserIncludingCrew(this.db, companyId, scope.userId);
+      if (jobIds.length === 0) {
+        return [];
+      }
+
+      const assignedJobs = await this.db.query.jobs.findMany({
+        where: and(eq(jobs.companyId, companyId), inArray(jobs.id, jobIds)),
+        columns: { id: true, customerId: true },
+      });
+      const customerIds = Array.from(
+        new Set(assignedJobs.map((job) => job.customerId).filter(Boolean)),
+      ) as string[];
+
+      whereClause = and(
+        eq(communications.companyId, companyId),
+        or(
+          inArray(communications.jobId, jobIds),
+          customerIds.length > 0 ? inArray(communications.customerId, customerIds) : sql`false`,
+        ),
+      )!;
+    }
+
     const rows = await this.db.query.communications.findMany({
-      where: eq(communications.companyId, companyId),
-      with: { customer: true, author: true, template: true },
+      where: whereClause,
+      with: { customer: true, author: true, template: true, job: true },
       orderBy: [desc(communications.occurredAt)],
     });
 
-    return rows.map(toCommunicationSummary);
+    return rows.map((row) => toCommunicationSummary(row));
   }
 
   async listTemplates(companyId: string): Promise<MessageTemplateSummary[]> {
@@ -85,10 +129,58 @@ export class CommunicationsService {
       throw new CommunicationsError('VALIDATION_ERROR', 'Message body is required');
     }
 
+    const clientActionId = input.clientActionId?.trim() || null;
+
+    if (clientActionId) {
+      const existing = await this.db.query.communications.findFirst({
+        where: and(
+          eq(communications.companyId, scope.companyId),
+          eq(communications.clientActionId, clientActionId),
+        ),
+        with: { customer: true, author: true, template: true, job: true },
+      });
+
+      if (existing) {
+        return toCommunicationSummary(existing, { idempotentReplay: true });
+      }
+    }
+
     await this.ensureCustomerBelongsToCompany(scope.companyId, input.customerId);
 
     if (input.templateId) {
       await this.ensureTemplateBelongsToCompany(scope.companyId, input.templateId);
+    }
+
+    if (input.jobId) {
+      await this.ensureJobBelongsToCompany(scope.companyId, input.jobId);
+    }
+
+    const technicianScoped =
+      Boolean(scope.roleName) &&
+      isTechnicianRole({
+        roleName: scope.roleName!,
+        permissions: scope.permissions ?? [],
+      });
+
+    if (technicianScoped) {
+      if (!input.jobId) {
+        throw new CommunicationsError(
+          'VALIDATION_ERROR',
+          'Technicians must link communications to an assigned job',
+        );
+      }
+      const allowed = await userHasJobAccess(
+        this.db,
+        scope.companyId,
+        input.jobId,
+        scope.userId,
+      );
+      if (!allowed) {
+        throw new CommunicationsError(
+          'FORBIDDEN',
+          'Technicians may only communicate on assigned jobs',
+        );
+      }
     }
 
     const occurredAt = input.occurredAt ? new Date(input.occurredAt) : new Date();
@@ -97,17 +189,27 @@ export class CommunicationsService {
       throw new CommunicationsError('VALIDATION_ERROR', 'Invalid occurred date');
     }
 
+    const channel: CommunicationChannel = input.channel ?? 'note';
+    const direction = input.direction ?? 'outbound';
+    const visibility = resolveVisibility(channel, direction, input.visibility);
+    const { deliveryState, failureReason } = resolveDeliveryOutcome(channel, visibility);
+
     const [created] = await this.db
       .insert(communications)
       .values({
         companyId: scope.companyId,
         customerId: input.customerId,
+        jobId: input.jobId ?? null,
         authorUserId: scope.userId,
         templateId: input.templateId ?? null,
-        channel: input.channel ?? 'note',
-        direction: input.direction ?? 'outbound',
+        channel,
+        direction,
+        visibility,
+        deliveryState,
         subject: normalizeOptionalText(input.subject),
         body,
+        failureReason,
+        clientActionId,
         occurredAt,
       })
       .returning();
@@ -118,14 +220,13 @@ export class CommunicationsService {
 
     const row = await this.db.query.communications.findFirst({
       where: eq(communications.id, created.id),
-      with: { customer: true, author: true, template: true },
+      with: { customer: true, author: true, template: true, job: true },
     });
 
     if (!row) {
       throw new CommunicationsError('CREATE_FAILED', 'Unable to load communication record');
     }
 
-    const direction = input.direction ?? 'outbound';
     if (direction === 'inbound') {
       emitBusinessEvent({
         companyId: scope.companyId,
@@ -281,6 +382,78 @@ export class CommunicationsService {
       throw new CommunicationsError('TEMPLATE_NOT_FOUND', 'Message template not found');
     }
   }
+
+  private async ensureJobBelongsToCompany(companyId: string, jobId: string) {
+    const job = await this.db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
+    });
+
+    if (!job) {
+      throw new CommunicationsError('JOB_NOT_FOUND', 'Job not found');
+    }
+  }
+}
+
+/**
+ * Decision 4 / UX-G honesty defaults. Callers may pass an explicit
+ * visibility; otherwise it is derived from channel/direction so a plain
+ * internal note never silently becomes an "outbound request".
+ */
+function resolveVisibility(
+  channel: CommunicationChannel,
+  direction: 'inbound' | 'outbound',
+  requested: CommunicationVisibility | null | undefined,
+): CommunicationVisibility {
+  if (requested) {
+    return requested;
+  }
+
+  if (channel === 'note') {
+    return 'internal_note';
+  }
+
+  if (direction === 'inbound') {
+    return 'customer_visible';
+  }
+
+  return 'outbound_request';
+}
+
+/**
+ * Decision 4 / UX-G comms honesty contract: this batch never calls a live
+ * provider, so `provider_delivered` must never be produced here.
+ * - internal_note is always logged_only — it never leaves TITAN.
+ * - customer_visible is logged_only — it is recorded/shown, not dispatched.
+ * - outbound_request is requested — a human or a future connector still has
+ *   to actually send it. email/sms get an explicit failureReason explaining
+ *   why nothing was sent, since those channels most obviously imply "sent".
+ */
+function resolveDeliveryOutcome(
+  channel: CommunicationChannel,
+  visibility: CommunicationVisibility,
+): { deliveryState: CommunicationDeliveryState; failureReason: string | null } {
+  if (visibility === 'internal_note') {
+    return { deliveryState: 'logged_only', failureReason: null };
+  }
+
+  if (visibility === 'customer_visible') {
+    return { deliveryState: 'logged_only', failureReason: null };
+  }
+
+  // outbound_request
+  if (channel === 'email' || channel === 'sms') {
+    return {
+      deliveryState: 'requested',
+      failureReason:
+        `No connected ${channel === 'email' ? 'email' : 'SMS'} provider dispatch path exists yet — ` +
+        'this send was logged as requested only. TITAN did not call a provider.',
+    };
+  }
+
+  return {
+    deliveryState: 'requested',
+    failureReason: 'Logged as requested only — no automated dispatch has run for this channel.',
+  };
 }
 
 function toCommunicationSummary(
@@ -288,22 +461,31 @@ function toCommunicationSummary(
     customer: typeof customers.$inferSelect | null;
     author: typeof users.$inferSelect | null;
     template: typeof messageTemplates.$inferSelect | null;
+    job?: typeof jobs.$inferSelect | null;
   },
+  options?: { idempotentReplay?: boolean },
 ): CommunicationSummary {
   return {
     id: row.id,
     customerId: row.customerId,
     customerName: row.customer?.name ?? 'Unknown',
+    jobId: row.jobId,
+    jobNumber: row.job?.jobNumber ?? null,
     authorUserId: row.authorUserId,
     authorName: formatAuthorName(row.author),
     templateId: row.templateId,
     templateName: row.template?.name ?? null,
     channel: row.channel,
     direction: row.direction,
+    visibility: row.visibility,
+    deliveryState: row.deliveryState,
     subject: row.subject,
     body: row.body,
+    failureReason: row.failureReason,
+    clientActionId: row.clientActionId,
     occurredAt: row.occurredAt.toISOString(),
     createdAt: row.createdAt.toISOString(),
+    ...(options?.idempotentReplay ? { idempotentReplay: true } : {}),
   };
 }
 

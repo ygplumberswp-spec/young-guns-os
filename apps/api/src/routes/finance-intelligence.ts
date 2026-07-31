@@ -139,7 +139,9 @@ export function createFinanceIntelligenceRouter({
   router.post('/budgets', requireWrite, async (req, res) => {
     const parsed = createBudgetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget payload' } });
       return;
     }
 
@@ -155,7 +157,9 @@ export function createFinanceIntelligenceRouter({
   router.patch('/budgets/:id', requireWrite, async (req, res) => {
     const parsed = updateBudgetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget payload' } });
       return;
     }
 
@@ -175,7 +179,9 @@ export function createFinanceIntelligenceRouter({
   router.post('/budgets/:id/lines', requireWrite, async (req, res) => {
     const parsed = createBudgetLineSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget line payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid budget line payload' } });
       return;
     }
 
@@ -208,25 +214,35 @@ export function createFinanceIntelligenceRouter({
   router.get('/forecast', requireRead, async (req, res) => {
     const forecastType = forecastTypeSchema.safeParse(req.query.type ?? 'monthly');
     if (!forecastType.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast type' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast type' } });
       return;
     }
 
     const { companyId } = getAuth(req);
-    const forecast = await financeIntelligenceService.getFinanceForecast(companyId, forecastType.data);
+    const forecast = await financeIntelligenceService.getFinanceForecast(
+      companyId,
+      forecastType.data,
+    );
     res.json({ data: { forecast } });
   });
 
   router.post('/forecast/generate', requireWrite, async (req, res) => {
     const parsed = generateForecastSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid forecast payload' } });
       return;
     }
 
     try {
       const { companyId } = getAuth(req);
-      const snapshot = await financeIntelligenceService.generateForecastSnapshot(companyId, parsed.data);
+      const snapshot = await financeIntelligenceService.generateForecastSnapshot(
+        companyId,
+        parsed.data,
+      );
       res.status(201).json({ data: { snapshot } });
     } catch (error) {
       handleFinanceIntelligenceError(res, error);

@@ -1,3 +1,9 @@
+import {
+  isTimeoutError,
+  providerTimeoutSignal,
+  PROVIDER_REQUEST_TIMEOUT_MS,
+} from './http-timeout.js';
+
 export class YocoError extends Error {
   constructor(
     public readonly code: string,
@@ -49,8 +55,15 @@ export class YocoClient {
           Authorization: `Bearer ${this.secretKey}`,
           Accept: 'application/json',
         },
+        signal: providerTimeoutSignal(),
       });
     } catch (error) {
+      if (isTimeoutError(error)) {
+        throw new YocoError(
+          'TIMEOUT',
+          `Yoco request timed out after ${PROVIDER_REQUEST_TIMEOUT_MS}ms`,
+        );
+      }
       throw new YocoError(
         'NETWORK_ERROR',
         error instanceof Error ? error.message : 'Unable to reach Yoco API',

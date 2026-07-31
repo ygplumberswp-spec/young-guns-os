@@ -32,6 +32,11 @@ export const MARKETING_INTELLIGENCE_TAB_GROUPS: TabGroup[] = [
     tabs: [{ id: 'audiences', label: 'Audiences' }],
   },
   {
+    id: 'reactivation',
+    label: 'Reactivation',
+    tabs: [{ id: 'reactivation', label: 'Reactivation' }],
+  },
+  {
     id: 'analytics',
     label: 'Analytics',
     tabs: [{ id: 'roi', label: 'Analytics' }],
@@ -74,6 +79,7 @@ export type MarketingIntelligenceTab =
   | 'campaigns'
   | 'calendar'
   | 'audiences'
+  | 'reactivation'
   | 'content'
   | 'brand'
   | 'assets'

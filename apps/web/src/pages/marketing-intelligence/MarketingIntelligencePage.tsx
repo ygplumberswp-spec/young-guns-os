@@ -1,12 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
-import { Button, EmptyState, GroupedTabNav, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Link, useSearch } from 'wouter';
+import {
+  Button,
+  EmptyState,
+  GroupedTabNav,
+  LoadingState,
+  PageHeader,
+  Panel,
+  StatCard,
+} from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureMarketingAnalytics,
   fetchMarketingIntelligenceDashboard,
   syncMarketingAlerts,
 } from '../../lib/enterprise-marketing-intelligence-api-client';
+import { ReactivationEligibilityPanel } from './ReactivationEligibilityPanel';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
@@ -29,7 +38,9 @@ import {
 
 export function MarketingIntelligencePage() {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<MarketingIntelligenceTab>('overview');
+  const search = useSearch();
+  const requestedTab = new URLSearchParams(search).get('tab') as MarketingIntelligenceTab | null;
+  const [activeTab, setActiveTab] = useState<MarketingIntelligenceTab>(requestedTab ?? 'overview');
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -244,6 +255,8 @@ export function MarketingIntelligencePage() {
           )}
         </Panel>
       ) : null}
+
+      {activeTab === 'reactivation' ? <ReactivationEligibilityPanel /> : null}
 
       {dashboard && activeTab === 'campaigns' ? (
         <Panel

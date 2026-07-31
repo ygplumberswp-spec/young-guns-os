@@ -1,11 +1,23 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { customers } from './customers';
 import { users } from './users';
 import { whatsappConnections } from './whatsapp-connections';
 import { whatsappMessages } from './whatsapp-messages';
 
-export const personalCommAccountTypeEnum = pgEnum('personal_comm_account_type', ['personal', 'business']);
+export const personalCommAccountTypeEnum = pgEnum('personal_comm_account_type', [
+  'personal',
+  'business',
+]);
 
 export const personalCommClassificationEnum = pgEnum('personal_comm_classification', [
   'business_customer',
@@ -21,7 +33,12 @@ export const personalCommClassificationEnum = pgEnum('personal_comm_classificati
   'unknown',
 ]);
 
-export const personalCommMediaTypeEnum = pgEnum('personal_comm_media_type', ['voice', 'image', 'video', 'document']);
+export const personalCommMediaTypeEnum = pgEnum('personal_comm_media_type', [
+  'voice',
+  'image',
+  'video',
+  'document',
+]);
 
 export const personalCommSignalTypeEnum = pgEnum('personal_comm_signal_type', [
   'new_lead',
@@ -35,7 +52,10 @@ export const personalCommSignalTypeEnum = pgEnum('personal_comm_signal_type', [
   'compliment',
 ]);
 
-export const personalCommActionTypeEnum = pgEnum('personal_comm_action_type', ['customer_reply', 'business_action']);
+export const personalCommActionTypeEnum = pgEnum('personal_comm_action_type', [
+  'customer_reply',
+  'business_action',
+]);
 export const personalCommActionStatusEnum = pgEnum('personal_comm_action_status', [
   'pending_approval',
   'approved',
@@ -103,28 +123,37 @@ export const personalCommConversations = pgTable('personal_comm_conversations', 
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const personalCommClassificationCorrections = pgTable('personal_comm_classification_corrections', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  companyId: uuid('company_id')
-    .notNull()
-    .references(() => companies.id, { onDelete: 'cascade' }),
-  conversationId: uuid('conversation_id')
-    .notNull()
-    .references(() => personalCommConversations.id, { onDelete: 'cascade' }),
-  previousClassification: personalCommClassificationEnum('previous_classification').notNull(),
-  correctedClassification: personalCommClassificationEnum('corrected_classification').notNull(),
-  notes: text('notes'),
-  correctedByUserId: uuid('corrected_by_user_id').references(() => users.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const personalCommClassificationCorrections = pgTable(
+  'personal_comm_classification_corrections',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    companyId: uuid('company_id')
+      .notNull()
+      .references(() => companies.id, { onDelete: 'cascade' }),
+    conversationId: uuid('conversation_id')
+      .notNull()
+      .references(() => personalCommConversations.id, { onDelete: 'cascade' }),
+    previousClassification: personalCommClassificationEnum('previous_classification').notNull(),
+    correctedClassification: personalCommClassificationEnum('corrected_classification').notNull(),
+    notes: text('notes'),
+    correctedByUserId: uuid('corrected_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+);
 
 export const personalCommMediaItems = pgTable('personal_comm_media_items', {
   id: uuid('id').primaryKey().defaultRandom(),
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, { onDelete: 'set null' }),
-  whatsappMessageId: uuid('whatsapp_message_id').references(() => whatsappMessages.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, {
+    onDelete: 'set null',
+  }),
+  whatsappMessageId: uuid('whatsapp_message_id').references(() => whatsappMessages.id, {
+    onDelete: 'set null',
+  }),
   mediaType: personalCommMediaTypeEnum('media_type').notNull(),
   externalMediaId: text('external_media_id'),
   mimeType: text('mime_type'),
@@ -139,8 +168,12 @@ export const personalCommVoiceAnalyses = pgTable('personal_comm_voice_analyses',
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  mediaItemId: uuid('media_item_id').references(() => personalCommMediaItems.id, { onDelete: 'set null' }),
-  whatsappMessageId: uuid('whatsapp_message_id').references(() => whatsappMessages.id, { onDelete: 'set null' }),
+  mediaItemId: uuid('media_item_id').references(() => personalCommMediaItems.id, {
+    onDelete: 'set null',
+  }),
+  whatsappMessageId: uuid('whatsapp_message_id').references(() => whatsappMessages.id, {
+    onDelete: 'set null',
+  }),
   transcription: text('transcription'),
   summary: text('summary'),
   keyPoints: jsonb('key_points').$type<string[]>().notNull().default([]),
@@ -197,7 +230,9 @@ export const personalCommLeadSignals = pgTable('personal_comm_lead_signals', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, {
+    onDelete: 'set null',
+  }),
   signalType: personalCommSignalTypeEnum('signal_type').notNull(),
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
@@ -213,7 +248,9 @@ export const personalCommFollowUps = pgTable('personal_comm_follow_ups', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, {
+    onDelete: 'set null',
+  }),
   followUpType: personalCommFollowUpTypeEnum('follow_up_type').notNull(),
   status: text('status').notNull().default('pending'),
   subject: text('subject').notNull(),
@@ -248,7 +285,9 @@ export const personalCommActions = pgTable('personal_comm_actions', {
   status: personalCommActionStatusEnum('status').notNull().default('pending_approval'),
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
-  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, { onDelete: 'set null' }),
+  conversationId: uuid('conversation_id').references(() => personalCommConversations.id, {
+    onDelete: 'set null',
+  }),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

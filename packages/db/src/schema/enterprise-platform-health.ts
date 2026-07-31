@@ -12,7 +12,12 @@ import {
 import { companies } from './companies';
 import { users } from './users';
 
-export const phHealthStatusEnum = pgEnum('ph_health_status', ['healthy', 'degraded', 'unhealthy', 'unknown']);
+export const phHealthStatusEnum = pgEnum('ph_health_status', [
+  'healthy',
+  'degraded',
+  'unhealthy',
+  'unknown',
+]);
 export const phDiagnosticStatusEnum = pgEnum('ph_diagnostic_status', [
   'pending',
   'running',
@@ -20,7 +25,12 @@ export const phDiagnosticStatusEnum = pgEnum('ph_diagnostic_status', [
   'failed',
   'skipped',
 ]);
-export const phIncidentSeverityEnum = pgEnum('ph_incident_severity', ['low', 'medium', 'high', 'critical']);
+export const phIncidentSeverityEnum = pgEnum('ph_incident_severity', [
+  'low',
+  'medium',
+  'high',
+  'critical',
+]);
 export const phIncidentStatusEnum = pgEnum('ph_incident_status', [
   'open',
   'investigating',
@@ -44,7 +54,11 @@ export const phServiceCategoryEnum = pgEnum('ph_service_category', [
   'scheduler',
   'automation',
 ]);
-export const phPlatformAlertSeverityEnum = pgEnum('ph_platform_alert_severity', ['info', 'warning', 'critical']);
+export const phPlatformAlertSeverityEnum = pgEnum('ph_platform_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+]);
 export const phPlatformAlertStatusEnum = pgEnum('ph_platform_alert_status', [
   'open',
   'acknowledged',
@@ -59,11 +73,20 @@ export const phPlatformConfig = pgTable('ph_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  monitoringPolicy: jsonb('monitoring_policy').$type<Record<string, unknown>>().notNull().default({}),
-  diagnosticsPolicy: jsonb('diagnostics_policy').$type<Record<string, unknown>>().notNull().default({}),
+  monitoringPolicy: jsonb('monitoring_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  diagnosticsPolicy: jsonb('diagnostics_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   capacityPolicy: jsonb('capacity_policy').$type<Record<string, unknown>>().notNull().default({}),
   incidentPolicy: jsonb('incident_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

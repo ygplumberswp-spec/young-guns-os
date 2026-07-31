@@ -75,7 +75,14 @@ export function buildSdkManifest(language: DeveloperSdkLanguage, version: string
   return {
     language,
     version,
-    features: ['authentication', 'pagination', 'webhooks', 'error_handling', 'rate_limiting', 'retry_logic'],
+    features: [
+      'authentication',
+      'pagination',
+      'webhooks',
+      'error_handling',
+      'rate_limiting',
+      'retry_logic',
+    ],
     authentication: ['api_key', 'bearer_token', 'personal_access_token'],
     pagination: { style: 'cursor', defaultPageSize: 25, maxPageSize: 100 },
     webhooks: { signatureHeader: 'X-Titan-Signature', retryPolicy: 'exponential_backoff' },

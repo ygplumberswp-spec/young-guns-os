@@ -34,12 +34,7 @@ export type BusinessDashboardType =
   | 'ai';
 
 export type BusinessReportStatus =
-  | 'draft'
-  | 'pending_approval'
-  | 'approved'
-  | 'scheduled'
-  | 'generated'
-  | 'archived';
+  'draft' | 'pending_approval' | 'approved' | 'scheduled' | 'generated' | 'archived';
 
 export type BusinessInsightType =
   | 'business_trend'
@@ -220,7 +215,9 @@ export type CreateBusinessDashboardRequest = {
   }>;
 };
 
-export type UpdateBusinessDashboardRequest = Partial<Omit<CreateBusinessDashboardRequest, 'widgets'>>;
+export type UpdateBusinessDashboardRequest = Partial<
+  Omit<CreateBusinessDashboardRequest, 'widgets'>
+>;
 
 export type CreateDashboardWidgetRequest = {
   widgetKey: string;

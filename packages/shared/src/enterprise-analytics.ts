@@ -25,17 +25,10 @@ export type AnalyticsDataModule =
 export type AnalyticsPermissionScope = 'read' | 'write' | 'admin';
 
 export type AnalyticsPlatformActionType =
-  | 'strategic_report'
-  | 'kpi_recommendation'
-  | 'forecast_review'
-  | 'governance_action';
+  'strategic_report' | 'kpi_recommendation' | 'forecast_review' | 'governance_action';
 
 export type AnalyticsPlatformActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type AnalyticsDataSnapshotSummary = {
   id: string;

@@ -44,13 +44,19 @@ export async function fetchEnterpriseAnalyticsDashboard(
 }
 
 export async function fetchAnalyticsWarehouse(accessToken: string) {
-  const data = await request<{ warehouse: AnalyticsWarehouseSummary }>('/enterprise-analytics/warehouse', {
-    accessToken,
-  });
+  const data = await request<{ warehouse: AnalyticsWarehouseSummary }>(
+    '/enterprise-analytics/warehouse',
+    {
+      accessToken,
+    },
+  );
   return data.warehouse;
 }
 
-export async function runAnalyticsAggregation(accessToken: string, body: RunAnalyticsAggregationRequest = {}) {
+export async function runAnalyticsAggregation(
+  accessToken: string,
+  body: RunAnalyticsAggregationRequest = {},
+) {
   const data = await request<{ snapshots: AnalyticsWarehouseSummary['snapshots'] }>(
     '/enterprise-analytics/aggregate',
     { accessToken, method: 'POST', body },
@@ -59,16 +65,22 @@ export async function runAnalyticsAggregation(accessToken: string, body: RunAnal
 }
 
 export async function fetchAnalyticsGovernance(accessToken: string) {
-  const data = await request<{ governance: AnalyticsGovernanceSummary }>('/enterprise-analytics/governance', {
-    accessToken,
-  });
+  const data = await request<{ governance: AnalyticsGovernanceSummary }>(
+    '/enterprise-analytics/governance',
+    {
+      accessToken,
+    },
+  );
   return data.governance;
 }
 
 export async function fetchAnalyticsPlatformActions(accessToken: string) {
-  const data = await request<{ actions: AnalyticsPlatformActionSummary[] }>('/enterprise-analytics/actions', {
-    accessToken,
-  });
+  const data = await request<{ actions: AnalyticsPlatformActionSummary[] }>(
+    '/enterprise-analytics/actions',
+    {
+      accessToken,
+    },
+  );
   return data.actions;
 }
 
@@ -76,18 +88,24 @@ export async function createAnalyticsPlatformAction(
   accessToken: string,
   body: CreateAnalyticsPlatformActionRequest,
 ) {
-  const data = await request<{ action: AnalyticsPlatformActionSummary }>('/enterprise-analytics/actions', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+  const data = await request<{ action: AnalyticsPlatformActionSummary }>(
+    '/enterprise-analytics/actions',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.action;
 }
 
 export async function fetchAnalyticsSavedLayouts(accessToken: string) {
-  const data = await request<{ layouts: AnalyticsSavedLayoutSummary[] }>('/enterprise-analytics/layouts', {
-    accessToken,
-  });
+  const data = await request<{ layouts: AnalyticsSavedLayoutSummary[] }>(
+    '/enterprise-analytics/layouts',
+    {
+      accessToken,
+    },
+  );
   return data.layouts;
 }
 
@@ -99,47 +117,71 @@ export async function fetchBusinessKpis(accessToken: string, options?: Analytics
   return data.kpis;
 }
 
-export async function fetchBusinessInsights(accessToken: string, options?: AnalyticsRequestOptions) {
-  const data = await request<{ insights: BusinessInsightSummary[] }>('/business-intelligence/insights', {
-    accessToken,
-    ...requestOptions(options),
-  });
+export async function fetchBusinessInsights(
+  accessToken: string,
+  options?: AnalyticsRequestOptions,
+) {
+  const data = await request<{ insights: BusinessInsightSummary[] }>(
+    '/business-intelligence/insights',
+    {
+      accessToken,
+      ...requestOptions(options),
+    },
+  );
   return data.insights;
 }
 
 export async function generateBusinessInsights(accessToken: string) {
-  const data = await request<{ insights: BusinessInsightSummary[] }>('/business-intelligence/insights/generate', {
-    accessToken,
-    method: 'POST',
-  });
+  const data = await request<{ insights: BusinessInsightSummary[] }>(
+    '/business-intelligence/insights/generate',
+    {
+      accessToken,
+      method: 'POST',
+    },
+  );
   return data.insights;
 }
 
-export async function fetchPredictiveForecasts(accessToken: string, options?: AnalyticsRequestOptions) {
-  const data = await request<{ forecasts: PredictiveForecastSummary[] }>('/business-intelligence/forecasts', {
-    accessToken,
-    ...requestOptions(options),
-  });
+export async function fetchPredictiveForecasts(
+  accessToken: string,
+  options?: AnalyticsRequestOptions,
+) {
+  const data = await request<{ forecasts: PredictiveForecastSummary[] }>(
+    '/business-intelligence/forecasts',
+    {
+      accessToken,
+      ...requestOptions(options),
+    },
+  );
   return data.forecasts;
 }
 
 export async function fetchBusinessReports(accessToken: string) {
-  const data = await request<{ reports: BusinessReportSummary[] }>('/business-intelligence/reports', { accessToken });
+  const data = await request<{ reports: BusinessReportSummary[] }>(
+    '/business-intelligence/reports',
+    { accessToken },
+  );
   return data.reports;
 }
 
 export async function fetchReportTemplates(accessToken: string) {
-  const data = await request<{ templates: BiReportTemplateSummary[] }>('/business-intelligence/report-templates', {
-    accessToken,
-  });
+  const data = await request<{ templates: BiReportTemplateSummary[] }>(
+    '/business-intelligence/report-templates',
+    {
+      accessToken,
+    },
+  );
   return data.templates;
 }
 
 export async function generateKpiSnapshots(accessToken: string) {
-  const data = await request<{ snapshots: unknown[] }>('/business-intelligence/kpis/snapshots/generate', {
-    accessToken,
-    method: 'POST',
-    body: {},
-  });
+  const data = await request<{ snapshots: unknown[] }>(
+    '/business-intelligence/kpis/snapshots/generate',
+    {
+      accessToken,
+      method: 'POST',
+      body: {},
+    },
+  );
   return data.snapshots;
 }

@@ -100,7 +100,8 @@ export class DispatchIntelligenceService {
     }
 
     const emergencyDetected =
-      input.emergencyDetected ?? detectEmergencyFromText(`${input.serviceIntent ?? ''} ${summary}`) !== null;
+      input.emergencyDetected ??
+      detectEmergencyFromText(`${input.serviceIntent ?? ''} ${summary}`) !== null;
 
     const [created] = await this.db
       .insert(dispatchReceptionistSummaries)
@@ -123,10 +124,15 @@ export class DispatchIntelligenceService {
     return summaries.find((item) => item.id === created!.id)!;
   }
 
-  async listRoutingRecommendations(companyId: string): Promise<DispatchRoutingRecommendationSummary[]> {
+  async listRoutingRecommendations(
+    companyId: string,
+  ): Promise<DispatchRoutingRecommendationSummary[]> {
     const rows = await this.db.query.dispatchRoutingRecommendations.findMany({
       where: eq(dispatchRoutingRecommendations.companyId, companyId),
-      orderBy: [desc(dispatchRoutingRecommendations.priority), desc(dispatchRoutingRecommendations.createdAt)],
+      orderBy: [
+        desc(dispatchRoutingRecommendations.priority),
+        desc(dispatchRoutingRecommendations.createdAt),
+      ],
       limit: 200,
     });
 
@@ -171,7 +177,10 @@ export class DispatchIntelligenceService {
     return rows.find((item) => item.id === created!.id)!;
   }
 
-  async listCallbackRequests(companyId: string, status?: string): Promise<DispatchCallbackRequestSummary[]> {
+  async listCallbackRequests(
+    companyId: string,
+    status?: string,
+  ): Promise<DispatchCallbackRequestSummary[]> {
     const rows = await this.db.query.dispatchCallbackRequests.findMany({
       where: status
         ? and(
@@ -235,7 +244,10 @@ export class DispatchIntelligenceService {
   async listEmergencyAssessments(companyId: string): Promise<DispatchEmergencyAssessmentSummary[]> {
     const rows = await this.db.query.dispatchEmergencyAssessments.findMany({
       where: eq(dispatchEmergencyAssessments.companyId, companyId),
-      orderBy: [desc(dispatchEmergencyAssessments.priority), desc(dispatchEmergencyAssessments.createdAt)],
+      orderBy: [
+        desc(dispatchEmergencyAssessments.priority),
+        desc(dispatchEmergencyAssessments.createdAt),
+      ],
       limit: 200,
     });
 
@@ -289,7 +301,9 @@ export class DispatchIntelligenceService {
       subject: row.subject,
       recommendation: row.recommendation,
       technicianId: row.technicianId,
-      technicianName: row.technician ? `${row.technician.firstName} ${row.technician.lastName}` : null,
+      technicianName: row.technician
+        ? `${row.technician.firstName} ${row.technician.lastName}`
+        : null,
       jobId: row.jobId,
       branchKey: row.branchKey,
       createdAt: row.createdAt.toISOString(),
@@ -412,7 +426,10 @@ export class DispatchIntelligenceService {
     }));
   }
 
-  async createAction(scope: StaffScope, input: CreateDispatchActionRequest): Promise<DispatchActionSummary> {
+  async createAction(
+    scope: StaffScope,
+    input: CreateDispatchActionRequest,
+  ): Promise<DispatchActionSummary> {
     const [created] = await this.db
       .insert(dispatchActions)
       .values({
@@ -472,7 +489,9 @@ export class DispatchIntelligenceService {
 
     const staffingRecommendations: string[] = [];
     if (callHistory.length === 0) {
-      staffingRecommendations.push('No call records yet — staffing recommendations appear once communication data exists.');
+      staffingRecommendations.push(
+        'No call records yet — staffing recommendations appear once communication data exists.',
+      );
     } else if (abandonedCallCount > 0) {
       staffingRecommendations.push(
         `${abandonedCallCount} missed/abandoned call(s) recorded — review receptionist coverage during busiest hours.`,
@@ -490,7 +509,10 @@ export class DispatchIntelligenceService {
     };
   }
 
-  async getTechnicianMatching(companyId: string, jobId?: string): Promise<DispatchTechnicianMatchSummary[]> {
+  async getTechnicianMatching(
+    companyId: string,
+    jobId?: string,
+  ): Promise<DispatchTechnicianMatchSummary[]> {
     const [assignees, schedulingContext, technicianIntel] = await Promise.all([
       this.schedulingService.listAssignees(companyId),
       this.schedulingService.buildAuraContext(companyId),
@@ -498,7 +520,9 @@ export class DispatchIntelligenceService {
     ]);
 
     return assignees.map((assignee) => {
-      const workload = schedulingContext.assigneeWorkload.find((item) => item.userId === assignee.id);
+      const workload = schedulingContext.assigneeWorkload.find(
+        (item) => item.userId === assignee.id,
+      );
       const quality = technicianIntel.technicians.find((item) => item.technicianId === assignee.id);
       const workloadCount = workload?.scheduledJobCount ?? 0;
       const overtimeRisk: DispatchTechnicianMatchSummary['overtimeRisk'] =
@@ -574,7 +598,10 @@ export class DispatchIntelligenceService {
       emergencyAssessmentCount: emergencies.length,
       pendingCallbackCount: callbacks.length,
       pendingActionCount: pendingActions.length,
-      branchWorkload: [...branchMap.entries()].map(([branchKey, jobCount]) => ({ branchKey, jobCount })),
+      branchWorkload: [...branchMap.entries()].map(([branchKey, jobCount]) => ({
+        branchKey,
+        jobCount,
+      })),
       callQueue,
       recentRecommendations: recommendations.slice(0, 10),
     };

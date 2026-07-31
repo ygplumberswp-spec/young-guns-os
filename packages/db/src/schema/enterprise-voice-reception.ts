@@ -36,7 +36,10 @@ export const vrPlatformConfig = pgTable('vr_platform_config', {
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
   telephonyPolicy: jsonb('telephony_policy').$type<Record<string, unknown>>().notNull().default({}),
-  receptionistPolicy: jsonb('receptionist_policy').$type<Record<string, unknown>>().notNull().default({}),
+  receptionistPolicy: jsonb('receptionist_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   routingPolicy: jsonb('routing_policy').$type<Record<string, unknown>>().notNull().default({}),
   recordingPolicy: jsonb('recording_policy').$type<Record<string, unknown>>().notNull().default({}),
   languagePolicy: jsonb('language_policy').$type<Record<string, unknown>>().notNull().default({}),
@@ -123,7 +126,10 @@ export const vrBusinessHours = pgTable('vr_business_hours', {
   name: text('name').notNull(),
   timezone: text('timezone').notNull().default('UTC'),
   weeklySchedule: jsonb('weekly_schedule').$type<Record<string, unknown>>().notNull().default({}),
-  holidayOverrides: jsonb('holiday_overrides').$type<Record<string, unknown>>().notNull().default({}),
+  holidayOverrides: jsonb('holiday_overrides')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   afterHoursDestination: text('after_hours_destination'),
   workflowStatus: vrWorkflowStatusEnum('workflow_status').notNull().default('published'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -137,7 +143,10 @@ export const vrEmergencyRules = pgTable('vr_emergency_rules', {
   ruleKey: text('rule_key').notNull(),
   name: text('name').notNull(),
   triggerKeywords: jsonb('trigger_keywords').$type<string[]>().notNull().default([]),
-  escalationWorkflow: jsonb('escalation_workflow').$type<Record<string, unknown>>().notNull().default({}),
+  escalationWorkflow: jsonb('escalation_workflow')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   priority: integer('priority').notNull().default(1),
   workflowStatus: vrWorkflowStatusEnum('workflow_status').notNull().default('published'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -166,7 +175,10 @@ export const vrAiReceptionistConfig = pgTable('vr_ai_receptionist_config', {
   enabled: boolean('enabled').notNull().default(false),
   welcomeMessage: text('welcome_message'),
   confidenceThreshold: integer('confidence_threshold').notNull().default(70),
-  escalationPolicy: jsonb('escalation_policy').$type<Record<string, unknown>>().notNull().default({}),
+  escalationPolicy: jsonb('escalation_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   knowledgePolicy: jsonb('knowledge_policy').$type<Record<string, unknown>>().notNull().default({}),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -193,7 +205,9 @@ export const vrLocationConfigs = pgTable('vr_location_configs', {
   locationKey: text('location_key').notNull(),
   name: text('name').notNull(),
   routingConfig: jsonb('routing_config').$type<Record<string, unknown>>().notNull().default({}),
-  businessHoursId: uuid('business_hours_id').references(() => vrBusinessHours.id, { onDelete: 'set null' }),
+  businessHoursId: uuid('business_hours_id').references(() => vrBusinessHours.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -202,7 +216,9 @@ export const vrCallIntelligenceRecords = pgTable('vr_call_intelligence_records',
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   durationSeconds: integer('duration_seconds'),
   queueTimeSeconds: integer('queue_time_seconds'),
   holdTimeSeconds: integer('hold_time_seconds'),
@@ -222,7 +238,9 @@ export const vrConversationDrafts = pgTable('vr_conversation_drafts', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, { onDelete: 'set null' }),
+  voiceSessionId: uuid('voice_session_id').references(() => voiceSessions.id, {
+    onDelete: 'set null',
+  }),
   draftType: text('draft_type').notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(),

@@ -10,14 +10,19 @@ import {
 
 describe('tenant capability routing', () => {
   it('matches warranty follow-up requests to customer support department', () => {
-    const route = matchCapabilityKeywordRoute('Create a warranty follow-up agent for completed jobs');
+    const route = matchCapabilityKeywordRoute(
+      'Create a warranty follow-up agent for completed jobs',
+    );
     assert.ok(route);
     assert.equal(route.department, 'customers');
     assert.equal(route.baseAgentKey, 'customer_support');
   });
 
   it('detects code-backed capability requests', () => {
-    assert.equal(indicatesCodeBackedCapability('We need a new API connector for supplier stock'), true);
+    assert.equal(
+      indicatesCodeBackedCapability('We need a new API connector for supplier stock'),
+      true,
+    );
     assert.equal(indicatesCodeBackedCapability('Monitor warranty follow-ups'), false);
   });
 

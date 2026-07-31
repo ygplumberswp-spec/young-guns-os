@@ -29,41 +29,55 @@ export class EnterprisePlatformHealthCapacityService {
 
   async captureCapacitySnapshot(companyId: string): Promise<PhCapacitySnapshotSummary> {
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const [performance, aiUsage, apiRequests, queueJobs, activeUsers, activeSessions, priorSnapshots, isPlatformOwner] =
-      await Promise.all([
-        this.productionReadinessService.getDashboard(companyId).then((d) => d.performance),
-        this.db
-          .select({ count: count() })
-          .from(aiUsageRecords)
-          .where(and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, since24h))),
-        this.db
-          .select({ count: count() })
-          .from(integrationRequestLogs)
-          .where(and(eq(integrationRequestLogs.companyId, companyId), gte(integrationRequestLogs.createdAt, since24h))),
-        this.db.query.automationQueueJobs.findMany({
-          where: eq(automationQueueJobs.companyId, companyId),
-          columns: { id: true, status: true },
-          limit: 500,
-        }),
-        this.db
-          .select({ count: count() })
-          .from(users)
-          .where(eq(users.companyId, companyId)),
-        this.db
-          .select({ count: count() })
-          .from(sessions)
-          .where(and(eq(sessions.companyId, companyId), gte(sessions.createdAt, since24h))),
-        this.db.query.phCapacitySnapshots.findMany({
-          where: eq(phCapacitySnapshots.companyId, companyId),
-          orderBy: [desc(phCapacitySnapshots.capturedAt)],
-          limit: 7,
-        }),
-        this.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId),
-      ]);
+    const [
+      performance,
+      aiUsage,
+      apiRequests,
+      queueJobs,
+      activeUsers,
+      activeSessions,
+      priorSnapshots,
+      isPlatformOwner,
+    ] = await Promise.all([
+      this.productionReadinessService.getDashboard(companyId).then((d) => d.performance),
+      this.db
+        .select({ count: count() })
+        .from(aiUsageRecords)
+        .where(
+          and(eq(aiUsageRecords.companyId, companyId), gte(aiUsageRecords.recordedAt, since24h)),
+        ),
+      this.db
+        .select({ count: count() })
+        .from(integrationRequestLogs)
+        .where(
+          and(
+            eq(integrationRequestLogs.companyId, companyId),
+            gte(integrationRequestLogs.createdAt, since24h),
+          ),
+        ),
+      this.db.query.automationQueueJobs.findMany({
+        where: eq(automationQueueJobs.companyId, companyId),
+        columns: { id: true, status: true },
+        limit: 500,
+      }),
+      this.db.select({ count: count() }).from(users).where(eq(users.companyId, companyId)),
+      this.db
+        .select({ count: count() })
+        .from(sessions)
+        .where(and(eq(sessions.companyId, companyId), gte(sessions.createdAt, since24h))),
+      this.db.query.phCapacitySnapshots.findMany({
+        where: eq(phCapacitySnapshots.companyId, companyId),
+        orderBy: [desc(phCapacitySnapshots.capturedAt)],
+        limit: 7,
+      }),
+      this.enterpriseSaasPlatformService.isPlatformOwnerTenant(companyId),
+    ]);
 
     const aiUsageCount = aiUsage[0]?.count ?? 0;
     const apiRequestCount = apiRequests[0]?.count ?? 0;
-    const backgroundJobLoad = queueJobs.filter((j) => j.status === 'pending' || j.status === 'running').length;
+    const backgroundJobLoad = queueJobs.filter(
+      (j) => j.status === 'pending' || j.status === 'running',
+    ).length;
     const storageUsageMb = performance?.memoryUsageMb ?? null;
     const queueGrowthCount = queueJobs.length;
 
@@ -104,7 +118,9 @@ export class EnterprisePlatformHealthCapacityService {
   }
 }
 
-function toCapacitySummary(row: typeof phCapacitySnapshots.$inferSelect): PhCapacitySnapshotSummary {
+function toCapacitySummary(
+  row: typeof phCapacitySnapshots.$inferSelect,
+): PhCapacitySnapshotSummary {
   return {
     id: row.id,
     storageUsageMb: row.storageUsageMb,

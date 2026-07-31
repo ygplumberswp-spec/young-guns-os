@@ -37,7 +37,10 @@ export const pdpPlatformConfig = pgTable('pdp_platform_config', {
   apiPolicy: jsonb('api_policy').$type<Record<string, unknown>>().notNull().default({}),
   webhookPolicy: jsonb('webhook_policy').$type<Record<string, unknown>>().notNull().default({}),
   authPolicy: jsonb('auth_policy').$type<Record<string, unknown>>().notNull().default({}),
-  rateLimitPolicy: jsonb('rate_limit_policy').$type<Record<string, unknown>>().notNull().default({}),
+  rateLimitPolicy: jsonb('rate_limit_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   sandboxPolicy: jsonb('sandbox_policy').$type<Record<string, unknown>>().notNull().default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -108,7 +111,10 @@ export const pdpSandboxConfig = pgTable('pdp_sandbox_config', {
   enabled: boolean('enabled').notNull().default(false),
   sandboxBaseUrl: text('sandbox_base_url'),
   testKeyPolicy: jsonb('test_key_policy').$type<Record<string, unknown>>().notNull().default({}),
-  webhookTestPolicy: jsonb('webhook_test_policy').$type<Record<string, unknown>>().notNull().default({}),
+  webhookTestPolicy: jsonb('webhook_test_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

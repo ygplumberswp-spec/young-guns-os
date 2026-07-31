@@ -218,7 +218,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = createProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider payload' } });
       return;
     }
 
@@ -230,7 +232,9 @@ export function createAiOrchestrationRouter({
       res.status(201).json({ data: { provider } });
     } catch (error) {
       if (error instanceof AiOrchestrationError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;
@@ -241,7 +245,9 @@ export function createAiOrchestrationRouter({
     const { companyId } = getAuth(req);
     const parsed = updateProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider update payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid provider update payload' } });
       return;
     }
 
@@ -254,7 +260,9 @@ export function createAiOrchestrationRouter({
       res.json({ data: { provider } });
     } catch (error) {
       if (error instanceof AiOrchestrationError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;
@@ -280,7 +288,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = routingRuleSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid routing rule payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid routing rule payload' } });
       return;
     }
 
@@ -308,7 +318,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = promptTemplateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid prompt template payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid prompt template payload' } });
       return;
     }
 
@@ -320,7 +332,9 @@ export function createAiOrchestrationRouter({
       res.status(201).json({ data: result });
     } catch (error) {
       if (error instanceof AiOrchestrationError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;
@@ -331,7 +345,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = promptVersionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid prompt version payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid prompt version payload' } });
       return;
     }
 
@@ -343,7 +359,9 @@ export function createAiOrchestrationRouter({
       res.status(201).json({ data: { version } });
     } catch (error) {
       if (error instanceof AiOrchestrationError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;
@@ -373,7 +391,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = qualityEvaluationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid quality evaluation payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid quality evaluation payload' },
+      });
       return;
     }
 
@@ -388,7 +408,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = feedbackSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feedback payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid feedback payload' } });
       return;
     }
 
@@ -422,7 +444,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = configurationActionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid configuration action payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid configuration action payload' },
+      });
       return;
     }
 
@@ -445,7 +469,9 @@ export function createAiOrchestrationRouter({
   });
 
   router.get('/resilience', requireRead, async (req, res) => {
-    const resilience = await aiProviderResilienceService.getResilienceStatus(getAuth(req).companyId);
+    const resilience = await aiProviderResilienceService.getResilienceStatus(
+      getAuth(req).companyId,
+    );
     res.json({ data: { resilience } });
   });
 
@@ -453,7 +479,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = memorySyncSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid memory sync payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid memory sync payload' } });
       return;
     }
 
@@ -473,7 +501,9 @@ export function createAiOrchestrationRouter({
     const auth = getAuth(req);
     const parsed = comparisonRunSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison payload' } });
       return;
     }
 
@@ -496,7 +526,9 @@ export function createAiOrchestrationRouter({
       res.status(201).json({ data: { run } });
     } catch (error) {
       if (error instanceof AiComparisonError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;
@@ -508,7 +540,9 @@ export function createAiOrchestrationRouter({
     const statusSchema = z.object({ status: z.enum(['approved', 'rejected']) });
     const parsed = statusSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison status payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid comparison status payload' },
+      });
       return;
     }
 
@@ -521,7 +555,9 @@ export function createAiOrchestrationRouter({
       res.json({ data: { run } });
     } catch (error) {
       if (error instanceof AiComparisonError) {
-        res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+        res
+          .status(error.code === 'NOT_FOUND' ? 404 : 400)
+          .json({ error: { code: error.code, message: error.message } });
         return;
       }
       throw error;

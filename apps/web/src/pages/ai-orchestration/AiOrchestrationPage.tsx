@@ -1,6 +1,12 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { AiExecutiveDashboard, AiProviderSummary, CreateAiProviderRequest, AiComparisonRunSummary, UnifiedAiGatewayStatus } from '@titan/shared';
+import type {
+  AiExecutiveDashboard,
+  AiProviderSummary,
+  CreateAiProviderRequest,
+  AiComparisonRunSummary,
+  UnifiedAiGatewayStatus,
+} from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import {
   AiOrchestrationApiClientError,
@@ -20,7 +26,16 @@ import {
   fetchAiRouting,
 } from '../../lib/ai-orchestration-api-client';
 
-type AiTab = 'dashboard' | 'providers' | 'routing' | 'prompts' | 'costs' | 'quality' | 'actions' | 'gateway' | 'comparisons';
+type AiTab =
+  | 'dashboard'
+  | 'providers'
+  | 'routing'
+  | 'prompts'
+  | 'costs'
+  | 'quality'
+  | 'actions'
+  | 'gateway'
+  | 'comparisons';
 
 function canAccess(permissions: string[]) {
   return (
@@ -47,9 +62,13 @@ export function AiOrchestrationPage() {
   const [providers, setProviders] = useState<AiProviderSummary[]>([]);
   const [models, setModels] = useState<Awaited<ReturnType<typeof fetchAiModels>>>([]);
   const [routingRules, setRoutingRules] = useState<Awaited<ReturnType<typeof fetchAiRouting>>>([]);
-  const [templates, setTemplates] = useState<Awaited<ReturnType<typeof fetchAiPromptTemplates>>>([]);
+  const [templates, setTemplates] = useState<Awaited<ReturnType<typeof fetchAiPromptTemplates>>>(
+    [],
+  );
   const [versions, setVersions] = useState<Awaited<ReturnType<typeof fetchAiPromptVersions>>>([]);
-  const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchAiConfigurationActions>>>([]);
+  const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchAiConfigurationActions>>>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -60,7 +79,9 @@ export function AiOrchestrationPage() {
   const [actionRecommendation, setActionRecommendation] = useState('');
   const [gatewayStatus, setGatewayStatus] = useState<UnifiedAiGatewayStatus | null>(null);
   const [comparisonRuns, setComparisonRuns] = useState<AiComparisonRunSummary[]>([]);
-  const [failovers, setFailovers] = useState<Array<{ id: string; reason: string; loggedAt: string }>>([]);
+  const [failovers, setFailovers] = useState<
+    Array<{ id: string; reason: string; loggedAt: string }>
+  >([]);
   const [comparisonSubject, setComparisonSubject] = useState('');
   const [comparisonPrompt, setComparisonPrompt] = useState('');
 
@@ -108,7 +129,11 @@ export function AiOrchestrationPage() {
         await loadPage();
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to load AI orchestration data');
+          setError(
+            err instanceof AiOrchestrationApiClientError
+              ? err.message
+              : 'Unable to load AI orchestration data',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -124,11 +149,17 @@ export function AiOrchestrationPage() {
   useEffect(() => {
     if (!accessToken || !canView) return;
     if (activeTab === 'gateway' && !gatewayStatus) {
-      void fetchAiGatewayStatus(accessToken).then(setGatewayStatus).catch(() => undefined);
-      void fetchAiFailovers(accessToken).then(setFailovers).catch(() => undefined);
+      void fetchAiGatewayStatus(accessToken)
+        .then(setGatewayStatus)
+        .catch(() => undefined);
+      void fetchAiFailovers(accessToken)
+        .then(setFailovers)
+        .catch(() => undefined);
     }
     if (activeTab === 'comparisons' && comparisonRuns.length === 0) {
-      void fetchAiComparisonRuns(accessToken).then(setComparisonRuns).catch(() => undefined);
+      void fetchAiComparisonRuns(accessToken)
+        .then(setComparisonRuns)
+        .catch(() => undefined);
     }
   }, [activeTab, accessToken, canView, gatewayStatus, comparisonRuns.length]);
 
@@ -138,11 +169,15 @@ export function AiOrchestrationPage() {
 
     try {
       setError(null);
-      await createAiProvider(accessToken, { providerKey: providerKey as CreateAiProviderRequest['providerKey'] });
+      await createAiProvider(accessToken, {
+        providerKey: providerKey as CreateAiProviderRequest['providerKey'],
+      });
       setSuccess('Provider configuration saved. Enable and configure credentials to activate.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create provider');
+      setError(
+        err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create provider',
+      );
     }
   }
 
@@ -163,7 +198,9 @@ export function AiOrchestrationPage() {
       setPromptContent('');
       await loadPage();
     } catch (err) {
-      setError(err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create prompt');
+      setError(
+        err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create prompt',
+      );
     }
   }
 
@@ -183,7 +220,9 @@ export function AiOrchestrationPage() {
       setActionRecommendation('');
       await loadPage();
     } catch (err) {
-      setError(err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create action');
+      setError(
+        err instanceof AiOrchestrationApiClientError ? err.message : 'Unable to create action',
+      );
     }
   }
 
@@ -215,8 +254,16 @@ export function AiOrchestrationPage() {
         description="Multi-model provider registry, routing, prompt management, cost intelligence, and quality analytics."
       />
 
-      {error ? <Panel title="Error" className="border-red-200 bg-red-50 text-red-700">{error}</Panel> : null}
-      {success ? <Panel title="Success" className="border-green-200 bg-green-50 text-green-700">{success}</Panel> : null}
+      {error ? (
+        <Panel title="Error" className="border-red-200 bg-red-50 text-red-700">
+          {error}
+        </Panel>
+      ) : null}
+      {success ? (
+        <Panel title="Success" className="border-green-200 bg-green-50 text-green-700">
+          {success}
+        </Panel>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         {tabs.map((tab) => (
@@ -278,7 +325,10 @@ export function AiOrchestrationPage() {
 
           <Panel title="Provider registry">
             {providers.length === 0 ? (
-              <EmptyState title="No providers configured" description="Register a provider to begin multi-model routing." />
+              <EmptyState
+                title="No providers configured"
+                description="Register a provider to begin multi-model routing."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {providers.map((provider) => (
@@ -302,11 +352,17 @@ export function AiOrchestrationPage() {
 
           <Panel title="Model capabilities">
             {models.length === 0 ? (
-              <EmptyState title="No models registered" description="Models appear when providers are configured." />
+              <EmptyState
+                title="No models registered"
+                description="Models appear when providers are configured."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {models.map((model) => (
-                  <li key={`${model.providerKey}-${model.modelKey}-${model.id ?? 'env'}`} className="py-3">
+                  <li
+                    key={`${model.providerKey}-${model.modelKey}-${model.id ?? 'env'}`}
+                    className="py-3"
+                  >
                     <p className="font-medium">{model.displayName}</p>
                     <p className="text-sm text-slate-500">
                       {model.providerName} · context {model.contextWindow.toLocaleString()} ·{' '}
@@ -323,7 +379,10 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'routing' ? (
         <Panel title="Routing rules">
           {routingRules.length === 0 ? (
-            <EmptyState title="No routing rules" description="Create routing rules to control model selection by task category." />
+            <EmptyState
+              title="No routing rules"
+              description="Create routing rules to control model selection by task category."
+            />
           ) : (
             <ul className="divide-y divide-slate-200">
               {routingRules.map((rule) => (
@@ -345,7 +404,11 @@ export function AiOrchestrationPage() {
           {canManage ? (
             <Panel title="Create prompt template">
               <form className="space-y-3" onSubmit={handleCreatePrompt}>
-                <Input label="Template name" value={promptName} onChange={(event) => setPromptName(event.target.value)} />
+                <Input
+                  label="Template name"
+                  value={promptName}
+                  onChange={(event) => setPromptName(event.target.value)}
+                />
                 <label className="block text-sm">
                   Prompt content
                   <textarea
@@ -361,7 +424,10 @@ export function AiOrchestrationPage() {
 
           <Panel title="Prompt templates">
             {templates.length === 0 ? (
-              <EmptyState title="No prompt templates" description="Create centralized prompt templates with approval workflow." />
+              <EmptyState
+                title="No prompt templates"
+                description="Create centralized prompt templates with approval workflow."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {templates.map((template) => (
@@ -378,7 +444,10 @@ export function AiOrchestrationPage() {
 
           <Panel title="Prompt versions">
             {versions.length === 0 ? (
-              <EmptyState title="No prompt versions" description="Version history appears after templates are created." />
+              <EmptyState
+                title="No prompt versions"
+                description="Version history appears after templates are created."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {versions.map((version) => (
@@ -398,7 +467,10 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'costs' && dashboard ? (
         <Panel title="Cost intelligence">
           <div className="grid gap-4 md:grid-cols-2">
-            <StatCard label="Total cost (cents)" value={String(dashboard.costAnalytics.totalCostCents)} />
+            <StatCard
+              label="Total cost (cents)"
+              value={String(dashboard.costAnalytics.totalCostCents)}
+            />
             <StatCard label="Total tokens" value={String(dashboard.costAnalytics.totalTokens)} />
           </div>
           {dashboard.costAnalytics.recommendations.length > 0 ? (
@@ -414,7 +486,10 @@ export function AiOrchestrationPage() {
       {!isLoading && activeTab === 'quality' && dashboard ? (
         <Panel title="Quality analytics">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Evaluations" value={String(dashboard.qualityAnalytics.evaluationCount)} />
+            <StatCard
+              label="Evaluations"
+              value={String(dashboard.qualityAnalytics.evaluationCount)}
+            />
             <StatCard
               label="Success rate"
               value={
@@ -431,7 +506,10 @@ export function AiOrchestrationPage() {
                   : '—'
               }
             />
-            <StatCard label="Hallucination reports" value={String(dashboard.qualityAnalytics.hallucinationReportCount)} />
+            <StatCard
+              label="Hallucination reports"
+              value={String(dashboard.qualityAnalytics.hallucinationReportCount)}
+            />
           </div>
         </Panel>
       ) : null}
@@ -441,7 +519,11 @@ export function AiOrchestrationPage() {
           {canManage ? (
             <Panel title="Draft configuration action">
               <form className="space-y-3" onSubmit={handleCreateAction}>
-                <Input label="Subject" value={actionSubject} onChange={(event) => setActionSubject(event.target.value)} />
+                <Input
+                  label="Subject"
+                  value={actionSubject}
+                  onChange={(event) => setActionSubject(event.target.value)}
+                />
                 <label className="block text-sm">
                   Recommendation
                   <textarea
@@ -457,7 +539,10 @@ export function AiOrchestrationPage() {
 
           <Panel title="Pending and recent actions">
             {actions.length === 0 ? (
-              <EmptyState title="No configuration actions" description="Draft prompt or provider changes require approval before execution." />
+              <EmptyState
+                title="No configuration actions"
+                description="Draft prompt or provider changes require approval before execution."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {actions.map((action) => (
@@ -481,23 +566,43 @@ export function AiOrchestrationPage() {
               <Panel title="Unified AURA Gateway">
                 <p>{gatewayStatus.summary}</p>
                 <div className="mt-4 grid gap-3 md:grid-cols-3">
-                  <StatCard label="Configured providers" value={String(gatewayStatus.configuredProviderCount)} />
-                  <StatCard label="Healthy providers" value={String(gatewayStatus.healthyProviderCount)} />
+                  <StatCard
+                    label="Configured providers"
+                    value={String(gatewayStatus.configuredProviderCount)}
+                  />
+                  <StatCard
+                    label="Healthy providers"
+                    value={String(gatewayStatus.healthyProviderCount)}
+                  />
                   <StatCard label="Routing rules" value={String(gatewayStatus.routingRuleCount)} />
-                  <StatCard label="Memory sync records" value={String(gatewayStatus.memorySyncCount)} />
-                  <StatCard label="Comparison runs" value={String(gatewayStatus.comparisonRunCount)} />
-                  <StatCard label="Access mode" value={gatewayStatus.aiAccessMode.replace(/_/g, ' ')} />
+                  <StatCard
+                    label="Memory sync records"
+                    value={String(gatewayStatus.memorySyncCount)}
+                  />
+                  <StatCard
+                    label="Comparison runs"
+                    value={String(gatewayStatus.comparisonRunCount)}
+                  />
+                  <StatCard
+                    label="Access mode"
+                    value={gatewayStatus.aiAccessMode.replace(/_/g, ' ')}
+                  />
                 </div>
               </Panel>
               <Panel title="Recent failovers">
                 {failovers.length === 0 ? (
-                  <EmptyState title="No failovers recorded" description="Failover events appear when providers are unavailable." />
+                  <EmptyState
+                    title="No failovers recorded"
+                    description="Failover events appear when providers are unavailable."
+                  />
                 ) : (
                   <ul className="divide-y divide-slate-200">
                     {failovers.map((event) => (
                       <li key={event.id} className="py-3">
                         <p className="font-medium">{event.reason}</p>
-                        <p className="text-sm text-slate-500">{new Date(event.loggedAt).toLocaleString()}</p>
+                        <p className="text-sm text-slate-500">
+                          {new Date(event.loggedAt).toLocaleString()}
+                        </p>
                       </li>
                     ))}
                   </ul>
@@ -515,7 +620,8 @@ export function AiOrchestrationPage() {
           {canManage ? (
             <Panel title="Run model comparison">
               <p className="mb-3 text-sm text-slate-600">
-                Sends the same task to multiple approved models, compares outputs, and requires human approval before execution.
+                Sends the same task to multiple approved models, compares outputs, and requires
+                human approval before execution.
               </p>
               <form
                 className="space-y-3"
@@ -533,11 +639,19 @@ export function AiOrchestrationPage() {
                       setComparisonPrompt('');
                     })
                     .catch((err) =>
-                      setError(err instanceof AiOrchestrationApiClientError ? err.message : 'Comparison failed'),
+                      setError(
+                        err instanceof AiOrchestrationApiClientError
+                          ? err.message
+                          : 'Comparison failed',
+                      ),
                     );
                 }}
               >
-                <Input label="Subject" value={comparisonSubject} onChange={(event) => setComparisonSubject(event.target.value)} />
+                <Input
+                  label="Subject"
+                  value={comparisonSubject}
+                  onChange={(event) => setComparisonSubject(event.target.value)}
+                />
                 <label className="block text-sm">
                   Task prompt
                   <textarea
@@ -553,7 +667,10 @@ export function AiOrchestrationPage() {
 
           <Panel title="Comparison runs">
             {comparisonRuns.length === 0 ? (
-              <EmptyState title="No comparison runs" description="High-impact tasks can be compared across multiple models." />
+              <EmptyState
+                title="No comparison runs"
+                description="High-impact tasks can be compared across multiple models."
+              />
             ) : (
               <ul className="divide-y divide-slate-200">
                 {comparisonRuns.map((run) => (

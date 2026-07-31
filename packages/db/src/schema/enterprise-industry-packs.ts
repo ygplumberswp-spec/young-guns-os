@@ -82,10 +82,22 @@ export const ipPlatformConfig = pgTable('ip_platform_config', {
     .notNull()
     .unique()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  marketplacePolicy: jsonb('marketplace_policy').$type<Record<string, unknown>>().notNull().default({}),
-  compliancePolicy: jsonb('compliance_policy').$type<Record<string, unknown>>().notNull().default({}),
-  certificatePolicy: jsonb('certificate_policy').$type<Record<string, unknown>>().notNull().default({}),
-  packBuilderPolicy: jsonb('pack_builder_policy').$type<Record<string, unknown>>().notNull().default({}),
+  marketplacePolicy: jsonb('marketplace_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  compliancePolicy: jsonb('compliance_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  certificatePolicy: jsonb('certificate_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  packBuilderPolicy: jsonb('pack_builder_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   analyticsPolicy: jsonb('analytics_policy').$type<Record<string, unknown>>().notNull().default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -121,7 +133,9 @@ export const ipPackInstallations = pgTable('ip_pack_installations', {
     .references(() => ipPackCatalog.id, { onDelete: 'cascade' }),
   installedVersion: text('installed_version').notNull(),
   status: ipPackStatusEnum('status').notNull().default('installed'),
-  installedByUserId: uuid('installed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  installedByUserId: uuid('installed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   installedAt: timestamp('installed_at', { withTimezone: true }),
   disabledAt: timestamp('disabled_at', { withTimezone: true }),
   config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
@@ -158,7 +172,9 @@ export const ipTemplates = pgTable('ip_templates', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   templateKey: text('template_key').notNull(),
   templateType: ipTemplateTypeEnum('template_type').notNull(),
   name: text('name').notNull(),
@@ -174,7 +190,9 @@ export const ipComplianceFrameworks = pgTable('ip_compliance_frameworks', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   frameworkKey: text('framework_key').notNull(),
   name: text('name').notNull(),
   description: text('description'),
@@ -209,7 +227,9 @@ export const ipCertificates = pgTable('ip_certificates', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   certificateKey: text('certificate_key').notNull(),
   certificateType: ipCertificateTypeEnum('certificate_type').notNull(),
   title: text('title').notNull(),
@@ -230,14 +250,18 @@ export const ipKnowledgeArticles = pgTable('ip_knowledge_articles', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   articleKey: text('article_key').notNull(),
   title: text('title').notNull(),
   articleType: text('article_type').notNull(),
   content: text('content'),
   status: ipKnowledgeStatusEnum('status').notNull().default('draft'),
   version: text('version').notNull().default('1.0.0'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -252,7 +276,9 @@ export const ipKnowledgeVersions = pgTable('ip_knowledge_versions', {
   version: text('version').notNull(),
   content: text('content'),
   changeSummary: text('change_summary'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -262,14 +288,22 @@ export const ipEquipmentCatalog = pgTable('ip_equipment_catalog', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   equipmentKey: text('equipment_key').notNull(),
   manufacturer: text('manufacturer'),
   model: text('model'),
   category: text('category'),
   specifications: jsonb('specifications').$type<Record<string, unknown>>().notNull().default({}),
-  serviceIntervals: jsonb('service_intervals').$type<Record<string, unknown>>().notNull().default({}),
-  replacementParts: jsonb('replacement_parts').$type<Record<string, unknown>>().notNull().default({}),
+  serviceIntervals: jsonb('service_intervals')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  replacementParts: jsonb('replacement_parts')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   attachments: jsonb('attachments').$type<Record<string, unknown>>().notNull().default({}),
   workflowStatus: ipWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -281,7 +315,9 @@ export const ipMaterialLibraries = pgTable('ip_material_libraries', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   materialKey: text('material_key').notNull(),
   name: text('name').notNull(),
   category: text('category'),
@@ -298,11 +334,16 @@ export const ipAssetTypes = pgTable('ip_asset_types', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   assetTypeKey: text('asset_type_key').notNull(),
   name: text('name').notNull(),
   description: text('description'),
-  fieldDefinitions: jsonb('field_definitions').$type<Record<string, unknown>>().notNull().default({}),
+  fieldDefinitions: jsonb('field_definitions')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   workflowStatus: ipWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -344,7 +385,9 @@ export const ipIndustryAlerts = pgTable('ip_industry_alerts', {
   status: ipAlertStatusEnum('status').notNull().default('open'),
   title: text('title').notNull(),
   description: text('description'),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   sourceModule: text('source_module'),
   context: jsonb('context').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -359,7 +402,9 @@ export const ipActionDrafts = pgTable('ip_action_drafts', {
   draftType: text('draft_type').notNull(),
   title: text('title').notNull(),
   content: text('content').notNull(),
-  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, { onDelete: 'set null' }),
+  packCatalogId: uuid('pack_catalog_id').references(() => ipPackCatalog.id, {
+    onDelete: 'set null',
+  }),
   sourceRecords: jsonb('source_records').$type<Record<string, unknown>>().notNull().default({}),
   aiGenerated: boolean('ai_generated').notNull().default(false),
   workflowStatus: ipWorkflowStatusEnum('workflow_status').notNull().default('draft'),

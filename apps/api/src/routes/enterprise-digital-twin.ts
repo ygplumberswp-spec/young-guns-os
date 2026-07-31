@@ -110,7 +110,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseDigitalTwinService.getExecutiveDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseDigitalTwinService.getExecutiveDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -119,7 +121,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/operational-state', requireRead, async (req, res) => {
     try {
-      const operationalState = await enterpriseDigitalTwinService.buildOperationalState(getAuth(req).companyId);
+      const operationalState = await enterpriseDigitalTwinService.buildOperationalState(
+        getAuth(req).companyId,
+      );
       res.json({ data: { operationalState } });
     } catch (error) {
       handleError(error, res);
@@ -128,7 +132,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/snapshots', requireRead, async (req, res) => {
     try {
-      const snapshots = await enterpriseDigitalTwinService.listStateSnapshots(getAuth(req).companyId);
+      const snapshots = await enterpriseDigitalTwinService.listStateSnapshots(
+        getAuth(req).companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -138,7 +144,10 @@ export function createEnterpriseDigitalTwinRouter({
   router.post('/snapshots', requireWrite, async (req, res) => {
     try {
       const body = snapshotSchema.parse(req.body);
-      const snapshot = await enterpriseDigitalTwinService.captureStateSnapshot(getAuth(req), body.label);
+      const snapshot = await enterpriseDigitalTwinService.captureStateSnapshot(
+        getAuth(req),
+        body.label,
+      );
       res.status(201).json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
@@ -184,7 +193,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/simulations', requireRead, async (req, res) => {
     try {
-      const simulations = await enterpriseDigitalTwinService.listSimulations(getAuth(req).companyId);
+      const simulations = await enterpriseDigitalTwinService.listSimulations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { simulations } });
     } catch (error) {
       handleError(error, res);
@@ -203,7 +214,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/comparisons', requireRead, async (req, res) => {
     try {
-      const comparisons = await enterpriseDigitalTwinService.listComparisons(getAuth(req).companyId);
+      const comparisons = await enterpriseDigitalTwinService.listComparisons(
+        getAuth(req).companyId,
+      );
       res.json({ data: { comparisons } });
     } catch (error) {
       handleError(error, res);
@@ -258,7 +271,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.get('/recommendations', requireRead, async (req, res) => {
     try {
-      const recommendations = await enterpriseDigitalTwinService.listRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseDigitalTwinService.listRecommendations(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);
@@ -267,7 +282,9 @@ export function createEnterpriseDigitalTwinRouter({
 
   router.post('/recommendations/generate', requireWrite, async (req, res) => {
     try {
-      const recommendations = await enterpriseDigitalTwinService.generateRecommendations(getAuth(req).companyId);
+      const recommendations = await enterpriseDigitalTwinService.generateRecommendations(
+        getAuth(req).companyId,
+      );
       res.status(201).json({ data: { recommendations } });
     } catch (error) {
       handleError(error, res);

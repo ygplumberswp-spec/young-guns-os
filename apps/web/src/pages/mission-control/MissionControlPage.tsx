@@ -213,10 +213,7 @@ export function MissionControlPage() {
             <>
               <div className="stat-grid">
                 {dashboard.businessHealthScore != null ? (
-                  <StatCard
-                    label="Business Health"
-                    value={String(dashboard.businessHealthScore)}
-                  />
+                  <StatCard label="Business Health" value={String(dashboard.businessHealthScore)} />
                 ) : null}
                 <StatCard label="Pending Alerts" value={String(dashboard.pendingAlertCount)} />
                 <StatCard label="Critical Alerts" value={String(dashboard.criticalAlertCount)} />
@@ -281,42 +278,42 @@ export function MissionControlPage() {
               </Panel>
 
               {viewMode === 'advanced' ? (
-              <Panel title="Department Health">
-                {dashboard.departmentHealth.length === 0 ? (
-                  <EmptyState
-                    title="No department health"
-                    description="Refresh department health from module data."
-                  />
-                ) : (
-                  <div className="data-list">
-                    {dashboard.departmentHealth.map((dept) => (
-                      <div key={dept.id} className="data-list-item">
-                        <strong>{formatModuleName(dept.departmentKey)}</strong>
-                        <span className={`status-pill status-pill--${dept.status}`}>
-                          {formatStatus(dept.status)}
-                        </span>
-                        <span className="page-muted">
-                          {dept.healthScore != null ? `${dept.healthScore}/100` : 'Not assessed'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {canWrite ? (
-                  <Button
-                    variant="secondary"
-                    disabled={isWorking}
-                    onClick={() =>
-                      void runAction(
-                        () => refreshMissionControlDepartmentHealth(accessToken!),
-                        'Department health refreshed from live module data.',
-                      )
-                    }
-                  >
-                    Refresh Department Health
-                  </Button>
-                ) : null}
-              </Panel>
+                <Panel title="Department Health">
+                  {dashboard.departmentHealth.length === 0 ? (
+                    <EmptyState
+                      title="No department health"
+                      description="Refresh department health from module data."
+                    />
+                  ) : (
+                    <div className="data-list">
+                      {dashboard.departmentHealth.map((dept) => (
+                        <div key={dept.id} className="data-list-item">
+                          <strong>{formatModuleName(dept.departmentKey)}</strong>
+                          <span className={`status-pill status-pill--${dept.status}`}>
+                            {formatStatus(dept.status)}
+                          </span>
+                          <span className="page-muted">
+                            {dept.healthScore != null ? `${dept.healthScore}/100` : 'Not assessed'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {canWrite ? (
+                    <Button
+                      variant="secondary"
+                      disabled={isWorking}
+                      onClick={() =>
+                        void runAction(
+                          () => refreshMissionControlDepartmentHealth(accessToken!),
+                          'Department health refreshed from live module data.',
+                        )
+                      }
+                    >
+                      Refresh Department Health
+                    </Button>
+                  ) : null}
+                </Panel>
               ) : null}
             </>
           ) : null}

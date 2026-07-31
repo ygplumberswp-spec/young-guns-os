@@ -1,10 +1,14 @@
 import { type ReactNode, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button } from '@titan/ui';
+import { AI_NAME } from '@titan/shared';
 import { useAuth } from '../lib/auth-context';
+import { mobileHrefMatchesLocation, toMobileNestedHref } from '../lib/nested-routing';
 import { filterTechnicianNav } from '../lib/role-experience';
 import { prefetchNavIntent } from '../lib/route-prefetch-registry';
 import { useStaffPreloadContext } from '../lib/preload-coordinator';
+import { TitanWordmark } from '../brand/TitanWordmark';
+import { StagingBadge } from '../components/StagingBadge';
 
 type MobileLayoutProps = {
   children: ReactNode;
@@ -26,8 +30,14 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   return (
     <div className="portal-shell">
       <header className="portal-header">
-        <div>
+        <div className="portal-header__brand-block">
+          <TitanWordmark variant="compact" className="portal-header__wordmark" />
+          <StagingBadge />
           <span className="portal-brand">Field Mobile</span>
+          <span className="brand-sub">
+            Powered by <span className="brand-sub__accent">{AI_NAME}</span>
+          </span>
+          <span className="brand-credit">Built by Young Guns Plumbing</span>
           {user ? <span className="portal-brand-sub">{user.companyName}</span> : null}
         </div>
         <div className="portal-header__user">
@@ -51,8 +61,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           {navItems.map((item) => (
             <Link
               key={item.href}
-              href={item.href}
-              className={`portal-nav__link ${location === item.href ? 'portal-nav__link--active' : ''}`}
+              href={toMobileNestedHref(item.href)}
+              className={`portal-nav__link ${mobileHrefMatchesLocation(item.href, location) ? 'portal-nav__link--active' : ''}`}
               onMouseEnter={() => handleNavIntent(item.href)}
               onFocus={() => handleNavIntent(item.href)}
               onTouchStart={() => handleNavIntent(item.href)}

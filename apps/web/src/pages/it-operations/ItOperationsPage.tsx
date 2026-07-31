@@ -120,8 +120,14 @@ export function ItOperationsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessItOperations(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageItOperations(user.permissions) : false), [user]);
@@ -144,7 +150,9 @@ export function ItOperationsPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load IT operations dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load IT operations dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -247,7 +255,10 @@ export function ItOperationsPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="IT Operations" description="You do not have permission to view IT operations." />
+        <PageHeader
+          title="IT Operations"
+          description="You do not have permission to view IT operations."
+        />
       </div>
     );
   }
@@ -312,7 +323,10 @@ export function ItOperationsPage() {
       {dashboard && activeTab === 'overview' ? (
         <>
           <div className="stat-grid">
-            <StatCard label="Overall Health" value={formatHealthStatus(dashboard.overallHealthStatus)} />
+            <StatCard
+              label="Overall Health"
+              value={formatHealthStatus(dashboard.overallHealthStatus)}
+            />
             <StatCard label="Open Incidents" value={String(dashboard.openIncidentCount)} />
             <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
             <StatCard label="Degraded Monitors" value={String(dashboard.degradedMonitorCount)} />
@@ -321,7 +335,10 @@ export function ItOperationsPage() {
           </div>
           <Panel
             title="Platform Health Monitoring"
-            description={dashboard.operationsMonitoring.alerts.join(' · ') || 'No active alerts from real platform data'}
+            description={
+              dashboard.operationsMonitoring.alerts.join(' · ') ||
+              'No active alerts from real platform data'
+            }
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
@@ -334,7 +351,10 @@ export function ItOperationsPage() {
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureItAnalytics(accessToken!), 'Analytics captured from real platform data.')
+                    void runAction(
+                      () => captureItAnalytics(accessToken!),
+                      'Analytics captured from real platform data.',
+                    )
                   }
                 >
                   Capture Analytics
@@ -343,7 +363,10 @@ export function ItOperationsPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncItAlerts(accessToken!), 'IT alerts synced from real monitoring signals.')
+                    void runAction(
+                      () => syncItAlerts(accessToken!),
+                      'IT alerts synced from real monitoring signals.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -352,7 +375,10 @@ export function ItOperationsPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncItBugDetections(accessToken!), 'Bug detections synced from real telemetry.')
+                    void runAction(
+                      () => syncItBugDetections(accessToken!),
+                      'Bug detections synced from real telemetry.',
+                    )
                   }
                 >
                   Sync Bug Detections
@@ -361,7 +387,10 @@ export function ItOperationsPage() {
                   variant="secondary"
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => captureItHealthSignals(accessToken!), 'Health signals captured from live modules.')
+                    void runAction(
+                      () => captureItHealthSignals(accessToken!),
+                      'Health signals captured from live modules.',
+                    )
                   }
                 >
                   Capture Health Signals
@@ -370,12 +399,17 @@ export function ItOperationsPage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
                 <li>Open incidents: {dashboard.analytics.openIncidentCount}</li>
                 <li>Open alerts: {dashboard.analytics.openAlertCount}</li>
                 <li>Degraded monitors: {dashboard.analytics.degradedMonitorCount}</li>
-                <li>Overall health: {formatHealthStatus(dashboard.analytics.overallHealthStatus)}</li>
+                <li>
+                  Overall health: {formatHealthStatus(dashboard.analytics.overallHealthStatus)}
+                </li>
               </ul>
             </Panel>
           ) : null}
@@ -383,19 +417,27 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'health' ? (
-        <Panel title="Global Health Monitoring" description="Health from configured monitors and production readiness modules">
+        <Panel
+          title="Global Health Monitoring"
+          description="Health from configured monitors and production readiness modules"
+        >
           {dashboard.productionReadiness ? (
             <div className="data-list">
               {dashboard.productionReadiness.systemHealth.map((module) => (
                 <div key={module.moduleKey} className="data-list-item">
                   <strong>{formatModuleKey(module.moduleKey)}</strong>
                   <span className="status-pill">{formatHealthStatus(module.status)}</span>
-                  {module.availabilityPercent != null ? <p>Availability: {module.availabilityPercent}%</p> : null}
+                  {module.availabilityPercent != null ? (
+                    <p>Availability: {module.availabilityPercent}%</p>
+                  ) : null}
                 </div>
               ))}
             </div>
           ) : (
-            <EmptyState title="No production readiness data" description="Capture health signals or configure monitors to populate module health." />
+            <EmptyState
+              title="No production readiness data"
+              description="Capture health signals or configure monitors to populate module health."
+            />
           )}
           {dashboard.recentHealthMonitors.length > 0 ? (
             <div className="data-list">
@@ -403,7 +445,10 @@ export function ItOperationsPage() {
                 <div key={monitor.id} className="data-list-item">
                   <strong>{monitor.name}</strong>
                   <span className="status-pill">{formatHealthStatus(monitor.healthStatus)}</span>
-                  <p>{monitor.monitorType}{monitor.targetModule ? ` · ${monitor.targetModule}` : ''}</p>
+                  <p>
+                    {monitor.monitorType}
+                    {monitor.targetModule ? ` · ${monitor.targetModule}` : ''}
+                  </p>
                 </div>
               ))}
             </div>
@@ -412,26 +457,40 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'self-healing' ? (
-        <Panel title="Self-Healing Engine" description="Autonomous low-risk repairs with full audit trail">
+        <Panel
+          title="Self-Healing Engine"
+          description="Autonomous low-risk repairs with full audit trail"
+        >
           {isSupplementaryLoading ? <p>Loading self-healing actions...</p> : null}
-          {supplementary.selfHealingActions.length === 0 && dashboard.recentRepairAttempts.length === 0 ? (
-            <EmptyState title="No self-healing actions" description="Safe repairs appear here after detection and approval." />
+          {supplementary.selfHealingActions.length === 0 &&
+          dashboard.recentRepairAttempts.length === 0 ? (
+            <EmptyState
+              title="No self-healing actions"
+              description="Safe repairs appear here after detection and approval."
+            />
           ) : (
             <div className="data-list">
               {supplementary.selfHealingActions.map((action) => (
                 <div key={action.id} className="data-list-item">
                   <strong>{action.actionType}</strong>
                   <span className="status-pill">{formatWorkflowStatus(action.workflowStatus)}</span>
-                  <p>Risk: {action.riskLevel}{action.outcome ? ` · ${action.outcome}` : ''}</p>
+                  <p>
+                    Risk: {action.riskLevel}
+                    {action.outcome ? ` · ${action.outcome}` : ''}
+                  </p>
                 </div>
               ))}
               {dashboard.recentRepairAttempts.map((attempt) => (
                 <div key={attempt.id} className="data-list-item">
                   <strong>{attempt.repairType}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(attempt.workflowStatus)}</span>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(attempt.workflowStatus)}
+                  </span>
                   <p>
                     Risk: {attempt.riskLevel}
-                    {attempt.success != null ? ` · ${attempt.success ? 'Verified' : 'Failed verification'}` : ''}
+                    {attempt.success != null
+                      ? ` · ${attempt.success ? 'Verified' : 'Failed verification'}`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -441,16 +500,24 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'bugs' ? (
-        <Panel title="Autonomous Bug Detection" description="Runtime errors and failures from real telemetry">
+        <Panel
+          title="Autonomous Bug Detection"
+          description="Runtime errors and failures from real telemetry"
+        >
           {dashboard.recentBugDetections.length === 0 ? (
-            <EmptyState title="No bug detections" description="Sync bug detections from operational logs and monitoring." />
+            <EmptyState
+              title="No bug detections"
+              description="Sync bug detections from operational logs and monitoring."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentBugDetections.map((bug) => (
                 <div key={bug.id} className="data-list-item">
                   <strong>{bug.title}</strong>
                   <span className="status-pill">{formatSeverity(bug.severity)}</span>
-                  <p>{bug.detectionSource} · {formatWorkflowStatus(bug.workflowStatus)}</p>
+                  <p>
+                    {bug.detectionSource} · {formatWorkflowStatus(bug.workflowStatus)}
+                  </p>
                 </div>
               ))}
             </div>
@@ -459,16 +526,25 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'incidents' ? (
-        <Panel title="Incident Management" description="Incidents linked to deployments, bugs, and providers">
+        <Panel
+          title="Incident Management"
+          description="Incidents linked to deployments, bugs, and providers"
+        >
           {dashboard.recentIncidents.length === 0 ? (
-            <EmptyState title="No incidents" description="Incidents are created from real platform failures and monitoring alerts." />
+            <EmptyState
+              title="No incidents"
+              description="Incidents are created from real platform failures and monitoring alerts."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentIncidents.map((incident) => (
                 <div key={incident.id} className="data-list-item">
                   <strong>{incident.title}</strong>
                   <span className="status-pill">{formatSeverity(incident.severity)}</span>
-                  <p>{incident.status}{incident.sourceModule ? ` · ${incident.sourceModule}` : ''}</p>
+                  <p>
+                    {incident.status}
+                    {incident.sourceModule ? ` · ${incident.sourceModule}` : ''}
+                  </p>
                 </div>
               ))}
             </div>
@@ -477,16 +553,27 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'deployments' ? (
-        <Panel title="Deployment Intelligence" description="Staging, production, canary, and rollback history">
+        <Panel
+          title="Deployment Intelligence"
+          description="Staging, production, canary, and rollback history"
+        >
           {dashboard.recentDeployments.length === 0 ? (
-            <EmptyState title="No deployments" description="Deployment records appear when builds are promoted through the pipeline." />
+            <EmptyState
+              title="No deployments"
+              description="Deployment records appear when builds are promoted through the pipeline."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentDeployments.map((deployment) => (
                 <div key={deployment.id} className="data-list-item">
                   <strong>{deployment.deploymentKey}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(deployment.deploymentStatus)}</span>
-                  <p>{deployment.environment}{deployment.version ? ` · ${deployment.version}` : ''}</p>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(deployment.deploymentStatus)}
+                  </span>
+                  <p>
+                    {deployment.environment}
+                    {deployment.version ? ` · ${deployment.version}` : ''}
+                  </p>
                 </div>
               ))}
             </div>
@@ -498,7 +585,9 @@ export function ItOperationsPage() {
                 {dashboard.recentChangeRequests.map((change) => (
                   <div key={change.id} className="data-list-item">
                     <strong>{change.title}</strong>
-                    <span className="status-pill">{formatWorkflowStatus(change.workflowStatus)}</span>
+                    <span className="status-pill">
+                      {formatWorkflowStatus(change.workflowStatus)}
+                    </span>
                     <p>Risk: {change.riskLevel}</p>
                   </div>
                 ))}
@@ -509,18 +598,29 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'builds' ? (
-        <Panel title="Continuous Testing Platform" description="Build and test run history from real CI records">
+        <Panel
+          title="Continuous Testing Platform"
+          description="Build and test run history from real CI records"
+        >
           {isSupplementaryLoading ? <p>Loading builds and tests...</p> : null}
           {supplementary.buildRecords.length === 0 && supplementary.testRuns.length === 0 ? (
-            <EmptyState title="No build records" description="Build and test records appear when CI pipelines execute." />
+            <EmptyState
+              title="No build records"
+              description="Build and test records appear when CI pipelines execute."
+            />
           ) : (
             <>
               <div className="data-list">
                 {supplementary.buildRecords.map((build) => (
                   <div key={build.id} className="data-list-item">
                     <strong>{build.buildKey}</strong>
-                    <span className="status-pill">{formatWorkflowStatus(build.workflowStatus)}</span>
-                    <p>{build.branch ?? '—'}{build.version ? ` · ${build.version}` : ''}</p>
+                    <span className="status-pill">
+                      {formatWorkflowStatus(build.workflowStatus)}
+                    </span>
+                    <p>
+                      {build.branch ?? '—'}
+                      {build.version ? ` · ${build.version}` : ''}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -531,8 +631,13 @@ export function ItOperationsPage() {
                     {supplementary.testRuns.map((run) => (
                       <div key={run.id} className="data-list-item">
                         <strong>{run.testSuite}</strong>
-                        <span className="status-pill">{formatWorkflowStatus(run.workflowStatus)}</span>
-                        <p>Passed {run.passedCount} · Failed {run.failedCount} · Skipped {run.skippedCount}</p>
+                        <span className="status-pill">
+                          {formatWorkflowStatus(run.workflowStatus)}
+                        </span>
+                        <p>
+                          Passed {run.passedCount} · Failed {run.failedCount} · Skipped{' '}
+                          {run.skippedCount}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -544,10 +649,16 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'apis' ? (
-        <Panel title="API Reliability" description="Latency, error rate, and availability from captured snapshots">
+        <Panel
+          title="API Reliability"
+          description="Latency, error rate, and availability from captured snapshots"
+        >
           {isSupplementaryLoading ? <p>Loading API reliability...</p> : null}
           {supplementary.apiSnapshots.length === 0 ? (
-            <EmptyState title="No API snapshots" description="Capture health signals to populate API reliability metrics." />
+            <EmptyState
+              title="No API snapshots"
+              description="Capture health signals to populate API reliability metrics."
+            />
           ) : (
             <div className="data-list">
               {supplementary.apiSnapshots.map((snapshot) => (
@@ -555,7 +666,9 @@ export function ItOperationsPage() {
                   <strong>{snapshot.endpointGroup}</strong>
                   <span className="status-pill">{formatHealthStatus(snapshot.healthStatus)}</span>
                   <p>
-                    {snapshot.availabilityPercent != null ? `Availability ${snapshot.availabilityPercent}%` : '—'}
+                    {snapshot.availabilityPercent != null
+                      ? `Availability ${snapshot.availabilityPercent}%`
+                      : '—'}
                     {snapshot.p95LatencyMs != null ? ` · P95 ${snapshot.p95LatencyMs}ms` : ''}
                   </p>
                 </div>
@@ -566,10 +679,16 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'databases' ? (
-        <Panel title="Database Reliability" description="Connections, latency, locks, and replication from real snapshots">
+        <Panel
+          title="Database Reliability"
+          description="Connections, latency, locks, and replication from real snapshots"
+        >
           {isSupplementaryLoading ? <p>Loading database health...</p> : null}
           {supplementary.databaseSnapshots.length === 0 ? (
-            <EmptyState title="No database snapshots" description="Database health appears after monitoring capture runs." />
+            <EmptyState
+              title="No database snapshots"
+              description="Database health appears after monitoring capture runs."
+            />
           ) : (
             <div className="data-list">
               {supplementary.databaseSnapshots.map((snapshot) => (
@@ -578,7 +697,9 @@ export function ItOperationsPage() {
                   <span className="status-pill">{formatHealthStatus(snapshot.healthStatus)}</span>
                   <p>
                     Slow queries: {snapshot.slowQueryCount}
-                    {snapshot.queryLatencyMs != null ? ` · Latency ${snapshot.queryLatencyMs}ms` : ''}
+                    {snapshot.queryLatencyMs != null
+                      ? ` · Latency ${snapshot.queryLatencyMs}ms`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -588,17 +709,26 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="Integration Reliability" description="Configured CRM, accounting, fleet, and communication providers">
+        <Panel
+          title="Integration Reliability"
+          description="Configured CRM, accounting, fleet, and communication providers"
+        >
           {isSupplementaryLoading ? <p>Loading integration health...</p> : null}
           {supplementary.integrationHealth.length === 0 ? (
-            <EmptyState title="No integration health records" description="Integration health is captured from the Universal Connector Platform." />
+            <EmptyState
+              title="No integration health records"
+              description="Integration health is captured from the Universal Connector Platform."
+            />
           ) : (
             <div className="data-list">
               {supplementary.integrationHealth.map((item) => (
                 <div key={item.id} className="data-list-item">
                   <strong>{item.integrationKey}</strong>
                   <span className="status-pill">{formatHealthStatus(item.healthStatus)}</span>
-                  <p>Failures: {item.failureCount}{item.latencyMs != null ? ` · ${item.latencyMs}ms` : ''}</p>
+                  <p>
+                    Failures: {item.failureCount}
+                    {item.latencyMs != null ? ` · ${item.latencyMs}ms` : ''}
+                  </p>
                 </div>
               ))}
             </div>
@@ -607,10 +737,16 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'ai-providers' ? (
-        <Panel title="AI Provider Reliability" description="Availability, latency, and failover from configured AI providers">
+        <Panel
+          title="AI Provider Reliability"
+          description="Availability, latency, and failover from configured AI providers"
+        >
           {isSupplementaryLoading ? <p>Loading AI provider health...</p> : null}
           {supplementary.aiProviderHealth.length === 0 ? (
-            <EmptyState title="No AI provider health records" description="AI provider metrics appear when providers are configured and monitored." />
+            <EmptyState
+              title="No AI provider health records"
+              description="AI provider metrics appear when providers are configured and monitored."
+            />
           ) : (
             <div className="data-list">
               {supplementary.aiProviderHealth.map((item) => (
@@ -629,10 +765,16 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'performance' ? (
-        <Panel title="Performance Intelligence" description="CPU, memory, queue depth, and API latency trends">
+        <Panel
+          title="Performance Intelligence"
+          description="CPU, memory, queue depth, and API latency trends"
+        >
           {isSupplementaryLoading ? <p>Loading performance snapshots...</p> : null}
           {supplementary.performanceSnapshots.length === 0 ? (
-            <EmptyState title="No performance snapshots" description="Performance data is captured from real platform telemetry." />
+            <EmptyState
+              title="No performance snapshots"
+              description="Performance data is captured from real platform telemetry."
+            />
           ) : (
             <div className="data-list">
               {supplementary.performanceSnapshots.map((snapshot) => (
@@ -641,7 +783,9 @@ export function ItOperationsPage() {
                   <span className="status-pill">{formatHealthStatus(snapshot.healthStatus)}</span>
                   <p>
                     Queue depth: {snapshot.queueDepth}
-                    {snapshot.apiP95LatencyMs != null ? ` · API P95 ${snapshot.apiP95LatencyMs}ms` : ''}
+                    {snapshot.apiP95LatencyMs != null
+                      ? ` · API P95 ${snapshot.apiP95LatencyMs}ms`
+                      : ''}
                   </p>
                 </div>
               ))}
@@ -651,11 +795,17 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'security' ? (
-        <Panel title="Platform Security Monitoring" description="Recommendations from Enterprise Security — no autonomous policy changes">
+        <Panel
+          title="Platform Security Monitoring"
+          description="Recommendations from Enterprise Security — no autonomous policy changes"
+        >
           {dashboard.productionReadiness ? (
             <p>{dashboard.productionReadiness.summary}</p>
           ) : (
-            <EmptyState title="No security context" description="Security posture integrates with the Enterprise Security platform." />
+            <EmptyState
+              title="No security context"
+              description="Security posture integrates with the Enterprise Security platform."
+            />
           )}
           <Link href="/enterprise-security">
             <Button variant="secondary">Open Security Platform</Button>
@@ -664,17 +814,31 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'backups' ? (
-        <Panel title="Backup Verification" description="Backup integrity checks — backups are never deleted automatically">
+        <Panel
+          title="Backup Verification"
+          description="Backup integrity checks — backups are never deleted automatically"
+        >
           {isSupplementaryLoading ? <p>Loading backup verifications...</p> : null}
           {supplementary.backupVerifications.length === 0 ? (
-            <EmptyState title="No backup verifications" description="Record backup verification results after restore testing." />
+            <EmptyState
+              title="No backup verifications"
+              description="Record backup verification results after restore testing."
+            />
           ) : (
             <div className="data-list">
               {supplementary.backupVerifications.map((item) => (
                 <div key={item.id} className="data-list-item">
                   <strong>{item.backupRef}</strong>
-                  <span className="status-pill">{formatWorkflowStatus(item.verificationStatus)}</span>
-                  <p>{item.verificationPassed == null ? 'Pending verification' : item.verificationPassed ? 'Passed' : 'Failed'}</p>
+                  <span className="status-pill">
+                    {formatWorkflowStatus(item.verificationStatus)}
+                  </span>
+                  <p>
+                    {item.verificationPassed == null
+                      ? 'Pending verification'
+                      : item.verificationPassed
+                        ? 'Passed'
+                        : 'Failed'}
+                  </p>
                 </div>
               ))}
             </div>
@@ -683,26 +847,48 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'disaster-recovery' ? (
-        <Panel title="Disaster Recovery" description="Recovery plans and drills from production readiness">
+        <Panel
+          title="Disaster Recovery"
+          description="Recovery plans and drills from production readiness"
+        >
           {dashboard.productionReadiness?.recovery ? (
             <ul className="simple-list">
               <li>Restore test: {dashboard.productionReadiness.recovery.restoreTestStatus}</li>
-              <li>RPO: {dashboard.productionReadiness.recovery.recoveryPointObjectiveMinutes ?? '—'} min</li>
-              <li>RTO: {dashboard.productionReadiness.recovery.recoveryTimeObjectiveMinutes ?? '—'} min</li>
+              <li>
+                RPO: {dashboard.productionReadiness.recovery.recoveryPointObjectiveMinutes ?? '—'}{' '}
+                min
+              </li>
+              <li>
+                RTO: {dashboard.productionReadiness.recovery.recoveryTimeObjectiveMinutes ?? '—'}{' '}
+                min
+              </li>
               <li>Latest backup: {dashboard.productionReadiness.recovery.latestBackupAt ?? '—'}</li>
-              <li>Multi-region: {dashboard.productionReadiness.recovery.multiRegionEnabled ? 'enabled' : 'disabled'}</li>
+              <li>
+                Multi-region:{' '}
+                {dashboard.productionReadiness.recovery.multiRegionEnabled ? 'enabled' : 'disabled'}
+              </li>
             </ul>
           ) : (
-            <EmptyState title="No disaster recovery data" description="Configure recovery objectives in production operations." />
+            <EmptyState
+              title="No disaster recovery data"
+              description="Configure recovery objectives in production operations."
+            />
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'technical-debt' ? (
-        <Panel title="Technical Debt Intelligence" description="Improvement plans only — no autonomous refactors">
+        <Panel
+          title="Technical Debt Intelligence"
+          description="Improvement plans only — no autonomous refactors"
+        >
           {isSupplementaryLoading ? <p>Loading technical debt...</p> : null}
-          {supplementary.technicalDebtRecords.length === 0 && supplementary.dependencyRecords.length === 0 ? (
-            <EmptyState title="No technical debt records" description="Track debt items and dependency advisories for planning." />
+          {supplementary.technicalDebtRecords.length === 0 &&
+          supplementary.dependencyRecords.length === 0 ? (
+            <EmptyState
+              title="No technical debt records"
+              description="Track debt items and dependency advisories for planning."
+            />
           ) : (
             <>
               <div className="data-list">
@@ -710,7 +896,9 @@ export function ItOperationsPage() {
                   <div key={item.id} className="data-list-item">
                     <strong>{item.title}</strong>
                     <span className="status-pill">{formatSeverity(item.severity)}</span>
-                    <p>{item.category} · {formatWorkflowStatus(item.workflowStatus)}</p>
+                    <p>
+                      {item.category} · {formatWorkflowStatus(item.workflowStatus)}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -722,7 +910,11 @@ export function ItOperationsPage() {
                       <div key={item.id} className="data-list-item">
                         <strong>{item.dependencyName}</strong>
                         <span className="status-pill">{formatHealthStatus(item.healthStatus)}</span>
-                        <p>{item.dependencyType}{item.version ? ` · ${item.version}` : ''}{item.isCritical ? ' · critical' : ''}</p>
+                        <p>
+                          {item.dependencyType}
+                          {item.version ? ` · ${item.version}` : ''}
+                          {item.isCritical ? ' · critical' : ''}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -734,16 +926,24 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'monitoring' ? (
-        <Panel title="Health Monitors" description="Configurable heartbeat intervals across platform modules">
+        <Panel
+          title="Health Monitors"
+          description="Configurable heartbeat intervals across platform modules"
+        >
           {dashboard.recentHealthMonitors.length === 0 ? (
-            <EmptyState title="No health monitors" description="Configure monitors to track infrastructure, APIs, and providers." />
+            <EmptyState
+              title="No health monitors"
+              description="Configure monitors to track infrastructure, APIs, and providers."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentHealthMonitors.map((monitor) => (
                 <div key={monitor.id} className="data-list-item">
                   <strong>{monitor.name}</strong>
                   <span className="status-pill">{formatHealthStatus(monitor.healthStatus)}</span>
-                  <p>{monitor.monitorKey} · {monitor.isActive ? 'active' : 'inactive'}</p>
+                  <p>
+                    {monitor.monitorKey} · {monitor.isActive ? 'active' : 'inactive'}
+                  </p>
                 </div>
               ))}
             </div>
@@ -752,16 +952,25 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'alerts' ? (
-        <Panel title="IT Alerts" description="Alerts synced from monitoring, incidents, and platform modules">
+        <Panel
+          title="IT Alerts"
+          description="Alerts synced from monitoring, incidents, and platform modules"
+        >
           {dashboard.recentAlerts.length === 0 ? (
-            <EmptyState title="No open alerts" description="Sync alerts from live platform monitoring signals." />
+            <EmptyState
+              title="No open alerts"
+              description="Sync alerts from live platform monitoring signals."
+            />
           ) : (
             <div className="data-list">
               {dashboard.recentAlerts.map((alert) => (
                 <div key={alert.id} className="data-list-item">
                   <strong>{alert.title}</strong>
                   <span className="status-pill">{formatSeverity(alert.severity)}</span>
-                  <p>{alert.alertType}{alert.sourceModule ? ` · ${alert.sourceModule}` : ''}</p>
+                  <p>
+                    {alert.alertType}
+                    {alert.sourceModule ? ` · ${alert.sourceModule}` : ''}
+                  </p>
                 </div>
               ))}
             </div>
@@ -770,16 +979,25 @@ export function ItOperationsPage() {
       ) : null}
 
       {dashboard && activeTab === 'audit' ? (
-        <Panel title="Audit Trail" description="Complete history of IT operations actions and changes">
+        <Panel
+          title="Audit Trail"
+          description="Complete history of IT operations actions and changes"
+        >
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
-            <EmptyState title="No audit logs" description="Audit entries are recorded for every IT operations action." />
+            <EmptyState
+              title="No audit logs"
+              description="Audit entries are recorded for every IT operations action."
+            />
           ) : (
             <div className="data-list">
               {supplementary.auditLogs.map((log) => (
                 <div key={log.id} className="data-list-item">
                   <strong>{log.actionType}</strong>
-                  <p>{log.entityType ?? '—'}{log.entityId ? ` · ${log.entityId}` : ''} · {log.createdAt}</p>
+                  <p>
+                    {log.entityType ?? '—'}
+                    {log.entityId ? ` · ${log.entityId}` : ''} · {log.createdAt}
+                  </p>
                 </div>
               ))}
             </div>
@@ -788,15 +1006,25 @@ export function ItOperationsPage() {
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA IT Operations Agent" description="Diagnosis, drafts, and approved low-risk repairs only — no destructive autonomous actions">
+        <Panel
+          title="AURA IT Operations Agent"
+          description="Diagnosis, drafts, and approved low-risk repairs only — no destructive autonomous actions"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'it_operations' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(content, 'it_operations' as import('@titan/shared').AgentKey)
+            }
             placeholder="Ask about incidents, health, deployments, self-healing, or platform reliability…"
           />
         </Panel>

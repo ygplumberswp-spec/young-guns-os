@@ -8,7 +8,14 @@ import type {
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { checkDbConnection } from '@titan/db';
-import { phDiagnosticResults, phDiagnosticRuns, ucProviderAdapters, integrationConnections, companies, automationQueueJobs } from '@titan/db';
+import {
+  phDiagnosticResults,
+  phDiagnosticRuns,
+  ucProviderAdapters,
+  integrationConnections,
+  companies,
+  automationQueueJobs,
+} from '@titan/db';
 import type { AiProviderResilienceService } from './ai-provider-resilience.service.js';
 import type { IntegrationPlatformService } from './integration-platform.service.js';
 
@@ -26,7 +33,9 @@ type DiagnosticTest = {
   testKey: string;
   testName: string;
   serviceCategory: PhServiceCategory;
-  run: (companyId: string) => Promise<{ passed: boolean; message: string; details?: Record<string, unknown> }>;
+  run: (
+    companyId: string,
+  ) => Promise<{ passed: boolean; message: string; details?: Record<string, unknown> }>;
 };
 
 export class EnterprisePlatformHealthDiagnosticsService {
@@ -41,7 +50,10 @@ export class EnterprisePlatformHealthDiagnosticsService {
     return rows.map(toDiagnosticRunSummary);
   }
 
-  async getDiagnosticRunDetail(companyId: string, runId: string): Promise<PhDiagnosticRunDetailSummary | null> {
+  async getDiagnosticRunDetail(
+    companyId: string,
+    runId: string,
+  ): Promise<PhDiagnosticRunDetailSummary | null> {
     const run = await this.deps.db.query.phDiagnosticRuns.findFirst({
       where: and(eq(phDiagnosticRuns.companyId, companyId), eq(phDiagnosticRuns.id, runId)),
     });
@@ -113,7 +125,8 @@ export class EnterprisePlatformHealthDiagnosticsService {
       }
     }
 
-    const finalStatus: PhDiagnosticStatus = failedCount === 0 ? 'passed' : failedCount === tests.length ? 'failed' : 'failed';
+    const finalStatus: PhDiagnosticStatus =
+      failedCount === 0 ? 'passed' : failedCount === tests.length ? 'failed' : 'failed';
     const [updated] = await this.deps.db
       .update(phDiagnosticRuns)
       .set({
@@ -140,7 +153,10 @@ export class EnterprisePlatformHealthDiagnosticsService {
             return { passed: false, message: 'Database URL not configured' };
           }
           const ok = await checkDbConnection(this.deps.databaseUrl);
-          return { passed: ok, message: ok ? 'Database connection successful' : 'Database connection failed' };
+          return {
+            passed: ok,
+            message: ok ? 'Database connection successful' : 'Database connection failed',
+          };
         },
       },
       {
@@ -171,8 +187,11 @@ export class EnterprisePlatformHealthDiagnosticsService {
         testName: 'AI provider health',
         serviceCategory: 'ai_provider',
         run: async (companyId) => {
-          const resilience = await this.deps.aiProviderResilienceService.getResilienceStatus(companyId);
-          const unhealthy = resilience.providers.filter((p) => p.healthStatus === 'unhealthy').length;
+          const resilience =
+            await this.deps.aiProviderResilienceService.getResilienceStatus(companyId);
+          const unhealthy = resilience.providers.filter(
+            (p) => p.healthStatus === 'unhealthy',
+          ).length;
           return {
             passed: unhealthy === 0,
             message:
@@ -195,9 +214,7 @@ export class EnterprisePlatformHealthDiagnosticsService {
             ),
           });
           const channels = ['email', 'sms', 'whatsapp'];
-          const configured = channels.filter((c) =>
-            adapters.some((a) => a.channel === c),
-          );
+          const configured = channels.filter((c) => adapters.some((a) => a.channel === c));
           return {
             passed: configured.length > 0 || adapters.length === 0,
             message:
@@ -237,7 +254,8 @@ export class EnterprisePlatformHealthDiagnosticsService {
         testName: 'Universal Connector Platform',
         serviceCategory: 'connector_platform',
         run: async (companyId) => {
-          const dashboard = await this.deps.integrationPlatformService.getExecutiveDashboard(companyId);
+          const dashboard =
+            await this.deps.integrationPlatformService.getExecutiveDashboard(companyId);
           const errorCount = dashboard.connectors.filter((c) => c.status === 'error').length;
           return {
             passed: errorCount === 0,
@@ -255,7 +273,10 @@ export class EnterprisePlatformHealthDiagnosticsService {
         serviceCategory: 'scheduler',
         run: async (companyId) => {
           const failed = await this.deps.db.query.automationQueueJobs.findMany({
-            where: and(eq(automationQueueJobs.companyId, companyId), eq(automationQueueJobs.status, 'failed')),
+            where: and(
+              eq(automationQueueJobs.companyId, companyId),
+              eq(automationQueueJobs.status, 'failed'),
+            ),
             limit: 100,
           });
           return {
@@ -286,7 +307,9 @@ function toDiagnosticRunSummary(row: typeof phDiagnosticRuns.$inferSelect): PhDi
   };
 }
 
-function toDiagnosticResultSummary(row: typeof phDiagnosticResults.$inferSelect): PhDiagnosticResultSummary {
+function toDiagnosticResultSummary(
+  row: typeof phDiagnosticResults.$inferSelect,
+): PhDiagnosticResultSummary {
   return {
     id: row.id,
     diagnosticRunId: row.diagnosticRunId,

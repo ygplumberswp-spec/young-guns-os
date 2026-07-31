@@ -20,35 +20,49 @@ export async function fetchAssetEquipmentDashboard(accessToken: string) {
 }
 
 export async function fetchAssetRegister(accessToken: string) {
-  const data = await request<{ assets: AssetEquipmentSummary[] }>('/asset-equipment/assets', { accessToken });
+  const data = await request<{ assets: AssetEquipmentSummary[] }>('/asset-equipment/assets', {
+    accessToken,
+  });
   return data.assets;
 }
 
 export async function fetchAssetMaintenanceRecords(accessToken: string) {
-  const data = await request<{ records: AssetMaintenanceRecordSummary[] }>('/asset-equipment/maintenance', {
-    accessToken,
-  });
+  const data = await request<{ records: AssetMaintenanceRecordSummary[] }>(
+    '/asset-equipment/maintenance',
+    {
+      accessToken,
+    },
+  );
   return data.records;
 }
 
 export async function fetchAssetMaintenanceSchedules(accessToken: string) {
-  const data = await request<{ schedules: AssetMaintenanceScheduleSummary[] }>('/asset-equipment/schedules', {
-    accessToken,
-  });
+  const data = await request<{ schedules: AssetMaintenanceScheduleSummary[] }>(
+    '/asset-equipment/schedules',
+    {
+      accessToken,
+    },
+  );
   return data.schedules;
 }
 
 export async function fetchAssetInspections(accessToken: string) {
-  const data = await request<{ inspections: AssetInspectionSummary[] }>('/asset-equipment/inspections', {
-    accessToken,
-  });
+  const data = await request<{ inspections: AssetInspectionSummary[] }>(
+    '/asset-equipment/inspections',
+    {
+      accessToken,
+    },
+  );
   return data.inspections;
 }
 
 export async function fetchAssetActions(accessToken: string) {
-  const data = await request<{ actions: AssetMaintenanceActionSummary[] }>('/asset-equipment/actions', {
-    accessToken,
-  });
+  const data = await request<{ actions: AssetMaintenanceActionSummary[] }>(
+    '/asset-equipment/actions',
+    {
+      accessToken,
+    },
+  );
   return data.actions;
 }
 
@@ -61,11 +75,17 @@ export async function createAssetEquipment(accessToken: string, body: CreateAsse
   return data.asset;
 }
 
-export async function createAssetAction(accessToken: string, body: CreateAssetMaintenanceActionRequest) {
-  const data = await request<{ action: AssetMaintenanceActionSummary }>('/asset-equipment/actions', {
-    accessToken,
-    method: 'POST',
-    body,
-  });
+export async function createAssetAction(
+  accessToken: string,
+  body: CreateAssetMaintenanceActionRequest,
+) {
+  const data = await request<{ action: AssetMaintenanceActionSummary }>(
+    '/asset-equipment/actions',
+    {
+      accessToken,
+      method: 'POST',
+      body,
+    },
+  );
   return data.action;
 }

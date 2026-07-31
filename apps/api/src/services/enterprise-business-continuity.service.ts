@@ -98,7 +98,8 @@ const SYSTEM_RECOVERY_PLANS: Array<{
   {
     scenarioKey: 'database_failure',
     name: 'Database Failure Recovery',
-    description: 'Restore tenant database from encrypted backup with point-in-time recovery validation.',
+    description:
+      'Restore tenant database from encrypted backup with point-in-time recovery validation.',
     estimatedRecoveryTimeMinutes: 120,
     recoverySteps: [
       { step: 1, action: 'Identify failed database scope and last verified backup.' },
@@ -126,7 +127,10 @@ const SYSTEM_RECOVERY_PLANS: Array<{
       { step: 4, action: 'Validate document permissions and tenant boundaries.' },
     ],
     dependencies: [{ module: 'storage' }, { module: 'documents' }],
-    validationChecklist: [{ item: 'File checksum validation passed' }, { item: 'Encryption verified' }],
+    validationChecklist: [
+      { item: 'File checksum validation passed' },
+      { item: 'Encryption verified' },
+    ],
   },
   {
     scenarioKey: 'ai_provider_outage',
@@ -192,7 +196,10 @@ const SYSTEM_RECOVERY_PLANS: Array<{
       { step: 4, action: 'Require owner approval before production restore.' },
     ],
     dependencies: [{ module: 'mission_control' }, { module: 'security' }],
-    validationChecklist: [{ item: 'All module health checks passed' }, { item: 'Owner approval recorded' }],
+    validationChecklist: [
+      { item: 'All module health checks passed' },
+      { item: 'Owner approval recorded' },
+    ],
   },
 ];
 
@@ -233,7 +240,9 @@ export class EnterpriseBusinessContinuityService {
       this.listLegacyOpsBackupRuns(companyId),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
     const continuityHealth = this.buildContinuityHealth(
       backupJobs,
@@ -289,7 +298,10 @@ export class EnterpriseBusinessContinuityService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateBcPlatformConfigRequest): Promise<BcPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateBcPlatformConfigRequest,
+  ): Promise<BcPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(bcPlatformConfig)
@@ -317,7 +329,10 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toBackupPolicySummary);
   }
 
-  async createBackupPolicy(scope: StaffScope, input: CreateBcBackupPolicyRequest): Promise<BcBackupPolicySummary> {
+  async createBackupPolicy(
+    scope: StaffScope,
+    input: CreateBcBackupPolicyRequest,
+  ): Promise<BcBackupPolicySummary> {
     const [created] = await this.deps.db
       .insert(bcBackupPolicies)
       .values({
@@ -332,15 +347,25 @@ export class EnterpriseBusinessContinuityService {
         isEnabled: input.isEnabled ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create backup policy');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create backup policy',
+      );
     await this.logAudit(scope, 'create_backup_policy', 'bc_backup_policies', created.id);
     return toBackupPolicySummary(created);
   }
 
-  async listBackupJobs(companyId: string, filters?: { status?: string }): Promise<BcBackupJobSummary[]> {
+  async listBackupJobs(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<BcBackupJobSummary[]> {
     const rows = await this.deps.db.query.bcBackupJobs.findMany({
       where: filters?.status
-        ? and(eq(bcBackupJobs.companyId, companyId), eq(bcBackupJobs.status, filters.status as never))
+        ? and(
+            eq(bcBackupJobs.companyId, companyId),
+            eq(bcBackupJobs.status, filters.status as never),
+          )
         : eq(bcBackupJobs.companyId, companyId),
       orderBy: [desc(bcBackupJobs.startedAt)],
       limit: 100,
@@ -352,13 +377,20 @@ export class EnterpriseBusinessContinuityService {
     return rows.map((row) => toBackupJobSummary(row, policyMap.get(row.policyId ?? '') ?? null));
   }
 
-  async createBackupJob(scope: StaffScope, input: CreateBcBackupJobRequest): Promise<BcBackupJobSummary> {
+  async createBackupJob(
+    scope: StaffScope,
+    input: CreateBcBackupJobRequest,
+  ): Promise<BcBackupJobSummary> {
     let policyName: string | null = null;
     if (input.policyId) {
       const policy = await this.deps.db.query.bcBackupPolicies.findFirst({
-        where: and(eq(bcBackupPolicies.id, input.policyId), eq(bcBackupPolicies.companyId, scope.companyId)),
+        where: and(
+          eq(bcBackupPolicies.id, input.policyId),
+          eq(bcBackupPolicies.companyId, scope.companyId),
+        ),
       });
-      if (!policy) throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Backup policy not found');
+      if (!policy)
+        throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Backup policy not found');
       policyName = policy.name;
     }
 
@@ -374,7 +406,8 @@ export class EnterpriseBusinessContinuityService {
         requestedByUserId: scope.userId,
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create backup job');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create backup job');
     await this.logAudit(scope, 'create_backup_job', 'bc_backup_jobs', created.id);
     return toBackupJobSummary(created, policyName);
   }
@@ -388,7 +421,10 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toRestoreRequestSummary);
   }
 
-  async createRestoreRequest(scope: StaffScope, input: CreateBcRestoreRequestRequest): Promise<BcRestoreRequestSummary> {
+  async createRestoreRequest(
+    scope: StaffScope,
+    input: CreateBcRestoreRequestRequest,
+  ): Promise<BcRestoreRequestSummary> {
     const [created] = await this.deps.db
       .insert(bcRestoreRequests)
       .values({
@@ -405,7 +441,11 @@ export class EnterpriseBusinessContinuityService {
         metadata: input.metadata ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create restore request');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create restore request',
+      );
     await this.logAudit(scope, 'create_restore_request', 'bc_restore_requests', created.id, {
       restoreScope: input.restoreScope,
     });
@@ -420,7 +460,8 @@ export class EnterpriseBusinessContinuityService {
     const existing = await this.deps.db.query.bcRestoreRequests.findFirst({
       where: and(eq(bcRestoreRequests.id, id), eq(bcRestoreRequests.companyId, scope.companyId)),
     });
-    if (!existing) throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Restore request not found');
+    if (!existing)
+      throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Restore request not found');
 
     if (input.status === 'in_progress' || input.status === 'completed') {
       if (existing.status !== 'approved') {
@@ -440,7 +481,9 @@ export class EnterpriseBusinessContinuityService {
       })
       .where(and(eq(bcRestoreRequests.id, id), eq(bcRestoreRequests.companyId, scope.companyId)))
       .returning();
-    await this.logAudit(scope, 'update_restore_request', 'bc_restore_requests', id, { status: input.status });
+    await this.logAudit(scope, 'update_restore_request', 'bc_restore_requests', id, {
+      status: input.status,
+    });
     return toRestoreRequestSummary(updated ?? existing);
   }
 
@@ -452,7 +495,10 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toRecoveryPlanSummary);
   }
 
-  async createRecoveryPlan(scope: StaffScope, input: CreateBcRecoveryPlanRequest): Promise<BcRecoveryPlanSummary> {
+  async createRecoveryPlan(
+    scope: StaffScope,
+    input: CreateBcRecoveryPlanRequest,
+  ): Promise<BcRecoveryPlanSummary> {
     const [created] = await this.deps.db
       .insert(bcRecoveryPlans)
       .values({
@@ -466,7 +512,11 @@ export class EnterpriseBusinessContinuityService {
         validationChecklist: input.validationChecklist ?? [],
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create recovery plan');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create recovery plan',
+      );
     await this.logAudit(scope, 'create_recovery_plan', 'bc_recovery_plans', created.id);
     return toRecoveryPlanSummary(created);
   }
@@ -480,7 +530,10 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toRecoveryTestSummary);
   }
 
-  async createRecoveryTest(scope: StaffScope, input: CreateBcRecoveryTestRequest): Promise<BcRecoveryTestSummary> {
+  async createRecoveryTest(
+    scope: StaffScope,
+    input: CreateBcRecoveryTestRequest,
+  ): Promise<BcRecoveryTestSummary> {
     const [created] = await this.deps.db
       .insert(bcRecoveryTests)
       .values({
@@ -493,7 +546,11 @@ export class EnterpriseBusinessContinuityService {
         isProductionSafe: input.isProductionSafe ?? true,
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create recovery test');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create recovery test',
+      );
     await this.logAudit(scope, 'create_recovery_test', 'bc_recovery_tests', created.id);
     return toRecoveryTestSummary(created);
   }
@@ -506,7 +563,8 @@ export class EnterpriseBusinessContinuityService {
     const existing = await this.deps.db.query.bcRecoveryTests.findFirst({
       where: and(eq(bcRecoveryTests.id, id), eq(bcRecoveryTests.companyId, scope.companyId)),
     });
-    if (!existing) throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Recovery test not found');
+    if (!existing)
+      throw new EnterpriseBusinessContinuityError('NOT_FOUND', 'Recovery test not found');
 
     const [updated] = await this.deps.db
       .update(bcRecoveryTests)
@@ -518,7 +576,10 @@ export class EnterpriseBusinessContinuityService {
         lessonsLearned: input.lessonsLearned ?? existing.lessonsLearned,
         failures: input.failures ?? existing.failures,
         startedAt: input.status === 'in_progress' ? new Date() : existing.startedAt,
-        completedAt: input.status === 'completed' || input.status === 'failed' ? new Date() : existing.completedAt,
+        completedAt:
+          input.status === 'completed' || input.status === 'failed'
+            ? new Date()
+            : existing.completedAt,
       })
       .where(and(eq(bcRecoveryTests.id, id), eq(bcRecoveryTests.companyId, scope.companyId)))
       .returning();
@@ -552,7 +613,11 @@ export class EnterpriseBusinessContinuityService {
         verifiedAt: input.passed !== undefined ? new Date() : null,
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create verification record');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create verification record',
+      );
     await this.logAudit(scope, 'create_verification_record', 'bc_verification_records', created.id);
     if (input.passed === false) {
       await this.upsertContinuityAlert(scope.companyId, {
@@ -590,7 +655,11 @@ export class EnterpriseBusinessContinuityService {
         metadata: input.metadata ?? {},
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to capture storage health');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to capture storage health',
+      );
     await this.logAudit(scope, 'capture_storage_health', 'bc_storage_health_snapshots', created.id);
     return toStorageHealthSummary(created);
   }
@@ -618,15 +687,25 @@ export class EnterpriseBusinessContinuityService {
         lastVerifiedAt: new Date(),
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create compliance record');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError(
+        'CREATE_FAILED',
+        'Unable to create compliance record',
+      );
     await this.logAudit(scope, 'create_compliance_record', 'bc_compliance_records', created.id);
     return toComplianceRecordSummary(created);
   }
 
-  async listContinuityAlerts(companyId: string, filters?: { status?: string }): Promise<BcContinuityAlertSummary[]> {
+  async listContinuityAlerts(
+    companyId: string,
+    filters?: { status?: string },
+  ): Promise<BcContinuityAlertSummary[]> {
     const rows = await this.deps.db.query.bcContinuityAlerts.findMany({
       where: filters?.status
-        ? and(eq(bcContinuityAlerts.companyId, companyId), eq(bcContinuityAlerts.status, filters.status as never))
+        ? and(
+            eq(bcContinuityAlerts.companyId, companyId),
+            eq(bcContinuityAlerts.status, filters.status as never),
+          )
         : eq(bcContinuityAlerts.companyId, companyId),
       orderBy: [desc(bcContinuityAlerts.createdAt)],
       limit: 100,
@@ -660,7 +739,10 @@ export class EnterpriseBusinessContinuityService {
       );
     }
 
-    if (dashboard.continuityHealth.oldestBackupAgeHours != null && dashboard.continuityHealth.oldestBackupAgeHours > 48) {
+    if (
+      dashboard.continuityHealth.oldestBackupAgeHours != null &&
+      dashboard.continuityHealth.oldestBackupAgeHours > 48
+    ) {
       alerts.push(
         await this.upsertContinuityAlert(scope.companyId, {
           alertType: 'stale_backup',
@@ -703,7 +785,10 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toActionDraftSummary);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateBcActionDraftRequest): Promise<BcActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateBcActionDraftRequest,
+  ): Promise<BcActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(bcActionDrafts)
       .values({
@@ -715,7 +800,8 @@ export class EnterpriseBusinessContinuityService {
         aiGenerated: input.aiGenerated ?? false,
       })
       .returning();
-    if (!created) throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create action draft');
+    if (!created)
+      throw new EnterpriseBusinessContinuityError('CREATE_FAILED', 'Unable to create action draft');
     await this.logAudit(scope, 'create_action_draft', 'bc_action_drafts', created.id);
     return toActionDraftSummary(created);
   }
@@ -729,7 +815,9 @@ export class EnterpriseBusinessContinuityService {
     return rows.map(toAuditLogSummary);
   }
 
-  private async listLegacyOpsBackupPolicies(companyId: string): Promise<LegacyOpsBackupPolicySummary[]> {
+  private async listLegacyOpsBackupPolicies(
+    companyId: string,
+  ): Promise<LegacyOpsBackupPolicySummary[]> {
     const rows = await this.deps.db.query.opsBackupPolicies.findMany({
       where: eq(opsBackupPolicies.companyId, companyId),
       orderBy: [desc(opsBackupPolicies.createdAt)],
@@ -770,13 +858,20 @@ export class EnterpriseBusinessContinuityService {
     legacyOpsBackupRuns: LegacyOpsBackupRunSummary[],
   ): BcContinuityHealthSummary {
     const allJobs = [...backupJobs];
-    const completedCount = allJobs.filter((j) => j.status === 'completed' || j.status === 'verified').length;
+    const completedCount = allJobs.filter(
+      (j) => j.status === 'completed' || j.status === 'verified',
+    ).length;
     const failedBackupCount = allJobs.filter((j) => j.status === 'failed').length;
     const totalFinished = completedCount + failedBackupCount;
-    const backupSuccessRatePercent = totalFinished > 0 ? Math.round((completedCount / totalFinished) * 100) : null;
+    const backupSuccessRatePercent =
+      totalFinished > 0 ? Math.round((completedCount / totalFinished) * 100) : null;
 
-    const pendingVerificationCount = verificationRecords.filter((v) => v.status === 'pending').length;
-    const verificationFailureCount = verificationRecords.filter((v) => v.status === 'failed' || v.passed === false).length;
+    const pendingVerificationCount = verificationRecords.filter(
+      (v) => v.status === 'pending',
+    ).length;
+    const verificationFailureCount = verificationRecords.filter(
+      (v) => v.status === 'failed' || v.passed === false,
+    ).length;
 
     const completedJobs = allJobs.filter((j) => j.completedAt);
     const oldestBackupAgeHours =
@@ -790,29 +885,34 @@ export class EnterpriseBusinessContinuityService {
           ? Math.max(
               ...legacyOpsBackupRuns
                 .filter((r) => r.completedAt)
-                .map((r) => Math.floor((Date.now() - new Date(r.completedAt!).getTime()) / (1000 * 60 * 60))),
+                .map((r) =>
+                  Math.floor((Date.now() - new Date(r.completedAt!).getTime()) / (1000 * 60 * 60)),
+                ),
             )
           : null;
 
-    const storageHealthStatus =
-      storageHealth.some((s) => s.healthStatus === 'critical' || s.healthStatus === 'unhealthy')
-        ? 'critical'
-        : storageHealth.some((s) => s.healthStatus === 'degraded' || s.healthStatus === 'warning')
-          ? 'degraded'
-          : storageHealth.length > 0
-            ? 'healthy'
-            : 'unknown';
-
-    const recoveryComplianceStatus =
-      complianceRecords.some((c) => c.status === 'non_compliant' || c.status === 'critical')
-        ? 'non_compliant'
-        : complianceRecords.length > 0
-          ? 'compliant'
+    const storageHealthStatus = storageHealth.some(
+      (s) => s.healthStatus === 'critical' || s.healthStatus === 'unhealthy',
+    )
+      ? 'critical'
+      : storageHealth.some((s) => s.healthStatus === 'degraded' || s.healthStatus === 'warning')
+        ? 'degraded'
+        : storageHealth.length > 0
+          ? 'healthy'
           : 'unknown';
+
+    const recoveryComplianceStatus = complianceRecords.some(
+      (c) => c.status === 'non_compliant' || c.status === 'critical',
+    )
+      ? 'non_compliant'
+      : complianceRecords.length > 0
+        ? 'compliant'
+        : 'unknown';
 
     return {
       backupSuccessRatePercent,
-      restoreReadinessStatus: verificationFailureCount > 0 ? 'not_ready' : completedCount > 0 ? 'ready' : 'unknown',
+      restoreReadinessStatus:
+        verificationFailureCount > 0 ? 'not_ready' : completedCount > 0 ? 'ready' : 'unknown',
       recoveryReadinessStatus: failedBackupCount > 0 ? 'degraded' : 'ready',
       providerRedundancyStatus: 'unknown',
       storageHealthStatus,
@@ -874,14 +974,22 @@ export class EnterpriseBusinessContinuityService {
   private async getPolicyNameMap(companyId: string, policyIds: string[]) {
     if (policyIds.length === 0) return new Map<string, string>();
     const rows = await this.deps.db.query.bcBackupPolicies.findMany({
-      where: and(eq(bcBackupPolicies.companyId, companyId), inArray(bcBackupPolicies.id, policyIds)),
+      where: and(
+        eq(bcBackupPolicies.companyId, companyId),
+        inArray(bcBackupPolicies.id, policyIds),
+      ),
     });
     return new Map(rows.map((r: { id: string; name: string }) => [r.id, r.name]));
   }
 
   private async upsertContinuityAlert(
     companyId: string,
-    input: { alertType: string; severity: 'info' | 'warning' | 'critical'; title: string; description?: string },
+    input: {
+      alertType: string;
+      severity: 'info' | 'warning' | 'critical';
+      title: string;
+      description?: string;
+    },
   ): Promise<BcContinuityAlertSummary> {
     const existing = await this.deps.db.query.bcContinuityAlerts.findFirst({
       where: and(
@@ -936,7 +1044,9 @@ export class EnterpriseBusinessContinuityService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof bcPlatformConfig.$inferSelect): BcPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof bcPlatformConfig.$inferSelect,
+): BcPlatformConfigSummary {
   return {
     backupPolicy: row.backupPolicy,
     restorePolicy: row.restorePolicy,
@@ -984,7 +1094,9 @@ function toBackupJobSummary(
   };
 }
 
-function toRestoreRequestSummary(row: typeof bcRestoreRequests.$inferSelect): BcRestoreRequestSummary {
+function toRestoreRequestSummary(
+  row: typeof bcRestoreRequests.$inferSelect,
+): BcRestoreRequestSummary {
   return {
     id: row.id,
     restoreScope: row.restoreScope,
@@ -1037,7 +1149,9 @@ function toRecoveryTestSummary(row: typeof bcRecoveryTests.$inferSelect): BcReco
   };
 }
 
-function toVerificationRecordSummary(row: typeof bcVerificationRecords.$inferSelect): BcVerificationRecordSummary {
+function toVerificationRecordSummary(
+  row: typeof bcVerificationRecords.$inferSelect,
+): BcVerificationRecordSummary {
   return {
     id: row.id,
     backupJobId: row.backupJobId,
@@ -1050,7 +1164,9 @@ function toVerificationRecordSummary(row: typeof bcVerificationRecords.$inferSel
   };
 }
 
-function toStorageHealthSummary(row: typeof bcStorageHealthSnapshots.$inferSelect): BcStorageHealthSummary {
+function toStorageHealthSummary(
+  row: typeof bcStorageHealthSnapshots.$inferSelect,
+): BcStorageHealthSummary {
   return {
     id: row.id,
     storageType: row.storageType,
@@ -1062,7 +1178,9 @@ function toStorageHealthSummary(row: typeof bcStorageHealthSnapshots.$inferSelec
   };
 }
 
-function toComplianceRecordSummary(row: typeof bcComplianceRecords.$inferSelect): BcComplianceRecordSummary {
+function toComplianceRecordSummary(
+  row: typeof bcComplianceRecords.$inferSelect,
+): BcComplianceRecordSummary {
   return {
     id: row.id,
     complianceType: row.complianceType,
@@ -1074,7 +1192,9 @@ function toComplianceRecordSummary(row: typeof bcComplianceRecords.$inferSelect)
   };
 }
 
-function toContinuityAlertSummary(row: typeof bcContinuityAlerts.$inferSelect): BcContinuityAlertSummary {
+function toContinuityAlertSummary(
+  row: typeof bcContinuityAlerts.$inferSelect,
+): BcContinuityAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,

@@ -15,10 +15,9 @@ export const integrationWebhookEvents = pgTable('integration_webhook_events', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  webhookEndpointId: uuid('webhook_endpoint_id').references(
-    () => integrationWebhookEndpoints.id,
-    { onDelete: 'set null' },
-  ),
+  webhookEndpointId: uuid('webhook_endpoint_id').references(() => integrationWebhookEndpoints.id, {
+    onDelete: 'set null',
+  }),
   provider: integrationProviderEnum('provider'),
   eventType: text('event_type').notNull(),
   status: integrationWebhookEventStatusEnum('status').notNull().default('received'),

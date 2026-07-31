@@ -67,7 +67,10 @@ export class OpenAiCompatibleProvider implements AuraProvider {
 
     const content = payload.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new AuraProviderError('PROVIDER_EMPTY_RESPONSE', 'The AI provider returned an empty response.');
+      throw new AuraProviderError(
+        'PROVIDER_EMPTY_RESPONSE',
+        'The AI provider returned an empty response.',
+      );
     }
 
     return content;

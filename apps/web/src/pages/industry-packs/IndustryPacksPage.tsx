@@ -56,7 +56,9 @@ export function IndustryPacksPage() {
   const [marketplacePacks, setMarketplacePacks] = useState<IpPackCatalogSummary[]>([]);
   const [installedPacks, setInstalledPacks] = useState<IpPackInstallationSummary[]>([]);
   const [templates, setTemplates] = useState<IpTemplateSummary[]>([]);
-  const [complianceFrameworks, setComplianceFrameworks] = useState<IpComplianceFrameworkSummary[]>([]);
+  const [complianceFrameworks, setComplianceFrameworks] = useState<IpComplianceFrameworkSummary[]>(
+    [],
+  );
   const [certificates, setCertificates] = useState<IpCertificateSummary[]>([]);
   const [equipmentCatalog, setEquipmentCatalog] = useState<IpEquipmentCatalogSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,8 +67,14 @@ export function IndustryPacksPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessIndustryPacks(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageIndustryPacks(user.permissions) : false), [user]);
@@ -98,7 +106,9 @@ export function IndustryPacksPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load industry packs dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load industry packs dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -178,7 +188,10 @@ export function IndustryPacksPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <EmptyState title="Access denied" description="You do not have permission to view industry packs." />
+        <EmptyState
+          title="Access denied"
+          description="You do not have permission to view industry packs."
+        />
       </div>
     );
   }
@@ -227,7 +240,10 @@ export function IndustryPacksPage() {
             <StatCard label="Installed Packs" value={String(dashboard.installedPackCount)} />
             <StatCard label="Marketplace Packs" value={String(dashboard.marketplacePackCount)} />
             <StatCard label="Templates" value={String(dashboard.templateCount)} />
-            <StatCard label="Compliance Frameworks" value={String(dashboard.complianceFrameworkCount)} />
+            <StatCard
+              label="Compliance Frameworks"
+              value={String(dashboard.complianceFrameworkCount)}
+            />
             <StatCard label="Certificates" value={String(dashboard.certificateCount)} />
             <StatCard label="Equipment Catalog" value={String(dashboard.equipmentCatalogCount)} />
             <StatCard label="Open Alerts" value={String(dashboard.openAlertCount)} />
@@ -235,7 +251,9 @@ export function IndustryPacksPage() {
           </div>
           <Panel
             title="Industry Monitoring"
-            description={dashboard.industryMonitoring.alerts.join(' · ') || 'No active industry signals'}
+            description={
+              dashboard.industryMonitoring.alerts.join(' · ') || 'No active industry signals'
+            }
           >
             <p>{dashboard.summary}</p>
             {canWrite ? (
@@ -284,7 +302,10 @@ export function IndustryPacksPage() {
           {isSupplementaryLoading ? (
             <p>Loading installed packs...</p>
           ) : installedPacks.length === 0 ? (
-            <EmptyState title="No installed packs" description="Install industry packs from the marketplace." />
+            <EmptyState
+              title="No installed packs"
+              description="Install industry packs from the marketplace."
+            />
           ) : (
             <div className="data-list">
               {installedPacks.map((pack) => (
@@ -306,7 +327,10 @@ export function IndustryPacksPage() {
           {isSupplementaryLoading ? (
             <p>Loading marketplace...</p>
           ) : marketplacePacks.length === 0 ? (
-            <EmptyState title="No marketplace packs" description="Built-in industry packs will appear here." />
+            <EmptyState
+              title="No marketplace packs"
+              description="Built-in industry packs will appear here."
+            />
           ) : (
             <div className="data-list">
               {marketplacePacks.map((pack) => (
@@ -373,8 +397,9 @@ export function IndustryPacksPage() {
                   <strong>{framework.name}</strong>
                   <span className="status-pill">{formatStatus(framework.workflowStatus)}</span>
                   <p>
-                    {[framework.countryCode, framework.regulatoryBody].filter(Boolean).join(' · ') ||
-                      'Configurable framework'}
+                    {[framework.countryCode, framework.regulatoryBody]
+                      .filter(Boolean)
+                      .join(' · ') || 'Configurable framework'}
                   </p>
                 </div>
               ))}
@@ -444,7 +469,10 @@ export function IndustryPacksPage() {
           {dashboard.analytics ? (
             <pre className="code-block">{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
           ) : (
-            <EmptyState title="No analytics captured" description="Capture analytics to measure industry KPIs." />
+            <EmptyState
+              title="No analytics captured"
+              description="Capture analytics to measure industry KPIs."
+            />
           )}
         </Panel>
       ) : null}
@@ -452,13 +480,19 @@ export function IndustryPacksPage() {
       {activeTab === 'settings' && dashboard ? (
         <Panel title="Settings">
           <p>Audit retention: {dashboard.platformConfig.auditRetentionDays} days</p>
-          <p>Marketplace, compliance, certificate, and pack builder policies are configurable via API.</p>
+          <p>
+            Marketplace, compliance, certificate, and pack builder policies are configurable via
+            API.
+          </p>
         </Panel>
       ) : null}
 
       {activeTab === 'pack-builder' ? (
         <Panel title="Pack Builder">
-          <p>Build custom industry packs using the App Builder platform without modifying core TITAN code.</p>
+          <p>
+            Build custom industry packs using the App Builder platform without modifying core TITAN
+            code.
+          </p>
           <Link href="/app-builder">
             <Button>Open App Builder</Button>
           </Link>
@@ -473,12 +507,20 @@ export function IndustryPacksPage() {
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
             onSend={(content) =>
-              void sendAgentMessage(content, 'industry_intelligence' as import('@titan/shared').AgentKey)
+              void sendAgentMessage(
+                content,
+                'industry_intelligence' as import('@titan/shared').AgentKey,
+              )
             }
             placeholder="Ask about industry packs, compliance, templates, or certificates…"
           />

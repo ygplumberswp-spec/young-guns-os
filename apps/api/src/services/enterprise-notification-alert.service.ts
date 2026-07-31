@@ -1,9 +1,5 @@
 import { and, desc, eq } from 'drizzle-orm';
-import type {
-  CreateNcAlertRequest,
-  NcAlertSummary,
-  NcModuleSource,
-} from '@titan/shared';
+import type { CreateNcAlertRequest, NcAlertSummary, NcModuleSource } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { ncAlerts } from '@titan/db';
 
@@ -15,7 +11,10 @@ export class EnterpriseNotificationAlertService {
   async listAlerts(companyId: string, options?: { status?: string }): Promise<NcAlertSummary[]> {
     const rows = await this.db.query.ncAlerts.findMany({
       where: options?.status
-        ? and(eq(ncAlerts.companyId, companyId), eq(ncAlerts.status, options.status as typeof ncAlerts.status.enumValues[number]))
+        ? and(
+            eq(ncAlerts.companyId, companyId),
+            eq(ncAlerts.status, options.status as (typeof ncAlerts.status.enumValues)[number]),
+          )
         : eq(ncAlerts.companyId, companyId),
       orderBy: [desc(ncAlerts.createdAt)],
       limit: 200,

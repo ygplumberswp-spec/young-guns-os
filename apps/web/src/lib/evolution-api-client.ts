@@ -43,10 +43,9 @@ export async function syncEvolutionTimeline(accessToken: string) {
 }
 
 export async function approveEvolutionLearning(accessToken: string, learningEventId: string) {
-  const data = await request<{ event: EnterpriseEvolutionDashboard['recentLearningEvents'][number] }>(
-    '/evolution/learning/approve',
-    { accessToken, method: 'POST', body: { learningEventId } },
-  );
+  const data = await request<{
+    event: EnterpriseEvolutionDashboard['recentLearningEvents'][number];
+  }>('/evolution/learning/approve', { accessToken, method: 'POST', body: { learningEventId } });
   return data.event;
 }
 

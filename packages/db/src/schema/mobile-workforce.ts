@@ -1,6 +1,16 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { inventoryItems } from './inventory-items';
+import { jobMaterialSourceEnum } from './job-execution-enums';
 import { jobs } from './jobs';
 import { mobileSyncQueue } from './mobile';
 import { users } from './users';
@@ -105,6 +115,9 @@ export const mobileJobInventoryUsage = pgTable('mobile_job_inventory_usage', {
     .notNull()
     .references(() => inventoryItems.id, { onDelete: 'restrict' }),
   quantity: integer('quantity').notNull(),
+  unit: text('unit'),
+  materialSource: jobMaterialSourceEnum('material_source'),
+  supplierReference: text('supplier_reference'),
   status: mobileInventoryUsageStatusEnum('status').notNull().default('pending_approval'),
   scanCode: text('scan_code'),
   notes: text('notes'),
@@ -130,6 +143,10 @@ export const mobileJobDocumentation = pgTable('mobile_job_documentation', {
   mimeType: text('mime_type'),
   sizeBytes: integer('size_bytes'),
   content: text('content'),
+  storageKey: text('storage_key'),
+  checksumSha256: text('checksum_sha256'),
+  clientActionId: text('client_action_id'),
+  evidencePhase: text('evidence_phase'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -68,9 +68,15 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
     return rows.map(toRunSummary);
   }
 
-  async getRunDetail(companyId: string, runId: string): Promise<RcIntegrationValidationRunDetailSummary | null> {
+  async getRunDetail(
+    companyId: string,
+    runId: string,
+  ): Promise<RcIntegrationValidationRunDetailSummary | null> {
     const run = await this.deps.db.query.rcIntegrationValidationRuns.findFirst({
-      where: and(eq(rcIntegrationValidationRuns.companyId, companyId), eq(rcIntegrationValidationRuns.id, runId)),
+      where: and(
+        eq(rcIntegrationValidationRuns.companyId, companyId),
+        eq(rcIntegrationValidationRuns.id, runId),
+      ),
     });
     if (!run) return null;
     const results = await this.deps.db.query.rcIntegrationValidationResults.findMany({
@@ -80,11 +86,19 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
     return { ...toRunSummary(run), results: results.map(toResultSummary) };
   }
 
-  async runIntegrationValidation(scope: StaffScope): Promise<RcIntegrationValidationRunDetailSummary> {
+  async runIntegrationValidation(
+    scope: StaffScope,
+  ): Promise<RcIntegrationValidationRunDetailSummary> {
     const runKey = `integration_${Date.now()}`;
     const [run] = await this.deps.db
       .insert(rcIntegrationValidationRuns)
-      .values({ companyId: scope.companyId, userId: scope.userId, runKey, status: 'running', startedAt: new Date() })
+      .values({
+        companyId: scope.companyId,
+        userId: scope.userId,
+        runKey,
+        status: 'running',
+        startedAt: new Date(),
+      })
       .returning();
 
     const checks = this.buildChecks();
@@ -137,10 +151,18 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
       }
     }
 
-    const finalStatus: RcValidationStatus = failedCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
+    const finalStatus: RcValidationStatus =
+      failedCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
     const [updated] = await this.deps.db
       .update(rcIntegrationValidationRuns)
-      .set({ status: finalStatus, checkCount: checks.length, passedCount, failedCount, warningCount, completedAt: new Date() })
+      .set({
+        status: finalStatus,
+        checkCount: checks.length,
+        passedCount,
+        failedCount,
+        warningCount,
+        completedAt: new Date(),
+      })
       .where(eq(rcIntegrationValidationRuns.id, run!.id))
       .returning();
 
@@ -164,9 +186,16 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'RBAC',
         category: 'rbac',
         run: async (companyId) => {
-          const [row] = await this.deps.db.select({ value: count() }).from(roles).where(eq(roles.companyId, companyId));
+          const [row] = await this.deps.db
+            .select({ value: count() })
+            .from(roles)
+            .where(eq(roles.companyId, companyId));
           const val = Number(row?.value ?? 0);
-          return { status: val >= 2 ? 'passed' : 'warning', severity: val >= 2 ? 'info' : 'warning', message: `${val} role(s) configured.` };
+          return {
+            status: val >= 2 ? 'passed' : 'warning',
+            severity: val >= 2 ? 'info' : 'warning',
+            message: `${val} role(s) configured.`,
+          };
         },
       },
       {
@@ -174,12 +203,19 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Multi-tenancy isolation',
         category: 'multi_tenancy',
         run: async (companyId) => {
-          const company = await this.deps.db.query.companies.findFirst({ where: eq(companies.id, companyId) });
-          const [userCount] = await this.deps.db.select({ value: count() }).from(users).where(eq(users.companyId, companyId));
+          const company = await this.deps.db.query.companies.findFirst({
+            where: eq(companies.id, companyId),
+          });
+          const [userCount] = await this.deps.db
+            .select({ value: count() })
+            .from(users)
+            .where(eq(users.companyId, companyId));
           return {
             status: company ? 'passed' : 'failed',
             severity: company ? 'info' : 'critical',
-            message: company ? `Tenant ${company.name} with ${userCount?.value ?? 0} user(s).` : 'Tenant not found.',
+            message: company
+              ? `Tenant ${company.name} with ${userCount?.value ?? 0} user(s).`
+              : 'Tenant not found.',
           };
         },
       },
@@ -188,8 +224,15 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'CRM module',
         category: 'crm',
         run: async (companyId) => {
-          const [row] = await this.deps.db.select({ value: count() }).from(customers).where(eq(customers.companyId, companyId));
-          return { status: 'passed', severity: 'info', message: `${row?.value ?? 0} customer record(s) — CRM module accessible.` };
+          const [row] = await this.deps.db
+            .select({ value: count() })
+            .from(customers)
+            .where(eq(customers.companyId, companyId));
+          return {
+            status: 'passed',
+            severity: 'info',
+            message: `${row?.value ?? 0} customer record(s) — CRM module accessible.`,
+          };
         },
       },
       {
@@ -197,8 +240,15 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Leads module',
         category: 'leads',
         run: async (companyId) => {
-          const [row] = await this.deps.db.select({ value: count() }).from(leads).where(eq(leads.companyId, companyId));
-          return { status: 'passed', severity: 'info', message: `${row?.value ?? 0} lead record(s).` };
+          const [row] = await this.deps.db
+            .select({ value: count() })
+            .from(leads)
+            .where(eq(leads.companyId, companyId));
+          return {
+            status: 'passed',
+            severity: 'info',
+            message: `${row?.value ?? 0} lead record(s).`,
+          };
         },
       },
       {
@@ -206,7 +256,10 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Customers module',
         category: 'customers',
         run: async (companyId) => {
-          const [row] = await this.deps.db.select({ value: count() }).from(customers).where(eq(customers.companyId, companyId));
+          const [row] = await this.deps.db
+            .select({ value: count() })
+            .from(customers)
+            .where(eq(customers.companyId, companyId));
           return { status: 'passed', severity: 'info', message: `${row?.value ?? 0} customer(s).` };
         },
       },
@@ -215,7 +268,10 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Jobs module',
         category: 'jobs',
         run: async (companyId) => {
-          const [row] = await this.deps.db.select({ value: count() }).from(jobs).where(eq(jobs.companyId, companyId));
+          const [row] = await this.deps.db
+            .select({ value: count() })
+            .from(jobs)
+            .where(eq(jobs.companyId, companyId));
           return { status: 'passed', severity: 'info', message: `${row?.value ?? 0} job(s).` };
         },
       },
@@ -224,7 +280,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Universal Connector Platform',
         category: 'connectors',
         run: async (companyId) => {
-          const monitoring = await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
+          const monitoring =
+            await this.deps.integrationPlatformService.getMonitoringSummary(companyId);
           return {
             status: monitoring.errorServiceCount === 0 ? 'passed' : 'failed',
             severity: monitoring.errorServiceCount === 0 ? 'info' : 'high',
@@ -237,12 +294,22 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Xero integration',
         category: 'xero',
         run: async (companyId) => {
-          const connections = await this.deps.db.query.integrationConnections.findMany({ where: eq(integrationConnections.companyId, companyId) });
+          const connections = await this.deps.db.query.integrationConnections.findMany({
+            where: eq(integrationConnections.companyId, companyId),
+          });
           const xero = connections.filter((c) => c.provider?.toLowerCase().includes('xero'));
           return {
-            status: xero.length === 0 ? 'warning' : xero.every((c) => c.status !== 'error') ? 'passed' : 'failed',
+            status:
+              xero.length === 0
+                ? 'warning'
+                : xero.every((c) => c.status !== 'error')
+                  ? 'passed'
+                  : 'failed',
             severity: xero.some((c) => c.status === 'error') ? 'high' : 'info',
-            message: xero.length === 0 ? 'No Xero integration configured.' : `${xero.length} Xero connection(s).`,
+            message:
+              xero.length === 0
+                ? 'No Xero integration configured.'
+                : `${xero.length} Xero connection(s).`,
           };
         },
       },
@@ -251,9 +318,15 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'WhatsApp providers',
         category: 'whatsapp',
         run: async (companyId) => {
-          const adapters = await this.deps.db.query.ucProviderAdapters.findMany({ where: eq(ucProviderAdapters.companyId, companyId) });
+          const adapters = await this.deps.db.query.ucProviderAdapters.findMany({
+            where: eq(ucProviderAdapters.companyId, companyId),
+          });
           const whatsapp = adapters.filter((a) => a.channel === 'whatsapp');
-          return { status: whatsapp.some((a) => a.status === 'active') ? 'passed' : 'warning', severity: 'info', message: `${whatsapp.length} WhatsApp adapter(s).` };
+          return {
+            status: whatsapp.some((a) => a.status === 'active') ? 'passed' : 'warning',
+            severity: 'info',
+            message: `${whatsapp.length} WhatsApp adapter(s).`,
+          };
         },
       },
       {
@@ -261,9 +334,15 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Email providers',
         category: 'email',
         run: async (companyId) => {
-          const adapters = await this.deps.db.query.ucProviderAdapters.findMany({ where: eq(ucProviderAdapters.companyId, companyId) });
+          const adapters = await this.deps.db.query.ucProviderAdapters.findMany({
+            where: eq(ucProviderAdapters.companyId, companyId),
+          });
           const email = adapters.filter((a) => a.channel === 'email');
-          return { status: email.some((a) => a.status === 'active') ? 'passed' : 'warning', severity: 'info', message: `${email.length} email adapter(s).` };
+          return {
+            status: email.some((a) => a.status === 'active') ? 'passed' : 'warning',
+            severity: 'info',
+            message: `${email.length} email adapter(s).`,
+          };
         },
       },
       {
@@ -272,7 +351,11 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         category: 'document_ai',
         run: async (companyId) => {
           const dashboard = await this.deps.enterpriseDocumentAiService.getDashboard(companyId);
-          return { status: 'passed', severity: 'info', message: `${dashboard.documentsStats.documentCount} document(s), ${dashboard.activeOcrProviderCount} OCR provider(s).` };
+          return {
+            status: 'passed',
+            severity: 'info',
+            message: `${dashboard.documentsStats.documentCount} document(s), ${dashboard.activeOcrProviderCount} OCR provider(s).`,
+          };
         },
       },
       {
@@ -280,7 +363,10 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Knowledge Graph',
         category: 'knowledge_graph',
         run: async (companyId) => {
-          const ctx = await this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(companyId);
+          const ctx =
+            await this.deps.enterpriseKnowledgeGraphService.buildKnowledgeGraphAuraContext(
+              companyId,
+            );
           return { status: 'passed', severity: 'info', message: ctx.summary };
         },
       },
@@ -289,7 +375,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Mission Control',
         category: 'mission_control',
         run: async (companyId) => {
-          const dashboard = await this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId);
+          const dashboard =
+            await this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId);
           return { status: 'passed', severity: 'info', message: dashboard.summary };
         },
       },
@@ -298,7 +385,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Security Platform',
         category: 'security',
         run: async (companyId) => {
-          const dashboard = await this.deps.enterpriseSecurityService.getExecutiveDashboard(companyId);
+          const dashboard =
+            await this.deps.enterpriseSecurityService.getExecutiveDashboard(companyId);
           return {
             status: dashboard.riskAlertCount === 0 ? 'passed' : 'warning',
             severity: dashboard.riskAlertCount > 0 ? 'high' : 'info',
@@ -311,7 +399,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'SaaS Platform',
         category: 'saas',
         run: async (companyId) => {
-          const dashboard = await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
+          const dashboard =
+            await this.deps.enterpriseSaasPlatformService.getPlatformDashboard(companyId);
           return { status: 'passed', severity: 'info', message: dashboard.summary };
         },
       },
@@ -329,7 +418,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'Business Continuity',
         category: 'business_continuity',
         run: async (companyId) => {
-          const dashboard = await this.deps.enterpriseBusinessContinuityService.getDashboard(companyId);
+          const dashboard =
+            await this.deps.enterpriseBusinessContinuityService.getDashboard(companyId);
           return { status: 'passed', severity: 'info', message: dashboard.summary };
         },
       },
@@ -356,7 +446,8 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         checkName: 'AI providers',
         category: 'ai_orchestration',
         run: async (companyId) => {
-          const hasProviders = await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
+          const hasProviders =
+            await this.deps.aiProviderResilienceService.hasConfiguredProviders(companyId);
           const status = await this.deps.aiProviderResilienceService.getResilienceStatus(companyId);
           return {
             status: hasProviders ? 'passed' : 'warning',
@@ -384,14 +475,20 @@ export class EnterpriseReleaseCenterIntegrationValidationService {
         category: 'authentication',
         run: async () => {
           const ok = this.deps.databaseUrl ? await checkDbConnection(this.deps.databaseUrl) : false;
-          return { status: ok ? 'passed' : 'failed', severity: ok ? 'info' : 'critical', message: ok ? 'Database reachable.' : 'Database connection failed.' };
+          return {
+            status: ok ? 'passed' : 'failed',
+            severity: ok ? 'info' : 'critical',
+            message: ok ? 'Database reachable.' : 'Database connection failed.',
+          };
         },
       },
     ];
   }
 }
 
-function toRunSummary(row: typeof rcIntegrationValidationRuns.$inferSelect): RcIntegrationValidationRunSummary {
+function toRunSummary(
+  row: typeof rcIntegrationValidationRuns.$inferSelect,
+): RcIntegrationValidationRunSummary {
   return {
     id: row.id,
     runKey: row.runKey,
@@ -406,7 +503,9 @@ function toRunSummary(row: typeof rcIntegrationValidationRuns.$inferSelect): RcI
   };
 }
 
-function toResultSummary(row: typeof rcIntegrationValidationResults.$inferSelect): RcIntegrationValidationResultSummary {
+function toResultSummary(
+  row: typeof rcIntegrationValidationResults.$inferSelect,
+): RcIntegrationValidationResultSummary {
   return {
     id: row.id,
     validationRunId: row.validationRunId,

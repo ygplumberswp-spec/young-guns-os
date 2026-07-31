@@ -204,7 +204,11 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseFinancialPlanningError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -213,7 +217,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -223,7 +230,10 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
     'financial_planning:manage',
     'finance:read',
   );
-  const requireWrite = requireAnyPermission('financial_planning:write', 'financial_planning:manage');
+  const requireWrite = requireAnyPermission(
+    'financial_planning:write',
+    'financial_planning:manage',
+  );
   const requireManage = requireAnyPermission('financial_planning:manage', 'platform:manage');
 
   router.get('/dashboard', requireStaffAuth, requireRead, async (req, res) => {
@@ -239,9 +249,8 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/financial-monitoring', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const financialMonitoring = await deps.enterpriseFinancialPlanningService.getFinancialMonitoring(
-        auth.companyId,
-      );
+      const financialMonitoring =
+        await deps.enterpriseFinancialPlanningService.getFinancialMonitoring(auth.companyId);
       res.json({ data: { financialMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -264,7 +273,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseFinancialPlanningService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseFinancialPlanningService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -274,7 +285,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
@@ -291,7 +304,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/categories', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const categories = await deps.enterpriseFinancialPlanningService.listCategories(auth.companyId);
+      const categories = await deps.enterpriseFinancialPlanningService.listCategories(
+        auth.companyId,
+      );
       res.json({ data: { categories } });
     } catch (error) {
       handleError(error, res);
@@ -305,7 +320,10 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const category = await deps.enterpriseFinancialPlanningService.createCategory(staffScope(req), parsed.data);
+      const category = await deps.enterpriseFinancialPlanningService.createCategory(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { category } });
     } catch (error) {
       handleError(error, res);
@@ -329,7 +347,10 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const entity = await deps.enterpriseFinancialPlanningService.createEntity(staffScope(req), parsed.data);
+      const entity = await deps.enterpriseFinancialPlanningService.createEntity(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { entity } });
     } catch (error) {
       handleError(error, res);
@@ -353,36 +374,49 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const budget = await deps.enterpriseFinancialPlanningService.createBudget(staffScope(req), parsed.data);
+      const budget = await deps.enterpriseFinancialPlanningService.createBudget(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { budget } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/budgets/:budgetId/submit-for-review', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const budget = await deps.enterpriseFinancialPlanningService.submitBudgetForReview(
-        staffScope(req),
-        getRouteParam(req.params.budgetId),
-      );
-      res.json({ data: { budget } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/budgets/:budgetId/submit-for-review',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const budget = await deps.enterpriseFinancialPlanningService.submitBudgetForReview(
+          staffScope(req),
+          getRouteParam(req.params.budgetId),
+        );
+        res.json({ data: { budget } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/budgets/:budgetId/submit-for-approval', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const budget = await deps.enterpriseFinancialPlanningService.submitBudgetForApproval(
-        staffScope(req),
-        getRouteParam(req.params.budgetId),
-      );
-      res.json({ data: { budget } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/budgets/:budgetId/submit-for-approval',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const budget = await deps.enterpriseFinancialPlanningService.submitBudgetForApproval(
+          staffScope(req),
+          getRouteParam(req.params.budgetId),
+        );
+        res.json({ data: { budget } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/budgets/:budgetId/approve', requireStaffAuth, requireWrite, async (req, res) => {
     try {
@@ -408,17 +442,22 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
     }
   });
 
-  router.post('/budgets/:budgetId/new-version', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const budget = await deps.enterpriseFinancialPlanningService.createBudgetVersion(
-        staffScope(req),
-        getRouteParam(req.params.budgetId),
-      );
-      res.status(201).json({ data: { budget } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/budgets/:budgetId/new-version',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const budget = await deps.enterpriseFinancialPlanningService.createBudgetVersion(
+          staffScope(req),
+          getRouteParam(req.params.budgetId),
+        );
+        res.status(201).json({ data: { budget } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/forecasts', requireStaffAuth, requireRead, async (req, res) => {
     try {
@@ -437,29 +476,39 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const forecast = await deps.enterpriseFinancialPlanningService.createForecast(staffScope(req), parsed.data);
+      const forecast = await deps.enterpriseFinancialPlanningService.createForecast(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { forecast } });
     } catch (error) {
       handleError(error, res);
     }
   });
 
-  router.post('/forecasts/:forecastId/snapshots', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const snapshot = await deps.enterpriseFinancialPlanningService.captureForecastSnapshot(
-        staffScope(req),
-        getRouteParam(req.params.forecastId),
-      );
-      res.status(201).json({ data: { snapshot } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/forecasts/:forecastId/snapshots',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const snapshot = await deps.enterpriseFinancialPlanningService.captureForecastSnapshot(
+          staffScope(req),
+          getRouteParam(req.params.forecastId),
+        );
+        res.status(201).json({ data: { snapshot } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/cash-flow/projections', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const projections = await deps.enterpriseFinancialPlanningService.listCashFlowProjections(auth.companyId);
+      const projections = await deps.enterpriseFinancialPlanningService.listCashFlowProjections(
+        auth.companyId,
+      );
       res.json({ data: { projections } });
     } catch (error) {
       handleError(error, res);
@@ -469,7 +518,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/cash-flow/projections', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = cashFlowProjectionSchema.safeParse(req.body ?? {});
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid cash flow projection request' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid cash flow projection request' },
+      });
       return;
     }
     try {
@@ -486,7 +537,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/treasury/accounts', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const accounts = await deps.enterpriseFinancialPlanningService.listTreasuryAccounts(auth.companyId);
+      const accounts = await deps.enterpriseFinancialPlanningService.listTreasuryAccounts(
+        auth.companyId,
+      );
       res.json({ data: { accounts } });
     } catch (error) {
       handleError(error, res);
@@ -496,11 +549,16 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/treasury/accounts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = treasuryAccountSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid treasury account' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid treasury account' } });
       return;
     }
     try {
-      const account = await deps.enterpriseFinancialPlanningService.createTreasuryAccount(staffScope(req), parsed.data);
+      const account = await deps.enterpriseFinancialPlanningService.createTreasuryAccount(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { account } });
     } catch (error) {
       handleError(error, res);
@@ -524,7 +582,10 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
       return;
     }
     try {
-      const scenario = await deps.enterpriseFinancialPlanningService.createScenario(staffScope(req), parsed.data);
+      const scenario = await deps.enterpriseFinancialPlanningService.createScenario(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { scenario } });
     } catch (error) {
       handleError(error, res);
@@ -534,7 +595,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/targets', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const targets = await deps.enterpriseFinancialPlanningService.listFinancialTargets(auth.companyId);
+      const targets = await deps.enterpriseFinancialPlanningService.listFinancialTargets(
+        auth.companyId,
+      );
       res.json({ data: { targets } });
     } catch (error) {
       handleError(error, res);
@@ -544,11 +607,16 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/targets', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = financialTargetSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid financial target' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid financial target' } });
       return;
     }
     try {
-      const target = await deps.enterpriseFinancialPlanningService.createFinancialTarget(staffScope(req), parsed.data);
+      const target = await deps.enterpriseFinancialPlanningService.createFinancialTarget(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { target } });
     } catch (error) {
       handleError(error, res);
@@ -559,7 +627,10 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
     try {
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const alerts = await deps.enterpriseFinancialPlanningService.listFinancialAlerts(auth.companyId, { status });
+      const alerts = await deps.enterpriseFinancialPlanningService.listFinancialAlerts(
+        auth.companyId,
+        { status },
+      );
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -568,7 +639,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
 
   router.post('/alerts/sync', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const alerts = await deps.enterpriseFinancialPlanningService.syncFinancialAlerts(staffScope(req));
+      const alerts = await deps.enterpriseFinancialPlanningService.syncFinancialAlerts(
+        staffScope(req),
+      );
       res.json({ data: { alerts } });
     } catch (error) {
       handleError(error, res);
@@ -578,7 +651,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/accounting/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseFinancialPlanningService.listAccountingProviders(auth.companyId);
+      const providers = await deps.enterpriseFinancialPlanningService.listAccountingProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -588,7 +663,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/accounting/providers', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = accountingProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid accounting provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid accounting provider' } });
       return;
     }
     try {
@@ -602,22 +679,29 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
     }
   });
 
-  router.post('/accounting/providers/:providerId/test', requireStaffAuth, requireManage, async (req, res) => {
-    try {
-      const provider = await deps.enterpriseFinancialPlanningService.testAccountingProvider(
-        staffScope(req),
-        getRouteParam(req.params.providerId),
-      );
-      res.json({ data: { provider } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/accounting/providers/:providerId/test',
+    requireStaffAuth,
+    requireManage,
+    async (req, res) => {
+      try {
+        const provider = await deps.enterpriseFinancialPlanningService.testAccountingProvider(
+          staffScope(req),
+          getRouteParam(req.params.providerId),
+        );
+        res.json({ data: { provider } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/banking/providers', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const providers = await deps.enterpriseFinancialPlanningService.listBankingProviders(auth.companyId);
+      const providers = await deps.enterpriseFinancialPlanningService.listBankingProviders(
+        auth.companyId,
+      );
       res.json({ data: { providers } });
     } catch (error) {
       handleError(error, res);
@@ -627,7 +711,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/banking/providers', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = bankingProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid banking provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid banking provider' } });
       return;
     }
     try {
@@ -641,22 +727,29 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
     }
   });
 
-  router.post('/banking/providers/:providerId/test', requireStaffAuth, requireManage, async (req, res) => {
-    try {
-      const provider = await deps.enterpriseFinancialPlanningService.testBankingProvider(
-        staffScope(req),
-        getRouteParam(req.params.providerId),
-      );
-      res.json({ data: { provider } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/banking/providers/:providerId/test',
+    requireStaffAuth,
+    requireManage,
+    async (req, res) => {
+      try {
+        const provider = await deps.enterpriseFinancialPlanningService.testBankingProvider(
+          staffScope(req),
+          getRouteParam(req.params.providerId),
+        );
+        res.json({ data: { provider } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.get('/profitability/snapshots', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const snapshots = await deps.enterpriseFinancialPlanningService.listProfitabilitySnapshots(auth.companyId);
+      const snapshots = await deps.enterpriseFinancialPlanningService.listProfitabilitySnapshots(
+        auth.companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -666,7 +759,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/profitability/snapshots', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = profitabilitySnapshotSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid profitability snapshot request' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid profitability snapshot request' },
+      });
       return;
     }
     try {
@@ -682,7 +777,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
 
   router.post('/analytics/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseFinancialPlanningService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseFinancialPlanningService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -692,7 +789,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.get('/analytics/latest', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const analytics = await deps.enterpriseFinancialPlanningService.getLatestAnalytics(auth.companyId);
+      const analytics = await deps.enterpriseFinancialPlanningService.getLatestAnalytics(
+        auth.companyId,
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -702,7 +801,9 @@ export function createEnterpriseFinancialPlanningRouter(deps: RouterDeps): Route
   router.post('/planning-drafts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = planningDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid planning action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid planning action draft' } });
       return;
     }
     try {

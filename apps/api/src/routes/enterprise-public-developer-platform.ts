@@ -65,7 +65,11 @@ function staffScope(req: import('express').Request) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterprisePublicDeveloperPlatformError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT' ? 400 : 500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'CONFLICT'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -74,9 +78,21 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
-  const requireRead = requireAnyPermission('public_developer:read', 'public_developer:manage', 'integrations:read', 'integrations:manage');
-  const requireWrite = requireAnyPermission('public_developer:write', 'public_developer:manage', 'integrations:manage');
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
+  const requireRead = requireAnyPermission(
+    'public_developer:read',
+    'public_developer:manage',
+    'integrations:read',
+    'integrations:manage',
+  );
+  const requireWrite = requireAnyPermission(
+    'public_developer:write',
+    'public_developer:manage',
+    'integrations:manage',
+  );
   const requireManage = requireAnyPermission('public_developer:manage', 'integrations:manage');
 
   router.use(requireStaffAuth);
@@ -84,7 +100,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const dashboard = await deps.enterprisePublicDeveloperPlatformService.getDashboard(auth.companyId);
+      const dashboard = await deps.enterprisePublicDeveloperPlatformService.getDashboard(
+        auth.companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -94,7 +112,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/developer-monitoring', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const developerMonitoring = await deps.enterprisePublicDeveloperPlatformService.getDeveloperMonitoring(auth.companyId);
+      const developerMonitoring =
+        await deps.enterprisePublicDeveloperPlatformService.getDeveloperMonitoring(auth.companyId);
       res.json({ data: { developerMonitoring } });
     } catch (error) {
       handleError(error, res);
@@ -104,7 +123,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterprisePublicDeveloperPlatformService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterprisePublicDeveloperPlatformService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -114,11 +135,17 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.put('/platform-config', requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
-      const platformConfig = await deps.enterprisePublicDeveloperPlatformService.updatePlatformConfig(staffScope(req), parsed.data);
+      const platformConfig =
+        await deps.enterprisePublicDeveloperPlatformService.updatePlatformConfig(
+          staffScope(req),
+          parsed.data,
+        );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -128,7 +155,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/sandbox-config', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const sandboxConfig = await deps.enterprisePublicDeveloperPlatformService.getSandboxConfig(auth.companyId);
+      const sandboxConfig = await deps.enterprisePublicDeveloperPlatformService.getSandboxConfig(
+        auth.companyId,
+      );
       res.json({ data: { sandboxConfig } });
     } catch (error) {
       handleError(error, res);
@@ -138,11 +167,16 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.put('/sandbox-config', requireManage, async (req, res) => {
     const parsed = sandboxConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sandbox config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid sandbox config' } });
       return;
     }
     try {
-      const sandboxConfig = await deps.enterprisePublicDeveloperPlatformService.updateSandboxConfig(staffScope(req), parsed.data);
+      const sandboxConfig = await deps.enterprisePublicDeveloperPlatformService.updateSandboxConfig(
+        staffScope(req),
+        parsed.data,
+      );
       res.json({ data: { sandboxConfig } });
     } catch (error) {
       handleError(error, res);
@@ -151,7 +185,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
 
   router.post('/developer-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const alerts = await deps.enterprisePublicDeveloperPlatformService.syncDeveloperAlerts(staffScope(req));
+      const alerts = await deps.enterprisePublicDeveloperPlatformService.syncDeveloperAlerts(
+        staffScope(req),
+      );
       res.json({ data: { developerAlerts: alerts } });
     } catch (error) {
       handleError(error, res);
@@ -160,7 +196,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterprisePublicDeveloperPlatformService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterprisePublicDeveloperPlatformService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -169,7 +207,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
 
   router.post('/api-status/capture', requireWrite, async (req, res) => {
     try {
-      const apiStatus = await deps.enterprisePublicDeveloperPlatformService.captureApiStatus(staffScope(req));
+      const apiStatus = await deps.enterprisePublicDeveloperPlatformService.captureApiStatus(
+        staffScope(req),
+      );
       res.json({ data: { apiStatus } });
     } catch (error) {
       handleError(error, res);
@@ -179,7 +219,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/aura-context', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const auraContext = await deps.enterprisePublicDeveloperPlatformService.buildAuraContext(auth.companyId);
+      const auraContext = await deps.enterprisePublicDeveloperPlatformService.buildAuraContext(
+        auth.companyId,
+      );
       res.json({ data: { auraContext } });
     } catch (error) {
       handleError(error, res);
@@ -206,7 +248,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
 
   router.get('/webhook-event-types', requireRead, async (_req, res) => {
     try {
-      const webhookEventTypes = await deps.enterprisePublicDeveloperPlatformService.listWebhookEventTypes();
+      const webhookEventTypes =
+        await deps.enterprisePublicDeveloperPlatformService.listWebhookEventTypes();
       res.json({ data: { webhookEventTypes } });
     } catch (error) {
       handleError(error, res);
@@ -216,7 +259,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/rate-limit-policies', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const rateLimitPolicies = await deps.enterprisePublicDeveloperPlatformService.listRateLimitPolicies(auth.companyId);
+      const rateLimitPolicies =
+        await deps.enterprisePublicDeveloperPlatformService.listRateLimitPolicies(auth.companyId);
       res.json({ data: { rateLimitPolicies } });
     } catch (error) {
       handleError(error, res);
@@ -226,11 +270,16 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.post('/rate-limit-policies', requireManage, async (req, res) => {
     const parsed = rateLimitSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid rate limit policy' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid rate limit policy' } });
       return;
     }
     try {
-      const policy = await deps.enterprisePublicDeveloperPlatformService.createRateLimitPolicy(staffScope(req), parsed.data);
+      const policy = await deps.enterprisePublicDeveloperPlatformService.createRateLimitPolicy(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { policy } });
     } catch (error) {
       handleError(error, res);
@@ -240,7 +289,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.post('/openapi/generate', requireWrite, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const openapiSpec = await deps.enterprisePublicDeveloperPlatformService.generateOpenApiSpec(auth.companyId);
+      const openapiSpec = await deps.enterprisePublicDeveloperPlatformService.generateOpenApiSpec(
+        auth.companyId,
+      );
       res.json({ data: { openapiSpec } });
     } catch (error) {
       handleError(error, res);
@@ -254,7 +305,10 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
       return;
     }
     try {
-      const record = await deps.enterprisePublicDeveloperPlatformService.generateSdk(staffScope(req), parsed.data);
+      const record = await deps.enterprisePublicDeveloperPlatformService.generateSdk(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { record } });
     } catch (error) {
       handleError(error, res);
@@ -264,7 +318,10 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/sdk-generation-records', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const sdkGenerationRecords = await deps.enterprisePublicDeveloperPlatformService.listSdkGenerationRecords(auth.companyId);
+      const sdkGenerationRecords =
+        await deps.enterprisePublicDeveloperPlatformService.listSdkGenerationRecords(
+          auth.companyId,
+        );
       res.json({ data: { sdkGenerationRecords } });
     } catch (error) {
       handleError(error, res);
@@ -274,7 +331,10 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/webhook-subscriptions', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const webhookSubscriptions = await deps.enterprisePublicDeveloperPlatformService.listWebhookSubscriptions(auth.companyId);
+      const webhookSubscriptions =
+        await deps.enterprisePublicDeveloperPlatformService.listWebhookSubscriptions(
+          auth.companyId,
+        );
       res.json({ data: { webhookSubscriptions } });
     } catch (error) {
       handleError(error, res);
@@ -284,7 +344,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/webhook-dead-letter', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const webhookDeadLetter = await deps.enterprisePublicDeveloperPlatformService.listWebhookDeadLetter(auth.companyId);
+      const webhookDeadLetter =
+        await deps.enterprisePublicDeveloperPlatformService.listWebhookDeadLetter(auth.companyId);
       res.json({ data: { webhookDeadLetter } });
     } catch (error) {
       handleError(error, res);
@@ -294,7 +355,10 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/webhook-deliveries', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const webhookDeliveries = await deps.enterprisePublicDeveloperPlatformService.listWebhookDeliveryHistory(auth.companyId);
+      const webhookDeliveries =
+        await deps.enterprisePublicDeveloperPlatformService.listWebhookDeliveryHistory(
+          auth.companyId,
+        );
       res.json({ data: { webhookDeliveries } });
     } catch (error) {
       handleError(error, res);
@@ -304,7 +368,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/api-keys', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const apiKeys = await deps.enterprisePublicDeveloperPlatformService.listDeveloperApiKeys(auth.companyId);
+      const apiKeys = await deps.enterprisePublicDeveloperPlatformService.listDeveloperApiKeys(
+        auth.companyId,
+      );
       res.json({ data: { apiKeys } });
     } catch (error) {
       handleError(error, res);
@@ -314,7 +380,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/developer-alerts', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const developerAlerts = await deps.enterprisePublicDeveloperPlatformService.listDeveloperAlerts(auth.companyId);
+      const developerAlerts =
+        await deps.enterprisePublicDeveloperPlatformService.listDeveloperAlerts(auth.companyId);
       res.json({ data: { developerAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -323,10 +390,11 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
 
   router.post('/developer-alerts/:alertId/acknowledge', requireWrite, async (req, res) => {
     try {
-      const developerAlert = await deps.enterprisePublicDeveloperPlatformService.acknowledgeDeveloperAlert(
-        staffScope(req),
-        getRouteParam(req.params.alertId),
-      );
+      const developerAlert =
+        await deps.enterprisePublicDeveloperPlatformService.acknowledgeDeveloperAlert(
+          staffScope(req),
+          getRouteParam(req.params.alertId),
+        );
       res.json({ data: { developerAlert } });
     } catch (error) {
       handleError(error, res);
@@ -336,11 +404,16 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.post('/action-drafts', requireWrite, async (req, res) => {
     const parsed = draftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action draft' } });
       return;
     }
     try {
-      const actionDraft = await deps.enterprisePublicDeveloperPlatformService.createActionDraft(staffScope(req), parsed.data);
+      const actionDraft = await deps.enterprisePublicDeveloperPlatformService.createActionDraft(
+        staffScope(req),
+        parsed.data,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);
@@ -350,7 +423,8 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/oauth-applications', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const oauthApplications = await deps.enterprisePublicDeveloperPlatformService.listOauthApplications(auth.companyId);
+      const oauthApplications =
+        await deps.enterprisePublicDeveloperPlatformService.listOauthApplications(auth.companyId);
       res.json({ data: { oauthApplications } });
     } catch (error) {
       handleError(error, res);
@@ -360,7 +434,9 @@ export function createEnterprisePublicDeveloperPlatformRouter(deps: RouterDeps):
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const auditLogs = await deps.enterprisePublicDeveloperPlatformService.listAuditLogs(auth.companyId);
+      const auditLogs = await deps.enterprisePublicDeveloperPlatformService.listAuditLogs(
+        auth.companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);

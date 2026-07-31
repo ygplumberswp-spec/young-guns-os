@@ -7,11 +7,21 @@ import { requireAnyPermission } from '../middleware/rbac.js';
 
 const scheduleTypeSchema = z.enum(['hourly', 'daily', 'weekly', 'monthly', 'manual']);
 const recoveryScenarioSchema = z.enum([
-  'database_failure', 'storage_failure', 'ai_provider_outage',
-  'communication_provider_outage', 'payment_provider_outage',
-  'integration_failure', 'infrastructure_outage',
+  'database_failure',
+  'storage_failure',
+  'ai_provider_outage',
+  'communication_provider_outage',
+  'payment_provider_outage',
+  'integration_failure',
+  'infrastructure_outage',
 ]);
-const restoreScopeSchema = z.enum(['point_in_time', 'full_tenant', 'module', 'document', 'configuration']);
+const restoreScopeSchema = z.enum([
+  'point_in_time',
+  'full_tenant',
+  'module',
+  'document',
+  'configuration',
+]);
 
 const platformConfigSchema = z.object({
   backupPolicy: z.record(z.unknown()).optional(),
@@ -52,7 +62,15 @@ const restoreRequestSchema = z.object({
 });
 
 const restoreUpdateSchema = z.object({
-  status: z.enum(['pending_approval', 'approved', 'rejected', 'in_progress', 'completed', 'failed', 'cancelled']),
+  status: z.enum([
+    'pending_approval',
+    'approved',
+    'rejected',
+    'in_progress',
+    'completed',
+    'failed',
+    'cancelled',
+  ]),
 });
 
 const recoveryPlanSchema = z.object({
@@ -135,9 +153,11 @@ function getRouteParam(value: string | string[]) {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseBusinessContinuityError) {
     const status =
-      error.code === 'NOT_FOUND' ? 404 :
-      error.code === 'VALIDATION_ERROR' || error.code === 'APPROVAL_REQUIRED' ? 400 :
-      500;
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'VALIDATION_ERROR' || error.code === 'APPROVAL_REQUIRED'
+          ? 400
+          : 500;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -146,21 +166,30 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requireRead = requireAnyPermission(
     'business_continuity:read',
     'business_continuity:manage',
     'ops:read',
     'it_operations:read',
   );
-  const requireWrite = requireAnyPermission('business_continuity:write', 'business_continuity:manage', 'ops:manage');
+  const requireWrite = requireAnyPermission(
+    'business_continuity:write',
+    'business_continuity:manage',
+    'ops:manage',
+  );
   const requireManage = requireAnyPermission('business_continuity:manage', 'ops:manage');
 
   router.use(requireStaffAuth);
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await deps.enterpriseBusinessContinuityService.getDashboard(getAuth(req).companyId);
+      const dashboard = await deps.enterpriseBusinessContinuityService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -169,7 +198,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/platform-config', requireRead, async (req, res) => {
     try {
-      const platformConfig = await deps.enterpriseBusinessContinuityService.getPlatformConfig(getAuth(req).companyId);
+      const platformConfig = await deps.enterpriseBusinessContinuityService.getPlatformConfig(
+        getAuth(req).companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -179,7 +210,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.put('/platform-config', requireManage, async (req, res) => {
     try {
       const input = platformConfigSchema.parse(req.body);
-      const platformConfig = await deps.enterpriseBusinessContinuityService.updatePlatformConfig(staffScope(req), input);
+      const platformConfig = await deps.enterpriseBusinessContinuityService.updatePlatformConfig(
+        staffScope(req),
+        input,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -188,7 +222,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/backup-policies', requireRead, async (req, res) => {
     try {
-      const backupPolicies = await deps.enterpriseBusinessContinuityService.listBackupPolicies(getAuth(req).companyId);
+      const backupPolicies = await deps.enterpriseBusinessContinuityService.listBackupPolicies(
+        getAuth(req).companyId,
+      );
       res.json({ data: { backupPolicies } });
     } catch (error) {
       handleError(error, res);
@@ -198,7 +234,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/backup-policies', requireWrite, async (req, res) => {
     try {
       const input = backupPolicySchema.parse(req.body);
-      const backupPolicy = await deps.enterpriseBusinessContinuityService.createBackupPolicy(staffScope(req), input);
+      const backupPolicy = await deps.enterpriseBusinessContinuityService.createBackupPolicy(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { backupPolicy } });
     } catch (error) {
       handleError(error, res);
@@ -208,7 +247,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.get('/backup-jobs', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const backupJobs = await deps.enterpriseBusinessContinuityService.listBackupJobs(getAuth(req).companyId, { status });
+      const backupJobs = await deps.enterpriseBusinessContinuityService.listBackupJobs(
+        getAuth(req).companyId,
+        { status },
+      );
       res.json({ data: { backupJobs } });
     } catch (error) {
       handleError(error, res);
@@ -218,7 +260,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/backup-jobs', requireWrite, async (req, res) => {
     try {
       const input = backupJobSchema.parse(req.body);
-      const backupJob = await deps.enterpriseBusinessContinuityService.createBackupJob(staffScope(req), input);
+      const backupJob = await deps.enterpriseBusinessContinuityService.createBackupJob(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { backupJob } });
     } catch (error) {
       handleError(error, res);
@@ -227,7 +272,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/restore-requests', requireRead, async (req, res) => {
     try {
-      const restoreRequests = await deps.enterpriseBusinessContinuityService.listRestoreRequests(getAuth(req).companyId);
+      const restoreRequests = await deps.enterpriseBusinessContinuityService.listRestoreRequests(
+        getAuth(req).companyId,
+      );
       res.json({ data: { restoreRequests } });
     } catch (error) {
       handleError(error, res);
@@ -237,7 +284,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/restore-requests', requireWrite, async (req, res) => {
     try {
       const input = restoreRequestSchema.parse(req.body);
-      const restoreRequest = await deps.enterpriseBusinessContinuityService.createRestoreRequest(staffScope(req), input);
+      const restoreRequest = await deps.enterpriseBusinessContinuityService.createRestoreRequest(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { restoreRequest } });
     } catch (error) {
       handleError(error, res);
@@ -260,7 +310,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/recovery-plans', requireRead, async (req, res) => {
     try {
-      const recoveryPlans = await deps.enterpriseBusinessContinuityService.listRecoveryPlans(getAuth(req).companyId);
+      const recoveryPlans = await deps.enterpriseBusinessContinuityService.listRecoveryPlans(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recoveryPlans } });
     } catch (error) {
       handleError(error, res);
@@ -270,7 +322,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/recovery-plans', requireWrite, async (req, res) => {
     try {
       const input = recoveryPlanSchema.parse(req.body);
-      const recoveryPlan = await deps.enterpriseBusinessContinuityService.createRecoveryPlan(staffScope(req), input);
+      const recoveryPlan = await deps.enterpriseBusinessContinuityService.createRecoveryPlan(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { recoveryPlan } });
     } catch (error) {
       handleError(error, res);
@@ -279,7 +334,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/recovery-tests', requireRead, async (req, res) => {
     try {
-      const recoveryTests = await deps.enterpriseBusinessContinuityService.listRecoveryTests(getAuth(req).companyId);
+      const recoveryTests = await deps.enterpriseBusinessContinuityService.listRecoveryTests(
+        getAuth(req).companyId,
+      );
       res.json({ data: { recoveryTests } });
     } catch (error) {
       handleError(error, res);
@@ -289,7 +346,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/recovery-tests', requireWrite, async (req, res) => {
     try {
       const input = recoveryTestSchema.parse(req.body);
-      const recoveryTest = await deps.enterpriseBusinessContinuityService.createRecoveryTest(staffScope(req), input);
+      const recoveryTest = await deps.enterpriseBusinessContinuityService.createRecoveryTest(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { recoveryTest } });
     } catch (error) {
       handleError(error, res);
@@ -312,7 +372,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/verification-records', requireRead, async (req, res) => {
     try {
-      const verificationRecords = await deps.enterpriseBusinessContinuityService.listVerificationRecords(getAuth(req).companyId);
+      const verificationRecords =
+        await deps.enterpriseBusinessContinuityService.listVerificationRecords(
+          getAuth(req).companyId,
+        );
       res.json({ data: { verificationRecords } });
     } catch (error) {
       handleError(error, res);
@@ -322,7 +385,11 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/verification-records', requireWrite, async (req, res) => {
     try {
       const input = verificationSchema.parse(req.body);
-      const verificationRecord = await deps.enterpriseBusinessContinuityService.createVerificationRecord(staffScope(req), input);
+      const verificationRecord =
+        await deps.enterpriseBusinessContinuityService.createVerificationRecord(
+          staffScope(req),
+          input,
+        );
       res.status(201).json({ data: { verificationRecord } });
     } catch (error) {
       handleError(error, res);
@@ -331,7 +398,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/storage-health', requireRead, async (req, res) => {
     try {
-      const storageHealth = await deps.enterpriseBusinessContinuityService.listStorageHealth(getAuth(req).companyId);
+      const storageHealth = await deps.enterpriseBusinessContinuityService.listStorageHealth(
+        getAuth(req).companyId,
+      );
       res.json({ data: { storageHealth } });
     } catch (error) {
       handleError(error, res);
@@ -341,7 +410,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/storage-health', requireWrite, async (req, res) => {
     try {
       const input = storageHealthSchema.parse(req.body);
-      const snapshot = await deps.enterpriseBusinessContinuityService.createStorageHealthSnapshot(staffScope(req), input);
+      const snapshot = await deps.enterpriseBusinessContinuityService.createStorageHealthSnapshot(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
@@ -350,7 +422,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/compliance-records', requireRead, async (req, res) => {
     try {
-      const complianceRecords = await deps.enterpriseBusinessContinuityService.listComplianceRecords(getAuth(req).companyId);
+      const complianceRecords =
+        await deps.enterpriseBusinessContinuityService.listComplianceRecords(
+          getAuth(req).companyId,
+        );
       res.json({ data: { complianceRecords } });
     } catch (error) {
       handleError(error, res);
@@ -360,7 +435,11 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/compliance-records', requireWrite, async (req, res) => {
     try {
       const input = complianceSchema.parse(req.body);
-      const complianceRecord = await deps.enterpriseBusinessContinuityService.createComplianceRecord(staffScope(req), input);
+      const complianceRecord =
+        await deps.enterpriseBusinessContinuityService.createComplianceRecord(
+          staffScope(req),
+          input,
+        );
       res.status(201).json({ data: { complianceRecord } });
     } catch (error) {
       handleError(error, res);
@@ -370,7 +449,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.get('/continuity-alerts', requireRead, async (req, res) => {
     try {
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-      const continuityAlerts = await deps.enterpriseBusinessContinuityService.listContinuityAlerts(getAuth(req).companyId, { status });
+      const continuityAlerts = await deps.enterpriseBusinessContinuityService.listContinuityAlerts(
+        getAuth(req).companyId,
+        { status },
+      );
       res.json({ data: { continuityAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -379,7 +461,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.post('/continuity-alerts/sync', requireWrite, async (req, res) => {
     try {
-      const continuityAlerts = await deps.enterpriseBusinessContinuityService.syncContinuityAlerts(staffScope(req));
+      const continuityAlerts = await deps.enterpriseBusinessContinuityService.syncContinuityAlerts(
+        staffScope(req),
+      );
       res.json({ data: { continuityAlerts } });
     } catch (error) {
       handleError(error, res);
@@ -388,7 +472,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.post('/analytics/capture', requireWrite, async (req, res) => {
     try {
-      const analytics = await deps.enterpriseBusinessContinuityService.captureAnalytics(staffScope(req));
+      const analytics = await deps.enterpriseBusinessContinuityService.captureAnalytics(
+        staffScope(req),
+      );
       res.json({ data: { analytics } });
     } catch (error) {
       handleError(error, res);
@@ -397,7 +483,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/action-drafts', requireRead, async (req, res) => {
     try {
-      const actionDrafts = await deps.enterpriseBusinessContinuityService.listActionDrafts(getAuth(req).companyId);
+      const actionDrafts = await deps.enterpriseBusinessContinuityService.listActionDrafts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { actionDrafts } });
     } catch (error) {
       handleError(error, res);
@@ -407,7 +495,10 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
   router.post('/action-drafts', requireWrite, async (req, res) => {
     try {
       const input = actionDraftSchema.parse(req.body);
-      const actionDraft = await deps.enterpriseBusinessContinuityService.createActionDraft(staffScope(req), input);
+      const actionDraft = await deps.enterpriseBusinessContinuityService.createActionDraft(
+        staffScope(req),
+        input,
+      );
       res.status(201).json({ data: { actionDraft } });
     } catch (error) {
       handleError(error, res);
@@ -416,7 +507,9 @@ export function createEnterpriseBusinessContinuityRouter(deps: RouterDeps): Rout
 
   router.get('/audit-logs', requireRead, async (req, res) => {
     try {
-      const auditLogs = await deps.enterpriseBusinessContinuityService.listAuditLogs(getAuth(req).companyId);
+      const auditLogs = await deps.enterpriseBusinessContinuityService.listAuditLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { auditLogs } });
     } catch (error) {
       handleError(error, res);

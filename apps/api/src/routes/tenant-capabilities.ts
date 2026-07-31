@@ -66,7 +66,9 @@ export function createTenantCapabilitiesRouter({
     const auth = getAuth(req);
     const parsed = discoverSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discovery request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid discovery request' } });
       return;
     }
     try {
@@ -84,7 +86,9 @@ export function createTenantCapabilitiesRouter({
     const auth = getAuth(req);
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid proposal request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid proposal request' } });
       return;
     }
     try {
@@ -92,7 +96,8 @@ export function createTenantCapabilitiesRouter({
         { companyId: auth.companyId, userId: auth.userId },
         {
           ...parsed.data,
-          extendAgentKey: parsed.data.extendAgentKey as CreateCapabilityProposalRequest['extendAgentKey'],
+          extendAgentKey: parsed.data
+            .extendAgentKey as CreateCapabilityProposalRequest['extendAgentKey'],
         },
       );
       res.status(201).json({ data: { capability } });
@@ -103,7 +108,10 @@ export function createTenantCapabilitiesRouter({
 
   router.get('/:id', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const capability = await tenantCapabilityBuilderService.getCapability(companyId, getRouteParam(req.params.id));
+    const capability = await tenantCapabilityBuilderService.getCapability(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     if (!capability) {
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Capability not found' } });
       return;
@@ -115,7 +123,9 @@ export function createTenantCapabilitiesRouter({
     const auth = getAuth(req);
     const parsed = updateSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update request' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid update request' } });
       return;
     }
     try {
@@ -184,7 +194,10 @@ export function createTenantCapabilitiesRouter({
 
   router.get('/:id/versions', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const versions = await tenantCapabilityBuilderService.listVersions(companyId, getRouteParam(req.params.id));
+    const versions = await tenantCapabilityBuilderService.listVersions(
+      companyId,
+      getRouteParam(req.params.id),
+    );
     res.json({ data: { versions } });
   });
 

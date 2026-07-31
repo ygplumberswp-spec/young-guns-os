@@ -83,7 +83,9 @@ function getRouteParam(value: string | string[]): string {
 
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseProductionReadinessError) {
-    res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({ error: { code: error.code, message: error.message } });
+    res
+      .status(error.code === 'NOT_FOUND' ? 404 : 400)
+      .json({ error: { code: error.code, message: error.message } });
     return;
   }
   throw error;
@@ -97,7 +99,13 @@ export function createEnterpriseProductionReadinessRouter({
 }: RouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
-  const requireRead = requireAnyPermission('ops:read', 'ops:manage', 'platform:read', 'platform:manage', 'executive:read');
+  const requireRead = requireAnyPermission(
+    'ops:read',
+    'ops:manage',
+    'platform:read',
+    'platform:manage',
+    'executive:read',
+  );
   const requireWrite = requireAnyPermission('ops:manage', 'platform:manage');
 
   router.use(requireAuth);
@@ -108,7 +116,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     try {
-      const dashboard = await enterpriseProductionReadinessService.getDashboard(getAuth(req).companyId);
+      const dashboard = await enterpriseProductionReadinessService.getDashboard(
+        getAuth(req).companyId,
+      );
       res.json({ data: { dashboard } });
     } catch (error) {
       handleError(error, res);
@@ -117,7 +127,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.post('/health/capture', requireWrite, async (req, res) => {
     try {
-      const snapshots = await enterpriseProductionReadinessService.captureHealthSnapshots(getAuth(req).companyId);
+      const snapshots = await enterpriseProductionReadinessService.captureHealthSnapshots(
+        getAuth(req).companyId,
+      );
       res.json({ data: { snapshots } });
     } catch (error) {
       handleError(error, res);
@@ -126,7 +138,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.post('/performance/capture', requireWrite, async (req, res) => {
     try {
-      const snapshot = await enterpriseProductionReadinessService.capturePerformanceSnapshot(getAuth(req).companyId);
+      const snapshot = await enterpriseProductionReadinessService.capturePerformanceSnapshot(
+        getAuth(req).companyId,
+      );
       res.json({ data: { snapshot } });
     } catch (error) {
       handleError(error, res);
@@ -135,7 +149,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.post('/readiness/run', requireWrite, async (req, res) => {
     try {
-      const run = await enterpriseProductionReadinessService.runReadinessChecks(getAuth(req).companyId);
+      const run = await enterpriseProductionReadinessService.runReadinessChecks(
+        getAuth(req).companyId,
+      );
       res.json({ data: { run } });
     } catch (error) {
       handleError(error, res);
@@ -144,7 +160,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.post('/logs/sync', requireWrite, async (req, res) => {
     try {
-      const logs = await enterpriseProductionReadinessService.syncOperationalLogs(getAuth(req).companyId);
+      const logs = await enterpriseProductionReadinessService.syncOperationalLogs(
+        getAuth(req).companyId,
+      );
       res.json({ data: { logs } });
     } catch (error) {
       handleError(error, res);
@@ -155,10 +173,15 @@ export function createEnterpriseProductionReadinessRouter({
     try {
       const parsed = logSearchSchema.safeParse(req.query);
       if (!parsed.success) {
-        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid log search parameters' } });
+        res
+          .status(400)
+          .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid log search parameters' } });
         return;
       }
-      const logs = await enterpriseProductionReadinessService.searchLogs(getAuth(req).companyId, parsed.data);
+      const logs = await enterpriseProductionReadinessService.searchLogs(
+        getAuth(req).companyId,
+        parsed.data,
+      );
       res.json({ data: { logs } });
     } catch (error) {
       handleError(error, res);
@@ -167,7 +190,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.post('/alerts/sync', requireWrite, async (req, res) => {
     try {
-      const candidates = await enterpriseProductionReadinessService.syncMissionControlAlerts(getAuth(req).companyId);
+      const candidates = await enterpriseProductionReadinessService.syncMissionControlAlerts(
+        getAuth(req).companyId,
+      );
       res.json({ data: { candidates } });
     } catch (error) {
       handleError(error, res);
@@ -259,7 +284,9 @@ export function createEnterpriseProductionReadinessRouter({
 
   router.get('/aura/context', requireRead, async (req, res) => {
     try {
-      const context = await enterpriseProductionReadinessService.buildAuraContext(getAuth(req).companyId);
+      const context = await enterpriseProductionReadinessService.buildAuraContext(
+        getAuth(req).companyId,
+      );
       res.json({ data: { context } });
     } catch (error) {
       handleError(error, res);

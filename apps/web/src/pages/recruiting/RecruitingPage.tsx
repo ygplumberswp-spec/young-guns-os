@@ -1,7 +1,11 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
-import type { RecruitingApplicationSummary, RecruitingCandidateSummary, RecruitingStatus } from '@titan/shared';
+import type {
+  RecruitingApplicationSummary,
+  RecruitingCandidateSummary,
+  RecruitingStatus,
+} from '@titan/shared';
 import { RECRUITING_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -23,7 +27,12 @@ export function RecruitingPage() {
   const { accessToken, user } = useAuth();
   const [candidates, setCandidates] = useState<RecruitingCandidateSummary[]>([]);
   const [applications, setApplications] = useState<RecruitingApplicationSummary[]>([]);
-  const [stats, setStats] = useState({ candidateCount: 0, applicationCount: 0, newCount: 0, interviewCount: 0 });
+  const [stats, setStats] = useState({
+    candidateCount: 0,
+    applicationCount: 0,
+    newCount: 0,
+    interviewCount: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,7 +43,10 @@ export function RecruitingPage() {
   const [notes, setNotes] = useState('');
 
   const canWrite = useMemo(
-    () => (user ? user.permissions.includes('recruiting:write') || user.permissions.includes('*') : false),
+    () =>
+      user
+        ? user.permissions.includes('recruiting:write') || user.permissions.includes('*')
+        : false,
     [user],
   );
 
@@ -71,7 +83,9 @@ export function RecruitingPage() {
     }
 
     void bootstrap();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [accessToken]);
 
   async function handleCreateCandidate(event: FormEvent<HTMLFormElement>) {
@@ -158,25 +172,58 @@ export function RecruitingPage() {
 
       <Panel title="Pipeline">
         <dl className="integrations-detail-list">
-          <div><dt>Candidates</dt><dd>{stats.candidateCount}</dd></div>
-          <div><dt>Applications</dt><dd>{stats.applicationCount}</dd></div>
-          <div><dt>New</dt><dd>{stats.newCount}</dd></div>
-          <div><dt>In interview</dt><dd>{stats.interviewCount}</dd></div>
+          <div>
+            <dt>Candidates</dt>
+            <dd>{stats.candidateCount}</dd>
+          </div>
+          <div>
+            <dt>Applications</dt>
+            <dd>{stats.applicationCount}</dd>
+          </div>
+          <div>
+            <dt>New</dt>
+            <dd>{stats.newCount}</dd>
+          </div>
+          <div>
+            <dt>In interview</dt>
+            <dd>{stats.interviewCount}</dd>
+          </div>
         </dl>
       </Panel>
 
       {canWrite ? (
         <Panel title="Add candidate">
           <form className="crm-form" onSubmit={(event) => void handleCreateCandidate(event)}>
-            <Input label="Name" value={name} onChange={(event) => setName(event.target.value)} required />
-            <Input label="Email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <Input
+              label="Name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              required
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
             <Input label="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
-            <Input label="Role title" value={roleTitle} onChange={(event) => setRoleTitle(event.target.value)} />
+            <Input
+              label="Role title"
+              value={roleTitle}
+              onChange={(event) => setRoleTitle(event.target.value)}
+            />
             <label className="titan-input-group">
               <span className="titan-input-label">Notes</span>
-              <textarea className="titan-input crm-textarea" rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} />
+              <textarea
+                className="titan-input crm-textarea"
+                rows={3}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+              />
             </label>
-            <Button type="submit" disabled={!name.trim()}>Create candidate</Button>
+            <Button type="submit" disabled={!name.trim()}>
+              Create candidate
+            </Button>
           </form>
         </Panel>
       ) : null}
@@ -202,17 +249,24 @@ export function RecruitingPage() {
                       className="titan-input"
                       value={candidate.status}
                       onChange={(event) =>
-                        void handleCandidateStatusChange(candidate.id, event.target.value as RecruitingStatus)
+                        void handleCandidateStatusChange(
+                          candidate.id,
+                          event.target.value as RecruitingStatus,
+                        )
                       }
                     >
                       {RECRUITING_STATUS_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                       ))}
                     </select>
                     <Button
                       type="button"
                       variant="secondary"
-                      onClick={() => void handleCreateApplication(candidate.id, candidate.roleTitle)}
+                      onClick={() =>
+                        void handleCreateApplication(candidate.id, candidate.roleTitle)
+                      }
                     >
                       Add application
                     </Button>
@@ -243,11 +297,16 @@ export function RecruitingPage() {
                     className="titan-input"
                     value={application.status}
                     onChange={(event) =>
-                      void handleApplicationStatusChange(application.id, event.target.value as RecruitingStatus)
+                      void handleApplicationStatusChange(
+                        application.id,
+                        event.target.value as RecruitingStatus,
+                      )
                     }
                   >
                     {RECRUITING_STATUS_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>{option.label}</option>
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
                     ))}
                   </select>
                 ) : null}

@@ -1,4 +1,5 @@
-export type LncCheckStatus = 'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped' | 'blocked';
+export type LncCheckStatus =
+  'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped' | 'blocked';
 
 export type LncReadinessStatus = 'not_ready' | 'blocked' | 'warning' | 'ready' | 'unknown';
 
@@ -30,11 +31,14 @@ export type LncCheckCategory =
   | 'monitoring'
   | 'audit';
 
-export type LncWizardStatus = 'draft' | 'in_progress' | 'pending_approval' | 'approved' | 'completed' | 'cancelled';
+export type LncWizardStatus =
+  'draft' | 'in_progress' | 'pending_approval' | 'approved' | 'completed' | 'cancelled';
 
-export type LncWizardStepStatus = 'pending' | 'in_progress' | 'passed' | 'failed' | 'blocked' | 'skipped';
+export type LncWizardStepStatus =
+  'pending' | 'in_progress' | 'passed' | 'failed' | 'blocked' | 'skipped';
 
-export type LncDeploymentStatus = 'planned' | 'pending_validation' | 'validated' | 'failed' | 'cancelled';
+export type LncDeploymentStatus =
+  'planned' | 'pending_validation' | 'validated' | 'failed' | 'cancelled';
 
 export type LncIssueSeverity = 'info' | 'warning' | 'high' | 'critical';
 

@@ -5,5 +5,11 @@
     "rootDir": "src",
     "outDir": "dist"
   },
-  "include": ["src/browser.ts", "src/permissions.ts", "src/password.ts", "src/role-experience.ts"]
+  "include": [
+    "src/browser.ts",
+    "src/permissions.ts",
+    "src/password.ts",
+    "src/role-experience.ts",
+    "src/rbac-matrix.ts"
+  ]
 }

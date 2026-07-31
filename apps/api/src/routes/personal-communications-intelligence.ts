@@ -102,7 +102,8 @@ export function createPersonalCommunicationsIntelligenceRouter({
 
   router.get('/dashboard', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const dashboard = await personalCommunicationsIntelligenceService.getExecutiveDashboard(companyId);
+    const dashboard =
+      await personalCommunicationsIntelligenceService.getExecutiveDashboard(companyId);
     res.json({ data: { dashboard } });
   });
 
@@ -116,7 +117,9 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = accountSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid account payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid account payload' } });
       return;
     }
     try {
@@ -136,13 +139,15 @@ export function createPersonalCommunicationsIntelligenceRouter({
 
   router.post('/conversations/sync', requireWrite, async (req, res) => {
     const { companyId } = getAuth(req);
-    const conversations = await personalCommunicationsIntelligenceService.syncConversations(companyId);
+    const conversations =
+      await personalCommunicationsIntelligenceService.syncConversations(companyId);
     res.status(201).json({ data: { conversations } });
   });
 
   router.get('/conversations', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const conversations = await personalCommunicationsIntelligenceService.listBusinessConversations(companyId);
+    const conversations =
+      await personalCommunicationsIntelligenceService.listBusinessConversations(companyId);
     res.json({ data: { conversations } });
   });
 
@@ -153,7 +158,9 @@ export function createPersonalCommunicationsIntelligenceRouter({
       : req.params.conversationId;
     const parsed = classificationOverrideSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid classification payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid classification payload' } });
       return;
     }
     try {
@@ -188,10 +195,15 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const { companyId } = getAuth(req);
     const parsed = voiceAnalyzeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid voice analysis payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid voice analysis payload' } });
       return;
     }
-    const analysis = await personalCommunicationsIntelligenceService.analyzeVoiceNote(companyId, parsed.data);
+    const analysis = await personalCommunicationsIntelligenceService.analyzeVoiceNote(
+      companyId,
+      parsed.data,
+    );
     res.status(201).json({ data: { analysis } });
   });
 
@@ -205,16 +217,22 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const { companyId } = getAuth(req);
     const parsed = mediaAnalyzeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid media analysis payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid media analysis payload' } });
       return;
     }
-    const analysis = await personalCommunicationsIntelligenceService.analyzeMedia(companyId, parsed.data);
+    const analysis = await personalCommunicationsIntelligenceService.analyzeMedia(
+      companyId,
+      parsed.data,
+    );
     res.status(201).json({ data: { analysis } });
   });
 
   router.get('/document-analyses', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const analyses = await personalCommunicationsIntelligenceService.listDocumentAnalyses(companyId);
+    const analyses =
+      await personalCommunicationsIntelligenceService.listDocumentAnalyses(companyId);
     res.json({ data: { analyses } });
   });
 
@@ -222,10 +240,15 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const { companyId } = getAuth(req);
     const parsed = mediaAnalyzeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid document analysis payload' } });
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Invalid document analysis payload' },
+      });
       return;
     }
-    const analysis = await personalCommunicationsIntelligenceService.analyzeDocument(companyId, parsed.data);
+    const analysis = await personalCommunicationsIntelligenceService.analyzeDocument(
+      companyId,
+      parsed.data,
+    );
     res.status(201).json({ data: { analysis } });
   });
 
@@ -249,7 +272,8 @@ export function createPersonalCommunicationsIntelligenceRouter({
 
   router.post('/follow-ups/generate', requireWrite, async (req, res) => {
     const { companyId } = getAuth(req);
-    const followUps = await personalCommunicationsIntelligenceService.generateFollowUpQueue(companyId);
+    const followUps =
+      await personalCommunicationsIntelligenceService.generateFollowUpQueue(companyId);
     res.status(201).json({ data: { followUps } });
   });
 
@@ -263,7 +287,9 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = privacySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid privacy payload' } });
       return;
     }
     const privacy = await personalCommunicationsIntelligenceService.updatePrivacySettings(
@@ -284,7 +310,9 @@ export function createPersonalCommunicationsIntelligenceRouter({
     const auth = getAuth(req);
     const parsed = actionSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid action payload' } });
       return;
     }
     try {
@@ -304,7 +332,10 @@ export function createPersonalCommunicationsIntelligenceRouter({
 
   router.get('/aura/context', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
-    const context = await personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(companyId);
+    const context =
+      await personalCommunicationsIntelligenceService.buildPersonalCommunicationsAuraContext(
+        companyId,
+      );
     res.json({ data: { context } });
   });
 

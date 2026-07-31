@@ -1,5 +1,6 @@
 import { hasAnyPermission, resolveStaffExperience, type StaffIdentity } from '@titan/auth/browser';
 import {
+  ACCOUNTANT_ALLOWED_HREFS,
   CLIENT_PORTAL_NAV_ITEMS,
   DISPATCHER_ALLOWED_HREFS,
   OWNER_STAFF_NAV_ITEMS,
@@ -16,7 +17,7 @@ export function toStaffIdentity(user: Pick<AuthUser, 'roleName' | 'permissions'>
 export function filterOwnerStaffNav(user: Pick<AuthUser, 'roleName' | 'permissions'>) {
   const identity = toStaffIdentity(user);
   const experience = resolveStaffExperience(identity);
-  if (experience === 'technician') {
+  if (experience === 'technician' || experience === 'client') {
     return [];
   }
 
@@ -24,6 +25,7 @@ export function filterOwnerStaffNav(user: Pick<AuthUser, 'roleName' | 'permissio
   return OWNER_STAFF_NAV_ITEMS.filter((item) => {
     if (seen.has(item.href)) return false;
     if (experience === 'dispatcher' && !DISPATCHER_ALLOWED_HREFS.has(item.href)) return false;
+    if (experience === 'accountant' && !ACCOUNTANT_ALLOWED_HREFS.has(item.href)) return false;
     if (item.experiences && !item.experiences.includes(experience)) return false;
     if (item.permissions && !hasAnyPermission(user.permissions, item.permissions)) return false;
     seen.add(item.href);

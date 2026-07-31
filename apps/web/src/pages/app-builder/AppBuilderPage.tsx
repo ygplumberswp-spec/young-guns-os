@@ -90,8 +90,14 @@ export function AppBuilderPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
   const canView = useMemo(() => (user ? canAccessAppBuilder(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageAppBuilder(user.permissions) : false), [user]);
@@ -114,7 +120,9 @@ export function AppBuilderPage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load app builder dashboard');
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load app builder dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -191,7 +199,10 @@ export function AppBuilderPage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="App Builder" description="You do not have permission to view the app builder platform." />
+        <PageHeader
+          title="App Builder"
+          description="You do not have permission to view the app builder platform."
+        />
       </div>
     );
   }
@@ -216,11 +227,18 @@ export function AppBuilderPage() {
   ];
 
   const featureRequests =
-    supplementary.featureRequests.length > 0 ? supplementary.featureRequests : (dashboard?.recentFeatureRequests ?? []);
+    supplementary.featureRequests.length > 0
+      ? supplementary.featureRequests
+      : (dashboard?.recentFeatureRequests ?? []);
 
   function renderFeatureRequestList(items: AbFeatureRequestSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No feature requests" description="Submit a feature request to begin the build pipeline." />;
+      return (
+        <EmptyState
+          title="No feature requests"
+          description="Submit a feature request to begin the build pipeline."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -229,7 +247,8 @@ export function AppBuilderPage() {
             <strong>{request.title}</strong>
             <span className="status-pill">{formatStatus(request.workflowStatus)}</span>
             <p>
-              {request.requestKey} · {request.requestType} · Risk: {formatRiskLevel(request.riskLevel)}
+              {request.requestKey} · {request.requestType} · Risk:{' '}
+              {formatRiskLevel(request.riskLevel)}
             </p>
             {request.naturalLanguageRequest ? <p>{request.naturalLanguageRequest}</p> : null}
           </div>
@@ -240,7 +259,12 @@ export function AppBuilderPage() {
 
   function renderRequirementsList(items: AbRequirementsAnalysisSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No requirements analyses" description="Analyze requirements from a feature request." />;
+      return (
+        <EmptyState
+          title="No requirements analyses"
+          description="Analyze requirements from a feature request."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -262,7 +286,10 @@ export function AppBuilderPage() {
   function renderArchitectureList(items: AbArchitectureImpactSummary[]) {
     if (items.length === 0) {
       return (
-        <EmptyState title="No architecture impact analyses" description="Run architecture impact analysis on a feature request." />
+        <EmptyState
+          title="No architecture impact analyses"
+          description="Run architecture impact analysis on a feature request."
+        />
       );
     }
     return (
@@ -284,7 +311,12 @@ export function AppBuilderPage() {
 
   function renderWorkspaceList(items: AbDevelopmentWorkspaceSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No development workspaces" description="Create an isolated workspace for a feature request." />;
+      return (
+        <EmptyState
+          title="No development workspaces"
+          description="Create an isolated workspace for a feature request."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -330,7 +362,12 @@ export function AppBuilderPage() {
 
   function renderDatabaseChangeList(items: AbDatabaseChangePlanSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No database change plans" description="Schema change plans require owner approval." />;
+      return (
+        <EmptyState
+          title="No database change plans"
+          description="Schema change plans require owner approval."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -341,7 +378,9 @@ export function AppBuilderPage() {
             <p>
               {plan.description ?? '—'}
               {plan.requiresOwnerApproval ? ' · owner approval required' : ''}
-              {plan.estimatedDurationMinutes != null ? ` · ~${plan.estimatedDurationMinutes} min` : ''}
+              {plan.estimatedDurationMinutes != null
+                ? ` · ~${plan.estimatedDurationMinutes} min`
+                : ''}
             </p>
           </div>
         ))}
@@ -351,7 +390,12 @@ export function AppBuilderPage() {
 
   function renderTestRunList(items: AbTestRunSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No test runs" description="Run test validation after code changes are ready." />;
+      return (
+        <EmptyState
+          title="No test runs"
+          description="Run test validation after code changes are ready."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -360,7 +404,8 @@ export function AppBuilderPage() {
             <strong>{run.runKey}</strong>
             <span className="status-pill">{formatStatus(run.workflowStatus)}</span>
             <p>
-              {run.testSuite} · Passed: {run.passedCount} · Failed: {run.failedCount} · Skipped: {run.skippedCount}
+              {run.testSuite} · Passed: {run.passedCount} · Failed: {run.failedCount} · Skipped:{' '}
+              {run.skippedCount}
             </p>
           </div>
         ))}
@@ -370,7 +415,12 @@ export function AppBuilderPage() {
 
   function renderPreviewList(items: AbPreviewRecordSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No previews" description="Create a preview after workspace changes are ready." />;
+      return (
+        <EmptyState
+          title="No previews"
+          description="Create a preview after workspace changes are ready."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -391,7 +441,12 @@ export function AppBuilderPage() {
 
   function renderApprovalList(items: AbApprovalRecordSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No approval records" description="Submit feature requests for approval before deployment." />;
+      return (
+        <EmptyState
+          title="No approval records"
+          description="Submit feature requests for approval before deployment."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -411,7 +466,12 @@ export function AppBuilderPage() {
 
   function renderDeploymentList(items: AbDeploymentSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No deployments" description="Deploy approved features through the governed pipeline." />;
+      return (
+        <EmptyState
+          title="No deployments"
+          description="Deploy approved features through the governed pipeline."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -432,7 +492,12 @@ export function AppBuilderPage() {
 
   function renderRollbackList(items: AbRollbackSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No rollbacks" description="Rollbacks are recorded when deployments are reverted." />;
+      return (
+        <EmptyState
+          title="No rollbacks"
+          description="Rollbacks are recorded when deployments are reverted."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -452,7 +517,12 @@ export function AppBuilderPage() {
 
   function renderDocumentationList(items: AbDocumentationUpdateSummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No documentation updates" description="Documentation updates are tracked per feature." />;
+      return (
+        <EmptyState
+          title="No documentation updates"
+          description="Documentation updates are tracked per feature."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -472,7 +542,12 @@ export function AppBuilderPage() {
 
   function renderRegistryList(items: AbFeatureRegistryEntrySummary[]) {
     if (items.length === 0) {
-      return <EmptyState title="No registry entries" description="Feature registry tracks deployed platform capabilities." />;
+      return (
+        <EmptyState
+          title="No registry entries"
+          description="Feature registry tracks deployed platform capabilities."
+        />
+      );
     }
     return (
       <div className="data-list">
@@ -542,7 +617,9 @@ export function AppBuilderPage() {
           >
             <p>{dashboard.summary}</p>
             <ul className="simple-list">
-              <li>Active feature requests: {dashboard.buildMonitoring.activeFeatureRequestCount}</li>
+              <li>
+                Active feature requests: {dashboard.buildMonitoring.activeFeatureRequestCount}
+              </li>
               <li>Pending approvals: {dashboard.buildMonitoring.pendingApprovalCount}</li>
               <li>Failed builds: {dashboard.buildMonitoring.failedBuildCount}</li>
               <li>Failed tests: {dashboard.buildMonitoring.failedTestCount}</li>
@@ -554,7 +631,10 @@ export function AppBuilderPage() {
                 <Button
                   disabled={isWorking}
                   onClick={() =>
-                    void runAction(() => syncAppBuilderAlerts(accessToken!), 'App builder alerts synced from platform signals.')
+                    void runAction(
+                      () => syncAppBuilderAlerts(accessToken!),
+                      'App builder alerts synced from platform signals.',
+                    )
                   }
                 >
                   Sync Alerts
@@ -575,7 +655,10 @@ export function AppBuilderPage() {
             ) : null}
           </Panel>
           {dashboard.analytics ? (
-            <Panel title="Latest Analytics Snapshot" description={`Captured ${dashboard.analytics.capturedAt}`}>
+            <Panel
+              title="Latest Analytics Snapshot"
+              description={`Captured ${dashboard.analytics.capturedAt}`}
+            >
               <ul className="simple-list">
                 <li>Feature requests: {dashboard.analytics.featureRequestCount}</li>
                 <li>Pending approvals: {dashboard.analytics.pendingApprovalCount}</li>
@@ -607,41 +690,63 @@ export function AppBuilderPage() {
       ) : null}
 
       {dashboard && activeTab === 'feature-requests' ? (
-        <Panel title="Feature Requests" description="Natural language and structured feature development requests">
-          {isSupplementaryLoading && featureRequests.length === 0 ? <p>Loading feature requests...</p> : null}
+        <Panel
+          title="Feature Requests"
+          description="Natural language and structured feature development requests"
+        >
+          {isSupplementaryLoading && featureRequests.length === 0 ? (
+            <p>Loading feature requests...</p>
+          ) : null}
           {renderFeatureRequestList(featureRequests)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'requirements' ? (
-        <Panel title="Requirements" description="Requirements analyses derived from feature request content">
+        <Panel
+          title="Requirements"
+          description="Requirements analyses derived from feature request content"
+        >
           {renderRequirementsList(dashboard.recentRequirements)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'architecture-impact' ? (
-        <Panel title="Architecture Impact" description="Impact assessments across frontend, backend, database, and security">
+        <Panel
+          title="Architecture Impact"
+          description="Impact assessments across frontend, backend, database, and security"
+        >
           {renderArchitectureList(dashboard.recentArchitectureImpacts)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'development-workspace' ? (
-        <Panel title="Development Workspace" description="Isolated workspaces — production remains untouched">
+        <Panel
+          title="Development Workspace"
+          description="Isolated workspaces — production remains untouched"
+        >
           {renderWorkspaceList(dashboard.recentWorkspaces)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'code-generation' ? (
-        <Panel title="Code Generation" description="Artifact metadata for explicitly generated code — no fake generation">
+        <Panel
+          title="Code Generation"
+          description="Artifact metadata for explicitly generated code — no fake generation"
+        >
           {isSupplementaryLoading ? <p>Loading code generation records...</p> : null}
           {renderCodeGenerationList(
-            supplementary.codeGenerationRecords.length > 0 ? supplementary.codeGenerationRecords : [],
+            supplementary.codeGenerationRecords.length > 0
+              ? supplementary.codeGenerationRecords
+              : [],
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'database-changes' ? (
-        <Panel title="Database Changes" description="Schema migration plans with owner approval for sensitive areas">
+        <Panel
+          title="Database Changes"
+          description="Schema migration plans with owner approval for sensitive areas"
+        >
           {isSupplementaryLoading ? <p>Loading database change plans...</p> : null}
           {renderDatabaseChangeList(
             supplementary.databaseChangePlans.length > 0 ? supplementary.databaseChangePlans : [],
@@ -650,13 +755,19 @@ export function AppBuilderPage() {
       ) : null}
 
       {dashboard && activeTab === 'testing' ? (
-        <Panel title="Testing" description="Test validation runs recorded from actual workflow execution">
+        <Panel
+          title="Testing"
+          description="Test validation runs recorded from actual workflow execution"
+        >
           {renderTestRunList(dashboard.recentTestRuns)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'preview' ? (
-        <Panel title="Preview" description="Preview environments with change summaries from workspace activity">
+        <Panel
+          title="Preview"
+          description="Preview environments with change summaries from workspace activity"
+        >
           {renderPreviewList(dashboard.recentPreviews)}
         </Panel>
       ) : null}
@@ -668,7 +779,10 @@ export function AppBuilderPage() {
       ) : null}
 
       {dashboard && activeTab === 'deployments' ? (
-        <Panel title="Deployments" description="Approved feature deployments with verification tracking">
+        <Panel
+          title="Deployments"
+          description="Approved feature deployments with verification tracking"
+        >
           {renderDeploymentList(dashboard.recentDeployments)}
         </Panel>
       ) : null}
@@ -689,16 +803,25 @@ export function AppBuilderPage() {
       ) : null}
 
       {dashboard && activeTab === 'feature-registry' ? (
-        <Panel title="Feature Registry" description="Platform capability registry for routes, APIs, and modules">
+        <Panel
+          title="Feature Registry"
+          description="Platform capability registry for routes, APIs, and modules"
+        >
           {renderRegistryList(dashboard.recentRegistryEntries)}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'audit' ? (
-        <Panel title="Audit Trail" description="Complete history of app builder actions and changes">
+        <Panel
+          title="Audit Trail"
+          description="Complete history of app builder actions and changes"
+        >
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
-            <EmptyState title="No audit logs" description="Audit entries are recorded for every app builder action." />
+            <EmptyState
+              title="No audit logs"
+              description="Audit entries are recorded for every app builder action."
+            />
           ) : (
             <div className="data-list">
               {supplementary.auditLogs.map((log) => (
@@ -723,7 +846,12 @@ export function AppBuilderPage() {
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}

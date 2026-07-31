@@ -1,4 +1,13 @@
-import { boolean, integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { companies } from './companies';
 import { users } from './users';
 import { workflowRuns } from './workflow-runs';
@@ -153,11 +162,15 @@ export const automationStudioApprovalRecords = pgTable('automation_studio_approv
   workflowId: uuid('workflow_id')
     .notNull()
     .references(() => workflows.id, { onDelete: 'cascade' }),
-  workflowRunId: uuid('workflow_run_id').references(() => workflowRuns.id, { onDelete: 'set null' }),
+  workflowRunId: uuid('workflow_run_id').references(() => workflowRuns.id, {
+    onDelete: 'set null',
+  }),
   approvalType: automationApprovalTypeEnum('approval_type').notNull(),
   status: automationApprovalStatusEnum('status').notNull().default('pending'),
   approverUserId: uuid('approver_user_id').references(() => users.id, { onDelete: 'set null' }),
-  delegatedToUserId: uuid('delegated_to_user_id').references(() => users.id, { onDelete: 'set null' }),
+  delegatedToUserId: uuid('delegated_to_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   comment: text('comment'),
   decidedAt: timestamp('decided_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

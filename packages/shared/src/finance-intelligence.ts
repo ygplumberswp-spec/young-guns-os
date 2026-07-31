@@ -3,12 +3,7 @@ export type FinanceBudgetPeriodType = 'monthly' | 'quarterly' | 'yearly';
 export type FinanceBudgetStatus = 'draft' | 'active' | 'closed';
 
 export type FinanceRecommendationType =
-  | 'pricing'
-  | 'margin'
-  | 'expense_reduction'
-  | 'collections'
-  | 'cash_flow'
-  | 'risk';
+  'pricing' | 'margin' | 'expense_reduction' | 'collections' | 'cash_flow' | 'risk';
 
 export type FinanceRecommendationStatus = 'pending' | 'accepted' | 'dismissed' | 'completed';
 
@@ -33,7 +28,12 @@ export type ProfitabilityIntelligence = {
   netMarginPercent: number | null;
   totalRevenueCents: number;
   totalProfitCents: number | null;
-  byJob: Array<{ jobId: string; jobTitle: string; revenueCents: number; marginPercent: number | null }>;
+  byJob: Array<{
+    jobId: string;
+    jobTitle: string;
+    revenueCents: number;
+    marginPercent: number | null;
+  }>;
   byCustomer: Array<{ customerName: string; revenueCents: number; jobCount: number }>;
   byService: Array<{ serviceName: string; revenueCents: number; jobCount: number }>;
   byTechnician: Array<{ technicianName: string; revenueCents: number; jobsCompleted: number }>;
@@ -159,7 +159,11 @@ export type FinanceIntelligenceAuraContext = {
   expenses: ExpenseIntelligence;
   forecast: FinanceForecast;
   pendingRecommendationCount: number;
-  topRecommendations: Array<{ title: string; recommendationType: FinanceRecommendationType; priority: string }>;
+  topRecommendations: Array<{
+    title: string;
+    recommendationType: FinanceRecommendationType;
+    priority: string;
+  }>;
   riskSignals: FinanceRiskSignal[];
   summary: string;
 };
@@ -172,7 +176,12 @@ export type CreateFinanceBudgetRequest = {
   currency?: string;
   status?: FinanceBudgetStatus;
   notes?: string | null;
-  lines?: Array<{ categoryKey: string; categoryName: string; budgetedAmountCents: number; notes?: string | null }>;
+  lines?: Array<{
+    categoryKey: string;
+    categoryName: string;
+    budgetedAmountCents: number;
+    notes?: string | null;
+  }>;
 };
 
 export type UpdateFinanceBudgetRequest = Partial<Omit<CreateFinanceBudgetRequest, 'lines'>>;

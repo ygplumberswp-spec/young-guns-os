@@ -38,34 +38,37 @@ export function MobileDashboardPage() {
           <>
             <div className="portal-grid">
               <Panel title="Assigned jobs" description={`${dashboard.assignedJobs.length} total`}>
-                <Link href="/mobile/jobs">View jobs</Link>
+                <Link href="/jobs">View jobs</Link>
               </Panel>
               <Panel
                 title="Route"
                 description={`${dashboard.routeSummary.stopCount} stops · next: ${dashboard.routeSummary.nextDestination?.title ?? 'None'}`}
               >
-                <Link href="/mobile/route">View route</Link>
+                <Link href="/route">View route</Link>
               </Panel>
               <Panel
                 title="Inventory alerts"
                 description={`${dashboard.inventoryAlerts.length} low-stock item(s)`}
               >
-                <Link href="/mobile/inventory">View inventory</Link>
+                <Link href="/inventory">View inventory</Link>
               </Panel>
               <Panel
                 title="Outstanding tasks"
                 description={`${dashboard.outstandingTaskCount} pending action(s)`}
               >
-                <Link href="/mobile/sync">Offline sync</Link>
+                <Link href="/sync">Offline sync</Link>
               </Panel>
               <Panel
                 title="Notifications"
                 description={`${dashboard.unreadNotificationCount} unread`}
               >
-                <Link href="/mobile/notifications">Open notifications</Link>
+                <Link href="/notifications">Open notifications</Link>
               </Panel>
-              <Panel title="Requests" description={`${dashboard.pendingRequestCount} pending approval`}>
-                <Link href="/mobile/time">Time & requests</Link>
+              <Panel
+                title="Requests"
+                description={`${dashboard.pendingRequestCount} pending approval`}
+              >
+                <Link href="/time">Time & requests</Link>
               </Panel>
             </div>
 

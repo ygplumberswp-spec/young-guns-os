@@ -100,9 +100,12 @@ export class EnterpriseReleaseManagementService {
       this.listPlatformAlerts(companyId, { status: 'open' }),
     ]);
 
-    void this.deps.enterpriseMissionControlService.getMissionControlDashboard(companyId).catch(() => null);
+    void this.deps.enterpriseMissionControlService
+      .getMissionControlDashboard(companyId)
+      .catch(() => null);
 
-    const documentationCompleteness = this.documentationService.getDocumentationCompleteness(documentationArtifacts);
+    const documentationCompleteness =
+      this.documentationService.getDocumentationCompleteness(documentationArtifacts);
     const pendingChecklistCount = this.versionService.getPendingChecklistCount(launchChecklist);
     const releaseReadiness = this.buildReleaseReadinessSummary({
       latestMobileReview,
@@ -119,7 +122,8 @@ export class EnterpriseReleaseManagementService {
         ? 'critical'
         : releaseReadiness.releaseStatus === 'warning'
           ? 'warning'
-          : releaseReadiness.releaseStatus === 'ready' || releaseReadiness.releaseStatus === 'released'
+          : releaseReadiness.releaseStatus === 'ready' ||
+              releaseReadiness.releaseStatus === 'released'
             ? 'healthy'
             : 'unknown';
 
@@ -165,7 +169,10 @@ export class EnterpriseReleaseManagementService {
     return toPlatformConfigSummary(await this.ensurePlatformConfig(companyId));
   }
 
-  async updatePlatformConfig(scope: StaffScope, input: UpdateRlmPlatformConfigRequest): Promise<RlmPlatformConfigSummary> {
+  async updatePlatformConfig(
+    scope: StaffScope,
+    input: UpdateRlmPlatformConfigRequest,
+  ): Promise<RlmPlatformConfigSummary> {
     const existing = await this.ensurePlatformConfig(scope.companyId);
     const [updated] = await this.deps.db
       .update(rlmPlatformConfig)
@@ -183,11 +190,14 @@ export class EnterpriseReleaseManagementService {
     return toPlatformConfigSummary(updated ?? existing);
   }
 
-  runMobilePackagingReview = (scope: StaffScope) => this.mobilePackagingService.runMobilePackagingReview(scope);
-  runAppStoreReadinessReviews = (scope: StaffScope) => this.appStoreService.runAllStoreReadinessReviews(scope);
+  runMobilePackagingReview = (scope: StaffScope) =>
+    this.mobilePackagingService.runMobilePackagingReview(scope);
+  runAppStoreReadinessReviews = (scope: StaffScope) =>
+    this.appStoreService.runAllStoreReadinessReviews(scope);
   runBrandingReview = (scope: StaffScope) => this.brandingService.runBrandingReview(scope);
   runUxReview = (scope: StaffScope) => this.uxReviewService.runUxReview(scope);
-  refreshDocumentationStatus = (scope: StaffScope) => this.documentationService.refreshDocumentationStatus(scope);
+  refreshDocumentationStatus = (scope: StaffScope) =>
+    this.documentationService.refreshDocumentationStatus(scope);
   finalizeVersion = (scope: StaffScope) => this.versionService.finalizeVersion(scope);
 
   async syncPlatformAlerts(scope: StaffScope): Promise<RlmPlatformAlertSummary[]> {
@@ -197,13 +207,55 @@ export class EnterpriseReleaseManagementService {
     const readiness = dashboard.releaseReadiness;
 
     const defs = [
-      ['mobile_not_ready', 'warning', 'Mobile packaging not ready', 'Run mobile packaging review and verify iOS/Android builds.', !readiness.mobileReady],
-      ['app_store_not_ready', 'warning', 'App store readiness incomplete', 'Complete Apple App Store and Google Play Store checklists.', !readiness.appStoreReady],
-      ['branding_not_ready', 'warning', 'Branding verification incomplete', 'Run branding review and configure white-label assets.', !readiness.brandingReady],
-      ['documentation_incomplete', 'warning', 'Documentation incomplete', `${readiness.documentationCompleteness}% documentation completeness.`, !readiness.documentationComplete],
-      ['launch_checklist_pending', 'warning', 'Launch checklist pending', `${readiness.pendingChecklistCount} required checklist item(s) pending.`, !readiness.launchChecklistComplete],
-      ['version_not_finalized', 'info', 'Version not finalized', 'Finalize TITAN Business OS v1.0.0 release record.', !readiness.versionFinalized],
-      ['release_blocked', 'critical', 'Release blocked', `Release status: ${readiness.releaseStatus}`, readiness.releaseStatus === 'blocked' || readiness.releaseStatus === 'not_ready'],
+      [
+        'mobile_not_ready',
+        'warning',
+        'Mobile packaging not ready',
+        'Run mobile packaging review and verify iOS/Android builds.',
+        !readiness.mobileReady,
+      ],
+      [
+        'app_store_not_ready',
+        'warning',
+        'App store readiness incomplete',
+        'Complete Apple App Store and Google Play Store checklists.',
+        !readiness.appStoreReady,
+      ],
+      [
+        'branding_not_ready',
+        'warning',
+        'Branding verification incomplete',
+        'Run branding review and configure white-label assets.',
+        !readiness.brandingReady,
+      ],
+      [
+        'documentation_incomplete',
+        'warning',
+        'Documentation incomplete',
+        `${readiness.documentationCompleteness}% documentation completeness.`,
+        !readiness.documentationComplete,
+      ],
+      [
+        'launch_checklist_pending',
+        'warning',
+        'Launch checklist pending',
+        `${readiness.pendingChecklistCount} required checklist item(s) pending.`,
+        !readiness.launchChecklistComplete,
+      ],
+      [
+        'version_not_finalized',
+        'info',
+        'Version not finalized',
+        'Finalize TITAN Business OS v1.0.0 release record.',
+        !readiness.versionFinalized,
+      ],
+      [
+        'release_blocked',
+        'critical',
+        'Release blocked',
+        `Release status: ${readiness.releaseStatus}`,
+        readiness.releaseStatus === 'blocked' || readiness.releaseStatus === 'not_ready',
+      ],
     ] as const;
 
     for (const [alertType, severity, title, description, active] of defs) {
@@ -249,7 +301,10 @@ export class EnterpriseReleaseManagementService {
     return toAnalyticsSummary(created!);
   }
 
-  async createActionDraft(scope: StaffScope, input: CreateRlmActionDraftRequest): Promise<RlmActionDraftSummary> {
+  async createActionDraft(
+    scope: StaffScope,
+    input: CreateRlmActionDraftRequest,
+  ): Promise<RlmActionDraftSummary> {
     const [created] = await this.deps.db
       .insert(rlmActionDrafts)
       .values({
@@ -283,15 +338,25 @@ export class EnterpriseReleaseManagementService {
     versionRecord: import('@titan/shared').RlmVersionRecordSummary | null;
     productionLaunchSummary: EnterpriseReleaseManagementDashboard['productionLaunchSummary'];
   }): RlmReleaseReadinessSummary {
-    const mobileReady = input.latestMobileReview?.status === 'passed' || (input.latestMobileReview?.iosReady && input.latestMobileReview?.androidReady) || false;
+    const mobileReady =
+      input.latestMobileReview?.status === 'passed' ||
+      (input.latestMobileReview?.iosReady && input.latestMobileReview?.androidReady) ||
+      false;
     const appStoreReady =
       input.appStoreReadiness.length >= 2 &&
       input.appStoreReadiness.every((s) => s.checklistTotalCount > 0);
-    const brandingReady = input.latestBrandingReview?.status === 'passed' || (input.latestBrandingReview?.warningCount ?? 99) <= 2;
+    const brandingReady =
+      input.latestBrandingReview?.status === 'passed' ||
+      (input.latestBrandingReview?.warningCount ?? 99) <= 2;
     const documentationComplete = input.documentationCompleteness >= 80;
-    const launchChecklistComplete = this.versionService.isLaunchChecklistComplete(input.launchChecklist);
-    const pendingChecklistCount = this.versionService.getPendingChecklistCount(input.launchChecklist);
-    const versionFinalized = input.versionRecord?.status === 'ready' || input.versionRecord?.status === 'released';
+    const launchChecklistComplete = this.versionService.isLaunchChecklistComplete(
+      input.launchChecklist,
+    );
+    const pendingChecklistCount = this.versionService.getPendingChecklistCount(
+      input.launchChecklist,
+    );
+    const versionFinalized =
+      input.versionRecord?.status === 'ready' || input.versionRecord?.status === 'released';
     const warningCount =
       (input.latestMobileReview?.warningCount ?? 0) +
       (input.latestBrandingReview?.warningCount ?? 0);
@@ -299,7 +364,8 @@ export class EnterpriseReleaseManagementService {
     let releaseStatus: RlmReleaseStatus = 'unknown';
     if (input.productionLaunchSummary?.launchStatus === 'blocked') releaseStatus = 'blocked';
     else if (!mobileReady || !appStoreReady) releaseStatus = 'not_ready';
-    else if (!documentationComplete || !launchChecklistComplete || pendingChecklistCount > 0) releaseStatus = 'warning';
+    else if (!documentationComplete || !launchChecklistComplete || pendingChecklistCount > 0)
+      releaseStatus = 'warning';
     else if (versionFinalized && mobileReady && brandingReady) releaseStatus = 'ready';
     else if (input.versionRecord?.status === 'released') releaseStatus = 'released';
 
@@ -320,7 +386,10 @@ export class EnterpriseReleaseManagementService {
   private async listPlatformAlerts(companyId: string, filters?: { status?: string }) {
     const rows = await this.deps.db.query.rlmPlatformAlerts.findMany({
       where: filters?.status
-        ? and(eq(rlmPlatformAlerts.companyId, companyId), eq(rlmPlatformAlerts.status, filters.status as 'open'))
+        ? and(
+            eq(rlmPlatformAlerts.companyId, companyId),
+            eq(rlmPlatformAlerts.status, filters.status as 'open'),
+          )
         : eq(rlmPlatformAlerts.companyId, companyId),
       orderBy: [desc(rlmPlatformAlerts.createdAt)],
       limit: 50,
@@ -341,11 +410,20 @@ export class EnterpriseReleaseManagementService {
       where: eq(rlmPlatformConfig.companyId, companyId),
     });
     if (existing) return existing;
-    const [created] = await this.deps.db.insert(rlmPlatformConfig).values({ companyId }).returning();
+    const [created] = await this.deps.db
+      .insert(rlmPlatformConfig)
+      .values({ companyId })
+      .returning();
     return created!;
   }
 
-  private async logAudit(scope: StaffScope, actionType: string, entityType?: string, entityId?: string, metadata?: Record<string, unknown>) {
+  private async logAudit(
+    scope: StaffScope,
+    actionType: string,
+    entityType?: string,
+    entityId?: string,
+    metadata?: Record<string, unknown>,
+  ) {
     await this.deps.db.insert(rlmAuditLogs).values({
       companyId: scope.companyId,
       userId: scope.userId,
@@ -357,7 +435,9 @@ export class EnterpriseReleaseManagementService {
   }
 }
 
-function toPlatformConfigSummary(row: typeof rlmPlatformConfig.$inferSelect): RlmPlatformConfigSummary {
+function toPlatformConfigSummary(
+  row: typeof rlmPlatformConfig.$inferSelect,
+): RlmPlatformConfigSummary {
   return {
     releasePolicy: (row.releasePolicy ?? {}) as Record<string, unknown>,
     documentationPolicy: (row.documentationPolicy ?? {}) as Record<string, unknown>,
@@ -367,7 +447,9 @@ function toPlatformConfigSummary(row: typeof rlmPlatformConfig.$inferSelect): Rl
   };
 }
 
-function toPlatformAlertSummary(row: typeof rlmPlatformAlerts.$inferSelect): RlmPlatformAlertSummary {
+function toPlatformAlertSummary(
+  row: typeof rlmPlatformAlerts.$inferSelect,
+): RlmPlatformAlertSummary {
   return {
     id: row.id,
     alertType: row.alertType,
@@ -380,7 +462,11 @@ function toPlatformAlertSummary(row: typeof rlmPlatformAlerts.$inferSelect): Rlm
 }
 
 function toAnalyticsSummary(row: typeof rlmAnalyticsSnapshots.$inferSelect): RlmAnalyticsSummary {
-  return { id: row.id, metrics: (row.metrics ?? {}) as Record<string, unknown>, capturedAt: row.capturedAt.toISOString() };
+  return {
+    id: row.id,
+    metrics: (row.metrics ?? {}) as Record<string, unknown>,
+    capturedAt: row.capturedAt.toISOString(),
+  };
 }
 
 function toActionDraftSummary(row: typeof rlmActionDrafts.$inferSelect): RlmActionDraftSummary {

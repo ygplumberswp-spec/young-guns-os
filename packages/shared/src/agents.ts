@@ -174,7 +174,20 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Job priority recommendations',
       'Fleet availability checks',
     ],
-    suggestedPermissions: ['jobs:read', 'dispatch:read', 'fleet:read', 'inventory:read', 'asset_equipment:read', 'dispatch_intelligence:read', 'fleet_intelligence:read', 'voice:read', 'automation:read', 'intelligence:read', 'analytics:read', 'knowledge:read'],
+    suggestedPermissions: [
+      'jobs:read',
+      'dispatch:read',
+      'fleet:read',
+      'inventory:read',
+      'asset_equipment:read',
+      'dispatch_intelligence:read',
+      'fleet_intelligence:read',
+      'voice:read',
+      'automation:read',
+      'intelligence:read',
+      'analytics:read',
+      'knowledge:read',
+    ],
     suggestedToolKeys: [
       'read_jobs',
       'read_inventory',
@@ -249,7 +262,15 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Financial risk detection',
       'Finance recommendations',
     ],
-    suggestedPermissions: ['finance:read', 'finance:write', 'customers:read', 'intelligence:read', 'analytics:read', 'integrations:read', 'procurement:read'],
+    suggestedPermissions: [
+      'finance:read',
+      'finance:write',
+      'customers:read',
+      'intelligence:read',
+      'analytics:read',
+      'integrations:read',
+      'procurement:read',
+    ],
     suggestedToolKeys: [
       'read_invoices',
       'read_quotes',
@@ -722,12 +743,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Optimization recommendations',
       'Executive decision reporting',
     ],
-    suggestedPermissions: [
-      'executive:read',
-      'executive:write',
-      'intelligence:read',
-      'agents:read',
-    ],
+    suggestedPermissions: ['executive:read', 'executive:write', 'intelligence:read', 'agents:read'],
     suggestedToolKeys: [
       'read_digital_twin_dashboard',
       'read_operational_state',
@@ -751,12 +767,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Documentation improvement recommendations',
       'Knowledge governance awareness',
     ],
-    suggestedPermissions: [
-      'knowledge:read',
-      'knowledge:write',
-      'intelligence:read',
-      'agents:read',
-    ],
+    suggestedPermissions: ['knowledge:read', 'knowledge:write', 'intelligence:read', 'agents:read'],
     suggestedToolKeys: [
       'read_knowledge_graph_dashboard',
       'search_organizational_memory',
@@ -857,11 +868,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Extension architecture recommendations',
       'Developer analytics interpretation',
     ],
-    suggestedPermissions: [
-      'integrations:read',
-      'integrations:manage',
-      'agents:read',
-    ],
+    suggestedPermissions: ['integrations:read', 'integrations:manage', 'agents:read'],
     suggestedToolKeys: [
       'read_developer_platform_dashboard',
       'read_api_health',
@@ -909,7 +916,15 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Recovery and maintenance plan drafting',
       'Operational incident explanation',
     ],
-    suggestedPermissions: ['ops:read', 'ops:manage', 'platform:read', 'platform:manage', 'executive:read', 'ai_orchestration:read', 'agents:read'],
+    suggestedPermissions: [
+      'ops:read',
+      'ops:manage',
+      'platform:read',
+      'platform:manage',
+      'executive:read',
+      'ai_orchestration:read',
+      'agents:read',
+    ],
     suggestedToolKeys: [
       'read_production_readiness_dashboard',
       'read_production_health',
@@ -938,7 +953,16 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Mobile report and quotation drafting',
       'Safety recommendations',
     ],
-    suggestedPermissions: ['mobile:read', 'mobile:write', 'mobile:manage', 'jobs:read', 'fleet:read', 'inventory:read', 'dispatch:read', 'agents:read'],
+    suggestedPermissions: [
+      'mobile:read',
+      'mobile:write',
+      'mobile:manage',
+      'jobs:read',
+      'fleet:read',
+      'inventory:read',
+      'dispatch:read',
+      'agents:read',
+    ],
     suggestedToolKeys: [
       'read_mobile_platform_dashboard',
       'read_mobile_devices',
@@ -1313,12 +1337,7 @@ export const AGENT_REGISTRY: AgentRegistryEntry[] = [
       'Integration and AI provider reliability',
       'Change management',
     ],
-    suggestedPermissions: [
-      'it_operations:read',
-      'it_operations:write',
-      'ops:read',
-      'agents:read',
-    ],
+    suggestedPermissions: ['it_operations:read', 'it_operations:write', 'ops:read', 'agents:read'],
     suggestedToolKeys: [
       'read_it_operations_dashboard',
       'read_ito_platform_health',
@@ -2104,7 +2123,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_cashflow_context',
     name: 'Read cash flow context',
-    description: 'Read cash inflow, outflow, position, and forecast intelligence from real tenant data.',
+    description:
+      'Read cash inflow, outflow, position, and forecast intelligence from real tenant data.',
     category: 'finance',
     requiredPermissions: ['finance:read'],
     executable: true,
@@ -2112,7 +2132,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_profitability_context',
     name: 'Read profitability context',
-    description: 'Read profit per job, customer, service, and margin analysis from real tenant data.',
+    description:
+      'Read profit per job, customer, service, and margin analysis from real tenant data.',
     category: 'finance',
     requiredPermissions: ['finance:read', 'analytics:read'],
     executable: true,
@@ -2120,7 +2141,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_receivables_context',
     name: 'Read receivables context',
-    description: 'Read overdue invoices, payment ageing, and collection priorities from real tenant data.',
+    description:
+      'Read overdue invoices, payment ageing, and collection priorities from real tenant data.',
     category: 'finance',
     requiredPermissions: ['finance:read'],
     executable: true,
@@ -2128,7 +2150,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_expense_context',
     name: 'Read expense context',
-    description: 'Read expense categories, supplier spending, and spending trends from real tenant data.',
+    description:
+      'Read expense categories, supplier spending, and spending trends from real tenant data.',
     category: 'finance',
     requiredPermissions: ['finance:read'],
     executable: true,
@@ -2144,7 +2167,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_finance_forecast',
     name: 'Read finance forecast',
-    description: 'Read weekly or monthly financial forecast and cash shortage warnings from real tenant data.',
+    description:
+      'Read weekly or monthly financial forecast and cash shortage warnings from real tenant data.',
     category: 'finance',
     requiredPermissions: ['finance:read'],
     executable: true,
@@ -2152,7 +2176,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_finance_action',
     name: 'Draft finance action',
-    description: 'Draft a finance action for review (requires approval). No automatic payments or accounting changes.',
+    description:
+      'Draft a finance action for review (requires approval). No automatic payments or accounting changes.',
     category: 'finance',
     requiredPermissions: ['finance:write'],
     executable: true,
@@ -2185,7 +2210,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_orchestration_status',
     name: 'Read orchestration status',
-    description: 'Read active agent orchestrations, workflow runs, pending approvals, and recent execution history.',
+    description:
+      'Read active agent orchestrations, workflow runs, pending approvals, and recent execution history.',
     category: 'orchestration',
     requiredPermissions: ['orchestration:read'],
     executable: true,
@@ -2193,7 +2219,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_sales_context',
     name: 'Read sales context',
-    description: 'Read sales intelligence context including pipeline value, open opportunities, and detected signals.',
+    description:
+      'Read sales intelligence context including pipeline value, open opportunities, and detected signals.',
     category: 'sales',
     requiredPermissions: ['sales:read'],
     executable: true,
@@ -2201,7 +2228,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_opportunities',
     name: 'Read sales opportunities',
-    description: 'Read detected and tracked sales opportunities from real tenant CRM, jobs, and finance data.',
+    description:
+      'Read detected and tracked sales opportunities from real tenant CRM, jobs, and finance data.',
     category: 'sales',
     requiredPermissions: ['sales:read'],
     executable: true,
@@ -2217,7 +2245,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_sales_follow_up',
     name: 'Draft sales follow-up',
-    description: 'Draft a sales follow-up recommendation or communication for review (requires approval).',
+    description:
+      'Draft a sales follow-up recommendation or communication for review (requires approval).',
     category: 'sales',
     requiredPermissions: ['sales:write'],
     executable: true,
@@ -2226,7 +2255,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_quote_recommendation',
     name: 'Draft quote recommendation',
-    description: 'Draft quote preparation recommendations based on customer history (requires approval).',
+    description:
+      'Draft quote preparation recommendations based on customer history (requires approval).',
     category: 'sales',
     requiredPermissions: ['sales:write', 'finance:read'],
     executable: true,
@@ -2235,7 +2265,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_marketing_context',
     name: 'Read marketing context',
-    description: 'Read marketing intelligence context including segments, campaigns, and recommendations.',
+    description:
+      'Read marketing intelligence context including segments, campaigns, and recommendations.',
     category: 'marketing',
     requiredPermissions: ['marketing:read'],
     executable: true,
@@ -2277,7 +2308,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_lead_context',
     name: 'Read lead context',
-    description: 'Read lead generation context including active leads, scores, and acquisition summary.',
+    description:
+      'Read lead generation context including active leads, scores, and acquisition summary.',
     category: 'leads',
     requiredPermissions: ['leads:read'],
     executable: true,
@@ -2301,7 +2333,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_acquisition_insights',
     name: 'Read acquisition insights',
-    description: 'Read acquisition intelligence insights derived from real tenant lead and CRM data.',
+    description:
+      'Read acquisition intelligence insights derived from real tenant lead and CRM data.',
     category: 'leads',
     requiredPermissions: ['leads:read'],
     executable: true,
@@ -2327,7 +2360,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_voice_context',
     name: 'Read voice context',
-    description: 'Read voice receptionist context including active sessions, follow-ups, and waiting enquiries.',
+    description:
+      'Read voice receptionist context including active sessions, follow-ups, and waiting enquiries.',
     category: 'voice',
     requiredPermissions: ['voice:read'],
     executable: true,
@@ -2387,7 +2421,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_customer_support_context',
     name: 'Read customer support context',
-    description: 'Read customer support context including open conversations, escalations, and attention insights.',
+    description:
+      'Read customer support context including open conversations, escalations, and attention insights.',
     category: 'customer_support',
     requiredPermissions: ['customer_support:read'],
     executable: true,
@@ -2420,7 +2455,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_appointment_update',
     name: 'Draft appointment update',
-    description: 'Draft an appointment update message for a customer for review (requires approval).',
+    description:
+      'Draft an appointment update message for a customer for review (requires approval).',
     category: 'customer_support',
     requiredPermissions: ['customer_support:write', 'dispatch:read'],
     executable: true,
@@ -2438,7 +2474,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_service_information_response',
     name: 'Draft service information response',
-    description: 'Draft a service information response for a customer for review (requires approval).',
+    description:
+      'Draft a service information response for a customer for review (requires approval).',
     category: 'customer_support',
     requiredPermissions: ['customer_support:write'],
     executable: true,
@@ -2536,7 +2573,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_mobile_request',
     name: 'Draft mobile request',
-    description: 'Draft a mobile workforce request for review (requires approval before execution).',
+    description:
+      'Draft a mobile workforce request for review (requires approval before execution).',
     category: 'operations',
     requiredPermissions: ['mobile:read', 'mobile:write'],
     executable: true,
@@ -2561,7 +2599,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_root_cause_analysis',
     name: 'Read root cause analysis',
-    description: 'Read root cause classification for a comeback (AURA recommendations are non-binding).',
+    description:
+      'Read root cause classification for a comeback (AURA recommendations are non-binding).',
     category: 'quality',
     requiredPermissions: ['quality:read', 'executive:read'],
     executable: true,
@@ -2585,7 +2624,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_quality_action',
     name: 'Draft quality action',
-    description: 'Draft a technician accountability action for manager approval (no automatic penalties).',
+    description:
+      'Draft a technician accountability action for manager approval (no automatic penalties).',
     category: 'quality',
     requiredPermissions: ['quality:read', 'quality:write'],
     executable: true,
@@ -2603,7 +2643,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_payroll_recommendation',
     name: 'Draft payroll recommendation',
-    description: 'Draft a payroll/labour recovery recommendation for approval (never executes payroll changes).',
+    description:
+      'Draft a payroll/labour recovery recommendation for approval (never executes payroll changes).',
     category: 'quality',
     requiredPermissions: ['quality:read', 'quality:write', 'finance:read'],
     executable: true,
@@ -2612,7 +2653,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_customer_communications',
     name: 'Read customer communications',
-    description: 'Read unified customer communication timeline across calls, WhatsApp, email, SMS, portal, and support.',
+    description:
+      'Read unified customer communication timeline across calls, WhatsApp, email, SMS, portal, and support.',
     category: 'communications_intelligence',
     requiredPermissions: ['communications_intelligence:read', 'communications:read'],
     executable: true,
@@ -2620,7 +2662,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_conversation_summary',
     name: 'Read conversation summary',
-    description: 'Read AI conversation intelligence summaries including sentiment and follow-up recommendations.',
+    description:
+      'Read AI conversation intelligence summaries including sentiment and follow-up recommendations.',
     category: 'communications_intelligence',
     requiredPermissions: ['communications_intelligence:read', 'customer_support:read'],
     executable: true,
@@ -2661,7 +2704,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_follow_up',
     name: 'Draft follow-up',
-    description: 'Draft a communication follow-up for approval (never contacts customer automatically).',
+    description:
+      'Draft a communication follow-up for approval (never contacts customer automatically).',
     category: 'communications_intelligence',
     requiredPermissions: ['communications_intelligence:read', 'communications_intelligence:write'],
     executable: true,
@@ -2727,7 +2771,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_asset_replacement',
     name: 'Draft asset replacement',
-    description: 'Draft an asset replacement recommendation for approval (never disposes automatically).',
+    description:
+      'Draft an asset replacement recommendation for approval (never disposes automatically).',
     category: 'asset_equipment',
     requiredPermissions: ['asset_equipment:read', 'asset_equipment:write'],
     executable: true,
@@ -2793,7 +2838,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_provider_configuration',
     name: 'Draft provider configuration',
-    description: 'Draft an AI provider configuration change for approval (never applies automatically).',
+    description:
+      'Draft an AI provider configuration change for approval (never applies automatically).',
     category: 'ai_orchestration',
     requiredPermissions: ['ai_orchestration:read', 'ai_orchestration:write'],
     executable: true,
@@ -2818,7 +2864,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_technician_matching',
     name: 'Read technician matching',
-    description: 'Read technician matching recommendations using skills, workload, and quality data.',
+    description:
+      'Read technician matching recommendations using skills, workload, and quality data.',
     category: 'dispatch_intelligence',
     requiredPermissions: ['dispatch_intelligence:read', 'dispatch:read', 'jobs:read'],
     executable: true,
@@ -2826,7 +2873,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_dispatch_recommendations',
     name: 'Read dispatch recommendations',
-    description: 'Read dispatch recommendations for reassignment, workload balancing, and emergencies.',
+    description:
+      'Read dispatch recommendations for reassignment, workload balancing, and emergencies.',
     category: 'dispatch_intelligence',
     requiredPermissions: ['dispatch_intelligence:read', 'dispatch:read'],
     executable: true,
@@ -2852,23 +2900,33 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
     name: 'Draft dispatch action',
     description: 'Draft a dispatch action for approval (never assigns technicians automatically).',
     category: 'dispatch_intelligence',
-    requiredPermissions: ['dispatch_intelligence:read', 'dispatch_intelligence:write', 'dispatch:write'],
+    requiredPermissions: [
+      'dispatch_intelligence:read',
+      'dispatch_intelligence:write',
+      'dispatch:write',
+    ],
     executable: true,
     requiresApproval: true,
   },
   {
     toolKey: 'draft_callback_action',
     name: 'Draft callback action',
-    description: 'Draft a customer callback action for approval (never contacts customer automatically).',
+    description:
+      'Draft a customer callback action for approval (never contacts customer automatically).',
     category: 'dispatch_intelligence',
-    requiredPermissions: ['dispatch_intelligence:read', 'dispatch_intelligence:write', 'voice:write'],
+    requiredPermissions: [
+      'dispatch_intelligence:read',
+      'dispatch_intelligence:write',
+      'voice:write',
+    ],
     executable: true,
     requiresApproval: true,
   },
   {
     toolKey: 'read_fleet_dashboard',
     name: 'Read fleet dashboard',
-    description: 'Read fleet executive dashboard with utilization, costs, health score, and GPS status.',
+    description:
+      'Read fleet executive dashboard with utilization, costs, health score, and GPS status.',
     category: 'fleet_intelligence',
     requiredPermissions: ['fleet_intelligence:read', 'fleet:read', 'agents:read'],
     executable: true,
@@ -2876,7 +2934,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_trip_history',
     name: 'Read trip history',
-    description: 'Read GPS-derived trip history from real Cartrack position data (never fabricated).',
+    description:
+      'Read GPS-derived trip history from real Cartrack position data (never fabricated).',
     category: 'fleet_intelligence',
     requiredPermissions: ['fleet_intelligence:read', 'fleet:read', 'integrations:read'],
     executable: true,
@@ -2916,7 +2975,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_fleet_action',
     name: 'Draft fleet action',
-    description: 'Draft a fleet action for approval (never executes maintenance or reassignment automatically).',
+    description:
+      'Draft a fleet action for approval (never executes maintenance or reassignment automatically).',
     category: 'fleet_intelligence',
     requiredPermissions: ['fleet_intelligence:read', 'fleet_intelligence:write', 'fleet:write'],
     executable: true,
@@ -2925,7 +2985,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_vehicle_replacement',
     name: 'Draft vehicle replacement',
-    description: 'Draft a vehicle replacement recommendation for approval (never replaces vehicles automatically).',
+    description:
+      'Draft a vehicle replacement recommendation for approval (never replaces vehicles automatically).',
     category: 'fleet_intelligence',
     requiredPermissions: ['fleet_intelligence:read', 'fleet_intelligence:write', 'fleet:write'],
     executable: true,
@@ -2936,7 +2997,11 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
     name: 'Read personal communications dashboard',
     description: 'Read executive personal/business communications dashboard from real tenant data.',
     category: 'personal_communications',
-    requiredPermissions: ['personal_communications:read', 'communications_intelligence:read', 'agents:read'],
+    requiredPermissions: [
+      'personal_communications:read',
+      'communications_intelligence:read',
+      'agents:read',
+    ],
     executable: true,
   },
   {
@@ -2958,7 +3023,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_media_analysis',
     name: 'Read media analysis',
-    description: 'Read image, video, and document analysis recommendations from real media records.',
+    description:
+      'Read image, video, and document analysis recommendations from real media records.',
     category: 'personal_communications',
     requiredPermissions: ['personal_communications:read', 'communications_intelligence:read'],
     executable: true,
@@ -2974,7 +3040,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_communication_classification',
     name: 'Read communication classification',
-    description: 'Read conversation classification results with confidence scores and manual overrides.',
+    description:
+      'Read conversation classification results with confidence scores and manual overrides.',
     category: 'personal_communications',
     requiredPermissions: ['personal_communications:read', 'communications:read'],
     executable: true,
@@ -2982,9 +3049,14 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_business_action',
     name: 'Draft business action',
-    description: 'Draft a business communication action for approval (never sends messages automatically).',
+    description:
+      'Draft a business communication action for approval (never sends messages automatically).',
     category: 'personal_communications',
-    requiredPermissions: ['personal_communications:read', 'personal_communications:write', 'communications:write'],
+    requiredPermissions: [
+      'personal_communications:read',
+      'personal_communications:write',
+      'communications:write',
+    ],
     executable: true,
     requiresApproval: true,
   },
@@ -3008,7 +3080,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_workforce_context',
     name: 'Read workforce context',
-    description: 'Read workforce intelligence context including pipeline, skill gaps, and staffing insights.',
+    description:
+      'Read workforce intelligence context including pipeline, skill gaps, and staffing insights.',
     category: 'workforce',
     requiredPermissions: ['workforce:read', 'recruiting:read'],
     executable: true,
@@ -3076,7 +3149,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_procurement_context',
     name: 'Read procurement context',
-    description: 'Read procurement intelligence context including stock signals, suppliers, and recommendations.',
+    description:
+      'Read procurement intelligence context including stock signals, suppliers, and recommendations.',
     category: 'procurement',
     requiredPermissions: ['procurement:read'],
     executable: true,
@@ -3084,7 +3158,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_stock_intelligence',
     name: 'Read stock intelligence',
-    description: 'Read inventory stock intelligence signals including low stock, fast-moving, and slow-moving items.',
+    description:
+      'Read inventory stock intelligence signals including low stock, fast-moving, and slow-moving items.',
     category: 'procurement',
     requiredPermissions: ['procurement:read', 'inventory:read'],
     executable: true,
@@ -3125,7 +3200,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_executive_alerts',
     name: 'Read executive alerts',
-    description: 'Read executive intelligence alerts for revenue, capacity, customer, and stock risks.',
+    description:
+      'Read executive intelligence alerts for revenue, capacity, customer, and stock risks.',
     category: 'executive',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3158,7 +3234,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_knowledge_base',
     name: 'Read knowledge base',
-    description: 'Read knowledge base articles, categories, and statistics from user-created content.',
+    description:
+      'Read knowledge base articles, categories, and statistics from user-created content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3166,7 +3243,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'search_knowledge',
     name: 'Search knowledge',
-    description: 'Search SOPs, documentation, training, policies, and knowledge articles with permission-aware results.',
+    description:
+      'Search SOPs, documentation, training, policies, and knowledge articles with permission-aware results.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3174,7 +3252,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_sop',
     name: 'Read SOP',
-    description: 'Read standard operating procedures and version history from user-created content.',
+    description:
+      'Read standard operating procedures and version history from user-created content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3182,7 +3261,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_training',
     name: 'Read training library',
-    description: 'Read training courses, skill paths, and completion records from user-created content.',
+    description:
+      'Read training courses, skill paths, and completion records from user-created content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3190,7 +3270,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_company_policy',
     name: 'Read company policy',
-    description: 'Read published company policies and compliance documents from user-created content.',
+    description:
+      'Read published company policies and compliance documents from user-created content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3198,7 +3279,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_workflows',
     name: 'Read workflows',
-    description: 'Read tenant workflow definitions, triggers, actions, and status from the automation studio.',
+    description:
+      'Read tenant workflow definitions, triggers, actions, and status from the automation studio.',
     category: 'automation',
     requiredPermissions: ['automation:read'],
     executable: true,
@@ -3214,7 +3296,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'validate_workflow',
     name: 'Validate workflow',
-    description: 'Validate a workflow definition for missing actions, unsafe loops, and configuration errors.',
+    description:
+      'Validate a workflow definition for missing actions, unsafe loops, and configuration errors.',
     category: 'automation',
     requiredPermissions: ['automation:read'],
     executable: true,
@@ -3247,7 +3330,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_integrations',
     name: 'Read integrations',
-    description: 'Read integration registry entries, connection status, and health from the Integration Hub.',
+    description:
+      'Read integration registry entries, connection status, and health from the Integration Hub.',
     category: 'integrations',
     requiredPermissions: ['integrations:read'],
     executable: true,
@@ -3279,7 +3363,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'validate_integration',
     name: 'Validate integration',
-    description: 'Validate integration configuration locally without modifying production systems or calling external APIs.',
+    description:
+      'Validate integration configuration locally without modifying production systems or calling external APIs.',
     category: 'integrations',
     requiredPermissions: ['integrations:read'],
     executable: true,
@@ -3287,7 +3372,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_integration_action',
     name: 'Draft integration action',
-    description: 'Draft an integration management action for review (requires approval before execution).',
+    description:
+      'Draft an integration management action for review (requires approval before execution).',
     category: 'integrations',
     requiredPermissions: ['integrations:manage'],
     executable: true,
@@ -3312,7 +3398,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_business_reports',
     name: 'Read business reports',
-    description: 'Read saved and scheduled business intelligence reports (metadata only until generated).',
+    description:
+      'Read saved and scheduled business intelligence reports (metadata only until generated).',
     category: 'executive',
     requiredPermissions: ['bi:read', 'intelligence:read'],
     executable: true,
@@ -3336,7 +3423,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_business_report',
     name: 'Draft business report',
-    description: 'Draft a business intelligence report for review (requires approval before generation).',
+    description:
+      'Draft a business intelligence report for review (requires approval before generation).',
     category: 'executive',
     requiredPermissions: ['bi:write'],
     executable: true,
@@ -3363,7 +3451,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_security_dashboard',
     name: 'Read security dashboard',
-    description: 'Read tenant security score, sessions, risk alerts, compliance, and encryption status from real activity.',
+    description:
+      'Read tenant security score, sessions, risk alerts, compliance, and encryption status from real activity.',
     category: 'security',
     requiredPermissions: ['security:read', 'agents:read'],
     executable: true,
@@ -3387,7 +3476,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_risk_alerts',
     name: 'Read risk alerts',
-    description: 'Read unresolved and recent security risk alerts derived from real tenant activity.',
+    description:
+      'Read unresolved and recent security risk alerts derived from real tenant activity.',
     category: 'security',
     requiredPermissions: ['security:read'],
     executable: true,
@@ -3403,7 +3493,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_security_action',
     name: 'Draft security action',
-    description: 'Draft a security recommendation for approval. Never executes lockouts, deletions, or permission changes automatically.',
+    description:
+      'Draft a security recommendation for approval. Never executes lockouts, deletions, or permission changes automatically.',
     category: 'security',
     requiredPermissions: ['security:read', 'security:write'],
     executable: true,
@@ -3412,7 +3503,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_integration_platform_dashboard',
     name: 'Read integration platform dashboard',
-    description: 'Read enterprise integration hub dashboard with connector status, monitoring, and vault summary from real tenant data.',
+    description:
+      'Read enterprise integration hub dashboard with connector status, monitoring, and vault summary from real tenant data.',
     category: 'integrations',
     requiredPermissions: ['integrations:read', 'agents:read'],
     executable: true,
@@ -3420,7 +3512,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_integration_connectors',
     name: 'Read integration connectors',
-    description: 'Read universal connector registry entries and live connection status for the tenant.',
+    description:
+      'Read universal connector registry entries and live connection status for the tenant.',
     category: 'integrations',
     requiredPermissions: ['integrations:read'],
     executable: true,
@@ -3428,7 +3521,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_integration_repair',
     name: 'Draft integration repair',
-    description: 'Draft an integration repair recommendation for approval. Never reconnects or changes credentials automatically.',
+    description:
+      'Draft an integration repair recommendation for approval. Never reconnects or changes credentials automatically.',
     category: 'integrations',
     requiredPermissions: ['integrations:read', 'integrations:manage'],
     executable: true,
@@ -3437,7 +3531,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_enterprise_analytics_dashboard',
     name: 'Read enterprise analytics dashboard',
-    description: 'Read unified enterprise analytics dashboard with KPIs, warehouse snapshots, forecasts, and governance from real tenant data.',
+    description:
+      'Read unified enterprise analytics dashboard with KPIs, warehouse snapshots, forecasts, and governance from real tenant data.',
     category: 'analytics',
     requiredPermissions: ['bi:read', 'analytics:read'],
     executable: true,
@@ -3445,7 +3540,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_data_warehouse',
     name: 'Read data warehouse',
-    description: 'Read analytics data warehouse module summaries, historical snapshots, and data lineage.',
+    description:
+      'Read analytics data warehouse module summaries, historical snapshots, and data lineage.',
     category: 'analytics',
     requiredPermissions: ['bi:read', 'analytics:read'],
     executable: true,
@@ -3453,7 +3549,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_analytics_governance',
     name: 'Read analytics governance',
-    description: 'Read dataset permissions, report permissions, retention policies, and analytics access audit history.',
+    description:
+      'Read dataset permissions, report permissions, retention policies, and analytics access audit history.',
     category: 'analytics',
     requiredPermissions: ['bi:read', 'analytics:read'],
     executable: true,
@@ -3461,7 +3558,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_strategic_report',
     name: 'Draft strategic report',
-    description: 'Draft a strategic business report for executive review (requires approval before generation or distribution).',
+    description:
+      'Draft a strategic business report for executive review (requires approval before generation or distribution).',
     category: 'analytics',
     requiredPermissions: ['bi:write'],
     executable: true,
@@ -3470,7 +3568,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_automation_studio_dashboard',
     name: 'Read automation studio dashboard',
-    description: 'Read enterprise automation studio dashboard with workflow health, monitoring, and recommendations from real tenant data.',
+    description:
+      'Read enterprise automation studio dashboard with workflow health, monitoring, and recommendations from real tenant data.',
     category: 'automation',
     requiredPermissions: ['automation:read'],
     executable: true,
@@ -3478,7 +3577,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_automation_monitoring',
     name: 'Read automation monitoring',
-    description: 'Read workflow execution monitoring — running, completed, failed runs, queue depth, and performance metrics.',
+    description:
+      'Read workflow execution monitoring — running, completed, failed runs, queue depth, and performance metrics.',
     category: 'automation',
     requiredPermissions: ['automation:read'],
     executable: true,
@@ -3486,7 +3586,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_workflow_improvement',
     name: 'Draft workflow improvement',
-    description: 'Draft a workflow improvement recommendation for approval. Never publishes or executes workflows automatically.',
+    description:
+      'Draft a workflow improvement recommendation for approval. Never publishes or executes workflows automatically.',
     category: 'automation',
     requiredPermissions: ['automation:write'],
     executable: true,
@@ -3495,7 +3596,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_digital_twin_dashboard',
     name: 'Read digital twin dashboard',
-    description: 'Read enterprise digital twin dashboard with live operational state, simulations, and risk indicators from real tenant data.',
+    description:
+      'Read enterprise digital twin dashboard with live operational state, simulations, and risk indicators from real tenant data.',
     category: 'decision_intelligence',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3503,7 +3605,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_operational_state',
     name: 'Read operational state',
-    description: 'Read live operational state mirrored from jobs, dispatch, fleet, inventory, finance, and workforce modules.',
+    description:
+      'Read live operational state mirrored from jobs, dispatch, fleet, inventory, finance, and workforce modules.',
     category: 'decision_intelligence',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3511,7 +3614,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_scenario_comparisons',
     name: 'Read scenario comparisons',
-    description: 'Read saved scenario comparisons with current vs predicted state, cost impact, and resource utilization metrics.',
+    description:
+      'Read saved scenario comparisons with current vs predicted state, cost impact, and resource utilization metrics.',
     category: 'decision_intelligence',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3519,7 +3623,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_decision_report',
     name: 'Draft decision report',
-    description: 'Draft a decision intelligence report for executive review. Never executes operational changes automatically.',
+    description:
+      'Draft a decision intelligence report for executive review. Never executes operational changes automatically.',
     category: 'decision_intelligence',
     requiredPermissions: ['executive:write'],
     executable: true,
@@ -3528,7 +3633,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_knowledge_graph_dashboard',
     name: 'Read knowledge graph dashboard',
-    description: 'Read enterprise knowledge graph dashboard with indexed entities, relationships, and coverage from real tenant data.',
+    description:
+      'Read enterprise knowledge graph dashboard with indexed entities, relationships, and coverage from real tenant data.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3536,7 +3642,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'search_organizational_memory',
     name: 'Search organizational memory',
-    description: 'Perform hybrid semantic search across organizational memory, knowledge graph entities, and existing knowledge base content.',
+    description:
+      'Perform hybrid semantic search across organizational memory, knowledge graph entities, and existing knowledge base content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3544,7 +3651,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_knowledge_relationships',
     name: 'Read knowledge relationships',
-    description: 'Read knowledge graph relationships between customers, jobs, assets, technicians, documents, and other indexed entities.',
+    description:
+      'Read knowledge graph relationships between customers, jobs, assets, technicians, documents, and other indexed entities.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:read'],
     executable: true,
@@ -3552,7 +3660,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_knowledge_report',
     name: 'Draft knowledge report',
-    description: 'Draft a knowledge intelligence report for review. Never autonomously publishes or modifies knowledge content.',
+    description:
+      'Draft a knowledge intelligence report for review. Never autonomously publishes or modifies knowledge content.',
     category: 'knowledge',
     requiredPermissions: ['knowledge:write'],
     executable: true,
@@ -3570,7 +3679,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_mission_control_alerts',
     name: 'Read mission control alerts',
-    description: 'Read enterprise alert center with critical, operational, financial, fleet, inventory, AI, security, and integration alerts.',
+    description:
+      'Read enterprise alert center with critical, operational, financial, fleet, inventory, AI, security, and integration alerts.',
     category: 'executive_operations',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3578,7 +3688,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_mission_control_incidents',
     name: 'Read mission control incidents',
-    description: 'Read active and historical incidents with severity, ownership, and resolution status from real tenant records.',
+    description:
+      'Read active and historical incidents with severity, ownership, and resolution status from real tenant records.',
     category: 'executive_operations',
     requiredPermissions: ['executive:read'],
     executable: true,
@@ -3605,7 +3716,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_evolution_patterns',
     name: 'Read evolution patterns',
-    description: 'Read detected operational trends, business risks, and pattern recognition results from real module data.',
+    description:
+      'Read detected operational trends, business risks, and pattern recognition results from real module data.',
     category: 'evolution',
     requiredPermissions: ['intelligence:read'],
     executable: true,
@@ -3613,7 +3725,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_evolution_recommendations',
     name: 'Read evolution recommendations',
-    description: 'Read optimization recommendations across scheduling, dispatch, fleet, inventory, finance, workforce, and automation.',
+    description:
+      'Read optimization recommendations across scheduling, dispatch, fleet, inventory, finance, workforce, and automation.',
     category: 'evolution',
     requiredPermissions: ['intelligence:read'],
     executable: true,
@@ -3621,7 +3734,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_evolution_learning',
     name: 'Read evolution learning events',
-    description: 'Read continuous learning events from approvals, corrections, jobs, workflows, and AI interactions.',
+    description:
+      'Read continuous learning events from approvals, corrections, jobs, workflows, and AI interactions.',
     category: 'evolution',
     requiredPermissions: ['intelligence:read'],
     executable: true,
@@ -3629,7 +3743,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_evolution_report',
     name: 'Draft evolution report',
-    description: 'Draft a business evolution report for review. Never autonomously applies learning or deploys optimizations.',
+    description:
+      'Draft a business evolution report for review. Never autonomously applies learning or deploys optimizations.',
     category: 'evolution',
     requiredPermissions: ['executive:write'],
     executable: true,
@@ -3638,7 +3753,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_optimization_plan',
     name: 'Draft optimization plan',
-    description: 'Draft an optimization plan with estimated impact for approval. Never autonomously executes business changes.',
+    description:
+      'Draft an optimization plan with estimated impact for approval. Never autonomously executes business changes.',
     category: 'evolution',
     requiredPermissions: ['executive:write'],
     executable: true,
@@ -3656,7 +3772,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_developer_guide',
     name: 'Draft developer guide',
-    description: 'Draft a developer guide for review. Never autonomously publishes extensions or modifies API credentials.',
+    description:
+      'Draft a developer guide for review. Never autonomously publishes extensions or modifies API credentials.',
     category: 'developer',
     requiredPermissions: ['integrations:manage'],
     executable: true,
@@ -3665,7 +3782,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_integration_guide',
     name: 'Draft integration guide',
-    description: 'Draft an integration guide with SDK and webhook examples for review. Never autonomously deploys integrations.',
+    description:
+      'Draft an integration guide with SDK and webhook examples for review. Never autonomously deploys integrations.',
     category: 'developer',
     requiredPermissions: ['integrations:manage'],
     executable: true,
@@ -3683,7 +3801,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_saas_tenant_usage',
     name: 'Read SaaS tenant usage',
-    description: 'Read tenant usage metrics including users, storage, API, AI, and integration counts.',
+    description:
+      'Read tenant usage metrics including users, storage, API, AI, and integration counts.',
     category: 'saas',
     requiredPermissions: ['saas:read'],
     executable: true,
@@ -3699,7 +3818,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_saas_onboarding_guide',
     name: 'Draft SaaS onboarding guide',
-    description: 'Draft a tenant onboarding guide for review. Never autonomously provisions tenants.',
+    description:
+      'Draft a tenant onboarding guide for review. Never autonomously provisions tenants.',
     category: 'saas',
     requiredPermissions: ['saas:manage'],
     executable: true,
@@ -3708,7 +3828,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_tenant_report',
     name: 'Draft tenant report',
-    description: 'Draft a tenant usage or health report for review. Never autonomously modifies tenant records.',
+    description:
+      'Draft a tenant usage or health report for review. Never autonomously modifies tenant records.',
     category: 'saas',
     requiredPermissions: ['platform:read'],
     executable: true,
@@ -3726,7 +3847,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_production_readiness_dashboard',
     name: 'Read production readiness dashboard',
-    description: 'Read enterprise production readiness dashboard with health, performance, and recovery status.',
+    description:
+      'Read enterprise production readiness dashboard with health, performance, and recovery status.',
     category: 'production_operations',
     requiredPermissions: ['ops:read'],
     executable: true,
@@ -3774,7 +3896,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_recovery_plan',
     name: 'Draft recovery plan',
-    description: 'Draft a disaster recovery plan for approval. Never autonomously restores backups.',
+    description:
+      'Draft a disaster recovery plan for approval. Never autonomously restores backups.',
     category: 'production_operations',
     requiredPermissions: ['ops:manage'],
     executable: true,
@@ -3810,7 +3933,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_scaling_recommendation',
     name: 'Draft scaling recommendation',
-    description: 'Draft a scaling recommendation for approval. Never autonomously changes infrastructure.',
+    description:
+      'Draft a scaling recommendation for approval. Never autonomously changes infrastructure.',
     category: 'production_operations',
     requiredPermissions: ['ops:manage'],
     executable: true,
@@ -3819,7 +3943,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_mobile_platform_dashboard',
     name: 'Read mobile platform dashboard',
-    description: 'Read enterprise mobile platform dashboard with devices, sync health, and fleet providers.',
+    description:
+      'Read enterprise mobile platform dashboard with devices, sync health, and fleet providers.',
     category: 'mobile_field',
     requiredPermissions: ['mobile:read'],
     executable: true,
@@ -3895,7 +4020,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_unified_communications_dashboard',
     name: 'Read unified communications dashboard',
-    description: 'Read enterprise unified communications dashboard with providers, voice, and analytics.',
+    description:
+      'Read enterprise unified communications dashboard with providers, voice, and analytics.',
     category: 'communications',
     requiredPermissions: ['communications:read'],
     executable: true,
@@ -3999,7 +4125,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_customer_experience_dashboard',
     name: 'Read customer experience dashboard',
-    description: 'Read enterprise customer experience dashboard with bookings, reviews, loyalty, and analytics.',
+    description:
+      'Read enterprise customer experience dashboard with bookings, reviews, loyalty, and analytics.',
     category: 'customer_experience',
     requiredPermissions: ['customer_experience:read', 'portal:read'],
     executable: true,
@@ -4031,7 +4158,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_technician_tracking',
     name: 'Read technician tracking',
-    description: 'Read technician ETA, progress, and fleet tracking availability for customer jobs.',
+    description:
+      'Read technician ETA, progress, and fleet tracking availability for customer jobs.',
     category: 'customer_experience',
     requiredPermissions: ['customer_experience:read', 'portal:read', 'fleet:read'],
     executable: true,
@@ -5093,7 +5221,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_it_operations_dashboard',
     name: 'Read IT operations dashboard',
-    description: 'Read the IT operations dashboard with health, incidents, and monitoring summaries.',
+    description:
+      'Read the IT operations dashboard with health, incidents, and monitoring summaries.',
     category: 'it_operations',
     requiredPermissions: ['it_operations:read', 'ops:read'],
     executable: true,
@@ -5101,7 +5230,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ito_platform_health',
     name: 'Read platform health monitoring',
-    description: 'Read platform health monitoring from production readiness, mission control, security, and integrations.',
+    description:
+      'Read platform health monitoring from production readiness, mission control, security, and integrations.',
     category: 'it_operations',
     requiredPermissions: ['it_operations:read', 'ops:read'],
     executable: true,
@@ -5178,7 +5308,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_business_evolution_dashboard',
     name: 'Read business evolution dashboard',
-    description: 'Read business evolution dashboard with observations, patterns, hypotheses, recommendations, and experiments from real tenant data.',
+    description:
+      'Read business evolution dashboard with observations, patterns, hypotheses, recommendations, and experiments from real tenant data.',
     category: 'business_evolution',
     requiredPermissions: ['business_evolution:read', 'intelligence:read'],
     executable: true,
@@ -5202,7 +5333,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_bev_recommendations',
     name: 'Read improvement recommendations',
-    description: 'Read evidence-based improvement recommendations awaiting review or implementation.',
+    description:
+      'Read evidence-based improvement recommendations awaiting review or implementation.',
     category: 'business_evolution',
     requiredPermissions: ['business_evolution:read', 'intelligence:read'],
     executable: true,
@@ -5218,7 +5350,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_bev_alerts',
     name: 'Read evolution alerts',
-    description: 'Read evolution alerts from failed experiments, negative outcomes, and learning quality issues.',
+    description:
+      'Read evolution alerts from failed experiments, negative outcomes, and learning quality issues.',
     category: 'business_evolution',
     requiredPermissions: ['business_evolution:read', 'intelligence:read'],
     executable: true,
@@ -5226,7 +5359,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_bev_experiment_plan',
     name: 'Draft experiment plan',
-    description: 'Draft a controlled experiment plan for approval. Never autonomously runs experiments.',
+    description:
+      'Draft a controlled experiment plan for approval. Never autonomously runs experiments.',
     category: 'business_evolution',
     requiredPermissions: ['business_evolution:write'],
     executable: true,
@@ -5307,7 +5441,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_app_builder_dashboard',
     name: 'Read app builder dashboard',
-    description: 'Read app builder dashboard with feature requests, workspaces, tests, approvals, and deployments from real tenant data.',
+    description:
+      'Read app builder dashboard with feature requests, workspaces, tests, approvals, and deployments from real tenant data.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5315,7 +5450,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ab_feature_requests',
     name: 'Read feature requests',
-    description: 'Read natural-language feature requests and workflow status from real tenant data.',
+    description:
+      'Read natural-language feature requests and workflow status from real tenant data.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5323,7 +5459,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ab_requirements',
     name: 'Read requirements analyses',
-    description: 'Read functional, technical, and acceptance requirements analyses for feature requests.',
+    description:
+      'Read functional, technical, and acceptance requirements analyses for feature requests.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5331,7 +5468,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ab_architecture_impacts',
     name: 'Read architecture impact analyses',
-    description: 'Read architecture impact assessments across frontend, backend, database, APIs, RBAC, and security.',
+    description:
+      'Read architecture impact assessments across frontend, backend, database, APIs, RBAC, and security.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5339,7 +5477,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ab_workspaces',
     name: 'Read development workspaces',
-    description: 'Read isolated development workspaces and branch tracking for in-progress features.',
+    description:
+      'Read isolated development workspaces and branch tracking for in-progress features.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5355,7 +5494,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_ab_alerts',
     name: 'Read app builder alerts',
-    description: 'Read app builder alerts from failed tests, failed deployments, and architecture warnings.',
+    description:
+      'Read app builder alerts from failed tests, failed deployments, and architecture warnings.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:read', 'intelligence:read'],
     executable: true,
@@ -5363,7 +5503,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_ab_implementation_plan',
     name: 'Draft implementation plan',
-    description: 'Draft a feature implementation plan for owner approval. Never autonomously generates or deploys code.',
+    description:
+      'Draft a feature implementation plan for owner approval. Never autonomously generates or deploys code.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:write'],
     executable: true,
@@ -5399,7 +5540,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_ab_test_plan',
     name: 'Draft test plan',
-    description: 'Draft a test plan covering unit, integration, API, RBAC, and tenant isolation tests.',
+    description:
+      'Draft a test plan covering unit, integration, API, RBAC, and tenant isolation tests.',
     category: 'app_builder',
     requiredPermissions: ['app_builder:write'],
     executable: true,
@@ -5444,7 +5586,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_industry_packs_dashboard',
     name: 'Read industry packs dashboard',
-    description: 'Read industry packs dashboard with installed packs, templates, compliance, and certificates from real tenant data.',
+    description:
+      'Read industry packs dashboard with installed packs, templates, compliance, and certificates from real tenant data.',
     category: 'industry_packs',
     requiredPermissions: ['industry_packs:read', 'intelligence:read'],
     executable: true,
@@ -5545,7 +5688,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_ip_certificate_template',
     name: 'Draft certificate template',
-    description: 'Draft a certificate template for approval. Certificates require completed work to issue.',
+    description:
+      'Draft a certificate template for approval. Certificates require completed work to issue.',
     category: 'industry_packs',
     requiredPermissions: ['industry_packs:write'],
     executable: true,
@@ -5590,7 +5734,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_pdp_api_scopes',
     name: 'Read API scopes',
-    description: 'Read configurable public API scopes for customers, jobs, finance, fleet, and other resources.',
+    description:
+      'Read configurable public API scopes for customers, jobs, finance, fleet, and other resources.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:read', 'integrations:read'],
     executable: true,
@@ -5606,7 +5751,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_pdp_webhook_deliveries',
     name: 'Read webhook deliveries',
-    description: 'Read webhook delivery history, failures, and retry status from real delivery records.',
+    description:
+      'Read webhook delivery history, failures, and retry status from real delivery records.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:read', 'integrations:read'],
     executable: true,
@@ -5614,7 +5760,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_pdp_sdk_packages',
     name: 'Read SDK packages',
-    description: 'Read generated SDK packages and generation records for TypeScript, JavaScript, and Python.',
+    description:
+      'Read generated SDK packages and generation records for TypeScript, JavaScript, and Python.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:read', 'integrations:read'],
     executable: true,
@@ -5622,7 +5769,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_pdp_developer_alerts',
     name: 'Read developer alerts',
-    description: 'Read API health, webhook failure, and rate-limit alerts for the public developer platform.',
+    description:
+      'Read API health, webhook failure, and rate-limit alerts for the public developer platform.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:read', 'integrations:read'],
     executable: true,
@@ -5630,7 +5778,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_pdp_integration_guide',
     name: 'Draft integration guide',
-    description: 'Draft a public API integration guide for review. Never autonomously creates credentials or deploys integrations.',
+    description:
+      'Draft a public API integration guide for review. Never autonomously creates credentials or deploys integrations.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:write'],
     executable: true,
@@ -5639,7 +5788,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_pdp_webhook_config',
     name: 'Draft webhook configuration',
-    description: 'Draft a webhook subscription configuration for review. Never autonomously creates webhook endpoints.',
+    description:
+      'Draft a webhook subscription configuration for review. Never autonomously creates webhook endpoints.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:write'],
     executable: true,
@@ -5648,7 +5798,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_pdp_api_example',
     name: 'Draft API example',
-    description: 'Draft API request and response examples for review. Never exposes secrets or production credentials.',
+    description:
+      'Draft API request and response examples for review. Never exposes secrets or production credentials.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:write'],
     executable: true,
@@ -5666,7 +5817,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_pdp_diagnostic_report',
     name: 'Draft diagnostic report',
-    description: 'Draft an integration diagnostic report from real API and webhook data for review.',
+    description:
+      'Draft an integration diagnostic report from real API and webhook data for review.',
     category: 'public_developer',
     requiredPermissions: ['public_developer:write'],
     executable: true,
@@ -5675,7 +5827,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_sm_dashboard',
     name: 'Read SaaS management dashboard',
-    description: 'Read SaaS management dashboard with subscriptions, billing, usage, licenses, and alerts from real tenant data.',
+    description:
+      'Read SaaS management dashboard with subscriptions, billing, usage, licenses, and alerts from real tenant data.',
     category: 'saas_management',
     requiredPermissions: ['saas_management:read', 'saas:read', 'platform:read'],
     executable: true,
@@ -5691,7 +5844,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_sm_subscriptions',
     name: 'Read subscriptions',
-    description: 'Read subscription status, trial dates, and plan assignments from real tenant data.',
+    description:
+      'Read subscription status, trial dates, and plan assignments from real tenant data.',
     category: 'saas_management',
     requiredPermissions: ['saas_management:read', 'saas:read', 'platform:read'],
     executable: true,
@@ -5723,7 +5877,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_sm_subscription_report',
     name: 'Draft subscription report',
-    description: 'Draft a subscription report for review. Never autonomously modifies subscriptions.',
+    description:
+      'Draft a subscription report for review. Never autonomously modifies subscriptions.',
     category: 'saas_management',
     requiredPermissions: ['saas_management:write'],
     executable: true,
@@ -5759,7 +5914,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'draft_sm_plan_recommendation',
     name: 'Draft plan recommendation',
-    description: 'Draft a plan upgrade or downgrade recommendation for approval. Never autonomously changes plans.',
+    description:
+      'Draft a plan upgrade or downgrade recommendation for approval. Never autonomously changes plans.',
     category: 'saas_management',
     requiredPermissions: ['saas_management:write'],
     executable: true,
@@ -5768,7 +5924,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_vr_dashboard',
     name: 'Read voice reception dashboard',
-    description: 'Read unified voice reception dashboard with call stats, routing, and AI receptionist status.',
+    description:
+      'Read unified voice reception dashboard with call stats, routing, and AI receptionist status.',
     category: 'voice_reception',
     requiredPermissions: ['voice_reception:read', 'voice:read', 'communications:read'],
     executable: false,
@@ -6515,7 +6672,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_rc_dashboard',
     name: 'Read release center dashboard',
-    description: 'Read overall release readiness score, failed validations, and release center summary.',
+    description:
+      'Read overall release readiness score, failed validations, and release center summary.',
     category: 'release_center',
     requiredPermissions: ['release_center:read', 'ops:read'],
     executable: false,
@@ -6686,7 +6844,8 @@ export const AGENT_TOOL_REGISTRY: AgentToolDefinition[] = [
   {
     toolKey: 'read_rlm_dashboard',
     name: 'Read release dashboard',
-    description: 'Read release readiness, mobile status, documentation completeness, and launch checklist from real platform data.',
+    description:
+      'Read release readiness, mobile status, documentation completeness, and launch checklist from real platform data.',
     category: 'release_manager',
     requiredPermissions: ['release_manager:read', 'ops:read'],
     executable: false,

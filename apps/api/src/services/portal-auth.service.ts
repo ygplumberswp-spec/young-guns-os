@@ -70,11 +70,7 @@ export class PortalAuthService {
       .set({ lastLoginAt: new Date(), updatedAt: new Date() })
       .where(eq(portalUsers.id, portalUser.id));
 
-    return this.createSessionForPortalUser(
-      portalUser.id,
-      input.userAgent,
-      input.ipAddress,
-    );
+    return this.createSessionForPortalUser(portalUser.id, input.userAgent, input.ipAddress);
   }
 
   async logout(refreshToken: string): Promise<void> {
@@ -83,7 +79,10 @@ export class PortalAuthService {
       .update(portalSessions)
       .set({ revokedAt: new Date() })
       .where(
-        and(eq(portalSessions.refreshTokenHash, refreshTokenHash), isNull(portalSessions.revokedAt)),
+        and(
+          eq(portalSessions.refreshTokenHash, refreshTokenHash),
+          isNull(portalSessions.revokedAt),
+        ),
       );
   }
 

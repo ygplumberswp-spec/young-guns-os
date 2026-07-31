@@ -89,9 +89,9 @@ const DATA_FETCHERS: Record<string, DataFetcher> = {
   },
   'mobile/jobs': (ctx) => {
     if (ctx.kind !== 'staff') return Promise.resolve([]);
-    return request<{ jobs: unknown[] }>('/mobile/workforce/jobs', { accessToken: ctx.accessToken }).then(
-      (data) => data.jobs,
-    );
+    return request<{ jobs: unknown[] }>('/mobile/workforce/jobs', {
+      accessToken: ctx.accessToken,
+    }).then((data) => data.jobs);
   },
   'mobile/notifications': (ctx) => {
     if (ctx.kind !== 'staff') return Promise.resolve([]);
@@ -154,14 +154,10 @@ export function prefetchDataQuery(queryKey: string, context: PreloadContext): vo
   scheduleBackgroundTask(dedupeKey, 'background', async (taskSignal) => {
     if (taskSignal.aborted) return;
 
-    await fetchQueryCache(
-      fullKey,
-      (abortSignal) => fetcher(context, abortSignal),
-      {
-        staleTimeMs: staleTimeForQueryKey(queryKey),
-        background: true,
-      },
-    );
+    await fetchQueryCache(fullKey, (abortSignal) => fetcher(context, abortSignal), {
+      staleTimeMs: staleTimeForQueryKey(queryKey),
+      background: true,
+    });
   });
 }
 

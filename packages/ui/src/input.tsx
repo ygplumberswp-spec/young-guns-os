@@ -16,7 +16,11 @@ export function Input({ label, error, className, id, ...props }: InputProps) {
           {label}
         </label>
       ) : null}
-      <input id={inputId} className={clsx('titan-input', error && 'titan-input--error')} {...props} />
+      <input
+        id={inputId}
+        className={clsx('titan-input', error && 'titan-input--error')}
+        {...props}
+      />
       {error ? <span className="titan-input-error">{error}</span> : null}
     </div>
   );

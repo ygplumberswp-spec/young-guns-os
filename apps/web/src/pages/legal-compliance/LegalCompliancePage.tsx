@@ -48,11 +48,23 @@ export function LegalCompliancePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const { agentMessages, isSending, pendingTasks, sendAgentMessage, updateTask, error: assistantError } =
-    useAuraChat();
+  const {
+    agentMessages,
+    isSending,
+    pendingTasks,
+    sendAgentMessage,
+    updateTask,
+    error: assistantError,
+  } = useAuraChat();
 
-  const canView = useMemo(() => (user ? canAccessLegalCompliance(user.permissions) : false), [user]);
-  const canWrite = useMemo(() => (user ? canManageLegalCompliance(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () => (user ? canAccessLegalCompliance(user.permissions) : false),
+    [user],
+  );
+  const canWrite = useMemo(
+    () => (user ? canManageLegalCompliance(user.permissions) : false),
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -72,7 +84,11 @@ export function LegalCompliancePage() {
         if (!cancelled) setDashboard(data);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof ApiClientError ? err.message : 'Unable to load legal compliance dashboard');
+          setError(
+            err instanceof ApiClientError
+              ? err.message
+              : 'Unable to load legal compliance dashboard',
+          );
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -103,7 +119,10 @@ export function LegalCompliancePage() {
   if (!canView) {
     return (
       <div className="automation-page">
-        <PageHeader title="Legal & Compliance" description="You do not have permission to view legal compliance." />
+        <PageHeader
+          title="Legal & Compliance"
+          description="You do not have permission to view legal compliance."
+        />
       </div>
     );
   }
@@ -163,16 +182,33 @@ export function LegalCompliancePage() {
           <div className="stat-grid">
             <StatCard label="Active Contracts" value={String(dashboard.activeContractCount)} />
             <StatCard label="Expiring Soon" value={String(dashboard.expiringContractCount)} />
-            <StatCard label="Overdue Obligations" value={String(dashboard.overdueObligationCount)} />
+            <StatCard
+              label="Overdue Obligations"
+              value={String(dashboard.overdueObligationCount)}
+            />
             <StatCard label="Open Risks" value={String(dashboard.openRiskCount)} />
             <StatCard label="Open Legal Matters" value={String(dashboard.openLegalMatterCount)} />
-            <StatCard label="Pending Privacy Requests" value={String(dashboard.pendingPrivacyRequestCount)} />
+            <StatCard
+              label="Pending Privacy Requests"
+              value={String(dashboard.pendingPrivacyRequestCount)}
+            />
           </div>
-          <Panel title="Compliance Monitoring" description={dashboard.complianceMonitoring.alerts.join(' · ') || 'No active alerts'}>
+          <Panel
+            title="Compliance Monitoring"
+            description={dashboard.complianceMonitoring.alerts.join(' · ') || 'No active alerts'}
+          >
             <p>{dashboard.summary}</p>
             {canWrite ? (
               <div className="panel-actions">
-                <Button disabled={isWorking} onClick={() => void runAction(() => captureLegalAnalytics(accessToken!), 'Analytics captured from real legal data.')}>
+                <Button
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => captureLegalAnalytics(accessToken!),
+                      'Analytics captured from real legal data.',
+                    )
+                  }
+                >
                   Capture Analytics
                 </Button>
               </div>
@@ -184,7 +220,10 @@ export function LegalCompliancePage() {
       {dashboard && activeTab === 'contracts' ? (
         <Panel title="Contracts" description="Draft → Review → Approval → Execution">
           {dashboard.recentContracts.length === 0 ? (
-            <EmptyState title="No contracts" description="Contracts appear when created in the legal workspace." />
+            <EmptyState
+              title="No contracts"
+              description="Contracts appear when created in the legal workspace."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentContracts.map((c) => (
@@ -193,7 +232,16 @@ export function LegalCompliancePage() {
                   {c.counterpartyName ? ` · ${c.counterpartyName}` : ''}
                   {c.expiryDate ? ` · expires ${c.expiryDate}` : ''}
                   {canWrite && c.workflowStatus === 'pending_approval' ? (
-                    <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => approveContract(accessToken!, c.id), 'Contract approved.')}>
+                    <Button
+                      variant="secondary"
+                      disabled={isWorking}
+                      onClick={() =>
+                        void runAction(
+                          () => approveContract(accessToken!, c.id),
+                          'Contract approved.',
+                        )
+                      }
+                    >
                       Approve
                     </Button>
                   ) : null}
@@ -207,15 +255,28 @@ export function LegalCompliancePage() {
       {dashboard && activeTab === 'obligations' ? (
         <Panel title="Obligations Register">
           {dashboard.recentObligations.length === 0 ? (
-            <EmptyState title="No obligations" description="Obligations are created from contracts, policies, and regulations." />
+            <EmptyState
+              title="No obligations"
+              description="Obligations are created from contracts, policies, and regulations."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentObligations.map((o) => (
                 <li key={o.id}>
-                  {o.title} — {o.status}{o.isOverdue ? ' (overdue)' : ''}
+                  {o.title} — {o.status}
+                  {o.isOverdue ? ' (overdue)' : ''}
                   {o.dueDate ? ` · due ${o.dueDate}` : ''}
                   {canWrite && o.status !== 'completed' ? (
-                    <Button variant="secondary" disabled={isWorking} onClick={() => void runAction(() => completeObligation(accessToken!, o.id), 'Obligation completed.')}>
+                    <Button
+                      variant="secondary"
+                      disabled={isWorking}
+                      onClick={() =>
+                        void runAction(
+                          () => completeObligation(accessToken!, o.id),
+                          'Obligation completed.',
+                        )
+                      }
+                    >
                       Complete
                     </Button>
                   ) : null}
@@ -227,7 +288,10 @@ export function LegalCompliancePage() {
       ) : null}
 
       {dashboard && activeTab === 'compliance' ? (
-        <Panel title="Compliance Monitoring" description="Real records only — no fabricated compliance failures">
+        <Panel
+          title="Compliance Monitoring"
+          description="Real records only — no fabricated compliance failures"
+        >
           <ul className="simple-list">
             {dashboard.complianceMonitoring.alerts.length === 0 ? (
               <li>No compliance alerts from real tenant data.</li>
@@ -241,7 +305,10 @@ export function LegalCompliancePage() {
       {dashboard && activeTab === 'risks' ? (
         <Panel title="Risk Register" description="Scores show inputs, formula, and methodology">
           {dashboard.recentRisks.length === 0 ? (
-            <EmptyState title="No risks" description="Risks are registered when identified by authorized users." />
+            <EmptyState
+              title="No risks"
+              description="Risks are registered when identified by authorized users."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentRisks.map((r) => (
@@ -256,8 +323,13 @@ export function LegalCompliancePage() {
       ) : null}
 
       {dashboard && activeTab === 'controls' ? (
-        <Panel title="Internal Controls" description="Control tests and exceptions from real tenant records">
-          <p>{dashboard.controlCount} control(s), {dashboard.failedControlCount} failed.</p>
+        <Panel
+          title="Internal Controls"
+          description="Control tests and exceptions from real tenant records"
+        >
+          <p>
+            {dashboard.controlCount} control(s), {dashboard.failedControlCount} failed.
+          </p>
           {dashboard.failedControlCount === 0 ? (
             <p>No failed controls recorded.</p>
           ) : (
@@ -268,27 +340,40 @@ export function LegalCompliancePage() {
 
       {dashboard && activeTab === 'insurance' ? (
         <Panel title="Insurance & Claims">
-          <p>{dashboard.insurancePolicyCount} insurance policy record(s), {dashboard.openClaimCount} open claim(s).</p>
+          <p>
+            {dashboard.insurancePolicyCount} insurance policy record(s), {dashboard.openClaimCount}{' '}
+            open claim(s).
+          </p>
           {dashboard.insurancePolicyCount === 0 && dashboard.openClaimCount === 0 ? (
-            <EmptyState title="No insurance records" description="Policies and claims appear when logged in the legal workspace." />
+            <EmptyState
+              title="No insurance records"
+              description="Policies and claims appear when logged in the legal workspace."
+            />
           ) : null}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'policies' ? (
         <Panel title="Policies" description="Draft → Review → Approval → Publish">
-          <p>{dashboard.publishedPolicyCount} published of {dashboard.policyCount} total.</p>
+          <p>
+            {dashboard.publishedPolicyCount} published of {dashboard.policyCount} total.
+          </p>
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'matters' ? (
         <Panel title="Legal Matters">
           {dashboard.recentLegalMatters.length === 0 ? (
-            <EmptyState title="No legal matters" description="Disputes, claims, and complaints appear when logged." />
+            <EmptyState
+              title="No legal matters"
+              description="Disputes, claims, and complaints appear when logged."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.recentLegalMatters.map((m) => (
-                <li key={m.id}>{m.title} — {m.matterType} ({m.status})</li>
+                <li key={m.id}>
+                  {m.title} — {m.matterType} ({m.status})
+                </li>
               ))}
             </ul>
           )}
@@ -298,7 +383,10 @@ export function LegalCompliancePage() {
       {dashboard && activeTab === 'privacy' ? (
         <Panel title="Privacy Requests">
           {dashboard.pendingPrivacyRequests.length === 0 ? (
-            <EmptyState title="No pending privacy requests" description="Data subject requests appear when submitted." />
+            <EmptyState
+              title="No pending privacy requests"
+              description="Data subject requests appear when submitted."
+            />
           ) : (
             <ul className="simple-list">
               {dashboard.pendingPrivacyRequests.map((p) => (
@@ -313,26 +401,43 @@ export function LegalCompliancePage() {
       ) : null}
 
       {dashboard && activeTab === 'retention' ? (
-        <Panel title="Retention & Legal Holds" description="Record disposal follows Draft → Legal Review → Approval → Execution">
+        <Panel
+          title="Retention & Legal Holds"
+          description="Record disposal follows Draft → Legal Review → Approval → Execution"
+        >
           <p>{dashboard.activeLegalHoldCount} active legal hold(s).</p>
           {dashboard.activeLegalHoldCount === 0 ? (
-            <EmptyState title="No active legal holds" description="Legal holds appear when placed on tenant records." />
+            <EmptyState
+              title="No active legal holds"
+              description="Legal holds appear when placed on tenant records."
+            />
           ) : null}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'evidence' ? (
-        <Panel title="Evidence Register" description="Documents, approvals, signatures, and audit evidence with chain of custody">
+        <Panel
+          title="Evidence Register"
+          description="Documents, approvals, signatures, and audit evidence with chain of custody"
+        >
           {dashboard.documentStats ? (
-            <p>{dashboard.documentStats.documentCount} linked document(s) in the document platform.</p>
+            <p>
+              {dashboard.documentStats.documentCount} linked document(s) in the document platform.
+            </p>
           ) : (
-            <EmptyState title="No evidence records" description="Evidence is registered when uploaded or linked to legal workflows." />
+            <EmptyState
+              title="No evidence records"
+              description="Evidence is registered when uploaded or linked to legal workflows."
+            />
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'providers' ? (
-        <Panel title="E-Signature Providers" description="Vendor-agnostic — DocuSign, Adobe Sign, manual upload, and more">
+        <Panel
+          title="E-Signature Providers"
+          description="Vendor-agnostic — DocuSign, Adobe Sign, manual upload, and more"
+        >
           <p>{dashboard.signatureProviderCount} signature provider(s) configured.</p>
         </Panel>
       ) : null}
@@ -347,32 +452,53 @@ export function LegalCompliancePage() {
               <li>Open risks: {dashboard.analytics.openRiskCount}</li>
             </ul>
           ) : (
-            <EmptyState title="No analytics captured" description="Capture analytics from real legal activity." />
+            <EmptyState
+              title="No analytics captured"
+              description="Capture analytics from real legal activity."
+            />
           )}
         </Panel>
       ) : null}
 
       {dashboard && activeTab === 'settings' ? (
-        <Panel title="Legal & Compliance Settings" description="Jurisdictions, risk methodology, retention, and provider templates">
+        <Panel
+          title="Legal & Compliance Settings"
+          description="Jurisdictions, risk methodology, retention, and provider templates"
+        >
           <ul className="simple-list">
             <li>Platform owner tenant: {dashboard.isPlatformOwner ? 'Yes' : 'No'}</li>
             <li>Signature providers configured: {dashboard.signatureProviderCount}</li>
-            <li>Jurisdiction templates: {Object.keys(dashboard.platformConfig.jurisdictionTemplates ?? {}).length}</li>
-            <li>Risk methodology configured: {dashboard.platformConfig.riskMethodology ? 'Yes' : 'No'}</li>
+            <li>
+              Jurisdiction templates:{' '}
+              {Object.keys(dashboard.platformConfig.jurisdictionTemplates ?? {}).length}
+            </li>
+            <li>
+              Risk methodology configured: {dashboard.platformConfig.riskMethodology ? 'Yes' : 'No'}
+            </li>
           </ul>
         </Panel>
       ) : null}
 
       {activeTab === 'assistant' ? (
-        <Panel title="AURA Legal & Compliance Agent" description="AI-generated outputs require human review — not legal advice">
+        <Panel
+          title="AURA Legal & Compliance Agent"
+          description="AI-generated outputs require human review — not legal advice"
+        >
           {assistantError ? <p className="form-error">{assistantError}</p> : null}
           <AuraMessageList messages={agentMessages} isSending={isSending} />
           {pendingTasks.map((task) => (
-            <AuraTaskApprovalCard key={task.id} task={task} accessToken={accessToken ?? ''} onUpdated={updateTask} />
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
           ))}
           <AuraComposer
             disabled={isSending}
-            onSend={(content) => void sendAgentMessage(content, 'legal_compliance' as import('@titan/shared').AgentKey)}
+            onSend={(content) =>
+              void sendAgentMessage(content, 'legal_compliance' as import('@titan/shared').AgentKey)
+            }
             placeholder="Ask about contracts, obligations, risks, compliance gaps, or policy language…"
           />
         </Panel>

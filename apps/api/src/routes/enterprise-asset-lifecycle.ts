@@ -182,8 +182,7 @@ function getRouteParam(value: string | string[]): string {
 
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseAssetLifecycleError) {
-    const status =
-      error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 500;
+    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 500;
     res.status(status).json({ error: error.code, message: error.message });
     return;
   }
@@ -192,7 +191,10 @@ function handleError(error: unknown, res: import('express').Response) {
 
 export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   const router = Router();
-  const requireStaffAuth = createAuthMiddleware({ jwtSecret: deps.jwtSecret, authService: deps.authService });
+  const requireStaffAuth = createAuthMiddleware({
+    jwtSecret: deps.jwtSecret,
+    authService: deps.authService,
+  });
   const requirePortalAuth = createPortalAuthMiddleware({
     jwtSecret: deps.jwtSecret,
     portalAuthService: deps.portalAuthService,
@@ -223,7 +225,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.get('/iot/monitoring', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const monitoring = await deps.enterpriseAssetLifecycleService.getIotMonitoring(auth.companyId);
+      const monitoring = await deps.enterpriseAssetLifecycleService.getIotMonitoring(
+        auth.companyId,
+      );
       res.json({ data: { monitoring } });
     } catch (error) {
       handleError(error, res);
@@ -233,7 +237,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.get('/platform-config', requireStaffAuth, requireRead, async (req, res) => {
     try {
       const auth = getAuth(req);
-      const platformConfig = await deps.enterpriseAssetLifecycleService.getPlatformConfig(auth.companyId);
+      const platformConfig = await deps.enterpriseAssetLifecycleService.getPlatformConfig(
+        auth.companyId,
+      );
       res.json({ data: { platformConfig } });
     } catch (error) {
       handleError(error, res);
@@ -243,7 +249,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.put('/platform-config', requireStaffAuth, requireManage, async (req, res) => {
     const parsed = platformConfigSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid platform config' } });
       return;
     }
     try {
@@ -271,7 +279,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.post('/categories', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = categorySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid category payload' } });
       return;
     }
     try {
@@ -289,7 +299,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.post('/registry-profiles', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = registryProfileSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid registry profile' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid registry profile' } });
       return;
     }
     try {
@@ -307,7 +319,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.post('/iot/providers', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = iotProviderSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid IoT provider' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid IoT provider' } });
       return;
     }
     try {
@@ -322,18 +336,23 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
     }
   });
 
-  router.post('/iot/providers/:providerId/test', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const provider = await deps.enterpriseAssetLifecycleService.testIotProvider(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.providerId),
-      );
-      res.json({ data: { provider } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/iot/providers/:providerId/test',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const provider = await deps.enterpriseAssetLifecycleService.testIotProvider(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.providerId),
+        );
+        res.json({ data: { provider } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/iot/devices', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = iotDeviceSchema.safeParse(req.body);
@@ -353,29 +372,36 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
     }
   });
 
-  router.post('/iot/devices/:deviceId/map-asset', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = z.object({ assetId: z.string().uuid() }).safeParse(req.body);
-    if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'assetId required' } });
-      return;
-    }
-    try {
-      const auth = getAuth(req);
-      const device = await deps.enterpriseAssetLifecycleService.mapDeviceToAsset(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.deviceId),
-        parsed.data.assetId,
-      );
-      res.json({ data: { device } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/iot/devices/:deviceId/map-asset',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      const parsed = z.object({ assetId: z.string().uuid() }).safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'assetId required' } });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const device = await deps.enterpriseAssetLifecycleService.mapDeviceToAsset(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.deviceId),
+          parsed.data.assetId,
+        );
+        res.json({ data: { device } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/telemetry/ingest', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = telemetrySchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid telemetry payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid telemetry payload' } });
       return;
     }
     try {
@@ -393,7 +419,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.post('/lifecycle/stages', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = lifecycleStageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lifecycle stage' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid lifecycle stage' } });
       return;
     }
     try {
@@ -408,31 +436,41 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
     }
   });
 
-  router.post('/lifecycle/stages/:historyId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const stage = await deps.enterpriseAssetLifecycleService.approveLifecycleStage(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.historyId),
-      );
-      res.json({ data: { stage } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/lifecycle/stages/:historyId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const stage = await deps.enterpriseAssetLifecycleService.approveLifecycleStage(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.historyId),
+        );
+        res.json({ data: { stage } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
-  router.post('/lifecycle/stages/:historyId/execute', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const stage = await deps.enterpriseAssetLifecycleService.executeLifecycleStage(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.historyId),
-      );
-      res.json({ data: { stage } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/lifecycle/stages/:historyId/execute',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const stage = await deps.enterpriseAssetLifecycleService.executeLifecycleStage(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.historyId),
+        );
+        res.json({ data: { stage } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/alerts/:alertId/acknowledge', requireStaffAuth, requireWrite, async (req, res) => {
     try {
@@ -448,9 +486,13 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   });
 
   router.post('/alerts/:alertId/resolve', requireStaffAuth, requireWrite, async (req, res) => {
-    const parsed = z.object({ resolutionNotes: z.string().trim().max(4000).optional() }).safeParse(req.body);
+    const parsed = z
+      .object({ resolutionNotes: z.string().trim().max(4000).optional() })
+      .safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid resolution payload' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid resolution payload' } });
       return;
     }
     try {
@@ -495,7 +537,9 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
   router.post('/work-order-drafts', requireStaffAuth, requireWrite, async (req, res) => {
     const parsed = workOrderDraftSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid work order draft' } });
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid work order draft' } });
       return;
     }
     try {
@@ -510,18 +554,23 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
     }
   });
 
-  router.post('/work-order-drafts/:draftId/approve', requireStaffAuth, requireWrite, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const draft = await deps.enterpriseAssetLifecycleService.approveWorkOrderDraft(
-        { companyId: auth.companyId, userId: auth.userId },
-        getRouteParam(req.params.draftId),
-      );
-      res.json({ data: { draft } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+  router.post(
+    '/work-order-drafts/:draftId/approve',
+    requireStaffAuth,
+    requireWrite,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const draft = await deps.enterpriseAssetLifecycleService.approveWorkOrderDraft(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.draftId),
+        );
+        res.json({ data: { draft } });
+      } catch (error) {
+        handleError(error, res);
+      }
+    },
+  );
 
   router.post('/analytics/capture', requireStaffAuth, requireWrite, async (req, res) => {
     try {
@@ -536,22 +585,27 @@ export function createEnterpriseAssetLifecycleRouter(deps: RouterDeps): Router {
     }
   });
 
-  router.get('/digital-twin/assets/:assetId/state', requireStaffAuth, requireRead, async (req, res) => {
-    try {
-      const auth = getAuth(req);
-      const state = await deps.enterpriseAssetLifecycleService.buildDigitalTwinAssetState(
-        auth.companyId,
-        getRouteParam(req.params.assetId),
-      );
-      if (!state) {
-        res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Asset not found' } });
-        return;
+  router.get(
+    '/digital-twin/assets/:assetId/state',
+    requireStaffAuth,
+    requireRead,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const state = await deps.enterpriseAssetLifecycleService.buildDigitalTwinAssetState(
+          auth.companyId,
+          getRouteParam(req.params.assetId),
+        );
+        if (!state) {
+          res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Asset not found' } });
+          return;
+        }
+        res.json({ data: { state } });
+      } catch (error) {
+        handleError(error, res);
       }
-      res.json({ data: { state } });
-    } catch (error) {
-      handleError(error, res);
-    }
-  });
+    },
+  );
 
   router.get('/aura-context', requireStaffAuth, requireRead, async (req, res) => {
     try {

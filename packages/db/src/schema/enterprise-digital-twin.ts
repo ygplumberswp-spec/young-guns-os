@@ -77,9 +77,14 @@ export const digitalTwinStateSnapshots = pgTable('digital_twin_state_snapshots',
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
   label: text('label'),
-  operationalState: jsonb('operational_state').$type<Record<string, unknown>>().notNull().default({}),
+  operationalState: jsonb('operational_state')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   summary: text('summary'),
-  capturedByUserId: uuid('captured_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  capturedByUserId: uuid('captured_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -117,8 +122,14 @@ export const digitalTwinSimulations = pgTable('digital_twin_simulations', {
   simulationType: digitalTwinSimulationTypeEnum('simulation_type').notNull(),
   status: digitalTwinSimulationStatusEnum('status').notNull().default('pending'),
   inputState: jsonb('input_state').$type<Record<string, unknown>>().notNull().default({}),
-  projectedOutcomes: jsonb('projected_outcomes').$type<Record<string, unknown>>().notNull().default({}),
-  comparisonMetrics: jsonb('comparison_metrics').$type<Record<string, unknown>>().notNull().default({}),
+  projectedOutcomes: jsonb('projected_outcomes')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
+  comparisonMetrics: jsonb('comparison_metrics')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   resultSummary: text('result_summary'),
   isReadOnly: boolean('is_read_only').notNull().default(true),
   createdByUserId: uuid('created_by_user_id')
@@ -136,7 +147,10 @@ export const digitalTwinScenarioComparisons = pgTable('digital_twin_scenario_com
     .references(() => companies.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   scenarioIds: jsonb('scenario_ids').$type<string[]>().notNull().default([]),
-  comparisonResults: jsonb('comparison_results').$type<Record<string, unknown>>().notNull().default({}),
+  comparisonResults: jsonb('comparison_results')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   summary: text('summary'),
   createdByUserId: uuid('created_by_user_id')
     .notNull()
@@ -177,7 +191,9 @@ export const digitalTwinRecommendations = pgTable('digital_twin_recommendations'
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  scenarioId: uuid('scenario_id').references(() => digitalTwinScenarios.id, { onDelete: 'set null' }),
+  scenarioId: uuid('scenario_id').references(() => digitalTwinScenarios.id, {
+    onDelete: 'set null',
+  }),
   title: text('title').notNull(),
   recommendation: text('recommendation').notNull(),
   priority: text('priority').notNull().default('medium'),
@@ -197,7 +213,9 @@ export const digitalTwinPlatformActions = pgTable('digital_twin_platform_actions
   subject: text('subject').notNull(),
   recommendation: text('recommendation').notNull(),
   payload: jsonb('payload').$type<Record<string, unknown>>().notNull().default({}),
-  scenarioId: uuid('scenario_id').references(() => digitalTwinScenarios.id, { onDelete: 'set null' }),
+  scenarioId: uuid('scenario_id').references(() => digitalTwinScenarios.id, {
+    onDelete: 'set null',
+  }),
   createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

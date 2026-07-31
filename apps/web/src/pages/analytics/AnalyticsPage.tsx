@@ -1,9 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type {
-  AnalyticsPeriod,
-  ReportDefinitionSummary,
-} from '@titan/shared';
+import type { AnalyticsPeriod, ReportDefinitionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   fetchAnalyticsDashboard,
@@ -253,7 +250,10 @@ export function AnalyticsPage() {
               <section className="analytics-page__stats" aria-label="Executive KPIs">
                 <StatCard
                   label="Revenue"
-                  value={formatMoney(dashboardQuery.data.revenue.totalCents, dashboardQuery.data.currency)}
+                  value={formatMoney(
+                    dashboardQuery.data.revenue.totalCents,
+                    dashboardQuery.data.currency,
+                  )}
                   hint={`${formatChangePercent(dashboardQuery.data.revenue.changePercent)} vs previous period`}
                 />
                 <StatCard
@@ -425,13 +425,18 @@ export function AnalyticsPage() {
           {profitabilityQuery.data ? (
             <Panel title="Job profitability">
               <p className="page-muted">
-                Revenue is derived from linked invoices. Material and labour costs are not tracked in
-                TITAN yet, so estimated profit reflects revenue only.
+                Revenue is derived from linked invoices. Material and labour costs are not tracked
+                in TITAN yet, so estimated profit reflects revenue only.
               </p>
               <dl className="analytics-page__metrics analytics-page__metrics--inline">
                 <div>
                   <dt>Total revenue</dt>
-                  <dd>{formatMoney(profitabilityQuery.data.totals.revenueCents, profitabilityQuery.data.currency)}</dd>
+                  <dd>
+                    {formatMoney(
+                      profitabilityQuery.data.totals.revenueCents,
+                      profitabilityQuery.data.currency,
+                    )}
+                  </dd>
                 </div>
                 <div>
                   <dt>Average margin</dt>
@@ -466,7 +471,9 @@ export function AnalyticsPage() {
                           <td>{job.jobTitle}</td>
                           <td>{job.customerName}</td>
                           <td>{job.status}</td>
-                          <td>{formatMoney(job.revenueCents, profitabilityQuery.data!.currency)}</td>
+                          <td>
+                            {formatMoney(job.revenueCents, profitabilityQuery.data!.currency)}
+                          </td>
                           <td>{job.labourHours ?? '—'}</td>
                           <td>{job.marginPercent !== null ? `${job.marginPercent}%` : '—'}</td>
                         </tr>
@@ -614,19 +621,36 @@ export function AnalyticsPage() {
                 <dl className="analytics-page__metrics">
                   <div>
                     <dt>Payment inflow</dt>
-                    <dd>{formatMoney(financeQuery.data.cashFlow.inflowCents, financeQuery.data.currency)}</dd>
+                    <dd>
+                      {formatMoney(
+                        financeQuery.data.cashFlow.inflowCents,
+                        financeQuery.data.currency,
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt>Invoiced</dt>
-                    <dd>{formatMoney(financeQuery.data.cashFlow.invoicedCents, financeQuery.data.currency)}</dd>
+                    <dd>
+                      {formatMoney(
+                        financeQuery.data.cashFlow.invoicedCents,
+                        financeQuery.data.currency,
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt>Outstanding</dt>
-                    <dd>{formatMoney(financeQuery.data.cashFlow.outstandingCents, financeQuery.data.currency)}</dd>
+                    <dd>
+                      {formatMoney(
+                        financeQuery.data.cashFlow.outstandingCents,
+                        financeQuery.data.currency,
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt>Monthly comparison</dt>
-                    <dd>{formatChangePercent(financeQuery.data.monthlyComparison.changePercent)}</dd>
+                    <dd>
+                      {formatChangePercent(financeQuery.data.monthlyComparison.changePercent)}
+                    </dd>
                   </div>
                 </dl>
               </Panel>
@@ -675,7 +699,10 @@ export function AnalyticsPage() {
                   label="Active KPIs"
                   value={String(enterpriseQuery.data.stats.activeKpiCount)}
                 />
-                <StatCard label="Dashboards" value={String(enterpriseQuery.data.stats.dashboardCount)} />
+                <StatCard
+                  label="Dashboards"
+                  value={String(enterpriseQuery.data.stats.dashboardCount)}
+                />
                 <StatCard
                   label="Pending insights"
                   value={String(enterpriseQuery.data.stats.pendingInsightCount)}
@@ -775,7 +802,9 @@ export function AnalyticsPage() {
           <>
             {canWrite ? (
               <div className="analytics-page__section-header">
-                <span className="page-muted">Insights generated from real operational signals.</span>
+                <span className="page-muted">
+                  Insights generated from real operational signals.
+                </span>
                 <Button
                   size="sm"
                   variant="secondary"

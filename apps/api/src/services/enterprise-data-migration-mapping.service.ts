@@ -4,7 +4,15 @@ import { DM_ENTITY_FIELD_TARGETS } from '@titan/shared';
 export type ParsedRow = Record<string, string>;
 
 const FIELD_ALIASES: Record<string, string[]> = {
-  name: ['name', 'customer name', 'customer_name', 'full name', 'fullname', 'company', 'company name'],
+  name: [
+    'name',
+    'customer name',
+    'customer_name',
+    'full name',
+    'fullname',
+    'company',
+    'company name',
+  ],
   email: ['email', 'e-mail', 'email address', 'mail'],
   phone: ['phone', 'mobile', 'cell', 'cell number', 'telephone', 'contact number', 'phone number'],
   mobile: ['mobile', 'cell', 'cell number', 'phone mobile'],
@@ -21,7 +29,11 @@ const FIELD_ALIASES: Record<string, string[]> = {
 };
 
 function normalizeHeader(value: string): string {
-  return value.trim().toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ');
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ');
 }
 
 export function parseFileContent(sourceFormat: DmSourceFormat, fileContent: string): ParsedRow[] {
@@ -32,7 +44,11 @@ export function parseFileContent(sourceFormat: DmSourceFormat, fileContent: stri
     if (Array.isArray(parsed)) {
       return parsed.map((row) => normalizeRow(row as Record<string, unknown>));
     }
-    if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { records?: unknown }).records)) {
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      Array.isArray((parsed as { records?: unknown }).records)
+    ) {
       return ((parsed as { records: Record<string, unknown>[] }).records ?? []).map(normalizeRow);
     }
     return [];
@@ -146,7 +162,10 @@ export function suggestFieldMappings(
   return suggestions;
 }
 
-export function applyMappings(rows: ParsedRow[], mappings: Record<string, string>): Record<string, string>[] {
+export function applyMappings(
+  rows: ParsedRow[],
+  mappings: Record<string, string>,
+): Record<string, string>[] {
   return rows.map((row) => {
     const mapped: Record<string, string> = {};
     for (const [sourceField, targetField] of Object.entries(mappings)) {

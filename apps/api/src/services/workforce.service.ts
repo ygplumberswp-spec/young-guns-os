@@ -72,9 +72,7 @@ export class WorkforceService {
       }),
     ]);
 
-    const activePipeline = candidates.filter(
-      (row) => !['hired', 'rejected'].includes(row.status),
-    );
+    const activePipeline = candidates.filter((row) => !['hired', 'rejected'].includes(row.status));
 
     return {
       candidateCount: candidates.length,
@@ -101,7 +99,8 @@ export class WorkforceService {
 
     return stageDefs.map((stage) => ({
       ...stage,
-      count: candidates.filter((row) => normalizePipelineStatus(row.status) === stage.status).length,
+      count: candidates.filter((row) => normalizePipelineStatus(row.status) === stage.status)
+        .length,
     }));
   }
 
@@ -166,7 +165,10 @@ export class WorkforceService {
     return rows.map(toSkillSummary);
   }
 
-  async createSkill(scope: TenantScope, input: CreateEmployeeSkillRequest): Promise<EmployeeSkillSummary> {
+  async createSkill(
+    scope: TenantScope,
+    input: CreateEmployeeSkillRequest,
+  ): Promise<EmployeeSkillSummary> {
     await this.ensureUser(scope.companyId, input.userId);
 
     const [created] = await this.deps.db
@@ -280,8 +282,18 @@ export class WorkforceService {
         certificationKey: input.certificationKey?.trim(),
         name: input.name?.trim(),
         issuer: input.issuer !== undefined ? input.issuer?.trim() || null : undefined,
-        issuedAt: input.issuedAt !== undefined ? (input.issuedAt ? new Date(input.issuedAt) : null) : undefined,
-        expiresAt: input.expiresAt !== undefined ? (input.expiresAt ? new Date(input.expiresAt) : null) : undefined,
+        issuedAt:
+          input.issuedAt !== undefined
+            ? input.issuedAt
+              ? new Date(input.issuedAt)
+              : null
+            : undefined,
+        expiresAt:
+          input.expiresAt !== undefined
+            ? input.expiresAt
+              ? new Date(input.expiresAt)
+              : null
+            : undefined,
         notes: input.notes !== undefined ? input.notes?.trim() || null : undefined,
         updatedAt: new Date(),
       })
@@ -351,7 +363,8 @@ export class WorkforceService {
       .set({
         trainingKey: input.trainingKey?.trim(),
         title: input.title?.trim(),
-        description: input.description !== undefined ? input.description?.trim() || null : undefined,
+        description:
+          input.description !== undefined ? input.description?.trim() || null : undefined,
         status: input.status,
         completedAt:
           input.completedAt !== undefined
@@ -412,8 +425,7 @@ export class WorkforceService {
 
     for (const insight of staffingInsights.slice(0, 5)) {
       signals.push({
-        recommendationType:
-          insight.insightType === 'capacity_pressure' ? 'capacity' : 'staffing',
+        recommendationType: insight.insightType === 'capacity_pressure' ? 'capacity' : 'staffing',
         title: insight.title,
         description: insight.description,
         priority: insight.priority,
@@ -638,7 +650,8 @@ export class WorkforceService {
         averageCompletionHours: tech.averageCompletionHours,
         workloadScore: tech.workloadScore,
         trainingNeedSignal:
-          (completionRatePercent !== null && completionRatePercent < 60) || tech.workloadScore >= 85,
+          (completionRatePercent !== null && completionRatePercent < 60) ||
+          tech.workloadScore >= 85,
         summary: `${tech.name}: ${tech.jobsCompleted}/${tech.jobsAssigned} jobs completed${completionRatePercent !== null ? ` (${completionRatePercent}%)` : ''}, workload ${tech.workloadScore}.`,
       };
     });

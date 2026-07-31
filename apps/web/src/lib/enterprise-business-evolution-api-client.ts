@@ -33,10 +33,13 @@ export async function fetchBusinessEvolutionDashboard(accessToken: string) {
 }
 
 export async function captureBevAnalytics(accessToken: string) {
-  const data = await request<{ analytics: unknown }>('/enterprise-business-evolution/analytics/capture', {
-    method: 'POST',
-    accessToken,
-  });
+  const data = await request<{ analytics: unknown }>(
+    '/enterprise-business-evolution/analytics/capture',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
   return data.analytics;
 }
 
@@ -89,9 +92,12 @@ export async function fetchBevObservations(accessToken: string) {
 }
 
 export async function fetchBevPatterns(accessToken: string) {
-  const data = await request<{ patterns: BevPatternSummary[] }>('/enterprise-business-evolution/patterns', {
-    accessToken,
-  });
+  const data = await request<{ patterns: BevPatternSummary[] }>(
+    '/enterprise-business-evolution/patterns',
+    {
+      accessToken,
+    },
+  );
   return data.patterns;
 }
 
@@ -120,9 +126,12 @@ export async function fetchBevExperiments(accessToken: string) {
 }
 
 export async function fetchBevOutcomes(accessToken: string) {
-  const data = await request<{ outcomes: BevOutcomeSummary[] }>('/enterprise-business-evolution/outcomes', {
-    accessToken,
-  });
+  const data = await request<{ outcomes: BevOutcomeSummary[] }>(
+    '/enterprise-business-evolution/outcomes',
+    {
+      accessToken,
+    },
+  );
   return data.outcomes;
 }
 
@@ -222,11 +231,17 @@ export async function fetchBevAuditLogs(accessToken: string) {
   return data.auditLogs;
 }
 
-export async function updateBevPlatformConfig(accessToken: string, body: UpdateBevPlatformConfigRequest) {
-  const data = await request<{ platformConfig: unknown }>('/enterprise-business-evolution/platform-config', {
-    method: 'PUT',
-    accessToken,
-    body,
-  });
+export async function updateBevPlatformConfig(
+  accessToken: string,
+  body: UpdateBevPlatformConfigRequest,
+) {
+  const data = await request<{ platformConfig: unknown }>(
+    '/enterprise-business-evolution/platform-config',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
   return data.platformConfig;
 }

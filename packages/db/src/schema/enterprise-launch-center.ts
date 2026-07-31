@@ -89,7 +89,12 @@ export const lncPlatformAlertStatusEnum = pgEnum('lnc_platform_alert_status', [
   'resolved',
   'dismissed',
 ]);
-export const lncIssueSeverityEnum = pgEnum('lnc_issue_severity', ['info', 'warning', 'high', 'critical']);
+export const lncIssueSeverityEnum = pgEnum('lnc_issue_severity', [
+  'info',
+  'warning',
+  'high',
+  'critical',
+]);
 
 export const lncPlatformConfig = pgTable('lnc_platform_config', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -99,10 +104,16 @@ export const lncPlatformConfig = pgTable('lnc_platform_config', {
     .references(() => companies.id, { onDelete: 'cascade' }),
   readinessPolicy: jsonb('readiness_policy').$type<Record<string, unknown>>().notNull().default({}),
   scoringWeights: jsonb('scoring_weights').$type<Record<string, unknown>>().notNull().default({}),
-  acceptancePolicy: jsonb('acceptance_policy').$type<Record<string, unknown>>().notNull().default({}),
+  acceptancePolicy: jsonb('acceptance_policy')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   goLivePolicy: jsonb('go_live_policy').$type<Record<string, unknown>>().notNull().default({}),
   rollbackPolicy: jsonb('rollback_policy').$type<Record<string, unknown>>().notNull().default({}),
-  alertLevelConfig: jsonb('alert_level_config').$type<Record<string, unknown>>().notNull().default({}),
+  alertLevelConfig: jsonb('alert_level_config')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   auditRetentionDays: integer('audit_retention_days').notNull().default(365),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -204,14 +215,19 @@ export const lncReadinessScores = pgTable('lnc_readiness_scores', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  readinessScanId: uuid('readiness_scan_id').references(() => lncReadinessScans.id, { onDelete: 'set null' }),
+  readinessScanId: uuid('readiness_scan_id').references(() => lncReadinessScans.id, {
+    onDelete: 'set null',
+  }),
   overallScore: integer('overall_score'),
   overallStatus: lncReadinessStatusEnum('overall_status').notNull().default('unknown'),
   criticalBlockerCount: integer('critical_blocker_count').notNull().default(0),
   highPriorityCount: integer('high_priority_count').notNull().default(0),
   warningCount: integer('warning_count').notNull().default(0),
   passedCount: integer('passed_count').notNull().default(0),
-  recommendations: jsonb('recommendations').$type<Array<Record<string, unknown>>>().notNull().default([]),
+  recommendations: jsonb('recommendations')
+    .$type<Array<Record<string, unknown>>>()
+    .notNull()
+    .default([]),
   scoreBreakdown: jsonb('score_breakdown').$type<Record<string, unknown>>().notNull().default({}),
   capturedAt: timestamp('captured_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -227,7 +243,9 @@ export const lncGoLiveWizards = pgTable('lnc_go_live_wizards', {
   status: lncWizardStatusEnum('status').notNull().default('draft'),
   currentStepKey: text('current_step_key'),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
@@ -247,7 +265,9 @@ export const lncGoLiveWizardSteps = pgTable('lnc_go_live_wizard_steps', {
   stepName: text('step_name').notNull(),
   stepOrder: integer('step_order').notNull().default(0),
   status: lncWizardStepStatusEnum('status').notNull().default('pending'),
-  completedByUserId: uuid('completed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  completedByUserId: uuid('completed_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   notes: text('notes'),
   details: jsonb('details').$type<Record<string, unknown>>().notNull().default({}),
@@ -260,13 +280,18 @@ export const lncRollbackPlanLinks = pgTable('lnc_rollback_plan_links', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  goLiveWizardId: uuid('go_live_wizard_id').references(() => lncGoLiveWizards.id, { onDelete: 'set null' }),
+  goLiveWizardId: uuid('go_live_wizard_id').references(() => lncGoLiveWizards.id, {
+    onDelete: 'set null',
+  }),
   recoveryPlanId: uuid('recovery_plan_id'),
   planName: text('plan_name').notNull(),
   planDescription: text('plan_description'),
   isSelected: boolean('is_selected').notNull().default(false),
   validationStatus: lncCheckStatusEnum('validation_status').notNull().default('pending'),
-  validationReport: jsonb('validation_report').$type<Record<string, unknown>>().notNull().default({}),
+  validationReport: jsonb('validation_report')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -277,7 +302,9 @@ export const lncDeploymentValidations = pgTable('lnc_deployment_validations', {
   companyId: uuid('company_id')
     .notNull()
     .references(() => companies.id, { onDelete: 'cascade' }),
-  goLiveWizardId: uuid('go_live_wizard_id').references(() => lncGoLiveWizards.id, { onDelete: 'set null' }),
+  goLiveWizardId: uuid('go_live_wizard_id').references(() => lncGoLiveWizards.id, {
+    onDelete: 'set null',
+  }),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   validationKey: text('validation_key').notNull(),
   status: lncDeploymentStatusEnum('status').notNull().default('planned'),

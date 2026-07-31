@@ -87,17 +87,21 @@ export class EnterpriseDataMigrationImportService {
         return created.id;
       }
       case 'lead': {
+        const { isValidSaMobile } = await import('@titan/shared');
+        const rawPhone = row.contactPhone?.trim() || null;
         const created = await this.deps.leadsService.createLead(
           { companyId, userId },
           {
             title: row.title!.trim(),
             contactName: row.contactName!.trim(),
             contactEmail: row.contactEmail?.trim() || null,
-            contactPhone: row.contactPhone?.trim() || null,
+            contactPhone: rawPhone && isValidSaMobile(rawPhone) ? rawPhone : null,
             notes: row.notes?.trim() || null,
+            acknowledgePlaceholderEmail: true,
+            duplicateOverrideReason: 'enterprise_data_migration_import',
           },
         );
-        return created.id;
+        return created.lead.id;
       }
       case 'supplier': {
         const created = await this.deps.procurementService.createSupplier(companyId, {

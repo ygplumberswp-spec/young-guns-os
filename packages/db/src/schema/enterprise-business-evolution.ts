@@ -335,7 +335,9 @@ export const bevUserFeedback = pgTable('bev_user_feedback', {
   targetId: uuid('target_id').notNull(),
   feedbackRating: bevFeedbackRatingEnum('feedback_rating').notNull(),
   feedbackText: text('feedback_text'),
-  submittedByUserId: uuid('submitted_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  submittedByUserId: uuid('submitted_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -378,7 +380,10 @@ export const bevAgentImprovements = pgTable('bev_agent_improvements', {
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  performanceAfter: jsonb('performance_after').$type<Record<string, unknown>>().notNull().default({}),
+  performanceAfter: jsonb('performance_after')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   rollbackVersionLabel: text('rollback_version_label'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -394,14 +399,19 @@ export const bevPromptPolicyVersions = pgTable('bev_prompt_policy_versions', {
   versionLabel: text('version_label').notNull(),
   content: text('content').notNull(),
   changeReason: text('change_reason'),
-  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  approvedByUserId: uuid('approved_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   effectiveAt: timestamp('effective_at', { withTimezone: true }),
   rollbackVersionLabel: text('rollback_version_label'),
   performanceBefore: jsonb('performance_before')
     .$type<Record<string, unknown>>()
     .notNull()
     .default({}),
-  performanceAfter: jsonb('performance_after').$type<Record<string, unknown>>().notNull().default({}),
+  performanceAfter: jsonb('performance_after')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   workflowStatus: bevWorkflowStatusEnum('workflow_status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -433,9 +443,13 @@ export const bevKnowledgeReinforcements = pgTable('bev_knowledge_reinforcements'
   knowledgeNodeRef: text('knowledge_node_ref'),
   linkedEntities: jsonb('linked_entities').$type<Record<string, unknown>>().notNull().default({}),
   validatedAt: timestamp('validated_at', { withTimezone: true }),
-  validatedByUserId: uuid('validated_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  validatedByUserId: uuid('validated_by_user_id').references(() => users.id, {
+    onDelete: 'set null',
+  }),
   learningStage: bevLearningStageEnum('learning_stage').notNull().default('validated'),
-  sourceOutcomeId: uuid('source_outcome_id').references(() => bevOutcomes.id, { onDelete: 'set null' }),
+  sourceOutcomeId: uuid('source_outcome_id').references(() => bevOutcomes.id, {
+    onDelete: 'set null',
+  }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -465,7 +479,10 @@ export const bevStrategicRoadmapItems = pgTable('bev_strategic_roadmap_items', {
   description: text('description'),
   priority: text('priority').notNull().default('medium'),
   workflowStatus: bevWorkflowStatusEnum('workflow_status').notNull().default('draft'),
-  expectedOutcomes: jsonb('expected_outcomes').$type<Record<string, unknown>>().notNull().default({}),
+  expectedOutcomes: jsonb('expected_outcomes')
+    .$type<Record<string, unknown>>()
+    .notNull()
+    .default({}),
   ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
   dependencies: jsonb('dependencies').$type<Record<string, unknown>>().notNull().default({}),
   budgetCents: integer('budget_cents'),

@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import type {
   MobileAlertSummary,
   MobileApprovalSummary,
@@ -36,6 +36,7 @@ import type { JobsService } from './jobs.service.js';
 import type { NotificationService } from './notification.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import { getJobIdsForUserIncludingCrew, userHasJobAccess } from './job-execution.service.js';
 
 type StaffScope = {
   companyId: string;
@@ -118,10 +119,7 @@ export class MobileService {
   async getOwnerApprovals(companyId: string): Promise<MobileApprovalSummary[]> {
     const [agentRows, workflowRows] = await Promise.all([
       this.db.query.agentTasks.findMany({
-        where: and(
-          eq(agentTasks.companyId, companyId),
-          eq(agentTasks.status, 'pending_approval'),
-        ),
+        where: and(eq(agentTasks.companyId, companyId), eq(agentTasks.status, 'pending_approval')),
         orderBy: [desc(agentTasks.createdAt)],
         limit: 20,
       }),
@@ -225,31 +223,26 @@ export class MobileService {
   }
 
   async listAssignedJobs(scope: StaffScope) {
+    const jobIds = await getJobIdsForUserIncludingCrew(this.db, scope.companyId, scope.userId);
+
+    if (jobIds.length === 0) {
+      return [];
+    }
+
     const rows = await this.db.query.jobs.findMany({
-      where: and(eq(jobs.companyId, scope.companyId), eq(jobs.assignedUserId, scope.userId)),
+      where: and(eq(jobs.companyId, scope.companyId), inArray(jobs.id, jobIds)),
       with: { customer: true, assignedUser: true },
       orderBy: [desc(jobs.scheduledAt), desc(jobs.updatedAt)],
       limit: 50,
     });
 
-    return rows.map((row) => ({
-      id: row.id,
-      customerId: row.customerId,
-      customerName: row.customer?.name ?? 'Unknown',
-      title: row.title,
-      status: row.status,
-      scheduledAt: row.scheduledAt?.toISOString() ?? null,
-      scheduledEndAt: row.scheduledEndAt?.toISOString() ?? null,
-      assignedUserId: row.assignedUserId,
-      assignedUserName: row.assignedUser
-        ? `${row.assignedUser.firstName} ${row.assignedUser.lastName}`.trim()
-        : null,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    }));
+    return rows.map((row) => toMobileJobSummary(row));
   }
 
-  async getTechnicianSchedule(scope: StaffScope, dateInput?: string): Promise<MobileTechnicianSchedule> {
+  async getTechnicianSchedule(
+    scope: StaffScope,
+    dateInput?: string,
+  ): Promise<MobileTechnicianSchedule> {
     const date = dateInput ? new Date(dateInput) : new Date();
     const from = new Date(date);
     from.setHours(0, 0, 0, 0);
@@ -271,7 +264,12 @@ export class MobileService {
   ): Promise<MobileTechnicianCustomerDetails | null> {
     const job = await this.jobsService.getJob(scope.companyId, jobId);
 
-    if (!job || job.assignedUserId !== scope.userId) {
+    if (!job) {
+      return null;
+    }
+
+    const hasAccess = await userHasJobAccess(this.db, scope.companyId, jobId, scope.userId);
+    if (!hasAccess) {
       return null;
     }
 
@@ -283,10 +281,12 @@ export class MobileService {
 
     return {
       customerId: customer.id,
-      customerName: customer.name,
-      email: customer.email,
-      phone: customer.phone,
-      address: null,
+      customerName: job.customerName || customer.name,
+      email: job.siteContact.email ?? customer.email,
+      phone: job.siteContact.mobile ?? customer.phone,
+      address: job.address.display,
+      accessInstructions: job.accessInstructions,
+      siteContact: job.siteContact,
       job,
     };
   }
@@ -328,7 +328,9 @@ export class MobileService {
       customerName: customer.name,
       companyName: customer.company.name,
       permissions: scope.permissions,
-      activeJobs: activeJobs.jobs.filter((job) => job.status !== 'completed' && job.status !== 'cancelled'),
+      activeJobs: activeJobs.jobs.filter(
+        (job) => job.status !== 'completed' && job.status !== 'cancelled',
+      ),
       recentInvoices: recentInvoices.invoices.slice(0, 10),
       notifications,
     };
@@ -347,21 +349,7 @@ export class MobileService {
     });
 
     return {
-      jobs: rows.map((row) => ({
-        id: row.id,
-        customerId: row.customerId,
-        customerName: row.customer?.name ?? customerNameFallback(scope.customerId),
-        title: row.title,
-        status: row.status,
-        scheduledAt: row.scheduledAt?.toISOString() ?? null,
-        scheduledEndAt: row.scheduledEndAt?.toISOString() ?? null,
-        assignedUserId: row.assignedUserId,
-        assignedUserName: row.assignedUser
-          ? `${row.assignedUser.firstName} ${row.assignedUser.lastName}`.trim()
-          : null,
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-      })),
+      jobs: rows.map((row) => toMobileJobSummary(row, customerNameFallback(scope.customerId))),
     };
   }
 
@@ -371,29 +359,58 @@ export class MobileService {
     }
 
     const rows = await this.db.query.invoices.findMany({
-      where: and(eq(invoices.companyId, scope.companyId), eq(invoices.customerId, scope.customerId)),
+      where: and(
+        eq(invoices.companyId, scope.companyId),
+        eq(invoices.customerId, scope.customerId),
+      ),
       with: { customer: true, job: true },
       orderBy: [desc(invoices.updatedAt)],
       limit: 25,
     });
 
     return {
-      invoices: rows.map((row) => ({
-        id: row.id,
-        invoiceNumber: row.invoiceNumber,
-        title: row.title,
-        status: row.status,
-        customerId: row.customerId,
-        customerName: row.customer?.name ?? customerNameFallback(scope.customerId),
-        jobId: row.jobId,
-        jobTitle: row.job?.title ?? null,
-        amountCents: row.amountCents,
-        amountPaidCents: row.amountPaidCents,
-        currency: row.currency,
-        dueDate: row.dueDate?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-      })),
+      invoices: rows.map((row) => {
+        const totalCents = row.totalCents ?? row.amountCents;
+        const internalNumber = row.internalNumber ?? row.invoiceNumber;
+        const displayInvoiceNumber = row.xeroInvoiceNumber?.trim()
+          ? row.xeroInvoiceNumber.trim()
+          : `Pending Xero sync (${internalNumber})`;
+        return {
+          id: row.id,
+          invoiceNumber: row.invoiceNumber,
+          internalNumber,
+          displayInvoiceNumber,
+          xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
+          xeroReference: row.xeroReference ?? null,
+          numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
+            | 'internal_pending_xero'
+            | 'xero',
+          title: row.title,
+          status: row.status,
+          stage: row.stage ?? 'standard',
+          customerId: row.customerId,
+          customerName: row.customer?.name ?? customerNameFallback(scope.customerId),
+          jobId: row.jobId,
+          jobTitle: row.job?.title ?? null,
+          jobNumber: row.job?.jobNumber ?? null,
+          quoteId: row.quoteId ?? null,
+          quoteNumber: null,
+          quoteVersionNumber: row.quoteVersionNumber ?? null,
+          amountCents: row.amountCents,
+          totalCents,
+          amountPaidCents: row.amountPaidCents,
+          outstandingCents: Math.max(0, totalCents - row.amountPaidCents),
+          isOverdue: Boolean(
+            row.dueDate &&
+              row.dueDate < new Date() &&
+              ['sent', 'partial', 'overdue'].includes(row.status),
+          ),
+          currency: row.currency,
+          dueDate: row.dueDate?.toISOString() ?? null,
+          createdAt: row.createdAt.toISOString(),
+          updatedAt: row.updatedAt.toISOString(),
+        };
+      }),
     };
   }
 
@@ -403,7 +420,10 @@ export class MobileService {
     }
 
     const rows = await this.db.query.documents.findMany({
-      where: and(eq(documents.companyId, scope.companyId), eq(documents.customerId, scope.customerId)),
+      where: and(
+        eq(documents.companyId, scope.companyId),
+        eq(documents.customerId, scope.customerId),
+      ),
       with: { category: true, customer: true, job: true, uploadedBy: true },
       orderBy: [desc(documents.updatedAt)],
       limit: 25,
@@ -438,12 +458,14 @@ export class MobileService {
       return { communications: [] };
     }
 
+    // UX-G: internal notes never leak to portal/client surfaces.
     const rows = await this.db.query.communications.findMany({
       where: and(
         eq(communications.companyId, scope.companyId),
         eq(communications.customerId, scope.customerId),
+        ne(communications.visibility, 'internal_note'),
       ),
-      with: { customer: true, author: true, template: true },
+      with: { customer: true, author: true, template: true, job: true },
       orderBy: [desc(communications.createdAt)],
       limit: 25,
     });
@@ -453,14 +475,22 @@ export class MobileService {
         id: row.id,
         customerId: row.customerId,
         customerName: row.customer?.name ?? customerNameFallback(scope.customerId),
+        jobId: row.jobId,
+        jobNumber: row.job?.jobNumber ?? null,
         authorUserId: row.authorUserId,
-        authorName: row.author ? `${row.author.firstName} ${row.author.lastName}`.trim() : 'Unknown',
+        authorName: row.author
+          ? `${row.author.firstName} ${row.author.lastName}`.trim()
+          : 'Unknown',
         templateId: row.templateId,
         templateName: row.template?.name ?? null,
         channel: row.channel,
         direction: row.direction,
+        visibility: row.visibility,
+        deliveryState: row.deliveryState,
         subject: row.subject,
         body: row.body,
+        failureReason: row.failureReason,
+        clientActionId: row.clientActionId,
         occurredAt: row.occurredAt.toISOString(),
         createdAt: row.createdAt.toISOString(),
       })),
@@ -536,4 +566,47 @@ export class MobileService {
 
 function customerNameFallback(customerId: string): string {
   return `Customer ${customerId.slice(0, 8)}`;
+}
+
+function toMobileJobSummary(
+  row: typeof jobs.$inferSelect & {
+    customer?: { name: string } | null;
+    assignedUser?: { firstName: string; lastName: string } | null;
+  },
+  fallbackCustomerName?: string,
+) {
+  const addressDisplay =
+    [
+      row.snapshotUnit ? `Unit ${row.snapshotUnit}` : null,
+      row.snapshotStreet,
+      row.snapshotSuburb,
+      row.snapshotCity,
+      row.snapshotProvince,
+      row.snapshotPostalCode,
+    ]
+      .filter(Boolean)
+      .join(', ') || null;
+
+  return {
+    id: row.id,
+    jobNumber: row.jobNumber ?? null,
+    customerId: row.customerId,
+    customerName:
+      row.snapshotCustomerName ?? row.customer?.name ?? fallbackCustomerName ?? 'Unknown',
+    propertyId: row.propertyId ?? null,
+    title: row.title,
+    jobType: row.jobType ?? null,
+    priority: row.priority ?? 'normal',
+    status: row.status,
+    addressDisplay,
+    siteContactMobile: row.snapshotSiteContactMobile ?? null,
+    scheduledAt: row.scheduledAt?.toISOString() ?? null,
+    scheduledEndAt: row.scheduledEndAt?.toISOString() ?? null,
+    assignedUserId: row.assignedUserId,
+    assignedUserName: row.assignedUser
+      ? `${row.assignedUser.firstName} ${row.assignedUser.lastName}`.trim()
+      : null,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  };
 }

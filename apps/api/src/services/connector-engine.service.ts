@@ -182,7 +182,8 @@ export class ConnectorEngineService {
                 : whatsappConnection.status === 'error'
                   ? 'error'
                   : 'pending';
-            lastSyncAt = whatsappConnection.connectedAt ?? whatsappConnection.updatedAt ?? lastSyncAt;
+            lastSyncAt =
+              whatsappConnection.connectedAt ?? whatsappConnection.updatedAt ?? lastSyncAt;
             lastError = whatsappConnection.lastError ?? lastError;
           }
         } else if (connector.connectorKey === 'openai' || connector.connectorKey === 'gemini') {

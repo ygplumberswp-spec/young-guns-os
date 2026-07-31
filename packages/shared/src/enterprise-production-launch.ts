@@ -1,17 +1,10 @@
-export type PlValidationStatus = 'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
+export type PlValidationStatus =
+  'pending' | 'running' | 'passed' | 'failed' | 'warning' | 'skipped';
 
 export type PlLaunchStatus = 'not_ready' | 'blocked' | 'warning' | 'ready' | 'launched' | 'unknown';
 
 export type PlProviderCategory =
-  | 'xero'
-  | 'email'
-  | 'whatsapp'
-  | 'sms'
-  | 'payments'
-  | 'cartrack'
-  | 'ai'
-  | 'storage'
-  | 'connectors';
+  'xero' | 'email' | 'whatsapp' | 'sms' | 'payments' | 'cartrack' | 'ai' | 'storage' | 'connectors';
 
 export type PlDeploymentStatus =
   | 'draft'
@@ -24,15 +17,10 @@ export type PlDeploymentStatus =
   | 'cancelled';
 
 export type PlWizardStatus =
-  | 'draft'
-  | 'in_progress'
-  | 'pending_approval'
-  | 'approved'
-  | 'launched'
-  | 'blocked'
-  | 'cancelled';
+  'draft' | 'in_progress' | 'pending_approval' | 'approved' | 'launched' | 'blocked' | 'cancelled';
 
-export type PlWizardStepStatus = 'pending' | 'in_progress' | 'passed' | 'failed' | 'blocked' | 'skipped';
+export type PlWizardStepStatus =
+  'pending' | 'in_progress' | 'passed' | 'failed' | 'blocked' | 'skipped';
 
 export type PlInsightSeverity = 'info' | 'warning' | 'high' | 'critical';
 
@@ -95,9 +83,10 @@ export type PlLiveIntegrationVerificationResultSummary = {
   createdAt: string;
 };
 
-export type PlLiveIntegrationVerificationRunDetailSummary = PlLiveIntegrationVerificationRunSummary & {
-  results: PlLiveIntegrationVerificationResultSummary[];
-};
+export type PlLiveIntegrationVerificationRunDetailSummary =
+  PlLiveIntegrationVerificationRunSummary & {
+    results: PlLiveIntegrationVerificationResultSummary[];
+  };
 
 export type PlDeploymentPipelineRunSummary = {
   id: string;

@@ -15,12 +15,7 @@ import type {
   WorkflowValidationResult,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import {
-  workflowAuditLogs,
-  workflowSchedules,
-  workflowTemplates,
-  workflows,
-} from '@titan/db';
+import { workflowAuditLogs, workflowSchedules, workflowTemplates, workflows } from '@titan/db';
 import type { AutomationService } from './automation.service.js';
 import type { WorkflowEngineService } from './workflow-engine.service.js';
 
@@ -56,7 +51,10 @@ export class WorkflowStudioService {
     return rows.map(toTemplateSummary);
   }
 
-  async createTemplate(scope: TenantScope, input: CreateWorkflowTemplateRequest): Promise<WorkflowTemplateSummary> {
+  async createTemplate(
+    scope: TenantScope,
+    input: CreateWorkflowTemplateRequest,
+  ): Promise<WorkflowTemplateSummary> {
     const name = input.name.trim();
     if (!name) throw new WorkflowStudioError('VALIDATION_ERROR', 'Template name is required');
 
@@ -88,7 +86,8 @@ export class WorkflowStudioService {
       .update(workflowTemplates)
       .set({
         name: input.name?.trim(),
-        description: input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
+        description:
+          input.description !== undefined ? normalizeOptionalText(input.description) : undefined,
         category: input.category,
         templateKey: input.templateKey?.trim(),
         definition: input.definition,
@@ -112,7 +111,12 @@ export class WorkflowStudioService {
     const definition = template.definition as {
       triggers?: Array<{ triggerType: string; config?: Record<string, unknown> }>;
       actions?: Array<{ actionType: string; sortOrder?: number; config?: Record<string, unknown> }>;
-      conditions?: Array<{ field: string; operator?: string; value?: string | null; sortOrder?: number }>;
+      conditions?: Array<{
+        field: string;
+        operator?: string;
+        value?: string | null;
+        sortOrder?: number;
+      }>;
       canvasConfig?: Record<string, unknown>;
       category?: string;
     };
@@ -150,7 +154,14 @@ export class WorkflowStudioService {
       })
       .where(and(eq(workflows.id, workflowId), eq(workflows.companyId, scope.companyId)));
 
-    await this.logAudit(scope, workflowId, null, 'workflow_submitted', null, 'Workflow submitted for approval');
+    await this.logAudit(
+      scope,
+      workflowId,
+      null,
+      'workflow_submitted',
+      null,
+      'Workflow submitted for approval',
+    );
 
     return this.deps.automationService.getWorkflow(scope.companyId, workflowId);
   }
@@ -158,7 +169,10 @@ export class WorkflowStudioService {
   async activateWorkflow(scope: TenantScope, workflowId: string) {
     const workflow = await this.ensureWorkflow(scope.companyId, workflowId);
     if (workflow.status !== 'pending_approval' && workflow.status !== 'paused') {
-      throw new WorkflowStudioError('INVALID_STATE', 'Workflow must be pending approval or paused to activate');
+      throw new WorkflowStudioError(
+        'INVALID_STATE',
+        'Workflow must be pending approval or paused to activate',
+      );
     }
 
     await this.deps.db
@@ -216,7 +230,11 @@ export class WorkflowStudioService {
     return this.deps.workflowEngineService.simulateRun(scope, workflowId, input.payload ?? {});
   }
 
-  async executeWorkflow(scope: TenantScope, workflowId: string, payload: Record<string, unknown> = {}) {
+  async executeWorkflow(
+    scope: TenantScope,
+    workflowId: string,
+    payload: Record<string, unknown> = {},
+  ) {
     const workflow = await this.ensureWorkflow(scope.companyId, workflowId);
     if (workflow.status !== 'active') {
       throw new WorkflowStudioError('INVALID_STATE', 'Workflow must be active before execution');
@@ -243,7 +261,10 @@ export class WorkflowStudioService {
     return rows.map(toScheduleSummary);
   }
 
-  async createSchedule(scope: TenantScope, input: CreateWorkflowScheduleRequest): Promise<WorkflowScheduleSummary> {
+  async createSchedule(
+    scope: TenantScope,
+    input: CreateWorkflowScheduleRequest,
+  ): Promise<WorkflowScheduleSummary> {
     await this.ensureWorkflow(scope.companyId, input.workflowId);
 
     const [created] = await this.deps.db
@@ -278,9 +299,12 @@ export class WorkflowStudioService {
 
     const merged = {
       scheduleType: input.scheduleType ?? existing.scheduleType,
-      cronExpression: input.cronExpression !== undefined ? input.cronExpression : existing.cronExpression,
-      intervalMinutes: input.intervalMinutes !== undefined ? input.intervalMinutes : existing.intervalMinutes,
-      runAt: input.runAt !== undefined ? (input.runAt ? new Date(input.runAt) : null) : existing.runAt,
+      cronExpression:
+        input.cronExpression !== undefined ? input.cronExpression : existing.cronExpression,
+      intervalMinutes:
+        input.intervalMinutes !== undefined ? input.intervalMinutes : existing.intervalMinutes,
+      runAt:
+        input.runAt !== undefined ? (input.runAt ? new Date(input.runAt) : null) : existing.runAt,
       timezone: input.timezone ?? existing.timezone,
       enabled: input.enabled ?? existing.enabled,
     };
@@ -304,14 +328,19 @@ export class WorkflowStudioService {
       })
       .where(eq(workflowSchedules.id, scheduleId));
 
-    const row = await this.deps.db.query.workflowSchedules.findFirst({ where: eq(workflowSchedules.id, scheduleId) });
+    const row = await this.deps.db.query.workflowSchedules.findFirst({
+      where: eq(workflowSchedules.id, scheduleId),
+    });
     return toScheduleSummary(row!);
   }
 
   async listAuditLogs(companyId: string, workflowId?: string): Promise<WorkflowAuditLogSummary[]> {
     const rows = await this.deps.db.query.workflowAuditLogs.findMany({
       where: workflowId
-        ? and(eq(workflowAuditLogs.companyId, companyId), eq(workflowAuditLogs.workflowId, workflowId))
+        ? and(
+            eq(workflowAuditLogs.companyId, companyId),
+            eq(workflowAuditLogs.workflowId, workflowId),
+          )
         : eq(workflowAuditLogs.companyId, companyId),
       orderBy: [desc(workflowAuditLogs.createdAt)],
       limit: 100,
@@ -365,7 +394,10 @@ export class WorkflowStudioService {
     return this.deps.automationService.listWorkflows(companyId);
   }
 
-  async createWebhook(scope: TenantScope, workflowId: string): Promise<{ webhookKey: string; secret: string }> {
+  async createWebhook(
+    scope: TenantScope,
+    workflowId: string,
+  ): Promise<{ webhookKey: string; secret: string }> {
     await this.ensureWorkflow(scope.companyId, workflowId);
     const secret = randomBytes(24).toString('hex');
     const webhookKey = `wh_${randomBytes(12).toString('hex')}`;

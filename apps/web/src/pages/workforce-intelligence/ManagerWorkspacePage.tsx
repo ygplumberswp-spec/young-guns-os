@@ -19,7 +19,10 @@ export function ManagerWorkspacePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [isWorking, setIsWorking] = useState(false);
 
-  const canManage = useMemo(() => (user ? canManageWorkforceIntelligence(user.permissions) : false), [user]);
+  const canManage = useMemo(
+    () => (user ? canManageWorkforceIntelligence(user.permissions) : false),
+    [user],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +35,10 @@ export function ManagerWorkspacePage() {
         const data = (await fetchManagerWorkspace(accessToken)) as WiManagerWorkspaceSummary;
         if (!cancelled) setWorkspace(data);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiClientError ? err.message : 'Unable to load manager workspace');
+        if (!cancelled)
+          setError(
+            err instanceof ApiClientError ? err.message : 'Unable to load manager workspace',
+          );
       } finally {
         if (!cancelled) setIsLoading(false);
       }
@@ -68,7 +74,10 @@ export function ManagerWorkspacePage() {
   if (!canManage) {
     return (
       <div className="automation-page">
-        <PageHeader title="Manager Workspace" description="You do not have permission to access the manager workspace." />
+        <PageHeader
+          title="Manager Workspace"
+          description="You do not have permission to access the manager workspace."
+        />
       </div>
     );
   }
@@ -97,7 +106,10 @@ export function ManagerWorkspacePage() {
 
           <Panel title="Pending Timesheet Approvals">
             {workspace.pendingTimesheetApprovals.length === 0 ? (
-              <EmptyState title="No pending timesheets" description="Submitted timesheets awaiting approval appear here." />
+              <EmptyState
+                title="No pending timesheets"
+                description="Submitted timesheets awaiting approval appear here."
+              />
             ) : (
               <ul className="simple-list">
                 {workspace.pendingTimesheetApprovals.map((ts) => (
@@ -106,7 +118,12 @@ export function ManagerWorkspacePage() {
                     <Button
                       variant="secondary"
                       disabled={isWorking}
-                      onClick={() => void runApproval(() => approveTimesheet(accessToken!, ts.id), 'Timesheet approved.')}
+                      onClick={() =>
+                        void runApproval(
+                          () => approveTimesheet(accessToken!, ts.id),
+                          'Timesheet approved.',
+                        )
+                      }
                     >
                       Approve
                     </Button>
@@ -118,7 +135,10 @@ export function ManagerWorkspacePage() {
 
           <Panel title="Pending Leave Approvals">
             {workspace.pendingLeaveApprovals.length === 0 ? (
-              <EmptyState title="No pending leave" description="Leave requests awaiting approval appear here." />
+              <EmptyState
+                title="No pending leave"
+                description="Leave requests awaiting approval appear here."
+              />
             ) : (
               <ul className="simple-list">
                 {workspace.pendingLeaveApprovals.map((leave) => (
@@ -127,7 +147,12 @@ export function ManagerWorkspacePage() {
                     <Button
                       variant="secondary"
                       disabled={isWorking}
-                      onClick={() => void runApproval(() => approveLeaveApplication(accessToken!, leave.id), 'Leave approved.')}
+                      onClick={() =>
+                        void runApproval(
+                          () => approveLeaveApplication(accessToken!, leave.id),
+                          'Leave approved.',
+                        )
+                      }
                     >
                       Approve
                     </Button>
@@ -139,7 +164,10 @@ export function ManagerWorkspacePage() {
 
           <Panel title="Team Performance">
             {workspace.teamPerformance.length === 0 ? (
-              <EmptyState title="No performance data" description="Capture performance from real job completion data." />
+              <EmptyState
+                title="No performance data"
+                description="Capture performance from real job completion data."
+              />
             ) : (
               <ul className="simple-list">
                 {workspace.teamPerformance.map((perf) => (
@@ -151,7 +179,10 @@ export function ManagerWorkspacePage() {
 
           <Panel title="Compliance Risks">
             {workspace.complianceRisks.length === 0 ? (
-              <EmptyState title="No certification risks" description="Expiring certifications appear here." />
+              <EmptyState
+                title="No certification risks"
+                description="Expiring certifications appear here."
+              />
             ) : (
               <ul className="simple-list">
                 {workspace.complianceRisks.map((cert) => (

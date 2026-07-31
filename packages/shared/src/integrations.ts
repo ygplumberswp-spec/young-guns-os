@@ -10,20 +10,28 @@ export type IntegrationProvider =
   | 'resend'
   | 'custom';
 
+/**
+ * Honesty-only synthetic providers (Decision 6 / UX-G). These never map to a
+ * real backend connector and must never appear in `IntegrationProvider`
+ * columns/enums — they exist only as dashboard-status pseudo-entries so the
+ * UI can render an honest "NOT IMPLEMENTED" card instead of hiding them.
+ */
+export type HonestyOnlyIntegrationProvider = 'gmail' | 'n8n'; // n8n remains in union for Integrations status card; not honesty-only after UX-J
+
 export type IntegrationConnectionStatus = 'disconnected' | 'pending' | 'connected' | 'error';
 
 export type IntegrationMappingStatus = 'unmapped' | 'mapped' | 'ignored';
 
-export type IntegrationProviderCategory = 'fleet' | 'accounting' | 'communications' | 'payments';
+export type IntegrationProviderCategory =
+  | 'fleet'
+  | 'accounting'
+  | 'communications'
+  | 'payments'
+  | 'automation';
 
 export type IntegrationProviderAvailability = 'available' | 'planned';
 
-export type IntegrationSyncJobStatus =
-  | 'pending'
-  | 'running'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+export type IntegrationSyncJobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
 
 export type IntegrationSyncJobType = 'manual' | 'scheduled';
 
@@ -180,13 +188,23 @@ export function getIntegrationProviderRegistryEntry(
   return INTEGRATION_PROVIDER_REGISTRY.find((entry) => entry.provider === provider);
 }
 
-export type IntegrationProviderStatus = IntegrationProviderRegistryEntry & {
+export type IntegrationProviderStatus = Omit<IntegrationProviderRegistryEntry, 'provider'> & {
+  /** Widened to include honesty-only synthetic providers (Decision 6 / UX-G). */
+  provider: IntegrationProvider | HonestyOnlyIntegrationProvider;
   connectionId: string | null;
   connectionStatus: IntegrationConnectionStatus;
   isConfigured: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
   connectedAt: string | null;
+  /** Decision 4 / UX-G — sole source of truth for UI capability labels. */
+  capabilityState: import('./integration-capability.js').IntegrationCapabilityState;
+  capabilityLabel: import('./integration-capability.js').IntegrationCapabilityStateLabel;
+  /** When false, Connect/Send must be disabled. */
+  canConnect: boolean;
+  canSend: boolean;
+  /** True for synthetic honesty-only cards (gmail, n8n) with no real backend. */
+  honestyOnly?: boolean;
 };
 
 export type IntegrationHubStats = {

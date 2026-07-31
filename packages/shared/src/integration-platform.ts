@@ -18,12 +18,7 @@ export type IntegrationConnectorCategory =
   | 'custom';
 
 export type IntegrationConnectorAuthType =
-  | 'oauth2'
-  | 'api_key'
-  | 'basic_auth'
-  | 'bearer_token'
-  | 'webhook'
-  | 'custom';
+  'oauth2' | 'api_key' | 'basic_auth' | 'bearer_token' | 'webhook' | 'custom';
 
 export type IntegrationConnectorSyncMode = 'scheduled' | 'manual' | 'event_driven';
 
@@ -34,17 +29,10 @@ export type IntegrationSyncScopeType = 'incremental' | 'full' | 'event_driven';
 export type IntegrationSyncConflictStatus = 'detected' | 'resolved' | 'ignored';
 
 export type IntegrationPlatformActionType =
-  | 'integration_repair'
-  | 'reconnect_recommendation'
-  | 'sync_retry'
-  | 'credential_rotation';
+  'integration_repair' | 'reconnect_recommendation' | 'sync_retry' | 'credential_rotation';
 
 export type IntegrationPlatformActionStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type IntegrationDiagnosticStatus = 'pending' | 'running' | 'completed' | 'failed';
 

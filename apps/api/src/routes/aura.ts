@@ -70,7 +70,12 @@ function handleAuraError(res: import('express').Response, error: unknown) {
   throw error;
 }
 
-export function createAuraRouter({ auraService, db, jwtSecret, authService }: AuraRouterDeps): Router {
+export function createAuraRouter({
+  auraService,
+  db,
+  jwtSecret,
+  authService,
+}: AuraRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireAuraRead = requireAnyPermission('agents:read', 'intelligence:read', '*');

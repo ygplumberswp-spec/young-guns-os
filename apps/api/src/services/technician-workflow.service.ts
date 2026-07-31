@@ -4,6 +4,7 @@ import { mobileActionLogs } from '@titan/db';
 import type { JobsService } from './jobs.service.js';
 import type { NotificationService } from './notification.service.js';
 import type { MobileSyncService } from './mobile-sync.service.js';
+import { JobExecutionError, JobExecutionService, userHasJobAccess } from './job-execution.service.js';
 
 export class TechnicianWorkflowError extends Error {
   constructor(
@@ -20,27 +21,38 @@ type TechnicianScope = {
   userId: string;
 };
 
+function mapExecutionError(error: unknown): TechnicianWorkflowError {
+  if (error instanceof JobExecutionError) {
+    return new TechnicianWorkflowError(error.code, error.message);
+  }
+  if (error instanceof TechnicianWorkflowError) {
+    return error;
+  }
+  throw error;
+}
+
 export class TechnicianWorkflowService {
   constructor(
     private readonly db: DatabaseClient,
     private readonly jobsService: JobsService,
     private readonly notificationService: NotificationService,
     private readonly mobileSyncService: MobileSyncService,
+    private readonly jobExecutionService: JobExecutionService,
   ) {}
 
   async acceptJob(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
 
-    if (!['new', 'scheduled'].includes(job.status)) {
-      throw new TechnicianWorkflowError(
-        'INVALID_STATUS',
-        'Only new or scheduled jobs can be accepted',
-      );
+    try {
+      await this.jobExecutionService.transition(scope, jobId, { action: 'accept' });
+    } catch (error) {
+      throw mapExecutionError(error);
     }
 
-    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
-      status: 'scheduled',
-    });
+    const updated = await this.jobsService.getJob(scope.companyId, jobId);
+    if (!updated) {
+      throw new TechnicianWorkflowError('NOT_FOUND', 'Job not found');
+    }
 
     await this.logAction(scope, 'accept_job', 'job', jobId, { previousStatus: job.status });
     await this.notificationService.createNotification({
@@ -60,37 +72,43 @@ export class TechnicianWorkflowService {
   async startJob(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
 
-    if (!['scheduled', 'new', 'in_progress'].includes(job.status)) {
-      throw new TechnicianWorkflowError('INVALID_STATUS', 'Job cannot be started from this status');
+    try {
+      await this.jobExecutionService.transition(scope, jobId, { action: 'start_work' });
+    } catch (error) {
+      throw mapExecutionError(error);
     }
 
-    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
-      status: 'in_progress',
-    });
+    const updated = await this.jobsService.getJob(scope.companyId, jobId);
+    if (!updated) {
+      throw new TechnicianWorkflowError('NOT_FOUND', 'Job not found');
+    }
 
     await this.logAction(scope, 'start_job', 'job', jobId, { previousStatus: job.status });
     return updated;
   }
 
-  async pauseJob(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
+  async pauseJob(scope: TechnicianScope, jobId: string, reason?: string): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
 
-    if (job.status !== 'in_progress') {
-      throw new TechnicianWorkflowError('INVALID_STATUS', 'Only in-progress jobs can be paused');
+    try {
+      await this.jobExecutionService.transition(scope, jobId, { action: 'pause', reason });
+    } catch (error) {
+      throw mapExecutionError(error);
     }
 
-    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
-      status: 'scheduled',
-    });
+    const updated = await this.jobsService.getJob(scope.companyId, jobId);
+    if (!updated) {
+      throw new TechnicianWorkflowError('NOT_FOUND', 'Job not found');
+    }
 
-    await this.logAction(scope, 'pause_job', 'job', jobId, { previousStatus: job.status });
+    await this.logAction(scope, 'pause_job', 'job', jobId, { previousStatus: job.status, reason });
     await this.notificationService.createNotification({
       companyId: scope.companyId,
       recipientType: 'staff',
       recipientUserId: scope.userId,
       notificationType: 'schedule_changed',
       title: 'Job paused',
-      body: `${updated.title} was paused and returned to scheduled.`,
+      body: `${updated.title} was paused${reason ? `: ${reason}` : ''}.`,
       entityType: 'job',
       entityId: jobId,
     });
@@ -98,19 +116,13 @@ export class TechnicianWorkflowService {
     return updated;
   }
 
+  /** Legacy endpoint kept for compatibility — full completion now requires the gated completion endpoint. */
   async completeJob(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
-    const job = await this.requireAssignedJob(scope, jobId);
-
-    if (!['in_progress', 'scheduled'].includes(job.status)) {
-      throw new TechnicianWorkflowError('INVALID_STATUS', 'Job cannot be completed from this status');
-    }
-
-    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
-      status: 'completed',
-    });
-
-    await this.logAction(scope, 'complete_job', 'job', jobId, { previousStatus: job.status });
-    return updated;
+    await this.requireAssignedJob(scope, jobId);
+    throw new TechnicianWorkflowError(
+      'COMPLETION_GATE_REQUIRED',
+      'Use the gated completion endpoint with full completion details to finish this job',
+    );
   }
 
   async markEnRoute(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
@@ -119,8 +131,11 @@ export class TechnicianWorkflowService {
     if (!job.assignedUserId) {
       throw new TechnicianWorkflowError('INVALID_STATE', 'Job must have an assigned technician');
     }
-    if (!['scheduled', 'in_progress', 'new'].includes(job.status)) {
-      throw new TechnicianWorkflowError('INVALID_STATUS', 'Job cannot be marked en route from this status');
+
+    try {
+      await this.jobExecutionService.transition(scope, jobId, { action: 'en_route' });
+    } catch (error) {
+      throw mapExecutionError(error);
     }
 
     await this.logAction(scope, 'mark_en_route', 'job', jobId, {
@@ -133,6 +148,13 @@ export class TechnicianWorkflowService {
 
   async markArrived(scope: TechnicianScope, jobId: string): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
+
+    try {
+      await this.jobExecutionService.transition(scope, jobId, { action: 'arrive' });
+    } catch (error) {
+      throw mapExecutionError(error);
+    }
+
     await this.logAction(scope, 'mark_arrived', 'job', jobId, { previousStatus: job.status });
     return job;
   }
@@ -141,7 +163,10 @@ export class TechnicianWorkflowService {
     const job = await this.requireAssignedJob(scope, jobId);
 
     if (!['new', 'scheduled'].includes(job.status)) {
-      throw new TechnicianWorkflowError('INVALID_STATUS', 'Dispatch cannot be rejected from this status');
+      throw new TechnicianWorkflowError(
+        'INVALID_STATUS',
+        'Dispatch cannot be rejected from this status',
+      );
     }
 
     const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
@@ -155,7 +180,11 @@ export class TechnicianWorkflowService {
     return updated;
   }
 
-  async addJobNote(scope: TechnicianScope, jobId: string, input: AddJobNoteRequest): Promise<JobDetail> {
+  async addJobNote(
+    scope: TechnicianScope,
+    jobId: string,
+    input: AddJobNoteRequest,
+  ): Promise<JobDetail> {
     const job = await this.requireAssignedJob(scope, jobId);
     const note = input.note.trim();
 
@@ -164,7 +193,9 @@ export class TechnicianWorkflowService {
     }
 
     const combinedNotes = job.notes ? `${job.notes}\n\n${note}` : note;
-    const updated = await this.jobsService.updateJob(scope.companyId, jobId, { notes: combinedNotes });
+    const updated = await this.jobsService.updateJob(scope.companyId, jobId, {
+      notes: combinedNotes,
+    });
 
     await this.logAction(scope, 'add_job_note', 'job', jobId, { noteLength: note.length });
     return updated;
@@ -211,7 +242,8 @@ export class TechnicianWorkflowService {
       throw new TechnicianWorkflowError('NOT_FOUND', 'Job not found');
     }
 
-    if (job.assignedUserId !== scope.userId) {
+    const hasAccess = await userHasJobAccess(this.db, scope.companyId, jobId, scope.userId);
+    if (!hasAccess) {
       throw new TechnicianWorkflowError('FORBIDDEN', 'Job is not assigned to you');
     }
 

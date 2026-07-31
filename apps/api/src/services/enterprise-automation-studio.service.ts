@@ -121,14 +121,17 @@ export class EnterpriseAutomationStudioService {
       .map((row) => row.durationMs)
       .filter((value): value is number => value != null);
     const avgDurationMs =
-      durations.length > 0 ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length) : null;
+      durations.length > 0
+        ? Math.round(durations.reduce((sum, value) => sum + value, 0) / durations.length)
+        : null;
 
     return {
       runningCount,
       completedCount,
       failedCount,
       queueDepth: queueJobs.length,
-      successRatePercent: totalFinished > 0 ? Math.round((completedCount / totalFinished) * 100) : null,
+      successRatePercent:
+        totalFinished > 0 ? Math.round((completedCount / totalFinished) * 100) : null,
       avgDurationMs,
       pendingApprovalCount: stats.pendingApprovalCount,
     };
@@ -145,7 +148,10 @@ export class EnterpriseAutomationStudioService {
     });
   }
 
-  async getDesigner(companyId: string, workflowId: string): Promise<AutomationStudioDesignerSummary> {
+  async getDesigner(
+    companyId: string,
+    workflowId: string,
+  ): Promise<AutomationStudioDesignerSummary> {
     await this.ensureWorkflow(companyId, workflowId);
     const [workflow, nodes, connections, variables] = await Promise.all([
       this.deps.db.query.workflows.findFirst({ where: eq(workflows.id, workflowId) }),
@@ -170,15 +176,22 @@ export class EnterpriseAutomationStudioService {
   ): Promise<AutomationStudioDesignerSummary> {
     await this.ensureWorkflow(scope.companyId, workflowId);
 
-    await this.deps.db.delete(automationStudioNodes).where(
-      and(eq(automationStudioNodes.companyId, scope.companyId), eq(automationStudioNodes.workflowId, workflowId)),
-    );
-    await this.deps.db.delete(automationStudioConnections).where(
-      and(
-        eq(automationStudioConnections.companyId, scope.companyId),
-        eq(automationStudioConnections.workflowId, workflowId),
-      ),
-    );
+    await this.deps.db
+      .delete(automationStudioNodes)
+      .where(
+        and(
+          eq(automationStudioNodes.companyId, scope.companyId),
+          eq(automationStudioNodes.workflowId, workflowId),
+        ),
+      );
+    await this.deps.db
+      .delete(automationStudioConnections)
+      .where(
+        and(
+          eq(automationStudioConnections.companyId, scope.companyId),
+          eq(automationStudioConnections.workflowId, workflowId),
+        ),
+      );
 
     if (input.nodes.length > 0) {
       await this.deps.db.insert(automationStudioNodes).values(
@@ -248,7 +261,11 @@ export class EnterpriseAutomationStudioService {
     if (input.canvasConfig) {
       await this.deps.db
         .update(workflows)
-        .set({ canvasConfig: input.canvasConfig, updatedAt: new Date(), updatedByUserId: scope.userId })
+        .set({
+          canvasConfig: input.canvasConfig,
+          updatedAt: new Date(),
+          updatedByUserId: scope.userId,
+        })
         .where(and(eq(workflows.id, workflowId), eq(workflows.companyId, scope.companyId)));
     }
 
@@ -295,9 +312,15 @@ export class EnterpriseAutomationStudioService {
     };
   }
 
-  async listVersions(companyId: string, workflowId: string): Promise<AutomationStudioVersionSummary[]> {
+  async listVersions(
+    companyId: string,
+    workflowId: string,
+  ): Promise<AutomationStudioVersionSummary[]> {
     const rows = await this.deps.db.query.automationStudioVersions.findMany({
-      where: and(eq(automationStudioVersions.companyId, companyId), eq(automationStudioVersions.workflowId, workflowId)),
+      where: and(
+        eq(automationStudioVersions.companyId, companyId),
+        eq(automationStudioVersions.workflowId, workflowId),
+      ),
       orderBy: [desc(automationStudioVersions.versionNumber)],
     });
 
@@ -362,10 +385,16 @@ export class EnterpriseAutomationStudioService {
     }
   }
 
-  async listTestRuns(companyId: string, workflowId?: string): Promise<AutomationStudioTestRunSummary[]> {
+  async listTestRuns(
+    companyId: string,
+    workflowId?: string,
+  ): Promise<AutomationStudioTestRunSummary[]> {
     const rows = await this.deps.db.query.automationStudioTestRuns.findMany({
       where: workflowId
-        ? and(eq(automationStudioTestRuns.companyId, companyId), eq(automationStudioTestRuns.workflowId, workflowId))
+        ? and(
+            eq(automationStudioTestRuns.companyId, companyId),
+            eq(automationStudioTestRuns.workflowId, workflowId),
+          )
         : eq(automationStudioTestRuns.companyId, companyId),
       orderBy: [desc(automationStudioTestRuns.createdAt)],
       limit: 50,
@@ -424,7 +453,10 @@ export class EnterpriseAutomationStudioService {
     return rows.map(toApprovalChainSummary);
   }
 
-  async listApprovalRecords(companyId: string, workflowId?: string): Promise<AutomationStudioApprovalRecordSummary[]> {
+  async listApprovalRecords(
+    companyId: string,
+    workflowId?: string,
+  ): Promise<AutomationStudioApprovalRecordSummary[]> {
     const rows = await this.deps.db.query.automationStudioApprovalRecords.findMany({
       where: workflowId
         ? and(
@@ -449,14 +481,21 @@ export class EnterpriseAutomationStudioService {
     }));
   }
 
-  async generateRecommendations(companyId: string): Promise<AutomationStudioRecommendationSummary[]> {
+  async generateRecommendations(
+    companyId: string,
+  ): Promise<AutomationStudioRecommendationSummary[]> {
     const [monitoring, stats, workflowList] = await Promise.all([
       this.getMonitoringSummary(companyId),
       this.deps.automationService.getStats(companyId),
       this.deps.automationService.listWorkflows(companyId),
     ]);
 
-    const signals: Array<{ workflowId?: string; title: string; recommendation: string; priority: string }> = [];
+    const signals: Array<{
+      workflowId?: string;
+      title: string;
+      recommendation: string;
+      priority: string;
+    }> = [];
 
     if (monitoring.failedCount > 0) {
       signals.push({
@@ -486,7 +525,8 @@ export class EnterpriseAutomationStudioService {
     if (stats.activeWorkflowCount === 0 && stats.workflowCount > 0) {
       signals.push({
         title: 'No active automations',
-        recommendation: 'Workflows exist but none are active — review pending approvals and publish approved workflows.',
+        recommendation:
+          'Workflows exist but none are active — review pending approvals and publish approved workflows.',
         priority: 'medium',
       });
     }
@@ -557,9 +597,15 @@ export class EnterpriseAutomationStudioService {
     return toActionSummary(row!);
   }
 
-  private async listNodes(companyId: string, workflowId: string): Promise<AutomationStudioNodeSummary[]> {
+  private async listNodes(
+    companyId: string,
+    workflowId: string,
+  ): Promise<AutomationStudioNodeSummary[]> {
     const rows = await this.deps.db.query.automationStudioNodes.findMany({
-      where: and(eq(automationStudioNodes.companyId, companyId), eq(automationStudioNodes.workflowId, workflowId)),
+      where: and(
+        eq(automationStudioNodes.companyId, companyId),
+        eq(automationStudioNodes.workflowId, workflowId),
+      ),
     });
 
     return rows.map((row) => ({
@@ -574,7 +620,10 @@ export class EnterpriseAutomationStudioService {
     }));
   }
 
-  private async listConnections(companyId: string, workflowId: string): Promise<AutomationStudioConnectionSummary[]> {
+  private async listConnections(
+    companyId: string,
+    workflowId: string,
+  ): Promise<AutomationStudioConnectionSummary[]> {
     const rows = await this.deps.db.query.automationStudioConnections.findMany({
       where: and(
         eq(automationStudioConnections.companyId, companyId),
@@ -591,9 +640,15 @@ export class EnterpriseAutomationStudioService {
     }));
   }
 
-  private async listVariables(companyId: string, workflowId: string): Promise<AutomationStudioVariableSummary[]> {
+  private async listVariables(
+    companyId: string,
+    workflowId: string,
+  ): Promise<AutomationStudioVariableSummary[]> {
     const rows = await this.deps.db.query.automationStudioVariables.findMany({
-      where: and(eq(automationStudioVariables.companyId, companyId), eq(automationStudioVariables.workflowId, workflowId)),
+      where: and(
+        eq(automationStudioVariables.companyId, companyId),
+        eq(automationStudioVariables.workflowId, workflowId),
+      ),
     });
 
     return rows.map((row) => ({
@@ -616,7 +671,9 @@ export class EnterpriseAutomationStudioService {
   }
 }
 
-function toTestRunSummary(row: typeof automationStudioTestRuns.$inferSelect): AutomationStudioTestRunSummary {
+function toTestRunSummary(
+  row: typeof automationStudioTestRuns.$inferSelect,
+): AutomationStudioTestRunSummary {
   return {
     id: row.id,
     workflowId: row.workflowId,

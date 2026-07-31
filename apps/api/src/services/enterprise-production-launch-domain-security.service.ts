@@ -40,7 +40,11 @@ export class EnterpriseProductionLaunchDomainSecurityService {
         message: usesHttps ? 'APP_URL uses HTTPS.' : 'APP_URL should use HTTPS in production.',
       });
     } else {
-      findings.push({ key: 'production_domain', severity: 'critical', message: 'APP_URL not configured.' });
+      findings.push({
+        key: 'production_domain',
+        severity: 'critical',
+        message: 'APP_URL not configured.',
+      });
     }
 
     if (this.deps.apiPublicUrl) {
@@ -54,28 +58,39 @@ export class EnterpriseProductionLaunchDomainSecurityService {
     findings.push({
       key: 'cors',
       severity: this.deps.appUrl ? 'info' : 'warning',
-      message: this.deps.appUrl ? `CORS restricted to APP_URL (${this.deps.appUrl}).` : 'CORS origin depends on APP_URL configuration.',
+      message: this.deps.appUrl
+        ? `CORS restricted to APP_URL (${this.deps.appUrl}).`
+        : 'CORS origin depends on APP_URL configuration.',
     });
 
     findings.push({
       key: 'session_security',
       severity: isProduction ? 'info' : 'warning',
-      message: isProduction ? 'Production cookie security enabled via auth middleware.' : 'Run with NODE_ENV=production for secure cookies.',
+      message: isProduction
+        ? 'Production cookie security enabled via auth middleware.'
+        : 'Run with NODE_ENV=production for secure cookies.',
     });
 
     findings.push({
       key: 'jwt_secrets',
       severity: this.deps.jwtSecret && this.deps.jwtRefreshSecret ? 'info' : 'critical',
-      message: this.deps.jwtSecret && this.deps.jwtRefreshSecret ? 'JWT secrets configured.' : 'JWT secrets missing.',
+      message:
+        this.deps.jwtSecret && this.deps.jwtRefreshSecret
+          ? 'JWT secrets configured.'
+          : 'JWT secrets missing.',
     });
 
     findings.push({
       key: 'secret_management',
       severity: this.deps.encryptionKey ? 'info' : 'warning',
-      message: this.deps.encryptionKey ? 'Integration encryption key configured.' : 'Integration encryption key not set — credentials may use fallback.',
+      message: this.deps.encryptionKey
+        ? 'Integration encryption key configured.'
+        : 'Integration encryption key not set — credentials may use fallback.',
     });
 
-    const securityDashboard = await this.deps.enterpriseSecurityService.getExecutiveDashboard(scope.companyId);
+    const securityDashboard = await this.deps.enterpriseSecurityService.getExecutiveDashboard(
+      scope.companyId,
+    );
     findings.push({
       key: 'security_platform',
       severity: securityDashboard.riskAlertCount > 0 ? 'high' : 'info',
@@ -89,8 +104,11 @@ export class EnterpriseProductionLaunchDomainSecurityService {
     });
 
     const criticalCount = findings.filter((f) => f.severity === 'critical').length;
-    const warningCount = findings.filter((f) => f.severity === 'warning' || f.severity === 'high').length;
-    const status: PlValidationStatus = criticalCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
+    const warningCount = findings.filter(
+      (f) => f.severity === 'warning' || f.severity === 'high',
+    ).length;
+    const status: PlValidationStatus =
+      criticalCount > 0 ? 'failed' : warningCount > 0 ? 'warning' : 'passed';
 
     const [created] = await this.deps.db
       .insert(plDomainSecurityReviews)
@@ -110,7 +128,9 @@ export class EnterpriseProductionLaunchDomainSecurityService {
   }
 }
 
-function toSummary(row: typeof plDomainSecurityReviews.$inferSelect): PlDomainSecurityReviewSummary {
+function toSummary(
+  row: typeof plDomainSecurityReviews.$inferSelect,
+): PlDomainSecurityReviewSummary {
   return {
     id: row.id,
     reviewKey: row.reviewKey,

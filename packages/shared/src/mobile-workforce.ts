@@ -3,6 +3,17 @@ import type { NotificationSummary } from './mobile.js';
 import type { IntelligenceGreeting } from './intelligence.js';
 import type { Recommendation } from './intelligence.js';
 import type { ScheduledJobEvent } from './scheduling.js';
+import type {
+  JobCompletionGateResult,
+  JobCrewMemberSummary,
+  JobExecutionException,
+  JobExecutionPhase,
+  JobMaterialLineSummary,
+  JobVariationSummary,
+  JobVehicleAssignmentSummary,
+  JobWorkflowAction,
+} from './job-execution.js';
+import type { JobEvidencePhase } from './job-evidence.js';
 
 export type MobileWorkforceRequestType =
   | 'inventory_allocation'
@@ -13,27 +24,13 @@ export type MobileWorkforceRequestType =
   | 'general_request';
 
 export type MobileWorkforceRequestStatus =
-  | 'pending_approval'
-  | 'approved'
-  | 'rejected'
-  | 'executed'
-  | 'cancelled';
+  'pending_approval' | 'approved' | 'rejected' | 'executed' | 'cancelled';
 
 export type MobileTimeEntryType =
-  | 'clock_in'
-  | 'clock_out'
-  | 'break_start'
-  | 'break_end'
-  | 'travel'
-  | 'job_time';
+  'clock_in' | 'clock_out' | 'break_start' | 'break_end' | 'travel' | 'job_time';
 
 export type MobileDocumentationType =
-  | 'photo'
-  | 'video'
-  | 'document'
-  | 'inspection_form'
-  | 'safety_checklist'
-  | 'customer_signature';
+  'photo' | 'video' | 'document' | 'inspection_form' | 'safety_checklist' | 'customer_signature';
 
 export type MobileInventoryUsageStatus = 'pending_approval' | 'approved' | 'rejected' | 'executed';
 
@@ -56,6 +53,8 @@ export type MobileTimeEntrySummary = {
   entryType: MobileTimeEntryType;
   jobId: string | null;
   jobTitle: string | null;
+  userId: string;
+  userName: string;
   startedAt: string;
   endedAt: string | null;
   durationMinutes: number | null;
@@ -85,6 +84,12 @@ export type MobileJobDocumentationSummary = {
   mimeType: string | null;
   sizeBytes: number | null;
   content: string | null;
+  storageKey: string | null;
+  checksumSha256: string | null;
+  evidencePhase: JobEvidencePhase | null;
+  hasBinary: boolean;
+  /** Relative API path to fetch the stored binary, or null when no binary is stored. */
+  downloadPath: string | null;
   createdAt: string;
 };
 
@@ -143,6 +148,11 @@ export type MobileRouteIntelligence = {
     speedKmh: number | null;
   } | null;
   cartrackConnected: boolean;
+  /** UX-I — never claim live Maps/Cartrack when provider path is absent. */
+  mapsCapabilityState: import('./young-guns-ops.js').MapsEtaCapabilityState;
+  mapsCapabilityLabel: string;
+  etaSource: 'none' | 'schedule_only';
+  liveTrackingAvailable: boolean;
 };
 
 export type MobileWorkforceDashboard = {
@@ -161,10 +171,22 @@ export type MobileWorkforceDashboard = {
   unreadNotificationCount: number;
 };
 
-export type MobileJobExecutionWorkspace = {
-  jobId: string;
+export type MobileJobWorkspacePropertyHistoryEntry = {
+  id: string;
+  jobNumber: string | null;
   title: string;
   status: string;
+  completedAt: string | null;
+};
+
+export type MobileJobExecutionWorkspace = {
+  jobId: string;
+  jobNumber: string | null;
+  jobType: string | null;
+  priority: string;
+  title: string;
+  status: string;
+  executionPhase: JobExecutionPhase;
   scheduledAt: string | null;
   scheduledEndAt: string | null;
   workInstructions: string | null;
@@ -174,6 +196,33 @@ export type MobileJobExecutionWorkspace = {
     email: string | null;
     phone: string | null;
   };
+  address: {
+    display: string | null;
+    street: string | null;
+    suburb: string | null;
+    city: string | null;
+    province: string | null;
+    postalCode: string | null;
+    unit: string | null;
+  };
+  accessInstructions: string | null;
+  siteContact: {
+    name: string | null;
+    mobile: string | null;
+    email: string | null;
+  };
+  /** Internal work notes — office/technician only, never customer- or finance-facing. */
+  internalNotes: string | null;
+  customerVisibleNotes: string | null;
+  navigationUrl: string | null;
+  crew: JobCrewMemberSummary[];
+  vehicle: JobVehicleAssignmentSummary | null;
+  variations: JobVariationSummary[];
+  materialLines: JobMaterialLineSummary[];
+  exceptions: JobExecutionException[];
+  availableActions: JobWorkflowAction[];
+  completionGate: JobCompletionGateResult;
+  propertyHistory: MobileJobWorkspacePropertyHistoryEntry[];
   checklist: Record<string, boolean>;
   laborTimeEntries: MobileTimeEntrySummary[];
   materialsUsed: MobileJobInventoryUsageSummary[];
@@ -222,6 +271,11 @@ export type SubmitMobileJobDocumentationRequest = {
   sizeBytes?: number;
   content?: string;
   metadata?: Record<string, unknown>;
+  /**
+   * Legacy metadata-only path. Setting a phase on a photo/signature without binary evidence is
+   * rejected — use the evidence upload endpoint (`UploadJobEvidenceRequest`) to attach a phase-gated file.
+   */
+  evidencePhase?: JobEvidencePhase;
 };
 
 export type ReportMobileSyncConflictRequest = {

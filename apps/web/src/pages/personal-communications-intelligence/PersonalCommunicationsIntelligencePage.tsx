@@ -41,7 +41,9 @@ export function PersonalCommunicationsIntelligencePage() {
   const { accessToken, user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [dashboard, setDashboard] = useState<PersonalCommExecutiveDashboard | null>(null);
-  const [conversations, setConversations] = useState<Awaited<ReturnType<typeof fetchConversations>>>([]);
+  const [conversations, setConversations] = useState<
+    Awaited<ReturnType<typeof fetchConversations>>
+  >([]);
   const [followUps, setFollowUps] = useState<Awaited<ReturnType<typeof fetchFollowUps>>>([]);
   const [signals, setSignals] = useState<Awaited<ReturnType<typeof fetchLeadSignals>>>([]);
   const [actions, setActions] = useState<Awaited<ReturnType<typeof fetchPersonalCommActions>>>([]);
@@ -56,13 +58,14 @@ export function PersonalCommunicationsIntelligencePage() {
 
   async function loadPage() {
     if (!accessToken) return;
-    const [dashboardData, conversationRows, followUpRows, signalRows, actionRows] = await Promise.all([
-      fetchPersonalCommDashboard(accessToken),
-      fetchConversations(accessToken),
-      fetchFollowUps(accessToken),
-      fetchLeadSignals(accessToken),
-      fetchPersonalCommActions(accessToken),
-    ]);
+    const [dashboardData, conversationRows, followUpRows, signalRows, actionRows] =
+      await Promise.all([
+        fetchPersonalCommDashboard(accessToken),
+        fetchConversations(accessToken),
+        fetchFollowUps(accessToken),
+        fetchLeadSignals(accessToken),
+        fetchPersonalCommActions(accessToken),
+      ]);
     setDashboard(dashboardData);
     setConversations(conversationRows);
     setFollowUps(followUpRows);
@@ -106,7 +109,11 @@ export function PersonalCommunicationsIntelligencePage() {
       setSuccess('WhatsApp conversations indexed from real tenant messages.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof PersonalCommunicationsApiClientError ? err.message : 'Unable to sync conversations');
+      setError(
+        err instanceof PersonalCommunicationsApiClientError
+          ? err.message
+          : 'Unable to sync conversations',
+      );
     }
   }
 
@@ -119,7 +126,11 @@ export function PersonalCommunicationsIntelligencePage() {
       setSuccess('Follow-up queue generated.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof PersonalCommunicationsApiClientError ? err.message : 'Unable to generate follow-ups');
+      setError(
+        err instanceof PersonalCommunicationsApiClientError
+          ? err.message
+          : 'Unable to generate follow-ups',
+      );
     }
   }
 
@@ -132,7 +143,11 @@ export function PersonalCommunicationsIntelligencePage() {
       setSuccess('Lead signals detected from real conversations.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof PersonalCommunicationsApiClientError ? err.message : 'Unable to detect lead signals');
+      setError(
+        err instanceof PersonalCommunicationsApiClientError
+          ? err.message
+          : 'Unable to detect lead signals',
+      );
     }
   }
 
@@ -152,15 +167,25 @@ export function PersonalCommunicationsIntelligencePage() {
       setSuccess('Business action drafted for approval.');
       await loadPage();
     } catch (err) {
-      setError(err instanceof PersonalCommunicationsApiClientError ? err.message : 'Unable to create action');
+      setError(
+        err instanceof PersonalCommunicationsApiClientError
+          ? err.message
+          : 'Unable to create action',
+      );
     }
   }
 
   if (!canView) {
     return (
       <div className="page">
-        <PageHeader title="Personal Communications" description="WhatsApp business assistant and communication intelligence." />
-        <EmptyState title="Access restricted" description="You do not have permission to view personal communications intelligence." />
+        <PageHeader
+          title="Personal Communications"
+          description="WhatsApp business assistant and communication intelligence."
+        />
+        <EmptyState
+          title="Access restricted"
+          description="You do not have permission to view personal communications intelligence."
+        />
       </div>
     );
   }
@@ -183,7 +208,11 @@ export function PersonalCommunicationsIntelligencePage() {
       {success ? <p className="form-success">{success}</p> : null}
       <div className="tab-row">
         {tabs.map((tab) => (
-          <Button key={tab.id} variant={activeTab === tab.id ? 'primary' : 'secondary'} onClick={() => setActiveTab(tab.id)}>
+          <Button
+            key={tab.id}
+            variant={activeTab === tab.id ? 'primary' : 'secondary'}
+            onClick={() => setActiveTab(tab.id)}
+          >
             {tab.label}
           </Button>
         ))}
@@ -193,19 +222,31 @@ export function PersonalCommunicationsIntelligencePage() {
         <div className="stack">
           {canManage ? (
             <Panel title="Sync WhatsApp conversations">
-              <p>Index real WhatsApp messages into business conversations. No messages are sent automatically.</p>
+              <p>
+                Index real WhatsApp messages into business conversations. No messages are sent
+                automatically.
+              </p>
               <Button onClick={() => void handleSync()}>Sync conversations</Button>
             </Panel>
           ) : null}
           <div className="stat-grid">
-            <StatCard label="Business conversations" value={String(dashboard.totalBusinessConversations)} />
-            <StatCard label="Personal conversations" value={String(dashboard.totalPersonalConversations)} />
+            <StatCard
+              label="Business conversations"
+              value={String(dashboard.totalBusinessConversations)}
+            />
+            <StatCard
+              label="Personal conversations"
+              value={String(dashboard.totalPersonalConversations)}
+            />
             <StatCard label="New leads" value={String(dashboard.newLeadsDetected)} />
             <StatCard label="Follow-ups" value={String(dashboard.pendingFollowUpCount)} />
             <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
             <StatCard label="Voice notes processed" value={String(dashboard.voiceNotesProcessed)} />
             <StatCard label="Documents analysed" value={String(dashboard.documentsAnalysed)} />
-            <StatCard label="WhatsApp" value={dashboard.whatsappConnected ? 'Connected' : 'Disconnected'} />
+            <StatCard
+              label="WhatsApp"
+              value={dashboard.whatsappConnected ? 'Connected' : 'Disconnected'}
+            />
           </div>
           <Panel title="Executive summary">
             <p>{dashboard.summary}</p>
@@ -215,13 +256,16 @@ export function PersonalCommunicationsIntelligencePage() {
       {!isLoading && activeTab === 'conversations' ? (
         <Panel title="Business conversations">
           {conversations.length === 0 ? (
-            <EmptyState title="No conversations indexed" description="Sync WhatsApp messages to index conversations." />
+            <EmptyState
+              title="No conversations indexed"
+              description="Sync WhatsApp messages to index conversations."
+            />
           ) : (
             <ul className="list">
               {conversations.map((row) => (
                 <li key={row.id}>
-                  {row.customerName ?? row.contactName ?? row.threadKey} · {row.classification} ({row.classificationConfidence}%) ·{' '}
-                  {row.messageCount} messages
+                  {row.customerName ?? row.contactName ?? row.threadKey} · {row.classification} (
+                  {row.classificationConfidence}%) · {row.messageCount} messages
                 </li>
               ))}
             </ul>
@@ -237,7 +281,10 @@ export function PersonalCommunicationsIntelligencePage() {
           ) : null}
           <Panel title="Follow-up queue">
             {followUps.length === 0 ? (
-              <EmptyState title="No follow-ups" description="Generate follow-ups from real communication data." />
+              <EmptyState
+                title="No follow-ups"
+                description="Generate follow-ups from real communication data."
+              />
             ) : (
               <ul className="list">
                 {followUps.map((item) => (
@@ -259,7 +306,10 @@ export function PersonalCommunicationsIntelligencePage() {
           ) : null}
           <Panel title="Lead & customer intelligence">
             {signals.length === 0 ? (
-              <EmptyState title="No lead signals" description="Run detection after conversations are indexed." />
+              <EmptyState
+                title="No lead signals"
+                description="Run detection after conversations are indexed."
+              />
             ) : (
               <ul className="list">
                 {signals.map((signal) => (
@@ -277,7 +327,11 @@ export function PersonalCommunicationsIntelligencePage() {
           {canManage ? (
             <Panel title="Draft business action">
               <form className="stack" onSubmit={handleCreateAction}>
-                <Input label="Subject" value={actionSubject} onChange={(e) => setActionSubject(e.target.value)} />
+                <Input
+                  label="Subject"
+                  value={actionSubject}
+                  onChange={(e) => setActionSubject(e.target.value)}
+                />
                 <Input
                   label="Recommendation"
                   value={actionRecommendation}
@@ -289,7 +343,10 @@ export function PersonalCommunicationsIntelligencePage() {
           ) : null}
           <Panel title="Pending actions">
             {actions.length === 0 ? (
-              <EmptyState title="No actions" description="Draft replies and business actions require approval before execution." />
+              <EmptyState
+                title="No actions"
+                description="Draft replies and business actions require approval before execution."
+              />
             ) : (
               <ul className="list">
                 {actions.map((action) => (
