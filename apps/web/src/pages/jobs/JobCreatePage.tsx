@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
 import type {
@@ -24,6 +24,11 @@ import { fetchTeamMembers } from '../../lib/team-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { canManageJobs } from '../../features/jobs/JobList';
+import {
+  documentInputFromFile,
+  JOB_DOCUMENT_ACCEPT,
+  titleFromFileName,
+} from '../../features/jobs/job-document-attach';
 
 type SiteMode = 'existing' | 'new';
 
@@ -71,8 +76,9 @@ export function JobCreatePage() {
   const [updateVerifiedCustomer, setUpdateVerifiedCustomer] = useState(false);
   const [updateVerifiedProperty, setUpdateVerifiedProperty] = useState(false);
   const [docTitle, setDocTitle] = useState('');
-  const [docFileName, setDocFileName] = useState('');
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<CreateJobDocumentInput[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -293,17 +299,33 @@ export function JobCreatePage() {
     }
   }
 
+  function handleDocumentFileChange(file: File | null) {
+    setPendingFile(file);
+    if (!file) return;
+    if (!docTitle.trim()) {
+      setDocTitle(titleFromFileName(file.name));
+    }
+    setFieldErrors((prev) => {
+      const next = { ...prev };
+      delete next.documents;
+      return next;
+    });
+  }
+
   function addDocument() {
-    if (!docTitle.trim() || !docFileName.trim()) {
+    if (!pendingFile) {
       setFieldErrors((prev) => ({
         ...prev,
-        documents: 'Document title and file name are required',
+        documents: 'Select a photo or document file to attach',
       }));
       return;
     }
-    setDocuments((prev) => [...prev, { title: docTitle.trim(), fileName: docFileName.trim() }]);
+    setDocuments((prev) => [...prev, documentInputFromFile(pendingFile, docTitle)]);
     setDocTitle('');
-    setDocFileName('');
+    setPendingFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     setFieldErrors((prev) => {
       const next = { ...prev };
       delete next.documents;
@@ -644,33 +666,57 @@ export function JobCreatePage() {
           <section className="jobs-form__section">
             <h2 className="jobs-form__section-title">Photos / documents</h2>
             <p className="page-muted">
-              Attach document metadata using the existing documents system (linked to this job on
-              create).
+              Select photos or documents to attach. File details are stored through the existing
+              documents system and linked to this job when you create it.
             </p>
             <div className="jobs-form__grid">
               <Input
                 label="Document title"
                 value={docTitle}
                 onChange={(event) => setDocTitle(event.target.value)}
+                placeholder="Blocked drain"
               />
-              <Input
-                label="File name"
-                value={docFileName}
-                onChange={(event) => setDocFileName(event.target.value)}
-                placeholder="blocked-drain.jpg"
-              />
+              <label className="titan-input-group">
+                <span className="titan-input-label">Photo or document file</span>
+                <input
+                  ref={fileInputRef}
+                  className="titan-input"
+                  type="file"
+                  accept={JOB_DOCUMENT_ACCEPT}
+                  onChange={(event) =>
+                    handleDocumentFileChange(event.target.files?.[0] ?? null)
+                  }
+                />
+              </label>
             </div>
+            {pendingFile ? (
+              <p className="page-muted jobs-doc-pending">
+                Selected: {pendingFile.name}
+                {pendingFile.type ? ` · ${pendingFile.type}` : ''}
+                {Number.isFinite(pendingFile.size)
+                  ? ` · ${Math.max(1, Math.round(pendingFile.size / 1024))} KB`
+                  : ''}
+              </p>
+            ) : null}
             {fieldErrors.documents ? (
               <span className="form-error">{fieldErrors.documents}</span>
             ) : null}
-            <Button type="button" variant="secondary" onClick={addDocument}>
+            <Button type="button" variant="secondary" onClick={addDocument} disabled={!pendingFile}>
               Add document
             </Button>
             {documents.length > 0 ? (
               <ul className="jobs-doc-list">
                 {documents.map((doc, index) => (
                   <li key={`${doc.fileName}-${index}`}>
-                    {doc.title} <span className="page-muted">({doc.fileName})</span>
+                    {doc.title}{' '}
+                    <span className="page-muted">
+                      ({doc.fileName}
+                      {doc.fileType ? ` · ${doc.fileType}` : ''}
+                      {doc.fileSizeBytes != null
+                        ? ` · ${Math.max(1, Math.round(doc.fileSizeBytes / 1024))} KB`
+                        : ''}
+                      )
+                    </span>
                     <button
                       type="button"
                       className="jobs-link"

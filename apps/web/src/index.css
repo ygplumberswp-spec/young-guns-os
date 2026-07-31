@@ -2095,6 +2095,10 @@ a:focus-visible {
   gap: 0.35rem;
 }
 
+.jobs-doc-pending {
+  margin: 0;
+}
+
 .jobs-form__preview {
   background: var(--titan-surface-muted);
   border-radius: 0.75rem;

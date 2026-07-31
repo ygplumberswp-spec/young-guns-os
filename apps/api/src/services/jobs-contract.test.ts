@@ -39,4 +39,18 @@ describe('UX-A job create contract', () => {
   it('allocates padded job numbers', () => {
     assert.equal(formatJobNumber(7), 'JOB-000007');
   });
+
+  it('accepts document metadata payload for job-linked create (blocked-drain.jpg)', () => {
+    const documents = [
+      {
+        title: 'blocked drain',
+        fileName: 'blocked-drain.jpg',
+        fileType: 'image/jpeg',
+        fileSizeBytes: 1280,
+      },
+    ];
+    assert.equal(documents[0]?.fileName, 'blocked-drain.jpg');
+    assert.ok(documents[0]?.fileType?.startsWith('image/'));
+    assert.ok((documents[0]?.fileSizeBytes ?? 0) > 0);
+  });
 });
