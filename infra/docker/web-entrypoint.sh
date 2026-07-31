@@ -2,7 +2,7 @@
 # Runs via nginx image /docker-entrypoint.d before nginx starts.
 # When API_PROXY_UPSTREAM is set, proxy /api/* same-origin and force the UI
 # onto relative /api/v1 (overrides any baked VITE_API_BASE_URL).
-set -eu
+set -u
 
 CONF_DIR="${NGINX_CONF_DIR:-/etc/nginx/conf.d}"
 CONF="${CONF_DIR}/default.conf"
@@ -10,11 +10,11 @@ HTML_ROOT="${TITAN_HTML_ROOT:-/usr/share/nginx/html}"
 NOPROXY_SRC="${TITAN_NOPROXY_CONF:-/etc/nginx/noproxy.default.conf}"
 
 # Remove auto-generated template output if present so we own default.conf.
-rm -f "${CONF_DIR}/default.conf"
+rm -f "${CONF_DIR}/default.conf" 2>/dev/null || true
 
 if [ -n "${API_PROXY_UPSTREAM:-}" ]; then
   UPSTREAM="${API_PROXY_UPSTREAM%/}"
-  cat >"${CONF}" <<EOF
+  if ! cat >"${CONF}" <<EOF
 server {
   listen 8080;
   server_name _;
@@ -39,6 +39,7 @@ server {
   }
 
   # Same-origin API proxy — browser never needs cross-origin CORS to the API service.
+  # POST /api/v1/auth/* must hit the API (static try_files returns nginx 405 otherwise).
   location /api/ {
     proxy_pass ${UPSTREAM};
     proxy_http_version 1.1;
@@ -68,8 +69,13 @@ server {
   }
 }
 EOF
-  printf 'window.__TITAN_API_BASE__="";\n' >"${HTML_ROOT}/runtime-config.js"
-  echo "titan-web: API proxy enabled → ${UPSTREAM} (same-origin /api)"
+  then
+    echo "titan-web: ERROR — failed to write ${CONF}; falling back to noproxy" >&2
+    cp "${NOPROXY_SRC}" "${CONF}"
+  else
+    printf 'window.__TITAN_API_BASE__="";\n' >"${HTML_ROOT}/runtime-config.js"
+    echo "titan-web: API proxy enabled → ${UPSTREAM} (same-origin /api)"
+  fi
 else
   cp "${NOPROXY_SRC}" "${CONF}"
   echo "titan-web: API_PROXY_UPSTREAM unset — serving static UI only (no /api proxy)"

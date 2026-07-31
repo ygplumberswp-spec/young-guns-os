@@ -11,15 +11,19 @@ type ProtectedRouteProps = {
 };
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, sessionBootstrap } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Absolute escape: ProtectedRoute also mounts under `/mobile` nest.
-      setLocation(toAppAbsoluteHref('/auth/login?reason=session_expired'));
+      // Only label true refresh rejections as expired — missing/unreachable are plain sign-in.
+      const href =
+        sessionBootstrap === 'expired'
+          ? '/auth/login?reason=session_expired'
+          : '/auth/login';
+      setLocation(toAppAbsoluteHref(href));
     }
-  }, [isAuthenticated, isLoading, setLocation]);
+  }, [isAuthenticated, isLoading, sessionBootstrap, setLocation]);
 
   if (isLoading) {
     return (

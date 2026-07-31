@@ -18,11 +18,15 @@ import {
   readCachedStaffSession,
 } from './mobile-offline-queue';
 
+/** Why the user is anonymous after bootstrap (drives login banner / redirect). */
+export type SessionBootstrapState = 'loading' | 'authenticated' | 'missing' | 'expired' | 'unreachable';
+
 type AuthContextValue = {
   user: AuthUser | null;
   accessToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  sessionBootstrap: SessionBootstrapState;
   signup: (input: {
     companyName: string;
     email: string;
@@ -49,29 +53,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionBootstrap, setSessionBootstrap] = useState<SessionBootstrapState>('loading');
 
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
       try {
-        let restored: Awaited<ReturnType<typeof api.restoreSession>> = null;
+        let restored: api.RestoreSessionResult = { status: 'missing' };
         try {
           restored = await api.restoreSession();
         } catch {
-          restored = null;
+          restored = { status: 'unreachable' };
         }
 
         if (cancelled) {
           return;
         }
 
-        if (restored) {
-          setUser(restored.user);
-          setAccessToken(restored.session.accessToken);
+        if (restored.status === 'authenticated') {
+          setUser(restored.payload.user);
+          setAccessToken(restored.payload.session.accessToken);
+          setSessionBootstrap('authenticated');
           await cacheStaffSessionForOffline({
-            user: restored.user as unknown as Record<string, unknown>,
-            accessToken: restored.session.accessToken,
+            user: restored.payload.user as unknown as Record<string, unknown>,
+            accessToken: restored.payload.session.accessToken,
           });
           return;
         }
@@ -82,14 +88,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (cached) {
             setUser(cached.user as unknown as AuthUser);
             setAccessToken(cached.accessToken);
+            setSessionBootstrap('authenticated');
             return;
           }
-        } else {
-          // Online refresh failed ⇒ session expired — clear protected local data.
+        } else if (restored.status === 'expired') {
+          // Online refresh rejected an existing cookie — clear protected local data.
           await clearAllMobileOfflineData();
         }
+
         setUser(null);
         setAccessToken(null);
+        setSessionBootstrap(restored.status);
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -114,6 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return payload.user;
     });
     setAccessToken(payload.session.accessToken);
+    setSessionBootstrap('authenticated');
     void cacheStaffSessionForOffline({
       user: payload.user as unknown as Record<string, unknown>,
       accessToken: payload.session.accessToken,
@@ -171,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await clearAllMobileOfflineData();
     setUser(null);
     setAccessToken(null);
+    setSessionBootstrap('missing');
   }, [user]);
 
   const value = useMemo<AuthContextValue>(
@@ -179,12 +190,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accessToken,
       isLoading,
       isAuthenticated: Boolean(user && accessToken),
+      sessionBootstrap,
       signup,
       login,
       acceptInvite,
       logout,
     }),
-    [user, accessToken, isLoading, signup, login, acceptInvite, logout],
+    [user, accessToken, isLoading, sessionBootstrap, signup, login, acceptInvite, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

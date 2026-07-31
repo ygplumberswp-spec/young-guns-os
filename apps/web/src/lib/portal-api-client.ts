@@ -27,7 +27,9 @@ import { isApiError } from '@titan/shared';
 
 import { resolveApiBase } from './runtime-env';
 
-const API_BASE = resolveApiBase();
+function apiBase(): string {
+  return resolveApiBase();
+}
 
 type RequestOptions = {
   method?: string;
@@ -68,7 +70,7 @@ async function refreshPortalAccessToken(): Promise<PortalAuthSession | null> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE}/portal/auth/refresh`, {
+        const response = await fetch(`${apiBase()}/portal/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -103,7 +105,7 @@ export async function portalRequest<T>(path: string, options: RequestOptions = {
     headers.Authorization = `Bearer ${options.accessToken}`;
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
+  const response = await fetch(`${apiBase()}${path}`, {
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',
@@ -149,7 +151,7 @@ export async function portalLogout(): Promise<void> {
 }
 
 export async function restorePortalSession(): Promise<PortalAuthPayload | null> {
-  const response = await fetch(`${API_BASE}/portal/auth/refresh`, {
+  const response = await fetch(`${apiBase()}/portal/auth/refresh`, {
     method: 'POST',
     credentials: 'include',
   });

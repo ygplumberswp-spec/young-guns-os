@@ -2,7 +2,10 @@ import type { ApiResponse, AuthSession, AuthUser } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 import { resolveApiBase } from './runtime-env';
 
-const API_BASE = resolveApiBase();
+/** Resolve per-call so `/runtime-config.js` can force same-origin `/api/v1`. */
+function apiBase(): string {
+  return resolveApiBase();
+}
 
 type RequestOptions = {
   method?: string;
@@ -88,7 +91,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     options.timeoutMs ? timeoutSignal(options.timeoutMs) : undefined,
   ]);
 
-  const url = `${API_BASE}${path}`;
+  const base = apiBase();
+  const url = `${base}${path}`;
   let response: Response;
   try {
     response = await fetch(url, {
@@ -106,8 +110,8 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
     }
     throw new ApiClientError(
-      API_BASE.startsWith('/')
-        ? 'Cannot reach the API from this UI deploy. Set VITE_API_BASE_URL to the public API origin and rebuild the web app.'
+      base.startsWith('/')
+        ? 'Cannot reach the API from this UI deploy. Set API_PROXY_UPSTREAM on the web service (or VITE_API_BASE_URL) and redeploy.'
         : 'Cannot reach the TITAN API. Check VITE_API_BASE_URL, API uptime, and that API APP_URL matches this web origin (CORS).',
       0,
       'NETWORK_ERROR',
@@ -133,7 +137,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       throw error;
     }
     throw new ApiClientError(
-      'API returned an unexpected response. Confirm VITE_API_BASE_URL points at the Railway API service.',
+      'API returned an unexpected response. Confirm the web /api proxy or VITE_API_BASE_URL points at the API service.',
       response.status || 0,
       'INVALID_API_RESPONSE',
     );
@@ -144,7 +148,7 @@ async function refreshAccessToken(): Promise<AuthSession | null> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
-        const response = await fetch(`${API_BASE}/auth/refresh`, {
+        const response = await fetch(`${apiBase()}/auth/refresh`, {
           method: 'POST',
           credentials: 'include',
         });
@@ -170,6 +174,12 @@ export type AuthPayload = {
   user: AuthUser;
   session: AuthSession;
 };
+
+export type RestoreSessionResult =
+  | { status: 'authenticated'; payload: AuthPayload }
+  | { status: 'missing' }
+  | { status: 'expired' }
+  | { status: 'unreachable' };
 
 export async function signup(body: {
   companyName: string;
@@ -223,15 +233,44 @@ export async function fetchCurrentUser(accessToken?: string | null): Promise<Aut
   }
 }
 
-export async function restoreSession(): Promise<AuthPayload | null> {
-  const response = await fetch(`${API_BASE}/auth/refresh`, {
-    method: 'POST',
-    credentials: 'include',
-  });
-
-  if (!response.ok) {
-    return null;
+/**
+ * Attempt cookie-based session restore.
+ * Distinguishes missing cookie vs rejected/expired token vs network failure so
+ * ProtectedRoute does not mislabel first visits as "session expired".
+ */
+export async function restoreSession(): Promise<RestoreSessionResult> {
+  let response: Response;
+  try {
+    response = await fetch(`${apiBase()}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+  } catch {
+    return { status: 'unreachable' };
   }
 
-  return parseResponse<AuthPayload>(response);
+  if (response.status === 401) {
+    let code = '';
+    try {
+      const payload = (await response.json()) as { error?: { code?: string } };
+      code = String(payload?.error?.code ?? '');
+    } catch {
+      code = '';
+    }
+    if (code === 'SESSION_MISSING') {
+      return { status: 'missing' };
+    }
+    return { status: 'expired' };
+  }
+
+  if (!response.ok) {
+    return { status: 'expired' };
+  }
+
+  try {
+    const payload = await parseResponse<AuthPayload>(response);
+    return { status: 'authenticated', payload };
+  } catch {
+    return { status: 'expired' };
+  }
 }
