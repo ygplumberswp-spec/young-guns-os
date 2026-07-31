@@ -6,6 +6,7 @@ import {
   createPortalAuthMiddleware,
   type PortalAuthenticatedRequest,
 } from '../middleware/portal-auth.js';
+import { buildRefreshCookieOptions } from '../lib/auth-cookies.js';
 
 const loginSchema = z.object({
   email: z.string().trim().email(),
@@ -184,22 +185,18 @@ function setRefreshCookie(
   refreshToken: string,
   isProduction: boolean,
 ) {
-  res.cookie(PORTAL_REFRESH_COOKIE_NAME, refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict',
-    path: '/api/v1/portal/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie(
+    PORTAL_REFRESH_COOKIE_NAME,
+    refreshToken,
+    buildRefreshCookieOptions(isProduction, '/api/v1/portal/auth'),
+  );
 }
 
 function clearRefreshCookie(res: import('express').Response, isProduction: boolean) {
-  res.clearCookie(PORTAL_REFRESH_COOKIE_NAME, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict',
-    path: '/api/v1/portal/auth',
-  });
+  res.clearCookie(
+    PORTAL_REFRESH_COOKIE_NAME,
+    buildRefreshCookieOptions(isProduction, '/api/v1/portal/auth'),
+  );
 }
 
 function handlePortalAuthError(res: import('express').Response, error: unknown) {

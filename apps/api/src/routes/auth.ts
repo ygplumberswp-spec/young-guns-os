@@ -6,6 +6,7 @@ import type { AuthService } from '../services/auth.service.js';
 import { AuthError } from '../services/auth.service.js';
 import type { EnterpriseSecurityService } from '../services/enterprise-security.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { buildRefreshCookieOptions } from '../lib/auth-cookies.js';
 import { aiRoutingCache } from '../services/ai-routing-cache.js';
 import { apiReadCache } from '../services/api-read-cache.js';
 
@@ -350,22 +351,18 @@ function setRefreshCookie(
   refreshToken: string,
   isProduction: boolean,
 ) {
-  res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict',
-    path: '/api/v1/auth',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie(
+    REFRESH_COOKIE_NAME,
+    refreshToken,
+    buildRefreshCookieOptions(isProduction, '/api/v1/auth'),
+  );
 }
 
 function clearRefreshCookie(res: import('express').Response, isProduction: boolean) {
-  res.clearCookie(REFRESH_COOKIE_NAME, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict',
-    path: '/api/v1/auth',
-  });
+  res.clearCookie(
+    REFRESH_COOKIE_NAME,
+    buildRefreshCookieOptions(isProduction, '/api/v1/auth'),
+  );
 }
 
 type SecurityLoginEventInput = Parameters<EnterpriseSecurityService['recordLoginEvent']>[0];

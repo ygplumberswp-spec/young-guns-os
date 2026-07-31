@@ -85,13 +85,31 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     options.timeoutMs ? timeoutSignal(options.timeoutMs) : undefined,
   ]);
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: options.method ?? 'GET',
-    headers,
-    credentials: 'include',
-    body: options.body ? JSON.stringify(options.body) : undefined,
-    signal,
-  });
+  const url = `${API_BASE}${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method ?? 'GET',
+      headers,
+      credentials: 'include',
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal,
+    });
+  } catch (error) {
+    const aborted =
+      (error instanceof DOMException && error.name === 'AbortError') ||
+      (error instanceof Error && error.name === 'AbortError');
+    if (aborted) {
+      throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+    }
+    throw new ApiClientError(
+      API_BASE.startsWith('/')
+        ? 'Cannot reach the API from this UI deploy. Set VITE_API_BASE_URL to the public API origin and rebuild the web app.'
+        : 'Cannot reach the TITAN API. Check VITE_API_BASE_URL, API uptime, and that API APP_URL matches this web origin (CORS).',
+      0,
+      'NETWORK_ERROR',
+    );
+  }
 
   if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {
     const refreshed = await refreshAccessToken();
@@ -105,7 +123,18 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     }
   }
 
-  return parseResponse<T>(response);
+  try {
+    return await parseResponse<T>(response);
+  } catch (error) {
+    if (error instanceof ApiClientError) {
+      throw error;
+    }
+    throw new ApiClientError(
+      'API returned an unexpected response. Confirm VITE_API_BASE_URL points at the Railway API service.',
+      response.status || 0,
+      'INVALID_API_RESPONSE',
+    );
+  }
 }
 
 async function refreshAccessToken(): Promise<AuthSession | null> {
