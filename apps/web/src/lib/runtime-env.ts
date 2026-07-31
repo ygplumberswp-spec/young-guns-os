@@ -9,11 +9,14 @@ export function isStagingUi(): boolean {
 /**
  * API origin for non-proxied deploys (Railway/Render separate services).
  * Empty → same-origin `/api/v1` (Vite proxy or reverse proxy).
+ * Accepts either `https://api.example.com` or `https://api.example.com/api/v1`.
  */
 export function resolveApiBase(): string {
-  const raw = String(import.meta.env.VITE_API_BASE_URL || '')
-    .trim()
-    .replace(/\/+$/, '');
+  let raw = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (!raw) return '/api/v1';
+  raw = raw.replace(/\/+$/, '');
+  raw = raw.replace(/\/api\/v1$/i, '');
+  raw = raw.replace(/\/+$/, '');
   if (!raw) return '/api/v1';
   return `${raw}/api/v1`;
 }

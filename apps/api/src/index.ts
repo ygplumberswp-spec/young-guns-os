@@ -21,6 +21,7 @@ import { createErrorHandler, notFoundHandler } from './middleware/error-handler.
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
 import { securityHeadersMiddleware } from './middleware/security-headers.js';
+import { parseCorsOriginAllowlist } from './lib/public-url.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createAuraRouter } from './routes/aura.js';
 import { createCompanyRouter } from './routes/company.js';
@@ -1178,9 +1179,17 @@ app.use(
   }),
 );
 
+const corsOrigins = parseCorsOriginAllowlist(env.APP_URL, env.CORS_ORIGINS);
 app.use(
   cors({
-    origin: env.APP_URL,
+    origin(origin, callback) {
+      // Non-browser clients omit Origin; allow those. Browsers must match APP_URL / CORS_ORIGINS.
+      if (!origin || corsOrigins.has(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
   }),
 );

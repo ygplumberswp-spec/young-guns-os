@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { loadAuraConfigFromEnv } from '@titan/aura';
 import { parseBoolFlag } from './lib/env-flags.js';
+import { isPlaceholderPublicUrl, normalizePublicOrigin } from './lib/public-url.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -35,6 +36,8 @@ const envSchema = z.object({
   WHATSAPP_ENABLED: z.string().optional(),
   EMAIL_SENDING_ENABLED: z.string().optional(),
   READY_REQUIRE_REDIS: z.string().optional(),
+  /** Optional comma-separated extra browser origins allowed for credentialed CORS. */
+  CORS_ORIGINS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema> & {
@@ -77,14 +80,14 @@ function applyStagingRuntimeFallbacks(): void {
   const railwayPublic = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
   const httpsPublic = railwayPublic ? `https://${railwayPublic.replace(/^https?:\/\//, '')}` : null;
 
-  if ((!process.env.APP_URL || isLocalhostUrl(process.env.APP_URL)) && httpsPublic) {
-    process.env.APP_URL = httpsPublic;
-  }
+  // API_PUBLIC_URL may default to this API service's Railway domain.
+  // APP_URL must NOT — on the API service RAILWAY_PUBLIC_DOMAIN is the API host,
+  // and using it as APP_URL breaks browser CORS for the separate web service.
   if (!process.env.API_PUBLIC_URL && httpsPublic) {
     process.env.API_PUBLIC_URL = httpsPublic;
   }
 
-  // Private-only staging: placeholders satisfy production URL validation; health does not need CORS.
+  // Private-only staging: placeholders satisfy production URL validation until a real web origin is set.
   if (!process.env.APP_URL || isLocalhostUrl(process.env.APP_URL)) {
     process.env.APP_URL = 'https://titan-staging-web.railway.internal';
   }
@@ -144,6 +147,12 @@ export function loadEnv(): Env {
   const data = result.data;
   const staging = isStagingLabels(data.APP_ENV, data.TITAN_ENV);
 
+  // Canonical browser origins — trailing slashes/paths break credentialed CORS.
+  data.APP_URL = normalizePublicOrigin(data.APP_URL);
+  if (data.API_PUBLIC_URL) {
+    data.API_PUBLIC_URL = normalizePublicOrigin(data.API_PUBLIC_URL);
+  }
+
   if (data.SEED_DEV && data.NODE_ENV === 'production') {
     throw new Error('SEED_DEV must be false in production');
   }
@@ -158,8 +167,19 @@ export function loadEnv(): Env {
     if (isLocalhostUrl(data.APP_URL)) {
       throw new Error(
         staging
-          ? 'APP_URL must not be localhost in staging production mode (set APP_URL or enable a Railway domain)'
+          ? 'APP_URL must not be localhost in staging production mode (set APP_URL to the public web origin)'
           : 'APP_URL must not be localhost when NODE_ENV=production',
+      );
+    }
+    if (isPlaceholderPublicUrl(data.APP_URL)) {
+      throw new Error(
+        'APP_URL is still a docs/example placeholder. Set it to the exact public web origin (scheme+host), e.g. https://<web-service>.up.railway.app — not the API URL.',
+      );
+    }
+    const railwayPublic = process.env.RAILWAY_PUBLIC_DOMAIN?.trim().replace(/^https?:\/\//, '');
+    if (railwayPublic && data.APP_URL === `https://${railwayPublic}`) {
+      throw new Error(
+        'APP_URL is set to this API service domain. Set APP_URL to the web frontend origin so credentialed CORS can succeed.',
       );
     }
   }

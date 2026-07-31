@@ -72,9 +72,12 @@ export class ApiClientError extends Error {
 }
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  const body = options.body ? JSON.stringify(options.body) : undefined;
+  // Only set Content-Type when sending a body — otherwise every GET triggers a CORS preflight.
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (options.accessToken) {
     headers.Authorization = `Bearer ${options.accessToken}`;
@@ -92,7 +95,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       method: options.method ?? 'GET',
       headers,
       credentials: 'include',
-      body: options.body ? JSON.stringify(options.body) : undefined,
+      body,
       signal,
     });
   } catch (error) {

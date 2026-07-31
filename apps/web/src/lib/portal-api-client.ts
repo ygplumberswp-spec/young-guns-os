@@ -93,9 +93,11 @@ async function refreshPortalAccessToken(): Promise<PortalAuthSession | null> {
 }
 
 export async function portalRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
+  const headers: Record<string, string> = {};
+  const body = options.body ? JSON.stringify(options.body) : undefined;
+  if (body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (options.accessToken) {
     headers.Authorization = `Bearer ${options.accessToken}`;
@@ -105,7 +107,7 @@ export async function portalRequest<T>(path: string, options: RequestOptions = {
     method: options.method ?? 'GET',
     headers,
     credentials: 'include',
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body,
   });
 
   if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {

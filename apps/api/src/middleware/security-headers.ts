@@ -8,7 +8,10 @@ export function securityHeadersMiddleware(): RequestHandler {
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-XSS-Protection', '0');
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+    // API is consumed by a separate web origin on Railway/Render. `same-site`
+    // blocks credentialed cross-subdomain fetches when `*.up.railway.app` is on
+    // the public suffix list.
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.removeHeader('X-Powered-By');
     next();
   };
