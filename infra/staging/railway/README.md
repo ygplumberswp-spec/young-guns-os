@@ -1,47 +1,36 @@
-# Railway staging service configs
+# Railway staging — TITAN monorepo
 
-**GitHub repo:** `ygplumberswp-spec/young-guns-os`  
-**Environment:** `staging` only  
-**Status:** Config prepared — **do not deploy** until approved
+## Why Railpack previously ran
 
-## Detected monorepo roots
+This repo has **no** root `Dockerfile` (files are `infra/docker/Dockerfile.api` / `Dockerfile.web`).  
+If Railway does not apply `builder = DOCKERFILE` + `dockerfilePath`, it falls back to **Railpack** (“Detected Node”).
 
-| Service | Package | App directory | Dockerfile | Verified start |
-|---------|---------|---------------|------------|----------------|
-| `titan-staging-api` | `@titan/api` | `apps/api` | `infra/docker/Dockerfile.api` | `node --import tsx src/index.ts` (image CMD; workdir `apps/api`) |
-| `titan-staging-web` | `@titan/web` | `apps/web` | `infra/docker/Dockerfile.web` | nginx on `8080` serving `apps/web/dist` |
+## Canonical Config-as-code paths (use these in the Railway UI)
 
-Docker builds must use **repository root** as context (Dockerfiles copy workspace packages).
+| Service | Config-as-code path | Dockerfile |
+|---------|---------------------|------------|
+| `titan-staging-api` | **`/apps/api/railway.toml`** | `/infra/docker/Dockerfile.api` |
+| `titan-staging-web` | **`/apps/web/railway.toml`** | `/infra/docker/Dockerfile.web` |
 
-## Apply in Railway dashboard (no CLI required)
+These live at the **package roots**, which is where Railway’s monorepo docs detect `railway.toml` / `railway.json`.
 
-For each service in the **staging** environment:
+Do **not** rely on `/infra/staging/railway/...` as the service Config-as-code path (kept only as documentation mirrors).
 
-### titan-staging-api
+## Required service settings
 
-1. Source: GitHub `ygplumberswp-spec/young-guns-os` (branch as agreed, typically `main`).
-2. Builder: Dockerfile  
-3. Dockerfile path: `infra/docker/Dockerfile.api`  
-4. Root directory: `/` (repo root)  
-5. Healthcheck path: `/api/v1/health/ready`  
-6. Public networking: **off** (do not generate domain)  
-7. Variables: copy non-secret defaults from `titan-staging-api.env.staging.names`; enter secrets in UI only  
-8. **Do not Deploy** yet  
+1. **Root Directory**: empty (`/`) — Dockerfiles need monorepo context  
+2. **Config-as-code**: paths in the table above  
+3. **Variable** (official Dockerfile override):  
+   - API: `RAILWAY_DOCKERFILE_PATH=/infra/docker/Dockerfile.api`  
+   - Web: `RAILWAY_DOCKERFILE_PATH=/infra/docker/Dockerfile.web`  
+4. Do not set a Custom Start Command (image CMD is correct)
 
-### titan-staging-web
+## Expected build log (success)
 
-1. Same GitHub repo / staging environment  
-2. Dockerfile path: `infra/docker/Dockerfile.web`  
-3. Root directory: `/`  
-4. Healthcheck path: `/healthz`  
-5. Build args / vars: `VITE_APP_ENV=staging`, `VITE_TITAN_ENV=staging`, `VITE_API_BASE_URL=` (empty for now)  
-6. Public networking: **off** (do not generate domain)  
-7. **Do not Deploy** yet  
+```
+==========================
+Using detected Dockerfile!
+==========================
+```
 
-## Out of scope
-
-- Redis service  
-- Worker / scheduler services  
-- Custom DNS  
-- Production database credentials  
-- Provider activation  
+If you still see `Detected Node` / Railpack, the Config-as-code path or `RAILWAY_DOCKERFILE_PATH` is wrong.

@@ -1,5 +1,7 @@
-# Canonical deploy config also lives at /apps/api/railway.toml (preferred Config-as-code path).
-# Keep this file in sync for staging documentation under infra/staging/railway/.
+# TITAN API — Railway config-as-code (package root).
+# Set service Config-as-code path to: /apps/api/railway.toml
+# Root Directory must remain empty (/) so Docker build context is the monorepo root.
+# Dockerfile is NOT named "Dockerfile", so builder + absolute dockerfilePath are required.
 
 [build]
 builder = "DOCKERFILE"
