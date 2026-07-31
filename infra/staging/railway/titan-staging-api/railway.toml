@@ -1,0 +1,35 @@
+# Service: titan-staging-api
+# Repo: ygplumberswp-spec/young-guns-os
+# Environment: staging only
+# Apply in Railway service settings (or `railway link` + service config).
+# DO NOT deploy from this file automatically.
+# DO NOT enable public networking / generate a domain yet.
+# DO NOT set production DATABASE_URL.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "infra/docker/Dockerfile.api"
+# Monorepo root required — Dockerfile copies workspace packages
+watchPatterns = [
+  "apps/api/**",
+  "packages/shared/**",
+  "packages/auth/**",
+  "packages/db/**",
+  "packages/aura/**",
+  "infra/docker/Dockerfile.api",
+  "pnpm-lock.yaml",
+  "pnpm-workspace.yaml",
+  "package.json",
+]
+
+[deploy]
+# Readiness (DB reachable + provider gates reported). Redis not required while READY_REQUIRE_REDIS=false.
+healthcheckPath = "/api/v1/health/ready"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+# Keep start command from Dockerfile CMD:
+#   WORKDIR apps/api && node --import tsx src/index.ts
+# Do not override with a different process.
+# numReplicas left at platform default (1).
+# Do not attach a public domain in this phase.
