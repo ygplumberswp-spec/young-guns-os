@@ -4,13 +4,13 @@
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "/infra/docker/Dockerfile.web"
+dockerfilePath = "infra/docker/Dockerfile.web"
 watchPatterns = [
   "/apps/web/**",
   "/packages/shared/**",
   "/packages/auth/**",
   "/packages/ui/**",
-  "/infra/docker/Dockerfile.web",
+  "infra/docker/Dockerfile.web",
   "/infra/docker/nginx.web.conf",
   "/pnpm-lock.yaml",
   "/pnpm-workspace.yaml",

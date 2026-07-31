@@ -1,0 +1,32 @@
+# TITAN Web — multi-stage static build on unprivileged nginx
+FROM node:20-bookworm-slim AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@10.12.1 --activate
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc* ./
+COPY apps/web/package.json apps/web/
+COPY packages/shared/package.json packages/shared/
+COPY packages/auth/package.json packages/auth/
+COPY packages/ui/package.json packages/ui/
+RUN pnpm install --frozen-lockfile --filter @titan/web...
+
+FROM base AS build
+COPY --from=deps /app /app
+COPY . .
+ARG VITE_API_BASE_URL=
+ARG VITE_APP_ENV=staging
+ARG VITE_TITAN_ENV=staging
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_APP_ENV=$VITE_APP_ENV
+ENV VITE_TITAN_ENV=$VITE_TITAN_ENV
+RUN pnpm --filter @titan/shared --filter @titan/auth --filter @titan/ui --filter @titan/web run build
+
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+COPY infra/docker/nginx.web.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/healthz || exit 1

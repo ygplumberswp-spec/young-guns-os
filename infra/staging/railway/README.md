@@ -9,8 +9,8 @@ If Railway does not apply `builder = DOCKERFILE` + `dockerfilePath`, it falls ba
 
 | Service | Config-as-code path | Dockerfile |
 |---------|---------------------|------------|
-| `titan-staging-api` | **`/apps/api/railway.toml`** | `/infra/docker/Dockerfile.api` |
-| `titan-staging-web` | **`/apps/web/railway.toml`** | `/infra/docker/Dockerfile.web` |
+| `titan-staging-api` | **`/apps/api/railway.toml`** | `infra/docker/Dockerfile.api` |
+| `titan-staging-web` | **`/apps/web/railway.toml`** | `infra/docker/Dockerfile.web` |
 
 These live at the **package roots**, which is where Railway’s monorepo docs detect `railway.toml` / `railway.json`.
 

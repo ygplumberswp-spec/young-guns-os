@@ -3,14 +3,14 @@
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "/infra/docker/Dockerfile.api"
+dockerfilePath = "infra/docker/Dockerfile.api"
 watchPatterns = [
   "/apps/api/**",
   "/packages/shared/**",
   "/packages/auth/**",
   "/packages/db/**",
   "/packages/aura/**",
-  "/infra/docker/Dockerfile.api",
+  "infra/docker/Dockerfile.api",
   "/pnpm-lock.yaml",
   "/pnpm-workspace.yaml",
   "/package.json",
