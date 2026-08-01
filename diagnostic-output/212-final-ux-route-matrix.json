@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T18:11:31.007Z",
+  "generatedAt": "2026-08-01T18:48:45.967Z",
   "branch": "cursor/integration-lock-auto-sync",
   "totalRoutes": 134,
   "backButtonFix": {
@@ -1395,7 +1395,7 @@
       "responsive": "verified-css",
       "rbac": "ProtectedRoute",
       "states": "standard",
-      "quickActions": "Y",
+      "quickActions": "n/a",
       "componentFile": "apps/web/src/pages/jobs/JobListPage.tsx",
       "notes": []
     },
@@ -1669,22 +1669,6 @@
       "states": "standard",
       "quickActions": "n/a",
       "componentFile": "apps/web/src/pages/platform/PlatformPage.tsx",
-      "notes": []
-    },
-    {
-      "pageName": "Platform Health",
-      "url": "/platform-health",
-      "sidebar": "—",
-      "backButton": "Y",
-      "backDestination": "/",
-      "pageHeader": "Y",
-      "centredContainer": "partial",
-      "primaryAction": "Y",
-      "responsive": "verified-css",
-      "rbac": "ProtectedRoute",
-      "states": "standard",
-      "quickActions": "n/a",
-      "componentFile": "apps/web/src/pages/platform-health/PlatformHealthPage.tsx",
       "notes": []
     },
     {
@@ -1975,6 +1959,22 @@
       "states": "standard",
       "quickActions": "n/a",
       "componentFile": "apps/web/src/pages/settings/DataProtectionSettingsPage.tsx",
+      "notes": []
+    },
+    {
+      "pageName": "Platform Health",
+      "url": "/settings/advanced/platform-health",
+      "sidebar": "Settings",
+      "backButton": "Y",
+      "backDestination": "/settings/company",
+      "pageHeader": "Y",
+      "centredContainer": "Y",
+      "primaryAction": "Y",
+      "responsive": "verified-css",
+      "rbac": "ProtectedRoute",
+      "states": "standard",
+      "quickActions": "n/a",
+      "componentFile": "apps/web/src/pages/platform-health/PlatformHealthPage.tsx",
       "notes": []
     },
     {

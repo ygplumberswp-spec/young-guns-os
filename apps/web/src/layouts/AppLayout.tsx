@@ -21,7 +21,6 @@ import {
   useSearchCommandPaletteShortcut,
   AppContentContainer,
 } from '../components/ux';
-import { AppContentContainer } from './AppContentContainer';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

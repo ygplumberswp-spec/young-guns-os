@@ -53,7 +53,7 @@ export function RowActionsCell({
           </span>
         </button>
       ) : null}
-      <MoreMenu label="⋮" items={moreItems} align="end" usePortal />
+      <MoreMenu label="⋮" items={moreItems} align="end" />
     </div>
   );
 }

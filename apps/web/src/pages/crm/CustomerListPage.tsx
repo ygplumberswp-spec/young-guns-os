@@ -2,7 +2,7 @@ import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
 import { Button, PageLoadState } from '@titan/ui';
-import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
+import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, classifyCustomerValueFromEvidence, isCustomerValueClassificationFilterKey } from '@titan/shared';
 import { fetchCustomersByClassification, fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
@@ -56,16 +56,19 @@ export function CustomerListPage() {
         return fetchCustomersWithClassification(accessToken!, debouncedSearch);
       } catch {
         const fallback = await fetchCustomers(accessToken!, debouncedSearch);
+        const computedAt = new Date().toISOString();
         return fallback.map((customer) => ({
           ...customer,
           valueClassification: {
-            isVerifiedInvoiced: false,
-            isPayingCustomer: false,
-            isFullyPaid: false,
-            isOverdueDebtor: false,
-            isUnpaidDebtor: false,
-            isPartiallyPaid: false,
-            isProspect: false,
+            ...classifyCustomerValueFromEvidence({
+              customerId: customer.id,
+              customerName: customer.name,
+              customerStatus: customer.status,
+              isSupplierOnly: false,
+              xeroContactId: null,
+              invoices: [],
+            }),
+            computedAt,
           },
         }));
       }

@@ -1,11 +1,81 @@
 # TITAN Final UX Consolidation Report
 
-Generated: 2026-08-01T18:11:31.007Z
-Branch: `cursor/integration-lock-auto-sync`
-Staging API: `https://young-guns-os-staging.up.railway.app`
-Staging Web: `https://comfortable-determination-staging.up.railway.app`
+Generated: 2026-08-01T20:52:00.000Z
+Branch: `cursor/titan-final-product-consolidation`
+Base commit: `5f585d3` (integration-lock-auto-sync tip)
+Consolidation tip: `f067c2e` (local — staging deploy pending Owner review)
+Staging API: `https://young-guns-os-staging.up.railway.app/api/v1/health` → **200**
+Staging Web: `https://comfortable-determination-staging.up.railway.app/` → **200** (pre-consolidation deploy)
 
-## 1. Back button — app-wide fix (BLOCKER RESOLVED)
+---
+
+## Stage A — Branch reconciliation (COMPLETE)
+
+| Source branch | Approved commits | Status on consolidation |
+|---------------|------------------|-------------------------|
+| `cursor/integration-lock-auto-sync` | `5f585d3` base — `4e9d67c`, `e372214`, `1881f69`, `fb2e88e` | **Included** (branch base) |
+| `cursor/cal-001-scheduling-calendar` | `d3252dd`, `00f1da0`, migration `0117` | **Included** (`ef9ca26`, `f067c2e`) |
+| `cursor/xero-payments-hotfix` | `f03dc24`, `529d27f` (CV marker + payments) | **Included** (`753c84e`, `e8b814b`) |
+| `cursor/visual-alignment-polish` | `5a4162f`, `491e397`, `6135383` (`99159f9` absorbed — identical grid rules) | **Included** (`588849a`, `0481f9b`, `f85155f`) |
+| `cursor/leads-customers-ui-patch` | `eca227f` inline badges | **Absorbed via `fb2e88e`** — StatusBadgeDropdown + RowActionsCell already present; cherry-pick skipped to preserve quick actions |
+| `cursor/ux-hardening-phase1` | — | **NOT merged** (obsolete per Owner directive) |
+
+### Prior worker absorption
+
+| Worker | Scope | Status |
+|--------|-------|--------|
+| `211b51cb` | Integration lock + Cartrack auto-map | **Absorbed** — commits on base branch |
+| `e54c0e6a` | Dashboard 4→2→1 card separation | **Absorbed** — `6135383` / `f85155f` |
+| `3e1abe53` | CAL-001 calendar-primary UX | **Absorbed** — `00f1da0` / `f067c2e` |
+| `c2db31b1` | 187 probe | Not found as separate commits — diagnostics artifacts preserved on base |
+
+### Post-reconcile fix commits (consolidation-only)
+
+- Remove duplicate `AppContentContainer` import / dead layouts copy
+- `RowActionsCell`: drop unsupported `usePortal` prop on `MoreMenu`
+- `CustomerListPage`: typed fallback via `classifyCustomerValueFromEvidence`
+
+---
+
+## Stage B — Shared shell (PARTIAL — gap-fill only)
+
+| Requirement | Status |
+|-------------|--------|
+| `AppContentContainer` wired in `AppLayout` | **Y** |
+| `PageHeader` / `BackButton` on staff routes | **133/134** (only `/` excluded by design) |
+| Design system spacing tokens (24px sections, 16–20px card gap) | **Y** on dashboard via `6135383` |
+| Complete route matrix | **Generated** — 134 routes, see below |
+| Sidebar restructure per directive | **NOT verified on staging** — deferred |
+| Unified Communications workspace | **NOT in this pass** — deferred |
+| WhatsApp/Email connect-once | **Code on base branch** — staging proof pending |
+
+---
+
+## Technical checks (local, consolidation branch)
+
+| Check | Result |
+|-------|--------|
+| `pnpm typecheck` | **PASS** |
+| `@titan/api` tests | **369 pass** |
+| `@titan/web` tests | **136 pass** |
+| `@titan/web` build | **PASS** |
+| Staging API health (`/api/v1/health`) | **200** |
+| Staging web root | **200** (current deploy = pre-consolidation SHA) |
+
+---
+
+## Remaining blockers (honest — NOT complete)
+
+1. **Staging deploy of consolidation branch not yet run** — Owner must approve push + `railway up` for web + API
+2. **Cartrack live proof** — CF172047/CF77263 mapped=2 needs post-deploy curl against staging API
+3. **Fleet Live Map** — all vehicles route may need additional work (not verified)
+4. **Unified Communications workspace** — not implemented in consolidation pass
+5. **Sidebar restructure** — not verified against Owner directive section 22
+6. **Customer 360 / Job file completeness / Finance Sage-like clarity** — gap-fill deferred
+7. **Settings index** (`/settings`) — redirect-only, missing PageHeader (1 route in matrix)
+8. **Acceptance gates section 22** — require Owner staging click-through after deploy
+
+---
 
 **Root cause:** `shouldShowBackButton()` hid back on all `MODULE_ROOT_PATHS` (list/landing pages like `/jobs`, `/crm`, `/leads`, `/settings`).
 
@@ -26,22 +96,11 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 
 ## 4. Tests / build
 
-| Check | Result |
-|-------|--------|
-| `pnpm typecheck` | PASS |
-| `@titan/web` tests (incl. back-navigation) | PASS |
-| `@titan/api` tests (356) | PASS |
-| `pnpm build` | PASS |
-
-Back-navigation tests updated: module roots (`/jobs`, `/crm`, `/integrations`) now expect back visible; settings sub-pages fall back to `/settings/company`.
+Run: `pnpm typecheck`, `pnpm test`, `pnpm build` (results appended after CI run).
 
 ## 5. Remaining blockers
 
-- **Staging Cartrack live proof** — CF172047/CF77263 auto-map count=2 pending post-deploy curl against staging API
-- `/settings` route is redirect-only (no visible page) — back N/A
-- Dashboard `/` intentionally has no back button
-
-All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeader`/`BackButton` (see matrix).
+See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification pending post-deploy.
 
 ## Route matrix (134 staff routes)
 
@@ -130,7 +189,7 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 | Product Create | `/inventory/products/new` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Stock Overview | `/inventory/stock` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | It Operations | `/it-operations` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
-| Job List | `/jobs` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | Y |
+| Job List | `/jobs` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Job Detail | `/jobs/:id` | — | Y | `/jobs` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Job Create | `/jobs/new` | — | Y | `/jobs` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Knowledge Graph | `/knowledge` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
@@ -148,7 +207,6 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 | Operations | `/operations` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Personal Communications Intelligence | `/personal-communications-intelligence` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Platform | `/platform` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
-| Platform Health | `/platform-health` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Purchase Order List | `/procurement` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Parts Requests | `/procurement/parts-requests` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Purchase Order Detail | `/procurement/purchase-orders/:id` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
@@ -167,6 +225,7 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 | Settings Index | `/settings` | Settings | Y | `/` | N | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | About Settings | `/settings/about` | Settings | Y | `/settings/company` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Data Protection Settings | `/settings/advanced/data-protection` | Settings | Y | `/settings/company` | Y | Y | N | verified-css | ProtectedRoute | standard | n/a |
+| Platform Health | `/settings/advanced/platform-health` | Settings | Y | `/settings/company` | Y | Y | Y | verified-css | ProtectedRoute | standard | n/a |
 | Owner Billing | `/settings/billing` | Settings | Y | `/settings/company` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Cartrack Settings | `/settings/cartrack` | Settings | Y | `/settings/company` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Company Settings | `/settings/company` | Settings | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
@@ -202,201 +261,3 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 - Registration normalize: `packages/shared/src/vehicle-registration.ts`
 - Auto-map on connect/sync: `apps/api/src/services/integrations.service.ts`
 - Live Dispatch 3s poll when visible: `apps/web/src/features/dispatch/useCartrackLivePositions.ts`
-
-## Owner correction — Company Health scope (final review)
-
-**Scope:** Focused correction only — no full visual alignment redo.
-
-| Change | Detail |
-|--------|--------|
-| **Removed from Company Health** | Today's Plan panel; technical systems (knowledge graph, release/production launch, developer platform, etc.); excessive tabs (incidents, timeline, operations map, AI recommendations); zero-value stat card rows |
-| **Company Health now shows** | Eight business areas: cash flow, jobs, customers & leads, team, fleet, stock, compliance, integrations — via `CompanyHealthAreasGrid` |
-| **Today's Plan relocated** | AURA workspace tab at `/aura/todays-plan` (`AuraSectionNav` — unchanged, verified present) |
-| **Platform Health relocated** | Settings → Advanced → Platform Health at `/settings/advanced/platform-health`; legacy `/platform-health` redirects; sidebar top-level Platform Health nav removed |
-| **Platform Health enhanced** | New **Platform Systems** tab with deployment/release/knowledge-graph/developer links and technical module snapshots + documentation percentages |
-
-**Preserved:** `AppContentContainer`, layout tokens, CAL-001, Xero/finance, drafts, Business Rules, universal quick actions.
-
-**Validation:** `pnpm run typecheck`, `@titan/web` test + build — pass.
-
-**Staging:** Railway `comfortable-determination` (sweet-victory) — deploy triggered for `491e397`; HTTP 200 at https://comfortable-determination-staging.up.railway.app (report updated at `a3405c3`).
-
----
-
-## Responsive Layout Addendum (commit `99159f9`)
-
-**Scope:** Staging-only CSS fix — no integration lock, no Company Health scope redo, preserves `491e397` / `AppContentContainer` / layout tokens.
-
-### Problem
-
-Dashboard summary cards and `.stat-grid` rows used conflicting rules (`index.css` fixed 4-col + `auto-fit minmax(11rem)`), causing cramped overlap and unpredictable column counts at laptop widths (1024–1439px).
-
-### Breakpoints (owner spec)
-
-| Viewport | Summary cards (`--cols-4` / `.stat-grid`) |
-|----------|-------------------------------------------|
-| ≥1440px | 4 columns (dashboard); `.stat-grid` auto-fit ≥16rem min |
-| 1200–1439px | 3 columns |
-| 1024–1199px | 2 columns |
-| 768–1023px | 2 columns |
-| <768px | 1 column |
-
-Company Health areas: 2 columns ≥768px, 1 column below. AURA business dashboard and Mission Control split stack below 768px.
-
-### CSS tokens added (`layout-grid.css`)
-
-| Token | Value |
-|-------|-------|
-| `--titan-bp-mobile` | `48rem` (768px) |
-| `--titan-bp-tablet` | `64rem` (1024px) |
-| `--titan-bp-desktop-sm` | `75rem` (1200px) |
-| `--titan-bp-desktop` | `90rem` (1440px) |
-| `--titan-summary-card-min` | `16rem` |
-| `--titan-summary-grid-gap` | `var(--titan-rhythm-cards)` |
-| `--titan-touch-target-min` | `2.75rem` (44px) |
-
-### Files touched
-
-| File | Change |
-|------|--------|
-| `apps/web/src/styles/layout-grid.css` | App-wide `.ux-summary-grid` + `.stat-grid` responsive rules; overflow-x clip on container; 768px stack for AURA / Mission Control / Company Health |
-| `apps/web/src/index.css` | Removed duplicate/conflicting `.dashboard-stats` and `.stat-grid` / `.ux-summary-grid` column rules |
-
-### Pages verified (via shared grid classes)
-
-- **Dashboard** — `SummaryCardGrid columns={4}` (`DashboardStats`, `TodayAtAGlanceGrid`)
-- **Company Health** — `SummaryCardGrid` stat row + `company-health-areas` grid
-- **Leads** — `.stat-grid` on `LeadListPage`
-- **Customers / Finance / Settings / AURA** — inherit `.stat-grid` or page-shell tokens app-wide
-
-### Validation
-
-```bash
-pnpm run typecheck          # pass
-pnpm --filter @titan/web run test   # 133 pass
-pnpm --filter @titan/web run build  # pass
-```
-
-### Staging deploy
-
-- **Commit:** `99159f9` on `cursor/visual-alignment-polish`
-- **Service:** Railway `comfortable-determination` (sweet-victory)
-- **Deploy:** `railway up --service comfortable-determination` from `apps/web`
-- **URL:** https://comfortable-determination-staging.up.railway.app
-
----
-
-## Dashboard Spacing Correction (staging-only)
-
-**Scope:** Executive dashboard layout/CSS only — preserves CAL-001, Xero fixes, quick actions, and all data fetching.
-
-### Problem (before)
-
-At laptop widths (1200–1439px), commit `99159f9` introduced a **3-column** breakpoint for `.ux-summary-grid--cols-4`. With exactly four summary cards (Jobs Today, Team Status, Money Today, Customer Activity), the grid rendered **3 + 1 orphan** — row 1 full, row 2 a single stranded card with a large empty gap.
-
-Customer value could also show **two loading indicators** at once: a status line (“Updating customer value from Xero…”) plus skeleton metric cards beneath it. API 503 Xero-sync responses could surface the same message again via the error EmptyState.
-
-### Root cause
-
-| Issue | Cause |
-|-------|-------|
-| 3+1 orphan layout | `@media (min-width: 1200px) and (max-width: 1439px) { repeat(3, …) }` on a 4-item grid |
-| Duplicate Customer value status | Combined status `<p>` + skeleton grid for both `loading` and `updating`; Xero 503 errors routed to error EmptyState with identical copy |
-
-### Fix (after)
-
-**Summary-card grid** — explicit content-width breakpoints, no intermediate 3-col step:
-
-| Content width | Columns |
-|---------------|---------|
-| ≥1440px | 4 equal columns |
-| 768–1439px | 2 equal columns |
-| <768px | 1 column |
-
-**Dashboard section grid** (Live ops / Completed, Priorities / Team today): 2 equal columns ≥768px, stacks at <768px. Customer value spans full width below paired rows.
-
-**Spacing tokens:** 24px between major sections (`--titan-dashboard-section-gap`), 18px between cards (`--titan-summary-grid-gap`), 20px card padding (`--titan-dashboard-card-padding`), 16px heading-to-grid gap.
-
-**Customer value:** one section-level state — skeleton only on initial load; single Xero status line on update (no skeleton); Xero-sync API errors treated as `updating` instead of duplicate error copy.
-
-### Files changed
-
-| File | Change |
-|------|--------|
-| `apps/web/src/styles/layout-grid.css` | Removed 1200px 3-col breakpoint; 1→2→4 col flow; dashboard section/card tokens; exec-dashboard grid rhythm |
-| `apps/web/src/index.css` | Header action spacing; removed 960px grid override (now 768px in layout-grid); customer-value status margin |
-| `apps/web/src/features/crm/CustomerValueMetricsPanel.tsx` | Single loading/updating state; Xero-sync errors → updating |
-
-### Verification widths
-
-Manual/CSS verification target: **1440, 1280, 1024, 768, 375px** — expect clean 4→2→1 transitions, no 3+1, no stranded cards, no overlap.
-
-(Screenshots: not captured — no Playwright harness in repo; CSS breakpoint changes documented above.)
-
-### Validation
-
-```bash
-pnpm run typecheck                    # pass
-pnpm --filter @titan/web run test     # 133 pass
-pnpm --filter @titan/web run build    # pass
-```
-
-### Staging deploy
-
-- **Branch:** `cursor/visual-alignment-polish`
-- **Service:** Railway `comfortable-determination` only (no production)
-- **Deploy:** `railway up --service comfortable-determination` from `apps/web` — **submitted**
-- **Build logs:** https://railway.com/project/58663be4-c72d-4dc8-b19b-5c7bf808f9a3/service/4f65f434-c42c-4bf6-81ab-eea441836290
-- **URL:** https://comfortable-determination-staging.up.railway.app
-
----
-
-## Dashboard Card-Separation Correction (staging-only)
-
-**Scope:** Executive dashboard — CSS grid gaps and card isolation only. No functional changes.
-
-### Problem (before)
-
-Owner staging screenshot (pre-commit) still showed:
-
-1. **Cards touching** — summary and panel cards appeared flush with no visible gutter (insufficient explicit `column-gap` / `row-gap`, margin-based spacing, `height: 100%` stretch).
-2. **Today at a glance 3+1** — staging was still on commit `99159f9` with `@media (min-width: 1200px) and (max-width: 1439px) { repeat(3, …) }`; local fix had not been committed/pushed.
-
-### Root cause
-
-| Issue | Cause |
-|-------|-------|
-| 3+1 at laptop | Live 1200px 3-column rule in deployed `99159f9` CSS |
-| Cards touching | Single `gap` token at 16px without separate row/column gaps; card wrappers lacked `margin: 0`, `isolation`, and explicit borders; paired rows not grouped with dedicated 20px row spacing |
-
-### Fix (after)
-
-| Token / rule | Value |
-|--------------|-------|
-| `--titan-summary-grid-gap` | 18px horizontal card gap |
-| `--titan-dashboard-card-row-gap` | 20px vertical card gap |
-| `--titan-dashboard-section-gap` | 24px major sections |
-| `--titan-dashboard-heading-gap` | 12px below headings |
-| `--titan-dashboard-paired-row-gap` | 20px between paired grid rows |
-
-- **Today at a glance:** dashboard-scoped `.exec-dashboard .exec-dashboard-glance.ux-summary-grid--cols-4` enforces 4→2→1 only.
-- **Paired sections:** wrapped in `.exec-dashboard-paired` (Live ops/Completed + Priorities/Team today).
-- **Customer value:** `.exec-dashboard-customer-value` full width; Xero updating message moved to Panel description only (no duplicate body text).
-- **Card isolation:** each card gets own border, background, rounded corners, `margin: 0`, `isolation: isolate`.
-
-### Files changed
-
-| File | Change |
-|------|--------|
-| `apps/web/src/styles/layout-grid.css` | Explicit column/row gaps; dashboard-scoped 4→2→1; paired grid wrapper; card isolation |
-| `apps/web/src/index.css` | Removed duplicate `.exec-dashboard-grid` grid definition |
-| `apps/web/src/features/dashboard/ExecutiveDashboard.tsx` | `exec-dashboard-paired` + `exec-dashboard-customer-value` wrappers |
-| `apps/web/src/features/crm/CustomerValueMetricsPanel.tsx` | Single Xero message via Panel description |
-
-### Validation & deploy
-
-```bash
-pnpm run typecheck                    # pass
-pnpm --filter @titan/web run test     # 133 pass
-pnpm --filter @titan/web run build    # pass
-```
