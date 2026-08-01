@@ -6,6 +6,7 @@ import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import { toStaffIdentity } from '../../lib/role-experience';
 import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY, MFA_LOGIN_REDIRECT_PATH } from '../../lib/api-client';
+import { isSessionExpiredLoginReason } from '../../lib/session-expiry-routing';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
 export function LoginPage() {
@@ -50,7 +51,7 @@ function LoginForm() {
   return (
     <AuthLayout
       banner={
-        reason === 'session_expired' ? (
+        isSessionExpiredLoginReason(reason) ? (
           <p className="auth-banner auth-banner--warning" role="status">
             Your session expired. Sign in again to continue.
           </p>

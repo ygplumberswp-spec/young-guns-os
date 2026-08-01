@@ -376,3 +376,20 @@
 | **Staging** | `/health/ready` **503/28P01** — Phase 8–12 public smokes skipped |
 | **Approval required?** | No — local only |
 | **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; session expiry UI e2e |
+
+---
+
+## Sprint 023 — Session expiry UI e2e (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Auth UX — session expiry redirect, banner, re-login |
+| **Result** | `session-refresh.test.ts` — 4 API refresh checks (`SESSION_MISSING` vs `SESSION_EXPIRED`/`SESSION_INVALID`, valid re-issue); `session-expiry.test.ts` — 9 web bootstrap/redirect checks; `classifyRestoreSessionRefresh` + `session-expiry-routing` helpers wired into `ProtectedRoute`, `LoginPage`, `SessionExpiredPage` |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `session-refresh.test.ts`, `session-expiry.test.ts`, `session-expiry-routing.ts`, `api-client.ts`, `ProtectedRoute.tsx`, `LoginPage.tsx`, `AuthStatusPages.tsx`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**392 pass**, +13 session expiry), `pnpm build` — pass |
+| **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; offline duplicate-completion e2e |

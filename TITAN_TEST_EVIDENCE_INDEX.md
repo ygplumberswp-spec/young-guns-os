@@ -175,10 +175,11 @@
 | `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | | Sprint 018 full staging verification report |
 
 | `apps/api/src/lib/customer-visible-job-eta.test.ts` | UX-030 customer-visible job ETA helper tests |
+| `apps/api/src/routes/session-refresh.test.ts` | Sprint 023 — `/auth/refresh` SESSION_MISSING vs SESSION_EXPIRED contract |
+| `apps/web/src/lib/session-expiry.test.ts` | Sprint 023 — bootstrap classification + ProtectedRoute redirect/banner contract |
 
 ## Coverage gaps (Phase 2+ targets)
 
-- Session expiry UI e2e  
 - Live Xero sync integration (staging, read-only)  
 - AURA provider connection e2e  
 - Offline duplicate-completion e2e  

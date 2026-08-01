@@ -201,6 +201,20 @@ export type RestoreSessionResult =
   | { status: 'expired' }
   | { status: 'unreachable' };
 
+/**
+ * Maps `/auth/refresh` HTTP outcomes to bootstrap state for ProtectedRoute.
+ * Keeps first visits (`SESSION_MISSING`) distinct from true expiry rejections.
+ */
+export function classifyRestoreSessionRefresh(
+  httpStatus: number,
+  errorCode?: string | null,
+): Exclude<RestoreSessionResult, { status: 'authenticated' }>['status'] {
+  if (httpStatus === 401) {
+    return errorCode === 'SESSION_MISSING' ? 'missing' : 'expired';
+  }
+  return 'expired';
+}
+
 export async function signup(body: {
   companyName: string;
   email: string;
@@ -288,14 +302,11 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
     } catch {
       code = '';
     }
-    if (code === 'SESSION_MISSING') {
-      return { status: 'missing' };
-    }
-    return { status: 'expired' };
+    return { status: classifyRestoreSessionRefresh(response.status, code) };
   }
 
   if (!response.ok) {
-    return { status: 'expired' };
+    return { status: classifyRestoreSessionRefresh(response.status) };
   }
 
   try {

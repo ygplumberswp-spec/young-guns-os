@@ -99,8 +99,9 @@
 7. ~~**FRZ-010 / Phase 12 (local slice)** — Job completion/billing chain panel + invoice-from-job + payment prefill + Xero sync UI stubs **DONE**; live Xero OAuth/sync remain~~ **DONE (local)** — Sprint 016  
 8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018–019 idempotent); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, invalid/unauthorized `RAILWAY_TOKEN`)  
 9. **PLT-008 / MFA login gate** — **DONE (local automated)** — `mfa-login-gate.test.ts` + `login-mfa.test.ts`; staging login MFA click-path still blocked (503/28P01)  
-10. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-11. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+10. **Auth session expiry UX** — **DONE (local automated)** — `session-refresh.test.ts` + `session-expiry.test.ts`; staging click-path still blocked (503/28P01)  
+11. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+12. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

@@ -6,6 +6,7 @@ import { AuthLayout } from '../../layouts/AuthLayout';
 import { GuestRoute } from '../../components/ProtectedRoute';
 import { useAuth } from '../../lib/auth-context';
 import { ApiClientError, MFA_CHALLENGE_STORAGE_KEY } from '../../lib/api-client';
+import { SESSION_EXPIRED_LOGIN_PATH } from '../../lib/session-expiry-routing';
 import { toStaffIdentity } from '../../lib/role-experience';
 
 /**
@@ -151,7 +152,7 @@ export function SessionExpiredPage() {
             workspace.
           </p>
           <div className="auth-card__actions">
-            <Link href="/auth/login?reason=session_expired">
+            <Link href={SESSION_EXPIRED_LOGIN_PATH}>
               <Button type="button">Sign in again</Button>
             </Link>
           </div>

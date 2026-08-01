@@ -4,6 +4,7 @@ import { LoadingState } from '@titan/ui';
 import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { toAppAbsoluteHref } from '../lib/nested-routing';
+import { staffLoginRedirectHref } from '../lib/session-expiry-routing';
 import { toStaffIdentity } from '../lib/role-experience';
 
 type ProtectedRouteProps = {
@@ -17,11 +18,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Only label true refresh rejections as expired — missing/unreachable are plain sign-in.
-      const href =
-        sessionBootstrap === 'expired'
-          ? '/auth/login?reason=session_expired'
-          : '/auth/login';
-      setLocation(toAppAbsoluteHref(href));
+      setLocation(staffLoginRedirectHref(sessionBootstrap));
     }
   }, [isAuthenticated, isLoading, sessionBootstrap, setLocation]);
 
