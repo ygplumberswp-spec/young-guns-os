@@ -59,8 +59,10 @@ import { BusinessIntegrationsService } from './services/business-integrations.se
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
+import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
+import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
@@ -404,6 +406,10 @@ const whatsappService = WhatsappService.create({
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   apiPublicUrl,
   hubService: integrationHubService,
+});
+const whatsappContactEnrichmentService = WhatsappContactEnrichmentService.create({
+  db,
+  whatsappService,
 });
 const integrationApiManagementService = new IntegrationApiManagementService({
   db,
@@ -1369,14 +1375,6 @@ app.use(
   }),
 );
 app.use(
-  '/api/v1/customers',
-  createCustomersRouter({
-    customerValueClassificationService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
-app.use(
   '/api/v1/marketing-eligibility',
   createMarketingEligibilityRouter({
     marketingEligibilityService,
@@ -1476,6 +1474,15 @@ app.use(
   '/api/v1/whatsapp',
   createWhatsappRouter({
     whatsappService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/whatsapp/enrichment',
+  createWhatsappEnrichmentRouter({
+    enrichmentService: whatsappContactEnrichmentService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
