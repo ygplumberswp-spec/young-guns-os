@@ -898,8 +898,6 @@ a:focus-visible {
 
 .owner-page-content {
   width: 100%;
-  max-width: 80rem;
-  margin: 0 auto;
 }
 
 .dashboard-header {
@@ -5468,7 +5466,8 @@ a:focus-visible {
 
 .page-shell:not(.page-shell--wide),
 .automation-page:not(.page-shell--wide) {
-  max-width: 88rem;
+  max-width: none;
+  margin-inline: auto;
 }
 
 .stat-grid .titan-stat-card,
@@ -6331,6 +6330,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .ux-summary-grid--cols-4 {
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  justify-items: stretch;
 }
 
 .ux-compact-tabs__row {

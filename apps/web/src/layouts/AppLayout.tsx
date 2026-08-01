@@ -20,6 +20,7 @@ import {
   SearchCommandPalette,
   useSearchCommandPaletteShortcut,
 } from '../components/ux';
+import { AppContentContainer } from './AppContentContainer';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -216,7 +217,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setCommandPaletteOpen(false)}
         canAccessSearch={canSearch}
       />
-      {children}
+      <AppContentContainer>{children}</AppContentContainer>
     </AppShell>
   );
 }
