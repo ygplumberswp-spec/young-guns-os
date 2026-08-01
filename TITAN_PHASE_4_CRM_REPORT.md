@@ -2,12 +2,13 @@
 
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 3):** `ec9cfc3`  
+**Final SHA:** `bb398e2`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02
 
 ## Verdict
 
-**GO** — with documented HOLD items (non-blocking for Phase 4 gate)
+**GO** @ `bb398e2` — authenticated staging verification 234 (0 blockers)
 
 ## Summary
 
@@ -60,13 +61,24 @@ Phase 4 delivers CRM list column parity, dedicated row actions (WhatsApp / Email
 
 ## Staging verification
 
-Run after deploy:
+| Service | Deployment ID | Status |
+|---|---|---|
+| API (`young-guns-os`) | `0aae8a9f-5754-4c8a-848b-19d5f09c43e1` | SUCCESS |
+| Web (`comfortable-determination`) | `17635f39-21e7-42c0-ab7e-a6692d2390b9` | SUCCESS |
+
+Verify script result: **GO** — `diagnostic-output/234-crm-actions-bulk-delete-verify.json`
+
+- 678 customers on staging API
+- Bulk endpoint HTTP 200 with per-row results
+- Customer + lead list columns and row actions verified @ 1440/768/375
+- Customer 360 — 12 tabs verified on live customer
+- Screenshots: `diagnostic-output/phase4-crm-staging/`
+
+Run locally:
 
 ```bash
 node diagnostic-output/234-crm-actions-bulk-delete-verify.mjs
 ```
-
-Screenshots: `diagnostic-output/phase4-crm-staging/`
 
 ## HOLD items (remaining)
 

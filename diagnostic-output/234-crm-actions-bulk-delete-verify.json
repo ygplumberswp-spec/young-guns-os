@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "phase4-crm-actions-v1",
+  "label": "234-crm-actions-bulk-delete-verify",
+  "generatedAt": "2026-08-01T22:23:07.626Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "bb398e24d6c3fc43f6ce88e5e48fcdbcc095afa3",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "customersStatus": 200,
+    "customerCount": 678,
+    "sampleHasListEnrichment": false,
+    "bulkEndpointStatus": 200,
+    "bulkHasSummary": true
+  },
+  "ui": {
+    "routes": [
+      {
+        "path": "/crm",
+        "name": "customers",
+        "expectHeaders": [
+          "Outstanding",
+          "Actions",
+          "Last job"
+        ],
+        "headerChecks": {
+          "Outstanding": true,
+          "Actions": true,
+          "Last job": true
+        },
+        "hasRowActionsDesktop": true,
+        "hasMoreMenu": true,
+        "hasFloatingPencil": false,
+        "bulkActions": [
+          "Assign",
+          "Change status",
+          "Email",
+          "WhatsApp",
+          "Archive",
+          "Delete",
+          "Clear selection"
+        ],
+        "hasBulkEmail": true,
+        "hasBulkArchive": true,
+        "hasBulkDelete": true
+      },
+      {
+        "path": "/leads",
+        "name": "leads",
+        "expectHeaders": [
+          "Service",
+          "Age",
+          "Actions"
+        ],
+        "headerChecks": {
+          "Service": true,
+          "Age": true,
+          "Actions": true
+        },
+        "hasRowActionsDesktop": true,
+        "hasMoreMenu": true,
+        "hasFloatingPencil": false,
+        "bulkActions": [
+          "Assign",
+          "Change status",
+          "Email",
+          "WhatsApp",
+          "Archive",
+          "Delete",
+          "Clear selection"
+        ],
+        "hasBulkEmail": true,
+        "hasBulkArchive": true,
+        "hasBulkDelete": true
+      }
+    ],
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "mobileActionsMenu": true,
+        "screenshot": "diagnostic-output/phase4-crm-staging/crm-list-1440.png"
+      },
+      {
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "mobileActionsMenu": true,
+        "screenshot": "diagnostic-output/phase4-crm-staging/crm-list-768.png"
+      },
+      {
+        "id": "375",
+        "width": 375,
+        "height": 812,
+        "mobileActionsMenu": true,
+        "screenshot": "diagnostic-output/phase4-crm-staging/crm-list-375.png"
+      }
+    ],
+    "customer360": {
+      "customerId": "b9526bfc-58c3-4a41-a1a3-d247e8044719",
+      "tabs": [
+        "Overview",
+        "Properties",
+        "Jobs",
+        "Quotes",
+        "Invoices",
+        "Payments",
+        "Finance",
+        "Equipment",
+        "Communications",
+        "Documents",
+        "Maintenance",
+        "Activity"
+      ],
+      "financeScreenshot": "diagnostic-output/phase4-crm-staging/customer-360-finance.png"
+    }
+  },
+  "blockers": [],
+  "holdItems": [
+    "customers: bulk Delete visible to Owner (expected with typed DELETE guard)",
+    "Customer list enrichment fields sparse on sample row (may be empty tenant data)",
+    "Lead estimated value column shows — until quote-linked value exists"
+  ],
+  "verdict": "GO"
+}
