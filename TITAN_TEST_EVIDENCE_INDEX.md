@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Phase 0  
-**Automated test files:** 45 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 004  
+**Automated test files:** 46 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -95,7 +95,13 @@
 
 | File | Domain |
 |------|--------|
+### Brand & shell
+
+| File | Domain |
+|------|--------|
 | `apps/web/src/brand/TitanWordmark.test.ts` | SVG wordmark |
+| `apps/web/src/brand/brand-shell.test.ts` | Auth + owner/portal shell responsive contracts |
+| `packages/auth/src/tokens.test.ts` | MFA challenge tokens |
 | `packages/ui/src/button-variants.test.ts` | UI components |
 
 ### Infrastructure

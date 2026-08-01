@@ -91,8 +91,8 @@
 | **Phase** | 3 — Locked TITAN brand, login and responsive shell |
 | **Result** | Complete (local) |
 | **Checkpoint** | `043d23b` |
-| **Files changed** | `auth-shell.test.ts`, `index.css` (414px auth safe-area + wordmark) |
+| **Files changed** | `brand-shell.test.ts` (auth/portal/owner shell contracts), control doc updates |
 | **Migration** | None |
-| **Tests** | Web tests 36 pass (includes brand shell contracts) |
+| **Tests** | `pnpm typecheck`, `pnpm test` (212 pass), `pnpm build` — pass |
 | **Approval required?** | No |
 | **Next phase selected** | Phase 4 — Owner Command Centre and navigation |

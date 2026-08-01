@@ -94,7 +94,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | PLT-009 | SSO missing | MISSING | Spec IdP |
 | Dashboard / UX-012 | ~~False zero welcome / empty upcoming~~ **CLOSED staging (UX-I)** | CLOSED | Truthful KPI strip + today scheduled panel |
 | ~~UX-008 / UX-009~~ | **CLOSED (UX-E staging)** — job finance chips + invoice stages | — | — |
-| UX-013 | Customer list no search; no address column | PARTIAL | Search name/phone/address — **OPS-001** |
+| UX-013 | Customer list no search; no address column | **CLOSED (Sprint 003)** | Search name/phone/address — **OPS-001** |
 | UX-017 | Job detail missing snapshot + finance strip | PARTIAL | Ops header with site + linked numbers — **OPS-005** |
 | UX-018 | Schedule cards show JOB#/site/contact/priority/access | **CLOSED (UX-D staging)** | Suburb + operational context on events — **OPS-006** |
 | UX-022 | Receipts + payment search **CLOSED (UX-E)**; payment links still missing | PARTIAL | Payment links — **FIN-014** |
@@ -213,7 +213,7 @@ Full screen matrix + acceptance tests: **`TITAN_OPERATIONAL_UX_AUDIT.md`**.
 | UX-010 | Partial / UX-A | Ops search done; Xero # / payment ref open | OPS-005, FIN-* |
 | UX-011 | Critical | Never invent invoice numbers if Xero unavailable | FIN-002, FIN-005 |
 | UX-012 | **CLOSED (UX-I)** | Dashboard KPI truth + today scheduled | Dashboard |
-| UX-013 | High | CRM list search + address | OPS-001 |
+| UX-013 | High | CRM list search + address | **CLOSED (Sprint 003)** → OPS-001 |
 | UX-014 | Critical | Customer create address/property/consent | OPS-001–002, CD-006 |
 | UX-015 | Critical | CRM detail properties + create-job-at-property | OPS-002 |
 | UX-016 | **CLOSED (UX-A)** | Job list job # / address / search | OPS-005 |
