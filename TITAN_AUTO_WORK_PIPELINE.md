@@ -12,7 +12,7 @@
 |-------|-----|--------|--------|----------|
 | 1 | Xero recovery fix | **PASS** (code + staging deploy) | `9bec8c3` | `diagnostic-output/187-xero-import-recovery-verify.json` |
 | 1b | Xero payments SQL fix | **PASS** (code/tests) / **STAGING DEPLOY UNVERIFIED** | `162cbf4`, `4a24b89` | `diagnostic-output/194-payments-sql-fix.json` |
-| 2 | Xero import GO | **NO-GO** — import quiescent + `last_sync_at` set; **CV-001b** `cvMetricsRefreshJobId` still null | `60b4829` | `202-xero-go-verdict.json`, `205-cv-001b-post-xero-go.json`, `187` |
+| 2 | Xero import GO | **NO-GO** — deploy `8c3e7b7` recovery **PASS** (job `8e6aec9b` completed, `last_sync_at` set); **CV-001b** connector marker still null | `8c3e7b7` | `198-xero-go-verdict.json`, `197-xero-go-recovery-monitor.json`, `201-cv-001b-post-xero-go.json`, `187` |
 | 3 | SPI-001 Supplier Price Intelligence | **PASS** (code/tests) / **FAIL** (staging migration) | `0b6b911` | `189-spi001-staging-verify.json` |
 | 4 | YGP-001 Young Guns Pricing | **QUEUED** | — | blocked until SPI-001 staging PASS |
 | 5 | E2E margin flow verify | **QUEUED** | — | `188-supplier-to-margin-e2e-verify.json` |
