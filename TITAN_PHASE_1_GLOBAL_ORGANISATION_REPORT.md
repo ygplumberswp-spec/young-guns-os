@@ -94,10 +94,12 @@ Shared shell: `FinancePhaseHoldPage` + `FinanceNav` tabs (includes new sections)
 ## Deploy
 
 - **Service:** `comfortable-determination` (staging web only)
+- **Deployment ID:** `410dea41-e2a2-4822-81eb-fbfcb5abc2ef` (SUCCESS)
 - **Production:** untouched
 - **API:** no deploy (nav changes are web-only)
 - **Migrations:** none
 - **Xero writes:** none
+- **Staging verdict @ 236:** **GO** — 35 screenshots (Owner/Accountant/Dispatcher × 5 viewports)
 
 ---
 

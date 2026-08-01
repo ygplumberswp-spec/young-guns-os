@@ -1,0 +1,527 @@
+{
+  "schemaVersion": "phase1-global-organisation-v1",
+  "label": "236-phase1-global-organisation-verify",
+  "generatedAt": "2026-08-01T21:04:50.960Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "fd7a4da0254d09ff145a6ec7596ab74ea92e82bf",
+  "deploy": {
+    "service": "comfortable-determination",
+    "environment": "staging",
+    "deploymentId": "410dea41-e2a2-4822-81eb-fbfcb5abc2ef",
+    "status": "SUCCESS",
+    "productionTouched": false,
+    "apiDeployed": false
+  },
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "viewports": [
+    "1440",
+    "1280",
+    "1024",
+    "768",
+    "375"
+  ],
+  "roles": [
+    {
+      "id": "owner",
+      "roleName": "Company Owner",
+      "navLabels": [
+        "Dashboard",
+        "Customers",
+        "Leads",
+        "Jobs",
+        "Scheduling",
+        "Quotes",
+        "Invoices",
+        "Payments",
+        "Receivables",
+        "Bills & Payables",
+        "Cashflow",
+        "Live Dispatch",
+        "Fleet",
+        "Inventory",
+        "Procurement",
+        "Documents",
+        "Communications",
+        "Analytics",
+        "Marketing",
+        "AURA Team",
+        "Automation Command Centre",
+        "Company Health"
+      ],
+      "expectNav": [
+        "Dashboard",
+        "Receivables",
+        "Live Dispatch",
+        "AURA Team"
+      ],
+      "denyNav": [
+        "Settings"
+      ],
+      "expectPass": true,
+      "denyPass": true,
+      "pages": [
+        {
+          "route": "/",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/settings/company",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/settings/company",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/settings/company",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/settings/company",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/",
+          "viewport": "375",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "375",
+          "ok": true
+        },
+        {
+          "route": "/settings/company",
+          "viewport": "375",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "id": "accountant",
+      "roleName": "Accountant",
+      "navLabels": [
+        "Dashboard",
+        "Customers",
+        "Quotes",
+        "Invoices",
+        "Payments",
+        "Receivables",
+        "Bills & Payables",
+        "Cashflow",
+        "Documents",
+        "Analytics"
+      ],
+      "expectNav": [
+        "Quotes",
+        "Receivables",
+        "Bills & Payables",
+        "Cashflow"
+      ],
+      "denyNav": [
+        "Live Dispatch",
+        "Scheduling"
+      ],
+      "expectPass": true,
+      "denyPass": true,
+      "pages": [
+        {
+          "route": "/finance/receivables",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "375",
+          "ok": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "375",
+          "ok": true
+        }
+      ]
+    },
+    {
+      "id": "dispatcher",
+      "roleName": "Dispatcher",
+      "navLabels": [
+        "Dashboard",
+        "Customers",
+        "Leads",
+        "Jobs",
+        "Scheduling",
+        "Quotes",
+        "Invoices",
+        "Payments",
+        "Live Dispatch",
+        "Documents",
+        "Communications"
+      ],
+      "expectNav": [
+        "Jobs",
+        "Scheduling",
+        "Live Dispatch"
+      ],
+      "denyNav": [
+        "Receivables",
+        "AURA Team",
+        "Analytics"
+      ],
+      "expectPass": true,
+      "denyPass": true,
+      "pages": [
+        {
+          "route": "/jobs",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/mobile-platform/dispatcher",
+          "viewport": "1440",
+          "ok": true
+        },
+        {
+          "route": "/jobs",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/mobile-platform/dispatcher",
+          "viewport": "1280",
+          "ok": true
+        },
+        {
+          "route": "/jobs",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/mobile-platform/dispatcher",
+          "viewport": "1024",
+          "ok": true
+        },
+        {
+          "route": "/jobs",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/mobile-platform/dispatcher",
+          "viewport": "768",
+          "ok": true
+        },
+        {
+          "route": "/jobs",
+          "viewport": "375",
+          "ok": true
+        },
+        {
+          "route": "/mobile-platform/dispatcher",
+          "viewport": "375",
+          "ok": true
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "role": "owner",
+      "route": "/",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-dashboard-1440.png"
+    },
+    {
+      "role": "owner",
+      "route": "/finance/receivables",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-finance_receivables-1440.png"
+    },
+    {
+      "role": "owner",
+      "route": "/settings/company",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-settings_company-1440.png"
+    },
+    {
+      "role": "owner",
+      "route": "/",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-dashboard-1280.png"
+    },
+    {
+      "role": "owner",
+      "route": "/finance/receivables",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-finance_receivables-1280.png"
+    },
+    {
+      "role": "owner",
+      "route": "/settings/company",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-settings_company-1280.png"
+    },
+    {
+      "role": "owner",
+      "route": "/",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-dashboard-1024.png"
+    },
+    {
+      "role": "owner",
+      "route": "/finance/receivables",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-finance_receivables-1024.png"
+    },
+    {
+      "role": "owner",
+      "route": "/settings/company",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-settings_company-1024.png"
+    },
+    {
+      "role": "owner",
+      "route": "/",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-dashboard-768.png"
+    },
+    {
+      "role": "owner",
+      "route": "/finance/receivables",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-finance_receivables-768.png"
+    },
+    {
+      "role": "owner",
+      "route": "/settings/company",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-settings_company-768.png"
+    },
+    {
+      "role": "owner",
+      "route": "/",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-dashboard-375.png"
+    },
+    {
+      "role": "owner",
+      "route": "/finance/receivables",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-finance_receivables-375.png"
+    },
+    {
+      "role": "owner",
+      "route": "/settings/company",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/owner-settings_company-375.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/receivables",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_receivables-1440.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/payables",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_payables-1440.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/receivables",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_receivables-1280.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/payables",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_payables-1280.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/receivables",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_receivables-1024.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/payables",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_payables-1024.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/receivables",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_receivables-768.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/payables",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_payables-768.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/receivables",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_receivables-375.png"
+    },
+    {
+      "role": "accountant",
+      "route": "/finance/payables",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/accountant-finance_payables-375.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/jobs",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-jobs-1440.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/mobile-platform/dispatcher",
+      "viewport": "1440",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-mobile-platform_dispatcher-1440.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/jobs",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-jobs-1280.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/mobile-platform/dispatcher",
+      "viewport": "1280",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-mobile-platform_dispatcher-1280.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/jobs",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-jobs-1024.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/mobile-platform/dispatcher",
+      "viewport": "1024",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-mobile-platform_dispatcher-1024.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/jobs",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-jobs-768.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/mobile-platform/dispatcher",
+      "viewport": "768",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-mobile-platform_dispatcher-768.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/jobs",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-jobs-375.png"
+    },
+    {
+      "role": "dispatcher",
+      "route": "/mobile-platform/dispatcher",
+      "viewport": "375",
+      "path": "diagnostic-output/phase1-global-org-staging/dispatcher-mobile-platform_dispatcher-375.png"
+    }
+  ],
+  "checks": {
+    "groupedSidebar": true,
+    "settingsHeaderWorkspace": true,
+    "financeHoldPages": true,
+    "roleNavFiltering": true
+  },
+  "verdict": "GO"
+}

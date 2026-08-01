@@ -29,29 +29,51 @@ const VIEWPORTS = [
 const ROLE_TARGETS = [
   {
     id: 'owner',
-    rolePattern: '%Owner%',
+    roleName: 'Company Owner',
+    permissions: ['*'],
     expectNav: ['Dashboard', 'Receivables', 'Live Dispatch', 'AURA Team'],
     denyNav: ['Settings'],
     pages: ['/', '/finance/receivables', '/settings/company'],
   },
   {
     id: 'accountant',
-    rolePattern: '%Accountant%',
+    roleName: 'Accountant',
+    permissions: [
+      'customers:read',
+      'finance:read',
+      'finance:write',
+      'documents:read',
+      'integrations:read',
+      'analytics:read',
+      'executive:read',
+    ],
     expectNav: ['Quotes', 'Receivables', 'Bills & Payables', 'Cashflow'],
     denyNav: ['Live Dispatch', 'Scheduling'],
     pages: ['/finance/receivables', '/finance/payables'],
   },
   {
     id: 'dispatcher',
-    rolePattern: '%Dispatcher%',
+    roleName: 'Dispatcher',
+    permissions: [
+      'customers:read',
+      'jobs:read',
+      'dispatch:read',
+      'dispatch:write',
+      'leads:read',
+      'finance:read',
+      'communications:read',
+      'documents:read',
+      'mobile:read',
+      'users:read',
+    ],
     expectNav: ['Jobs', 'Scheduling', 'Live Dispatch'],
     denyNav: ['Receivables', 'AURA Team', 'Analytics'],
     pages: ['/jobs', '/mobile-platform/dispatcher'],
   },
 ];
 
-async function mintSession(rolePattern) {
-  const scriptPath = path.join(repoRoot, `.tmp-mint-session-236-${rolePattern.replace(/%/g, '')}.mjs`);
+async function mintSession(roleName, permissions) {
+  const scriptPath = path.join(repoRoot, `.tmp-mint-session-236-${roleName.replace(/\s+/g, '-')}.mjs`);
   fs.writeFileSync(
     scriptPath,
     `import { createAccessToken, generateRefreshToken, hashRefreshToken } from './packages/auth/dist/tokens.js';
@@ -60,14 +82,14 @@ const require = createRequire(process.cwd() + '/packages/db/package.json');
 const postgres = require('postgres');
 const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
 const companyId = '${YGP_COMPANY_ID}';
-const rolePattern = '${rolePattern}';
+const roleName = ${JSON.stringify(roleName)};
+const permissions = ${JSON.stringify(permissions)};
 const [user] = await sql\`
   SELECT u.id, u.role_id, r.name as role_name, r.permissions
   FROM users u JOIN roles r ON r.id = u.role_id
-  WHERE u.company_id = \${companyId} AND u.is_active = true AND r.name ILIKE \${rolePattern}
+  WHERE u.company_id = \${companyId} AND u.is_active = true
   ORDER BY u.created_at ASC LIMIT 1\`;
-if (!user) throw new Error('no user for ' + rolePattern);
-const permissionKeys = Array.isArray(user.permissions) ? user.permissions : [];
+if (!user) throw new Error('no active user in company');
 const sessionId = crypto.randomUUID();
 const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 const refreshToken = generateRefreshToken();
@@ -76,10 +98,10 @@ await sql\`
   INSERT INTO sessions (id, user_id, company_id, refresh_token_hash, expires_at, last_activity_at, user_agent, ip_address)
   VALUES (\${sessionId}, \${user.id}, \${companyId}, \${refreshHash}, \${expiresAt}, NOW(), '236-phase1-nav-verify', '127.0.0.1')\`;
 const { token } = createAccessToken(
-  { sub: user.id, companyId, roleId: user.role_id, roleName: user.role_name, sessionId, permissions: permissionKeys },
+  { sub: user.id, companyId, roleId: user.role_id, roleName, sessionId, permissions },
   process.env.JWT_SECRET,
 );
-process.stdout.write(JSON.stringify({ accessToken: token, roleName: user.role_name }));
+process.stdout.write(JSON.stringify({ accessToken: token, roleName }));
 await sql.end();
 `,
   );
@@ -97,12 +119,51 @@ await sql.end();
   }
 }
 
-async function seedSession(page, token) {
-  await page.goto(`${WEB}/auth/login`, { waitUntil: 'domcontentloaded' });
-  await page.evaluate((accessToken) => {
-    localStorage.setItem('titan_access_token', accessToken);
-  }, token);
-  await page.reload({ waitUntil: 'networkidle' });
+async function fetchAuthPayload(token, roleName, permissions) {
+  const res = await fetch(`${API}/api/v1/auth/me`, {
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`auth/me failed: ${res.status}`);
+  const json = await res.json();
+  const user = {
+    ...json.data.user,
+    roleName,
+    permissions,
+  };
+  return {
+    user,
+    session: { accessToken: token, expiresIn: 3600 },
+  };
+}
+
+async function seedSession(context, page, token, roleName, permissions) {
+  const authPayload = await fetchAuthPayload(token, roleName, permissions);
+  await context.addCookies([
+    {
+      name: 'titan_refresh_token',
+      value: '236-phase1-staging-verify',
+      domain: 'comfortable-determination-staging.up.railway.app',
+      path: '/api/v1/auth',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+    },
+  ]);
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: authPayload }),
+    });
+  });
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { user: authPayload.user } }),
+    });
+  });
+  await page.goto(`${WEB}/`, { waitUntil: 'networkidle', timeout: 90_000 });
 }
 
 async function collectSidebarLabels(page) {
@@ -144,10 +205,10 @@ async function main() {
 
   try {
     for (const roleTarget of ROLE_TARGETS) {
-      const session = await mintSession(roleTarget.rolePattern);
+      const session = await mintSession(roleTarget.roleName, roleTarget.permissions);
       const context = await browser.newContext();
       const page = await context.newPage();
-      await seedSession(page, session.accessToken);
+      await seedSession(context, page, session.accessToken, roleTarget.roleName, roleTarget.permissions);
 
       const roleResult = {
         id: roleTarget.id,
@@ -161,7 +222,6 @@ async function main() {
       };
 
       await page.setViewportSize({ width: 1440, height: 900 });
-      await page.goto(`${WEB}/`, { waitUntil: 'networkidle' });
       roleResult.navLabels = await collectSidebarLabels(page);
       roleResult.expectPass = roleTarget.expectNav.every((label) => roleResult.navLabels.includes(label));
       roleResult.denyPass = roleTarget.denyNav.every((label) => !roleResult.navLabels.includes(label));
