@@ -1,0 +1,105 @@
+{
+  "label": "215-cv-fix-deploy-verify",
+  "generatedAt": "2026-08-01T18:25:55Z",
+  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
+  "branch": "cursor/xero-payments-hotfix",
+  "commit": "529d27f",
+  "environment": "staging",
+  "stagingUrl": "https://young-guns-os-staging.up.railway.app",
+  "railway": {
+    "project": "sweet-victory",
+    "service": "young-guns-os",
+    "activeDeploymentId": "eeef45dd-f2a4-4ca7-8687-954c82471fbf",
+    "deployAttempts": [
+      {
+        "id": "09636134-5b4b-420c-b797-723edc2e853e",
+        "status": "SKIPPED",
+        "method": "railway up -d"
+      },
+      {
+        "id": "4ac1a2ff-ddb7-4dba-bf31-03bc18b69807",
+        "status": "REMOVED",
+        "method": "cli redeploy chain"
+      },
+      {
+        "id": "eeef45dd-f2a4-4ca7-8687-954c82471fbf",
+        "status": "SUCCESS",
+        "method": "cli deploy (active)"
+      }
+    ]
+  },
+  "healthReady": {
+    "path": "/api/v1/health/ready",
+    "httpStatus": 200,
+    "schedulersEnabled": true,
+    "checkedAt": "2026-08-01T18:25:55Z"
+  },
+  "schedulerWait": {
+    "waitedSeconds": "~15m polling (60-90s ticks + extended)",
+    "cvMetricsRefreshJobIdViaSettle": "not yet \u2014 import job 93144ea8 still running; marker set only on handleXeroImportJobSettled or scheduler backfill after quiescence",
+    "importProgressAtVerify": {
+      "jobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+      "jobStatus": "running",
+      "errorMessage": null,
+      "checkpoint": {
+        "stage": "payments",
+        "contactsPage": 8,
+        "invoicesPage": 7,
+        "paymentsPage": 1,
+        "bankTransactionsPage": 1
+      },
+      "heartbeatAt": "2026-08-01T18:25:47.242Z",
+      "activity": "processing",
+      "resumedFromAbandoned": false,
+      "contactsPulled": 0,
+      "invoicesPulled": 0,
+      "completedStages": [
+        "contacts",
+        "invoices"
+      ]
+    }
+  },
+  "probe187": {
+    "artifact": "diagnostic-output/187-xero-import-recovery-verify.mjs",
+    "outputArtifact": "diagnostic-output/187-xero-import-recovery-verify.json",
+    "verdict": "IN_PROGRESS",
+    "cv_auto_recalc_fired": "FAIL",
+    "checks": {
+      "job_status_completed": false,
+      "last_sync_at_populated": true,
+      "contacts_mappings_present": true,
+      "invoice_mappings_present": true,
+      "payment_mappings_present": true,
+      "no_duplicate_customer_mappings": true,
+      "cv_auto_recalc_fired": false,
+      "recovery_checkpoint_or_resuming": true
+    },
+    "cvMetrics": {
+      "cvMetricsRefreshJobId": null,
+      "cvMetricsRefreshAt": null
+    },
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 3078
+    },
+    "connection": {
+      "status": "connected",
+      "lastSyncAt": "2026-08-01T17:37:22.876Z",
+      "lastError": null
+    }
+  },
+  "phase2Go": {
+    "decision": "no",
+    "reason": "187 verdict IN_PROGRESS; cv_auto_recalc_fired FAIL until import 93144ea8 completes and CV refresh marks connector autoSync"
+  },
+  "remainingBlocker": "Staging Xero import job 93144ea8 must reach completed; then re-run 187 \u2014 expect cvMetricsRefreshJobId and PASS if no new errors (CV-001b schema drift fix deployed)",
+  "constraintsHonoured": {
+    "stagingOnly": true,
+    "noProduction": true,
+    "noMigrations0107_0110": true,
+    "noMergeToMain": true,
+    "integrationLockBranchUntouched": true
+  }
+}
