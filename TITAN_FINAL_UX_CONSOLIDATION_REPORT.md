@@ -117,3 +117,66 @@ pnpm --filter @titan/web run test
 **Validation:** `pnpm run typecheck`, `@titan/web` test + build — pass.
 
 **Staging:** Railway `comfortable-determination` (sweet-victory) — deploy triggered for `491e397`; HTTP 200 at https://comfortable-determination-staging.up.railway.app (report updated at `a3405c3`).
+
+---
+
+## Responsive Layout Addendum (commit `99159f9`)
+
+**Scope:** Staging-only CSS fix — no integration lock, no Company Health scope redo, preserves `491e397` / `AppContentContainer` / layout tokens.
+
+### Problem
+
+Dashboard summary cards and `.stat-grid` rows used conflicting rules (`index.css` fixed 4-col + `auto-fit minmax(11rem)`), causing cramped overlap and unpredictable column counts at laptop widths (1024–1439px).
+
+### Breakpoints (owner spec)
+
+| Viewport | Summary cards (`--cols-4` / `.stat-grid`) |
+|----------|-------------------------------------------|
+| ≥1440px | 4 columns (dashboard); `.stat-grid` auto-fit ≥16rem min |
+| 1200–1439px | 3 columns |
+| 1024–1199px | 2 columns |
+| 768–1023px | 2 columns |
+| <768px | 1 column |
+
+Company Health areas: 2 columns ≥768px, 1 column below. AURA business dashboard and Mission Control split stack below 768px.
+
+### CSS tokens added (`layout-grid.css`)
+
+| Token | Value |
+|-------|-------|
+| `--titan-bp-mobile` | `48rem` (768px) |
+| `--titan-bp-tablet` | `64rem` (1024px) |
+| `--titan-bp-desktop-sm` | `75rem` (1200px) |
+| `--titan-bp-desktop` | `90rem` (1440px) |
+| `--titan-summary-card-min` | `16rem` |
+| `--titan-summary-grid-gap` | `var(--titan-rhythm-cards)` |
+| `--titan-touch-target-min` | `2.75rem` (44px) |
+
+### Files touched
+
+| File | Change |
+|------|--------|
+| `apps/web/src/styles/layout-grid.css` | App-wide `.ux-summary-grid` + `.stat-grid` responsive rules; overflow-x clip on container; 768px stack for AURA / Mission Control / Company Health |
+| `apps/web/src/index.css` | Removed duplicate/conflicting `.dashboard-stats` and `.stat-grid` / `.ux-summary-grid` column rules |
+
+### Pages verified (via shared grid classes)
+
+- **Dashboard** — `SummaryCardGrid columns={4}` (`DashboardStats`, `TodayAtAGlanceGrid`)
+- **Company Health** — `SummaryCardGrid` stat row + `company-health-areas` grid
+- **Leads** — `.stat-grid` on `LeadListPage`
+- **Customers / Finance / Settings / AURA** — inherit `.stat-grid` or page-shell tokens app-wide
+
+### Validation
+
+```bash
+pnpm run typecheck          # pass
+pnpm --filter @titan/web run test   # 133 pass
+pnpm --filter @titan/web run build  # pass
+```
+
+### Staging deploy
+
+- **Commit:** `99159f9` on `cursor/visual-alignment-polish`
+- **Service:** Railway `comfortable-determination` (sweet-victory)
+- **Deploy:** `railway up --service comfortable-determination` from `apps/web`
+- **URL:** https://comfortable-determination-staging.up.railway.app
