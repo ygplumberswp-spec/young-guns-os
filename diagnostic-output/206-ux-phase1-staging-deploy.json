@@ -2,7 +2,7 @@
   "label": "206-ux-phase1-staging-deploy",
   "purpose": "Staging deploy attempt for Owner UX Phase 1 review (cursor/ux-hardening-phase1 only; no merge)",
   "branch": "cursor/ux-hardening-phase1",
-  "targetSha": "06121a5dcd43b1c547f455213e2056f51dd83d04f",
+  "targetSha": "32464b81e07c9813542020eedf1b02053bc139e9",
   "uxFeatureSha": "7347a59a2412bcf1b6ae6ec37bc4fece271577a3",
   "deployAttempted": true,
   "deployMethod": [
@@ -44,12 +44,13 @@
   },
   "ownerApprovalRequiredForMerge": true,
   "ownerNextSteps": [
-    "Railway dashboard → sweet-victory → staging → set deploy branch to cursor/ux-hardening-phase1 (or redeploy latest commit 06121a5 on both young-guns-os and comfortable-determination), OR",
+    "Railway dashboard \u2192 sweet-victory \u2192 staging \u2192 set deploy branch to cursor/ux-hardening-phase1 (or redeploy latest commit 06121a5 on both young-guns-os and comfortable-determination), OR",
     "Approve merge of cursor/ux-hardening-phase1 into cursor/titan-frozen-scope-completion and redeploy staging from completion"
   ],
   "constraintsHonored": {
     "noMergeToCompletion": true,
     "noProduction": true
   },
-  "finishedAt": "2026-08-01T15:48:00.000Z"
+  "finishedAt": "2026-08-01T15:48:00.000Z",
+  "deployTriggerSha": "06121a532557f88ba2e64702b954c80022c62b53"
 }
