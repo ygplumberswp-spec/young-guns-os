@@ -297,3 +297,8 @@ pnpm run typecheck                    # pass
 pnpm --filter @titan/web run test     # 133 pass
 pnpm --filter @titan/web run build    # pass
 ```
+
+- **Commit:** `6135383` on `cursor/visual-alignment-polish` (pushed)
+- **Service:** Railway `comfortable-determination` only (no production)
+- **Deploy:** `railway up --service comfortable-determination` — **submitted**
+- **URL:** https://comfortable-determination-staging.up.railway.app
