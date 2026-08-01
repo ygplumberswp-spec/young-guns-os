@@ -16,6 +16,18 @@ Every freeze section (FRZ-001 … FRZ-023) and traceability row is subject to th
 
 Classification **Verified complete** requires binding-rule compliance — not code existence alone. See `TITAN_COMPLETE_APP_AUDIT.md` for module-level PASS/PARTIAL/FAIL register.
 
+### Customer value classification (Phase 1 — 2026-08-01)
+
+| Item | Status | Evidence |
+|------|--------|----------|
+| Binding definitions + metric catalog | **Implemented** | `TITAN_CUSTOMER_VALUE_CLASSIFICATION.md` |
+| Shared types + pure classifier | **Implemented** | `@titan/shared` `customer-value-classification.ts` |
+| API `GET /api/v1/customers/value-metrics` | **Implemented** | `apps/api/src/routes/customers.ts` |
+| API `GET /api/v1/customers?classification=` | **Implemented** | Same |
+| Marketing eligibility (paying/fully paid + consent) | **Extended** | `marketing-eligibility.service.ts` |
+| Staging probe (Young Guns, counts only) | **Pending Owner DB URL** | `182-customer-value-classification-staging-probe.json` |
+| Dashboard/CRM metric cards | **Partial** | `CustomerValueMetricsPanel` — AURA/collections deep-links next sprint |
+
 ---
 
 ## Classification legend (binding)

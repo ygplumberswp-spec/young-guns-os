@@ -1,14 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
 import { fetchCustomers } from '../../lib/crm-api';
+import { fetchCustomersByClassification } from '../../lib/customer-value-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { CacheStaleNotice } from '../../components/CacheStaleNotice';
-import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/crm/CustomerList';
+import {
+  canAccessCrm,
+  canManageCustomers,
+  CustomerList,
+} from '../../features/crm/CustomerList';
+import { CustomerValueMetricsPanel } from '../../features/crm/CustomerValueMetricsPanel';
 
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
+  const searchParams = useSearch();
+  const classificationParam = new URLSearchParams(searchParams).get('classification');
+  const classificationFilter =
+    classificationParam && isCustomerValueClassificationFilterKey(classificationParam)
+      ? classificationParam
+      : null;
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -28,9 +41,19 @@ export function CustomerListPage() {
     isStale,
     refetch,
   } = useStaffCachedQuery({
-    queryKey: `crm/customers:${debouncedSearch}`,
+    queryKey: `crm/customers:${classificationFilter ?? 'all'}:${debouncedSearch}`,
     enabled: canView,
-    fetcher: async () => fetchCustomers(accessToken!, debouncedSearch),
+    fetcher: async () => {
+      if (classificationFilter) {
+        const rows = await fetchCustomersByClassification(
+          accessToken!,
+          classificationFilter,
+          debouncedSearch,
+        );
+        return rows.map(({ valueClassification: _valueClassification, ...customer }) => customer);
+      }
+      return fetchCustomers(accessToken!, debouncedSearch);
+    },
   });
 
   if (!canView) {
@@ -41,11 +64,19 @@ export function CustomerListPage() {
     );
   }
 
+  const filterLabel = classificationFilter
+    ? CUSTOMER_VALUE_CLASSIFICATION_LABELS[classificationFilter]
+    : null;
+
   return (
     <div className="crm-page">
       <PageHeader
         title="Customers"
-        description="Search by name, phone, email or property address."
+        description={
+          filterLabel
+            ? `Filtered: ${filterLabel}. Search within this classification.`
+            : 'Search by name, phone, email or property address.'
+        }
         actions={
           canWrite ? (
             <Link href="/crm/new">
@@ -54,6 +85,17 @@ export function CustomerListPage() {
           ) : undefined
         }
       />
+
+      {classificationFilter ? (
+        <p className="page-muted">
+          Showing {filterLabel}.{' '}
+          <Link href="/crm" className="crm-link">
+            Clear filter
+          </Link>
+        </p>
+      ) : null}
+
+      <CustomerValueMetricsPanel compact />
 
       <CacheStaleNotice isStale={isStale} error={error} onRetry={() => void refetch()} />
 

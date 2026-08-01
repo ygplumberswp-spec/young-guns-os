@@ -76,6 +76,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | UX-025 / UX-027 | ~~Comms may be log-only; Gmail/n8n false capability~~ **CLOSED staging** | CLOSED | False ops trust | Truthful send states + Decision 4/6 — **COM-006–007, COM-011, AI-006** |
 | UX-026 | ~~Marketing Execute without consent/eligibility / real send~~ **CLOSED staging (UX-H)** | CLOSED | POPIA + fake success | Gate + honest execute (no provider send) — **MKT-001, CD-006–007** |
 | UX-033 | ~~n8n backbone absent~~ **CLOSED staging (UX-J)** for Automations visibility | CLOSED | Live cloud n8n still OUT | Decision 5–6 — **AUT-002, COM-011** |
+| **CV-001** | Customer value classification (invoiced vs paid, 8 buckets) | **PARTIAL** | CRM/finance/marketing alignment | **Phase 1 foundation 2026-08-01** — API + shared classifier + dashboard cards; AURA/collections UI next sprint | `TITAN_CUSTOMER_VALUE_CLASSIFICATION.md`, `182-customer-value-classification-staging-probe.json` |
 
 ---
 

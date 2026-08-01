@@ -16,6 +16,7 @@ import { scheduleDashboardBackgroundPrep } from '../../lib/route-prefetch-regist
 import { DASHBOARD_METRICS } from './constants';
 import { DashboardMetricIcon } from './DashboardMetricIcon';
 import { DashboardWelcome } from './DashboardWelcome';
+import { CustomerValueMetricsPanel } from '../crm/CustomerValueMetricsPanel';
 
 export function DashboardStats() {
   const { accessToken, user } = useAuth();
@@ -254,6 +255,7 @@ export function DashboardStats() {
           </div>
         ))}
       </section>
+      {canViewCustomers ? <CustomerValueMetricsPanel compact /> : null}
     </>
   );
 }

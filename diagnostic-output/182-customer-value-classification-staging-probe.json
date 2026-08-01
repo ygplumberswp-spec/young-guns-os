@@ -1,0 +1,13 @@
+{
+  "label": "182-customer-value-classification-staging-probe",
+  "generatedAt": "2026-08-01T11:38:52.298Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "verdict": "ERROR",
+  "xeroImportInProgress": null,
+  "youngGunsCompanyId": null,
+  "metrics": null,
+  "notes": [
+    "Read-only probe failed: password authentication failed for user \"postgres\""
+  ]
+}

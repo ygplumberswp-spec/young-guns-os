@@ -120,6 +120,7 @@ Rationale:
 | Migration register | `TITAN_MIGRATION_REGISTER.md` | Created Phase 0 |
 | Test evidence index | `TITAN_TEST_EVIDENCE_INDEX.md` | Created Phase 0 |
 | Pilot readiness report | `TITAN_PILOT_READINESS_REPORT.md` | Created Phase 0 |
+| **Customer value classification** | `TITAN_CUSTOMER_VALUE_CLASSIFICATION.md` | **Phase 1 foundation — 2026-08-01** |
 | Prior audit (reference) | `TITAN_MASTER_ACCEPTANCE_REGISTER.md` | Retained |
 
 ---

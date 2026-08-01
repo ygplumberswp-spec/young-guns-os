@@ -32,7 +32,7 @@ TITAN has substantial implementation (~155 web pages, 84 API route modules) but 
 |------|---------|----------------------|------------------|
 | **Auth & session** | PARTIAL | (3)(7) — hard-refresh fix deployed `7741976`; MFA local only | `session-expiry.test.ts`, staging session UX pending full live proof |
 | **RBAC & tenant isolation** | **PASS** | Meets (5)(6)(9) — 97 cross-tenant + 71 forbidden-action tests; Sprint 022 staging GO | `cross-tenant-denial-matrix.test.ts` |
-| **Leads & CRM** | PARTIAL | (3)(10) — Phase 5 staging GO; `lead.converted` domain event wired | `staging-phase5-public-e2e.mjs` |
+| **Leads & CRM** | PARTIAL | (3)(10) — Phase 5 staging GO; **customer value classification Phase 1** (8 buckets, API + dashboard cards) | `TITAN_CUSTOMER_VALUE_CLASSIFICATION.md`, `staging-phase5-public-e2e.mjs` |
 | **Jobs & properties** | PARTIAL | (3)(10) — Phase 5 chain; job lifecycle events partial | Phase 5/6 E2E |
 | **Scheduling & dispatch** | PARTIAL | (3)(4) — Phase 6 staging GO; `job.scheduled` event; live map depth open | Sprint 017 |
 | **Technician mobile** | PARTIAL | (3)(7)(10) — UX-B staging GO; offline idempotency local | `mobile-offline-completion.test.ts` |

@@ -1369,6 +1369,14 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/customers',
+  createCustomersRouter({
+    customerValueClassificationService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/marketing-eligibility',
   createMarketingEligibilityRouter({
     marketingEligibilityService,

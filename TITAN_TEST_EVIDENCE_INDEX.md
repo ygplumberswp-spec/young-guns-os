@@ -77,6 +77,8 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `packages/shared/src/nav-honesty.test.ts` | Nav capability honesty |
 | `apps/api/src/services/xero-oauth.test.ts` | Xero OAuth |
 | `apps/api/src/services/xero-import-sync.test.ts` | Xero import |
+| `packages/shared/src/customer-value-classification.test.ts` | **Customer value classification (CV-001)** |
+| `apps/api/src/services/customer-value-classification.test.ts` | Customer value metrics contract + tenant isolation |
 | `packages/shared/src/n8n-orchestration.test.ts` | n8n signing |
 | `apps/api/src/lib/n8n-signing.test.ts` | n8n HMAC |
 
@@ -211,6 +213,11 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `diagnostic-output/frz018d-xero-staging-post-sync-verify.mjs` | FRZ-018d post-sync probe script (DB + API; optional OWNER_ACCESS_TOKEN) |
 | `TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md` | **FRZ-019 local audit — PARTIAL** (settings exist; version/rollback missing) |
 | `diagnostic-output/173-frz019-config-studio-audit.json` | FRZ-019 structured local audit |
+| `TITAN_BINDING_ACCEPTANCE_RULE.md` | **GLOBAL BINDING ACCEPTANCE RULE** — 10 completion criteria app-wide |
+| `TITAN_COMPLETE_APP_AUDIT.md` | **Complete-app audit** — 27 areas classified |
+| `diagnostic-output/180-staging-data-cleanup-audit.json` | Staging data cleanup manifest evidence (1 preserve, 59 E2E candidates) |
+| `diagnostic-output/181-complete-app-audit.json` | Complete-app audit structured evidence |
+| `TITAN_STAGING_DATA_CLEANUP_MANIFEST.md` | Non-destructive cleanup manifest — **awaiting Owner approval** |
 
 ## Coverage gaps (Phase 2+ targets)
 

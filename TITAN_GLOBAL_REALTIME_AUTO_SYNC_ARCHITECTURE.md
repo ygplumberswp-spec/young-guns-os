@@ -127,3 +127,7 @@ Evidence: `diagnostic-output/179-global-autosync-staging-verify.json`
 - `apps/api/src/routes/background-work.ts`
 - `apps/web/src/features/shared/BackgroundWorkStatusPanel.tsx`
 - `apps/web/src/lib/background-work-api-client.ts`
+
+### Customer value classification (cross-ref)
+
+After Xero import completes, `GET /api/v1/customers/value-metrics` reads local `invoices` + `xero_customer_mappings` (read-only). While `integration_sync_jobs` import status is `pending`/`running`, metrics return `dataCompleteness: partial` — see `TITAN_CUSTOMER_VALUE_CLASSIFICATION.md`.

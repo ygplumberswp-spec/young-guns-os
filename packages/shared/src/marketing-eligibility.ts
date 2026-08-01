@@ -220,6 +220,7 @@ export type InvoiceClassificationInput = {
   amountPaidCents: number;
   totalCents: number;
   issuedAt: string | null;
+  dueDate?: string | null;
   updatedAt: string;
 };
 
