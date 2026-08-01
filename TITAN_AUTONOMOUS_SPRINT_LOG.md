@@ -342,3 +342,20 @@
 | **Tests** | `customer-visible-job-eta.test.ts` (3 pass); `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
 | **Approval required?** | No — local only; staging proof waits on Railway DB fix |
 | **Next phase selected** | Owner Railway env sync + public smokes; Phase 2 cross-tenant denial matrix (automated) |
+
+---
+
+## Sprint 021 — Phase 2 cross-tenant denial matrix (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 2 — Tenant isolation (execution plan risk #4) |
+| **Result** | `cross-tenant-denial-matrix.test.ts` — 97 new automated checks: 7 staff roles × 11 pilot domains, forged-tenant rejection, 9 key route wiring assertions, tenant company param guard (403/allow) |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `cross-tenant-denial-matrix.test.ts`, `apps/api/package.json` test script, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**362 pass**, +97 denial matrix), `pnpm build` — pass |
+| **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; MFA login gate e2e (risk #5) |

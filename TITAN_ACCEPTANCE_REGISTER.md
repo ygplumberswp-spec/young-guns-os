@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `767b947` (Sprint 017 staging verification)  
-**Updated (UTC):** 2026-08-01 — Sprint 018: migrations 0105–0106 on staging DB (journal 106); public API smokes blocked (Railway DB 28P01)  
+**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 021 Phase 2 denial matrix (post-commit)  
+**Updated (UTC):** 2026-08-01 — Sprint 021: automated cross-tenant API denial matrix (execution plan risk #4)  
 
 ---
 
@@ -44,7 +44,7 @@
 
 | Req ID | Freeze § | Summary | Role | DB | API | UI | Permissions | Tenant isolation | Loading/error/retry | Audit | Automated tests | Staging evidence | Provider dep | Approval dep | Classification | Gap | Owner | Commit | Evidence |
 |--------|----------|---------|------|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| FRZ-001 | §1–2 | Binding scope + definition of complete | All | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | Partial | — | — | Partially implemented | Control docs now exist; full traceability in progress | Cursor | Phase 0 | This register |
+| FRZ-001 | §1–2 | Binding scope + definition of complete | All | Partial | Partial | Partial | Partial | Partial | Partial | Partial | **Partial → Phase 2 matrix** | Partial | — | — | Partially implemented | Automated denial matrix (97 tests) for jobs/CRM/leads/finance/inventory/scheduling/team/procurement/fleet; live staging cross-tenant probe still blocked (503/28P01) | Cursor | Sprint 021 | `cross-tenant-denial-matrix.test.ts` |
 | FRZ-002 | §3 | One responsive app, role experiences | All | Yes | Yes | Yes | Yes | Yes | Partial | Partial | Yes | Mocks | — | — | Implemented, not staging-verified | `/my` alias + role guards need live re-proof | Cursor | 8d35bfd | `role-experience-routes.test.ts` |
 | FRZ-003 | §4 | Locked visual identity (SVG wordmark, fonts, login) | All | N/A | N/A | Partial | N/A | N/A | Partial | N/A | Yes | Staging reports + Sprint 004 shell tests | — | — | Partially implemented | Brand foundation closed; responsive shell contract tests added Phase 3 | Cursor | UX reports | `TitanWordmark.test.ts`, `brand-shell.test.ts` |
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |

@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 017 staging verification (Phases 5–12 smoke; migrations 0105–0106 blocked)  
-**Automated test files:** 52 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 021: Phase 2 cross-tenant denial matrix (97 automated tests)  
+**Automated test files:** 53 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **242 pass** (Sprint 017) |
+| `pnpm test` | shared → auth → web → api (sequential) — **362 pass** (Sprint 021) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -41,6 +41,7 @@
 | File | Domain |
 |------|--------|
 | `apps/api/src/lib/tenant-scope.test.ts` | Scope helpers |
+| `apps/api/src/lib/cross-tenant-denial-matrix.test.ts` | **Phase 2 denial matrix** — 7 roles × 11 domains + route wiring + param guard |
 
 ### Lead / job / finance contracts
 
@@ -174,7 +175,6 @@
 
 ## Coverage gaps (Phase 2+ targets)
 
-- Cross-tenant API denial matrix (automated)  
 - Session expiry UI e2e  
 - MFA login gate e2e  
 - Live Xero sync integration (staging, read-only)  
