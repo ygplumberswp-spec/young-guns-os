@@ -5,6 +5,22 @@
 
 ---
 
+## Sprint JOB-DEL-001 — Job cancel, archive & safe test-job delete (QUEUED)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | JOB-DEL-001 — Owner-only safe deletion of confirmed test/demo jobs; cancel + archive + restore |
+| **Result** | **QUEUED** — pipeline entry added; implementation blocked until Xero GO + migration window clear |
+| **Pipeline** | `TITAN_AUTO_WORK_PIPELINE.md` Phase 6 (after E2E margin / SPI-001 pricing phases) |
+| **Subagent** | Coordinate with `7443e5b5` — merge lifecycle code if in flight; no duplicate `job-lifecycle.service.ts` |
+| **Evidence (pre-impl audit)** | `diagnostic-output/190-job-delete-blocker-audit.json` — schema missing lifecycle cols; Xero import running |
+| **Hard gates** | No production; no YG real-job delete; no staging migration during active Xero import batches |
+| **Approval required?** | **Yes — Owner** — confirm test job id prefix before any staging soft-delete |
+| **Next phase selected** | Implement migration + API + UI after Phase 5 PASS; staging verify undeletable test job |
+
+---
+
 ## Sprint GLOBAL-AUTOSYNC-179 — App-wide real-time & auto-sync framework
 
 | Field | Value |
