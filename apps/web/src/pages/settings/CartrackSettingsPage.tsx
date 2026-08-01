@@ -437,7 +437,7 @@ export function CartrackSettingsPage() {
 
       <p className="page-muted">
         Need Titan vehicles first?{' '}
-        <Link href="/fleet" className="integration-link">
+        <Link href="/fleet/live-map" className="integration-link">
           Manage fleet
         </Link>
       </p>

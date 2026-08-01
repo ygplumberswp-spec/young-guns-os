@@ -90,6 +90,45 @@ export function createFleetRouter({
     }
   });
 
+  router.get('/trips', requireAnyPermission('fleet:read', 'fleet:write', 'dispatch:read'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const fromRaw = typeof req.query.from === 'string' ? req.query.from : null;
+    const toRaw = typeof req.query.to === 'string' ? req.query.to : null;
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    const from = fromRaw ? new Date(fromRaw) : startOfDay;
+    const to = toRaw ? new Date(toRaw) : endOfDay;
+
+    try {
+      const payload = await integrationsService.buildFleetTrips(companyId, from, to);
+      res.json({ data: payload });
+    } catch (error) {
+      handleIntegrationsError(res, error);
+    }
+  });
+
+  router.get('/drivers', requireAnyPermission('fleet:read', 'fleet:write', 'dispatch:read'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    try {
+      const payload = await integrationsService.buildFleetDrivers(companyId);
+      res.json({ data: payload });
+    } catch (error) {
+      handleIntegrationsError(res, error);
+    }
+  });
+
+  router.get('/events', requireAnyPermission('fleet:read', 'fleet:write', 'dispatch:read'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    try {
+      const payload = await integrationsService.buildFleetEvents(companyId);
+      res.json({ data: payload });
+    } catch (error) {
+      handleIntegrationsError(res, error);
+    }
+  });
+
   router.get('/vehicles', requireAnyPermission('fleet:read', 'fleet:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const vehicles = await fleetService.listVehicles(companyId);

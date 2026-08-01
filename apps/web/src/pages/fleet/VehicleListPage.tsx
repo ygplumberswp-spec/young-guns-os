@@ -6,7 +6,7 @@ import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessFleet, canManageFleet, VehicleList } from '../../features/fleet/VehicleList';
-import { FleetDispatchBoard } from '../../features/fleet/FleetDispatchBoard';
+import { FleetSectionNav } from '../../features/fleet/FleetSectionNav';
 
 export function VehicleListPage() {
   const { accessToken, user } = useAuth();
@@ -28,17 +28,19 @@ export function VehicleListPage() {
 
   if (!canView) {
     return (
-      <div className="fleet-page">
-        <PageHeader title="Fleet" description="You do not have permission to view fleet." />
+      <div className="fleet-page page-stack">
+        <FleetSectionNav />
+        <PageHeader title="Fleet vehicles" description="You do not have permission to view fleet." />
       </div>
     );
   }
 
   return (
-    <div className="fleet-page">
+    <div className="fleet-page page-stack">
+      <FleetSectionNav />
       <PageHeader
-        title="Fleet"
-        description="Manage company vehicles, live GPS map, and today's dispatch board."
+        title="Fleet vehicles"
+        description="Manage company vehicles and Cartrack mappings."
         actions={
           <div className="page-header-actions">
             <Link href="/fleet/live-map">
@@ -52,8 +54,6 @@ export function VehicleListPage() {
           </div>
         }
       />
-
-      <FleetDispatchBoard />
 
       <PageLoadState
         isLoading={isLoading}

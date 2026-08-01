@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-08-01T20:15:00.000Z",
+  "label": "227-fleet-live-map-route-fix",
+  "branch": "cursor/cartrack-live-map-final",
+  "baseCommit": "8b89ee498ceb2cc78d0f5ae98b592ff75eb80d0d",
+  "deployNote": "Deployed from uncommitted working tree atop 8b89ee4",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "rootCause": {
+    "summary": "Sidebar Fleet linked to /fleet (VehicleListPage) which embedded FleetDispatchBoard with legacy 'Today's dispatch board' and 'LIVE MAPS/ROUTING NOT IMPLEMENTED' copy. /fleet/live-map route existed but was not the default Fleet entry.",
+    "category": "wrong_default_route",
+    "legacyComponent": "FleetDispatchBoard on /fleet",
+    "notMissingRoute": true
+  },
+  "fix": {
+    "redirectFleetToLiveMap": true,
+    "removedDispatchBoardFromVehicleList": true,
+    "vehicleListMovedTo": "/fleet/vehicles",
+    "sidebarFleetHref": "/fleet/live-map",
+    "fleetSectionNavTabs": ["Live Map", "Vehicles", "Trips", "Alerts", "More: Drivers, Geofences, Route History, Events, Maintenance, Reports"],
+    "emptyStateCopy": "Waiting for first automatic GPS update from Cartrack background sync"
+  },
+  "deploy": {
+    "apiDeployId": "504b8cc8-5787-47a2-b889-221aef02cc81",
+    "webDeployId": "7965c591-1b58-4f2d-846e-3809cae2fb9a",
+    "webBundleBefore": "index-DJbTjbKs.js",
+    "webBundleAfter": "index-D8MgIk61.js",
+    "bundleContainsFleetLiveMapPage": true,
+    "bundleContainsFleetSectionNav": true,
+    "bundleContainsLegacyDispatch": false,
+    "bundleContainsNotImplemented": false
+  },
+  "routes": {
+    "/fleet": "redirect → /fleet/live-map",
+    "/fleet/live-map": 200,
+    "/fleet/vehicles": 200,
+    "/api/v1/fleet/live-map": 401,
+    "/api/v1/fleet/trips": 401,
+    "/api/v1/fleet/drivers": 401,
+    "/api/v1/fleet/events": 401
+  },
+  "gps": {
+    "source": "226-cartrack-live-map-final-verify.json",
+    "CF172047": 6,
+    "CF77263": 6,
+    "total": 12,
+    "lastSyncAt": "2026-08-01T19:45:27.386Z"
+  },
+  "authenticatedProof": {
+    "status": "PENDING",
+    "blocker": "OWNER_ACCESS_TOKEN not available in agent session; Young Guns tenant required for GPS on map",
+    "screenshotPath": "diagnostic-output/fleet-live-map-staging/ (capture script ready; Playwright browsers not installed locally)"
+  },
+  "verdict": "HOLD",
+  "verdictDetail": "Route fix deployed and bundle verified clean; HOLD until Owner authenticates Young Guns tenant and confirms map canvas with CF172047/CF77263 markers on /fleet/live-map"
+}

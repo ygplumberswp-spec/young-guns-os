@@ -1,7 +1,10 @@
 import type {
   CreateVehicleRequest,
+  FleetOwnerDriversResponse,
+  FleetOwnerEventsResponse,
   FleetLiveMapSnapshot,
   FleetStats,
+  FleetOwnerTripsResponse,
   JobAssignee,
   UpdateVehicleRequest,
   VehicleDetail,
@@ -11,6 +14,25 @@ import { request } from './api-client';
 
 export async function fetchFleetLiveMap(accessToken: string): Promise<FleetLiveMapSnapshot> {
   return request<FleetLiveMapSnapshot>('/fleet/live-map', { accessToken });
+}
+
+export async function fetchFleetTrips(
+  accessToken: string,
+  params?: { from?: string; to?: string },
+): Promise<FleetOwnerTripsResponse> {
+  const search = new URLSearchParams();
+  if (params?.from) search.set('from', params.from);
+  if (params?.to) search.set('to', params.to);
+  const suffix = search.toString() ? `?${search.toString()}` : '';
+  return request<FleetOwnerTripsResponse>(`/fleet/trips${suffix}`, { accessToken });
+}
+
+export async function fetchFleetDrivers(accessToken: string): Promise<FleetOwnerDriversResponse> {
+  return request<FleetOwnerDriversResponse>('/fleet/drivers', { accessToken });
+}
+
+export async function fetchFleetEvents(accessToken: string): Promise<FleetOwnerEventsResponse> {
+  return request<FleetOwnerEventsResponse>('/fleet/events', { accessToken });
 }
 
 export async function fetchFleetStats(accessToken: string): Promise<FleetStats> {

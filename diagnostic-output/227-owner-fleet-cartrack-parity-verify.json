@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-08-01T20:15:00.000Z",
+  "label": "227-owner-fleet-cartrack-parity-verify",
+  "branch": "cursor/cartrack-live-map-final",
+  "baseCommit": "8b89ee498ceb2cc78d0f5ae98b592ff75eb80d0d",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "rootCause": {
+    "summary": "Owner Fleet sidebar pointed to /fleet showing legacy FleetDispatchBoard instead of /fleet/live-map FleetLiveMapPage.",
+    "fix": "Fleet nav → /fleet/live-map, /fleet redirects, FleetSectionNav owner experience, enriched API snapshot."
+  },
+  "deploy": {
+    "apiDeployId": "504b8cc8-5787-47a2-b889-221aef02cc81",
+    "webDeployId": "7965c591-1b58-4f2d-846e-3809cae2fb9a",
+    "webBundleAfter": "index-D8MgIk61.js"
+  },
+  "health": {
+    "ready": {
+      "httpStatus": 200,
+      "database": "connected",
+      "schedulersEnabled": true
+    }
+  },
+  "web": {
+    "bundleContainsFleetLiveMapPage": true,
+    "bundleContainsLegacyDispatch": false,
+    "bundleContainsNotImplemented": false
+  },
+  "gps": {
+    "source": "226-verify (pre-deploy baseline unchanged)",
+    "CF172047": 6,
+    "CF77263": 6,
+    "total": 12,
+    "lastSyncAt": "2026-08-01T19:45:27.386Z"
+  },
+  "liveMap": {
+    "route": "/fleet/live-map",
+    "webHttpStatus": 200,
+    "apiEndpoint": "/api/v1/fleet/live-map",
+    "apiHttpStatusUnauthenticated": 401,
+    "clientPollMsVisible": 3000,
+    "pollsCachedTitanPositionsOnly": true
+  },
+  "fleetRoutes": {
+    "/fleet/live-map": 200,
+    "/fleet/vehicles": 200,
+    "/fleet/trips": 200,
+    "/fleet/alerts": 200,
+    "/fleet/drivers": 200,
+    "/fleet/geofences": 200,
+    "/fleet/route-history": 200
+  },
+  "features": {
+    "verdicts": {
+      "routeFix": "GO",
+      "liveMapUiShell": "GO",
+      "liveMapAuthenticatedGps": "HOLD",
+      "fleetNav": "GO",
+      "trips": "HOLD",
+      "drivers": "HOLD",
+      "events": "HOLD",
+      "alerts": "HOLD",
+      "geofences": "HOLD",
+      "maintenance": "HOLD",
+      "reports": "HOLD",
+      "customerEtaShare": "HOLD",
+      "mobileUx": "HOLD"
+    }
+  },
+  "screenshots": {
+    "directory": "diagnostic-output/fleet-live-map-staging",
+    "status": "PENDING",
+    "script": "diagnostic-output/fleet-live-map-staging-capture.mjs"
+  },
+  "verdict": "HOLD",
+  "blockers": [
+    "Authenticated Young Guns Owner session required to confirm GPS markers on /fleet/live-map",
+    "Screenshots pending (Playwright install or Owner browser verification)"
+  ]
+}

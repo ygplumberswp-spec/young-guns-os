@@ -176,6 +176,42 @@ export const FleetLiveMapPage = lazyNamed(
   () => import('../pages/fleet/FleetLiveMapPage'),
   'FleetLiveMapPage',
 );
+export const FleetTripsPage = lazyNamed(
+  () => import('../pages/fleet/FleetTripsPage'),
+  'FleetTripsPage',
+);
+export const FleetAlertsPage = lazyNamed(
+  () => import('../pages/fleet/FleetAlertsPage'),
+  'FleetAlertsPage',
+);
+export const FleetDriversPage = lazyNamed(
+  () => import('../pages/fleet/FleetDriversPage'),
+  'FleetDriversPage',
+);
+export const FleetGeofencesPage = lazyNamed(
+  () => import('../pages/fleet/FleetGeofencesPage'),
+  'FleetGeofencesPage',
+);
+export const FleetRouteHistoryPage = lazyNamed(
+  () => import('../pages/fleet/FleetRouteHistoryPage'),
+  'FleetRouteHistoryPage',
+);
+export const FleetEventsPage = lazyNamed(
+  () => import('../pages/fleet/FleetEventsPage'),
+  'FleetEventsPage',
+);
+export const FleetMaintenancePage = lazyNamed(
+  () => import('../pages/fleet/FleetMaintenancePage'),
+  'FleetMaintenancePage',
+);
+export const FleetReportsPage = lazyNamed(
+  () => import('../pages/fleet/FleetReportsPage'),
+  'FleetReportsPage',
+);
+export const FleetIndexRedirect = lazyNamed(
+  () => import('../pages/fleet/FleetIndexRedirect'),
+  'FleetIndexRedirect',
+);
 export const MessageListPage = lazyNamed(
   () => import('../pages/communications/MessageListPage'),
   'MessageListPage',

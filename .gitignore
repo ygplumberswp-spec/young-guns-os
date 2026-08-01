@@ -46,6 +46,11 @@ apps/api/storage/job-evidence/*
 
 # Local audit and migration artifacts (do not commit)
 audit-output/
+diagnostic-output/.tmp-visual-review-auth/
+diagnostic-output/.tmp-visual-audit-auth/
+TITAN_AUTHENTICATED_VISUAL_AUDIT.zip
+diagnostic-output/titan-final-visual-audit/
+diagnostic-output/TITAN_AUTHENTICATED_VISUAL_REVIEW.zip
 migration-full.txt
 **/_journal.backup.json
 

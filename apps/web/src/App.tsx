@@ -298,8 +298,23 @@ export function App() {
                         />
                         <Route path="/fleet/new" component={OwnerPages.VehicleCreatePage} />
                         <Route path="/fleet/live-map" component={OwnerPages.FleetLiveMapPage} />
+                        <Route path="/fleet/vehicles" component={OwnerPages.VehicleListPage} />
+                        <Route path="/fleet/trips" component={OwnerPages.FleetTripsPage} />
+                        <Route path="/fleet/alerts" component={OwnerPages.FleetAlertsPage} />
+                        <Route path="/fleet/drivers" component={OwnerPages.FleetDriversPage} />
+                        <Route path="/fleet/geofences" component={OwnerPages.FleetGeofencesPage} />
+                        <Route
+                          path="/fleet/route-history"
+                          component={OwnerPages.FleetRouteHistoryPage}
+                        />
+                        <Route path="/fleet/events" component={OwnerPages.FleetEventsPage} />
+                        <Route
+                          path="/fleet/maintenance"
+                          component={OwnerPages.FleetMaintenancePage}
+                        />
+                        <Route path="/fleet/reports" component={OwnerPages.FleetReportsPage} />
                         <Route path="/fleet/:id" component={OwnerPages.VehicleDetailPage} />
-                        <Route path="/fleet" component={OwnerPages.VehicleListPage} />
+                        <Route path="/fleet" component={OwnerPages.FleetIndexRedirect} />
                         <Route
                           path="/inventory/products/new"
                           component={OwnerPages.ProductCreatePage}

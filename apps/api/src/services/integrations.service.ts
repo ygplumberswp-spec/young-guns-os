@@ -1,7 +1,11 @@
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
   CartrackSyncResult,
+  FleetCapabilityReason,
+  FleetOwnerDriversResponse,
+  FleetOwnerEventsResponse,
+  FleetOwnerTripsResponse,
   FleetTrackingContext,
   IntegrationMappingStatus,
   IntegrationSyncHealth,
@@ -14,6 +18,9 @@ import {
   deriveMappingReviewCategory,
   INTEGRATION_MAPPING_REVIEW_LABELS,
   matchVehicleByRegistration,
+  resolveFleetDisplayState,
+  buildJobAddressDisplay,
+  type FleetJobLink,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -21,6 +28,7 @@ import {
   integrationConnections,
   integrationSyncSchedules,
   integrationVehicleMappings,
+  jobs,
   securityAuditLogs,
   vehicles,
 } from '@titan/db';
@@ -716,6 +724,51 @@ export class IntegrationsService {
       };
     }
 
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+
+    const todaysJobRows = await this.db.query.jobs.findMany({
+      where: and(
+        eq(jobs.companyId, companyId),
+        gte(jobs.scheduledAt, startOfDay),
+        sql`${jobs.scheduledAt} < ${endOfDay}`,
+      ),
+      with: { assignedUser: true, customer: true },
+      orderBy: [asc(jobs.scheduledAt)],
+    });
+
+    const todaysJobs = todaysJobRows.map((job) => ({
+      id: job.id,
+      jobNumber: job.jobNumber,
+      title: job.title,
+      status: job.status,
+      scheduledAt: job.scheduledAt,
+      addressDisplay:
+        buildJobAddressDisplay({
+          street: job.snapshotStreet,
+          suburb: job.snapshotSuburb,
+          city: job.snapshotCity,
+          province: job.snapshotProvince,
+          postalCode: job.snapshotPostalCode,
+          unit: job.snapshotUnit,
+        }) ?? null,
+      assignedUserId: job.assignedUserId,
+      assignedUserName: job.assignedUser
+        ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim()
+        : null,
+      customerName: job.snapshotCustomerName ?? job.customer?.name ?? null,
+    }));
+
+    const jobsByAssignee = new Map<string, typeof todaysJobs>();
+    for (const job of todaysJobs) {
+      if (!job.assignedUserId) continue;
+      const list = jobsByAssignee.get(job.assignedUserId) ?? [];
+      list.push(job);
+      jobsByAssignee.set(job.assignedUserId, list);
+    }
+
     const mappings = await this.db.query.integrationVehicleMappings.findMany({
       where: and(
         eq(integrationVehicleMappings.companyId, companyId),
@@ -724,9 +777,6 @@ export class IntegrationsService {
       ),
       with: { vehicle: true },
     });
-
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
 
     const vehicles = await Promise.all(
       mappings
@@ -751,44 +801,105 @@ export class IntegrationsService {
               : null;
 
           const speedKmh = latest?.speedKmh ?? null;
-          const ignitionOn =
-            rawPayload && typeof rawPayload.ignition_on === 'boolean'
-              ? rawPayload.ignition_on
-              : rawPayload && typeof rawPayload.ignitionOn === 'boolean'
-                ? rawPayload.ignitionOn
-                : null;
-
-          const movementState = deriveMovementState({
-            speedKmh,
-            ignitionOn,
-            hasPosition: Boolean(latest),
-          });
-
+          const ignitionOn = readBoolean(rawPayload, ['ignition_on', 'ignitionOn']);
+          const hasPosition = Boolean(latest);
+          const movementState = deriveMovementState({ speedKmh, ignitionOn, hasPosition });
           const stale =
             !latest?.recordedAt ||
             Date.now() - new Date(latest.recordedAt).getTime() > 120_000;
+          const isTrackerOffline = !hasPosition;
+
+          const assigneeJobs = mapping.vehicle?.assignedUserId
+            ? jobsByAssignee.get(mapping.vehicle.assignedUserId) ?? []
+            : [];
+          const activeJob =
+            assigneeJobs.find((job) => job.status === 'in_progress') ??
+            assigneeJobs.find((job) => job.status === 'scheduled') ??
+            null;
+          const nextJob =
+            assigneeJobs.find(
+              (job) =>
+                job.id !== activeJob?.id &&
+                (job.status === 'scheduled' || job.status === 'new'),
+            ) ?? null;
+
+          const toJobLink = (
+            job: (typeof todaysJobs)[number] | null,
+            role: FleetJobLink['role'],
+          ): FleetJobLink | null => {
+            if (!job) return null;
+            return {
+              jobId: job.id,
+              jobNumber: job.jobNumber,
+              title: job.title,
+              customerName: job.customerName,
+              assignedUserId: job.assignedUserId,
+              assignedUserName: job.assignedUserName,
+              scheduledAt: job.scheduledAt?.toISOString() ?? null,
+              addressDisplay: job.addressDisplay,
+              status: job.status,
+              role,
+            };
+          };
+
+          const odometerKm = readNumber(rawPayload, [
+            'odometer_km',
+            'odometerKm',
+            'odometer',
+            'Odometer',
+          ]);
+          const fuelPercent = readNumber(rawPayload, [
+            'fuel_percent',
+            'fuelPercent',
+            'fuel_level',
+            'fuelLevel',
+          ]);
+
+          const todayDistanceKm = computeTrailDistanceKm(trailRows);
+          const tripStartedAt =
+            trailRows.length > 0
+              ? trailRows[trailRows.length - 1]?.recordedAt.toISOString()
+              : null;
+
+          const driverName =
+            readString(rawPayload, ['driver_name', 'driverName']) ??
+            mapping.vehicle?.assignedUserId
+              ? todaysJobs.find((j) => j.assignedUserId === mapping.vehicle?.assignedUserId)
+                  ?.assignedUserName ?? null
+              : null;
 
           return {
             vehicleId,
+            name: mapping.vehicle?.name ?? null,
             registration: mapping.vehicle?.licensePlate ?? mapping.externalRegistration,
-            driverName:
-              (typeof rawPayload?.driver_name === 'string' ? rawPayload.driver_name : null) ??
-              (typeof rawPayload?.driverName === 'string' ? rawPayload.driverName : null),
+            driverName,
+            technicianName: mapping.vehicle?.assignedUserId
+              ? todaysJobs.find((j) => j.assignedUserId === mapping.vehicle?.assignedUserId)
+                  ?.assignedUserName ?? null
+              : null,
             latitude: latest?.latitude ?? null,
             longitude: latest?.longitude ?? null,
             speedKmh,
-            heading:
-              typeof trailRows[0]?.heading === 'number' ? trailRows[0]?.heading : null,
+            heading: typeof trailRows[0]?.heading === 'number' ? trailRows[0]?.heading : null,
             ignitionOn,
             movementState,
+            displayState: resolveFleetDisplayState({
+              movementState,
+              ignitionOn,
+              isStale: stale,
+              hasPosition,
+            }),
             recordedAt: latest?.recordedAt ?? null,
-            address:
-              typeof rawPayload?.address === 'string'
-                ? rawPayload.address
-                : typeof rawPayload?.Address === 'string'
-                  ? rawPayload.Address
-                  : null,
+            address: readString(rawPayload, ['address', 'Address']),
             isStale: stale,
+            isTrackerOffline,
+            odometerKm,
+            fuelPercent,
+            todayDistanceKm,
+            tripStartedAt,
+            externalTrackerId: mapping.externalVehicleId,
+            currentJob: toJobLink(activeJob, 'current'),
+            nextJob: toJobLink(nextJob, 'next'),
             trailToday: trailRows
               .slice()
               .reverse()
@@ -806,6 +917,148 @@ export class IntegrationsService {
       vehicles,
       generatedAt: new Date().toISOString(),
     };
+  }
+
+  async buildFleetTrips(companyId: string, from: Date, _to: Date): Promise<FleetOwnerTripsResponse> {
+    const capability = await this.resolveFleetCapability(companyId);
+    if (capability !== 'available') {
+      return { trips: [], capability, generatedAt: new Date().toISOString() };
+    }
+
+    const snapshot = await this.buildFleetLiveMapSnapshot(companyId);
+    const trips = snapshot.vehicles
+      .filter((vehicle) => vehicle.trailToday.length >= 2)
+      .map((vehicle) => {
+        const trail = vehicle.trailToday;
+        const start = trail[0]!;
+        const end = trail[trail.length - 1]!;
+        return {
+          id: `${vehicle.vehicleId}:${from.toISOString().slice(0, 10)}`,
+          vehicleId: vehicle.vehicleId,
+          vehicleName: vehicle.name,
+          registration: vehicle.registration,
+          driverName: vehicle.driverName,
+          startedAt: start.recordedAt,
+          endedAt: end.recordedAt,
+          startArea: vehicle.address,
+          endArea: vehicle.address,
+          distanceKm: vehicle.todayDistanceKm,
+          drivingMinutes: null,
+          idleMinutes: null,
+          linkedJobId: vehicle.currentJob?.jobId ?? null,
+          linkedJobTitle: vehicle.currentJob?.title ?? null,
+          pointCount: trail.length,
+        };
+      });
+
+    return { trips, capability, generatedAt: new Date().toISOString() };
+  }
+
+  async buildFleetDrivers(companyId: string): Promise<FleetOwnerDriversResponse> {
+    const capability = await this.resolveFleetCapability(companyId);
+    if (capability !== 'available') {
+      return { drivers: [], capability, generatedAt: new Date().toISOString() };
+    }
+
+    const snapshot = await this.buildFleetLiveMapSnapshot(companyId);
+    const byDriver = new Map<string, (typeof snapshot.vehicles)[number]>();
+
+    for (const vehicle of snapshot.vehicles) {
+      const key = vehicle.driverName?.trim() || vehicle.technicianName?.trim();
+      if (!key) continue;
+      if (!byDriver.has(key)) {
+        byDriver.set(key, vehicle);
+      }
+    }
+
+    const drivers = [...byDriver.entries()].map(([driverName, vehicle]) => ({
+      driverId: vehicle.externalTrackerId,
+      driverName,
+      assignedVehicleId: vehicle.vehicleId,
+      assignedVehicleRegistration: vehicle.registration,
+      linkedVehicleId: vehicle.vehicleId,
+      status: vehicle.displayState,
+      todayDistanceKm: vehicle.todayDistanceKm,
+      currentJob: vehicle.currentJob,
+      lastPositionAt: vehicle.recordedAt,
+      lastArea: vehicle.address,
+    }));
+
+    return { drivers, capability, generatedAt: new Date().toISOString() };
+  }
+
+  async buildFleetEvents(companyId: string): Promise<FleetOwnerEventsResponse> {
+    const capability = await this.resolveFleetCapability(companyId);
+    if (capability !== 'available') {
+      return { events: [], capability, generatedAt: new Date().toISOString() };
+    }
+
+    const snapshot = await this.buildFleetLiveMapSnapshot(companyId);
+    const events = snapshot.vehicles.flatMap((vehicle) => {
+      const items = [];
+      if (vehicle.isStale) {
+        items.push({
+          id: `stale:${vehicle.vehicleId}`,
+          vehicleId: vehicle.vehicleId,
+          registration: vehicle.registration,
+          driverName: vehicle.driverName,
+          eventType: 'gps_stale',
+          severity: 'warning' as const,
+          occurredAt: vehicle.recordedAt ?? new Date().toISOString(),
+          description: 'GPS position exceeds 2 minute freshness threshold',
+          acknowledged: false,
+          linkedJobId: vehicle.currentJob?.jobId ?? null,
+        });
+      }
+      if (vehicle.isTrackerOffline) {
+        items.push({
+          id: `offline:${vehicle.vehicleId}`,
+          vehicleId: vehicle.vehicleId,
+          registration: vehicle.registration,
+          driverName: vehicle.driverName,
+          eventType: 'tracker_offline',
+          severity: 'critical' as const,
+          occurredAt: new Date().toISOString(),
+          description: 'No GPS position received from Cartrack for mapped vehicle',
+          acknowledged: false,
+          linkedJobId: null,
+        });
+      }
+      if (vehicle.displayState === 'driving' && (vehicle.speedKmh ?? 0) > 120) {
+        items.push({
+          id: `speed:${vehicle.vehicleId}:${vehicle.recordedAt}`,
+          vehicleId: vehicle.vehicleId,
+          registration: vehicle.registration,
+          driverName: vehicle.driverName,
+          eventType: 'speeding',
+          severity: 'warning' as const,
+          occurredAt: vehicle.recordedAt ?? new Date().toISOString(),
+          description: `Speed ${Math.round(vehicle.speedKmh ?? 0)} km/h reported by Cartrack`,
+          acknowledged: false,
+          linkedJobId: vehicle.currentJob?.jobId ?? null,
+        });
+      }
+      return items;
+    });
+
+    return { events, capability, generatedAt: new Date().toISOString() };
+  }
+
+  private async resolveFleetCapability(companyId: string): Promise<FleetCapabilityReason> {
+    const connection = await this.db.query.integrationConnections.findFirst({
+      where: and(
+        eq(integrationConnections.companyId, companyId),
+        eq(integrationConnections.provider, 'cartrack'),
+      ),
+    });
+
+    if (!connection?.credentialsEncrypted) {
+      return 'not_connected';
+    }
+    if (connection.status !== 'connected') {
+      return 'temporarily_unavailable';
+    }
+    return 'available';
   }
 
   private async getOrCreateConnection(companyId: string) {
@@ -1136,4 +1389,57 @@ function deriveMovementState(input: {
   }
 
   return 'parked';
+}
+
+function readString(payload: Record<string, unknown> | null, keys: string[]): string | null {
+  if (!payload) return null;
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function readBoolean(payload: Record<string, unknown> | null, keys: string[]): boolean | null {
+  if (!payload) return null;
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'boolean') return value;
+  }
+  return null;
+}
+
+function readNumber(payload: Record<string, unknown> | null, keys: string[]): number | null {
+  if (!payload) return null;
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+function computeTrailDistanceKm(
+  trailRows: Array<{ latitude: number; longitude: number }>,
+): number | null {
+  if (trailRows.length < 2) return null;
+  let total = 0;
+  for (let i = 1; i < trailRows.length; i += 1) {
+    total += haversineKm(
+      trailRows[i - 1]!.latitude,
+      trailRows[i - 1]!.longitude,
+      trailRows[i]!.latitude,
+      trailRows[i]!.longitude,
+    );
+  }
+  return Math.round(total * 10) / 10;
+}
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
