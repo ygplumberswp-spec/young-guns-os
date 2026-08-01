@@ -5,6 +5,23 @@
 
 ---
 
+## Sprint 192 — Cursor safe resume reconciliation
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Safe resume after Cursor close — reconcile git, staging, pipeline |
+| **Result** | **RESUME_SAFE** — Phase 2 Xero GO in progress; no destructive actions |
+| **Prior worker** | `bf815d2f` interrupted (no 192 JSON); completed by coordinator `cc48def9` |
+| **Staging** | `/health/ready` 200; DB connected; Xero job `81c5b8d8…` running at contacts p3; `last_sync_at` null |
+| **Mappings preserved** | 673 customers, 5 invoices, 0 duplicates |
+| **JOB-DEL-001** | No uncommitted lifecycle code from `7443e5b5` — remains QUEUED |
+| **Pilot/Launch** | NOT READY — verified; no be2c2f22 action required |
+| **Evidence** | `diagnostic-output/192-cursor-resume-reconciliation.json` |
+| **Next phase selected** | Read-only monitor Xero auto-resume; hold SPI 0110 + JOB-DEL until import GO |
+
+---
+
 ## Sprint PRN-001 — Complete-app printing and PDF output (QUEUED)
 
 | Field | Value |
