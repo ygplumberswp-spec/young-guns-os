@@ -1,0 +1,40 @@
+{
+  "label": "STAGING-P6",
+  "phase": 6,
+  "startedAt": "2026-08-01T07:19:24.607Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "forbiddenRefChecked": true,
+  "productionRefTouched": false,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "896be700-d7f1-428b-8d90-a9a15bbc839f"
+    },
+    {
+      "name": "technician_role_lookup",
+      "status": "PASS",
+      "detail": "db211cf8-7f80-4ed3-ae06-bde9690b4704"
+    },
+    {
+      "name": "technician_provision",
+      "status": "PASS",
+      "detail": "4cfe72ed-a9f7-4a13-8bd6-af0e44baef6e,15abc313-3c6a-4a33-9fb3-4c7a99e08641"
+    },
+    {
+      "name": "job_create",
+      "status": "FAIL",
+      "detail": "{\"code\":\"VALIDATION_ERROR\",\"message\":\"Invalid job payload\",\"details\":{\"formErrors\":[],\"fieldErrors\":{\"customerId\":[\"Required\"],\"siteContact\":[\"Required\"]}}}"
+    }
+  ],
+  "totals": {
+    "passed": 0,
+    "failed": 0
+  },
+  "verdict": "NO-GO"
+}

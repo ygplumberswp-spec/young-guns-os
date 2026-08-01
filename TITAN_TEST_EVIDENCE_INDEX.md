@@ -130,6 +130,8 @@
 | `TITAN_STAGING_TEST_RESULTS.md` | Staging harness 75/0 |
 | `diagnostic-output/*.json` | Playwright diagnostics |
 | `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 10/10 GO** |
+| `diagnostic-output/141-staging-phase6-e2e.json` | **Phase 6 staging E2E — NO-GO** (job_create `VALIDATION_ERROR`: `customerId`/`siteContact` required on direct POST `/jobs`) |
+| `packages/db/scripts/staging-phase6-public-e2e.mjs` | Phase 6 public API E2E runner (crew + calendar labels) |
 | `TITAN_PHASE5_STAGING_REPORT.md` | Phase 5 staging verification report |
 | `packages/db/scripts/staging-phase5-public-e2e.mjs` | Phase 5 public API E2E runner |
 | `scripts/phase3-operational-verify.mjs` | Operational verification |

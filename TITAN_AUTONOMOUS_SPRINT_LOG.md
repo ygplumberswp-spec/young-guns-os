@@ -178,3 +178,22 @@
 | **Tests** | `pnpm typecheck`, `pnpm test` (235 pass), `pnpm build` — pass |
 | **Approval required?** | FRZ-006 staging E2E — staging DB password + Railway deploy |
 | **Next phase selected** | FRZ-006 staging proof when credentials available; CRM properties panel / UX-018 schedule map remain safe local |
+
+---
+
+## Sprint 010 — Phase 6 staging E2E script (public API)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 6 — FRZ-006 crew assignment + calendar execution labels (staging proof) |
+| **Result** | Public staging E2E runner added; first run **NO-GO** at `job_create` (API validation: `customerId`, `siteContact` required — align payload with lead-convert chain or CRM pre-create) |
+| **Checkpoint** | `6b29117` (prior); commit pending this sprint |
+| **Files changed** | `staging-phase6-public-e2e.mjs`, `diagnostic-output/141-staging-phase6-e2e.json`, evidence index + sprint log |
+| **Migration** | None |
+| **Tests** | E2E only — `node packages/db/scripts/staging-phase6-public-e2e.mjs` against `young-guns-os-staging.up.railway.app` (staging ref `cpkuwtaipjxeipvbssvn`; production ref not touched) |
+| **Staging E2E** | `diagnostic-output/141-staging-phase6-e2e.json` — **4 pass / 1 fail** (`job_create`); verdict **NO-GO** |
+| **Deploy** | Not performed |
+| **Approval required?** | Fix job-create payload or use lead→convert path like Phase 5 runner; re-run E2E for FRZ-006 **GO** |
+| **Next phase selected** | Re-run Phase 6 staging E2E after payload fix; UX-017/029 local work already at Sprint 009 checkpoint |
+
