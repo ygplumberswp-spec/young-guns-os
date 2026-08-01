@@ -1,5 +1,6 @@
 import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type {
+  BulkOperationSummary,
   CreateCustomerActivityRequest,
   CreateCustomerPropertyRequest,
   CreateCustomerRequest,
@@ -8,11 +9,13 @@ import type {
   CustomerPropertySummary,
   CustomerSummary,
   CustomerStatusChangeGuardInput,
+  CustomerUiStatus,
   UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
 import {
   buildJobAddressDisplay,
+  customerUiStatusToDbStatus,
   isValidEmailAddress,
   isValidSaPhone,
   normalizeSaMobile,
@@ -133,9 +136,17 @@ export class CrmService {
       customerRows.map((row) => row.id),
     );
 
-    return customerRows.map((row) =>
-      toCustomerSummary(row, addressByCustomerId.get(row.id) ?? null),
+    const enrichmentByCustomerId = await loadCustomerListEnrichment(
+      this.db,
+      companyId,
+      customerRows.map((row) => row.id),
     );
+
+    return customerRows.map((row) => {
+      const enrichment = enrichmentByCustomerId.get(row.id);
+      const address = addressByCustomerId.get(row.id);
+      return toCustomerSummary(row, address?.display ?? null, address?.suburb ?? null, enrichment);
+    });
   }
 
   async getCustomer(companyId: string, customerId: string): Promise<CustomerDetail | null> {
@@ -155,8 +166,18 @@ export class CrmService {
       return null;
     }
 
+    const addressMap = await loadPrimaryAddressDisplays(this.db, companyId, [customerId]);
+    const enrichmentMap = await loadCustomerListEnrichment(this.db, companyId, [customerId]);
+    const address = addressMap.get(customerId);
+    const enrichment = enrichmentMap.get(customerId);
+
     return {
-      ...toCustomerSummary(customer),
+      ...toCustomerSummary(
+        customer,
+        address?.display ?? null,
+        address?.suburb ?? null,
+        enrichment,
+      ),
       notes: customer.notes,
       activities: customer.activities.map((activity) => ({
         id: activity.id,
@@ -517,6 +538,165 @@ export class CrmService {
     });
   }
 
+  async bulkCustomers(
+    companyId: string,
+    input: {
+      ids: string[];
+      action: 'archive' | 'delete' | 'set_status';
+      status?: CustomerUiStatus;
+      typedConfirmation?: string;
+      classificationById?: Map<string, CustomerStatusChangeGuardInput | null>;
+      actorUserId: string;
+      isOwner: boolean;
+    },
+  ): Promise<BulkOperationSummary> {
+    const summary: BulkOperationSummary = {
+      deleted: 0,
+      archived: 0,
+      updated: 0,
+      skipped: 0,
+      blocked: 0,
+      results: [],
+    };
+
+    const uniqueIds = [...new Set(input.ids)];
+    for (const customerId of uniqueIds) {
+      const existing = await this.getCustomer(companyId, customerId);
+      if (!existing) {
+        summary.skipped += 1;
+        summary.results.push({
+          id: customerId,
+          name: customerId,
+          status: 'skipped',
+          reason: 'Customer not found',
+        });
+        continue;
+      }
+
+      const classification = input.classificationById?.get(customerId) ?? null;
+
+      if (input.action === 'delete') {
+        if (!input.isOwner) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: 'Owner-only permanent delete',
+          });
+          continue;
+        }
+        if (input.typedConfirmation !== 'DELETE') {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: 'Typed DELETE confirmation required',
+          });
+          continue;
+        }
+        try {
+          await this.deleteCustomer(companyId, customerId, {
+            classification,
+            actorUserId: input.actorUserId,
+            isOwner: true,
+          });
+          summary.deleted += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'deleted',
+          });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: error instanceof CrmError ? error.message : 'Delete blocked',
+          });
+        }
+        continue;
+      }
+
+      if (input.action === 'archive') {
+        const guard = validateCustomerStatusChange('archived', classification);
+        if (!guard.allowed) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: guard.reason,
+          });
+          continue;
+        }
+        try {
+          await this.updateCustomer(
+            companyId,
+            customerId,
+            { status: customerUiStatusToDbStatus('archived') },
+            { classification, actorUserId: input.actorUserId },
+          );
+          summary.archived += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'archived',
+          });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: error instanceof CrmError ? error.message : 'Archive failed',
+          });
+        }
+        continue;
+      }
+
+      if (input.action === 'set_status' && input.status) {
+        const guard = validateCustomerStatusChange(input.status, classification);
+        if (!guard.allowed) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: guard.reason,
+          });
+          continue;
+        }
+        try {
+          await this.updateCustomer(
+            companyId,
+            customerId,
+            { status: customerUiStatusToDbStatus(input.status) },
+            { classification, actorUserId: input.actorUserId },
+          );
+          summary.updated += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'updated',
+          });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: customerId,
+            name: existing.name,
+            status: 'blocked',
+            reason: error instanceof CrmError ? error.message : 'Status change failed',
+          });
+        }
+      }
+    }
+
+    return summary;
+  }
+
   async addActivity(
     scope: TenantScope,
     customerId: string,
@@ -632,6 +812,13 @@ export class CrmService {
 function toCustomerSummary(
   row: typeof customers.$inferSelect,
   primaryAddressDisplay: string | null = null,
+  primarySuburb: string | null = null,
+  enrichment?: {
+    lastJobAt: string | null;
+    lastJobNumber: string | null;
+    lastActivityAt: string | null;
+    nextAction: string | null;
+  },
 ): CustomerSummary {
   return {
     id: row.id,
@@ -640,11 +827,16 @@ function toCustomerSummary(
     email: row.email,
     phone: row.phone,
     primaryAddressDisplay,
+    primarySuburb,
     status: row.status,
     isSupplierOnly: row.isSupplierOnly,
     doNotContact: row.doNotContact,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    lastJobAt: enrichment?.lastJobAt ?? null,
+    lastJobNumber: enrichment?.lastJobNumber ?? null,
+    lastActivityAt: enrichment?.lastActivityAt ?? null,
+    nextAction: enrichment?.nextAction ?? null,
   };
 }
 
@@ -694,8 +886,8 @@ async function loadPrimaryAddressDisplays(
   db: DatabaseClient,
   companyId: string,
   customerIds: string[],
-): Promise<Map<string, string | null>> {
-  const map = new Map<string, string | null>();
+): Promise<Map<string, { display: string | null; suburb: string | null }>> {
+  const map = new Map<string, { display: string | null; suburb: string | null }>();
   if (customerIds.length === 0) {
     return map;
   }
@@ -710,9 +902,8 @@ async function loadPrimaryAddressDisplays(
 
   for (const row of rows) {
     if (map.has(row.customerId)) continue;
-    map.set(
-      row.customerId,
-      buildJobAddressDisplay({
+    map.set(row.customerId, {
+      display: buildJobAddressDisplay({
         street: row.addressLine1,
         suburb: row.suburb,
         city: row.city,
@@ -720,7 +911,75 @@ async function loadPrimaryAddressDisplays(
         postalCode: row.postalCode,
         unit: row.unitNumber ?? row.addressLine2,
       }),
-    );
+      suburb: row.suburb ?? null,
+    });
+  }
+
+  return map;
+}
+
+type CustomerListEnrichment = {
+  lastJobAt: string | null;
+  lastJobNumber: string | null;
+  lastActivityAt: string | null;
+  nextAction: string | null;
+};
+
+async function loadCustomerListEnrichment(
+  db: DatabaseClient,
+  companyId: string,
+  customerIds: string[],
+): Promise<Map<string, CustomerListEnrichment>> {
+  const map = new Map<string, CustomerListEnrichment>();
+  if (customerIds.length === 0) return map;
+
+  const jobRows = await db
+    .select({
+      customerId: jobs.customerId,
+      updatedAt: sql<Date>`max(${jobs.updatedAt})`.as('updated_at'),
+      jobNumber: sql<string | null>`(
+        array_agg(${jobs.jobNumber} ORDER BY ${jobs.updatedAt} DESC)
+      )[1]`.as('job_number'),
+    })
+    .from(jobs)
+    .where(and(eq(jobs.companyId, companyId), inArray(jobs.customerId, customerIds)))
+    .groupBy(jobs.customerId);
+
+  const activityRows = await db
+    .select({
+      customerId: customerActivities.customerId,
+      lastAt: sql<Date>`max(${customerActivities.createdAt})`.as('last_at'),
+    })
+    .from(customerActivities)
+    .where(
+      and(
+        eq(customerActivities.companyId, companyId),
+        inArray(customerActivities.customerId, customerIds),
+      ),
+    )
+    .groupBy(customerActivities.customerId);
+
+  for (const id of customerIds) {
+    map.set(id, {
+      lastJobAt: null,
+      lastJobNumber: null,
+      lastActivityAt: null,
+      nextAction: null,
+    });
+  }
+
+  for (const row of jobRows) {
+    if (!row.customerId) continue;
+    const entry = map.get(row.customerId);
+    if (!entry) continue;
+    entry.lastJobAt = row.updatedAt ? new Date(row.updatedAt).toISOString() : null;
+    entry.lastJobNumber = row.jobNumber ?? null;
+  }
+
+  for (const row of activityRows) {
+    const entry = map.get(row.customerId);
+    if (!entry) continue;
+    entry.lastActivityAt = row.lastAt ? new Date(row.lastAt).toISOString() : null;
   }
 
   return map;

@@ -14,11 +14,20 @@ export type CustomerSummary = {
   phone: string | null;
   /** Primary property address when one exists */
   primaryAddressDisplay: string | null;
+  /** Primary property suburb when known */
+  primarySuburb: string | null;
   status: CustomerStatus;
   isSupplierOnly: boolean;
   doNotContact: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Most recent job for this customer, when available */
+  lastJobAt: string | null;
+  lastJobNumber: string | null;
+  /** Latest CRM activity note timestamp */
+  lastActivityAt: string | null;
+  /** Open follow-up action text when scheduled */
+  nextAction: string | null;
 };
 
 export type CustomerActivity = {

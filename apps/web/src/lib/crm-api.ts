@@ -1,4 +1,5 @@
 import type {
+  BulkOperationSummary,
   CreateCustomerActivityRequest,
   CreateCustomerPropertyRequest,
   CreateCustomerRequest,
@@ -6,6 +7,7 @@ import type {
   CustomerDetail,
   CustomerPropertySummary,
   CustomerSummary,
+  CustomerUiStatus,
   UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
@@ -69,6 +71,22 @@ export async function deleteCustomer(accessToken: string, customerId: string): P
   await request<Record<string, never>>(`/crm/customers/${customerId}`, {
     method: 'DELETE',
     accessToken,
+  });
+}
+
+export async function bulkCustomers(
+  accessToken: string,
+  body: {
+    ids: string[];
+    action: 'archive' | 'delete' | 'set_status';
+    status?: CustomerUiStatus;
+    typedConfirmation?: string;
+  },
+): Promise<BulkOperationSummary> {
+  return request<BulkOperationSummary>('/crm/customers/bulk', {
+    method: 'POST',
+    accessToken,
+    body,
   });
 }
 

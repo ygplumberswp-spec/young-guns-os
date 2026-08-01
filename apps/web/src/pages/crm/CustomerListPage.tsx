@@ -59,6 +59,11 @@ export function CustomerListPage() {
         const computedAt = new Date().toISOString();
         return baseCustomers.map((customer) => ({
           ...customer,
+          primarySuburb: customer.primarySuburb ?? null,
+          lastJobAt: customer.lastJobAt ?? null,
+          lastJobNumber: customer.lastJobNumber ?? null,
+          lastActivityAt: customer.lastActivityAt ?? null,
+          nextAction: customer.nextAction ?? null,
           valueClassification: {
             ...classifyCustomerValueFromEvidence({
               customerId: customer.id,

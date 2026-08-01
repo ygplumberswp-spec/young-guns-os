@@ -2,30 +2,37 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { hasAnyPermission } from '@titan/auth/browser';
 import { Button, EmptyState, Panel } from '@titan/ui';
-import type { CustomerSummary, CustomerUiStatus } from '@titan/shared';
+import type { BulkOperationSummary, CustomerSummary, CustomerUiStatus } from '@titan/shared';
 import {
   CUSTOMER_STATUS_FILTER_GROUPS,
   CUSTOMER_UI_STATUS_OPTIONS,
+  CUSTOMER_VALUE_CLASSIFICATION_LABELS,
+  buildEmailHref,
+  buildWhatsAppHref,
   customerUiStatusToDbStatus,
+  formatListMoney,
+  getCustomerDeleteEligibility,
   getCustomerUiStatusTone,
   isCustomerUiStatusWritable,
   resolveCustomerUiStatus,
   validateCustomerStatusChange,
-  getCustomerDeleteEligibility,
 } from '@titan/shared';
-import { deleteCustomer, updateCustomer } from '../../lib/crm-api';
+import { bulkCustomers, deleteCustomer, updateCustomer } from '../../lib/crm-api';
 import type { CustomerWithValueClassification } from '../../lib/customer-value-api-client';
 import { ApiClientError } from '../../lib/api-client';
 import {
   BulkActionBar,
+  BulkCommunicationsReview,
   MultiStatusFilter,
   RowActionsCell,
   StatusBadgeDropdown,
   StatusRowAccent,
+  TypedDeleteDialog,
   type InlineSaveState,
   type MoreMenuItem,
   useConfirmDialog,
 } from '../../components/ux';
+import { useAuth } from '../../lib/auth-context';
 
 type CustomerListProps = {
   customers: CustomerSummary[];
@@ -58,7 +65,22 @@ export function CustomerList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [rowSaveState, setRowSaveState] = useState<RowSaveState>({});
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkReviewChannel, setBulkReviewChannel] = useState<'email' | 'whatsapp' | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkResult, setBulkResult] = useState<BulkOperationSummary | null>(null);
+  const { user } = useAuth();
   const { confirm, alert, dialog: confirmDialog } = useConfirmDialog();
+
+  const isOwner = useMemo(
+    () =>
+      Boolean(
+        user?.permissions.includes('*') ||
+          user?.roleName === 'Company Owner' ||
+          user?.roleName === 'Owner' ||
+          user?.roleName?.toLowerCase() === 'owner',
+      ),
+    [user],
+  );
 
   const rows = useMemo(
     () =>
@@ -219,15 +241,57 @@ export function CustomerList({
     if (!accessToken || !canWrite || selectedIds.size === 0) return;
     setBulkSaving(true);
     try {
-      for (const row of filteredRows) {
-        if (!selectedIds.has(row.customer.id) || row.uiStatus === targetUiStatus) continue;
-        await changeCustomerStatus(row.customer, targetUiStatus, row.classification);
-      }
+      const summary = await bulkCustomers(accessToken, {
+        ids: [...selectedIds],
+        action: 'set_status',
+        status: targetUiStatus,
+      });
+      setBulkResult(summary);
       setSelectedIds(new Set());
+      await onRefresh();
     } finally {
       setBulkSaving(false);
     }
   }
+
+  async function bulkArchive() {
+    if (!accessToken || !canWrite || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const summary = await bulkCustomers(accessToken, {
+        ids: [...selectedIds],
+        action: 'archive',
+      });
+      setBulkResult(summary);
+      setSelectedIds(new Set());
+      await onRefresh();
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function bulkDeleteConfirmed() {
+    if (!accessToken || !canWrite || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const summary = await bulkCustomers(accessToken, {
+        ids: [...selectedIds],
+        action: 'delete',
+        typedConfirmation: 'DELETE',
+      });
+      setBulkResult(summary);
+      setSelectedIds(new Set());
+      setShowBulkDelete(false);
+      await onRefresh();
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  const selectedRows = useMemo(
+    () => filteredRows.filter((row) => selectedIds.has(row.customer.id)),
+    [filteredRows, selectedIds],
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (!checked) {
@@ -255,29 +319,51 @@ export function CustomerList({
   const bulkActions = canWrite
     ? [
         {
-          id: 'active',
-          label: 'Mark active',
+          id: 'assign',
+          label: 'Assign',
           onClick: () => void bulkSetStatus('active'),
-          disabled: bulkSaving,
+          disabled: bulkSaving || selectedIds.size === 0,
         },
         {
-          id: 'inactive',
-          label: 'Mark inactive',
+          id: 'status',
+          label: 'Change status',
           onClick: () => void bulkSetStatus('inactive'),
           disabled: bulkSaving,
         },
         {
-          id: 'duplicate',
-          label: 'Duplicate review',
-          onClick: () => void bulkSetStatus('duplicate_review'),
-          disabled: bulkSaving,
+          id: 'email',
+          label: 'Email',
+          onClick: () => setBulkReviewChannel('email'),
+          disabled: bulkSaving || selectedIds.size === 0,
+        },
+        {
+          id: 'whatsapp',
+          label: 'WhatsApp',
+          onClick: () => setBulkReviewChannel('whatsapp'),
+          disabled: bulkSaving || selectedIds.size === 0,
         },
         {
           id: 'archived',
           label: 'Archive',
-          onClick: () => void bulkSetStatus('archived'),
+          onClick: () => void bulkArchive(),
           disabled: bulkSaving,
-          variant: 'destructive' as const,
+        },
+        ...(isOwner
+          ? [
+              {
+                id: 'delete',
+                label: 'Delete',
+                onClick: () => setShowBulkDelete(true),
+                disabled: bulkSaving,
+                variant: 'destructive' as const,
+              },
+            ]
+          : []),
+        {
+          id: 'clear',
+          label: 'Clear selection',
+          onClick: () => setSelectedIds(new Set()),
+          disabled: bulkSaving || selectedIds.size === 0,
         },
       ]
     : [];
@@ -313,6 +399,13 @@ export function CustomerList({
         actions={bulkActions}
       />
 
+      {bulkResult ? (
+        <p className="page-muted">
+          Bulk complete — deleted {bulkResult.deleted}, archived {bulkResult.archived}, updated{' '}
+          {bulkResult.updated}, blocked {bulkResult.blocked}, skipped {bulkResult.skipped}.
+        </p>
+      ) : null}
+
       {filteredRows.length === 0 ? (
         <EmptyState
           title={trimmedSearch || statusFilters.length ? 'No matching customers' : 'No customers yet'}
@@ -331,21 +424,29 @@ export function CustomerList({
         />
       ) : (
         <div className="crm-table-wrap leads-list">
-          <table className="crm-table crm-table--compact">
+          <table className="crm-table crm-table--compact crm-table--phase4">
             <thead>
               <tr>
                 <th className="leads-table__check-col" aria-label="Select" />
-                <th>Name</th>
+                <th>Customer</th>
                 <th className="leads-table__hide-mobile">Contact</th>
-                <th className="leads-table__hide-mobile">Address</th>
-                <th className="leads-table__hide-mobile">Updated</th>
-                <th className="leads-table__actions-col">Actions</th>
+                <th className="leads-table__hide-mobile">Property / suburb</th>
+                <th className="leads-table__hide-mobile">Type / value</th>
+                <th className="leads-table__hide-mobile">Last job</th>
+                <th className="leads-table__hide-mobile">Outstanding</th>
+                <th className="leads-table__hide-mobile">Overdue</th>
+                <th className="leads-table__hide-mobile">Last activity</th>
+                <th className="leads-table__hide-mobile">Next action</th>
+                <th className="leads-table__actions-col leads-table__actions-col--wide">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredRows.map(({ customer, classification, uiStatus }) => {
                 const tone = getCustomerUiStatusTone(uiStatus);
                 const saveState = rowSaveState[customer.id] ?? 'idle';
+                const valueLabel = classification
+                  ? CUSTOMER_VALUE_CLASSIFICATION_LABELS[classification.primaryClassification]
+                  : '—';
 
                 const dropdownOptions = CUSTOMER_UI_STATUS_OPTIONS.map((option) => {
                   const guard = validateCustomerStatusChange(option.value, classification);
@@ -401,14 +502,36 @@ export function CustomerList({
                       <div className="muted-text">{customer.email ?? '—'}</div>
                     </td>
                     <td className="leads-table__hide-mobile">
-                      {customer.primaryAddressDisplay ?? '—'}
+                      <div>{customer.primaryAddressDisplay ?? '—'}</div>
+                      <div className="muted-text">{customer.primarySuburb ?? '—'}</div>
+                    </td>
+                    <td className="leads-table__hide-mobile">{valueLabel}</td>
+                    <td className="leads-table__hide-mobile">
+                      {customer.lastJobAt
+                        ? `${customer.lastJobNumber ?? 'Job'} · ${new Date(customer.lastJobAt).toLocaleDateString()}`
+                        : '—'}
                     </td>
                     <td className="leads-table__hide-mobile">
-                      {new Date(customer.updatedAt).toLocaleDateString()}
+                      {classification
+                        ? formatListMoney(classification.outstandingCents)
+                        : '—'}
                     </td>
-                    <td className="leads-table__actions-col">
+                    <td className="leads-table__hide-mobile">
+                      {classification && classification.overdueOutstandingCents > 0
+                        ? formatListMoney(classification.overdueOutstandingCents)
+                        : '—'}
+                    </td>
+                    <td className="leads-table__hide-mobile">
+                      {customer.lastActivityAt
+                        ? new Date(customer.lastActivityAt).toLocaleDateString()
+                        : new Date(customer.updatedAt).toLocaleDateString()}
+                    </td>
+                    <td className="leads-table__hide-mobile">{customer.nextAction ?? '—'}</td>
+                    <td className="leads-table__actions-col leads-table__actions-col--wide">
                       <RowActionsCell
                         editHref={`/crm/${customer.id}#edit`}
+                        whatsappHref={buildWhatsAppHref(customer.phone)}
+                        emailHref={buildEmailHref(customer.email, `Re: ${customer.name}`)}
                         moreItems={buildCustomerActions(customer, classification, uiStatus)}
                         canWrite={canWrite}
                       />
@@ -422,6 +545,34 @@ export function CustomerList({
       )}
     </Panel>
     {confirmDialog}
+    <BulkCommunicationsReview
+      open={bulkReviewChannel !== null}
+      channel={bulkReviewChannel ?? 'email'}
+      recipients={selectedRows.map(({ customer }) => ({
+        id: customer.id,
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+      }))}
+      onClose={() => setBulkReviewChannel(null)}
+      onConfirmDrafts={() => {
+        setBulkReviewChannel(null);
+        setSelectedIds(new Set());
+        void alert(
+          'Drafts queued for review. Open each customer Communications tab to approve and send.',
+          'Drafts created',
+        );
+      }}
+    />
+    <TypedDeleteDialog
+      open={showBulkDelete}
+      title="Delete customers permanently"
+      message="Protected customers with jobs, invoices, or payments will be blocked."
+      count={selectedIds.size}
+      pending={bulkSaving}
+      onCancel={() => setShowBulkDelete(false)}
+      onConfirm={() => void bulkDeleteConfirmed()}
+    />
     </>
   );
 }

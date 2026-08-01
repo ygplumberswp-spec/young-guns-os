@@ -219,6 +219,61 @@ export function createCrmRouter({
     },
   );
 
+  router.post('/customers/bulk', requireAnyPermission('customers:write'), async (req, res) => {
+    const parsed = z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+        action: z.enum(['archive', 'delete', 'set_status']),
+        status: z
+          .enum(['active', 'inactive', 'payment_attention', 'duplicate_review', 'archived'])
+          .optional(),
+        typedConfirmation: z.string().optional(),
+      })
+      .safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid bulk customer payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const auth = getAuth(req);
+      const isOwner =
+        auth.permissions.includes('*') ||
+        auth.roleName === 'Company Owner' ||
+        auth.roleName === 'Owner' ||
+        auth.roleName.toLowerCase() === 'owner';
+
+      const classificationById = new Map<string, import('@titan/shared').CustomerStatusChangeGuardInput | null>();
+      for (const id of parsed.data.ids) {
+        const classification = await customerValueClassificationService
+          .getCustomerClassification(auth.companyId, id)
+          .catch(() => null);
+        classificationById.set(id, classification);
+      }
+
+      const summary = await crmService.bulkCustomers(auth.companyId, {
+        ids: parsed.data.ids,
+        action: parsed.data.action,
+        status: parsed.data.status,
+        typedConfirmation: parsed.data.typedConfirmation,
+        classificationById,
+        actorUserId: auth.userId,
+        isOwner,
+      });
+
+      res.json({ data: summary });
+    } catch (error) {
+      handleCrmError(res, error);
+    }
+  });
+
   router.post(
     '/customers/:customerId/activities',
     requireAnyPermission('customers:write'),

@@ -812,6 +812,136 @@ export class LeadsService {
     });
   }
 
+  async bulkLeads(
+    scope: TenantScope,
+    input: {
+      ids: string[];
+      action: 'archive' | 'delete' | 'set_status' | 'assign';
+      status?: LeadStatus;
+      assignedUserId?: string | null;
+      typedConfirmation?: string;
+      isOwner: boolean;
+    },
+  ): Promise<import('@titan/shared').BulkOperationSummary> {
+    const summary: import('@titan/shared').BulkOperationSummary = {
+      deleted: 0,
+      archived: 0,
+      updated: 0,
+      skipped: 0,
+      blocked: 0,
+      results: [],
+    };
+
+    for (const leadId of [...new Set(input.ids)]) {
+      const existing = await this.db.query.leads.findFirst({
+        where: and(eq(leads.id, leadId), eq(leads.companyId, scope.companyId)),
+      });
+      if (!existing) {
+        summary.skipped += 1;
+        summary.results.push({
+          id: leadId,
+          name: leadId,
+          status: 'skipped',
+          reason: 'Lead not found',
+        });
+        continue;
+      }
+
+      const displayName = existing.companyName || existing.contactName;
+
+      if (input.action === 'delete') {
+        if (!input.isOwner) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: 'Owner-only permanent delete',
+          });
+          continue;
+        }
+        if (input.typedConfirmation !== 'DELETE') {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: 'Typed DELETE confirmation required',
+          });
+          continue;
+        }
+        try {
+          await this.deleteLead(scope, leadId);
+          summary.deleted += 1;
+          summary.results.push({ id: leadId, name: displayName, status: 'deleted' });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: error instanceof LeadsError ? error.message : 'Delete blocked',
+          });
+        }
+        continue;
+      }
+
+      if (input.action === 'archive') {
+        try {
+          await this.updateLead(scope, leadId, { status: 'duplicate' });
+          summary.archived += 1;
+          summary.results.push({ id: leadId, name: displayName, status: 'archived' });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: error instanceof LeadsError ? error.message : 'Archive failed',
+          });
+        }
+        continue;
+      }
+
+      if (input.action === 'assign') {
+        try {
+          await this.updateLead(scope, leadId, {
+            assignedUserId: input.assignedUserId ?? null,
+          });
+          summary.updated += 1;
+          summary.results.push({ id: leadId, name: displayName, status: 'updated' });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: error instanceof LeadsError ? error.message : 'Assign failed',
+          });
+        }
+        continue;
+      }
+
+      if (input.action === 'set_status' && input.status) {
+        try {
+          await this.updateLead(scope, leadId, { status: input.status });
+          summary.updated += 1;
+          summary.results.push({ id: leadId, name: displayName, status: 'updated' });
+        } catch (error) {
+          summary.blocked += 1;
+          summary.results.push({
+            id: leadId,
+            name: displayName,
+            status: 'blocked',
+            reason: error instanceof LeadsError ? error.message : 'Status change failed',
+          });
+        }
+      }
+    }
+
+    return summary;
+  }
+
   async listActivities(companyId: string, leadId: string): Promise<LeadActivitySummary[]> {
     await this.ensureLeadBelongsToCompany(companyId, leadId);
 

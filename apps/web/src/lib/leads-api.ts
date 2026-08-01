@@ -1,4 +1,5 @@
 import type {
+  BulkOperationSummary,
   ConvertLeadRequest,
   ConvertLeadResult,
   CreateLeadRequest,
@@ -101,6 +102,23 @@ export async function deleteLead(accessToken: string, leadId: string): Promise<v
   await request<Record<string, never>>(`/leads/${leadId}`, {
     accessToken,
     method: 'DELETE',
+  });
+}
+
+export async function bulkLeads(
+  accessToken: string,
+  body: {
+    ids: string[];
+    action: 'archive' | 'delete' | 'set_status' | 'assign';
+    status?: LeadStatus;
+    assignedUserId?: string | null;
+    typedConfirmation?: string;
+  },
+): Promise<BulkOperationSummary> {
+  return request<BulkOperationSummary>('/leads/bulk', {
+    accessToken,
+    method: 'POST',
+    body,
   });
 }
 

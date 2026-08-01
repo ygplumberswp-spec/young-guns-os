@@ -6,11 +6,13 @@ import type {
   CustomerDetail,
   CustomerStatus,
   CustomerPortalAccessSummary,
+  CustomerValueClassificationSummary,
   WhatsappMessageSummary,
 } from '@titan/shared';
-import { AI_NAME, CUSTOMER_STATUS_OPTIONS, isPlaceholderEmail } from '@titan/shared';
+import { AI_NAME, CUSTOMER_STATUS_OPTIONS, classifyCustomerValueFromEvidence, isPlaceholderEmail } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { addCustomerActivity, fetchCustomer, updateCustomer } from '../../lib/crm-api';
+import { fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
 import {
   createCustomerPortalInvite,
   fetchCustomerPortalAccess,
@@ -24,6 +26,7 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageCustomers } from '../../features/crm/CustomerList';
+import { Customer360Tabs } from '../../features/crm/Customer360Tabs';
 import {
   canCreateJobAtProperty,
   CustomerPropertiesPanel,
@@ -62,6 +65,9 @@ export function CustomerDetailPage() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [isPortalLoading, setIsPortalLoading] = useState(false);
   const [isInvitingPortal, setIsInvitingPortal] = useState(false);
+  const [classification, setClassification] = useState<CustomerValueClassificationSummary | null>(
+    null,
+  );
 
   const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
 
@@ -137,6 +143,24 @@ export function CustomerDetailPage() {
         setIsLoadingWhatsapp(false);
       }
     }
+
+    try {
+      const enriched = await fetchCustomersWithClassification(accessToken);
+      const match = enriched.find((row) => row.id === customerId);
+      setClassification(match?.valueClassification ?? null);
+    } catch {
+      setClassification({
+        ...classifyCustomerValueFromEvidence({
+          customerId: data.id,
+          customerName: data.name,
+          customerStatus: data.status,
+          isSupplierOnly: data.isSupplierOnly,
+          xeroContactId: null,
+          invoices: [],
+        }),
+        computedAt: new Date().toISOString(),
+      });
+    }
   }
 
   useEffect(() => {
@@ -168,6 +192,12 @@ export function CustomerDetailPage() {
       cancelled = true;
     };
   }, [accessToken, customerId, canCommunicate, canManagePortal]);
+
+  useEffect(() => {
+    if (window.location.hash === '#edit' && canWrite && customer) {
+      setIsEditing(true);
+    }
+  }, [canWrite, customer, customerId]);
 
   async function handleInvitePortal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -347,7 +377,7 @@ export function CustomerDetailPage() {
     <div className="crm-page">
       <PageHeader
         title={customer.name}
-        description="Customer profile and activity history."
+        description="Customer 360 — profile, finance, jobs and communications."
         actions={
           <div className="crm-detail__actions">
             <Link href={`/aura?customerId=${customer.id}`}>
@@ -373,279 +403,293 @@ export function CustomerDetailPage() {
         </p>
       ) : null}
 
-      <div className="crm-detail">
-        <Panel title="Profile">
-          {isEditing && canWrite ? (
-            <form className="crm-form" onSubmit={(event) => void handleSave(event)}>
-              <Input
-                label="Name"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                required
-              />
+      {accessToken ? (
+        <Customer360Tabs
+          customerId={customerId}
+          customer={customer}
+          accessToken={accessToken}
+          classification={classification}
+          profilePanel={
+            <Panel title="Profile">
+              {isEditing && canWrite ? (
+                <form className="crm-form" onSubmit={(event) => void handleSave(event)}>
+                  <Input
+                    label="Name"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    required
+                  />
 
-              <Input
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                  />
 
-              <Input
-                label="Phone"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
-              />
+                  <Input
+                    label="Phone"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                  />
 
-              <label className="titan-input-group">
-                <span className="titan-input-label">Status</span>
-                <select
-                  className="titan-input"
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as CustomerStatus)}
-                >
-                  {CUSTOMER_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="titan-input-group">
-                <span className="titan-input-label">Notes</span>
-                <textarea
-                  className="titan-input crm-textarea"
-                  rows={4}
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                />
-              </label>
-
-              <div className="crm-form__actions">
-                <Button type="submit" disabled={isSaving || !name.trim()}>
-                  {isSaving ? 'Saving…' : 'Save changes'}
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <dl className="crm-detail-list">
-              <div>
-                <dt>Status</dt>
-                <dd>
-                  <span className={`crm-status crm-status--${customer.status}`}>
-                    {formatStatus(customer.status)}
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{customer.email ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Phone</dt>
-                <dd>{customer.phone ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Notes</dt>
-                <dd>{customer.notes ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Created</dt>
-                <dd>{new Date(customer.createdAt).toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>Updated</dt>
-                <dd>{new Date(customer.updatedAt).toLocaleString()}</dd>
-              </div>
-            </dl>
-          )}
-
-          {canWrite && !isEditing ? (
-            <div className="crm-form__actions">
-              <Button type="button" onClick={() => setIsEditing(true)}>
-                Edit customer
-              </Button>
-            </div>
-          ) : null}
-        </Panel>
-
-        {accessToken ? (
-          <CustomerPropertiesPanel
-            accessToken={accessToken}
-            customerId={customerId}
-            canWrite={canWrite}
-            canCreateJob={canCreateJob}
-          />
-        ) : null}
-
-        <Panel title="Activity notes">
-          {canWrite ? (
-            <form className="crm-activity-form" onSubmit={(event) => void handleAddActivity(event)}>
-              <label className="titan-input-group">
-                <span className="titan-input-label">Add note</span>
-                <textarea
-                  className="titan-input crm-textarea"
-                  rows={3}
-                  value={activityContent}
-                  onChange={(event) => setActivityContent(event.target.value)}
-                  placeholder="Log a call, meeting, or update about this customer"
-                  required
-                />
-              </label>
-              <Button type="submit" disabled={isAddingNote || !activityContent.trim()}>
-                {isAddingNote ? 'Adding…' : 'Add note'}
-              </Button>
-            </form>
-          ) : null}
-
-          {customer.activities.length === 0 ? (
-            <p className="page-muted">No activity notes yet.</p>
-          ) : (
-            <ul className="crm-activity-list">
-              {customer.activities.map((activity) => (
-                <li key={activity.id} className="crm-activity-item">
-                  <p className="crm-activity-item__content">{activity.content}</p>
-                  <p className="crm-activity-item__meta">
-                    {activity.authorName} · {new Date(activity.createdAt).toLocaleString()}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Panel>
-
-        {canManagePortal ? (
-          <Panel title="Customer portal access">
-            {isPortalLoading ? <p className="page-muted">Loading portal access…</p> : null}
-            {portalAccess?.portalUser ? (
-              <div className="stack-form">
-                <p>
-                  Active portal user: <strong>{portalAccess.portalUser.email}</strong>
-                  {portalAccess.portalUser.isActive ? ' · Active' : ' · Inactive'}
-                </p>
-                {portalAccess.portalUser.isActive ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => void handleRevokePortalAccess(portalAccess.portalUser!.id)}
-                  >
-                    Deactivate portal login
-                  </Button>
-                ) : null}
-              </div>
-            ) : portalAccess?.pendingInvite ? (
-              <div className="stack-form">
-                <p>
-                  Invitation pending for <strong>{portalAccess.pendingInvite.email}</strong> until{' '}
-                  {new Date(portalAccess.pendingInvite.expiresAt).toLocaleString()}.
-                </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => void handleRevokePortalInvite(portalAccess.pendingInvite!.id)}
-                >
-                  Revoke invitation
-                </Button>
-              </div>
-            ) : (
-              <form className="stack-form" onSubmit={(event) => void handleInvitePortal(event)}>
-                <p className="page-muted">
-                  Invite this customer to their own portal. Creating the customer record does not
-                  grant login access.
-                </p>
-                <Input
-                  label="Invitation email"
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                  required
-                />
-                <Button type="submit" disabled={isInvitingPortal || !inviteEmail.trim()}>
-                  {isInvitingPortal ? 'Creating invitation…' : 'Invite to portal'}
-                </Button>
-                {inviteUrl ? (
-                  <p className="page-muted">
-                    Share this secure link with the customer: {inviteUrl}
-                  </p>
-                ) : null}
-              </form>
-            )}
-          </Panel>
-        ) : null}
-
-        <Panel title="WhatsApp">
-          {isLoadingWhatsapp ? (
-            <p className="page-muted">Loading WhatsApp history…</p>
-          ) : whatsappMessages.length === 0 ? (
-            <p className="page-muted">No WhatsApp messages for this customer yet.</p>
-          ) : (
-            <ul className="crm-activity-list">
-              {whatsappMessages.map((message) => (
-                <li key={message.id} className="crm-activity-item">
-                  <p className="crm-activity-item__content">{message.messageContent}</p>
-                  <p className="crm-activity-item__meta">
-                    {message.direction} · {message.deliveryStatus}
-                    {message.isDraft ? ' · draft' : ''} ·{' '}
-                    {new Date(message.createdAt).toLocaleString()}
-                  </p>
-                  {message.isDraft && canCommunicate ? (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      disabled={isSendingWhatsapp}
-                      onClick={() => void handleApproveWhatsappDraft(message.id)}
+                  <label className="titan-input-group">
+                    <span className="titan-input-label">Status</span>
+                    <select
+                      className="titan-input"
+                      value={status}
+                      onChange={(event) => setStatus(event.target.value as CustomerStatus)}
                     >
-                      Approve & send
-                    </Button>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
+                      {CUSTOMER_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-          {canCommunicate ? (
-            <form
-              className="crm-activity-form"
-              onSubmit={(event) => void handleSendWhatsapp(event)}
-            >
-              <label className="titan-input-group">
-                <span className="titan-input-label">Send WhatsApp message</span>
-                <textarea
-                  className="titan-input crm-textarea"
-                  rows={3}
-                  value={whatsappMessage}
-                  onChange={(event) => setWhatsappMessage(event.target.value)}
-                  placeholder="Write a WhatsApp message for this customer"
-                  required
-                />
-              </label>
-              <label className="titan-checkbox">
-                <input
-                  type="checkbox"
-                  checked={sendAsDraft}
-                  onChange={(event) => setSendAsDraft(event.target.checked)}
-                />
-                Save as draft for approval (recommended)
-              </label>
-              <Button
-                type="submit"
-                disabled={isSendingWhatsapp || !whatsappMessage.trim() || !phone.trim()}
-              >
-                {isSendingWhatsapp ? 'Sending…' : sendAsDraft ? 'Create draft' : 'Send WhatsApp'}
-              </Button>
-              {!phone.trim() ? (
-                <p className="page-muted">
-                  Add a phone number to the customer profile to send WhatsApp messages.
-                </p>
+                  <label className="titan-input-group">
+                    <span className="titan-input-label">Notes</span>
+                    <textarea
+                      className="titan-input crm-textarea"
+                      rows={4}
+                      value={notes}
+                      onChange={(event) => setNotes(event.target.value)}
+                    />
+                  </label>
+
+                  <div className="crm-form__actions">
+                    <Button type="submit" disabled={isSaving || !name.trim()}>
+                      {isSaving ? 'Saving…' : 'Save changes'}
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <dl className="crm-detail-list">
+                  <div>
+                    <dt>Status</dt>
+                    <dd>
+                      <span className={`crm-status crm-status--${customer.status}`}>
+                        {formatStatus(customer.status)}
+                      </span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{customer.email ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Phone</dt>
+                    <dd>{customer.phone ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Notes</dt>
+                    <dd>{customer.notes ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt>Created</dt>
+                    <dd>{new Date(customer.createdAt).toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Updated</dt>
+                    <dd>{new Date(customer.updatedAt).toLocaleString()}</dd>
+                  </div>
+                </dl>
+              )}
+
+              {canWrite && !isEditing ? (
+                <div className="crm-form__actions">
+                  <Button type="button" onClick={() => setIsEditing(true)}>
+                    Edit customer
+                  </Button>
+                </div>
               ) : null}
-            </form>
-          ) : null}
-        </Panel>
-      </div>
+            </Panel>
+          }
+          propertiesPanel={
+            <CustomerPropertiesPanel
+              accessToken={accessToken}
+              customerId={customerId}
+              canWrite={canWrite}
+              canCreateJob={canCreateJob}
+            />
+          }
+          activityPanel={
+            <Panel title="Activity notes">
+              {canWrite ? (
+                <form
+                  className="crm-activity-form"
+                  onSubmit={(event) => void handleAddActivity(event)}
+                >
+                  <label className="titan-input-group">
+                    <span className="titan-input-label">Add note</span>
+                    <textarea
+                      className="titan-input crm-textarea"
+                      rows={3}
+                      value={activityContent}
+                      onChange={(event) => setActivityContent(event.target.value)}
+                      placeholder="Log a call, meeting, or update about this customer"
+                      required
+                    />
+                  </label>
+                  <Button type="submit" disabled={isAddingNote || !activityContent.trim()}>
+                    {isAddingNote ? 'Adding…' : 'Add note'}
+                  </Button>
+                </form>
+              ) : null}
+
+              {customer.activities.length === 0 ? (
+                <p className="page-muted">No activity notes yet.</p>
+              ) : (
+                <ul className="crm-activity-list">
+                  {customer.activities.map((activity) => (
+                    <li key={activity.id} className="crm-activity-item">
+                      <p className="crm-activity-item__content">{activity.content}</p>
+                      <p className="crm-activity-item__meta">
+                        {activity.authorName} · {new Date(activity.createdAt).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          }
+          communicationsPanel={
+            <>
+              {canManagePortal ? (
+                <Panel title="Customer portal access">
+                  {isPortalLoading ? <p className="page-muted">Loading portal access…</p> : null}
+                  {portalAccess?.portalUser ? (
+                    <div className="stack-form">
+                      <p>
+                        Active portal user: <strong>{portalAccess.portalUser.email}</strong>
+                        {portalAccess.portalUser.isActive ? ' · Active' : ' · Inactive'}
+                      </p>
+                      {portalAccess.portalUser.isActive ? (
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => void handleRevokePortalAccess(portalAccess.portalUser!.id)}
+                        >
+                          Deactivate portal login
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : portalAccess?.pendingInvite ? (
+                    <div className="stack-form">
+                      <p>
+                        Invitation pending for <strong>{portalAccess.pendingInvite.email}</strong>{' '}
+                        until {new Date(portalAccess.pendingInvite.expiresAt).toLocaleString()}.
+                      </p>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => void handleRevokePortalInvite(portalAccess.pendingInvite!.id)}
+                      >
+                        Revoke invitation
+                      </Button>
+                    </div>
+                  ) : (
+                    <form className="stack-form" onSubmit={(event) => void handleInvitePortal(event)}>
+                      <p className="page-muted">
+                        Invite this customer to their own portal. Creating the customer record does
+                        not grant login access.
+                      </p>
+                      <Input
+                        label="Invitation email"
+                        type="email"
+                        value={inviteEmail}
+                        onChange={(event) => setInviteEmail(event.target.value)}
+                        required
+                      />
+                      <Button type="submit" disabled={isInvitingPortal || !inviteEmail.trim()}>
+                        {isInvitingPortal ? 'Creating invitation…' : 'Invite to portal'}
+                      </Button>
+                      {inviteUrl ? (
+                        <p className="page-muted">
+                          Share this secure link with the customer: {inviteUrl}
+                        </p>
+                      ) : null}
+                    </form>
+                  )}
+                </Panel>
+              ) : null}
+
+              <Panel title="WhatsApp">
+                {isLoadingWhatsapp ? (
+                  <p className="page-muted">Loading WhatsApp history…</p>
+                ) : whatsappMessages.length === 0 ? (
+                  <p className="page-muted">No WhatsApp messages for this customer yet.</p>
+                ) : (
+                  <ul className="crm-activity-list">
+                    {whatsappMessages.map((message) => (
+                      <li key={message.id} className="crm-activity-item">
+                        <p className="crm-activity-item__content">{message.messageContent}</p>
+                        <p className="crm-activity-item__meta">
+                          {message.direction} · {message.deliveryStatus}
+                          {message.isDraft ? ' · draft' : ''} ·{' '}
+                          {new Date(message.createdAt).toLocaleString()}
+                        </p>
+                        {message.isDraft && canCommunicate ? (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            disabled={isSendingWhatsapp}
+                            onClick={() => void handleApproveWhatsappDraft(message.id)}
+                          >
+                            Approve & send
+                          </Button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {canCommunicate ? (
+                  <form
+                    className="crm-activity-form"
+                    onSubmit={(event) => void handleSendWhatsapp(event)}
+                  >
+                    <label className="titan-input-group">
+                      <span className="titan-input-label">Send WhatsApp message</span>
+                      <textarea
+                        className="titan-input crm-textarea"
+                        rows={3}
+                        value={whatsappMessage}
+                        onChange={(event) => setWhatsappMessage(event.target.value)}
+                        placeholder="Write a WhatsApp message for this customer"
+                        required
+                      />
+                    </label>
+                    <label className="titan-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={sendAsDraft}
+                        onChange={(event) => setSendAsDraft(event.target.checked)}
+                      />
+                      Save as draft for approval (recommended)
+                    </label>
+                    <Button
+                      type="submit"
+                      disabled={isSendingWhatsapp || !whatsappMessage.trim() || !phone.trim()}
+                    >
+                      {isSendingWhatsapp ? 'Sending…' : sendAsDraft ? 'Create draft' : 'Send WhatsApp'}
+                    </Button>
+                    {!phone.trim() ? (
+                      <p className="page-muted">
+                        Add a phone number to the customer profile to send WhatsApp messages.
+                      </p>
+                    ) : null}
+                  </form>
+                ) : null}
+              </Panel>
+            </>
+          }
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,26 +1,31 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import type { LeadStatus, LeadSummary } from '@titan/shared';
+import type { BulkOperationSummary, LeadStatus, LeadSummary } from '@titan/shared';
 import {
+  buildEmailHref,
+  buildWhatsAppHref,
+  getLeadDeleteEligibility,
   getLeadStatusLabel,
   getLeadStatusTone,
-  getLeadDeleteEligibility,
   LEAD_QUICK_STATUS_ACTIONS,
   LEAD_STATUS_FILTER_GROUPS,
   leadStatusesForFilterGroups,
 } from '@titan/shared';
 import { EmptyState, LoadingState, Panel } from '@titan/ui';
-import { deleteLead, updateLead } from '../../lib/leads-api';
+import { bulkLeads, deleteLead, updateLead } from '../../lib/leads-api';
 import {
   BulkActionBar,
+  BulkCommunicationsReview,
   MultiStatusFilter,
   RowActionsCell,
   StatusBadgeDropdown,
   StatusRowAccent,
+  TypedDeleteDialog,
   type InlineSaveState,
   type MoreMenuItem,
   useConfirmDialog,
 } from '../../components/ux';
+import { useAuth } from '../../lib/auth-context';
 
 type LeadListTableProps = {
   leads: LeadSummary[];
@@ -56,7 +61,22 @@ export function LeadListTable({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [rowSaveState, setRowSaveState] = useState<RowSaveState>({});
   const [bulkSaving, setBulkSaving] = useState(false);
+  const [bulkReviewChannel, setBulkReviewChannel] = useState<'email' | 'whatsapp' | null>(null);
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkResult, setBulkResult] = useState<BulkOperationSummary | null>(null);
+  const { user } = useAuth();
   const { confirm, alert, dialog: confirmDialog } = useConfirmDialog();
+
+  const isOwner = useMemo(
+    () =>
+      Boolean(
+        user?.permissions.includes('*') ||
+          user?.roleName === 'Company Owner' ||
+          user?.roleName === 'Owner' ||
+          user?.roleName?.toLowerCase() === 'owner',
+      ),
+    [user],
+  );
 
   const filteredLeads = useMemo(() => {
     if (statusFilters.length === 0) return leads;
@@ -199,16 +219,57 @@ export function LeadListTable({
     if (!accessToken || !canWrite || selectedIds.size === 0) return;
     setBulkSaving(true);
     try {
-      const selected = filteredLeads.filter((lead) => selectedIds.has(lead.id));
-      for (const lead of selected) {
-        if (lead.status === targetStatus) continue;
-        await changeLeadStatus(lead, targetStatus);
-      }
+      const summary = await bulkLeads(accessToken, {
+        ids: [...selectedIds],
+        action: 'set_status',
+        status: targetStatus,
+      });
+      setBulkResult(summary);
       setSelectedIds(new Set());
+      await onRefresh();
     } finally {
       setBulkSaving(false);
     }
   }
+
+  async function bulkArchive() {
+    if (!accessToken || !canWrite || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const summary = await bulkLeads(accessToken, {
+        ids: [...selectedIds],
+        action: 'archive',
+      });
+      setBulkResult(summary);
+      setSelectedIds(new Set());
+      await onRefresh();
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  async function bulkDeleteConfirmed() {
+    if (!accessToken || !canWrite || selectedIds.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const summary = await bulkLeads(accessToken, {
+        ids: [...selectedIds],
+        action: 'delete',
+        typedConfirmation: 'DELETE',
+      });
+      setBulkResult(summary);
+      setSelectedIds(new Set());
+      setShowBulkDelete(false);
+      await onRefresh();
+    } finally {
+      setBulkSaving(false);
+    }
+  }
+
+  const selectedLeads = useMemo(
+    () => filteredLeads.filter((lead) => selectedIds.has(lead.id)),
+    [filteredLeads, selectedIds],
+  );
 
   function toggleSelectAll(checked: boolean) {
     if (!checked) {
@@ -236,36 +297,51 @@ export function LeadListTable({
   const bulkActions = canWrite
     ? [
         {
-          id: 'qualify',
-          label: 'Mark qualified',
-          onClick: () => void bulkSetStatus('qualified'),
-          disabled: bulkSaving,
-        },
-        {
-          id: 'decline',
-          label: 'Decline',
-          onClick: () => void bulkSetStatus('lost'),
-          disabled: bulkSaving,
-          variant: 'destructive' as const,
-        },
-        {
           id: 'assign',
           label: 'Assign',
           onClick: () => navigate('/leads#assign-bulk'),
           disabled: bulkSaving || selectedIds.size === 0,
         },
         {
-          id: 'pending',
-          label: 'Mark pending',
-          onClick: () => void bulkSetStatus('awaiting_information'),
+          id: 'status',
+          label: 'Change status',
+          onClick: () => void bulkSetStatus('qualified'),
           disabled: bulkSaving,
+        },
+        {
+          id: 'email',
+          label: 'Email',
+          onClick: () => setBulkReviewChannel('email'),
+          disabled: bulkSaving || selectedIds.size === 0,
+        },
+        {
+          id: 'whatsapp',
+          label: 'WhatsApp',
+          onClick: () => setBulkReviewChannel('whatsapp'),
+          disabled: bulkSaving || selectedIds.size === 0,
         },
         {
           id: 'archive',
           label: 'Archive',
-          onClick: () => void bulkSetStatus('duplicate'),
+          onClick: () => void bulkArchive(),
           disabled: bulkSaving,
-          variant: 'destructive' as const,
+        },
+        ...(isOwner
+          ? [
+              {
+                id: 'delete',
+                label: 'Delete',
+                onClick: () => setShowBulkDelete(true),
+                disabled: bulkSaving,
+                variant: 'destructive' as const,
+              },
+            ]
+          : []),
+        {
+          id: 'clear',
+          label: 'Clear selection',
+          onClick: () => setSelectedIds(new Set()),
+          disabled: bulkSaving || selectedIds.size === 0,
         },
       ]
     : [];
@@ -306,6 +382,13 @@ export function LeadListTable({
         actions={bulkActions}
       />
 
+      {bulkResult ? (
+        <p className="page-muted">
+          Bulk complete — deleted {bulkResult.deleted}, archived {bulkResult.archived}, updated{' '}
+          {bulkResult.updated}, blocked {bulkResult.blocked}, skipped {bulkResult.skipped}.
+        </p>
+      ) : null}
+
       {error ? <p className="form-error">{error}</p> : null}
       {isLoading ? <LoadingState label="Loading leads…" /> : null}
 
@@ -322,17 +405,20 @@ export function LeadListTable({
 
       {filteredLeads.length > 0 ? (
         <div className="table-scroll leads-list">
-          <table className="data-table leads-table leads-table--compact">
+          <table className="data-table leads-table leads-table--compact leads-table--phase4">
             <thead>
               <tr>
                 <th className="leads-table__check-col" aria-label="Select" />
-                <th>Name</th>
+                <th>Lead</th>
                 <th className="leads-table__hide-mobile">Contact</th>
+                <th className="leads-table__hide-mobile">Service</th>
+                <th className="leads-table__hide-mobile">Suburb</th>
                 <th className="leads-table__hide-mobile">Source</th>
-                <th className="leads-table__hide-mobile">Assigned</th>
+                <th className="leads-table__hide-mobile">Owner</th>
+                <th className="leads-table__hide-mobile">Est. value</th>
+                <th className="leads-table__hide-mobile">Age</th>
                 <th className="leads-table__hide-mobile">Next action</th>
-                <th className="leads-table__hide-mobile">Updated</th>
-                <th className="leads-table__actions-col">Actions</th>
+                <th className="leads-table__actions-col leads-table__actions-col--wide">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -377,21 +463,30 @@ export function LeadListTable({
                     </td>
                     <td className="leads-table__hide-mobile">
                       {lead.contactPhoneE164 || lead.contactPhone || '—'}
+                      {lead.contactEmail ? (
+                        <div className="muted-text">{lead.contactEmail}</div>
+                      ) : null}
                     </td>
+                    <td className="leads-table__hide-mobile">{lead.serviceType || '—'}</td>
+                    <td className="leads-table__hide-mobile">{lead.suburb || '—'}</td>
                     <td className="leads-table__hide-mobile">{lead.sourceName || '—'}</td>
                     <td className="leads-table__hide-mobile">{lead.assignedUserName || '—'}</td>
+                    <td className="leads-table__hide-mobile">—</td>
+                    <td className="leads-table__hide-mobile">{lead.ageDays}d</td>
                     <td className="leads-table__hide-mobile">
                       {lead.nextAction || '—'}
                       {lead.nextActionDueAt
                         ? ` · ${new Date(lead.nextActionDueAt).toLocaleDateString()}`
                         : ''}
                     </td>
-                    <td className="leads-table__hide-mobile">
-                      {new Date(lead.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="leads-table__actions-col">
+                    <td className="leads-table__actions-col leads-table__actions-col--wide">
                       <RowActionsCell
                         editHref={`/leads/${lead.id}#edit`}
+                        whatsappHref={buildWhatsAppHref(lead.contactPhoneE164 ?? lead.contactPhone)}
+                        emailHref={buildEmailHref(
+                          lead.contactEmail,
+                          `Re: ${lead.companyName || lead.contactName}`,
+                        )}
                         moreItems={buildLeadActions(lead)}
                         canWrite={canWrite}
                       />
@@ -405,6 +500,34 @@ export function LeadListTable({
       ) : null}
     </Panel>
     {confirmDialog}
+    <BulkCommunicationsReview
+      open={bulkReviewChannel !== null}
+      channel={bulkReviewChannel ?? 'email'}
+      recipients={selectedLeads.map((lead) => ({
+        id: lead.id,
+        name: lead.companyName || lead.contactName,
+        email: lead.contactEmail,
+        phone: lead.contactPhoneE164 ?? lead.contactPhone,
+      }))}
+      onClose={() => setBulkReviewChannel(null)}
+      onConfirmDrafts={() => {
+        setBulkReviewChannel(null);
+        setSelectedIds(new Set());
+        void alert(
+          'Drafts queued for review. Open each lead detail to approve outbound messages.',
+          'Drafts created',
+        );
+      }}
+    />
+    <TypedDeleteDialog
+      open={showBulkDelete}
+      title="Delete leads permanently"
+      message="Converted or job-linked leads will be blocked."
+      count={selectedIds.size}
+      pending={bulkSaving}
+      onCancel={() => setShowBulkDelete(false)}
+      onConfirm={() => void bulkDeleteConfirmed()}
+    />
     </>
   );
 }

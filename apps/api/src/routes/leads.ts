@@ -304,6 +304,49 @@ export function createLeadsRouter({
     }
   });
 
+  router.post('/bulk', requireWrite, async (req, res) => {
+    const parsed = z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+        action: z.enum(['archive', 'delete', 'set_status', 'assign']),
+        status: leadStatusSchema.optional(),
+        assignedUserId: z.string().uuid().nullable().optional(),
+        typedConfirmation: z.string().optional(),
+      })
+      .safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid bulk lead payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const auth = getAuth(req);
+      const isOwner =
+        auth.permissions.includes('*') ||
+        auth.roleName === 'Company Owner' ||
+        auth.roleName === 'Owner' ||
+        auth.roleName.toLowerCase() === 'owner';
+      const summary = await leadsService.bulkLeads(auth, {
+        ids: parsed.data.ids,
+        action: parsed.data.action,
+        status: parsed.data.status,
+        assignedUserId: parsed.data.assignedUserId,
+        typedConfirmation: parsed.data.typedConfirmation,
+        isOwner,
+      });
+      res.json({ data: summary });
+    } catch (error) {
+      handleLeadsError(res, error);
+    }
+  });
+
   router.get('/scoring/insights', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const insights = await leadsService.getAcquisitionInsights(companyId);

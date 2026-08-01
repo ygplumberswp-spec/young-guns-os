@@ -32,6 +32,8 @@ export * from './localisation.js';
 export * from './team.js';
 export * from './crm.js';
 export * from './crm-list-ui.js';
+export * from './crm-bulk.js';
+export * from './contact-actions.js';
 export * from './contact-validation.js';
 export * from './job-contract.js';
 export * from './job-execution.js';

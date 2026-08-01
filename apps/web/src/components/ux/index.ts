@@ -7,6 +7,8 @@ export { SummaryCardGrid } from './SummaryCardGrid';
 export { PrimaryAction } from './PrimaryAction';
 export { MoreMenu, QuickActionsDropdown, type MoreMenuItem } from './MoreMenu';
 export { RowActionsCell } from './RowActionsCell';
+export { BulkCommunicationsReview, type BulkCommunicationRecipient } from './BulkCommunicationsReview';
+export { TypedDeleteDialog } from './TypedDeleteDialog';
 export { CompactTabs, type CompactTabItem } from './CompactTabs';
 export { CompactFilterTabs, type CompactFilterOption } from './CompactFilterTabs';
 export { StatusBadge, type StatusBadgeTone } from './StatusBadge';

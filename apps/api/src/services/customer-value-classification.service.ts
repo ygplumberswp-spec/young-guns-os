@@ -138,11 +138,16 @@ export class CustomerValueClassificationService {
         email: row.email,
         phone: row.phone,
         primaryAddressDisplay: null,
+        primarySuburb: null,
         status: row.status,
         isSupplierOnly: row.isSupplierOnly,
         doNotContact: row.doNotContact,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
+        lastJobAt: null,
+        lastJobNumber: null,
+        lastActivityAt: null,
+        nextAction: null,
         valueClassification: classification,
       });
     }
