@@ -56,16 +56,19 @@ export function CustomerListPage() {
           : await fetchCustomersWithClassification(accessToken!, debouncedSearch);
         return enriched;
       } catch {
+        const computedAt = new Date().toISOString();
         return baseCustomers.map((customer) => ({
           ...customer,
           valueClassification: {
-            isVerifiedInvoiced: false,
-            isPayingCustomer: false,
-            isFullyPaid: false,
-            isOverdueDebtor: false,
-            isUnpaidDebtor: false,
-            isPartiallyPaid: false,
-            isProspect: false,
+            ...classifyCustomerValueFromEvidence({
+              customerId: customer.id,
+              customerName: customer.name,
+              customerStatus: customer.status,
+              isSupplierOnly: false,
+              xeroContactId: null,
+              invoices: [],
+            }),
+            computedAt,
           },
         }));
       }
