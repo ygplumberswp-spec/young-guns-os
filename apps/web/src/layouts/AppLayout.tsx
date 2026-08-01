@@ -19,6 +19,7 @@ import {
   HeaderSearchTrigger,
   SearchCommandPalette,
   useSearchCommandPaletteShortcut,
+  AppContentContainer,
 } from '../components/ux';
 
 function companyInitials(name: string): string {
@@ -216,7 +217,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setCommandPaletteOpen(false)}
         canAccessSearch={canSearch}
       />
-      {children}
+      <AppContentContainer>{children}</AppContentContainer>
     </AppShell>
   );
 }

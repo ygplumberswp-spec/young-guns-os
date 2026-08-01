@@ -69,9 +69,10 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/aura\/business-rules$/, fallback: '/aura' },
   { match: /^\/aura\/todays-plan$/, fallback: '/aura' },
 
-  // Settings (all sub-pages → settings hub)
-  { match: /^\/settings\/[^/]+$/, fallback: '/settings' },
-  { match: /^\/settings\/advanced\/[^/]+$/, fallback: '/settings' },
+  // Settings (hub is company profile — `/settings` redirects there)
+  { match: /^\/settings\/advanced\/[^/]+$/, fallback: '/settings/company' },
+  { match: /^\/settings\/company$/, fallback: '/' },
+  { match: /^\/settings\/[^/]+$/, fallback: '/settings/company' },
 
   // Integrations sub-pages
   { match: /^\/integrations\/[^/]+$/, fallback: '/integrations' },
@@ -95,7 +96,7 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/mobile\/(route|inventory|time|notifications|sync)$/, fallback: '/mobile' },
 ];
 
-/** Top-level module landing pages — no back button (sidebar destinations). */
+/** Top-level module landing pages — used for last-module memory and layout hints. */
 export const MODULE_ROOT_PATHS = new Set([
   '/',
   '/jobs',
@@ -194,13 +195,11 @@ export function isBackButtonExcluded(pathname: string): boolean {
   return false;
 }
 
+/** Show back on every staff page except the main dashboard home. */
 export function shouldShowBackButton(pathname: string): boolean {
   if (isBackButtonExcluded(pathname)) return false;
   if (pathname === '/') return false;
-  if (MODULE_ROOT_PATHS.has(pathname)) return false;
-
-  const fallback = resolveSmartBackFallback(pathname);
-  return fallback !== pathname;
+  return true;
 }
 
 export function rememberLastModule(pathname: string): void {

@@ -25,8 +25,12 @@ describe('resolveSmartBackFallback', () => {
     assert.equal(resolveSmartBackFallback('/finance/invoices/inv-1'), '/finance/invoices');
   });
 
-  it('maps settings sub-page to settings hub', () => {
-    assert.equal(resolveSmartBackFallback('/settings/team'), '/settings');
+  it('maps settings sub-page to company profile hub', () => {
+    assert.equal(resolveSmartBackFallback('/settings/team'), '/settings/company');
+  });
+
+  it('maps company settings to dashboard', () => {
+    assert.equal(resolveSmartBackFallback('/settings/company'), '/');
   });
 
   it('maps aura business rules to aura hub', () => {
@@ -43,10 +47,16 @@ describe('shouldShowBackButton', () => {
     assert.equal(shouldShowBackButton('/'), false);
   });
 
-  it('hides on module roots', () => {
-    assert.equal(shouldShowBackButton('/jobs'), false);
-    assert.equal(shouldShowBackButton('/crm'), false);
-    assert.equal(shouldShowBackButton('/settings'), false);
+  it('shows on module roots', () => {
+    assert.equal(shouldShowBackButton('/jobs'), true);
+    assert.equal(shouldShowBackButton('/crm'), true);
+    assert.equal(shouldShowBackButton('/settings/company'), true);
+  });
+
+  it('module roots fall back to dashboard', () => {
+    assert.equal(resolveSmartBackFallback('/jobs'), '/');
+    assert.equal(resolveSmartBackFallback('/crm'), '/');
+    assert.equal(resolveSmartBackFallback('/integrations'), '/');
   });
 
   it('shows on detail and create pages', () => {

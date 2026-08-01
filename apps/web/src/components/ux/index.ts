@@ -1,3 +1,4 @@
+export { AppContentContainer } from './AppContentContainer';
 export { PageHeader } from './PageHeader';
 export { BackButton } from './BackButton';
 export { TitanNotificationsProvider, useTitanNotify, type TitanNotifyVariant } from './TitanNotifications';

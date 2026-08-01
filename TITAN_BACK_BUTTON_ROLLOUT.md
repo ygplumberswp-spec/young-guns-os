@@ -58,3 +58,13 @@ Removed per-page “Back to …” `Link`+`Button` blocks superseded by `PageHea
 
 - `scripts/migrate-page-header-imports.mjs`
 - `scripts/remove-legacy-back-buttons.mjs`
+
+## Deploy evidence
+
+| Item | Value |
+|------|-------|
+| Commit | `f2c69b9` (includes back-button rollout + AURA Business Rules on same branch tip) |
+| Railway service | `comfortable-determination` |
+| Deploy ID | `c8753892-5035-4e03-a2ab-e9e12113f1ca` |
+| Staging URL | https://comfortable-determination-staging.up.railway.app |
+| Health | HTTP **200** on `/` (2026-08-01) |

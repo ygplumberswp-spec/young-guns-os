@@ -22,6 +22,7 @@ import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
 import { useAuraChat } from '../../features/aura/useAuraChat';
 import { AuraMark } from '../../brand/AuraMark';
 import { AuraSectionNav } from '../../features/aura/AuraSectionNav';
+import { BackButton } from '../../components/ux';
 
 export function AuraPage() {
   const { user, accessToken } = useAuth();
@@ -165,7 +166,8 @@ export function AuraPage() {
   }
 
   return (
-    <div className="aura-page">
+    <div className="aura-page page-shell">
+      <BackButton className="aura-page__back" />
       <header className="aura-page__header">
         <div className="aura-page__brand">
           <AuraMark size="md" className="aura-page__mark" />
