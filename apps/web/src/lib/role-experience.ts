@@ -4,6 +4,7 @@ import {
   CLIENT_PORTAL_NAV_ITEMS,
   DISPATCHER_ALLOWED_HREFS,
   OWNER_STAFF_NAV_ITEMS,
+  PROCUREMENT_NAV_ITEM,
   TECHNICIAN_NAV_ITEMS,
   type NavItemConfig,
 } from '@titan/shared';
@@ -22,7 +23,7 @@ export function filterOwnerStaffNav(user: Pick<AuthUser, 'roleName' | 'permissio
   }
 
   const seen = new Set<string>();
-  return OWNER_STAFF_NAV_ITEMS.filter((item) => {
+  const items = OWNER_STAFF_NAV_ITEMS.filter((item) => {
     if (seen.has(item.href)) return false;
     if (experience === 'dispatcher' && !DISPATCHER_ALLOWED_HREFS.has(item.href)) return false;
     if (experience === 'accountant' && !ACCOUNTANT_ALLOWED_HREFS.has(item.href)) return false;
@@ -31,6 +32,18 @@ export function filterOwnerStaffNav(user: Pick<AuthUser, 'roleName' | 'permissio
     seen.add(item.href);
     return true;
   });
+
+  if (hasAnyPermission(user.permissions, PROCUREMENT_NAV_ITEM.permissions ?? [])) {
+    if (!seen.has(PROCUREMENT_NAV_ITEM.href)) {
+      items.splice(
+        items.findIndex((item) => item.href === '/inventory/products') + 1,
+        0,
+        PROCUREMENT_NAV_ITEM,
+      );
+    }
+  }
+
+  return items;
 }
 
 export function filterTechnicianNav(user: Pick<AuthUser, 'roleName' | 'permissions'>) {

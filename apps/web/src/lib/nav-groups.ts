@@ -1,18 +1,18 @@
 import type { NavItemConfig } from '@titan/shared';
 
-export type NavGroupId = 'core' | 'finance' | 'operations' | 'intelligence' | 'platform';
+export type NavGroupId = 'core' | 'finance' | 'operations' | 'intelligence';
 
 export type NavGroupDefinition = {
   id: NavGroupId;
   label: string;
 };
 
+/** Phase 1 — four grouped sidebar sections; Settings lives in header workspace. */
 export const NAV_GROUP_ORDER: NavGroupDefinition[] = [
   { id: 'core', label: 'Core' },
   { id: 'finance', label: 'Finance' },
   { id: 'operations', label: 'Operations' },
   { id: 'intelligence', label: 'Intelligence' },
-  { id: 'platform', label: 'Platform' },
 ];
 
 const HREF_GROUP: Record<string, NavGroupId> = {
@@ -24,28 +24,20 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/finance/quotes': 'finance',
   '/finance/invoices': 'finance',
   '/finance/payments': 'finance',
+  '/finance/receivables': 'finance',
+  '/finance/payables': 'finance',
+  '/finance/cashflow': 'finance',
   '/inventory/products': 'operations',
   '/procurement': 'operations',
   '/fleet': 'operations',
   '/mobile-platform/dispatcher': 'operations',
-  '/dispatch-intelligence': 'operations',
   '/communications/messages': 'operations',
   '/documents': 'operations',
   '/analytics': 'intelligence',
   '/marketing': 'intelligence',
-  '/marketing-intelligence': 'intelligence',
-  '/sales-intelligence': 'intelligence',
   '/aura/agents': 'intelligence',
   '/automation': 'intelligence',
   '/mission-control': 'intelligence',
-  '/integrations': 'platform',
-  '/security': 'platform',
-  '/enterprise-modules': 'platform',
-  '/settings/advanced/platform-health': 'platform',
-  '/release-center': 'platform',
-  '/saas-management': 'platform',
-  '/settings/company': 'platform',
-  '/aura': 'platform',
 };
 
 export function groupNavItems(items: NavItemConfig[]): Array<{
@@ -55,7 +47,7 @@ export function groupNavItems(items: NavItemConfig[]): Array<{
   const buckets = new Map<NavGroupId, NavItemConfig[]>();
 
   for (const item of items) {
-    const groupId = HREF_GROUP[item.href] ?? 'platform';
+    const groupId = HREF_GROUP[item.href] ?? 'operations';
     const list = buckets.get(groupId) ?? [];
     list.push(item);
     buckets.set(groupId, list);

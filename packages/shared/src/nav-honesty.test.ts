@@ -2,7 +2,12 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { NAV_LABELS } from './nav-labels.js';
 import { ENTERPRISE_MODULE_LINKS } from './enterprise-modules.js';
-import { CLIENT_PORTAL_NAV_ITEMS, OWNER_STAFF_NAV_ITEMS } from './role-experience.js';
+import {
+  CLIENT_PORTAL_NAV_ITEMS,
+  GLOBAL_SEARCH_NAV_ITEM,
+  OWNER_STAFF_NAV_ITEMS,
+  PROCUREMENT_NAV_ITEM,
+} from './role-experience.js';
 
 describe('nav honesty (UX-K)', () => {
   it('UX-050 — does not duplicate Finance href onto Quotes', () => {
@@ -16,7 +21,10 @@ describe('nav honesty (UX-K)', () => {
     const financeLabels = new Set(
       OWNER_STAFF_NAV_ITEMS.filter((item) => item.href.startsWith('/finance/')).map((i) => i.label),
     );
-    assert.deepEqual([...financeLabels].sort(), ['Invoices', 'Payments', 'Quotes']);
+    assert.deepEqual(
+      [...financeLabels].sort(),
+      ['Bills & Payables', 'Cashflow', 'Invoices', 'Payments', 'Quotes', 'Receivables'],
+    );
   });
 
   it('UX-052 — Live Dispatch is a first-class staff nav item', () => {
@@ -26,19 +34,34 @@ describe('nav honesty (UX-K)', () => {
     assert.ok(item?.experiences?.includes('dispatcher'));
   });
 
-  it('UX-048 — enterprise modules index is platform-owner only', () => {
+  it('UX-048 — enterprise modules index is platform-owner only (direct URL, not sidebar)', () => {
     const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/enterprise-modules');
-    assert.ok(item);
-    assert.equal(item?.label, 'Enterprise modules');
-    assert.deepEqual(item?.experiences, ['platform_owner']);
+    assert.equal(item, undefined);
     assert.ok(ENTERPRISE_MODULE_LINKS.length >= 10);
     assert.ok(ENTERPRISE_MODULE_LINKS.every((link) => link.href.startsWith('/')));
   });
 
-  it('Phase 4 — global search is a first-class owner nav item', () => {
-    const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/global-search');
-    assert.ok(item);
-    assert.equal(item?.label, 'Search');
+  it('Phase 1 — global search is header-only, not duplicated in sidebar', () => {
+    const sidebarSearch = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/global-search');
+    assert.equal(sidebarSearch, undefined);
+    assert.equal(GLOBAL_SEARCH_NAV_ITEM.href, '/global-search');
+    assert.equal(GLOBAL_SEARCH_NAV_ITEM.label, 'Search');
+  });
+
+  it('Phase 1 — procurement hidden from default sidebar', () => {
+    const sidebarProcurement = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/procurement');
+    assert.equal(sidebarProcurement, undefined);
+    assert.equal(PROCUREMENT_NAV_ITEM.href, '/procurement');
+  });
+
+  it('Phase 1 — settings and integrations are not in main sidebar', () => {
+    for (const href of ['/settings/company', '/settings/team', '/integrations', '/security', '/aura']) {
+      assert.equal(
+        OWNER_STAFF_NAV_ITEMS.some((item) => item.href === href),
+        false,
+        href,
+      );
+    }
   });
 
   it('Phase E — canonical UX label renames are applied', () => {
@@ -46,8 +69,6 @@ describe('nav honesty (UX-K)', () => {
     assert.ok(byLabel(NAV_LABELS.auraTeam));
     assert.ok(byLabel(NAV_LABELS.companyHealth));
     assert.ok(byLabel(NAV_LABELS.automationCommandCentre));
-    assert.ok(byLabel(NAV_LABELS.teamAndAccess));
-    assert.ok(byLabel(NAV_LABELS.auraExecutiveChat));
     assert.equal(byLabel('AURA Capabilities'), false);
     assert.equal(byLabel('Mission Control'), false);
     assert.equal(byLabel('Users & Access'), false);

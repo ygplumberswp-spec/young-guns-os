@@ -1,16 +1,20 @@
 import { CompactTabs } from '../../components/ux';
 
+/** Phase 1 settings workspace — accessed via header identity link, not main sidebar. */
 const tabs = [
   { href: '/settings/company', label: 'Company' },
   { href: '/settings/team', label: 'Team & Access' },
-  { href: '/settings/security', label: 'Security' },
+  { href: '/settings/billing', label: 'Finance & Pricing' },
+  { href: '/settings/dashboard', label: 'Jobs & Scheduling' },
+  { href: '/settings/cartrack', label: 'Fleet' },
+  { href: '/inventory/products', label: 'Inventory' },
+  { href: '/settings/notifications', label: 'Communications' },
+  { href: '/integrations', label: 'Integrations' },
   { href: '/settings/documents-records', label: 'Documents' },
-  { href: '/settings/notifications', label: 'Notifications' },
-  { href: '/settings/advanced/data-protection', label: 'Data protection' },
-  { href: '/settings/advanced/platform-health', label: 'Platform health' },
-  { href: '/settings/portal', label: 'Portal' },
-  { href: '/settings/billing', label: 'Billing' },
-  { href: '/settings/about', label: 'About' },
+  { href: '/aura/business-rules', label: 'AURA & Automations' },
+  { href: '/settings/security', label: 'Security' },
+  { href: '/settings/advanced/platform-health', label: 'Platform Health' },
+  { href: '/settings/about', label: 'Company Setup' },
 ];
 
 export function SettingsNav() {

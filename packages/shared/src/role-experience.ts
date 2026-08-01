@@ -29,45 +29,56 @@ export const COMPANY_BUSINESS_EXPERIENCES: StaffExperience[] = [
   'staff',
 ];
 
+/** Phase 1 — global product organisation sidebar (Settings via header; Search via command palette). */
 export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
+  // Core
   {
     href: '/',
     label: 'Dashboard',
     permissions: ['analytics:read', 'executive:read', 'jobs:read', '*'],
   },
-  {
-    href: '/global-search',
-    label: 'Search',
-    permissions: ['search:read', 'intelligence:read', 'ops:read', '*'],
-  },
   { href: '/crm', label: 'Customers', permissions: ['customers:read', '*'] },
   { href: '/leads', label: 'Leads', permissions: ['leads:read', '*'] },
   { href: '/jobs', label: 'Jobs', permissions: ['jobs:read', '*'] },
   { href: '/scheduling', label: 'Scheduling', permissions: ['dispatch:read', '*'] },
+  // Finance — BOQs live under Quotes via FinanceNav
   { href: '/finance/quotes', label: 'Quotes', permissions: ['finance:read', '*'] },
   { href: '/finance/invoices', label: 'Invoices', permissions: ['finance:read', '*'] },
   { href: '/finance/payments', label: 'Payments', permissions: ['finance:read', '*'] },
-  // UX-K / UX-050 — removed duplicate label "Finance" that reused Quotes href.
-  { href: '/inventory/products', label: 'Inventory', permissions: ['inventory:read', '*'] },
-  { href: '/procurement', label: 'Procurement', permissions: ['procurement:read', '*'] },
-  { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
-    href: '/fleet/live-map',
-    label: NAV_LABELS.fleetLiveMap,
-    permissions: ['fleet:read', 'dispatch:read', '*'],
+    href: '/finance/receivables',
+    label: NAV_LABELS.receivables,
+    permissions: ['finance:read', 'executive:read', '*'],
+    experiences: ['company_owner', 'manager', 'platform_owner', 'accountant', 'staff'],
   },
+  {
+    href: '/finance/payables',
+    label: NAV_LABELS.billsAndPayables,
+    permissions: ['finance:read', 'executive:read', '*'],
+    experiences: ['company_owner', 'manager', 'platform_owner', 'accountant', 'staff'],
+  },
+  {
+    href: '/finance/cashflow',
+    label: NAV_LABELS.cashflow,
+    permissions: ['finance:read', 'executive:read', '*'],
+    experiences: ['company_owner', 'manager', 'platform_owner', 'accountant', 'staff'],
+  },
+  // Operations — Procurement hidden unless procurement:read permission is granted
   {
     href: '/mobile-platform/dispatcher',
     label: NAV_LABELS.liveDispatch,
     permissions: ['dispatch:read', 'mobile:read', '*'],
     experiences: ['dispatcher', 'company_owner', 'manager', 'platform_owner', 'staff'],
   },
+  { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
+  { href: '/inventory/products', label: 'Inventory', permissions: ['inventory:read', '*'] },
+  { href: '/documents', label: 'Documents', permissions: ['documents:read', '*'] },
   {
     href: '/communications/messages',
     label: 'Communications',
     permissions: ['communications:read', '*'],
   },
-  { href: '/documents', label: 'Documents', permissions: ['documents:read', '*'] },
+  // Intelligence
   { href: '/analytics', label: 'Analytics', permissions: ['analytics:read', '*'] },
   { href: '/marketing', label: 'Marketing', permissions: ['marketing:read', '*'] },
   {
@@ -76,50 +87,31 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['agents:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
-  { href: '/automation', label: NAV_LABELS.automationCommandCentre, permissions: ['automation:read', '*'] },
+  {
+    href: '/automation',
+    label: NAV_LABELS.automationCommandCentre,
+    permissions: ['automation:read', '*'],
+  },
   {
     href: '/mission-control',
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
   },
-  { href: '/integrations', label: 'Integrations', permissions: ['integrations:read', '*'] },
-  { href: '/security', label: 'Security', permissions: ['security:read', '*'] },
-  {
-    href: '/enterprise-modules',
-    label: 'Enterprise modules',
-    permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
-    experiences: ['platform_owner'],
-  },
-  {
-    href: '/release-center',
-    label: 'Release Center',
-    permissions: ['release_center:read', 'platform:cross_tenant', '*'],
-    experiences: ['platform_owner'],
-  },
-  {
-    href: '/saas-management',
-    label: 'SaaS Management',
-    permissions: ['saas:read', 'saas:manage', 'platform:cross_tenant', '*'],
-    experiences: ['platform_owner'],
-  },
-  {
-    href: '/settings/company',
-    label: 'Settings',
-    permissions: ['settings:manage', 'company:manage', '*'],
-    experiences: [...COMPANY_BUSINESS_EXPERIENCES],
-  },
-  {
-    href: '/settings/team',
-    label: NAV_LABELS.teamAndAccess,
-    permissions: ['users:read', 'users:manage', '*'],
-  },
-  {
-    href: '/aura',
-    label: NAV_LABELS.auraExecutiveChat,
-    permissions: ['agents:read', 'intelligence:read', '*'],
-    experiences: [...COMPANY_BUSINESS_EXPERIENCES],
-  },
 ];
+
+/** Procurement is intentionally excluded from default sidebar — direct URL only when enabled. */
+export const PROCUREMENT_NAV_ITEM: NavItemConfig = {
+  href: '/procurement',
+  label: 'Procurement',
+  permissions: ['procurement:read', '*'],
+};
+
+/** Global search remains header/command-palette only (not sidebar). */
+export const GLOBAL_SEARCH_NAV_ITEM: NavItemConfig = {
+  href: '/global-search',
+  label: 'Search',
+  permissions: ['search:read', 'intelligence:read', 'ops:read', '*'],
+};
 
 /** Dispatcher operational navigation — no platform admin, AURA owner chat or SaaS controls. */
 export const DISPATCHER_ALLOWED_HREFS = new Set([
@@ -146,6 +138,9 @@ export const ACCOUNTANT_ALLOWED_HREFS = new Set([
   '/finance/quotes',
   '/finance/invoices',
   '/finance/payments',
+  '/finance/receivables',
+  '/finance/payables',
+  '/finance/cashflow',
   '/documents',
   '/integrations',
   '/analytics',

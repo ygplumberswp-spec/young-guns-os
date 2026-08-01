@@ -353,6 +353,12 @@ export function App() {
                           component={OwnerPages.PaymentDetailPage}
                         />
                         <Route path="/finance/payments" component={OwnerPages.PaymentListPage} />
+                        <Route
+                          path="/finance/receivables"
+                          component={OwnerPages.FinanceReceivablesPage}
+                        />
+                        <Route path="/finance/payables" component={OwnerPages.FinancePayablesPage} />
+                        <Route path="/finance/cashflow" component={OwnerPages.FinanceCashflowPage} />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
                         <Route
                           path="/workforce/day-timeline"

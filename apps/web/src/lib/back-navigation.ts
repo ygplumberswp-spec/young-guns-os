@@ -21,6 +21,9 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/finance\/payments\/[^/]+$/, fallback: '/finance/payments' },
   { match: /^\/finance\/boq\/new$/, fallback: '/finance/boq' },
   { match: /^\/finance\/boq\/[^/]+$/, fallback: '/finance/boq' },
+  { match: /^\/finance\/receivables$/, fallback: '/finance/quotes' },
+  { match: /^\/finance\/payables$/, fallback: '/finance/quotes' },
+  { match: /^\/finance\/cashflow$/, fallback: '/finance/quotes' },
 
   // Jobs & schedule
   { match: /^\/jobs\/new$/, fallback: '/jobs' },

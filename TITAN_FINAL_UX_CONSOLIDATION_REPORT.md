@@ -1,9 +1,26 @@
 # TITAN Final UX Consolidation Report
 
-Generated: 2026-08-01T20:56:31.881Z
-Branch: `cursor/integration-lock-auto-sync`
+Generated: 2026-08-01T21:10:00.000Z
+Branch: `cursor/titan-owner-operating-model-final`
 Staging API: `https://young-guns-os-staging.up.railway.app`
 Staging Web: `https://comfortable-determination-staging.up.railway.app`
+
+## Phase 1 — Global organisation (complete @ 236)
+
+**Grouped sidebar:** Core / Finance / Operations / Intelligence via `nav-groups.ts` + `AppLayout`.  
+**Settings:** Header identity link → `/settings/company` workspace with `SettingsNav` compact tabs (not sidebar).  
+**Finance HOLD:** `/finance/receivables`, `/payables`, `/cashflow` — honest empty states, no fake Xero data.  
+**Search:** Command palette only (removed from sidebar).  
+**Procurement:** Permission-gated sidebar insert.  
+**Evidence:** `TITAN_PHASE_1_GLOBAL_ORGANISATION_REPORT.md`, `diagnostic-output/236-phase1-global-organisation-verify.json`
+
+## Phase 0 — Route reconciliation (complete @ 235)
+
+**Totals:** 163 inventoried routes = 62 GO + 46 HOLD + 55 NO-GO (138 staff + 9 mobile + 9 portal + 7 auth).  
+**Fix:** Seven auth routes classified; `/developer` + `/developers` added to staff inventory.  
+**Evidence:** `diagnostic-output/235-phase0-route-reconciliation-verify.json`
+
+---
 
 ## 1. Back button — app-wide fix (BLOCKER RESOLVED)
 
@@ -26,7 +43,13 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 
 ## 4. Tests / build
 
-Run: `pnpm typecheck`, `pnpm test`, `pnpm build` (results appended after CI run).
+| Check | Result |
+|-------|--------|
+| `pnpm typecheck` | PASS |
+| `pnpm test` | PASS — 373 tests |
+| `pnpm --filter @titan/web run build` | PASS |
+| Phase 0 arithmetic (235) | PASS — 163 = 62 + 46 + 55 |
+| Phase 1 staging nav (236) | See verify JSON post-deploy |
 
 ## 5. Remaining blockers
 

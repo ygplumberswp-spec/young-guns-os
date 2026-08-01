@@ -120,6 +120,18 @@ export const PaymentDetailPage = lazyNamed(
   () => import('../pages/finance/PaymentDetailPage'),
   'PaymentDetailPage',
 );
+export const FinanceReceivablesPage = lazyNamed(
+  () => import('../pages/finance/FinanceReceivablesPage'),
+  'FinanceReceivablesPage',
+);
+export const FinancePayablesPage = lazyNamed(
+  () => import('../pages/finance/FinancePayablesPage'),
+  'FinancePayablesPage',
+);
+export const FinanceCashflowPage = lazyNamed(
+  () => import('../pages/finance/FinanceCashflowPage'),
+  'FinanceCashflowPage',
+);
 export const ProductListPage = lazyNamed(
   () => import('../pages/inventory/ProductListPage'),
   'ProductListPage',

@@ -14,9 +14,14 @@ describe('filterOwnerStaffNav (UX-K)', () => {
     assert.ok(labels.includes('Quotes'));
     assert.ok(labels.includes('Invoices'));
     assert.ok(labels.includes('Payments'));
+    assert.ok(labels.includes('Receivables'));
+    assert.ok(labels.includes('Bills & Payables'));
+    assert.ok(labels.includes('Cashflow'));
     assert.equal(labels.includes('Finance'), false);
     assert.ok(hrefs.includes('/mobile-platform/dispatcher'));
     assert.equal(hrefs.includes('/enterprise-modules'), false);
+    assert.equal(hrefs.includes('/global-search'), false);
+    assert.equal(hrefs.includes('/settings/company'), false);
     assert.equal(hrefs.filter((h) => h === '/finance/quotes').length, 1);
   });
 
@@ -61,6 +66,9 @@ describe('filterOwnerStaffNav (UX-K)', () => {
     assert.ok(hrefs.includes('/finance/quotes'));
     assert.ok(hrefs.includes('/finance/invoices'));
     assert.ok(hrefs.includes('/finance/payments'));
+    assert.ok(hrefs.includes('/finance/receivables'));
+    assert.ok(hrefs.includes('/finance/payables'));
+    assert.ok(hrefs.includes('/finance/cashflow'));
     assert.equal(hrefs.includes('/mobile-platform/dispatcher'), false);
     assert.equal(hrefs.includes('/enterprise-modules'), false);
   });

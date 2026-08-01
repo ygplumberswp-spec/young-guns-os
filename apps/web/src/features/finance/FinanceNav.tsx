@@ -6,6 +6,9 @@ const sectionTabs = [
   { href: '/finance/boq', label: 'BOQs' },
   { href: '/finance/invoices', label: 'Invoices' },
   { href: '/finance/payments', label: 'Payments' },
+  { href: '/finance/receivables', label: 'Receivables' },
+  { href: '/finance/payables', label: 'Bills & Payables' },
+  { href: '/finance/cashflow', label: 'Cashflow' },
 ];
 
 const secondaryItems = [
