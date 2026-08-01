@@ -66,7 +66,13 @@ export function BackgroundWorkStatusPanel({
                 {item.checkpoint.completedStages?.length
                   ? ` · completed: ${item.checkpoint.completedStages.join(', ')}`
                   : ''}
+                {item.checkpoint.pagesProcessed != null
+                  ? ` · processed: ${item.checkpoint.pagesProcessed}`
+                  : ''}
               </p>
+            ) : null}
+            {item.retryAt ? (
+              <p className="page-muted">Next retry: {new Date(item.retryAt).toLocaleString()}</p>
             ) : null}
             {item.message ? <p className="form-error">{item.message}</p> : null}
           </li>

@@ -1,76 +1,54 @@
 {
-  "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T11:53:13.383Z",
-  "stagingRef": "cpkuwtaipjxeipvbssvn",
-  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
-  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
-  "targetJobPrefix": "8e6aec9b",
-  "verdict": "FAIL",
+  "generatedAt": "2026-08-01T11:54:29.908Z",
+  "targetJobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
   "checks": [
     {
-      "name": "job_status_completed",
-      "pass": false
+      "name": "target_job_status",
+      "status": "PASS",
+      "detail": "failed · checkpoint=missing · uiActivity=n/a"
     },
     {
-      "name": "last_sync_at_populated",
-      "pass": false
+      "name": "checkpoint_preserved",
+      "status": "PARTIAL",
+      "detail": "{\"checkpoint\":null,\"contactsPulled\":null,\"resumedFromAbandoned\":false,\"heartbeatAt\":null}"
     },
     {
-      "name": "contacts_mappings_present",
-      "pass": true,
-      "count": 673
+      "name": "mapping_counts",
+      "status": "PASS",
+      "detail": {
+        "customers": 673,
+        "invoices": 5,
+        "payments": 0
+      }
     },
     {
-      "name": "invoice_mappings_present",
-      "pass": true
-    },
-    {
-      "name": "payment_mappings_present",
-      "pass": true
-    },
-    {
-      "name": "no_duplicate_customer_mappings",
-      "pass": true
-    },
-    {
-      "name": "cv_auto_recalc_fired",
-      "pass": false
-    },
-    {
-      "name": "recovery_checkpoint_or_resuming",
-      "pass": false
+      "name": "last_sync_at",
+      "status": "PARTIAL",
+      "detail": {
+        "lastSyncAt": null,
+        "lastError": null
+      }
     }
   ],
-  "mappingCounts": {
-    "customer_mappings": 673,
-    "invoice_mappings": 5,
-    "payment_mappings": 0,
-    "bank_tx_logs": 0
-  },
-  "importJob": {
-    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
-    "jobStatus": "failed",
+  "job": {
+    "id": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "status": "failed",
     "errorMessage": "Abandoned: Xero import exceeded the time limit or was interrupted.",
-    "checkpoint": null,
-    "heartbeatAt": null,
-    "activity": null,
-    "resumedFromAbandoned": false,
-    "contactsPulled": null,
-    "invoicesPulled": null,
-    "completedStages": []
+    "startedAt": "2026-08-01T11:15:01.260Z",
+    "completedAt": "2026-08-01T11:45:30.439Z",
+    "resultSummary": {
+      "reason": "stale_running_job",
+      "abandoned": true,
+      "failedStage": null
+    }
+  },
+  "mappingCounts": {
+    "customers": 673,
+    "invoices": 5,
+    "payments": 0
   },
   "connection": {
-    "status": "connected",
-    "lastSyncAt": null,
-    "lastError": null
-  },
-  "cvMetrics": {
-    "cvMetricsRefreshJobId": null,
-    "cvMetricsRefreshAt": null
-  },
-  "duplicateMappingRegression": {
-    "duplicateCustomerContactIds": 0,
-    "samples": []
-  },
-  "notes": []
+    "last_sync_at": null,
+    "last_error": null
+  }
 }

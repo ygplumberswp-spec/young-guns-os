@@ -31,6 +31,8 @@ test('IntegrationSyncOrchestratorService deduplicates concurrent runs per tenant
         status: 'queued' as const,
         message: 'queued',
       }),
+      failStaleImportJobs: async () => 0,
+      resumeAbandonedImportJobs: async () => 0,
       processPendingImportJobs: async () => 0,
     } as never,
     xeroOAuthService: {

@@ -716,3 +716,18 @@
 | **Staging touched** | Read-only poll only — import **not interrupted** |
 | **Tests** | `customer-value-classification.test.ts` (partial + paying=0), `background-work-orchestrator.test.ts` (import complete hook) |
 
+---
+
+## Sprint FRZ-018h — Xero import heartbeat + auto-resume
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018h — stale-job timeout fix + checkpoint recovery |
+| **Root cause** | `failStaleImportJobs` used `startedAt` + 30 min monolithic cutoff; overwrote `result_summary` on abandon |
+| **Result** | **Implemented** — per-batch heartbeat, 15 min stall threshold, auto-resume from checkpoint/mappings |
+| **Import at start** | Job `8e6aec9b…` **failed** (stale timeout); ~682 contacts preserved |
+| **Post-deploy expectation** | Scheduler resumes same job at invoices stage without manual Sync now |
+| **Evidence** | `diagnostic-output/187-xero-import-recovery-verify.json`, `xero-import-recovery.test.ts` |
+| **Next queued worker (after Xero GO)** | SPI-001 Supplier Price Intelligence — see `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md` |
+

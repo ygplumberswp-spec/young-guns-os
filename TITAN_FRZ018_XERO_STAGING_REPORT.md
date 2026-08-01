@@ -225,3 +225,24 @@ OWNER_ACCESS_TOKEN='<staging Bearer>' node diagnostic-output/frz018f-auto-sync-s
 - Only present/absent and connection state reported
 - Production Supabase ref not accessed
 - No live financial writes
+
+---
+
+## FRZ-018h import heartbeat + auto-resume (2026-08-01)
+
+**Root cause:** `failStaleImportJobs` compared `startedAt` to `XERO_IMPORT_STALE_JOB_MS` (30 min) — a **total-duration** cutoff. Job `8e6aec9b…` (~682 contacts, invoice stage) was killed after ~30 min despite healthy batch progress. Worse: stale handler **overwrote** `result_summary`, dropping checkpoint metadata.
+
+| Fix | Detail |
+|-----|--------|
+| Heartbeat | `heartbeatAt` + lease renewed each batch persist |
+| Stall detection | Abandon only when **no heartbeat for 15 min** while `running` (not total import duration) |
+| Checkpoint durability | Abandon merges existing summary; never wipes checkpoint |
+| Auto-resume | Scheduler `resumeAbandonedImportJobs()` re-enqueues failed jobs with checkpoint or reconstructs from mapping counts |
+| Rate limits | 429 sets `nextRetryAt` — does not fail entire import |
+| UI | Resuming / Retrying / Partial / Waiting labels + checkpoint + next retry |
+| `last_sync_at` | Still only on full import success |
+
+Evidence: `diagnostic-output/187-xero-import-recovery-verify.json`  
+Probe: `node diagnostic-output/frz018-xero-import-recovery-verify.mjs`
+
+**Post-deploy:** scheduler auto-resumes job `8e6aec9b…` from invoices checkpoint (~682 contacts preserved). No OAuth reconnect or Sync now required.

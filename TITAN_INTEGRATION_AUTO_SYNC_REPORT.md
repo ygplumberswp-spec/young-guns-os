@@ -87,3 +87,11 @@ Evidence: `diagnostic-output/177-frz018f-auto-sync-schedulers-verify.json`
 1. Deploy commit to staging; enable gates; verify Xero auto initial + scheduled incremental.
 2. Cartrack staging proof once credentials supplied.
 3. Gmail/Google Calendar/Meta — product decision or stub remains honest.
+
+---
+
+## FRZ-018h — Import recovery (2026-08-01)
+
+Replaced monolithic 30-minute `startedAt` abandon with **15-minute heartbeat stall detection**. Checkpoints preserved on abandon; scheduler auto-resumes failed import jobs from `result_summary` or mapping-count reconstruction. UI exposes Resuming / Retrying / Partial / Waiting states.
+
+Evidence: `diagnostic-output/187-xero-import-recovery-verify.json`

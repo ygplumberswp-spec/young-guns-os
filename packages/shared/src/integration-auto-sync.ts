@@ -15,7 +15,7 @@ export type AutoSyncProviderKey =
   | 'openai'
   | 'gemini';
 
-export type IntegrationSyncTrigger = 'initial' | 'incremental' | 'manual' | 'retry';
+export type IntegrationSyncTrigger = 'initial' | 'incremental' | 'manual' | 'retry' | 'resume';
 
 export type IntegrationAutoSyncUiState =
   | 'not_configured'

@@ -242,6 +242,8 @@ export class IntegrationSyncOrchestratorService {
       return { processed: 0, skipped: 0, errors: 0 };
     }
 
+    await this.deps.xeroSyncService.failStaleImportJobs();
+    await this.deps.xeroSyncService.resumeAbandonedImportJobs();
     await this.deps.xeroSyncService.processPendingImportJobs();
 
     await this.reconcileConnectedProvidersWithoutSchedules();

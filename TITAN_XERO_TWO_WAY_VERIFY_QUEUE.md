@@ -3,7 +3,9 @@
 **Status:** **QUEUED** — blocked until import GO  
 **Coordinates with:** `TITAN_CLEAN_DATA_UX_QUEUE.md` Phase A, CV-001 watcher (`cvMetricsRefreshJobId`)  
 **Does not conflict with:** CV post-import metrics refresh — separate idempotency flag `twoWayReadVerifyJobId`  
-**Active import (do not interrupt):** `8e6aec9b-2d99-493c-85b8-75f61d7f414b`  
+**Active import (do not interrupt):** `8e6aec9b-2d99-493c-85b8-75f61d7f414b` — auto-resume enabled after FRZ-018h deploy (heartbeat + checkpoint recovery).
+
+**Next worker after Xero GO:** **SPI-001 Supplier Price Intelligence** — start immediately after import completes and `last_sync_at` is set; do not implement in FRZ-018h scope.
 
 ---
 
