@@ -118,7 +118,13 @@ pnpm --filter @titan/shared run test 119/119 PASS
 
 ## Staging deploy status
 
-See deploy section below — Railway CLI authenticated to `sweet-victory` / staging.
+| Service | URL | Health | Deployment |
+|---------|-----|--------|------------|
+| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | **200** `/` | `39c254eb-1907-4e48-85de-75e6a78731b6` |
+| API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | **200** `/api/v1/health/ready` | Auto-build from push |
+
+Railway CLI: `npx @railway/cli up --service comfortable-determination` (staging only).  
+Commit deployed: `032f797`
 
 ---
 
