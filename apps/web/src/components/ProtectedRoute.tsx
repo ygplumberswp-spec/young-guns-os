@@ -28,7 +28,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (isLoading) {
     return (
       <div style={{ padding: '2rem' }}>
-        <LoadingState label="Opening TITAN…" />
+        <LoadingState label="Restoring your session…" />
       </div>
     );
   }

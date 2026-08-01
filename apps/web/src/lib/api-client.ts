@@ -1,6 +1,7 @@
-import type { ApiResponse, AuthSession, AuthUser } from '@titan/shared';
+import type { ApiResponse, AuthSession, AuthUser, StaffSessionSummary } from '@titan/shared';
 import { isApiError } from '@titan/shared';
 import { resolveApiBase } from './runtime-env';
+import { publishStaffSessionEvent, withCrossTabRefreshLock } from './session-sync';
 
 /** Resolve per-call so `/runtime-config.js` can force same-origin `/api/v1`. */
 function apiBase(): string {
@@ -146,7 +147,7 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
 async function refreshAccessToken(): Promise<AuthSession | null> {
   if (!refreshPromise) {
-    refreshPromise = (async () => {
+    refreshPromise = withCrossTabRefreshLock(async () => {
       try {
         const response = await fetch(`${apiBase()}/auth/refresh`, {
           method: 'POST',
@@ -154,6 +155,7 @@ async function refreshAccessToken(): Promise<AuthSession | null> {
         });
 
         if (!response.ok) {
+          publishStaffSessionEvent({ type: 'session_expired' });
           return null;
         }
 
@@ -164,7 +166,7 @@ async function refreshAccessToken(): Promise<AuthSession | null> {
       } finally {
         refreshPromise = null;
       }
-    })();
+    });
   }
 
   return refreshPromise;
@@ -311,8 +313,44 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
 
   try {
     const payload = await parseResponse<AuthPayload>(response);
+    publishStaffSessionEvent({
+      type: 'refresh',
+      accessToken: payload.session.accessToken,
+      expiresIn: payload.session.expiresIn,
+    });
     return { status: 'authenticated', payload };
   } catch {
     return { status: 'expired' };
   }
+}
+
+export async function fetchMySessions(accessToken: string): Promise<StaffSessionSummary[]> {
+  const data = await request<{ sessions: StaffSessionSummary[] }>('/auth/sessions', { accessToken });
+  return data.sessions;
+}
+
+export async function revokeMySession(accessToken: string, sessionId: string): Promise<void> {
+  await request<{ success: boolean }>(`/auth/sessions/${sessionId}/revoke`, {
+    method: 'POST',
+    accessToken,
+    skipAuthRefresh: true,
+  });
+}
+
+export async function revokeAllOtherMySessions(accessToken: string): Promise<number> {
+  const data = await request<{ success: boolean; revokedCount: number }>('/auth/sessions/revoke-others', {
+    method: 'POST',
+    accessToken,
+    skipAuthRefresh: true,
+  });
+  return data.revokedCount;
+}
+
+export async function confirmStepUp(accessToken: string, password: string): Promise<{ stepUpToken: string; expiresIn: number }> {
+  return request<{ stepUpToken: string; expiresIn: number }>('/auth/step-up', {
+    method: 'POST',
+    accessToken,
+    body: { password },
+    skipAuthRefresh: true,
+  });
 }

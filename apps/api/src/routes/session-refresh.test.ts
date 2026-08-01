@@ -151,6 +151,24 @@ describe('POST /auth/refresh — session expiry bootstrap contract', () => {
     assert.equal(result.payload.error?.code, 'SESSION_INVALID');
   });
 
+  it('returns SESSION_REUSE_DETECTED when a rotated refresh token is reused', async () => {
+    const app = buildApp(
+      baseAuthService({
+        refresh: async () => {
+          throw new AuthError(
+            'SESSION_REUSE_DETECTED',
+            'Session invalidated for security. Please sign in again.',
+          );
+        },
+      }),
+    );
+
+    const result = await postRefresh(app, 'reused-token');
+
+    assert.equal(result.status, 401);
+    assert.equal(result.payload.error?.code, 'SESSION_REUSE_DETECTED');
+  });
+
   it('issues a new access token when refresh cookie is valid', async () => {
     const app = buildApp(baseAuthService());
     const result = await postRefresh(app, 'valid-refresh-token');

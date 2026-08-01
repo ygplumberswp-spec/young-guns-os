@@ -341,6 +341,8 @@ export class EnterpriseSecurityService {
       userAgent: row.userAgent,
       createdAt: row.createdAt.toISOString(),
       expiresAt: row.expiresAt.toISOString(),
+      lastActivityAt: row.lastActivityAt?.toISOString() ?? null,
+      isTrustedDevice: row.isTrustedDevice,
       isCurrent: currentSessionId ? row.id === currentSessionId : false,
     }));
   }
@@ -1035,18 +1037,24 @@ export class EnterpriseSecurityService {
 
     const policy = await this.getTenantPolicy(input.companyId);
     const timeoutMs = policy.sessionTimeoutMinutes * 60 * 1000;
-    if (session.createdAt.getTime() + timeoutMs < Date.now()) {
+    const lastActiveAt = session.lastActivityAt ?? session.createdAt;
+    if (lastActiveAt.getTime() + timeoutMs < Date.now()) {
       await this.db
         .update(sessions)
-        .set({ revokedAt: new Date() })
+        .set({ revokedAt: new Date(), revokedReason: 'inactivity_timeout' })
         .where(eq(sessions.id, session.id));
       return {
         allowed: false,
         code: 'SESSION_TIMEOUT',
-        message: 'Session exceeded tenant timeout policy',
+        message: 'Session exceeded tenant inactivity timeout policy',
         statusCode: 401,
       };
     }
+
+    await this.db
+      .update(sessions)
+      .set({ lastActivityAt: new Date() })
+      .where(eq(sessions.id, session.id));
 
     if (policy.trustedDeviceRequired && input.deviceFingerprint) {
       const device = await this.db.query.securityTrustedDevices.findFirst({

@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { AuthSession, AuthUser } from '@titan/shared';
+import type { AuthSession, AuthUser, StaffSessionUxState } from '@titan/shared';
 import * as api from './api-client';
 import * as teamApi from './team-api';
 import { clearAllQueryCache, clearQueryCacheForScope } from './query-cache';
@@ -17,6 +17,12 @@ import {
   clearAllMobileOfflineData,
   readCachedStaffSession,
 } from './mobile-offline-queue';
+import {
+  decodeAccessTokenExpiryMs,
+  publishStaffSessionEvent,
+  subscribeStaffSessionEvents,
+} from './session-sync';
+import { SESSION_EXPIRY_WARNING_MS } from '@titan/shared';
 
 /** Why the user is anonymous after bootstrap (drives login banner / redirect). */
 export type SessionBootstrapState = 'loading' | 'authenticated' | 'missing' | 'expired' | 'unreachable';
@@ -27,6 +33,8 @@ type AuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   sessionBootstrap: SessionBootstrapState;
+  sessionUxState: StaffSessionUxState | null;
+  dismissSessionUxState: () => void;
   signup: (input: {
     companyName: string;
     email: string;
@@ -58,11 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [sessionBootstrap, setSessionBootstrap] = useState<SessionBootstrapState>('loading');
+  const [sessionUxState, setSessionUxState] = useState<StaffSessionUxState | null>('restoring');
 
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
+      setSessionUxState('restoring');
       try {
         let restored: api.RestoreSessionResult = { status: 'missing' };
         try {
@@ -79,6 +89,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(restored.payload.user);
           setAccessToken(restored.payload.session.accessToken);
           setSessionBootstrap('authenticated');
+          setSessionUxState('restored');
+          publishStaffSessionEvent({
+            type: 'login',
+            accessToken: restored.payload.session.accessToken,
+            expiresIn: restored.payload.session.expiresIn,
+          });
           await cacheStaffSessionForOffline({
             user: restored.payload.user as unknown as Record<string, unknown>,
             accessToken: restored.payload.session.accessToken,
@@ -93,11 +109,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(cached.user as unknown as AuthUser);
             setAccessToken(cached.accessToken);
             setSessionBootstrap('authenticated');
+            setSessionUxState('restored');
             return;
           }
         } else if (restored.status === 'expired') {
           // Online refresh rejected an existing cookie — clear protected local data.
           await clearAllMobileOfflineData();
+          setSessionUxState('sign_in_again');
+        } else if (restored.status === 'unreachable') {
+          setSessionUxState('connection_lost');
+        } else {
+          setSessionUxState(null);
         }
 
         setUser(null);
@@ -117,6 +139,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    return subscribeStaffSessionEvents((event) => {
+      if (event.type === 'logout' || event.type === 'session_expired') {
+        setUser(null);
+        setAccessToken(null);
+        setSessionBootstrap('expired');
+        setSessionUxState('sign_in_again');
+        return;
+      }
+
+      if (event.type === 'refresh' || event.type === 'login') {
+        setAccessToken(event.accessToken);
+        setSessionBootstrap('authenticated');
+        setSessionUxState('restored');
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    function handleOnline() {
+      setSessionUxState((current) => (current === 'connection_lost' ? 'reconnecting' : current));
+    }
+
+    function handleOffline() {
+      setSessionUxState('connection_lost');
+    }
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) {
+      return;
+    }
+
+    const expiryMs = decodeAccessTokenExpiryMs(accessToken);
+    if (!expiryMs) {
+      return;
+    }
+
+    const warnAt = expiryMs - SESSION_EXPIRY_WARNING_MS;
+    const delay = warnAt - Date.now();
+    if (delay <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSessionUxState((current) => (current === 'restored' ? 'expiring_soon' : current));
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [accessToken]);
+
   const applyAuth = useCallback((payload: { user: AuthUser; session: AuthSession }) => {
     setUser((previous) => {
       if (previous && previous.id !== payload.user.id) {
@@ -128,6 +208,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     setAccessToken(payload.session.accessToken);
     setSessionBootstrap('authenticated');
+    setSessionUxState('restored');
+    publishStaffSessionEvent({
+      type: 'login',
+      accessToken: payload.session.accessToken,
+      expiresIn: payload.session.expiresIn,
+    });
     void cacheStaffSessionForOffline({
       user: payload.user as unknown as Record<string, unknown>,
       accessToken: payload.session.accessToken,
@@ -189,6 +275,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       : null;
 
     await api.logout();
+    publishStaffSessionEvent({ type: 'logout' });
     if (scope) {
       clearQueryCacheForScope(scope);
     }
@@ -198,7 +285,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAccessToken(null);
     setSessionBootstrap('missing');
+    setSessionUxState(null);
   }, [user]);
+
+  const dismissSessionUxState = useCallback(() => {
+    setSessionUxState(null);
+  }, []);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -207,13 +299,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isLoading,
       isAuthenticated: Boolean(user && accessToken),
       sessionBootstrap,
+      sessionUxState,
+      dismissSessionUxState,
       signup,
       login,
       completeLoginMfa,
       acceptInvite,
       logout,
     }),
-    [user, accessToken, isLoading, sessionBootstrap, signup, login, completeLoginMfa, acceptInvite, logout],
+    [user, accessToken, isLoading, sessionBootstrap, sessionUxState, dismissSessionUxState, signup, login, completeLoginMfa, acceptInvite, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

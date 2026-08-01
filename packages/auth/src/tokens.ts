@@ -10,8 +10,25 @@ export type AccessTokenPayload = {
   permissions: string[];
 };
 
-const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+/** Default access token lifetime (~15 minutes). Override via TITAN_ACCESS_TOKEN_TTL_SECONDS. */
+export const ACCESS_TOKEN_TTL_SECONDS = resolveAccessTokenTtlSeconds();
 export const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** Trusted-device refresh window (up to 30 days). */
+export const TRUSTED_DEVICE_REFRESH_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+/** Step-up re-auth window for sensitive actions (5 minutes). */
+export const STEP_UP_TOKEN_TTL_SECONDS = 5 * 60;
+
+function resolveAccessTokenTtlSeconds(): number {
+  const raw = process.env.TITAN_ACCESS_TOKEN_TTL_SECONDS;
+  if (!raw) {
+    return 15 * 60;
+  }
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed < 60 || parsed > 3600) {
+    return 15 * 60;
+  }
+  return parsed;
+}
 
 export function createAccessToken(
   payload: AccessTokenPayload,
@@ -95,4 +112,47 @@ export function generateRefreshToken(): string {
 
 export function hashRefreshToken(refreshToken: string): string {
   return createHash('sha256').update(refreshToken).digest('hex');
+}
+
+export type StepUpTokenPayload = {
+  purpose: 'step_up';
+  sub: string;
+  companyId: string;
+  sessionId: string;
+};
+
+export function createStepUpToken(
+  userId: string,
+  companyId: string,
+  sessionId: string,
+  secret: string,
+): { token: string; expiresIn: number } {
+  const token = jwt.sign(
+    { purpose: 'step_up', sub: userId, companyId, sessionId } satisfies StepUpTokenPayload,
+    secret,
+    { expiresIn: STEP_UP_TOKEN_TTL_SECONDS },
+  );
+  return { token, expiresIn: STEP_UP_TOKEN_TTL_SECONDS };
+}
+
+export function verifyStepUpToken(
+  token: string,
+  secret: string,
+  expected: { userId: string; companyId: string; sessionId: string },
+): boolean {
+  try {
+    const decoded = jwt.verify(token, secret);
+    if (typeof decoded !== 'object' || decoded === null) {
+      return false;
+    }
+    const payload = decoded as Partial<StepUpTokenPayload>;
+    return (
+      payload.purpose === 'step_up' &&
+      payload.sub === expected.userId &&
+      payload.companyId === expected.companyId &&
+      payload.sessionId === expected.sessionId
+    );
+  } catch {
+    return false;
+  }
 }

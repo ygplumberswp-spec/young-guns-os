@@ -1,7 +1,7 @@
 import { Router, type Response } from 'express';
 import type { Logger } from 'pino';
 import { z } from 'zod';
-import { validatePasswordStrength, createMfaLoginChallengeToken, verifyMfaLoginChallengeToken } from '@titan/auth';
+import { validatePasswordStrength, createMfaLoginChallengeToken, verifyMfaLoginChallengeToken, createStepUpToken } from '@titan/auth';
 import type { AuthService } from '../services/auth.service.js';
 import { AuthError } from '../services/auth.service.js';
 import type { EnterpriseSecurityService } from '../services/enterprise-security.service.js';
@@ -34,6 +34,14 @@ const acceptInviteSchema = z.object({
   firstName: z.string().trim().min(1).max(80),
   lastName: z.string().trim().min(1).max(80),
   password: z.string().min(8).max(128),
+});
+
+const stepUpSchema = z.object({
+  password: z.string().min(1).max(128),
+});
+
+const trustedDeviceSchema = z.object({
+  trustedDevice: z.boolean().optional(),
 });
 
 const REFRESH_COOKIE_NAME = 'titan_refresh_token';
@@ -438,7 +446,13 @@ export function createAuthRouter({
     authLog?.debug('Refresh request received — validating refresh token');
 
     try {
-      const result = await authService.refresh(refreshToken);
+      const parsedTrusted = trustedDeviceSchema.safeParse(req.body ?? {});
+      const result = await authService.refresh({
+        refreshToken,
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip,
+        trustedDevice: parsedTrusted.success ? parsedTrusted.data.trustedDevice : undefined,
+      });
       authLog?.info(
         { userId: result.user.id, sessionExpiresIn: result.session.expiresIn },
         'Refresh succeeded — new access token issued',
@@ -472,6 +486,65 @@ export function createAuthRouter({
     }
 
     res.json({ data: { user } });
+  });
+
+  router.get('/sessions', requireAuth, async (req, res) => {
+    const auth = (req as AuthenticatedRequest).auth;
+    const sessions = await authService.listMySessions(auth.userId, auth.sessionId);
+    res.json({ data: { sessions } });
+  });
+
+  router.post('/sessions/:sessionId/revoke', requireAuth, async (req, res) => {
+    const auth = (req as AuthenticatedRequest).auth;
+    const sessionId = typeof req.params.sessionId === 'string' ? req.params.sessionId : req.params.sessionId[0];
+
+    try {
+      await authService.revokeMySession(auth.userId, sessionId);
+      res.json({ data: { success: true } });
+    } catch (error) {
+      handleAuthError(res, error, authLog);
+    }
+  });
+
+  router.post('/sessions/revoke-others', requireAuth, async (req, res) => {
+    const auth = (req as AuthenticatedRequest).auth;
+
+    try {
+      const revokedCount = await authService.revokeAllOtherMySessions(auth.userId, auth.sessionId);
+      res.json({ data: { success: true, revokedCount } });
+    } catch (error) {
+      handleAuthError(res, error, authLog);
+    }
+  });
+
+  router.post('/step-up', requireAuth, async (req, res) => {
+    const auth = (req as AuthenticatedRequest).auth;
+    const parsed = stepUpSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Password is required for step-up authentication',
+        },
+      });
+      return;
+    }
+
+    const valid = await authService.verifyPasswordForStepUp(auth.userId, parsed.data.password);
+
+    if (!valid) {
+      res.status(401).json({
+        error: {
+          code: 'STEP_UP_INVALID',
+          message: 'Password confirmation failed',
+        },
+      });
+      return;
+    }
+
+    const stepUp = createStepUpToken(auth.userId, auth.companyId, auth.sessionId, jwtSecret);
+    res.json({ data: { stepUpToken: stepUp.token, expiresIn: stepUp.expiresIn } });
   });
 
   return router;
@@ -561,7 +634,11 @@ function handleAuthError(res: Response, error: unknown, authLog?: Logger) {
             ? 404
             : error.code === 'SESSION_EXPIRED' || error.code === 'SESSION_INVALID'
               ? 401
-              : error.code === 'INVITE_INVALID'
+              : error.code === 'SESSION_REUSE_DETECTED'
+                ? 401
+                : error.code === 'ACCOUNT_DISABLED'
+                  ? 403
+                  : error.code === 'INVITE_INVALID'
                 ? 400
                 : error.code === 'SIGNUP_FAILED' || error.code === 'SESSION_FAILED'
                   ? 503

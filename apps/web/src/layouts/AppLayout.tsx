@@ -14,6 +14,7 @@ import { CompanyMediaImage } from '../features/company/CompanyMediaImage';
 import { NavIcon } from '../components/NavIcon';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
+import { SessionStatusBanner } from '../components/SessionStatusBanner';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -29,7 +30,7 @@ type AppLayoutProps = {
 export function AppLayout({ children }: AppLayoutProps) {
   const [location] = useLocation();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const { user, logout, accessToken } = useAuth();
+  const { user, logout, accessToken, sessionUxState, dismissSessionUxState } = useAuth();
   const { logoFileId, companyName: profileCompanyName } = useCompanyLocale();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -188,6 +189,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           onClick={() => setMobileNavOpen(false)}
         />
       ) : null}
+      <SessionStatusBanner state={sessionUxState} onDismiss={dismissSessionUxState} />
       {children}
     </AppShell>
   );

@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/*.test.ts src/features/aura/*.test.ts src/features/jobs/*.test.ts src/features/dispatch/*.test.ts src/features/global-search/*.test.ts src/lib/portal-routing.test.ts src/lib/nested-routing.test.ts src/brand/*.test.ts src/lib/login-mfa.test.ts src/lib/session-expiry.test.ts src/lib/mobile-offline-completion.test.ts src/lib/role-forbidden-direct-url.test.ts"
+    "test": "tsx --test src/lib/*.test.ts src/features/aura/*.test.ts src/features/jobs/*.test.ts src/features/dispatch/*.test.ts src/features/global-search/*.test.ts src/lib/portal-routing.test.ts src/lib/nested-routing.test.ts src/brand/*.test.ts src/lib/login-mfa.test.ts src/lib/session-expiry.test.ts src/lib/secure-session.test.ts src/lib/mobile-offline-completion.test.ts src/lib/role-forbidden-direct-url.test.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.2.5",

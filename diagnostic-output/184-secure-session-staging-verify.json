@@ -1,0 +1,66 @@
+{
+  "label": "SECURE-SESSION-184",
+  "startedAt": "2026-08-01T11:51:08.010Z",
+  "finishedAt": "2026-08-01T11:51:11.982Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "summary": "7 PASS / 3 PARTIAL / 1 FAIL",
+  "overall": "NO-GO",
+  "results": [
+    {
+      "name": "api_health",
+      "status": "FAIL",
+      "detail": "status=404"
+    },
+    {
+      "name": "api_ready",
+      "status": "PARTIAL",
+      "detail": "status=404"
+    },
+    {
+      "name": "web_health",
+      "status": "PASS",
+      "detail": "status=200"
+    },
+    {
+      "name": "refresh_missing_cookie",
+      "status": "PASS",
+      "detail": "SESSION_MISSING"
+    },
+    {
+      "name": "web_runtime_config",
+      "status": "PASS",
+      "detail": "present"
+    },
+    {
+      "name": "web_route_shell_/integrations/xero",
+      "status": "PASS",
+      "detail": "shell OK"
+    },
+    {
+      "name": "web_route_shell_/",
+      "status": "PASS",
+      "detail": "shell OK"
+    },
+    {
+      "name": "web_route_shell_/settings/security",
+      "status": "PASS",
+      "detail": "shell OK"
+    },
+    {
+      "name": "web_route_shell_/mobile/jobs",
+      "status": "PASS",
+      "detail": "shell OK"
+    },
+    {
+      "name": "auth_my_sessions",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set — cookie restore checks skipped"
+    },
+    {
+      "name": "auth_me_after_restore",
+      "status": "PARTIAL",
+      "detail": "OWNER_ACCESS_TOKEN not set"
+    }
+  ]
+}

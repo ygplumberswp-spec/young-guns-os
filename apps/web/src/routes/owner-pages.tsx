@@ -481,3 +481,7 @@ export const PortalSettingsPage = lazyNamed(
   () => import('../pages/settings/PortalSettingsPage'),
   'PortalSettingsPage',
 );
+export const SecuritySettingsPage = lazyNamed(
+  () => import('../pages/settings/SecuritySettingsPage'),
+  'SecuritySettingsPage',
+);

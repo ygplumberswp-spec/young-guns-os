@@ -5,6 +5,7 @@ import { EnterpriseSecurityError } from '../services/enterprise-security.service
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { createZeroTrustMiddleware } from '../middleware/zero-trust.js';
+import { createStepUpMiddleware } from '../middleware/step-up-auth.js';
 import { createRateLimitMiddleware } from '../middleware/rate-limit.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 
@@ -98,6 +99,7 @@ export function createEnterpriseSecurityRouter({
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireZeroTrust = createZeroTrustMiddleware({ enterpriseSecurityService });
+  const requireStepUp = createStepUpMiddleware({ jwtSecret });
   const requireRateLimit = createRateLimitMiddleware({ enterpriseSecurityService });
   const requireRead = requireAnyPermission(
     'security:read',
@@ -127,7 +129,7 @@ export function createEnterpriseSecurityRouter({
     res.json({ data: { policy } });
   });
 
-  router.patch('/policy', requireWrite, async (req, res) => {
+  router.patch('/policy', requireWrite, requireStepUp, async (req, res) => {
     const auth = getAuth(req);
     const parsed = policySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -169,7 +171,7 @@ export function createEnterpriseSecurityRouter({
     res.json({ data: { sessions } });
   });
 
-  router.post('/sessions/:sessionId/revoke', requireWrite, async (req, res) => {
+  router.post('/sessions/:sessionId/revoke', requireWrite, requireStepUp, async (req, res) => {
     const auth = getAuth(req);
     try {
       await enterpriseSecurityService.revokeSession(
@@ -182,7 +184,7 @@ export function createEnterpriseSecurityRouter({
     }
   });
 
-  router.post('/sessions/revoke-others', requireWrite, async (req, res) => {
+  router.post('/sessions/revoke-others', requireWrite, requireStepUp, async (req, res) => {
     const auth = getAuth(req);
     try {
       const revokedCount = await enterpriseSecurityService.revokeAllOtherSessions(
