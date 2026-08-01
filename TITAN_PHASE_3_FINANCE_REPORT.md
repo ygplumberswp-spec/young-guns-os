@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Phase:** 3 — full (3A–3D)  
 **Starting SHA:** `ccd5c1a` (partial Phase 3)  
-**Final SHA:** *(set at commit)*  
+**Final SHA:** `0fb820a`  
 **Production touched:** NO  
 
 ---
@@ -88,7 +88,7 @@
 | Payables UI (honest HOLD) | PASS |
 | DB/API outstanding match | PASS |
 
-**Evidence:** `diagnostic-output/230-xero-owner-control-parity-verify.json`  
+**Evidence:** `diagnostic-output/230-xero-owner-control-parity-verify.json` — **GO** @ 2026-08-01T22:12:21Z  
 **Screenshots:** `diagnostic-output/phase3-finance-staging/`
 
 ---
@@ -116,6 +116,24 @@
 | Web pages | `FinancePayablesPage.tsx`, `FinanceCashflowPage.tsx` |
 | Verify | `diagnostic-output/230-xero-owner-control-parity-verify.mjs` |
 | Docs | `XERO_TITAN_FULL_PARITY_MATRIX.md`, this report, owner operating model |
+
+---
+
+## Staging deployments
+
+| Service | Deploy ID |
+|---------|-----------|
+| API (young-guns-os) | `c769e40e-604c-4223-b646-d6a63d3cd810` |
+| Web (comfortable-determination) | `a229b1a3-c247-4dcc-b480-c7eea563ea52` |
+
+---
+
+## Commits
+
+| SHA | Message |
+|-----|---------|
+| `ccd5c1a` | docs(phase-3): partial finance report (prior) |
+| `0fb820a` | feat(phase-3): complete finance payables API and cashflow separation |
 
 ---
 

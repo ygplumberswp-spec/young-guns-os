@@ -1,9 +1,9 @@
 {
   "label": "230-xero-owner-control-parity-verify",
-  "phase": "3-partial",
-  "generatedAt": "2026-08-01T22:03:25.728Z",
+  "phase": "3-full",
+  "generatedAt": "2026-08-01T22:12:21.694Z",
   "branch": "cursor/titan-owner-operating-model-final",
-  "headSha": "e522d27f56efe3a5a0c425b945e855f4352a8a5f",
+  "headSha": "0fb820ad436e6679d05eda434667c126eb8430c7",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "webOrigin": "https://comfortable-determination-staging.up.railway.app",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -49,6 +49,14 @@
       "pass": true,
       "detail": {
         "status": 200
+      }
+    },
+    {
+      "name": "payables_api",
+      "pass": true,
+      "detail": {
+        "status": 200,
+        "accpayAvailable": false
       }
     },
     {
@@ -103,7 +111,7 @@
       ]
     },
     {
-      "name": "payables_ui_partial",
+      "name": "payables_ui",
       "pass": true,
       "detail": [
         {
@@ -206,7 +214,16 @@
     "cashflow": {
       "status": 200,
       "inflowCents": 0,
-      "outstandingReceivableCents": 0
+      "invoicedRevenueCents": 0,
+      "outstandingReceivableCents": 0,
+      "bankTransactionSyncCount": 3078,
+      "bankBalanceAvailable": false
+    },
+    "payables": {
+      "status": 200,
+      "accpayAvailable": false,
+      "poCashRequirementCents": 0,
+      "unmatchedBankTransactionCount": 3078
     },
     "financeStats": {
       "status": 200,
@@ -280,8 +297,8 @@
   ],
   "paritySummary": {
     "receivables": "GO — API + UI from synced ACCREC",
-    "payables": "HOLD — ACCPAY bills not imported; PO commitments only",
-    "cashflow": "PARTIAL — cash vs invoiced separated; bank balance pending",
+    "payables": "HOLD — ACCPAY not imported; honest UI + payables API with PO/bank-tx signals",
+    "cashflow": "GO (partial) — invoiced vs cash separated; bank balance ACCPAY on HOLD",
     "xeroWrite": "NONE — read-only verification"
   }
 }
