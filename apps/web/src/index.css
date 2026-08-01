@@ -1039,6 +1039,91 @@ a:focus-visible {
   height: 1.875rem;
 }
 
+.dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.625rem;
+}
+
+.dashboard-metrics--compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-metric-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.dashboard-metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem 0.875rem;
+  border-radius: var(--titan-radius-md);
+  border: 1px solid var(--titan-border-subtle);
+  background: var(--titan-surface-muted);
+  min-height: 5.5rem;
+}
+
+.dashboard-metric-link:hover .dashboard-metric-card,
+.dashboard-metric-link:focus-visible .dashboard-metric-card {
+  border-color: color-mix(in srgb, var(--titan-accent) 45%, var(--titan-border-subtle));
+  box-shadow: var(--titan-shadow-glow);
+}
+
+.dashboard-metric-label {
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.dashboard-metric-value {
+  font-size: 1.375rem;
+  line-height: 1.1;
+}
+
+.dashboard-metric-hint {
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.customer-value-status {
+  margin: 0 0 0.75rem;
+}
+
+.dashboard-metric-card--skeleton {
+  pointer-events: none;
+}
+
+.dashboard-metric-skeleton {
+  display: block;
+  border-radius: var(--titan-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--titan-surface-muted) 0%,
+    color-mix(in srgb, var(--titan-surface-hover) 70%, var(--titan-accent) 30%) 50%,
+    var(--titan-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: exec-dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+.dashboard-metric-skeleton--label {
+  width: 70%;
+  height: 0.75rem;
+}
+
+.dashboard-metric-skeleton--value {
+  width: 45%;
+  height: 1.375rem;
+  margin-top: 0.125rem;
+}
+
+.dashboard-metric-skeleton--hint {
+  width: 55%;
+  height: 0.75rem;
+  margin-top: 0.125rem;
+}
+
 .dashboard-panels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
