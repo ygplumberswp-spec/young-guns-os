@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { Route, Switch } from 'wouter';
+import { Redirect, Route, Switch } from 'wouter';
 import { AuthProvider } from './lib/auth-context';
 import { PreloadCoordinator } from './components/PreloadCoordinator';
 import { CompanyLocaleProvider } from './lib/company-locale-context';
@@ -215,7 +215,13 @@ export function App() {
                         <Route path="/global-search" component={OwnerPages.GlobalSearchPage} />
                         <Route path="/data-migration" component={OwnerPages.DataMigrationPage} />
                         <Route path="/notifications" component={OwnerPages.NotificationsPage} />
-                        <Route path="/platform-health" component={OwnerPages.PlatformHealthPage} />
+                        <Route path="/platform-health">
+                          {() => <Redirect to="/settings/advanced/platform-health" />}
+                        </Route>
+                        <Route
+                          path="/settings/advanced/platform-health"
+                          component={OwnerPages.PlatformHealthPage}
+                        />
                         <Route path="/launch-center" component={OwnerPages.LaunchCenterPage} />
                         <Route path="/release-center" component={OwnerPages.ReleaseCenterPage} />
                         <Route path="/go-live" component={OwnerPages.GoLivePage} />

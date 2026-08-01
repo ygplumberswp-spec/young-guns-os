@@ -139,7 +139,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/security',
   '/recruiting',
   '/evolution',
-  '/platform-health',
+  '/settings/advanced/platform-health',
   '/launch-center',
   '/release-center',
   '/go-live',

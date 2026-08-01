@@ -80,3 +80,23 @@ pnpm --filter @titan/web run test
 ## Owner review
 
 **STOP FOR OWNER REVIEW** — verify centered layout on Mission Control, Dashboard, Finance lists, AURA, and Scheduling on `comfortable-determination-staging` before production consideration.
+
+---
+
+## Owner correction — Company Health scope (final review)
+
+**Scope:** Focused correction only — no full visual alignment redo.
+
+| Change | Detail |
+|--------|--------|
+| **Removed from Company Health** | Today's Plan panel; technical systems (knowledge graph, release/production launch, developer platform, etc.); excessive tabs (incidents, timeline, operations map, AI recommendations); zero-value stat card rows |
+| **Company Health now shows** | Eight business areas: cash flow, jobs, customers & leads, team, fleet, stock, compliance, integrations — via `CompanyHealthAreasGrid` |
+| **Today's Plan relocated** | AURA workspace tab at `/aura/todays-plan` (`AuraSectionNav` — unchanged, verified present) |
+| **Platform Health relocated** | Settings → Advanced → Platform Health at `/settings/advanced/platform-health`; legacy `/platform-health` redirects; sidebar top-level Platform Health nav removed |
+| **Platform Health enhanced** | New **Platform Systems** tab with deployment/release/knowledge-graph/developer links and technical module snapshots + documentation percentages |
+
+**Preserved:** `AppContentContainer`, layout tokens, CAL-001, Xero/finance, drafts, Business Rules, universal quick actions.
+
+**Validation:** `pnpm run typecheck`, `@titan/web` test + build — pass.
+
+**Staging:** Railway `comfortable-determination` (sweet-victory) — see commit below.
