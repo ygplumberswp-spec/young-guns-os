@@ -614,7 +614,21 @@
 | **Tests** | Web 92 pass; API xero/session 301 pass; `pnpm typecheck`; `pnpm build` — pass |
 | **Staging verify** | Web health + runtime-config PASS; FRZ-018e DB probe 16 PASS / 1 FAIL / 2 PARTIAL |
 | **Approval required?** | **Yes — Owner** — hard-refresh session check + retry Sync now (read-only) |
-| **Next phase selected** | Owner full sync retry → FRZ-018f; FRZ-019 config version schema (local) |
+| **Next phase selected** | Owner reconnect Xero → FRZ-018g; FRZ-019 config version schema (local) |
+
+---
+
+## Sprint FRZ-018f — Auto-sync schedulers staging verify (PARTIAL)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018f — SCHEDULERS_ENABLED staging verify + auto-sync DB probe |
+| **Result** | **PARTIAL** — Owner enabled schedulers; 49 contacts from prior sync; 0 schedule rows (OAuth predates orchestrator); scheduler tick not yet evidenced |
+| **Checkpoint** | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `diagnostic-output/177-frz018f-auto-sync-schedulers-verify.json` |
+| **Staging verify** | API health PASS; DB 13 PASS / 1 FAIL / 6 PARTIAL; idempotency PASS |
+| **Approval required?** | **Yes — Owner** — redeploy confirm + reconnect Xero for schedule seed |
+| **Next phase selected** | Owner Xero reconnect → FRZ-018g GO probe; Cartrack when credentials supplied |
 
 ---
 
@@ -628,7 +642,7 @@
 | **Checkpoint** | `4e285b8` on `cursor/titan-frozen-scope-completion` |
 | **Files changed** | Orchestrator, scheduler, `integration-auto-sync.ts`, UI panels, architecture/report docs |
 | **Tests** | `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
-| **Staging verify** | API health OK; auto-sync endpoints require auth; full Xero auto-sync pending `PROVIDERS_ENABLED` + `XERO_SYNC_ENABLED` + `SCHEDULERS_ENABLED` + redeploy |
+| **Staging verify** | FRZ-018f PARTIAL — schedulers enabled; schedule seed blocked until Xero reconnect |
 | **Approval required?** | **Yes — Owner** — enable staging runtime gates; reconnect Xero or wait for scheduler |
 | **Next phase selected** | Staging Xero auto-sync DB probe (adapt FRZ-018e script); Cartrack when credentials supplied |
 

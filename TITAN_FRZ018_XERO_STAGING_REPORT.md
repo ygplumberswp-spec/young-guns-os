@@ -5,7 +5,7 @@
 **Production ref blocked:** `rshuiaghmtrvvilhqpwm` — not accessed  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Updated (UTC):** 2026-08-01  
-**Verdict:** **NO-GO (partial)** — session/UX fixes deployed; OAuth connected (Young Guns Plumbing); contacts import evidenced (49 mappings, 49 sync logs) but `last_sync_at` null, sync job failed (90s contacts timeout); invoices/payments/bank transactions not complete
+**Verdict:** **PARTIAL** — Owner enabled `SCHEDULERS_ENABLED=true`; OAuth connected (Young Guns Plumbing); 49 contacts imported (prior manual sync); no `integration_sync_schedules` row yet (OAuth predates auto-sync deploy); scheduler-driven sync not yet evidenced; `last_sync_at` null; invoices/payments/bank pending
 
 ---
 
@@ -47,6 +47,32 @@ Owner signal **"xero synced"** (Sync clicked on staging `/integrations/xero`) wa
 | Session/UX unit tests | **PASS** — 92 web + 301 API xero tests |
 
 Evidence: `diagnostic-output/176-frz018e-xero-staging-post-ux-verify.json`
+
+---
+
+## FRZ-018f auto-sync + schedulers verification (2026-08-01)
+
+**Owner signal:** `SCHEDULERS_ENABLED=true` on Railway staging API.
+
+| Check | Result |
+|-------|--------|
+| API `/health/ready` | **PASS** — database connected, `providersEnabled=true` |
+| Health `schedulersEnabled` field | **PARTIAL** — not exposed on `/health/ready` (only `workersEnabled=false`) |
+| OAuth connected (Young Guns Plumbing) | **PASS-DB** |
+| Contacts import | **PASS-DB** — 49 customer mappings, 49 sync logs (prior FRZ-018e manual sync) |
+| Invoices / payments / bank | **PARTIAL** — 0 mappings |
+| `last_sync_at` | **FAIL** — null |
+| `integration_sync_schedules` | **FAIL** — 0 rows (connect hook did not run post-orchestrator deploy) |
+| Scheduler-driven jobs | **PARTIAL** — 0 `job_type=scheduled`; 1 failed manual job from FRZ-018e |
+| Idempotency (duplicate mappings) | **PASS-DB** — no duplicate `xero_contact_id` rows |
+| Auto-sync API unauth | **PASS** — 401 on `GET /integration-platform/auto-sync/xero` |
+| Tenant isolation | **PASS** — foreign probe disconnected |
+
+**Probe totals:** 13 PASS / 1 FAIL / 6 PARTIAL → **PARTIAL**
+
+Evidence: `diagnostic-output/177-frz018f-auto-sync-schedulers-verify.json`
+
+**Root cause (schedule gap):** Xero OAuth completed before auto-sync orchestrator (`4e285b8`) deployed. `onProviderConnected` hook creates `integration_sync_schedules` and fires initial sync — hook only runs on reconnect, not retroactively.
 
 ---
 
@@ -132,24 +158,31 @@ Structured evidence: `diagnostic-output/175-frz018d-xero-staging-post-sync-verif
 
 | Field | Value |
 |-------|-------|
-| **Status** | **NO-GO (partial)** |
-| **Classification** | OAuth **connected**; contacts **partially imported** (49); full read-only import **incomplete** — sync job timeout |
+| **Status** | **PARTIAL** |
+| **Classification** | OAuth **connected**; schedulers **enabled (Owner signal)**; contacts **partial** (49); auto-sync schedule **not seeded**; full import **incomplete** |
 | **Connected** | **Yes** — Young Guns Plumbing on staging |
-| **Evidence** | This report + `176-frz018e-xero-staging-post-ux-verify.json` |
+| **Evidence** | This report + `177-frz018f-auto-sync-schedulers-verify.json` |
 
 ---
 
 ## 7. Owner action (required — for GO)
 
-1. After deploy lands, sign in on staging, open `/integrations/xero`, hard-refresh once to confirm session persists.
-2. Click **Sync now (read-only)** on the Xero page (or Integrations dashboard **Sync now**). Wait for success banner; note any error.
-3. If sync succeeds, signal **"xero synced"** for FRZ-018f re-verify or run:
+1. Confirm staging API **redeployed** after `SCHEDULERS_ENABLED=true` (in-process scheduler starts on API boot).
+2. **Reconnect Xero** on staging (`/integrations/xero` → disconnect + OAuth) to fire `onProviderConnected` hook — creates schedule + initial auto-sync. Alternative: authenticated `POST /api/v1/integration-platform/auto-sync/xero/run`.
+3. Wait up to 2 scheduler ticks (60s interval) or use Sync now (read-only).
+4. Re-run probe:
 
 ```bash
-OWNER_ACCESS_TOKEN='<staging Bearer>' node diagnostic-output/frz018e-xero-staging-post-ux-verify.mjs
+node diagnostic-output/frz018f-auto-sync-schedulers-verify.mjs
 ```
 
-4. If sync times out again, check Railway API logs for Xero rate limits / scope errors (prior failure: 90s contacts timeout).
+Optional with live UI state:
+
+```bash
+OWNER_ACCESS_TOKEN='<staging Bearer>' node diagnostic-output/frz018f-auto-sync-schedulers-verify.mjs
+```
+
+5. **GO criteria:** `integration_sync_schedules` row with `lastRunAt` set OR completed sync job; `last_sync_at` populated; contacts + at least one other entity type OR honest partial with scheduler audit.
 
 ---
 

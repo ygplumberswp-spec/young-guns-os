@@ -24,7 +24,7 @@
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
 | **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **Pending staging re-verify** — auto initial sync on OAuth + 20m scheduler (requires `PROVIDERS_ENABLED` + `XERO_SYNC_ENABLED` + `SCHEDULERS_ENABLED`) | Auto-sync panel | **OAuth connected — auto-sync framework deployed** | Enable staging gates; reconnect or wait for scheduler; check `GET /integration-platform/auto-sync/xero` |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018f PARTIAL** — OAuth connected; 49 contacts; `SCHEDULERS_ENABLED` enabled; 0 schedule rows | Auto-sync panel | **OAuth connected — schedulers enabled; schedule seed pending reconnect** | Reconnect Xero on staging to fire connect hook; verify `177-frz018f-auto-sync-schedulers-verify.json` |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — FRZ-018d Xero staging NO-GO; FRZ-019 local audit PARTIAL  
+**Updated (UTC):** 2026-08-01 — FRZ-018f Xero staging PARTIAL (schedulers enabled; schedule seed pending); FRZ-019 local audit PARTIAL  
 **Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -191,11 +191,14 @@
 | `TITAN_FRZ015_AURA_STAGING_REPORT.md` | **FRZ-015 staging verify — GO** (Owner configured; live synthetic 12/12) |
 | `diagnostic-output/169-frz015-aura-staging-verify.json` | FRZ-015 blocked probe (credential absent) |
 | `diagnostic-output/170-frz015-aura-staging-verify-go.json` | **FRZ-015 GO** — live synthetic AURA staging verify (12/12, no secrets) |
-| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging verify — NO-GO** (OAuth connected; sync not DB-corroborated) |
+| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging verify — PARTIAL** (OAuth connected; schedulers enabled; schedule seed pending) |
 | `diagnostic-output/171-frz018-xero-staging-readiness.json` | FRZ-018 blocked probe (credential absent) |
 | `diagnostic-output/172-frz018-xero-staging-readonly-verify.json` | FRZ-018b PAUSE-OAUTH — oauthConfigured=true, 14 PASS / 8 PAUSE |
 | `diagnostic-output/174-frz018c-xero-staging-readonly-verify.json` | FRZ-018c PARTIAL — Young Guns Plumbing connected; 14 PASS / 8 PARTIAL, no secrets |
 | `diagnostic-output/175-frz018d-xero-staging-post-sync-verify.json` | **FRZ-018d NO-GO** — Owner sync signal not DB-corroborated; 12 PASS / 4 FAIL, no secrets |
+| `diagnostic-output/176-frz018e-xero-staging-post-ux-verify.json` | **FRZ-018e NO-GO (partial)** — 49 contacts; last_sync_at null; 90s timeout |
+| `diagnostic-output/177-frz018f-auto-sync-schedulers-verify.json` | **FRZ-018f PARTIAL** — SCHEDULERS_ENABLED; 0 schedule rows; 13 PASS / 1 FAIL / 6 PARTIAL |
+| `diagnostic-output/frz018f-auto-sync-schedulers-verify.mjs` | FRZ-018f auto-sync + schedulers probe script |
 | `diagnostic-output/frz018c-xero-staging-readonly-verify.mjs` | FRZ-018c probe script (DB + API; optional OWNER_ACCESS_TOKEN) |
 | `diagnostic-output/frz018d-xero-staging-post-sync-verify.mjs` | FRZ-018d post-sync probe script (DB + API; optional OWNER_ACCESS_TOKEN) |
 | `TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md` | **FRZ-019 local audit — PARTIAL** (settings exist; version/rollback missing) |
@@ -203,7 +206,7 @@
 
 ## Coverage gaps (Phase 2+ targets)
 
-- Live Xero sync integration (staging, read-only) — **NO-GO** (FRZ-018d: OAuth connected; sync not DB-corroborated)  
+- Live Xero sync integration (staging, read-only) — **PARTIAL** (FRZ-018f: schedulers enabled; 49 contacts; reconnect Xero for schedule + GO)  
 - AURA provider connection e2e — **GO** (FRZ-015b staging synthetic verify)  
 
 ---

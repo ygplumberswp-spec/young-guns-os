@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018d Xero staging NO-GO (OAuth connected; sync not DB-corroborated); FRZ-019 local audit PARTIAL  
-**Verdict:** **NOT PILOT-READY** (FRZ-018 sync retry + remaining chain gaps)
+**Updated (UTC):** 2026-08-01 — FRZ-018f Xero staging PARTIAL (schedulers enabled; schedule seed pending); FRZ-019 local audit PARTIAL  
+**Verdict:** **NOT PILOT-READY** (FRZ-018 Xero reconnect for auto-sync GO + remaining chain gaps)
 
 ---
 
@@ -15,7 +15,7 @@
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
-| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **NO-GO** — Xero OAuth connected but sync not DB-corroborated | Owner retry sync on staging |
+| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **PARTIAL** — Xero OAuth connected, schedulers enabled, 49 contacts; reconnect for auto-sync GO | Owner reconnect Xero on staging |
 
 ---
 
@@ -122,4 +122,4 @@ Minimum for pilot:
 
 ## Exact blocker for pilot sign-off
 
-**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **NO-GO** — Owner OAuth connected (Young Guns Plumbing); Owner Sync click not DB-corroborated — 0 sync logs/mappings; Owner must retry sync.
+**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **PARTIAL** — OAuth connected (Young Guns Plumbing); SCHEDULERS_ENABLED; 49 contacts; 0 `integration_sync_schedules` — Owner must reconnect Xero to seed auto-sync schedule.

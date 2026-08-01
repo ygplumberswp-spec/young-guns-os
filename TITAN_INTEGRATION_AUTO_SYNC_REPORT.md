@@ -40,18 +40,34 @@ New tests:
 
 ---
 
-## Staging verification (Xero)
+## Staging verification (Xero) — FRZ-018f (2026-08-01)
 
-**Pre-requisites:** Owner enables `PROVIDERS_ENABLED=true`, `XERO_SYNC_ENABLED=true`, `SCHEDULERS_ENABLED=true` on staging API.
+**Owner signal:** `SCHEDULERS_ENABLED=true` enabled on Railway staging.
 
-**Expected after Xero OAuth connect:**
+| Gate | Status |
+|------|--------|
+| `PROVIDERS_ENABLED` | **PASS** — health/ready `providersEnabled=true` |
+| `XERO_SYNC_ENABLED` | **Inferred present** (prior FRZ-018 probes) |
+| `SCHEDULERS_ENABLED` | **PASS (Owner signal)** — not exposed on `/health/ready` |
+| OAuth connected | **PASS-DB** — Young Guns Plumbing |
+| Schedule seeded | **FAIL** — 0 `integration_sync_schedules` rows (OAuth predates orchestrator deploy) |
+| Scheduler-driven sync | **PARTIAL** — no scheduled jobs yet |
+| Contacts import | **PASS-DB** — 49 mappings (prior manual sync) |
+| Idempotency | **PASS-DB** — no duplicate customer mappings |
 
-1. `integration_sync_jobs` row with `job_type=scheduled` or `manual`, `sync_scope=import`, status `completed` or `running`.
-2. `xero_sync_logs` rows for imported contacts.
-3. `GET /api/v1/integration-platform/auto-sync/xero` → `uiState` transitions `initial_sync_running` → `synced`.
-4. Second scheduler tick — idempotency guard prevents duplicate full imports within 5-minute bucket.
+**Verdict:** **PARTIAL** — runtime gate enabled; schedule + initial sync hook blocked until Xero reconnect or manual `POST /auto-sync/xero/run`.
 
-**FRZ-018 script:** Adapt `diagnostic-output/frz018e-xero-staging-post-ux-verify.mjs` — do **not** re-run FRZ-015.
+Evidence: `diagnostic-output/177-frz018f-auto-sync-schedulers-verify.json`
+
+**Expected after Xero reconnect (or manual run):**
+
+1. `integration_sync_schedules` row with `enabled=true`, `nextRunAt` set.
+2. `integration_sync_jobs` row with `job_type=scheduled` or `initial`, status `completed` or `running`.
+3. `xero_sync_logs` rows for imported entities.
+4. `GET /api/v1/integration-platform/auto-sync/xero` → `uiState` transitions `initial_sync_running` → `synced`.
+5. Second scheduler tick — idempotency guard prevents duplicate full imports within 5-minute bucket.
+
+**Probe script:** `diagnostic-output/frz018f-auto-sync-schedulers-verify.mjs` — do **not** re-run FRZ-015.
 
 ---
 
