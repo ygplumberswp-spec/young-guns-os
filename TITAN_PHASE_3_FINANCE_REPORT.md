@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Phase:** 3 — full (3A–3D)  
 **Starting SHA:** `ccd5c1a` (partial Phase 3)  
-**Final SHA:** `0fb820a`  
+**Final SHA:** `6832dbd`  
 **Production touched:** NO  
 
 ---
