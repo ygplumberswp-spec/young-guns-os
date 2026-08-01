@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 021 Phase 2 denial matrix (post-commit)  
-**Updated (UTC):** 2026-08-01 — Sprint 021: automated cross-tenant API denial matrix (execution plan risk #4)  
+**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 022 MFA login gate e2e (post-commit)  
+**Updated (UTC):** 2026-08-01 — Sprint 022: MFA login gate automated e2e/API matrix (execution plan risk #5)  
 
 ---
 
@@ -98,8 +98,9 @@
 6. ~~**FRZ-012 / Phase 11 (local slice)** — Job document pack approval workflow + portal share + COC compliance panel **DONE**; supplier OCR + Reports & Compliance Agent remain~~ **DONE (local)** — Sprint 015  
 7. ~~**FRZ-010 / Phase 12 (local slice)** — Job completion/billing chain panel + invoice-from-job + payment prefill + Xero sync UI stubs **DONE**; live Xero OAuth/sync remain~~ **DONE (local)** — Sprint 016  
 8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018–019 idempotent); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, invalid/unauthorized `RAILWAY_TOKEN`)  
-9. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-10. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+9. **PLT-008 / MFA login gate** — **DONE (local automated)** — `mfa-login-gate.test.ts` + `login-mfa.test.ts`; staging login MFA click-path still blocked (503/28P01)  
+10. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+11. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 021: Phase 2 cross-tenant denial matrix (97 automated tests)  
-**Automated test files:** 53 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 022: MFA login gate e2e (17 automated tests, risk #5)  
+**Automated test files:** 54 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **362 pass** (Sprint 021) |
+| `pnpm test` | shared → auth → web → api (sequential) — **379 pass** (Sprint 022) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -24,6 +24,9 @@
 |------|--------|
 | `apps/api/src/lib/auth-cookies.test.ts` | Cookie flags / refresh path |
 | `apps/api/src/middleware/security-headers.test.ts` | Security headers |
+| `apps/api/src/routes/auth-mfa.test.ts` | MFA login gate — challenge/enrollment/verify |
+| `apps/api/src/routes/mfa-login-gate.test.ts` | **MFA login gate matrix (risk #5)** — policy × enrollment, session guard, challenge edge cases |
+| `apps/web/src/lib/login-mfa.test.ts` | MFA client contract + web flow routing |
 
 ### RBAC & routing
 
@@ -176,7 +179,6 @@
 ## Coverage gaps (Phase 2+ targets)
 
 - Session expiry UI e2e  
-- MFA login gate e2e  
 - Live Xero sync integration (staging, read-only)  
 - AURA provider connection e2e  
 - Offline duplicate-completion e2e  

@@ -5,7 +5,7 @@ import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import { toStaffIdentity } from '../../lib/role-experience';
-import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY } from '../../lib/api-client';
+import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY, MFA_LOGIN_REDIRECT_PATH } from '../../lib/api-client';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
 export function LoginPage() {
@@ -35,7 +35,7 @@ function LoginForm() {
       const result = await login({ email, password });
       if (isLoginMfaChallenge(result)) {
         sessionStorage.setItem(MFA_CHALLENGE_STORAGE_KEY, result.mfaChallengeToken);
-        setLocation('/auth/mfa?required=1');
+        setLocation(MFA_LOGIN_REDIRECT_PATH);
         return;
       }
       const homePath = result.user ? getStaffHomePath(toStaffIdentity(result.user)) : '/';

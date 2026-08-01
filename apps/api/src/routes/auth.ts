@@ -295,7 +295,7 @@ export function createAuthRouter({
         return;
       }
 
-      if (error instanceof Error && error.message.includes('MFA challenge')) {
+      if (error instanceof Error && isMfaChallengeTokenError(error)) {
         res.status(401).json({
           error: {
             code: 'MFA_CHALLENGE_EXPIRED',
@@ -478,6 +478,16 @@ export function createAuthRouter({
 }
 
 export { REFRESH_COOKIE_NAME };
+
+function isMfaChallengeTokenError(error: Error): boolean {
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('mfa challenge') ||
+    message.includes('jwt expired') ||
+    message.includes('invalid signature') ||
+    message.includes('jwt malformed')
+  );
+}
 
 function setRefreshCookie(
   res: import('express').Response,

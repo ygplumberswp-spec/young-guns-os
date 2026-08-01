@@ -359,3 +359,20 @@
 | **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
 | **Approval required?** | No — local only |
 | **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; MFA login gate e2e (risk #5) |
+
+---
+
+## Sprint 022 — MFA login gate e2e (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Security — MFA login gate (execution plan risk #5) |
+| **Result** | `mfa-login-gate.test.ts` — 12 API gate checks (policy × enrollment matrix, session issuance guard, challenge verification); `login-mfa.test.ts` — 5 web client/flow checks; `auth.ts` maps invalid/expired challenge JWTs to `MFA_CHALLENGE_EXPIRED`; `isLoginMfaChallenge` requires token |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `mfa-login-gate.test.ts`, `login-mfa.test.ts`, `auth.ts`, `api-client.ts`, `LoginPage.tsx`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**379 pass**, +17 MFA gate), `pnpm build` — pass |
+| **Staging** | `/health/ready` **503/28P01** — Phase 8–12 public smokes skipped |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; session expiry UI e2e |

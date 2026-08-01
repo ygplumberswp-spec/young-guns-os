@@ -184,10 +184,16 @@ export type LoginMfaChallenge = {
 export type LoginResponse = AuthPayload | LoginMfaChallenge;
 
 export function isLoginMfaChallenge(value: LoginResponse): value is LoginMfaChallenge {
-  return 'mfaRequired' in value && value.mfaRequired === true;
+  return (
+    'mfaRequired' in value &&
+    value.mfaRequired === true &&
+    typeof value.mfaChallengeToken === 'string' &&
+    value.mfaChallengeToken.length > 0
+  );
 }
 
 export const MFA_CHALLENGE_STORAGE_KEY = 'titan_mfa_challenge';
+export const MFA_LOGIN_REDIRECT_PATH = '/auth/mfa?required=1';
 
 export type RestoreSessionResult =
   | { status: 'authenticated'; payload: AuthPayload }
