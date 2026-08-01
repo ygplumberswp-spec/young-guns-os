@@ -1231,7 +1231,7 @@ function toRequestSummary(
 
 function toTimeEntrySummary(
   row: typeof mobileTimeEntries.$inferSelect & {
-    job?: { title: string } | null;
+    job?: { title: string; jobNumber: string | null } | null;
     user?: { firstName: string; lastName: string } | null;
   },
 ): MobileTimeEntrySummary {
@@ -1239,6 +1239,7 @@ function toTimeEntrySummary(
     id: row.id,
     entryType: row.entryType,
     jobId: row.jobId,
+    jobNumber: row.job?.jobNumber ?? null,
     jobTitle: row.job?.title ?? null,
     userId: row.userId,
     userName: row.user ? `${row.user.firstName} ${row.user.lastName}`.trim() : 'Unknown',

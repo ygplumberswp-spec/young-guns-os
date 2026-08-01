@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type {
   JobAssignee,
   ScheduleJobRequest,
@@ -9,9 +9,13 @@ import type {
 } from '@titan/shared';
 import { buildJobAddressDisplay } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { jobs, users } from '@titan/db';
+import { jobs, jobCrewMembers, jobVehicleAssignments, users, vehicles } from '@titan/db';
 import { JobsError } from './jobs.service.js';
 import { upsertPrimaryCrewMember } from './job-execution.service.js';
+import {
+  formatSchedulingCrewLabel,
+  formatSchedulingVehicleLabel,
+} from './scheduling-execution-labels.js';
 
 export class SchedulingError extends Error {
   constructor(
@@ -82,7 +86,11 @@ export class SchedulingService {
       orderBy: [asc(jobs.scheduledAt)],
     });
 
-    const events = rows.map(toScheduledJobEvent);
+    const executionLabels = await this.loadExecutionLabels(
+      companyId,
+      rows.map((row) => row.id),
+    );
+    const events = rows.map((row) => toScheduledJobEvent(row, executionLabels.get(row.id)));
 
     return {
       from: from.toISOString(),
@@ -141,6 +149,78 @@ export class SchedulingService {
     }
 
     return (await this.getScheduledJobEvent(companyId, jobId))!;
+  }
+
+  private async loadExecutionLabels(
+    companyId: string,
+    jobIds: string[],
+  ): Promise<Map<string, { crewLabel: string | null; vehicleLabel: string | null }>> {
+    const labels = new Map<string, { crewLabel: string | null; vehicleLabel: string | null }>();
+    if (jobIds.length === 0) {
+      return labels;
+    }
+
+    for (const jobId of jobIds) {
+      labels.set(jobId, { crewLabel: null, vehicleLabel: null });
+    }
+
+    const crewRows = await this.db
+      .select({
+        jobId: jobCrewMembers.jobId,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        isPrimary: jobCrewMembers.isPrimary,
+      })
+      .from(jobCrewMembers)
+      .innerJoin(users, eq(jobCrewMembers.userId, users.id))
+      .where(
+        and(
+          eq(jobCrewMembers.companyId, companyId),
+          inArray(jobCrewMembers.jobId, jobIds),
+          isNull(jobCrewMembers.unassignedAt),
+        ),
+      )
+      .orderBy(desc(jobCrewMembers.isPrimary), asc(jobCrewMembers.assignedAt));
+
+    const crewNamesByJob = new Map<string, string[]>();
+    for (const row of crewRows) {
+      const names = crewNamesByJob.get(row.jobId) ?? [];
+      names.push(`${row.firstName} ${row.lastName}`.trim());
+      crewNamesByJob.set(row.jobId, names);
+    }
+
+    for (const [jobId, names] of crewNamesByJob) {
+      const current = labels.get(jobId) ?? { crewLabel: null, vehicleLabel: null };
+      current.crewLabel = formatSchedulingCrewLabel(names);
+      labels.set(jobId, current);
+    }
+
+    const vehicleRows = await this.db
+      .select({
+        jobId: jobVehicleAssignments.jobId,
+        name: vehicles.name,
+        licensePlate: vehicles.licensePlate,
+      })
+      .from(jobVehicleAssignments)
+      .innerJoin(vehicles, eq(jobVehicleAssignments.vehicleId, vehicles.id))
+      .where(
+        and(
+          eq(jobVehicleAssignments.companyId, companyId),
+          inArray(jobVehicleAssignments.jobId, jobIds),
+          isNull(jobVehicleAssignments.unassignedAt),
+        ),
+      )
+      .orderBy(asc(jobVehicleAssignments.assignedAt));
+
+    for (const row of vehicleRows) {
+      const current = labels.get(row.jobId) ?? { crewLabel: null, vehicleLabel: null };
+      if (!current.vehicleLabel) {
+        current.vehicleLabel = formatSchedulingVehicleLabel(row.name, row.licensePlate);
+        labels.set(row.jobId, current);
+      }
+    }
+
+    return labels;
   }
 
   async updateSchedule(
@@ -289,7 +369,8 @@ export class SchedulingService {
       return null;
     }
 
-    return toScheduledJobEvent(job);
+    const executionLabels = await this.loadExecutionLabels(companyId, [jobId]);
+    return toScheduledJobEvent(job, executionLabels.get(jobId));
   }
 
   private async ensureAssigneeBelongsToCompany(companyId: string, userId: string): Promise<void> {
@@ -308,7 +389,10 @@ type JobWithRelations = typeof jobs.$inferSelect & {
   assignedUser: { firstName: string; lastName: string } | null;
 };
 
-function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
+function toScheduledJobEvent(
+  job: JobWithRelations,
+  executionLabels?: { crewLabel: string | null; vehicleLabel: string | null } | null,
+): ScheduledJobEvent {
   if (!job.scheduledAt) {
     throw new JobsError('VALIDATION_ERROR', 'Job is not scheduled');
   }
@@ -322,6 +406,10 @@ function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
       postalCode: job.snapshotPostalCode,
       unit: job.snapshotUnit,
     }) ?? null;
+
+  const assignedUserName = job.assignedUser
+    ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
+    : null;
 
   return {
     id: job.id,
@@ -341,13 +429,9 @@ function toScheduledJobEvent(job: JobWithRelations): ScheduledJobEvent {
     scheduledAt: job.scheduledAt.toISOString(),
     scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
     assignedUserId: job.assignedUserId,
-    assignedUserName: job.assignedUser
-      ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
-      : null,
-    vehicleLabel: null,
-    crewLabel: job.assignedUser
-      ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`.trim()
-      : null,
+    assignedUserName,
+    vehicleLabel: executionLabels?.vehicleLabel ?? null,
+    crewLabel: executionLabels?.crewLabel ?? assignedUserName,
   };
 }
 

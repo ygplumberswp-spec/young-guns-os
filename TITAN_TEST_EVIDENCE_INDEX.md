@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 008 Phase 6 crew assignment UI (local)  
-**Automated test files:** 47 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 009 UX-017 finance strip + UX-029 job time UX  
+**Automated test files:** 49 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **228 pass** (Sprint 007) |
+| `pnpm test` | shared → auth → web → api (sequential) — **235 pass** (Sprint 009) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -97,6 +97,8 @@
 |------|--------|
 | `apps/web/src/features/dispatch/build-job-create-href.test.ts` | Dispatch intel → job create deep-link |
 | `apps/web/src/features/jobs/crew-assignment-utils.test.ts` | Crew assignment draft validation (2–4 members, primary, uniqueness) |
+| `apps/web/src/features/finance/build-job-finance-action-href.test.ts` | Job detail finance quick-action href builder (UX-017) |
+| `apps/api/src/services/scheduling-execution-labels.test.ts` | Calendar crew/vehicle label formatting from execution tables |
 
 ### Brand / UI
 

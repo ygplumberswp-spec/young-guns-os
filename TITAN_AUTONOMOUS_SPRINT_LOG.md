@@ -162,3 +162,19 @@
 | **Tests** | `pnpm typecheck`, `pnpm test` (233 pass), `pnpm build` — pass |
 | **Approval required?** | Staging E2E for FRZ-006 crew/vehicle chain — staging DB password + deploy |
 | **Next phase selected** | Phase 6 staging proof (FRZ-006) when credentials available; UX-017 finance strip / UX-029 job time UX locally |
+
+---
+
+## Sprint 009 — UX-017 finance strip + UX-029 job time UX (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 6 remainder — job finance quick-actions, mobile job-scoped time, calendar execution labels |
+| **Result** | UX-017 finance strip with Create quote/invoice/payment links; UX-029 mobile time job picker + job #; scheduling calendar crew/vehicle labels from execution tables |
+| **Checkpoint** | pending commit |
+| **Files changed** | `JobFinanceStrip.tsx`, finance create prefill, `MobileTimePage.tsx`, `scheduling.service.ts`, `scheduling-execution-labels.ts`, control doc updates |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (235 pass), `pnpm build` — pass |
+| **Approval required?** | FRZ-006 staging E2E — staging DB password + Railway deploy |
+| **Next phase selected** | FRZ-006 staging proof when credentials available; CRM properties panel / UX-018 schedule map remain safe local |

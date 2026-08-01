@@ -52,6 +52,7 @@ export type MobileTimeEntrySummary = {
   id: string;
   entryType: MobileTimeEntryType;
   jobId: string | null;
+  jobNumber: string | null;
   jobTitle: string | null;
   userId: string;
   userName: string;

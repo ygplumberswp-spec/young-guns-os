@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `8d35bfd`  
-**Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
+**Checkpoint:** `pending Sprint 009`  
+**Updated (UTC):** 2026-08-01 — Sprint 009 UX-017 finance strip + UX-029 job time UX  
 
 ---
 
@@ -48,9 +48,9 @@
 | FRZ-002 | §3 | One responsive app, role experiences | All | Yes | Yes | Yes | Yes | Yes | Partial | Partial | Yes | Mocks | — | — | Implemented, not staging-verified | `/my` alias + role guards need live re-proof | Cursor | 8d35bfd | `role-experience-routes.test.ts` |
 | FRZ-003 | §4 | Locked visual identity (SVG wordmark, fonts, login) | All | N/A | N/A | Partial | N/A | N/A | Partial | N/A | Yes | Staging reports + Sprint 004 shell tests | — | — | Partially implemented | Brand foundation closed; responsive shell contract tests added Phase 3 | Cursor | UX reports | `TitanWordmark.test.ts`, `brand-shell.test.ts` |
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |
-| FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Staging Phase 5 E2E 10/10** | — | — | Partially implemented | Lead convert verified staging 2026-08-01; CRM properties panel local | Cursor | Phase 5 | `TITAN_PHASE5_STAGING_REPORT.md` |
+| FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Staging Phase 5 E2E 10/10** | — | — | Partially implemented | Job detail finance strip quick-actions local (UX-017); CRM properties panel local | Cursor | Sprint 009 | `TITAN_PHASE5_STAGING_REPORT.md`, `JobFinanceStrip.tsx` |
 | FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Staging UX-B 35/35 | Cartrack optional | — | Implemented, not staging-verified | Staging E2E not re-run on current commit | Cursor | b9bd4b0 | `TITAN_UX_B_CLOSURE_VERIFICATION_REPORT.md` |
-| FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Time tracking job-linked; full day timeline incomplete | Cursor | — | OPS-014 |
+| FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Mobile `/mobile/time` job picker + job # on entries (UX-029); full day timeline incomplete | Cursor | Sprint 009 | `MobileTimePage.tsx`, OPS-014 |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
 | FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | — | Quote send | Partially implemented | BOQ workspace + plan quotes largely missing | Cursor | UX-E | `finance-contract.test.ts` |
 | FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV works; live Xero # authority open | Cursor | UX-E | FIN-002, FIN-007 |
@@ -77,10 +77,10 @@
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
 | Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E 10/10 GO — `diagnostic-output/140-staging-phase5-e2e.json` |
-| Crew/Vehicle assignment | **Office UI implemented (local)** | `JobCrewAssignmentPanel` + `PUT /jobs/:id/crew`; staging E2E pending FRZ-006 |
+| Crew/Vehicle assignment | **Office UI implemented (local)** | `JobCrewAssignmentPanel` + schedule calendar execution labels; staging E2E pending FRZ-006 |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement |
-| Quote/BOQ → Approval | Partially implemented | UX-E quotes; BOQ workspace missing |
+| Quote/BOQ → Approval | Partially implemented | UX-E quotes; job detail finance quick-actions local (UX-017); BOQ workspace missing |
 | Invoice → Payment | Partially implemented | UX-E; live Xero blocked |
 | Profit | Partially implemented | Margin on quotes; job actuals partial |
 | Follow-up/Marketing | Partially implemented | UX-H gates; no live send |
@@ -91,7 +91,7 @@
 ## Next verification targets (ordered)
 
 1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
-2. **FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; staging E2E proof still required  
+2. **FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; scheduling calendar execution labels **local complete**; staging E2E proof still required  
 3. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 4. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
