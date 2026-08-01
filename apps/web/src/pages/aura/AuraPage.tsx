@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { AGENT_REGISTRY, AI_NAME, type AgentKey, type AgentTaskSummary } from '@titan/shared';
+import { AGENT_REGISTRY, AI_NAME, NAV_LABELS, type AgentKey, type AgentTaskSummary } from '@titan/shared';
 import { hasAgentManagePermission, hasAnyPermission } from '@titan/auth/browser';
 import { useSearch } from 'wouter';
 import { EmptyState, LoadingState } from '@titan/ui';
@@ -16,9 +16,11 @@ import { fetchAiProviders } from '../../lib/ai-orchestration-api-client';
 import { AuraBusinessDashboard } from '../../features/aura/AuraBusinessDashboard';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraConversationList } from '../../features/aura/AuraConversationList';
+import { AuraDiagnosticsPanel } from '../../features/aura/AuraDiagnosticsPanel';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
 import { useAuraChat } from '../../features/aura/useAuraChat';
+import { AuraMark } from '../../brand/AuraMark';
 
 export function AuraPage() {
   const { user, accessToken } = useAuth();
@@ -49,13 +51,19 @@ export function AuraPage() {
     agentMessages,
     pendingTasks,
     lastRunTools,
+    lastDiagnostics,
     isLoading,
     isSending,
+    thinkingPhase,
+    thinkingElapsedMs,
+    hasPageContext,
+    workingLabel,
     error,
     startConversation,
     selectConversation,
     sendMessage,
     sendAgentMessage,
+    cancelSend,
     updateTask,
     removeConversation,
   } = useAuraChat(pageContext);
@@ -152,14 +160,17 @@ export function AuraPage() {
   return (
     <div className="aura-page">
       <header className="aura-page__header">
-        <div>
-          <p className="aura-page__eyebrow">{AI_NAME}</p>
-          <h1 className="aura-page__title">AURA Chat</h1>
-          <p className="aura-page__subtitle">
-            Ask about finance, sales, operations, integrations and more — AURA selects the right
-            specialist automatically.
-            {contextLabel ? ` · ${contextLabel}` : ''}
-          </p>
+        <div className="aura-page__brand">
+          <AuraMark size="md" className="aura-page__mark" />
+          <div className="aura-page__brand-copy">
+            <p className="aura-page__eyebrow">{AI_NAME}</p>
+            <h1 className="aura-page__title">{NAV_LABELS.auraExecutiveChat}</h1>
+            <p className="aura-page__subtitle">
+              Ask about finance, sales, operations, integrations and more — AURA selects the right
+              specialist automatically.
+              {contextLabel ? ` · ${contextLabel}` : ''}
+            </p>
+          </div>
         </div>
         {canManageAgents ? (
           <div className="aura-page__controls">
@@ -235,7 +246,13 @@ export function AuraPage() {
             <LoadingState label="Loading conversations…" />
           ) : conversationMode === 'agent' && canManageAgents ? (
             <>
-              <AuraMessageList messages={agentMessages} isSending={isSending} />
+              <AuraMessageList
+                messages={agentMessages}
+                isSending={isSending}
+                thinkingPhase={thinkingPhase}
+                thinkingElapsedMs={thinkingElapsedMs}
+                hasPageContext={hasPageContext}
+              />
               {lastRunTools.length > 0 ? (
                 <div className="aura-tool-activity">
                   <p className="aura-tool-activity__title">Tool activity</p>
@@ -261,14 +278,25 @@ export function AuraPage() {
               ) : null}
             </>
           ) : (
-            <AuraMessageList messages={messages} isSending={isSending} />
+            <>
+              <AuraMessageList
+                messages={messages}
+                isSending={isSending}
+                thinkingPhase={thinkingPhase}
+                thinkingElapsedMs={thinkingElapsedMs}
+                hasPageContext={hasPageContext}
+              />
+              <AuraDiagnosticsPanel diagnostics={lastDiagnostics} />
+            </>
           )}
 
           {conversationMode === 'agent' && canManageAgents ? (
             <AuraComposer
               onSend={(content) => void sendAgentMessage(content, selectedAgentKey)}
-              disabled={isSending || aiProviderConfigured === false}
+              onCancel={cancelSend}
+              disabled={aiProviderConfigured === false}
               isWorking={isSending}
+              workingLabel={workingLabel || 'Thinking…'}
               placeholder={
                 aiProviderConfigured === false
                   ? 'Configure an AI provider to send messages'
@@ -278,8 +306,10 @@ export function AuraPage() {
           ) : (
             <AuraComposer
               onSend={sendMessage}
-              disabled={isSending || aiProviderConfigured === false}
+              onCancel={cancelSend}
+              disabled={aiProviderConfigured === false}
               isWorking={isSending}
+              workingLabel={workingLabel || 'Thinking…'}
               placeholder={
                 aiProviderConfigured === false
                   ? 'Configure an AI provider to send messages'

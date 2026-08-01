@@ -5,11 +5,17 @@ import type {
   AuraConversationDetail,
   AuraConversationSummary,
   AuraMessage,
+  AuraSendDiagnostics,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import * as auraApi from '../../lib/aura-api';
 import { runAgent } from '../../lib/agents-api';
 import { useAuth } from '../../lib/auth-context';
+import {
+  nextAuraThinkingPhase,
+  resolveAuraThinkingLabel,
+  type AuraThinkingPhase,
+} from './aura-thinking';
 
 type AgentChatMessage = AuraMessage & {
   toolsUsed?: string[];
@@ -24,6 +30,13 @@ function isTimeoutError(error: unknown): boolean {
   }
 
   return error instanceof ApiClientError && error.code === 'PROVIDER_TIMEOUT';
+}
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && error.name === 'AbortError') ||
+    (error instanceof ApiClientError && error.code === 'REQUEST_TIMEOUT')
+  );
 }
 
 export function useAuraChat(pageContext?: {
@@ -41,13 +54,25 @@ export function useAuraChat(pageContext?: {
     accessToken ? !conversationsCache.has(accessToken) : false,
   );
   const [isSending, setIsSending] = useState(false);
+  const [thinkingPhase, setThinkingPhase] = useState<AuraThinkingPhase>('idle');
+  const [thinkingElapsedMs, setThinkingElapsedMs] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [lastDiagnostics, setLastDiagnostics] = useState<AuraSendDiagnostics | null>(null);
   const [agentMessages, setAgentMessages] = useState<AgentChatMessage[]>([]);
   const [pendingTasks, setPendingTasks] = useState<AgentTaskSummary[]>([]);
   const [lastRunTools, setLastRunTools] = useState<string[]>([]);
   const selectRequestId = useRef(0);
   const sendRequestId = useRef(0);
   const sendAbortController = useRef<AbortController | null>(null);
+  const selectAbortController = useRef<AbortController | null>(null);
+  const thinkingStartedAt = useRef<number | null>(null);
+
+  const hasPageContext = Boolean(
+    pageContext?.customerId ||
+      pageContext?.jobId ||
+      pageContext?.vehicleId ||
+      pageContext?.schedulingView,
+  );
 
   const loadConversations = useCallback(async () => {
     if (!accessToken) {
@@ -66,18 +91,43 @@ export function useAuraChat(pageContext?: {
         return;
       }
 
+      selectAbortController.current?.abort();
+      const controller = new AbortController();
+      selectAbortController.current = controller;
+
       const requestId = ++selectRequestId.current;
       setError(null);
-      const conversation = await auraApi.getAuraConversation(accessToken, conversationId);
 
-      if (requestId !== selectRequestId.current) {
-        return;
+      try {
+        const conversation = await auraApi.getAuraConversation(accessToken, conversationId, {
+          signal: controller.signal,
+        });
+
+        if (requestId !== selectRequestId.current) {
+          return;
+        }
+
+        setActiveConversation(conversation);
+      } catch (err) {
+        if (isAbortError(err) || requestId !== selectRequestId.current) {
+          return;
+        }
+
+        setError(err instanceof ApiClientError ? err.message : 'Unable to load conversation');
       }
-
-      setActiveConversation(conversation);
     },
     [accessToken],
   );
+
+  const cancelSend = useCallback(() => {
+    sendAbortController.current?.abort();
+    sendAbortController.current = null;
+    sendRequestId.current += 1;
+    setIsSending(false);
+    setThinkingPhase('idle');
+    setThinkingElapsedMs(0);
+    thinkingStartedAt.current = null;
+  }, []);
 
   const startConversation = useCallback(async () => {
     if (!accessToken) {
@@ -104,6 +154,7 @@ export function useAuraChat(pageContext?: {
       sendAbortController.current?.abort();
       const controller = new AbortController();
       sendAbortController.current = controller;
+      const idempotencyKey = crypto.randomUUID();
 
       const trimmed = content.trim();
       const optimisticUserMessage: AuraMessage = {
@@ -115,6 +166,9 @@ export function useAuraChat(pageContext?: {
       };
 
       setIsSending(true);
+      setThinkingPhase('thinking');
+      setThinkingElapsedMs(0);
+      thinkingStartedAt.current = Date.now();
       setError(null);
       setActiveConversation((current) => {
         if (!current) {
@@ -170,12 +224,15 @@ export function useAuraChat(pageContext?: {
           {
             signal: controller.signal,
             timeoutMs: AURA_MESSAGE_TIMEOUT_MS,
+            idempotencyKey,
           },
         );
 
         if (requestId !== sendRequestId.current) {
           return;
         }
+
+        setLastDiagnostics(result.diagnostics ?? null);
 
         setActiveConversation((current) => {
           if (!current || current.id === 'pending' || current.id !== result.conversation.id) {
@@ -201,7 +258,19 @@ export function useAuraChat(pageContext?: {
           return;
         }
 
-        if (controller.signal.aborted && !(err instanceof ApiClientError)) {
+        if (controller.signal.aborted || isAbortError(err)) {
+          setActiveConversation((current) => {
+            if (!current) {
+              return current;
+            }
+
+            return {
+              ...current,
+              messages: current.messages.filter(
+                (message) => message.id !== optimisticUserMessage.id,
+              ),
+            };
+          });
           return;
         }
 
@@ -224,6 +293,9 @@ export function useAuraChat(pageContext?: {
       } finally {
         if (requestId === sendRequestId.current) {
           setIsSending(false);
+          setThinkingPhase('idle');
+          setThinkingElapsedMs(0);
+          thinkingStartedAt.current = null;
           sendAbortController.current = null;
         }
       }
@@ -237,7 +309,15 @@ export function useAuraChat(pageContext?: {
         return;
       }
 
+      const requestId = ++sendRequestId.current;
+      sendAbortController.current?.abort();
+      const controller = new AbortController();
+      sendAbortController.current = controller;
+
       setIsSending(true);
+      setThinkingPhase('thinking');
+      setThinkingElapsedMs(0);
+      thinkingStartedAt.current = Date.now();
       setError(null);
 
       const userMessage: AgentChatMessage = {
@@ -258,6 +338,10 @@ export function useAuraChat(pageContext?: {
           pageContext,
         });
 
+        if (requestId !== sendRequestId.current) {
+          return;
+        }
+
         const assistantMessage: AgentChatMessage = {
           id: crypto.randomUUID(),
           conversationId: activeConversation?.id ?? 'agent-session',
@@ -270,10 +354,30 @@ export function useAuraChat(pageContext?: {
         setAgentMessages((current) => [...current, assistantMessage]);
         setPendingTasks(result.pendingTasks);
         setLastRunTools(result.run.toolsUsed);
+
+        if (result.pendingTasks.length > 0) {
+          setThinkingPhase('waiting_approval');
+        }
       } catch (err) {
-        setError(err instanceof ApiClientError ? err.message : 'Unable to run agent');
+        if (requestId !== sendRequestId.current || isAbortError(err)) {
+          return;
+        }
+
+        setAgentMessages((current) => current.filter((message) => message.id !== userMessage.id));
+
+        if (isTimeoutError(err)) {
+          setError('The agent took too long to respond. You can safely retry your message.');
+        } else {
+          setError(err instanceof ApiClientError ? err.message : 'Unable to run agent');
+        }
       } finally {
-        setIsSending(false);
+        if (requestId === sendRequestId.current) {
+          setIsSending(false);
+          setThinkingPhase('idle');
+          setThinkingElapsedMs(0);
+          thinkingStartedAt.current = null;
+          sendAbortController.current = null;
+        }
       }
     },
     [accessToken, activeConversation?.id, isSending, pageContext],
@@ -303,6 +407,20 @@ export function useAuraChat(pageContext?: {
     },
     [accessToken, activeConversation, loadConversations],
   );
+
+  useEffect(() => {
+    if (!isSending || thinkingStartedAt.current == null) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      const elapsed = Date.now() - (thinkingStartedAt.current ?? Date.now());
+      setThinkingElapsedMs(elapsed);
+      setThinkingPhase((current) => nextAuraThinkingPhase(current, elapsed, hasPageContext));
+    }, 400);
+
+    return () => window.clearInterval(interval);
+  }, [hasPageContext, isSending]);
 
   useEffect(() => {
     let cancelled = false;
@@ -341,10 +459,12 @@ export function useAuraChat(pageContext?: {
       cancelled = true;
       selectRequestId.current += 1;
       sendAbortController.current?.abort();
+      selectAbortController.current?.abort();
     };
   }, [accessToken, loadConversations]);
 
   const messages: AuraMessage[] = activeConversation?.messages ?? [];
+  const workingLabel = resolveAuraThinkingLabel(thinkingPhase, thinkingElapsedMs, hasPageContext);
 
   return {
     conversations,
@@ -353,13 +473,19 @@ export function useAuraChat(pageContext?: {
     agentMessages,
     pendingTasks,
     lastRunTools,
+    lastDiagnostics,
     isLoading,
     isSending,
+    thinkingPhase,
+    thinkingElapsedMs,
+    hasPageContext,
+    workingLabel,
     error,
     startConversation,
     selectConversation,
     sendMessage,
     sendAgentMessage,
+    cancelSend,
     updateTask,
     removeConversation,
   };

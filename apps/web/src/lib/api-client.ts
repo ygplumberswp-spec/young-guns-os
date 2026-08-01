@@ -15,6 +15,7 @@ type RequestOptions = {
   skipAuthRefresh?: boolean;
   signal?: AbortSignal | null;
   timeoutMs?: number;
+  headers?: Record<string, string>;
 };
 
 function combineSignals(signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
@@ -91,6 +92,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
 
   if (options.accessToken) {
     headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+
+  if (options.headers) {
+    Object.assign(headers, options.headers);
   }
 
   const signal = combineSignals([
