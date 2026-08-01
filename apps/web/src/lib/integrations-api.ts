@@ -119,12 +119,29 @@ export async function disconnectXero(accessToken: string): Promise<XeroConnectio
   return data.connection;
 }
 
-export async function syncXero(accessToken: string): Promise<XeroSyncResult> {
-  const data = await request<{ result: XeroSyncResult }>('/integrations/xero/sync', {
+export async function syncXero(accessToken: string): Promise<XeroSyncResult & { queued?: boolean }> {
+  const data = await request<{ result: XeroSyncResult & { queued?: boolean } }>(
+    '/integrations/xero/sync',
+    {
+      method: 'POST',
+      accessToken,
+      timeoutMs: 15_000,
+    },
+  );
+  return data.result;
+}
+
+export async function enqueueXeroImportSync(accessToken: string) {
+  const data = await request<{
+    jobId: string;
+    status: 'queued' | 'running';
+    message: string;
+  }>('/integrations/xero/sync', {
     method: 'POST',
     accessToken,
+    timeoutMs: 15_000,
   });
-  return data.result;
+  return data;
 }
 
 export async function fetchXeroSyncStatus(accessToken: string): Promise<XeroSyncStatusResponse> {

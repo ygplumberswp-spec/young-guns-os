@@ -4,6 +4,8 @@ import type {
   IntegrationProviderAutoSyncStatus,
   XeroConnectionSummary,
   XeroEntitySyncResult,
+  XeroImportJobProgress,
+  XeroImportStage,
   XeroSyncStatusResponse,
 } from '@titan/shared';
 import { XERO_SYNC_BLOCKED_REASON } from '@titan/shared';
@@ -42,6 +44,43 @@ function formatEntityStats(stats: {
   return `${stats.syncedCount} synced · ${stats.pendingCount} pending · ${stats.failedCount} failed`;
 }
 
+const IMPORT_STAGE_LABELS: Record<XeroImportStage, string> = {
+  contacts: 'Contacts',
+  invoices: 'Invoices',
+  payments: 'Payments',
+  bank_transactions: 'Bank transactions',
+};
+
+function formatImportJobProgress(job: XeroImportJobProgress): string {
+  const stageLabel = job.currentStage ? IMPORT_STAGE_LABELS[job.currentStage] : 'Starting';
+  const contacts = `${job.contacts.createdCount} new / ${job.contacts.updatedCount} updated`;
+  const invoices = `${job.invoices.createdCount} new / ${job.invoices.updatedCount} updated`;
+  const payments = `${job.payments.createdCount} new / ${job.payments.updatedCount} updated`;
+  const bank = `${job.bankTransactions.createdCount} new / ${job.bankTransactions.updatedCount} updated`;
+  return `${stageLabel} — Contacts ${contacts}, Invoices ${invoices}, Payments ${payments}, Bank ${bank}`;
+}
+
+async function pollXeroImportUntilSettled(
+  accessToken: string,
+  onProgress: (status: XeroSyncStatusResponse) => void,
+): Promise<XeroSyncStatusResponse> {
+  const deadline = Date.now() + 30 * 60_000;
+
+  while (Date.now() < deadline) {
+    const status = await fetchXeroSyncStatus(accessToken);
+    onProgress(status);
+
+    const job = status.importJob;
+    if (!job || job.status === 'completed' || job.status === 'failed') {
+      return status;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+
+  throw new ApiClientError('Xero import is still running in the background.', 408, 'SYNC_IN_PROGRESS');
+}
+
 function countBankTransactionLogs(
   logs: Awaited<ReturnType<typeof fetchXeroSyncLogs>>,
 ): { synced: number; failed: number } {
@@ -65,6 +104,7 @@ export function XeroSyncPanel({
   const [autoSyncStatus, setAutoSyncStatus] = useState<IntegrationProviderAutoSyncStatus | null>(
     null,
   );
+  const [importProgress, setImportProgress] = useState<XeroImportJobProgress | null>(null);
   const [recentLogMessage, setRecentLogMessage] = useState<string | null>(null);
   const [bankTransactionStats, setBankTransactionStats] = useState({ synced: 0, failed: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +126,7 @@ export function XeroSyncPanel({
     ]);
     setStatus(syncStatus);
     setAutoSyncStatus(autoSync);
+    setImportProgress(syncStatus.importJob ?? null);
     setRecentLogMessage(logs[0]?.message ?? null);
     setBankTransactionStats(countBankTransactionLogs(logs));
   }, [accessToken]);
@@ -158,7 +199,25 @@ export function XeroSyncPanel({
     try {
       const result = await syncIntegrationConnectors(accessToken);
 
-      if (result.xeroSync?.success) {
+      if (result.xeroSync?.queued || result.xeroSync?.syncJobId) {
+        setSuccess(result.xeroSync.message ?? 'Xero import queued. Tracking progress…');
+        const finalStatus = await pollXeroImportUntilSettled(accessToken, (liveStatus) => {
+          setStatus(liveStatus);
+          setImportProgress(liveStatus.importJob ?? null);
+        });
+        const job = finalStatus.importJob;
+
+        if (job?.status === 'completed') {
+          setSuccess(
+            job.message ??
+              `Xero sync complete. ${formatImportJobProgress(job)}`,
+          );
+        } else if (job?.status === 'failed') {
+          setError(job.message ?? 'Xero sync failed.');
+        } else {
+          setSuccess('Xero import is running in the background. Refresh this page for live progress.');
+        }
+      } else if (result.xeroSync?.success) {
         const sync = result.xeroSync;
         setSuccess(
           `${sync.message} Contacts ${sync.contacts.createdCount} new / ${sync.contacts.updatedCount} updated · Invoices ${sync.invoices.createdCount} new / ${sync.invoices.updatedCount} updated · Payments ${sync.payments.createdCount} new / ${sync.payments.updatedCount} updated · Bank transactions ${sync.bankTransactions.createdCount} new / ${sync.bankTransactions.updatedCount} updated.`,
@@ -225,7 +284,10 @@ export function XeroSyncPanel({
             TITAN syncs Xero automatically after you connect and on a recurring schedule. Manual
             sync below is for recovery only.
           </p>
-          <IntegrationAutoSyncStatusPanel status={autoSyncStatus} />
+          <IntegrationAutoSyncStatusPanel
+            status={autoSyncStatus}
+            importJob={importProgress ?? status?.importJob ?? null}
+          />
         </Panel>
       ) : null}
 
@@ -247,6 +309,13 @@ export function XeroSyncPanel({
             {busyScope === 'all' ? 'Syncing from Xero…' : 'Sync now (recovery)'}
           </Button>
         </div>
+      ) : null}
+
+      {importProgress &&
+      (importProgress.status === 'queued' ||
+        importProgress.status === 'running' ||
+        importProgress.status === 'pending') ? (
+        <p className="page-muted">Background import: {formatImportJobProgress(importProgress)}</p>
       ) : null}
 
       {isLoading ? <p className="page-muted">Loading sync counters…</p> : null}

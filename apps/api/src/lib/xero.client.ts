@@ -72,6 +72,13 @@ type XeroClientOptions = {
 
 const API_BASE_URL = 'https://api.xero.com/api.xro/2.0';
 export const XERO_REQUEST_TIMEOUT_MS = 20_000;
+export const XERO_PAGE_SIZE = 100;
+export const XERO_RATE_LIMIT_MAX_RETRIES = 5;
+export const XERO_RATE_LIMIT_BASE_DELAY_MS = 2_000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function timeoutSignal(timeoutMs: number): AbortSignal {
   if (typeof AbortSignal.timeout === 'function') {
@@ -274,8 +281,26 @@ export class XeroClient {
   }
 
   async listPayments(): Promise<XeroPaymentRecord[]> {
-    const payload = await this.apiRequest('GET', '/Payments');
-    return extractPayments(payload);
+    const payments: XeroPaymentRecord[] = [];
+    let page = 1;
+
+    while (page <= 50) {
+      const batch = await this.listPaymentsPage(page);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      payments.push(...batch);
+
+      if (batch.length < XERO_PAGE_SIZE) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return payments;
   }
 
   async listContacts(): Promise<XeroContactRecord[]> {
@@ -283,8 +308,7 @@ export class XeroClient {
     let page = 1;
 
     while (page <= 50) {
-      const payload = await this.apiRequest('GET', `/Contacts?page=${page}`);
-      const batch = extractContacts(payload);
+      const batch = await this.listContactsPage(page);
 
       if (batch.length === 0) {
         break;
@@ -292,7 +316,7 @@ export class XeroClient {
 
       contacts.push(...batch);
 
-      if (batch.length < 100) {
+      if (batch.length < XERO_PAGE_SIZE) {
         break;
       }
 
@@ -302,15 +326,71 @@ export class XeroClient {
     return contacts;
   }
 
+  async listContactsPage(page: number): Promise<XeroContactRecord[]> {
+    const payload = await this.apiRequest('GET', `/Contacts?page=${page}`);
+    return extractContacts(payload);
+  }
+
   async listInvoices(): Promise<XeroInvoiceRecord[]> {
+    const invoices: XeroInvoiceRecord[] = [];
+    let page = 1;
+
+    while (page <= 50) {
+      const batch = await this.listInvoicesPage(page);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      invoices.push(...batch);
+
+      if (batch.length < XERO_PAGE_SIZE) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return invoices;
+  }
+
+  async listInvoicesPage(page: number): Promise<XeroInvoiceRecord[]> {
     const where = encodeURIComponent('Type=="ACCREC"');
-    const payload = await this.apiRequest('GET', `/Invoices?where=${where}`);
+    const payload = await this.apiRequest('GET', `/Invoices?where=${where}&page=${page}`);
     return extractInvoices(payload);
   }
 
-  async listBankTransactions(): Promise<XeroBankTransactionRecord[]> {
-    const payload = await this.apiRequest('GET', '/BankTransactions');
+  async listPaymentsPage(page: number): Promise<XeroPaymentRecord[]> {
+    const payload = await this.apiRequest('GET', `/Payments?page=${page}`);
+    return extractPayments(payload);
+  }
+
+  async listBankTransactionsPage(page: number): Promise<XeroBankTransactionRecord[]> {
+    const payload = await this.apiRequest('GET', `/BankTransactions?page=${page}`);
     return extractBankTransactions(payload);
+  }
+
+  async listBankTransactions(): Promise<XeroBankTransactionRecord[]> {
+    const rows: XeroBankTransactionRecord[] = [];
+    let page = 1;
+
+    while (page <= 50) {
+      const batch = await this.listBankTransactionsPage(page);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      rows.push(...batch);
+
+      if (batch.length < XERO_PAGE_SIZE) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return rows;
   }
 
   private async getDefaultSalesAccountCode(): Promise<string> {
@@ -336,6 +416,36 @@ export class XeroClient {
   }
 
   private async apiRequest(method: 'GET' | 'POST', path: string, body?: unknown): Promise<unknown> {
+    let attempt = 0;
+
+    while (attempt <= XERO_RATE_LIMIT_MAX_RETRIES) {
+      attempt += 1;
+
+      try {
+        return await this.apiRequestOnce(method, path, body);
+      } catch (error) {
+        if (
+          error instanceof XeroError &&
+          error.code === 'RATE_LIMIT' &&
+          attempt <= XERO_RATE_LIMIT_MAX_RETRIES
+        ) {
+          const retryAfterMs = XERO_RATE_LIMIT_BASE_DELAY_MS * 2 ** (attempt - 1);
+          await sleep(retryAfterMs);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new XeroError('RATE_LIMIT', 'Xero rate limit retries exhausted');
+  }
+
+  private async apiRequestOnce(
+    method: 'GET' | 'POST',
+    path: string,
+    body?: unknown,
+  ): Promise<unknown> {
     const accessToken = await this.fetchAccessToken();
     const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
@@ -377,6 +487,10 @@ export class XeroClient {
         'AUTH_FAILED',
         'Xero rejected the request. Verify the tenant ID and granted scopes.',
       );
+    }
+
+    if (response.status === 429) {
+      throw new XeroError('RATE_LIMIT', 'Xero rate limit reached. Retrying with backoff.');
     }
 
     if (!response.ok) {

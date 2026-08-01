@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   buildXeroImportSyncMessage,
-  resolveImportedInvoiceNumber,
-  XERO_IMPORT_OVERALL_TIMEOUT_MS,
+} from './xero-import-job.shared.js';
+import { resolveImportedInvoiceNumber } from './xero-sync.service.js';
+import {
+  XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_STALE_JOB_MS,
-} from './xero-sync.service.js';
+} from './xero-import-job.processor.js';
 import { XERO_REQUEST_TIMEOUT_MS } from '../lib/xero.client.js';
 
 test('resolveImportedInvoiceNumber prefers Xero invoice number', () => {
@@ -85,7 +87,7 @@ test('buildXeroImportSyncMessage reports failed stage without financial detail',
 
 test('timeout constants are finite and ordered for safe sync budgets', () => {
   assert.equal(XERO_REQUEST_TIMEOUT_MS, 20_000);
-  assert.equal(XERO_IMPORT_OVERALL_TIMEOUT_MS, 180_000);
-  assert.equal(XERO_IMPORT_STALE_JOB_MS, 180_000);
-  assert.ok(XERO_REQUEST_TIMEOUT_MS < XERO_IMPORT_OVERALL_TIMEOUT_MS);
+  assert.equal(XERO_IMPORT_BATCH_BUDGET_MS, 45_000);
+  assert.equal(XERO_IMPORT_STALE_JOB_MS, 30 * 60_000);
+  assert.ok(XERO_REQUEST_TIMEOUT_MS < XERO_IMPORT_BATCH_BUDGET_MS);
 });

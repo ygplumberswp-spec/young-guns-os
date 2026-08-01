@@ -32,7 +32,7 @@ export async function runIntegrationAutoSyncRecovery(
     {
       accessToken,
       method: 'POST',
-      timeoutMs: 190_000,
+      timeoutMs: 15_000,
     },
   );
   return data.result;

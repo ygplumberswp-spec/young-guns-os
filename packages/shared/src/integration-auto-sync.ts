@@ -64,6 +64,8 @@ export type IntegrationAutoSyncRunResult = {
   recordsProcessed: number;
   message: string;
   errorCode: string | null;
+  /** True when work was queued for background processing (outcome pending). */
+  queued?: boolean;
   /** Provider-specific payload (e.g. full Xero import counts). */
   details?: Record<string, unknown> | null;
 };

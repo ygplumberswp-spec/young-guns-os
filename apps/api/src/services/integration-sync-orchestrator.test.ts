@@ -26,19 +26,12 @@ test('IntegrationSyncOrchestratorService deduplicates concurrent runs per tenant
       listConnectors: async () => [],
     } as never,
     xeroSyncService: {
-      syncFromXero: async () => {
-        runCount += 1;
-        await new Promise((resolve) => setTimeout(resolve, 25));
-        return {
-          success: true,
-          message: 'ok',
-          syncedAt: new Date().toISOString(),
-          contacts: { createdCount: 1, updatedCount: 0, pulledCount: 1, failedCount: 0, skippedCount: 0 },
-          invoices: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-          payments: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-          bankTransactions: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-        };
-      },
+      enqueueImportSync: async () => ({
+        jobId: 'job-1',
+        status: 'queued' as const,
+        message: 'queued',
+      }),
+      processPendingImportJobs: async () => 0,
     } as never,
     xeroOAuthService: {
       ensureFreshAccessToken: async () => 'token',
@@ -60,9 +53,11 @@ test('IntegrationSyncOrchestratorService deduplicates concurrent runs per tenant
     }),
   ]);
 
-  assert.equal(runCount, 1);
+  assert.equal(runCount, 0);
   assert.equal(first.success, true);
+  assert.equal(first.queued, true);
   assert.equal(second.success, true);
+  assert.equal(second.queued, true);
 });
 
 test('IntegrationSyncOrchestratorService returns honest stub result for meta provider', async () => {
@@ -139,18 +134,15 @@ test('IntegrationSyncOrchestratorService backfills schedule for connected tenant
       ],
     } as never,
     xeroSyncService: {
-      syncFromXero: async () => {
+      enqueueImportSync: async () => {
         initialSyncTriggered = true;
         return {
-          success: true,
-          message: 'ok',
-          syncedAt: new Date().toISOString(),
-          contacts: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-          invoices: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-          payments: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
-          bankTransactions: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
+          jobId: 'job-xero',
+          status: 'queued' as const,
+          message: 'queued',
         };
       },
+      processPendingImportJobs: async () => 0,
     } as never,
     xeroOAuthService: {
       ensureFreshAccessToken: async () => 'token',

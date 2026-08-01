@@ -15,20 +15,6 @@ export type XeroEntitySyncStats = {
   lastError: string | null;
 };
 
-export type XeroSyncStatusResponse = {
-  connected: boolean;
-  organisationName: string | null;
-  baseCurrency: string | null;
-  customers: XeroEntitySyncStats;
-  quotes: XeroEntitySyncStats;
-  invoices: XeroEntitySyncStats;
-  payments: XeroEntitySyncStats;
-  outstandingAmountCents: number;
-  unpaidInvoiceCount: number;
-  customersWithOutstandingCount: number;
-  currency: string;
-};
-
 export type XeroImportEntityCounts = {
   createdCount: number;
   updatedCount: number;
@@ -50,6 +36,51 @@ export type XeroImportSyncResult = {
   failedStage?: XeroImportStage | null;
   completedStages?: XeroImportStage[];
   syncJobId?: string;
+};
+
+export type XeroImportJobStatus = 'queued' | 'pending' | 'running' | 'completed' | 'failed';
+
+export type XeroImportCheckpoint = {
+  stage: XeroImportStage;
+  contactsPage: number;
+  invoicesPage: number;
+  paymentsPage: number;
+  bankTransactionsPage: number;
+};
+
+export type XeroImportJobProgress = {
+  jobId: string;
+  status: XeroImportJobStatus;
+  currentStage: XeroImportStage | null;
+  completedStages: XeroImportStage[];
+  contacts: XeroImportEntityCounts;
+  invoices: XeroImportEntityCounts;
+  payments: XeroImportEntityCounts;
+  bankTransactions: XeroImportEntityCounts;
+  failedStage: XeroImportStage | null;
+  message: string | null;
+  syncedAt: string | null;
+};
+
+export type XeroEnqueueImportResult = {
+  jobId: string;
+  status: 'queued' | 'running';
+  message: string;
+};
+
+export type XeroSyncStatusResponse = {
+  connected: boolean;
+  organisationName: string | null;
+  baseCurrency: string | null;
+  customers: XeroEntitySyncStats;
+  quotes: XeroEntitySyncStats;
+  invoices: XeroEntitySyncStats;
+  payments: XeroEntitySyncStats;
+  outstandingAmountCents: number;
+  unpaidInvoiceCount: number;
+  customersWithOutstandingCount: number;
+  currency: string;
+  importJob?: XeroImportJobProgress | null;
 };
 
 export type XeroEntitySyncResult = {

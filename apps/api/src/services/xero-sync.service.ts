@@ -2,8 +2,9 @@ import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
 import type {
   XeroAccountingAuraContext,
   XeroEntitySyncResult,
+  XeroEnqueueImportResult,
   XeroImportEntityCounts,
-  XeroImportStage,
+  XeroImportJobProgress,
   XeroImportSyncResult,
   XeroSyncLogSummary,
   XeroSyncScope,
@@ -30,6 +31,23 @@ import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError } from '../l
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { XeroOAuthService } from './xero-oauth.service.js';
 import { invalidateIntegrationReadCaches } from './api-read-cache.js';
+import {
+  advanceToNextStage,
+  buildImportJobProgress,
+  buildImportSyncResult,
+  createInitialImportJobState,
+  importJobStateToSummary,
+  isStageComplete,
+  parseImportJobState,
+  XERO_IMPORT_BATCH_BUDGET_MS,
+  XERO_IMPORT_MAX_PAGES_PER_BATCH,
+  XERO_IMPORT_STALE_JOB_MS,
+} from './xero-import-job.processor.js';
+import {
+  buildXeroImportSyncMessage,
+  summarizeCounts,
+  type XeroImportJobState,
+} from './xero-import-job.shared.js';
 
 export class XeroSyncError extends Error {
   constructor(
@@ -41,12 +59,12 @@ export class XeroSyncError extends Error {
   }
 }
 
-/** Overall wall-clock budget for a full read-only Xero import. */
-export const XERO_IMPORT_OVERALL_TIMEOUT_MS = 180_000;
-/** Running import jobs older than this are marked failed as abandoned. */
-export const XERO_IMPORT_STALE_JOB_MS = 180_000;
+/** @deprecated Use XERO_IMPORT_BATCH_BUDGET_MS — kept for legacy test assertions. */
+export const XERO_IMPORT_OVERALL_TIMEOUT_MS = XERO_IMPORT_BATCH_BUDGET_MS;
+export { XERO_IMPORT_STALE_JOB_MS, XERO_IMPORT_BATCH_BUDGET_MS, XERO_IMPORT_MAX_PAGES_PER_BATCH };
+export { buildXeroImportSyncMessage, summarizeCounts };
 
-const activeImportCompanies = new Set<string>();
+const processingImportJobs = new Set<string>();
 
 type XeroSyncServiceDeps = {
   db: DatabaseClient;
@@ -59,27 +77,28 @@ type SyncFromXeroOptions = {
   jobType?: 'manual' | 'scheduled';
   trigger?: IntegrationSyncTrigger;
   idempotencyKey?: string;
+  /** When true, blocks until the queued background job finishes (tests/internal only). */
+  waitForCompletion?: boolean;
 };
+
+export type XeroImportJobSettledInput = {
+  companyId: string;
+  trigger?: IntegrationSyncTrigger;
+  result: XeroImportSyncResult;
+};
+
+type XeroImportJobSettledHandler = (input: XeroImportJobSettledInput) => Promise<void>;
 
 type SyncContext = {
   companyId: string;
   connection: typeof integrationConnections.$inferSelect;
   client: XeroClient;
   syncJobId?: string;
-  isTimedOut?: () => boolean;
 };
 
-function emptyImportCounts(): XeroImportEntityCounts {
-  return {
-    createdCount: 0,
-    updatedCount: 0,
-    pulledCount: 0,
-    failedCount: 0,
-    skippedCount: 0,
-  };
-}
-
 export class XeroSyncService {
+  private importJobSettledHandler?: XeroImportJobSettledHandler;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
@@ -89,6 +108,10 @@ export class XeroSyncService {
 
   static create(deps: XeroSyncServiceDeps): XeroSyncService {
     return new XeroSyncService(deps.db, deps.encryptionKey, deps.hubService, deps.xeroOAuthService);
+  }
+
+  setImportJobSettledHandler(handler: XeroImportJobSettledHandler): void {
+    this.importJobSettledHandler = handler;
   }
 
   async getSyncStatus(companyId: string): Promise<XeroSyncStatusResponse> {
@@ -108,6 +131,8 @@ export class XeroSyncService {
         this.getOutstandingSummary(companyId),
       ]);
 
+    const importJob = await this.getImportJobProgress(companyId);
+
     return {
       connected: true,
       organisationName: connection.config.organisationName ?? null,
@@ -120,7 +145,491 @@ export class XeroSyncService {
       unpaidInvoiceCount: outstanding.unpaidInvoiceCount,
       customersWithOutstandingCount: outstanding.customersWithOutstandingCount,
       currency,
+      importJob,
     };
+  }
+
+  async getImportJobProgress(companyId: string, jobId?: string): Promise<XeroImportJobProgress | null> {
+    const job = jobId
+      ? await this.db.query.integrationSyncJobs.findFirst({
+          where: and(
+            eq(integrationSyncJobs.id, jobId),
+            eq(integrationSyncJobs.companyId, companyId),
+            eq(integrationSyncJobs.provider, 'xero'),
+            eq(integrationSyncJobs.syncScope, 'import'),
+          ),
+        })
+      : await this.db.query.integrationSyncJobs.findFirst({
+          where: and(
+            eq(integrationSyncJobs.companyId, companyId),
+            eq(integrationSyncJobs.provider, 'xero'),
+            eq(integrationSyncJobs.syncScope, 'import'),
+          ),
+          orderBy: [desc(integrationSyncJobs.startedAt)],
+        });
+
+    if (!job) {
+      return null;
+    }
+
+    const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+    const status =
+      job.status === 'pending'
+        ? 'queued'
+        : (job.status as XeroImportJobProgress['status']);
+
+    return buildImportJobProgress(
+      job.id,
+      status,
+      state,
+      job.status === 'completed' ? job.completedAt?.toISOString() ?? null : null,
+      job.errorMessage ?? state.stageError,
+    );
+  }
+
+  async enqueueImportSync(
+    companyId: string,
+    userId?: string,
+    options?: SyncFromXeroOptions,
+  ): Promise<XeroEnqueueImportResult> {
+    await this.failStaleImportJobs(companyId);
+
+    const activeJob = await this.db.query.integrationSyncJobs.findFirst({
+      where: and(
+        eq(integrationSyncJobs.companyId, companyId),
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+        inArray(integrationSyncJobs.status, ['pending', 'running']),
+      ),
+      orderBy: [desc(integrationSyncJobs.startedAt)],
+    });
+
+    if (activeJob) {
+      return {
+        jobId: activeJob.id,
+        status: activeJob.status === 'pending' ? 'queued' : 'running',
+        message:
+          activeJob.status === 'pending'
+            ? 'Xero import is already queued.'
+            : 'Xero import is already running.',
+      };
+    }
+
+    const ctx = await this.createSyncContext(companyId);
+    const initialState = createInitialImportJobState({
+      idempotencyKey: options?.idempotencyKey,
+      trigger: options?.trigger,
+    });
+
+    if (!this.hubService) {
+      throw new XeroSyncError('NOT_CONFIGURED', 'Integration hub is required for Xero import jobs');
+    }
+
+    const syncJobId = await this.hubService.enqueueSyncJob({
+      companyId,
+      provider: 'xero',
+      integrationConnectionId: ctx.connection.id,
+      jobType: options?.jobType ?? 'manual',
+      syncScope: 'import',
+      resultSummary: importJobStateToSummary(initialState),
+    });
+
+    if (userId) {
+      await this.db.insert(securityAuditLogs).values({
+        companyId,
+        userId,
+        category: 'integrations',
+        action: 'xero_import_sync_queued',
+        entityType: 'integration_connection',
+        entityId: ctx.connection.id,
+        metadata: {
+          syncJobId,
+          trigger: options?.trigger ?? 'manual',
+        },
+      });
+    }
+
+    void this.processImportJobBatch(syncJobId).catch((error: unknown) => {
+      console.error('[xero-sync] Background import batch failed after enqueue', {
+        companyId,
+        syncJobId,
+        error,
+      });
+    });
+
+    return {
+      jobId: syncJobId,
+      status: 'queued',
+      message: 'Xero import queued for background processing.',
+    };
+  }
+
+  async processPendingImportJobs(limit = 10): Promise<number> {
+    await this.failStaleImportJobs();
+
+    const jobs = await this.db.query.integrationSyncJobs.findMany({
+      where: and(
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+        inArray(integrationSyncJobs.status, ['pending', 'running']),
+      ),
+      orderBy: [integrationSyncJobs.startedAt],
+      limit,
+    });
+
+    let processed = 0;
+
+    for (const job of jobs) {
+      await this.processImportJobBatch(job.id);
+      processed += 1;
+    }
+
+    return processed;
+  }
+
+  async processImportJobBatch(syncJobId: string): Promise<XeroImportSyncResult | null> {
+    if (processingImportJobs.has(syncJobId)) {
+      return null;
+    }
+
+    processingImportJobs.add(syncJobId);
+
+    try {
+      const job = await this.db.query.integrationSyncJobs.findFirst({
+        where: eq(integrationSyncJobs.id, syncJobId),
+      });
+
+      if (!job || job.syncScope !== 'import' || job.provider !== 'xero') {
+        return null;
+      }
+
+      if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+        return buildImportSyncResult(
+          parseImportJobState(job.resultSummary as Record<string, unknown> | null),
+          job.id,
+          job.completedAt?.toISOString() ?? null,
+        );
+      }
+
+      if (job.status === 'pending') {
+        await this.db
+          .update(integrationSyncJobs)
+          .set({ status: 'running', startedAt: new Date() })
+          .where(eq(integrationSyncJobs.id, syncJobId));
+      }
+
+      const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+      const ctx = await this.createSyncContext(job.companyId);
+      ctx.syncJobId = syncJobId;
+
+      const deadlineAt = Date.now() + XERO_IMPORT_BATCH_BUDGET_MS;
+      let allStagesComplete = false;
+
+      while (Date.now() < deadlineAt && !state.failedStage) {
+        const batchResult = await this.processCurrentImportStageBatch(ctx, state, deadlineAt);
+
+        if (state.failedStage) {
+          break;
+        }
+
+        if (batchResult.stageComplete) {
+          if (!advanceToNextStage(state)) {
+            allStagesComplete = true;
+            break;
+          }
+        } else if (batchResult.budgetExhausted) {
+          break;
+        }
+      }
+
+      await this.persistImportJobState(syncJobId, state);
+
+      if (state.failedStage || !allStagesComplete) {
+        if (!state.failedStage) {
+          return null;
+        }
+
+        return this.finalizeImportJob(job.companyId, syncJobId, ctx.connection.id, state);
+      }
+
+      return this.finalizeImportJob(job.companyId, syncJobId, ctx.connection.id, state, true);
+    } catch (error) {
+      const message = mapError(error);
+      await this.hubService?.completeSyncJob(syncJobId, {
+        status: 'failed',
+        errorMessage: message,
+        resultSummary: {
+          unexpectedError: true,
+          failedStage: null,
+        },
+      });
+      throw error;
+    } finally {
+      processingImportJobs.delete(syncJobId);
+    }
+  }
+
+  async syncFromXero(
+    companyId: string,
+    userId?: string,
+    options?: SyncFromXeroOptions,
+  ): Promise<XeroImportSyncResult> {
+    const queued = await this.enqueueImportSync(companyId, userId, options);
+
+    if (!options?.waitForCompletion) {
+      const progress = await this.getImportJobProgress(companyId, queued.jobId);
+      const state = progress
+        ? {
+            checkpoint: {
+              stage: progress.currentStage ?? 'contacts',
+              contactsPage: 1,
+              invoicesPage: 1,
+              paymentsPage: 1,
+              bankTransactionsPage: 1,
+            },
+            completedStages: progress.completedStages,
+            contacts: progress.contacts,
+            invoices: progress.invoices,
+            payments: progress.payments,
+            bankTransactions: progress.bankTransactions,
+            failedStage: progress.failedStage,
+            stageError: progress.message,
+          }
+        : createInitialImportJobState(options);
+
+      return {
+        ...buildImportSyncResult(state, queued.jobId, null),
+        success: false,
+        message: queued.message,
+        syncedAt: null,
+      };
+    }
+
+    const deadline = Date.now() + XERO_IMPORT_STALE_JOB_MS;
+
+    while (Date.now() < deadline) {
+      const result = await this.processImportJobBatch(queued.jobId);
+      const progress = await this.getImportJobProgress(companyId, queued.jobId);
+
+      if (
+        progress &&
+        (progress.status === 'completed' || progress.status === 'failed') &&
+        result
+      ) {
+        return result;
+      }
+
+      if (!progress || progress.status === 'completed' || progress.status === 'failed') {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    throw new XeroSyncError(
+      'SYNC_TIMEOUT',
+      'Xero background import did not finish within the expected window.',
+    );
+  }
+
+  private async retryImportSyncJob(
+    companyId: string,
+    syncJobId: string,
+  ): Promise<XeroEntitySyncResult> {
+    const failedJob = await this.db.query.integrationSyncJobs.findFirst({
+      where: and(
+        eq(integrationSyncJobs.id, syncJobId),
+        eq(integrationSyncJobs.companyId, companyId),
+      ),
+    });
+
+    const resumeState = parseImportJobState(
+      failedJob?.resultSummary as Record<string, unknown> | null,
+    );
+    resumeState.failedStage = null;
+    resumeState.stageError = null;
+
+    const queued = await this.enqueueImportSync(companyId, undefined, {
+      jobType: 'manual',
+      trigger: 'manual',
+    });
+
+    await this.db
+      .update(integrationSyncJobs)
+      .set({
+        resultSummary: importJobStateToSummary(resumeState),
+      })
+      .where(eq(integrationSyncJobs.id, queued.jobId));
+
+    const deadline = Date.now() + XERO_IMPORT_STALE_JOB_MS;
+
+    while (Date.now() < deadline) {
+      const result = await this.processImportJobBatch(queued.jobId);
+      const progress = await this.getImportJobProgress(companyId, queued.jobId);
+
+      if (progress && (progress.status === 'completed' || progress.status === 'failed') && result) {
+        return {
+          scope: 'import',
+          createdCount:
+            result.contacts.createdCount +
+            result.invoices.createdCount +
+            result.payments.createdCount +
+            result.bankTransactions.createdCount,
+          updatedCount:
+            result.contacts.updatedCount +
+            result.invoices.updatedCount +
+            result.payments.updatedCount +
+            result.bankTransactions.updatedCount,
+          pulledCount:
+            result.contacts.pulledCount +
+            result.invoices.pulledCount +
+            result.payments.pulledCount +
+            result.bankTransactions.pulledCount,
+          failedCount:
+            result.contacts.failedCount +
+            result.invoices.failedCount +
+            result.payments.failedCount +
+            result.bankTransactions.failedCount,
+          skippedCount:
+            result.contacts.skippedCount +
+            result.invoices.skippedCount +
+            result.payments.skippedCount +
+            result.bankTransactions.skippedCount,
+          syncedAt: result.syncedAt ?? new Date().toISOString(),
+          syncJobId: queued.jobId,
+        };
+      }
+
+      if (!progress || progress.status === 'completed' || progress.status === 'failed') {
+        break;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    throw new XeroSyncError(
+      'SYNC_TIMEOUT',
+      'Xero background import did not finish within the expected window.',
+    );
+  }
+
+  private async persistImportJobState(syncJobId: string, state: XeroImportJobState): Promise<void> {
+    await this.db
+      .update(integrationSyncJobs)
+      .set({
+        resultSummary: importJobStateToSummary(state),
+      })
+      .where(eq(integrationSyncJobs.id, syncJobId));
+  }
+
+  private async finalizeImportJob(
+    companyId: string,
+    syncJobId: string,
+    connectionId: string,
+    state: XeroImportJobState,
+    markComplete = false,
+  ): Promise<XeroImportSyncResult> {
+    const totalFailed =
+      state.contacts.failedCount +
+      state.invoices.failedCount +
+      state.payments.failedCount +
+      state.bankTransactions.failedCount;
+    const success = markComplete && state.failedStage == null && totalFailed === 0;
+    const now = new Date();
+    const result = buildImportSyncResult(
+      state,
+      syncJobId,
+      success ? now.toISOString() : null,
+    );
+
+    await this.db
+      .update(integrationConnections)
+      .set({
+        ...(success ? { lastSyncAt: now, lastError: null } : { lastError: result.message }),
+        updatedAt: now,
+      })
+      .where(eq(integrationConnections.id, connectionId));
+
+    await this.hubService?.completeSyncJob(syncJobId, {
+      status: success ? 'completed' : 'failed',
+      errorMessage: success ? null : result.message,
+      resultSummary: importJobStateToSummary(state),
+    });
+
+    await this.importJobSettledHandler?.({
+      companyId,
+      trigger: state.trigger,
+      result,
+    });
+
+    invalidateIntegrationReadCaches(companyId);
+    return result;
+  }
+
+  private async processCurrentImportStageBatch(
+    ctx: SyncContext,
+    state: XeroImportJobState,
+    deadlineAt: number,
+  ): Promise<{ stageComplete: boolean; budgetExhausted: boolean }> {
+    const stage = state.checkpoint.stage;
+    let pagesProcessed = 0;
+    let lastBatchSize = 0;
+    let budgetExhausted = false;
+
+    try {
+      while (pagesProcessed < XERO_IMPORT_MAX_PAGES_PER_BATCH && Date.now() < deadlineAt) {
+        if (stage === 'contacts') {
+          const batch = await ctx.client.listContactsPage(state.checkpoint.contactsPage);
+          lastBatchSize = batch.length;
+          await this.importContactBatch(ctx, batch, state.contacts);
+          state.checkpoint.contactsPage += 1;
+        } else if (stage === 'invoices') {
+          const batch = await ctx.client.listInvoicesPage(state.checkpoint.invoicesPage);
+          lastBatchSize = batch.length;
+          await this.importInvoiceBatch(ctx, batch, state.invoices);
+          state.checkpoint.invoicesPage += 1;
+        } else if (stage === 'payments') {
+          const batch = await ctx.client.listPaymentsPage(state.checkpoint.paymentsPage);
+          lastBatchSize = batch.length;
+          await this.importPaymentBatch(ctx, batch, state.payments);
+          state.checkpoint.paymentsPage += 1;
+        } else {
+          const batch = await ctx.client.listBankTransactionsPage(
+            state.checkpoint.bankTransactionsPage,
+          );
+          lastBatchSize = batch.length;
+          await this.importBankTransactionBatch(ctx, batch, state.bankTransactions);
+          state.checkpoint.bankTransactionsPage += 1;
+        }
+
+        pagesProcessed += 1;
+
+        if (isStageComplete(stage, state.checkpoint, lastBatchSize)) {
+          return { stageComplete: true, budgetExhausted: false };
+        }
+
+        if (Date.now() >= deadlineAt) {
+          budgetExhausted = true;
+          break;
+        }
+      }
+
+      if (pagesProcessed >= XERO_IMPORT_MAX_PAGES_PER_BATCH && !isStageComplete(stage, state.checkpoint, lastBatchSize)) {
+        budgetExhausted = true;
+      }
+
+      return {
+        stageComplete: isStageComplete(stage, state.checkpoint, lastBatchSize),
+        budgetExhausted,
+      };
+    } catch (error) {
+      state.failedStage = stage;
+      state.stageError =
+        error instanceof XeroError && error.code === 'TIMEOUT'
+          ? `Xero API timed out during ${stage}: ${error.message}`
+          : mapError(error);
+      return { stageComplete: false, budgetExhausted: false };
+    }
   }
 
   async listSyncLogs(companyId: string, limit = 100): Promise<XeroSyncLogSummary[]> {
@@ -183,43 +692,6 @@ export class XeroSyncService {
     }
   }
 
-  private async retryImportSyncJob(
-    companyId: string,
-    syncJobId: string,
-  ): Promise<XeroEntitySyncResult> {
-    const importResult = await this.syncFromXero(companyId);
-    return {
-      scope: 'import',
-      createdCount:
-        importResult.contacts.createdCount +
-        importResult.invoices.createdCount +
-        importResult.payments.createdCount +
-        importResult.bankTransactions.createdCount,
-      updatedCount:
-        importResult.contacts.updatedCount +
-        importResult.invoices.updatedCount +
-        importResult.payments.updatedCount +
-        importResult.bankTransactions.updatedCount,
-      pulledCount:
-        importResult.contacts.pulledCount +
-        importResult.invoices.pulledCount +
-        importResult.payments.pulledCount +
-        importResult.bankTransactions.pulledCount,
-      failedCount:
-        importResult.contacts.failedCount +
-        importResult.invoices.failedCount +
-        importResult.payments.failedCount +
-        importResult.bankTransactions.failedCount,
-      skippedCount:
-        importResult.contacts.skippedCount +
-        importResult.invoices.skippedCount +
-        importResult.payments.skippedCount +
-        importResult.bankTransactions.skippedCount,
-      syncedAt: importResult.syncedAt ?? new Date().toISOString(),
-      syncJobId,
-    };
-  }
-
   /**
    * Marks abandoned/stale Xero import jobs as failed.
    * Does not delete imported business data or mappings.
@@ -256,303 +728,6 @@ export class XeroSyncService {
       .returning({ id: integrationSyncJobs.id });
 
     return updated.length;
-  }
-
-  async syncFromXero(
-    companyId: string,
-    userId?: string,
-    options?: SyncFromXeroOptions,
-  ): Promise<XeroImportSyncResult> {
-    await this.failStaleImportJobs(companyId);
-
-    if (activeImportCompanies.has(companyId)) {
-      throw new XeroSyncError(
-        'SYNC_IN_PROGRESS',
-        'A Xero sync is already running for this company. Wait for it to finish, then retry.',
-      );
-    }
-
-    const activeJob = await this.db.query.integrationSyncJobs.findFirst({
-      where: and(
-        eq(integrationSyncJobs.companyId, companyId),
-        eq(integrationSyncJobs.provider, 'xero'),
-        eq(integrationSyncJobs.syncScope, 'import'),
-        inArray(integrationSyncJobs.status, ['pending', 'running']),
-      ),
-      orderBy: [desc(integrationSyncJobs.startedAt)],
-    });
-
-    if (activeJob) {
-      throw new XeroSyncError(
-        'SYNC_IN_PROGRESS',
-        'A Xero sync is already running for this company. Wait for it to finish, then retry.',
-      );
-    }
-
-    activeImportCompanies.add(companyId);
-    const deadlineAt = Date.now() + XERO_IMPORT_OVERALL_TIMEOUT_MS;
-    const isTimedOut = () => Date.now() >= deadlineAt;
-
-    try {
-      return await this.runXeroImport(companyId, userId, isTimedOut, options);
-    } catch (error) {
-      // Ensure abandoned DB jobs cannot block the next Sync now after unexpected failures.
-      await this.failStaleImportJobs(companyId, 0);
-      throw error;
-    } finally {
-      activeImportCompanies.delete(companyId);
-    }
-  }
-
-  private async runXeroImport(
-    companyId: string,
-    userId: string | undefined,
-    isTimedOut: () => boolean,
-    options?: SyncFromXeroOptions,
-  ): Promise<XeroImportSyncResult> {
-    let syncJobId: string | undefined;
-
-    try {
-      return await this.executeXeroImportStages(companyId, userId, isTimedOut, (id) => {
-        syncJobId = id;
-      }, options);
-    } catch (error) {
-      if (syncJobId) {
-        await this.hubService?.completeSyncJob(syncJobId, {
-          status: 'failed',
-          errorMessage: mapError(error),
-          resultSummary: {
-            unexpectedError: true,
-            failedStage: null,
-          },
-        });
-      }
-      throw error;
-    }
-  }
-
-  private async executeXeroImportStages(
-    companyId: string,
-    userId: string | undefined,
-    isTimedOut: () => boolean,
-    onJobStarted: (syncJobId: string | undefined) => void,
-    options?: SyncFromXeroOptions,
-  ): Promise<XeroImportSyncResult> {
-    const ctx = await this.createSyncContext(companyId);
-    ctx.isTimedOut = isTimedOut;
-    const syncJobId = await this.hubService?.startSyncJob({
-      companyId,
-      provider: 'xero',
-      integrationConnectionId: ctx.connection.id,
-      jobType: options?.jobType ?? 'manual',
-      syncScope: 'import',
-    });
-
-    ctx.syncJobId = syncJobId;
-    onJobStarted(syncJobId);
-
-    if (syncJobId && options?.idempotencyKey) {
-      await this.db
-        .update(integrationSyncJobs)
-        .set({
-          resultSummary: {
-            idempotencyKey: options.idempotencyKey,
-            trigger: options.trigger ?? 'manual',
-          },
-        })
-        .where(eq(integrationSyncJobs.id, syncJobId));
-    }
-
-    let contacts = emptyImportCounts();
-    let invoices = emptyImportCounts();
-    let payments = emptyImportCounts();
-    let bankTransactions = emptyImportCounts();
-    const completedStages: XeroImportStage[] = [];
-    let failedStage: XeroImportStage | null = null;
-    let stageError: string | null = null;
-
-    const stages: Array<{
-      stage: XeroImportStage;
-      run: () => Promise<XeroImportEntityCounts>;
-      assign: (counts: XeroImportEntityCounts) => void;
-    }> = [
-      {
-        stage: 'contacts',
-        run: () => this.importContactsFromXero(ctx),
-        assign: (counts) => {
-          contacts = counts;
-        },
-      },
-      {
-        stage: 'invoices',
-        run: () => this.importInvoicesFromXero(ctx),
-        assign: (counts) => {
-          invoices = counts;
-        },
-      },
-      {
-        stage: 'payments',
-        run: () => this.importPaymentsFromXero(ctx),
-        assign: (counts) => {
-          payments = counts;
-        },
-      },
-      {
-        stage: 'bank_transactions',
-        run: () => this.importBankTransactionsFromXero(ctx),
-        assign: (counts) => {
-          bankTransactions = counts;
-        },
-      },
-    ];
-
-    for (const step of stages) {
-      if (isTimedOut()) {
-        failedStage = step.stage;
-        stageError = `Xero sync timed out after ${XERO_IMPORT_OVERALL_TIMEOUT_MS / 1000}s during ${step.stage}. Partial imports were kept; Last sync was not updated.`;
-        break;
-      }
-
-      await this.updateImportJobProgress(syncJobId, {
-        stage: step.stage,
-        completedStages,
-        contacts,
-        invoices,
-        payments,
-        bankTransactions,
-      });
-
-      try {
-        const counts = await step.run();
-        if (isTimedOut()) {
-          failedStage = step.stage;
-          stageError = `Xero sync timed out after ${XERO_IMPORT_OVERALL_TIMEOUT_MS / 1000}s during ${step.stage}. Partial imports were kept; Last sync was not updated.`;
-          step.assign(counts);
-          break;
-        }
-        step.assign(counts);
-        completedStages.push(step.stage);
-      } catch (error) {
-        failedStage = step.stage;
-        stageError =
-          error instanceof XeroError && error.code === 'TIMEOUT'
-            ? `Xero API timed out during ${step.stage}: ${error.message}`
-            : mapError(error);
-        break;
-      }
-    }
-
-    const totalFailed =
-      contacts.failedCount +
-      invoices.failedCount +
-      payments.failedCount +
-      bankTransactions.failedCount;
-
-    const success = failedStage == null && totalFailed === 0;
-    const message = buildXeroImportSyncMessage({
-      success,
-      contacts,
-      invoices,
-      payments,
-      bankTransactions,
-      failedStage,
-      stageError,
-    });
-    const now = new Date();
-
-    const result: XeroImportSyncResult = {
-      success,
-      message,
-      syncedAt: success ? now.toISOString() : null,
-      contacts,
-      invoices,
-      payments,
-      bankTransactions,
-      failedStage,
-      completedStages,
-      syncJobId,
-    };
-
-    await this.db
-      .update(integrationConnections)
-      .set({
-        ...(success ? { lastSyncAt: now, lastError: null } : { lastError: message }),
-        updatedAt: now,
-      })
-      .where(eq(integrationConnections.id, ctx.connection.id));
-
-    if (syncJobId) {
-      await this.hubService?.completeSyncJob(syncJobId, {
-        status: success ? 'completed' : 'failed',
-        errorMessage: success ? null : message,
-        resultSummary: {
-          success,
-          failedStage,
-          completedStages,
-          contacts: summarizeCounts(contacts),
-          invoices: summarizeCounts(invoices),
-          payments: summarizeCounts(payments),
-          bankTransactions: summarizeCounts(bankTransactions),
-        },
-      });
-    }
-
-    if (userId) {
-      await this.db.insert(securityAuditLogs).values({
-        companyId,
-        userId,
-        category: 'integrations',
-        action: success ? 'xero_import_sync_completed' : 'xero_import_sync_failed',
-        entityType: 'integration_connection',
-        entityId: ctx.connection.id,
-        metadata: {
-          failedStage,
-          completedStages,
-          contactsCreated: contacts.createdCount,
-          contactsUpdated: contacts.updatedCount,
-          invoicesCreated: invoices.createdCount,
-          invoicesUpdated: invoices.updatedCount,
-          paymentsCreated: payments.createdCount,
-          paymentsUpdated: payments.updatedCount,
-          bankTransactionsCreated: bankTransactions.createdCount,
-          bankTransactionsUpdated: bankTransactions.updatedCount,
-          failedCount: totalFailed,
-        },
-      });
-    }
-
-    invalidateIntegrationReadCaches(companyId);
-    return result;
-  }
-
-  private async updateImportJobProgress(
-    syncJobId: string | undefined,
-    progress: {
-      stage: XeroImportStage;
-      completedStages: XeroImportStage[];
-      contacts: XeroImportEntityCounts;
-      invoices: XeroImportEntityCounts;
-      payments: XeroImportEntityCounts;
-      bankTransactions: XeroImportEntityCounts;
-    },
-  ): Promise<void> {
-    if (!syncJobId) {
-      return;
-    }
-
-    await this.db
-      .update(integrationSyncJobs)
-      .set({
-        resultSummary: {
-          currentStage: progress.stage,
-          completedStages: progress.completedStages,
-          contacts: summarizeCounts(progress.contacts),
-          invoices: summarizeCounts(progress.invoices),
-          payments: summarizeCounts(progress.payments),
-          bankTransactions: summarizeCounts(progress.bankTransactions),
-        },
-      })
-      .where(eq(integrationSyncJobs.id, syncJobId));
   }
 
   async syncCustomers(companyId: string): Promise<XeroEntitySyncResult> {
@@ -1362,25 +1537,12 @@ export class XeroSyncService {
     });
   }
 
-  private assertImportNotTimedOut(ctx: SyncContext, stage: XeroImportStage): void {
-    if (ctx.isTimedOut?.()) {
-      throw new XeroSyncError(
-        'TIMEOUT',
-        `Xero sync timed out after ${XERO_IMPORT_OVERALL_TIMEOUT_MS / 1000}s during ${stage}. Partial imports were kept; Last sync was not updated.`,
-      );
-    }
-  }
-
-  private async importContactsFromXero(ctx: SyncContext): Promise<XeroImportEntityCounts> {
-    this.assertImportNotTimedOut(ctx, 'contacts');
-    const remoteContacts = await ctx.client.listContacts();
-    let createdCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
-
+  private async importContactBatch(
+    ctx: SyncContext,
+    remoteContacts: Awaited<ReturnType<XeroClient['listContactsPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
     for (const contact of remoteContacts) {
-      this.assertImportNotTimedOut(ctx, 'contacts');
       try {
         const existingMapping = await this.db.query.xeroCustomerMappings.findFirst({
           where: and(
@@ -1410,7 +1572,7 @@ export class XeroSyncService {
             contact.contactId,
             'synced',
           );
-          updatedCount += 1;
+          counts.updatedCount += 1;
         } else {
           const customerId = await this.resolveCustomerForXeroContact(ctx, {
             xeroContactId: contact.contactId,
@@ -1418,8 +1580,10 @@ export class XeroSyncService {
             email: contact.email,
           });
           await this.upsertCustomerMapping(ctx, customerId, contact.contactId, 'synced');
-          createdCount += 1;
+          counts.createdCount += 1;
         }
+
+        counts.pulledCount += 1;
 
         await this.writeLog(ctx, {
           entityType: 'customer',
@@ -1429,7 +1593,7 @@ export class XeroSyncService {
           message: `Imported Xero contact ${contact.name}`,
         });
       } catch (error) {
-        failedCount += 1;
+        counts.failedCount += 1;
         await this.writeLog(ctx, {
           entityType: 'customer',
           xeroEntityId: contact.contactId,
@@ -1440,32 +1604,20 @@ export class XeroSyncService {
       }
     }
 
-    if (remoteContacts.length === 0) {
-      skippedCount = 1;
+    if (remoteContacts.length === 0 && counts.pulledCount === 0 && counts.skippedCount === 0) {
+      counts.skippedCount = 1;
     }
-
-    return {
-      createdCount,
-      updatedCount,
-      pulledCount: remoteContacts.length,
-      failedCount,
-      skippedCount,
-    };
   }
 
-  private async importInvoicesFromXero(ctx: SyncContext): Promise<XeroImportEntityCounts> {
-    this.assertImportNotTimedOut(ctx, 'invoices');
-    const remoteInvoices = await ctx.client.listInvoices();
-    let createdCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
-
+  private async importInvoiceBatch(
+    ctx: SyncContext,
+    remoteInvoices: Awaited<ReturnType<XeroClient['listInvoicesPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
     for (const remote of remoteInvoices) {
-      this.assertImportNotTimedOut(ctx, 'invoices');
       try {
         if (!remote.contactId) {
-          skippedCount += 1;
+          counts.skippedCount += 1;
           continue;
         }
 
@@ -1517,7 +1669,8 @@ export class XeroSyncService {
             remote.invoiceId,
             'synced',
           );
-          updatedCount += 1;
+          counts.updatedCount += 1;
+          counts.pulledCount += 1;
 
           await this.writeLog(ctx, {
             entityType: 'invoice',
@@ -1552,7 +1705,8 @@ export class XeroSyncService {
         }
 
         await this.upsertInvoiceMapping(ctx, createdInvoice.id, remote.invoiceId, 'synced');
-        createdCount += 1;
+        counts.createdCount += 1;
+        counts.pulledCount += 1;
 
         await this.writeLog(ctx, {
           entityType: 'invoice',
@@ -1563,7 +1717,7 @@ export class XeroSyncService {
           message: `Imported invoice ${invoiceNumber} from Xero`,
         });
       } catch (error) {
-        failedCount += 1;
+        counts.failedCount += 1;
         await this.writeLog(ctx, {
           entityType: 'invoice',
           xeroEntityId: remote.invoiceId,
@@ -1573,18 +1727,13 @@ export class XeroSyncService {
         });
       }
     }
-
-    return {
-      createdCount,
-      updatedCount,
-      pulledCount: remoteInvoices.length,
-      failedCount,
-      skippedCount,
-    };
   }
 
-  private async importPaymentsFromXero(ctx: SyncContext): Promise<XeroImportEntityCounts> {
-    this.assertImportNotTimedOut(ctx, 'payments');
+  private async importPaymentBatch(
+    ctx: SyncContext,
+    remotePayments: Awaited<ReturnType<XeroClient['listPaymentsPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
     const invoiceMappings = await this.db.query.xeroInvoiceMappings.findMany({
       where: and(
         eq(xeroInvoiceMappings.companyId, ctx.companyId),
@@ -1597,24 +1746,16 @@ export class XeroSyncService {
       invoiceMappings.filter((row) => row.xeroInvoiceId).map((row) => [row.xeroInvoiceId!, row]),
     );
 
-    const remotePayments = await ctx.client.listPayments();
-
-    let createdCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
-
     for (const remotePayment of remotePayments) {
-      this.assertImportNotTimedOut(ctx, 'payments');
       if (!remotePayment.invoiceId) {
-        skippedCount += 1;
+        counts.skippedCount += 1;
         continue;
       }
 
       const invoiceMapping = mappingByXeroInvoiceId.get(remotePayment.invoiceId);
 
       if (!invoiceMapping?.invoice) {
-        skippedCount += 1;
+        counts.skippedCount += 1;
         continue;
       }
 
@@ -1627,7 +1768,8 @@ export class XeroSyncService {
         });
 
         if (existingPaymentMapping) {
-          updatedCount += 1;
+          counts.updatedCount += 1;
+          counts.pulledCount += 1;
           continue;
         }
 
@@ -1650,7 +1792,8 @@ export class XeroSyncService {
           throw new XeroSyncError('CREATE_FAILED', 'Unable to create payment from Xero');
         }
 
-        createdCount += 1;
+        counts.createdCount += 1;
+        counts.pulledCount += 1;
 
         await this.db.insert(xeroPaymentMappings).values({
           companyId: ctx.companyId,
@@ -1662,7 +1805,6 @@ export class XeroSyncService {
           lastSuccessfulSyncAt: new Date(),
         });
 
-        // Avoid N+1 Xero invoice fetches (was hanging large payment imports).
         const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
         const invoiceTotalCents = invoiceMapping.invoice.amountCents ?? 0;
         const amountDue = Math.max(invoiceTotalCents - nextPaidCents, 0) / 100;
@@ -1694,7 +1836,7 @@ export class XeroSyncService {
           message: `Imported payment for invoice ${invoiceMapping.invoice.invoiceNumber}`,
         });
       } catch (error) {
-        failedCount += 1;
+        counts.failedCount += 1;
         await this.writeLog(ctx, {
           entityType: 'payment',
           entityId: invoiceMapping.invoiceId,
@@ -1705,26 +1847,14 @@ export class XeroSyncService {
         });
       }
     }
-
-    return {
-      createdCount,
-      updatedCount,
-      pulledCount: remotePayments.length,
-      failedCount,
-      skippedCount,
-    };
   }
 
-  private async importBankTransactionsFromXero(ctx: SyncContext): Promise<XeroImportEntityCounts> {
-    this.assertImportNotTimedOut(ctx, 'bank_transactions');
-    const remoteRows = await ctx.client.listBankTransactions();
-    let createdCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
-    let skippedCount = 0;
-
+  private async importBankTransactionBatch(
+    ctx: SyncContext,
+    remoteRows: Awaited<ReturnType<XeroClient['listBankTransactionsPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
     for (const remote of remoteRows) {
-      this.assertImportNotTimedOut(ctx, 'bank_transactions');
       try {
         const existing = await this.db.query.xeroSyncLogs.findFirst({
           where: and(
@@ -1752,7 +1882,8 @@ export class XeroSyncService {
               syncJobId: ctx.syncJobId ?? null,
             })
             .where(eq(xeroSyncLogs.id, existing.id));
-          updatedCount += 1;
+          counts.updatedCount += 1;
+          counts.pulledCount += 1;
           continue;
         }
 
@@ -1767,9 +1898,10 @@ export class XeroSyncService {
           message: remote.description ?? remote.reference ?? 'Imported bank transaction from Xero',
           details,
         });
-        createdCount += 1;
+        counts.createdCount += 1;
+        counts.pulledCount += 1;
       } catch (error) {
-        failedCount += 1;
+        counts.failedCount += 1;
         await this.writeLog(ctx, {
           entityType: 'bank_transaction',
           xeroEntityId: remote.bankTransactionId,
@@ -1780,17 +1912,9 @@ export class XeroSyncService {
       }
     }
 
-    if (remoteRows.length === 0) {
-      skippedCount = 1;
+    if (remoteRows.length === 0 && counts.pulledCount === 0 && counts.skippedCount === 0) {
+      counts.skippedCount = 1;
     }
-
-    return {
-      createdCount,
-      updatedCount,
-      pulledCount: remoteRows.length,
-      failedCount,
-      skippedCount,
-    };
   }
 
   private async resolveCustomerForXeroContact(
@@ -1904,53 +2028,4 @@ export function resolveImportedInvoiceNumber(
   }
 
   return `XERO-${xeroInvoiceId.slice(0, 8).toUpperCase()}`;
-}
-
-export function summarizeCounts(counts: XeroImportEntityCounts): Record<string, number> {
-  return {
-    createdCount: counts.createdCount,
-    updatedCount: counts.updatedCount,
-    pulledCount: counts.pulledCount,
-    failedCount: counts.failedCount,
-    skippedCount: counts.skippedCount,
-  };
-}
-
-export function buildXeroImportSyncMessage(input: {
-  success: boolean;
-  contacts: XeroImportEntityCounts;
-  invoices: XeroImportEntityCounts;
-  payments: XeroImportEntityCounts;
-  bankTransactions: XeroImportEntityCounts;
-  failedStage?: XeroImportStage | null;
-  stageError?: string | null;
-}): string {
-  const createdTotal =
-    input.contacts.createdCount +
-    input.invoices.createdCount +
-    input.payments.createdCount +
-    input.bankTransactions.createdCount;
-  const updatedTotal =
-    input.contacts.updatedCount +
-    input.invoices.updatedCount +
-    input.payments.updatedCount +
-    input.bankTransactions.updatedCount;
-  const failedTotal =
-    input.contacts.failedCount +
-    input.invoices.failedCount +
-    input.payments.failedCount +
-    input.bankTransactions.failedCount;
-
-  const summary = `Contacts ${input.contacts.createdCount} new / ${input.contacts.updatedCount} updated, invoices ${input.invoices.createdCount} new / ${input.invoices.updatedCount} updated, payments ${input.payments.createdCount} new / ${input.payments.updatedCount} updated, bank transactions ${input.bankTransactions.createdCount} new / ${input.bankTransactions.updatedCount} updated`;
-
-  if (input.success) {
-    return `Xero sync complete. ${summary}.`;
-  }
-
-  if (input.failedStage) {
-    const detail = input.stageError ? ` ${input.stageError}` : '';
-    return `Xero sync failed during ${input.failedStage}.${detail} ${summary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records. Last sync was not updated.`;
-  }
-
-  return `Xero sync finished with ${failedTotal} failed record(s). ${summary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.`;
 }

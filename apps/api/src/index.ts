@@ -424,6 +424,9 @@ const integrationSyncOrchestratorService = new IntegrationSyncOrchestratorServic
   businessIntegrationsService,
 });
 integrationPlatformService.setSyncOrchestrator(integrationSyncOrchestratorService);
+xeroSyncService.setImportJobSettledHandler((input) =>
+  integrationSyncOrchestratorService.handleXeroImportJobSettled(input),
+);
 xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
   void integrationSyncOrchestratorService
     .onProviderConnected({

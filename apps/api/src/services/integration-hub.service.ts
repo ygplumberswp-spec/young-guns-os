@@ -394,6 +394,35 @@ export class IntegrationHubService {
     return created.id;
   }
 
+  async enqueueSyncJob(input: {
+    companyId: string;
+    provider: IntegrationProvider;
+    integrationConnectionId?: string | null;
+    jobType?: 'manual' | 'scheduled';
+    syncScope?: string | null;
+    resultSummary?: Record<string, unknown> | null;
+  }): Promise<string> {
+    const [created] = await this.db
+      .insert(integrationSyncJobs)
+      .values({
+        companyId: input.companyId,
+        provider: input.provider,
+        integrationConnectionId: input.integrationConnectionId ?? null,
+        jobType: input.jobType ?? 'manual',
+        syncScope: input.syncScope ?? null,
+        status: 'pending',
+        startedAt: new Date(),
+        resultSummary: input.resultSummary ?? null,
+      })
+      .returning({ id: integrationSyncJobs.id });
+
+    if (!created) {
+      throw new IntegrationHubError('CREATE_FAILED', 'Unable to create sync job');
+    }
+
+    return created.id;
+  }
+
   async completeSyncJob(
     syncJobId: string,
     input: {

@@ -1,4 +1,11 @@
-import type { IntegrationProviderAutoSyncStatus } from '@titan/shared';
+import type { IntegrationProviderAutoSyncStatus, XeroImportJobProgress, XeroImportStage } from '@titan/shared';
+
+const IMPORT_STAGE_LABELS: Record<XeroImportStage, string> = {
+  contacts: 'Contacts',
+  invoices: 'Invoices',
+  payments: 'Payments',
+  bank_transactions: 'Bank transactions',
+};
 
 function autoSyncStateModifier(state: IntegrationProviderAutoSyncStatus['uiState']): string {
   switch (state) {
@@ -24,11 +31,13 @@ function autoSyncStateModifier(state: IntegrationProviderAutoSyncStatus['uiState
 type IntegrationAutoSyncStatusPanelProps = {
   status: IntegrationProviderAutoSyncStatus;
   compact?: boolean;
+  importJob?: XeroImportJobProgress | null;
 };
 
 export function IntegrationAutoSyncStatusPanel({
   status,
   compact = false,
+  importJob = null,
 }: IntegrationAutoSyncStatusPanelProps) {
   const modifier = autoSyncStateModifier(status.uiState);
 
@@ -71,6 +80,46 @@ export function IntegrationAutoSyncStatusPanel({
             <dt>Records processed (last run)</dt>
             <dd>{status.recordsProcessed}</dd>
           </div>
+        ) : null}
+        {importJob &&
+        (importJob.status === 'queued' ||
+          importJob.status === 'running' ||
+          importJob.status === 'pending') ? (
+          <>
+            <div>
+              <dt>Current stage</dt>
+              <dd>
+                {importJob.currentStage
+                  ? IMPORT_STAGE_LABELS[importJob.currentStage]
+                  : 'Starting'}
+              </dd>
+            </div>
+            <div>
+              <dt>Contacts processed</dt>
+              <dd>
+                {importJob.contacts.createdCount} new / {importJob.contacts.updatedCount} updated
+              </dd>
+            </div>
+            <div>
+              <dt>Invoices processed</dt>
+              <dd>
+                {importJob.invoices.createdCount} new / {importJob.invoices.updatedCount} updated
+              </dd>
+            </div>
+            <div>
+              <dt>Payments processed</dt>
+              <dd>
+                {importJob.payments.createdCount} new / {importJob.payments.updatedCount} updated
+              </dd>
+            </div>
+            <div>
+              <dt>Bank transactions processed</dt>
+              <dd>
+                {importJob.bankTransactions.createdCount} new /{' '}
+                {importJob.bankTransactions.updatedCount} updated
+              </dd>
+            </div>
+          </>
         ) : null}
         {status.failureCount > 0 ? (
           <div>

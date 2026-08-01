@@ -140,49 +140,33 @@ export function createIntegrationPlatformRouter({
             trigger: 'manual',
             userId,
           });
-          const imported = result.details?.xeroImport;
-          xeroSync =
-            imported && typeof imported === 'object'
-              ? (imported as Awaited<ReturnType<XeroSyncService['syncFromXero']>>)
-              : {
-                  success: result.success,
-                  message: result.message,
-                  syncedAt: result.success ? new Date().toISOString() : null,
-                  contacts: {
-                    createdCount: 0,
-                    updatedCount: 0,
-                    pulledCount: 0,
-                    failedCount: 0,
-                    skippedCount: 0,
-                  },
-                  invoices: {
-                    createdCount: 0,
-                    updatedCount: 0,
-                    pulledCount: 0,
-                    failedCount: 0,
-                    skippedCount: 0,
-                  },
-                  payments: {
-                    createdCount: 0,
-                    updatedCount: 0,
-                    pulledCount: 0,
-                    failedCount: 0,
-                    skippedCount: 0,
-                  },
-                  bankTransactions: {
-                    createdCount: 0,
-                    updatedCount: 0,
-                    pulledCount: 0,
-                    failedCount: 0,
-                    skippedCount: 0,
-                  },
-                  syncJobId: result.syncJobId ?? undefined,
-                };
+          xeroSync = {
+            success: false,
+            message: result.message,
+            syncedAt: null,
+            contacts: emptyXeroImportCounts(),
+            invoices: emptyXeroImportCounts(),
+            payments: emptyXeroImportCounts(),
+            bankTransactions: emptyXeroImportCounts(),
+            syncJobId: result.syncJobId ?? undefined,
+            queued: result.queued ?? false,
+          };
         } else {
-          xeroSync = await xeroSyncService.syncFromXero(companyId, userId, {
+          const queued = await xeroSyncService.enqueueImportSync(companyId, userId, {
             jobType: 'manual',
             trigger: 'manual',
           });
+          xeroSync = {
+            success: false,
+            message: queued.message,
+            syncedAt: null,
+            contacts: emptyXeroImportCounts(),
+            invoices: emptyXeroImportCounts(),
+            payments: emptyXeroImportCounts(),
+            bankTransactions: emptyXeroImportCounts(),
+            syncJobId: queued.jobId,
+            queued: true,
+          };
         }
       }
     } catch (error) {
@@ -395,6 +379,16 @@ export function createIntegrationPlatformRouter({
   });
 
   return router;
+}
+
+function emptyXeroImportCounts() {
+  return {
+    createdCount: 0,
+    updatedCount: 0,
+    pulledCount: 0,
+    failedCount: 0,
+    skippedCount: 0,
+  };
 }
 
 function handleError(res: import('express').Response, error: unknown) {

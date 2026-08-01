@@ -177,7 +177,13 @@ export class IntegrationSyncOrchestratorService {
       await this.ensureDefaultSchedule(connection.companyId, provider);
       backfilled += 1;
 
-      const connectorConfig = (connector.config ?? {}) as AutoSyncConnectorConfig;
+      const connectorRow = await this.deps.db.query.integrationConnectors.findFirst({
+        where: and(
+          eq(integrationConnectors.companyId, connection.companyId),
+          eq(integrationConnectors.connectorKey, provider),
+        ),
+      });
+      const connectorConfig = (connectorRow?.config ?? {}) as AutoSyncConnectorConfig;
       const initialCompleted = connectorConfig.autoSync?.initialSyncCompleted === true;
 
       if (!initialCompleted) {
@@ -231,6 +237,8 @@ export class IntegrationSyncOrchestratorService {
     if (!this.isAutoSyncRuntimeEnabled()) {
       return { processed: 0, skipped: 0, errors: 0 };
     }
+
+    await this.deps.xeroSyncService.processPendingImportJobs();
 
     await this.reconcileConnectedProvidersWithoutSchedules();
 
@@ -575,17 +583,24 @@ export class IntegrationSyncOrchestratorService {
 
     try {
       const result = await this.dispatchProviderSync(input, idempotencyKey);
-      await this.updateConnectorOutcomeMeta(input.companyId, input.provider, {
-        success: result.success,
-        recordsProcessed: result.recordsProcessed,
-        message: result.message,
-        initialSyncCompleted: input.trigger === 'initial' ? result.success : undefined,
-      });
+
+      if (!result.queued) {
+        await this.updateConnectorOutcomeMeta(input.companyId, input.provider, {
+          success: result.success,
+          recordsProcessed: result.recordsProcessed,
+          message: result.message,
+          initialSyncCompleted: input.trigger === 'initial' ? result.success : undefined,
+        });
+      }
 
       await this.recordAudit(
         input.companyId,
         input.userId,
-        result.success ? 'integration_auto_sync_completed' : 'integration_auto_sync_failed',
+        result.queued
+          ? 'integration_auto_sync_queued'
+          : result.success
+            ? 'integration_auto_sync_completed'
+            : 'integration_auto_sync_failed',
         {
           provider: input.provider,
           trigger: input.trigger,
@@ -593,6 +608,7 @@ export class IntegrationSyncOrchestratorService {
           recordsProcessed: result.recordsProcessed,
           message: result.message,
           idempotencyKey,
+          queued: result.queued ?? false,
         },
       );
 
@@ -639,27 +655,26 @@ export class IntegrationSyncOrchestratorService {
           await this.deps.xeroOAuthService.ensureFreshAccessToken(input.companyId);
         }
 
-        const syncResult = await this.deps.xeroSyncService.syncFromXero(input.companyId, input.userId, {
-          jobType,
-          trigger: input.trigger,
-          idempotencyKey,
-        });
-
-        const recordsProcessed =
-          syncResult.contacts.pulledCount +
-          syncResult.invoices.pulledCount +
-          syncResult.payments.pulledCount +
-          syncResult.bankTransactions.pulledCount;
+        const queued = await this.deps.xeroSyncService.enqueueImportSync(
+          input.companyId,
+          input.userId,
+          {
+            jobType,
+            trigger: input.trigger,
+            idempotencyKey,
+          },
+        );
 
         return {
           provider: 'xero',
           trigger: input.trigger,
-          success: syncResult.success,
-          syncJobId: syncResult.syncJobId ?? null,
-          recordsProcessed,
-          message: syncResult.message,
-          errorCode: syncResult.success ? null : 'SYNC_FAILED',
-          details: { xeroImport: syncResult },
+          success: true,
+          syncJobId: queued.jobId,
+          recordsProcessed: 0,
+          message: queued.message,
+          errorCode: null,
+          queued: true,
+          details: { jobId: queued.jobId, status: queued.status },
         };
       }
       case 'cartrack': {
@@ -836,6 +851,26 @@ export class IntegrationSyncOrchestratorService {
       .where(eq(integrationConnectors.id, connector.id));
   }
 
+  async handleXeroImportJobSettled(input: {
+    companyId: string;
+    trigger?: IntegrationSyncTrigger;
+    result: import('./xero-sync.service.js').XeroImportJobSettledInput['result'];
+  }): Promise<void> {
+    const recordsProcessed =
+      input.result.contacts.pulledCount +
+      input.result.invoices.pulledCount +
+      input.result.payments.pulledCount +
+      input.result.bankTransactions.pulledCount;
+
+    await this.updateConnectorOutcomeMeta(input.companyId, 'xero', {
+      success: input.result.success,
+      recordsProcessed,
+      message: input.result.message,
+      initialSyncCompleted:
+        input.trigger === 'initial' && input.result.success ? true : undefined,
+    });
+  }
+
   private async recordAudit(
     companyId: string,
     userId: string | undefined,
@@ -845,7 +880,6 @@ export class IntegrationSyncOrchestratorService {
     if (!userId) {
       return;
     }
-
     await this.deps.db.insert(securityAuditLogs).values({
       companyId,
       userId,
