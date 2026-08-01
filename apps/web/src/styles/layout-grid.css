@@ -11,6 +11,14 @@
   --titan-rhythm-filters: 0.875rem;
   --titan-rhythm-cards: 1rem;
   --titan-rhythm-tables: 1.25rem;
+  /* Responsive layout breakpoints (owner dashboard spec) */
+  --titan-bp-mobile: 48rem; /* 768px */
+  --titan-bp-tablet: 64rem; /* 1024px */
+  --titan-bp-desktop-sm: 75rem; /* 1200px — 2 vs 3 cols in standard desktop */
+  --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-summary-card-min: 16rem;
+  --titan-summary-grid-gap: var(--titan-rhythm-cards);
+  --titan-touch-target-min: 2.75rem; /* 44px */
 }
 
 .app-content-container {
@@ -21,6 +29,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--titan-section-gap);
+  overflow-x: clip;
 }
 
 .app-content-container--narrow {
@@ -95,15 +104,104 @@
   justify-items: stretch;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .aura-business-dashboard {
     grid-template-columns: 1fr;
   }
 }
 
+/* App-wide summary card grids — Dashboard, Leads, Finance, Mission Control */
+.ux-summary-grid,
+.stat-grid {
+  display: grid;
+  gap: var(--titan-summary-grid-gap);
+  width: 100%;
+  min-width: 0;
+  justify-items: stretch;
+}
 
-.ux-summary-grid {
-  justify-content: center;
+.ux-summary-grid > *,
+.stat-grid > * {
+  min-width: 0;
+}
+
+.ux-summary-grid--cols-4,
+.stat-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(var(--titan-summary-card-min), 1fr));
+  }
+}
+
+.ux-summary-grid--cols-3 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ux-summary-grid--cols-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-stats.ux-summary-grid {
+  gap: 0.875rem;
+}
+
+.dashboard-stat-card,
+.exec-dashboard-glance__link,
+.stat-grid .stat-card {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-stat-card__link,
+  .exec-dashboard-glance__link {
+    min-height: var(--titan-touch-target-min);
+  }
 }
 
 .aura-page__header {
@@ -114,9 +212,9 @@
   gap: 1rem;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 767px) {
   .mission-control-dashboard__split {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -176,9 +274,9 @@
   gap: 0.5rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .company-health-areas {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
