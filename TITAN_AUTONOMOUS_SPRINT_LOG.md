@@ -444,3 +444,12 @@
 | **Staging** | Requires Railway redeploy with this commit for API to bind; separate `DATABASE_URL` sync still required for DB health |
 | **Approval required?** | No — validation fix only |
 | **Next phase selected** | Railway redeploy API/web with fix; rerun public smokes after DB + APP_URL gates green |
+
+## Sprint 027 — Staging deploy path post APP_URL fix (58a16b7)
+
+| Field | Value |
+|-------|-------|
+| **Result** | Public staging **NO-GO** — health **503/28P01**; smokes skipped |
+| **Deploy** | **BLOCKED** — `RAILWAY_TOKEN` unset, CLI unauthorized; Owner redeploy API/web required |
+| **Evidence** | `167-staging-health-ready.json`, `167-staging-deploy-verification-summary.json`, `TITAN_STAGING_VERIFICATION_SPRINT020_REPORT.md` |
+

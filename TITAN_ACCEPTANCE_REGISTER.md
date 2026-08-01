@@ -76,7 +76,7 @@
 
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
-| Lead → Customer → Property → Job | **Verified complete (staging)** — **smoke rerun NO-GO Sprint 019** until Railway DB fixed | Phase 5 E2E **10/10 GO** (Sprint 017); latest rerun **NO-GO** — `140-staging-phase5-e2e.json` |
+| Lead → Customer → Property → Job | **Verified complete (staging)** — **smoke rerun NO-GO Sprint 019–020** until Railway DB + redeploy (`58a16b7` APP_URL fix live) | Phase 5 E2E **10/10 GO** (Sprint 017); latest rerun **NO-GO** — `140-staging-phase5-e2e.json` |
 | Crew/Vehicle assignment | **Verified complete (staging)** — **smoke rerun NO-GO Sprint 019** | Phase 6 E2E 12/12 GO (Sprint 017); latest rerun **NO-GO** — `141-staging-phase6-e2e.json` |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement + Phase 10 job costing panel + stock movement ledger |

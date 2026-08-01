@@ -172,6 +172,10 @@
 | `diagnostic-output/164-pnpm-test-staging-ops.txt` | Sprint 019 `pnpm test` |
 | `diagnostic-output/165-build-staging-ops.txt` | Sprint 019 `pnpm build` |
 | `diagnostic-output/166-staging-verification-summary.json` | Sprint 019 structured staging verification summary |
+| `diagnostic-output/167-staging-health-ready.json` | Public health ready — **503/28P01** (Sprint 020 post-`58a16b7`; redeploy blocked) |
+| `diagnostic-output/167-staging-deploy-verification-summary.json` | Sprint 020 deploy/health verification summary |
+| `TITAN_STAGING_VERIFICATION_SPRINT020_REPORT.md` | Sprint 020 full staging verification report |
+
 | `TITAN_STAGING_VERIFICATION_SPRINT019_REPORT.md` | Sprint 019 full staging verification report |
 | `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | | Sprint 018 full staging verification report |
 
