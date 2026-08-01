@@ -214,6 +214,9 @@ export function classifyRestoreSessionRefresh(
   if (httpStatus === 401) {
     return errorCode === 'SESSION_MISSING' ? 'missing' : 'expired';
   }
+  if (httpStatus >= 500) {
+    return 'unreachable';
+  }
   return 'expired';
 }
 

@@ -26,9 +26,13 @@ describe('classifyRestoreSessionRefresh (session expiry bootstrap)', () => {
     assert.equal(classifyRestoreSessionRefresh(401, undefined), 'expired');
   });
 
-  it('returns expired when refresh returns a non-401 error', () => {
-    assert.equal(classifyRestoreSessionRefresh(503), 'expired');
-    assert.equal(classifyRestoreSessionRefresh(500, 'INTERNAL_ERROR'), 'expired');
+  it('returns unreachable when refresh hits a server error (not a false expiry banner)', () => {
+    assert.equal(classifyRestoreSessionRefresh(503), 'unreachable');
+    assert.equal(classifyRestoreSessionRefresh(500, 'INTERNAL_ERROR'), 'unreachable');
+  });
+
+  it('returns expired for other non-401 client errors', () => {
+    assert.equal(classifyRestoreSessionRefresh(403, 'FORBIDDEN'), 'expired');
   });
 });
 

@@ -209,6 +209,7 @@ export function createAuthRouter({
         userAgent: req.headers['user-agent'],
       });
 
+      clearRefreshCookie(res, isProduction);
       setRefreshCookie(res, result.refreshToken, isProduction);
       authLog?.debug({ userId: result.user.id }, 'Refresh cookie set');
 
@@ -613,13 +614,17 @@ function isDatabaseUnavailable(error: unknown): boolean {
       ? error.cause.message.toLowerCase()
       : String(error.cause ?? '').toLowerCase();
 
+  const combined = `${message} ${causeMessage}`;
+
   return (
-    message.includes('connect') ||
-    message.includes('econnrefused') ||
-    message.includes('timeout') ||
-    causeMessage.includes('connect') ||
-    causeMessage.includes('econnrefused') ||
-    causeMessage.includes('timeout')
+    combined.includes('connect') ||
+    combined.includes('econnrefused') ||
+    combined.includes('timeout') ||
+    combined.includes('column') ||
+    combined.includes('does not exist') ||
+    combined.includes('undefined column') ||
+    combined.includes('relation') ||
+    combined.includes('syntax error')
   );
 }
 

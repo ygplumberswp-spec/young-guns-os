@@ -1,0 +1,54 @@
+{
+  "label": "STAGING-AUTH-SESSION-203",
+  "startedAt": "2026-08-01T14:29:00.000Z",
+  "finishedAt": "2026-08-01T14:32:00.000Z",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "rootCause": "Staging database had migration 0108_secure_session_enhancements pending (106 applied). Auth code from 4410a02 writes sessions.last_activity_at, is_trusted_device, and revoked_reason. Missing columns caused POST /auth/refresh and POST /auth/login (session create) to throw Postgres errors surfaced as HTTP 500 INTERNAL_ERROR / \"An unexpected error occurred\" — blocking re-login after cookie restore failure.",
+  "fix": {
+    "database": "Applied 0108_secure_session_enhancements on staging only (migrationCount 106→107). Script: packages/db/scripts/apply-0108-staging-only.mjs",
+    "code": [
+      "apps/web/src/lib/api-client.ts — classify 5xx refresh as unreachable (not false session_expired banner)",
+      "apps/api/src/routes/auth.ts — clear stale refresh cookie before issuing new session on login; broaden DB schema error detection in handleAuthError"
+    ]
+  },
+  "changedFiles": [
+    "apps/api/src/routes/auth.ts",
+    "apps/web/src/lib/api-client.ts",
+    "apps/web/src/lib/session-expiry.test.ts",
+    "packages/db/scripts/apply-0108-staging-only.mjs",
+    "diagnostic-output/203-staging-auth-session-fix.json"
+  ],
+  "localVerification": {
+    "apiTypecheck": "PASS",
+    "webTypecheck": "PASS",
+    "apiAuthTests": "12/12 PASS (session-refresh, auth-cookies, auth-mfa)",
+    "webAuthTests": "15/15 PASS (session-expiry, runtime-env)",
+    "apiBuild": "PASS",
+    "webBuild": "PASS"
+  },
+  "stagingVerification": {
+    "preFix": {
+      "refreshWithStaleCookie": { "status": 500, "code": "INTERNAL_ERROR" },
+      "loginInvalidCreds": { "status": 401, "code": "INVALID_CREDENTIALS" }
+    },
+    "postFix": {
+      "healthReady": { "url": "/api/v1/health/ready", "status": 200 },
+      "refreshMissingCookie": { "status": 401, "code": "SESSION_MISSING" },
+      "refreshInvalidCookie": { "status": 401, "code": "SESSION_INVALID" },
+      "signupAndRefresh": {
+        "status": "PASS",
+        "detail": "201 signup + Set-Cookie Path=/api/v1/auth Secure HttpOnly SameSite=Lax; refresh rotation 200"
+      },
+      "webRuntimeConfig": "window.__TITAN_API_BASE__=\"\" (same-origin proxy)",
+      "secureSessionVerify184": "9 PASS / 2 PARTIAL / 0 FAIL"
+    }
+  },
+  "deploy": {
+    "railwayCli": "npx @railway/cli (ygplumberswp@gmail.com)",
+    "services": ["young-guns-os (API)", "comfortable-determination (web)"],
+    "note": "DB migration applied live; code redeploy triggers after git push"
+  },
+  "overall": "GO"
+}
