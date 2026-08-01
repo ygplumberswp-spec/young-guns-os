@@ -31,7 +31,7 @@ The CAL-001 feature shipped the scheduling **API, conflict service, and calendar
 | Click job → preview drawer | `JobPreviewDrawer.tsx` — Open, Unschedule, Cancel, Duplicate link |
 | Drag-drop | Tray → grid + grid reschedule with conflict flow preserved |
 | Unscheduled tray | Collapsible `UnscheduledJobsTray.tsx` (unassigned, needs scheduling, delayed, conflict review) |
-| Filters + persistence | Toolbar filters incl. job type (client) + Clear; `useCalendarState` + nav history |
+| Filters + persistence | Toolbar filters incl. team (role), job type (client) + Clear; `useCalendarState` + nav history |
 | Mobile `/mobile/schedule` | Day default + current/next job highlights above day calendar |
 | Conflict prevention | Unchanged CAL-001 `scheduling-conflict.service.ts` + modals |
 
@@ -93,7 +93,7 @@ The CAL-001 feature shipped the scheduling **API, conflict service, and calendar
 | Mobile schedule | https://comfortable-determination-staging.up.railway.app/mobile/schedule |
 | API health | https://young-guns-os-staging.up.railway.app/api/v1/health/ready |
 
-Deploy: push to `cursor/cal-001-scheduling-calendar` → Railway autodeploy (staging services on same branch).
+Deploy: commit `00f1da0` pushed to `cursor/cal-001-scheduling-calendar` → Railway autodeploy **SUCCESS** (staging web deployment `045e9f96-c3c7-4161-9dec-929ea95b789b`).
 
 ---
 
@@ -111,7 +111,7 @@ Deploy: push to `cursor/cal-001-scheduling-calendar` → Railway autodeploy (sta
 ## Remaining gaps
 
 1. **Resize duration** — drag handle to extend/shrink `scheduledEndAt` not yet implemented (drop/move only).
-2. **Team filter** — no team entity on calendar API; technician filter only.
+2. **Team filter** — client-side filter by assignee `roleName` (no dedicated team entity on calendar API).
 3. **Duplicate as draft** — links to `/jobs/new?duplicateFrom=`; create page may not pre-fill from query yet.
 4. **Overlap layout** — concurrent jobs in same lane render stacked absolute positions (may visually overlap; no lane-packing algorithm).
 5. **Tablet swipe nav** — horizontal scroll on grid; native swipe gestures not added.
