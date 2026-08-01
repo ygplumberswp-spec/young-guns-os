@@ -87,7 +87,7 @@ export const CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE =
 
 /** Dashboard status while Xero sync is refreshing classifications. */
 export const CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE =
-  'Customer value is updating from Xero';
+  'Updating customer value from Xero…';
 
 /** Verified customer buckets — excludes prospect/supplier-only Xero contacts. */
 export const CUSTOMER_VALUE_VERIFIED_FILTER_KEYS = [
