@@ -2,14 +2,14 @@
 
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 4):** `3a70878`  
-**Final SHA:** `96f4951`  
+**Final SHA:** `38cb691`  
 **Code SHA:** `96f4951`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02
 
 ## Verdict
 
-**GO** @ `96f4951` — authenticated staging verification 232 (0 blockers)
+**GO** @ `38cb691` — authenticated staging verification 232 (0 blockers)
 
 Structural and UI parity for job payment ledger is verified on staging. Xero allocation parity remains **HOLD** (0 payments and 0 payment mappings on YGP staging — honest empty, not false zeroes).
 
