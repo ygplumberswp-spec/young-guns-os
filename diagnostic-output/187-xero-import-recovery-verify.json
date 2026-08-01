@@ -1,6 +1,6 @@
 {
   "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T18:25:46.667Z",
+  "generatedAt": "2026-08-01T18:55:01.354Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -52,20 +52,21 @@
     "jobStatus": "running",
     "errorMessage": null,
     "checkpoint": {
-      "stage": "payments",
+      "stage": "bank_transactions",
       "contactsPage": 8,
       "invoicesPage": 7,
-      "paymentsPage": 1,
-      "bankTransactionsPage": 1
+      "paymentsPage": 7,
+      "bankTransactionsPage": 10
     },
-    "heartbeatAt": "2026-08-01T18:25:47.242Z",
-    "activity": "processing",
+    "heartbeatAt": "2026-08-01T18:52:44.177Z",
+    "activity": "waiting_next_batch",
     "resumedFromAbandoned": false,
     "contactsPulled": 0,
     "invoicesPulled": 0,
     "completedStages": [
       "contacts",
-      "invoices"
+      "invoices",
+      "payments"
     ]
   },
   "connection": {

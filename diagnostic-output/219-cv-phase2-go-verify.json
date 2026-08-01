@@ -1,0 +1,424 @@
+{
+  "label": "219-cv-phase2-go-verify",
+  "generatedAt": "2026-08-01T18:54:53.993Z",
+  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
+  "branch": "cursor/xero-payments-hotfix",
+  "deploymentId": "eeef45dd-f2a4-4ca7-8687-954c82471fbf",
+  "import93144ea8": {
+    "jobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+    "finalStatus": "running",
+    "errorMessage": null
+  },
+  "pollLog": [
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 1
+          },
+          "heartbeat_at": "2026-08-01T18:26:48.888Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 1
+        },
+        "heartbeat_at": "2026-08-01T18:26:48.888Z"
+      },
+      "at": "2026-08-01T18:27:13.016Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 2
+          },
+          "heartbeat_at": "2026-08-01T18:28:46.931Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 2
+        },
+        "heartbeat_at": "2026-08-01T18:28:46.931Z"
+      },
+      "at": "2026-08-01T18:29:43.717Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 4
+          },
+          "heartbeat_at": "2026-08-01T18:31:47.377Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 4
+        },
+        "heartbeat_at": "2026-08-01T18:31:47.377Z"
+      },
+      "at": "2026-08-01T18:32:14.430Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 5
+          },
+          "heartbeat_at": "2026-08-01T18:33:48.729Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 5
+        },
+        "heartbeat_at": "2026-08-01T18:33:48.729Z"
+      },
+      "at": "2026-08-01T18:34:45.088Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 6
+          },
+          "heartbeat_at": "2026-08-01T18:36:46.861Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 6
+        },
+        "heartbeat_at": "2026-08-01T18:36:46.861Z"
+      },
+      "at": "2026-08-01T18:37:15.741Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 6
+          },
+          "heartbeat_at": "2026-08-01T18:39:02.407Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 6
+        },
+        "heartbeat_at": "2026-08-01T18:39:02.407Z"
+      },
+      "at": "2026-08-01T18:39:46.412Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 6
+          },
+          "heartbeat_at": "2026-08-01T18:41:34.389Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 6
+        },
+        "heartbeat_at": "2026-08-01T18:41:34.389Z"
+      },
+      "at": "2026-08-01T18:42:17.130Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 7
+          },
+          "heartbeat_at": "2026-08-01T18:43:34.382Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 7
+        },
+        "heartbeat_at": "2026-08-01T18:43:34.382Z"
+      },
+      "at": "2026-08-01T18:44:47.797Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 8
+          },
+          "heartbeat_at": "2026-08-01T18:47:16.804Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 8
+        },
+        "heartbeat_at": "2026-08-01T18:47:16.804Z"
+      },
+      "at": "2026-08-01T18:47:18.471Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 9
+          },
+          "heartbeat_at": "2026-08-01T18:49:16.576Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 9
+        },
+        "heartbeat_at": "2026-08-01T18:49:16.576Z"
+      },
+      "at": "2026-08-01T18:49:49.131Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 9
+          },
+          "heartbeat_at": "2026-08-01T18:51:43.998Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 9
+        },
+        "heartbeat_at": "2026-08-01T18:51:43.998Z"
+      },
+      "at": "2026-08-01T18:52:19.788Z"
+    },
+    {
+      "activeCount": 1,
+      "active": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running",
+          "checkpoint": {
+            "stage": "bank_transactions",
+            "contactsPage": 8,
+            "invoicesPage": 7,
+            "paymentsPage": 7,
+            "bankTransactionsPage": 10
+          },
+          "heartbeat_at": "2026-08-01T18:52:44.177Z"
+        }
+      ],
+      "target931": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "error_message": null,
+        "completed_at": null,
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 10
+        },
+        "heartbeat_at": "2026-08-01T18:52:44.177Z"
+      },
+      "at": "2026-08-01T18:54:50.506Z"
+    }
+  ],
+  "quiescentAtPoll": "2026-08-01T18:54:50.506Z",
+  "activeImportCountAtEnd": 1,
+  "probe187": {
+    "artifact": "diagnostic-output/187-xero-import-recovery-verify.mjs",
+    "outputArtifact": "diagnostic-output/187-xero-import-recovery-verify.json",
+    "exitCode": 3,
+    "verdict": "IN_PROGRESS",
+    "cv_auto_recalc_fired": "FAIL",
+    "cvMetricsRefreshJobId": null,
+    "cvMetricsRefreshAt": null,
+    "checks": {
+      "job_status_completed": false,
+      "last_sync_at_populated": true,
+      "contacts_mappings_present": true,
+      "invoice_mappings_present": true,
+      "payment_mappings_present": true,
+      "no_duplicate_customer_mappings": true,
+      "cv_auto_recalc_fired": false,
+      "recovery_checkpoint_or_resuming": true
+    }
+  },
+  "phase2Go": {
+    "decision": "no",
+    "reason": "187 verdict IN_PROGRESS; cv_auto_recalc_fired FAIL"
+  },
+  "overlapNote": "c90779e8 — no prior 219-cv-phase2-go-verify.json on branch; this run supersedes pending 215 follow-up"
+}
