@@ -795,3 +795,19 @@
 | **Evidence** | `diagnostic-output/187-xero-import-recovery-verify.json`, `xero-import-recovery.test.ts` |
 | **Next queued worker (after Xero GO)** | SPI-001 Supplier Price Intelligence — see `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md` |
 
+
+---
+
+## Sprint 195 — Payments SQL fix staging deploy verification
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Confirm staging deploy >= `162cbf4` before Xero job `81c5b8d8` reaches payments |
+| **Result** | **Deploy UNVERIFIED** — fix pushed to origin; no commit fingerprint on staging health |
+| **Evidence** | `diagnostic-output/195-payments-fix-deploy-verify.json`, fresh `187-xero-import-recovery-verify.json` |
+| **Blocked** | Railway CLI unauthorized; `RAILWAY_TOKEN` unset; GHA deploy workflow absent (CI main-only) |
+| **Xero** | Job **running**, stage **contacts** page 5 — **not yet at payments** |
+| **Approval required?** | **Yes — Owner** — Railway dashboard redeploy or valid Railway auth for CLI |
+| **Next automatic** | Read-only 187 poll; flag if stage → invoices/payments before deploy confirmed |
+

@@ -1,6 +1,6 @@
 {
   "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T12:31:05.433Z",
+  "generatedAt": "2026-08-01T12:32:44.366Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -58,7 +58,7 @@
       "paymentsPage": 1,
       "bankTransactionsPage": 1
     },
-    "heartbeatAt": "2026-08-01T12:29:39.941Z",
+    "heartbeatAt": "2026-08-01T12:32:39.517Z",
     "activity": "processing",
     "resumedFromAbandoned": false,
     "contactsPulled": 0,
