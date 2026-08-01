@@ -1,0 +1,8 @@
+{
+  "label": "206-ux-phase1-staging-deploy",
+  "purpose": "Railway staging redeploy trigger for Owner UX Phase 1 review (ux branch only)",
+  "branch": "cursor/ux-hardening-phase1",
+  "targetSha": "7347a59a2412bcf1b6ae6ec37bc4fece271577a3",
+  "mergeToCompletionBlocked": true,
+  "generatedAt": "2026-08-01T15:40:00.000Z"
+}
