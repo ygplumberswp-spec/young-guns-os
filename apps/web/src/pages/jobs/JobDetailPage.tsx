@@ -26,7 +26,8 @@ import { fetchJobFinanceSummary } from '../../lib/finance-api';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
-import { canAccessFinance } from '../../features/finance/utils';
+import { JobFinanceStrip } from '../../features/finance/JobFinanceStrip';
+import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobCrewAssignmentPanel } from '../../features/jobs/JobCrewAssignmentPanel';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
@@ -69,6 +70,10 @@ export function JobDetailPage() {
   );
   const canViewFinance = useMemo(
     () => (user ? canAccessFinance(user.permissions) : false),
+    [user],
+  );
+  const canWriteFinance = useMemo(
+    () => (user ? canManageFinance(user.permissions) : false),
     [user],
   );
   const canViewProcurement = useMemo(
@@ -373,27 +378,12 @@ export function JobDetailPage() {
         </Panel>
 
         {canViewFinance ? (
-          <Panel title="Finance">
-            {financeSummary && financeSummary.chips.length > 0 ? (
-              <div className="finance-chip-row">
-                {financeSummary.chips.map((chip, index) =>
-                  chip.href ? (
-                    <Link key={`${chip.kind}-${index}`} href={chip.href} className="finance-chip">
-                      <span>{chip.label}</span>
-                      <strong>{chip.value}</strong>
-                    </Link>
-                  ) : (
-                    <span key={`${chip.kind}-${index}`} className="finance-chip">
-                      <span>{chip.label}</span>
-                      <strong>{chip.value}</strong>
-                    </span>
-                  ),
-                )}
-              </div>
-            ) : (
-              <p className="page-muted">No quotes, invoices, or payments linked to this job yet.</p>
-            )}
-          </Panel>
+          <JobFinanceStrip
+            jobId={job.id}
+            customerId={job.customerId}
+            financeSummary={financeSummary}
+            canManageFinance={canWriteFinance}
+          />
         ) : null}
 
         <Panel title="Job details">

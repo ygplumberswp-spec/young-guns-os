@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
 import type { CustomerSummary, JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
 import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
@@ -38,6 +38,7 @@ export function QuoteCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidateQuotes } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [customerId, setCustomerId] = useState('');
@@ -86,7 +87,24 @@ export function QuoteCreatePage() {
         if (!cancelled) {
           setCustomers(customerData);
           setJobs(jobData);
-          setCustomerId(customerData[0]?.id ?? '');
+          const params = new URLSearchParams(search);
+          const preCustomerId = params.get('customerId');
+          const preJobId = params.get('jobId');
+          const prefillJob =
+            preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
+
+          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
+            setCustomerId(preCustomerId);
+          } else if (prefillJob) {
+            setCustomerId(prefillJob.customerId);
+          } else {
+            setCustomerId(customerData[0]?.id ?? '');
+          }
+
+          if (prefillJob) {
+            setJobId(prefillJob.id);
+            setTitle(prefillJob.title);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -101,7 +119,7 @@ export function QuoteCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, search]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 

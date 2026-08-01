@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
 import type { CustomerSummary, InvoiceStage, InvoiceStatus, JobSummary, QuoteSummary } from '@titan/shared';
 import { parseMoneyInput, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
@@ -16,6 +16,7 @@ export function InvoiceCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidateInvoices } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const [quotes, setQuotes] = useState<QuoteSummary[]>([]);
@@ -59,7 +60,24 @@ export function InvoiceCreatePage() {
           setCustomers(customerData);
           setJobs(jobData);
           setQuotes(quoteData);
-          setCustomerId(customerData[0]?.id ?? '');
+          const params = new URLSearchParams(search);
+          const preCustomerId = params.get('customerId');
+          const preJobId = params.get('jobId');
+          const prefillJob =
+            preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
+
+          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
+            setCustomerId(preCustomerId);
+          } else if (prefillJob) {
+            setCustomerId(prefillJob.customerId);
+          } else {
+            setCustomerId(customerData[0]?.id ?? '');
+          }
+
+          if (prefillJob) {
+            setJobId(prefillJob.id);
+            setTitle(prefillJob.title);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -74,7 +92,7 @@ export function InvoiceCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, search]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
   const customerQuotes = quotes.filter((quote) => quote.customerId === customerId);

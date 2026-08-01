@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
 import type { InvoiceSummary, PaymentMethod } from '@titan/shared';
 import { parseMoneyInput, PAYMENT_METHOD_OPTIONS } from '@titan/shared';
@@ -14,6 +14,8 @@ export function PaymentCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidatePayments } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const preJobId = useMemo(() => new URLSearchParams(search).get('jobId'), [search]);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
@@ -43,7 +45,8 @@ export function PaymentCreatePage() {
 
       try {
         const data = await fetchInvoices(accessToken);
-        const openInvoices = data.filter(
+        const jobScoped = preJobId ? data.filter((invoice) => invoice.jobId === preJobId) : data;
+        const openInvoices = jobScoped.filter(
           (invoice) => invoice.status !== 'cancelled' && invoice.status !== 'paid',
         );
 
@@ -64,7 +67,7 @@ export function PaymentCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, preJobId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
