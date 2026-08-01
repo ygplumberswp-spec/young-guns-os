@@ -177,12 +177,14 @@
 | `apps/api/src/lib/customer-visible-job-eta.test.ts` | UX-030 customer-visible job ETA helper tests |
 | `apps/api/src/routes/session-refresh.test.ts` | Sprint 023 — `/auth/refresh` SESSION_MISSING vs SESSION_EXPIRED contract |
 | `apps/web/src/lib/session-expiry.test.ts` | Sprint 023 — bootstrap classification + ProtectedRoute redirect/banner contract |
+| `apps/web/src/lib/mobile-offline-completion.test.ts` | Sprint 024 — mobile completion submit gate + offline flush tally contract |
+| `apps/api/src/services/job-execution-completion-idempotency.test.ts` | Sprint 024 — gated completion clientActionId replay + snapshot duplicate guards |
+| `apps/api/src/routes/mobile-offline-completion.test.ts` | Sprint 024 — `/offline/flush` duplicate replay + `/complete-gated` idempotency API contract |
 
 ## Coverage gaps (Phase 2+ targets)
 
 - Live Xero sync integration (staging, read-only)  
 - AURA provider connection e2e  
-- Offline duplicate-completion e2e  
 - Role-forbidden direct URL browser tests  
 
 ---

@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 022 MFA login gate e2e (post-commit)  
-**Updated (UTC):** 2026-08-01 — Sprint 022: MFA login gate automated e2e/API matrix (execution plan risk #5)  
+**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 024 offline duplicate-completion e2e (post-commit)  
+**Updated (UTC):** 2026-08-01 — Sprint 024: offline flush idempotency + gated completion duplicate protection (OPS-013 local automated)  
 
 ---
 
@@ -100,8 +100,9 @@
 8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018–019 idempotent); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, invalid/unauthorized `RAILWAY_TOKEN`)  
 9. **PLT-008 / MFA login gate** — **DONE (local automated)** — `mfa-login-gate.test.ts` + `login-mfa.test.ts`; staging login MFA click-path still blocked (503/28P01)  
 10. **Auth session expiry UX** — **DONE (local automated)** — `session-refresh.test.ts` + `session-expiry.test.ts`; staging click-path still blocked (503/28P01)  
-11. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-12. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+11. **OPS-013 / offline duplicate-completion** — **DONE (local automated)** — `mobile-offline-completion.test.ts` + `job-execution-completion-idempotency.test.ts` + route contract; staging click-path still blocked (503/28P01)  
+12. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+13. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

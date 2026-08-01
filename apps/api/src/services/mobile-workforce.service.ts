@@ -34,6 +34,7 @@ import type {
   UploadJobEvidenceRequest,
 } from '@titan/shared';
 import { formatMapsEtaCapabilityLabel } from '@titan/shared';
+import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
@@ -758,7 +759,7 @@ export class MobileWorkforceService {
           columns: { id: true },
         });
 
-        if (existing) {
+        if (classifyOfflineFlushByExistingLog(existing) === 'duplicate') {
           results.push({
             clientActionId: action.clientActionId,
             actionType: action.actionType,

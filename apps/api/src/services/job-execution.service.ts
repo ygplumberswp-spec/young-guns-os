@@ -21,6 +21,10 @@ import type {
 import { JOB_EXECUTION_TRANSITIONS, evaluateCompletionGate, phaseToJobStatus } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  shouldRejectDuplicateCompletionSnapshot,
+  shouldReplayGatedCompletionByClientActionId,
+} from './job-execution-completion-idempotency.js';
+import {
   inventoryItems,
   inventoryLocations,
   jobCompletionSnapshots,
@@ -1317,7 +1321,7 @@ export class JobExecutionService {
           eq(jobWorkflowEvents.clientActionId, input.clientActionId),
         ),
       });
-      if (existing) {
+      if (shouldReplayGatedCompletionByClientActionId(existing)) {
         return this.requireJob(scope.companyId, jobId);
       }
     }
@@ -1336,15 +1340,16 @@ export class JobExecutionService {
       ),
       columns: { createdAt: true },
     });
-    if (existingSnapshot) {
-      const reopenedSinceSnapshot =
-        job.reopenAt != null && job.reopenAt.getTime() > existingSnapshot.createdAt.getTime();
-      if (!reopenedSinceSnapshot) {
-        throw new JobExecutionError(
-          'COMPLETION_SNAPSHOT_EXISTS',
-          'A completion snapshot already exists for this job — reopen the job with a reason before recording a new completion',
-        );
-      }
+    if (
+      shouldRejectDuplicateCompletionSnapshot({
+        existingSnapshot,
+        reopenAt: job.reopenAt,
+      })
+    ) {
+      throw new JobExecutionError(
+        'COMPLETION_SNAPSHOT_EXISTS',
+        'A completion snapshot already exists for this job — reopen the job with a reason before recording a new completion',
+      );
     }
 
     const context = await this.collectGateContext(scope.companyId, jobId);

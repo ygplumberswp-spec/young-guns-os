@@ -393,3 +393,20 @@
 | **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
 | **Approval required?** | No — local only |
 | **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; offline duplicate-completion e2e |
+
+---
+
+## Sprint 024 — Offline duplicate-completion e2e (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Mobile UX — offline flush idempotency + gated completion duplicate protection |
+| **Result** | `mobile-offline-completion.test.ts` — 11 web checks (completion submit gate, flush tally, stable clientActionId); `job-execution-completion-idempotency.test.ts` — 7 API pure guards (clientActionId replay, snapshot rejection, flush classify); `mobile-offline-completion.test.ts` (routes) — 4 API contract checks (flush duplicate replay, complete-gated idempotent replay, COMPLETION_SNAPSHOT_EXISTS); stable per-job completion `clientActionId` wired in `MobileJobDetailPage` |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `mobile-offline-completion.ts`, `mobile-offline-completion.test.ts`, `job-execution-completion-idempotency.ts`, `job-execution-completion-idempotency.test.ts`, `mobile-offline-completion.test.ts` (routes), `mobile-offline-queue.ts`, `mobile-api-client.ts`, `MobileJobDetailPage.tsx`, `job-execution.service.ts`, `mobile-workforce.service.ts`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**413 pass**, +21 offline duplicate-completion), `pnpm build` — pass |
+| **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; role-forbidden direct URL browser tests |

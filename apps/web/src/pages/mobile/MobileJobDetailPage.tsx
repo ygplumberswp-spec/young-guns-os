@@ -15,6 +15,11 @@ import {
   uploadMobileJobEvidence,
 } from '../../lib/mobile-api-client';
 import {
+  evaluateMobileCompletionSubmit,
+  formatManualSyncMessage,
+  newStableCompletionClientActionId,
+} from '../../lib/mobile-offline-completion';
+import {
   cacheMobileWorkspaceSnapshot,
   enqueueOfflineAction,
   flushOfflineQueue,
@@ -94,6 +99,9 @@ export function MobileJobDetailPage() {
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
   const [offlineActions, setOfflineActions] = useState<OfflineQueuedAction[]>([]);
+  const [completionClientActionId] = useState(() =>
+    newStableCompletionClientActionId(jobId ?? 'unknown'),
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pendingPhaseRef = useRef<'before' | 'during' | 'after' | 'document'>('before');
 
@@ -455,36 +463,46 @@ export function MobileJobDetailPage() {
   async function handleComplete(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !jobId || busy || !workspace) return;
-    if (hasUnsyncedEvidence(offlineActions, jobId)) {
-      setError(
-        'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
-      );
-      return;
-    }
-    if (!signatureDocId && !completeForm.signatureUnavailableReason.trim()) {
-      setError('Capture a signature or provide a mandatory unavailable reason');
-      return;
-    }
-    if (!navigator.onLine) {
-      setError('Final completion requires a live connection after required evidence is synced');
+    const submitGate = evaluateMobileCompletionSubmit({
+      jobId,
+      offlineActions,
+      signatureDocId,
+      signatureUnavailableReason: completeForm.signatureUnavailableReason,
+      isOnline,
+    });
+    if (!submitGate.allowed) {
+      if (submitGate.reason === 'unsynced_evidence') {
+        setError(
+          'Required evidence is still Offline/Pending/Failed. Sync must succeed before completion can appear successful.',
+        );
+      } else if (submitGate.reason === 'missing_signature') {
+        setError('Capture a signature or provide a mandatory unavailable reason');
+      } else {
+        setError('Final completion requires a live connection after required evidence is synced');
+      }
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await completeMobileJobGated(accessToken, jobId, {
-        workPerformedSummary: completeForm.workPerformedSummary.trim(),
-        checklist,
-        siteCondition: completeForm.siteCondition.trim(),
-        customerRepName: completeForm.customerRepName.trim(),
-        signatureDocId: signatureDocId,
-        signatureUnavailableReason: completeForm.signatureUnavailableReason.trim() || null,
-        cocRequired: completeForm.cocRequired,
-        technicianDeclaration: completeForm.technicianDeclaration,
-        outstandingDefects: completeForm.outstandingDefects.trim() || null,
-        followUpRequired: Boolean(completeForm.outstandingDefects.trim()),
-        customerVisibleUpdate: note.trim() || null,
-      });
+      await completeMobileJobGated(
+        accessToken,
+        jobId,
+        {
+          workPerformedSummary: completeForm.workPerformedSummary.trim(),
+          checklist,
+          siteCondition: completeForm.siteCondition.trim(),
+          customerRepName: completeForm.customerRepName.trim(),
+          signatureDocId: signatureDocId,
+          signatureUnavailableReason: completeForm.signatureUnavailableReason.trim() || null,
+          cocRequired: completeForm.cocRequired,
+          technicianDeclaration: completeForm.technicianDeclaration,
+          outstandingDefects: completeForm.outstandingDefects.trim() || null,
+          followUpRequired: Boolean(completeForm.outstandingDefects.trim()),
+          customerVisibleUpdate: note.trim() || null,
+        },
+        { clientActionId: completionClientActionId },
+      );
       await reload();
       setMessage('Job completed with immutable snapshot');
     } catch (err) {
@@ -502,9 +520,7 @@ export function MobileJobDetailPage() {
       const result = await flushOfflineQueue(accessToken);
       await refreshOffline();
       await reload();
-      setMessage(
-        `Manual sync: ${result.synced} synced, ${result.duplicate} duplicate, ${result.failed} failed`,
-      );
+      setMessage(formatManualSyncMessage(result));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Manual sync failed');
     } finally {
