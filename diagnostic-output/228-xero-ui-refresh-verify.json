@@ -1,0 +1,153 @@
+{
+  "label": "228-xero-ui-refresh-verify",
+  "generatedAt": "2026-08-01T20:20:00.000Z",
+  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
+  "branch": "cursor/xero-payments-hotfix",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "import93144ea8": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+  "verdict": "GO",
+  "rootCause": "Running incremental bank-tx sync kept API xeroImportInProgress=true after job 93144ea8 completed; frontend also lacked post-sync cache invalidation for customers/value-metrics and finance queries.",
+  "stalePages": [
+    "Dashboard / Customer value panel",
+    "CRM customer value filters"
+  ],
+  "db": {
+    "connection": {
+      "status": "connected",
+      "lastSyncAt": "2026-08-01T19:29:24.777Z",
+      "lastError": null
+    },
+    "connector": {
+      "lastSyncAt": "2026-08-01T19:29:28.288Z",
+      "autoSync": {
+        "lastError": null,
+        "nextRetryAt": null,
+        "lastAttemptAt": "2026-08-01T19:59:09.844Z",
+        "lastSuccessAt": "2026-08-01T19:29:28.288Z",
+        "cvMetricsRefreshAt": "2026-08-01T19:29:27.509Z",
+        "consecutiveFailures": 0,
+        "initialSyncCompleted": false,
+        "lastRecordsProcessed": 3078,
+        "cvMetricsRefreshJobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "twoWayReadVerifyJobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "twoWayReadVerifyQueuedAt": "2026-08-01T19:29:29.601Z"
+      }
+    },
+    "activeImportJobs": [
+      {
+        "id": "ca479272-3edc-4dd5-b984-03e09370c6d0",
+        "status": "running",
+        "trigger": "incremental",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "checkpoint": {
+          "stage": "bank_transactions",
+          "contactsPage": 8,
+          "invoicesPage": 7,
+          "paymentsPage": 7,
+          "bankTransactionsPage": 12
+        }
+      }
+    ],
+    "job93144ea8": {
+      "status": "completed",
+      "completedAt": "2026-08-01T19:29:25.040Z",
+      "cvMetricsRefreshJobId": null
+    },
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 3078
+    },
+    "sampleInvoices": [
+      {
+        "invoice_number": "INV-0423",
+        "amount_cents": 247250,
+        "total_cents": 247250,
+        "amount_paid_cents": 0,
+        "status": "draft"
+      },
+      {
+        "invoice_number": "INV-0424",
+        "amount_cents": 226639,
+        "total_cents": 226639,
+        "amount_paid_cents": 0,
+        "status": "draft"
+      }
+    ],
+    "partialLogic": {
+      "legacyImportInProgress": true,
+      "fixedImportInProgress": false,
+      "incrementalBankTxOnly": true,
+      "legacyWouldShowUpdating": true,
+      "fixedWouldShowUpdating": false
+    }
+  },
+  "api": {
+    "authenticated": false
+  },
+  "uiExpected": {
+    "stalePagesBeforeFix": [
+      "Dashboard / Customer value panel",
+      "CRM customer value filters"
+    ],
+    "expectedAfterFix": [
+      "Customer value panel leaves updating state while incremental bank-tx sync runs post-CV refresh",
+      "Completed sync triggers invalidateAfterXeroSyncSettled (CV, finance, CRM, dashboard, integrations)"
+    ]
+  },
+  "deploy": {
+    "apiDeploymentId": "dc1cf1fc-5803-4fa8-b4ea-840c5caaf989",
+    "webDeploymentId": "2949e7a8-d2ac-4bff-b3b1-97c71c90d210",
+    "localHead": "cb13207",
+    "webBundle": "assets/index-CHiy0OEl.js",
+    "deployedAt": "2026-08-01T20:18:00.000Z",
+    "method": "railway up --detach (local source, uncommitted)"
+  },
+  "fix": {
+    "files": [
+      "apps/api/src/services/customer-value-classification.service.ts",
+      "apps/api/src/services/integration-sync-orchestrator.service.ts",
+      "apps/web/src/lib/cache-invalidation.ts",
+      "apps/web/src/lib/cache-policies.ts",
+      "apps/web/src/hooks/use-xero-sync-cache-refresh.ts",
+      "apps/web/src/layouts/AppLayout.tsx",
+      "apps/web/src/features/integrations/XeroSyncPanel.tsx",
+      "apps/web/src/pages/integrations/IntegrationsDashboardPage.tsx"
+    ],
+    "summary": "Stop incremental bank-tx sync from forcing CV partial after refresh; invalidate finance/CRM caches when Xero sync settles; poll background-work in AppLayout."
+  },
+  "checks": [
+    {
+      "name": "job931_completed",
+      "pass": true,
+      "detail": "completed"
+    },
+    {
+      "name": "last_sync_at_populated",
+      "pass": true,
+      "detail": "2026-08-01T19:29:24.777Z"
+    },
+    {
+      "name": "cv_refresh_marker_set",
+      "pass": true,
+      "detail": "93144ea8-f159-416f-bc48-b3b7b5445f98"
+    },
+    {
+      "name": "api_ready",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "owner_api_probe",
+      "pass": false,
+      "detail": "OWNER_ACCESS_TOKEN not set — API vs UI comparison uses DB partial simulation only"
+    }
+  ]
+}

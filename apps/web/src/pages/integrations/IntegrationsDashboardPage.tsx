@@ -4,7 +4,7 @@ import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
 import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
+import { invalidateAfterXeroSyncSettled } from '../../lib/cache-invalidation';
 import { fetchIntegrationAutoSyncStatuses } from '../../lib/integration-auto-sync-api-client';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import {
@@ -250,10 +250,7 @@ export function IntegrationsDashboardPage() {
       }
 
       if (cacheScope) {
-        invalidateStaffQueryPrefixes(cacheScope, accessToken, [
-          'integrations/hub-dashboard',
-          'integrations/platform-dashboard',
-        ]);
+        invalidateAfterXeroSyncSettled(cacheScope, accessToken);
       }
 
       await Promise.all([refetchHub(), refetchPlatform(), refetchAutoSync()]);

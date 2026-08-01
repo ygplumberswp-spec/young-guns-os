@@ -150,4 +150,19 @@ describe('CustomerValueClassificationService contract', () => {
     assert.equal(customerMatchesValueFilter(overdue, 'overdue_debtor'), true);
     assert.equal(customerMatchesValueFilter(overdue, 'unpaid_debtor'), false);
   });
+
+  it('resolveXeroImportState skips incremental bank-tx-only jobs after CV refresh marker', () => {
+    const source = readFileSync(
+      new URL('./customer-value-classification.service.ts', import.meta.url),
+      'utf8',
+    );
+    const fnStart = source.indexOf('private async resolveXeroImportState');
+    const fnEnd = source.indexOf('function toInvoiceClassificationInput', fnStart);
+    const fn = source.slice(fnStart, fnEnd);
+
+    assert.match(fn, /integrationConnectors/);
+    assert.match(fn, /cvMetricsRefreshJobId/);
+    assert.match(fn, /incrementalBankTxOnly/);
+    assert.match(fn, /importInProgress: importJobs\.length > 0 && !incrementalBankTxOnly/);
+  });
 });

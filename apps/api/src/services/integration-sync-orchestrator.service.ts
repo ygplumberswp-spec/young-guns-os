@@ -912,8 +912,7 @@ export class IntegrationSyncOrchestratorService {
       success: input.result.success,
       recordsProcessed,
       message: input.result.message,
-      initialSyncCompleted:
-        input.trigger === 'initial' && input.result.success ? true : undefined,
+      initialSyncCompleted: input.result.success ? true : undefined,
     });
   }
 
