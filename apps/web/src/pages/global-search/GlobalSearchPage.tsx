@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
 import type {
   EnterpriseGlobalSearchDashboard,
@@ -28,6 +29,7 @@ import {
   formatSeverity,
   formatStatus,
 } from '../../features/global-search/utils';
+import { resolveGlobalSearchEntityHref } from '../../features/global-search/entity-routes';
 
 type GlobalSearchTab =
   | 'search'
@@ -282,19 +284,39 @@ export function GlobalSearchPage() {
               {searchResults.length > 0 ? (
                 <Panel title={`Results (${searchResults.length})`}>
                   <div className="data-list">
-                    {searchResults.map((result) => (
-                      <div
-                        key={`${result.sourceModule}-${result.sourceEntityId}`}
-                        className="data-list-item"
-                      >
-                        <strong>{result.title}</strong>
-                        <span>
-                          {formatEntityType(result.entityType)} · {result.sourceModule} ·{' '}
-                          {formatRelevanceScore(result.relevanceScore)}
-                        </span>
-                        {result.summary ? <p>{result.summary}</p> : null}
-                      </div>
-                    ))}
+                    {searchResults.map((result) => {
+                      const href = resolveGlobalSearchEntityHref(
+                        result.entityType,
+                        result.sourceEntityId,
+                      );
+                      const content = (
+                        <>
+                          <strong>{result.title}</strong>
+                          <span>
+                            {formatEntityType(result.entityType)} · {result.sourceModule} ·{' '}
+                            {formatRelevanceScore(result.relevanceScore)}
+                          </span>
+                          {result.summary ? <p>{result.summary}</p> : null}
+                        </>
+                      );
+
+                      return href ? (
+                        <Link
+                          key={`${result.sourceModule}-${result.sourceEntityId}`}
+                          href={href}
+                          className="data-list-item data-list-item--link"
+                        >
+                          {content}
+                        </Link>
+                      ) : (
+                        <div
+                          key={`${result.sourceModule}-${result.sourceEntityId}`}
+                          className="data-list-item"
+                        >
+                          {content}
+                        </div>
+                      );
+                    })}
                   </div>
                 </Panel>
               ) : (

@@ -6,6 +6,7 @@ import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
 import { filterOwnerStaffNav, toStaffIdentity } from '../lib/role-experience';
+import { canAccessGlobalSearch } from '../features/global-search/utils';
 import { groupNavItems } from '../lib/nav-groups';
 import { prefetchNavIntent } from '../lib/route-prefetch-registry';
 import { useStaffPreloadContext } from '../lib/preload-coordinator';
@@ -42,6 +43,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const navItems = useMemo(() => (user ? filterOwnerStaffNav(user) : []), [user]);
   const groupedNavItems = useMemo(() => groupNavItems(navItems), [navItems]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
+  const canSearch = user ? canAccessGlobalSearch(user.permissions) : false;
   const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
   const preloadContext = useStaffPreloadContext();
 
@@ -113,6 +115,11 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </span>
                   </span>
                 </Link>
+                {canSearch ? (
+                  <Link href="/global-search" className="app-header__link">
+                    Search
+                  </Link>
+                ) : null}
                 {isTechnician ? (
                   <Link href="/mobile" className="app-header__link">
                     Field Mobile

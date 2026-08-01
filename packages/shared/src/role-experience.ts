@@ -16,6 +16,8 @@ export type NavItemConfig = {
   permissions?: string[];
   experiences?: StaffExperience[];
   portalPermission?: PortalAccessPermission;
+  /** Client portal: visible when the user has any listed permission. */
+  portalPermissions?: PortalAccessPermission[];
 };
 
 /** Experiences that receive the full company Business OS nav (subject to permissions). */
@@ -31,6 +33,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     href: '/',
     label: 'Dashboard',
     permissions: ['analytics:read', 'executive:read', 'jobs:read', '*'],
+  },
+  {
+    href: '/global-search',
+    label: 'Search',
+    permissions: ['search:read', 'intelligence:read', 'ops:read', '*'],
   },
   { href: '/crm', label: 'Customers', permissions: ['customers:read', '*'] },
   { href: '/leads', label: 'Leads', permissions: ['leads:read', '*'] },
@@ -186,8 +193,11 @@ export const CLIENT_PORTAL_NAV_ITEMS: NavItemConfig[] = [
   { href: '/my/appointments', label: 'Book Job', portalPermission: 'portal.appointments:read' },
   { href: '/my/jobs', label: 'My Jobs', portalPermission: 'portal.jobs:read' },
   { href: '/my/quotes', label: 'Quotes', portalPermission: 'portal.quotes:read' },
-  { href: '/my/finance', label: 'Invoices', portalPermission: 'portal.invoices:read' },
-  { href: '/my/finance', label: 'Payments', portalPermission: 'portal.payments:read' },
+  {
+    href: '/my/finance',
+    label: 'Invoices & payments',
+    portalPermissions: ['portal.invoices:read', 'portal.payments:read'],
+  },
   {
     href: '/my/communications',
     label: 'Messages',
@@ -199,7 +209,6 @@ export const CLIENT_PORTAL_NAV_ITEMS: NavItemConfig[] = [
     label: 'Properties / Equipment',
     portalPermission: 'portal.dashboard:read',
   },
-  { href: '/my/jobs', label: 'Technician Tracking', portalPermission: 'portal.jobs:read' },
   { href: '/my/profile', label: 'Profile', portalPermission: 'portal.dashboard:read' },
 ];
 

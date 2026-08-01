@@ -53,7 +53,13 @@ async function postJson(app: express.Express, path: string, body: unknown) {
       body: JSON.stringify(body),
     });
     const payload = (await response.json()) as {
-      data?: Record<string, unknown>;
+      data?: {
+        user?: { id?: string };
+        session?: { accessToken?: string };
+        mfaRequired?: boolean;
+        mfaChallengeToken?: string;
+        expiresIn?: number;
+      };
       error?: { code?: string; message?: string };
     };
     return { status: response.status, payload };
