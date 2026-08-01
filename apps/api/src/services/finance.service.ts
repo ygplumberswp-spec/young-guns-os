@@ -123,15 +123,29 @@ export class FinanceService {
 
     const mappings =
       rows.length > 0
-        ? await this.db.query.xeroInvoiceMappings.findMany({
-            where: and(
-              eq(xeroInvoiceMappings.companyId, companyId),
-              inArray(
-                xeroInvoiceMappings.invoiceId,
-                rows.map((row) => row.id),
+        ? await this.db
+            .select({
+              id: xeroInvoiceMappings.id,
+              companyId: xeroInvoiceMappings.companyId,
+              invoiceId: xeroInvoiceMappings.invoiceId,
+              xeroInvoiceId: xeroInvoiceMappings.xeroInvoiceId,
+              xeroInvoiceNumber: xeroInvoiceMappings.xeroInvoiceNumber,
+              xeroReference: xeroInvoiceMappings.xeroReference,
+              syncStatus: xeroInvoiceMappings.syncStatus,
+              lastSyncedAt: xeroInvoiceMappings.lastSyncedAt,
+              lastSuccessfulSyncAt: xeroInvoiceMappings.lastSuccessfulSyncAt,
+              lastError: xeroInvoiceMappings.lastError,
+            })
+            .from(xeroInvoiceMappings)
+            .where(
+              and(
+                eq(xeroInvoiceMappings.companyId, companyId),
+                inArray(
+                  xeroInvoiceMappings.invoiceId,
+                  rows.map((row) => row.id),
+                ),
               ),
-            ),
-          })
+            )
         : [];
     const mappingByInvoiceId = new Map(mappings.map((mapping) => [mapping.invoiceId, mapping]));
 
