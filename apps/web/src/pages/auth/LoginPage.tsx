@@ -1,12 +1,14 @@
 import { FormEvent, useState } from 'react';
 import { Link, useLocation, useSearch } from 'wouter';
-import { getStaffHomePath } from '@titan/auth/browser';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
-import { toStaffIdentity } from '../../lib/role-experience';
 import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY, MFA_LOGIN_REDIRECT_PATH } from '../../lib/api-client';
 import { isSessionExpiredLoginReason } from '../../lib/session-expiry-routing';
+import {
+  resolveStaffPostLoginPath,
+  staffAuthReturnFromSearch,
+} from '../../lib/staff-auth-return-routing';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
 export function LoginPage() {
@@ -39,8 +41,8 @@ function LoginForm() {
         setLocation(MFA_LOGIN_REDIRECT_PATH);
         return;
       }
-      const homePath = result.user ? getStaffHomePath(toStaffIdentity(result.user)) : '/';
-      setLocation(homePath);
+      staffAuthReturnFromSearch(search);
+      setLocation(resolveStaffPostLoginPath(result.user));
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sign in');
     } finally {

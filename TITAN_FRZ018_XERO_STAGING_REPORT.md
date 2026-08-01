@@ -5,15 +5,48 @@
 **Production ref blocked:** `rshuiaghmtrvvilhqpwm` — not accessed  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Updated (UTC):** 2026-08-01  
-**Verdict:** **NO-GO** — Owner OAuth connected (Young Guns Plumbing); Owner sync signal **not corroborated** in staging DB (lastSyncAt null, 0 sync logs, 0 mappings, 0 jobs)
+**Verdict:** **NO-GO (partial)** — session/UX fixes deployed; OAuth connected (Young Guns Plumbing); contacts import evidenced (49 mappings, 49 sync logs) but `last_sync_at` null, sync job failed (90s contacts timeout); invoices/payments/bank transactions not complete
 
 ---
 
 ## Executive summary
 
+Staging web/API health **PASS**. UX fixes shipped on branch `cursor/titan-frozen-scope-completion`:
+
+1. **Session on hard refresh** — coerce cross-origin baked `VITE_API_BASE_URL` to same-origin `/api/v1` so httpOnly refresh cookies survive reload through the nginx proxy.
+2. **Deep link restore** — protected routes append `returnTo`; login/MFA return to `/integrations/xero` (etc.) instead of role home.
+3. **Xero read-only sync UX** — prominent **Sync now (read-only)** on `/integrations/xero` calling full import (`/integration-platform/connectors/sync`); per-entity sync + bank-transaction guidance.
+
+DB probe (FRZ-018e, no Owner token): **49 customer mappings** and sync logs present (progress vs FRZ-018d zero), but **`last_sync_at` still null** and **`last_error` reports 90s contacts timeout** on a failed import job. Invoices, payments, and bank transactions remain unimported. **Owner must retry Sync now (read-only)** after deploy and confirm UI success message.
+
+**Likely prior session bug:** Web bundle baked `https://young-guns-os-staging.up.railway.app` as API base; login Set-Cookie landed on API host while refresh on hard reload hit web proxy without cookie → login redirect. Fixed via `coerceSameOriginApiBase` + inline `__TITAN_API_BASE__=""`.
+
+---
+
+## Prior FRZ-018d summary (unchanged baseline)
+
 Owner signal **"xero synced"** (Sync clicked on staging `/integrations/xero`) was **not corroborated** by read-only staging DB probes: `integration_connections.last_sync_at` remains **null**, `updated_at` unchanged since OAuth (`2026-08-01T10:20:52Z`), **0** `xero_sync_logs`, **0** `integration_sync_jobs`, **0** customer/invoice/payment mappings. OAuth connection remains valid — Young Guns Plumbing connected, encrypted credentials present, `last_error` null, `xero_connected` audit event. Pre-OAuth gates pass: credential gate, tenant isolation, token refresh code coverage (301 unit tests). **No live financial writes**, no FRZ-015 re-run.
 
-**Likely cause:** Sync did not complete successfully on the server (API error, timeout, or UI action did not reach import endpoints). Note: `/integrations/xero` exposes per-entity sync buttons and **Test connection**; dashboard **Sync now** calls `/integration-platform/connectors/sync` for full import.
+**Likely cause (018d):** Sync did not complete successfully on the server (API error, timeout, or UI action did not reach import endpoints). Note: `/integrations/xero` exposed per-entity sync buttons and **Test connection**; dashboard **Sync now** calls `/integration-platform/connectors/sync` for full import.
+
+---
+
+## FRZ-018e post-UX verification (2026-08-01)
+
+| Check | Result |
+|-------|--------|
+| Web `/healthz` | **PASS** |
+| Web runtime same-origin API | **PASS** |
+| API `/health/ready` | **PASS** |
+| OAuth connected (Young Guns Plumbing) | **PASS-DB** |
+| Contacts import | **PASS-DB** — 49 customer mappings, 49 sync logs |
+| Invoices import | **PARTIAL** — 0 mappings |
+| Payments import | **PARTIAL** — 0 mappings |
+| Bank transactions | **PARTIAL** — 0 bank_transaction logs |
+| `last_sync_at` | **FAIL** — null (failed job kept partial imports) |
+| Session/UX unit tests | **PASS** — 92 web + 301 API xero tests |
+
+Evidence: `diagnostic-output/176-frz018e-xero-staging-post-ux-verify.json`
 
 ---
 
@@ -99,24 +132,24 @@ Structured evidence: `diagnostic-output/175-frz018d-xero-staging-post-sync-verif
 
 | Field | Value |
 |-------|-------|
-| **Status** | **NO-GO** |
-| **Classification** | OAuth **connected**; Owner sync signal **not DB-corroborated** — no import evidence |
-| **Connected** | **Yes** — Young Guns Plumbing on staging (OAuth only) |
-| **Evidence** | This report + `175-frz018d-xero-staging-post-sync-verify.json` |
+| **Status** | **NO-GO (partial)** |
+| **Classification** | OAuth **connected**; contacts **partially imported** (49); full read-only import **incomplete** — sync job timeout |
+| **Connected** | **Yes** — Young Guns Plumbing on staging |
+| **Evidence** | This report + `176-frz018e-xero-staging-post-ux-verify.json` |
 
 ---
 
 ## 7. Owner action (required — for GO)
 
-1. Retry sync on staging — use **Integrations dashboard → Sync now** (full import) or `/integrations/xero` entity sync buttons (Customers, Invoices, Payments). Note any error message shown in the UI.
-2. If sync appears to succeed in UI, signal **"xero synced"** again for FRZ-018e re-verify.
-3. Optional: export staging Bearer token and re-run:
+1. After deploy lands, sign in on staging, open `/integrations/xero`, hard-refresh once to confirm session persists.
+2. Click **Sync now (read-only)** on the Xero page (or Integrations dashboard **Sync now**). Wait for success banner; note any error.
+3. If sync succeeds, signal **"xero synced"** for FRZ-018f re-verify or run:
 
 ```bash
-OWNER_ACCESS_TOKEN='<staging Bearer>' node diagnostic-output/frz018d-xero-staging-post-sync-verify.mjs
+OWNER_ACCESS_TOKEN='<staging Bearer>' node diagnostic-output/frz018e-xero-staging-post-ux-verify.mjs
 ```
 
-4. If sync fails repeatedly, check Railway API logs for Xero API errors (token refresh, rate limit, scope).
+4. If sync times out again, check Railway API logs for Xero rate limits / scope errors (prior failure: 90s contacts timeout).
 
 ---
 

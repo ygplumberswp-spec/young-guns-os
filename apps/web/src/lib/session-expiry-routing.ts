@@ -1,4 +1,5 @@
 import { toAppAbsoluteHref } from './nested-routing.js';
+import { appendStaffAuthReturnQuery } from './staff-auth-return-routing.js';
 
 /** Query param on `/auth/login` that shows the session-expired banner. */
 export const SESSION_EXPIRED_LOGIN_REASON = 'session_expired';
@@ -20,14 +21,17 @@ export type StaffSessionBootstrapRedirect =
  */
 export function staffLoginRedirectPath(
   sessionBootstrap: StaffSessionBootstrapRedirect,
+  returnPath?: string | null,
 ): string {
-  return sessionBootstrap === 'expired' ? SESSION_EXPIRED_LOGIN_PATH : PLAIN_LOGIN_PATH;
+  const base = sessionBootstrap === 'expired' ? SESSION_EXPIRED_LOGIN_PATH : PLAIN_LOGIN_PATH;
+  return returnPath ? appendStaffAuthReturnQuery(base, returnPath) : base;
 }
 
 export function staffLoginRedirectHref(
   sessionBootstrap: StaffSessionBootstrapRedirect,
+  returnPath?: string | null,
 ): string {
-  return toAppAbsoluteHref(staffLoginRedirectPath(sessionBootstrap));
+  return toAppAbsoluteHref(staffLoginRedirectPath(sessionBootstrap, returnPath));
 }
 
 export function isSessionExpiredLoginReason(reason: string | null | undefined): boolean {

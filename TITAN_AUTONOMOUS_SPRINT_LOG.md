@@ -602,6 +602,22 @@
 
 ---
 
+## Sprint FRZ-018e — Session persistence + Xero sync UX (NO-GO partial)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018e — Staging session hard-refresh fix, returnTo deep links, Xero Sync now (read-only) UX |
+| **Result** | **NO-GO (partial)** — UX/session fixes built; DB shows 49 contact imports but `last_sync_at` null after failed import timeout; invoices/payments/bank pending |
+| **Checkpoint** | pending commit on `cursor/titan-frozen-scope-completion` |
+| **Files changed** | `runtime-env.ts`, `staff-auth-return-routing.ts`, `ProtectedRoute.tsx`, `LoginPage.tsx`, `AuthStatusPages.tsx`, `XeroSyncPanel.tsx`, `XeroSettingsPage.tsx`, `index.html`, tests, FRZ-018e diagnostic |
+| **Tests** | Web 92 pass; API xero/session 301 pass; `pnpm typecheck`; `pnpm build` — pass |
+| **Staging verify** | Web health + runtime-config PASS; FRZ-018e DB probe 16 PASS / 1 FAIL / 2 PARTIAL |
+| **Approval required?** | **Yes — Owner** — hard-refresh session check + retry Sync now (read-only) |
+| **Next phase selected** | Owner full sync retry → FRZ-018f; FRZ-019 config version schema (local) |
+
+---
+
 ## Sprint FRZ-019 — Configuration Studio local audit (PARTIAL)
 
 | Field | Value |

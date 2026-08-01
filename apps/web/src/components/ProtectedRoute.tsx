@@ -1,11 +1,13 @@
 import { type ReactNode, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { LoadingState } from '@titan/ui';
-import { getStaffHomePath } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
-import { toAppAbsoluteHref } from '../lib/nested-routing';
+import { toAppAbsoluteHref, useAppPathname } from '../lib/nested-routing';
+import {
+  resolveStaffPostLoginPath,
+  staffAuthReturnFromSearch,
+} from '../lib/staff-auth-return-routing';
 import { staffLoginRedirectHref } from '../lib/session-expiry-routing';
-import { toStaffIdentity } from '../lib/role-experience';
 
 type ProtectedRouteProps = {
   children: ReactNode;
@@ -14,13 +16,14 @@ type ProtectedRouteProps = {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading, sessionBootstrap } = useAuth();
   const [, setLocation] = useLocation();
+  const pathname = useAppPathname();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       // Only label true refresh rejections as expired — missing/unreachable are plain sign-in.
-      setLocation(staffLoginRedirectHref(sessionBootstrap));
+      setLocation(staffLoginRedirectHref(sessionBootstrap, pathname));
     }
-  }, [isAuthenticated, isLoading, sessionBootstrap, setLocation]);
+  }, [isAuthenticated, isLoading, pathname, sessionBootstrap, setLocation]);
 
   if (isLoading) {
     return (
@@ -44,12 +47,14 @@ type GuestRouteProps = {
 export function GuestRoute({ children }: GuestRouteProps) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [, setLocation] = useLocation();
+  const search = useSearch();
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      setLocation(toAppAbsoluteHref(getStaffHomePath(toStaffIdentity(user))));
+      staffAuthReturnFromSearch(search);
+      setLocation(toAppAbsoluteHref(resolveStaffPostLoginPath(user)));
     }
-  }, [isAuthenticated, isLoading, setLocation, user]);
+  }, [isAuthenticated, isLoading, search, setLocation, user]);
 
   if (isLoading) {
     return (

@@ -274,7 +274,12 @@ export function XeroSettingsPage() {
           ) : null}
 
           {accessToken ? (
-            <XeroSyncPanel accessToken={accessToken} connection={connection} canManage={canManage} />
+            <XeroSyncPanel
+              accessToken={accessToken}
+              connection={connection}
+              canManage={canManage}
+              onConnectionChange={loadConnection}
+            />
           ) : null}
         </>
       ) : null}

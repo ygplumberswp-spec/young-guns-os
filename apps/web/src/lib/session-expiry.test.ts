@@ -45,6 +45,12 @@ describe('staff session expiry redirect contract', () => {
     }
   });
 
+  it('preserves returnTo for protected-route deep links', () => {
+    const path = staffLoginRedirectPath('missing', '/integrations/xero');
+    assert.match(path, /returnTo=/);
+    assert.match(path, /integrations%2Fxero|integrations\/xero/);
+  });
+
   it('does not label loading or authenticated states as session expired', () => {
     assert.equal(staffLoginRedirectPath('loading'), PLAIN_LOGIN_PATH);
     assert.equal(staffLoginRedirectPath('authenticated'), PLAIN_LOGIN_PATH);

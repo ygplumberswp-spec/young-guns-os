@@ -1,13 +1,15 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link, useLocation, useSearch } from 'wouter';
-import { getStaffHomePath } from '@titan/auth/browser';
 import { Button, Input } from '@titan/ui';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { GuestRoute } from '../../components/ProtectedRoute';
 import { useAuth } from '../../lib/auth-context';
 import { ApiClientError, MFA_CHALLENGE_STORAGE_KEY } from '../../lib/api-client';
 import { SESSION_EXPIRED_LOGIN_PATH } from '../../lib/session-expiry-routing';
-import { toStaffIdentity } from '../../lib/role-experience';
+import {
+  resolveStaffPostLoginPath,
+  staffAuthReturnFromSearch,
+} from '../../lib/staff-auth-return-routing';
 
 /**
  * Branded auth support surfaces. Password recovery remains honest until reset API exists.
@@ -77,7 +79,8 @@ export function MfaChallengePage() {
         code: code.trim(),
       });
       sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY);
-      setLocation(getStaffHomePath(toStaffIdentity(result.user)));
+      staffAuthReturnFromSearch(search);
+      setLocation(resolveStaffPostLoginPath(result.user));
     } catch (err) {
       if (err instanceof ApiClientError && err.code === 'MFA_CHALLENGE_EXPIRED') {
         sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY);
