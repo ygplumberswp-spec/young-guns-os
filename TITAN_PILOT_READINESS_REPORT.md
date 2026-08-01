@@ -122,4 +122,4 @@ Minimum for pilot:
 
 ## Exact blocker for pilot sign-off
 
-**Staging deployment of commit `8d35bfd` + lead conversion E2E with real SA address — requires Owner approval for staging deploy.**
+**Railway staging API must reach `/health/ready` 200 (fix `DATABASE_URL` auth 28P01 on Railway + redeploy); then rerun Phase 5/6/8–12 public E2E (Sprint 019 NO-GO).**

@@ -309,3 +309,20 @@
 | **Tests** | `pnpm typecheck`, `pnpm test` (**105** pass), `pnpm build` — pass |
 | **Approval required?** | Railway `DATABASE_URL` sync + `RAILWAY_TOKEN` or dashboard redeploy |
 | **Next phase selected** | Owner updates Railway staging env; rerun public smokes; optional drizzle-kit migrator investigation |
+
+---
+
+## Sprint 019 — Staging ops rerun (credentials validated locally)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Staging-only — backup, journal proof, migrate idempotent, redeploy attempt, public smokes |
+| **Result** | Backup **PASS** (`staging-backup-2026-08-01T08-25-06-002Z.dump`); journal **106/106** before and after; `migrate-staging-safe.mjs` **exit 0** (no pending 0105–0106); Railway redeploy **BLOCKED** (CLI unauthorized); public `/health/ready` **503/28P01**; Phase 5/6/8–12 public smokes **NO-GO** |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | Sprint 019 report, diagnostic JSON/txt, control docs |
+| **Migration** | 0105–0106 already applied on staging DB |
+| **Tests** | `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
+| **Approval required?** | Sync Railway staging `DATABASE_URL` + valid `RAILWAY_TOKEN` or dashboard redeploy |
+| **Next phase selected** | Owner Railway env sync; rerun public smokes; safe local Master Directive pause at FRZ-015 / FRZ-018 |
+

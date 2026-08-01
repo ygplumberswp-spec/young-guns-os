@@ -131,9 +131,9 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## L. Remaining backlog (launch-critical order)
 
-1. **Public staging smokes (Phases 5–12)** — **NO-GO** (Railway API DB auth `28P01`); prior Sprint 017 GO superseded until redeploy  
+1. **Public staging smokes (Phases 5–12)** — **NO-GO** (Sprint 019: health 503/28P01; Phase 5/6/8–12 fail `staging_api_ready`)  
 2. ~~Migrations `0105`–`0106` on staging DB~~ — **APPLIED** (journal **106**, Sprint 018); Railway API still **503/28P01** until service env updated  
-3. **Railway redeploy completion branch** — **BLOCKED** (no `RAILWAY_TOKEN`)  
+3. **Railway redeploy completion branch** — **BLOCKED** (`RAILWAY_TOKEN` unauthorized in CLI)  
 4. ~~Quote → invoice → payment chain local~~ **Phase 12 local done** — staging + live Xero proof open  
 5. AURA AI provider verified connection  
 6. Xero OAuth staging (read-only first)  
@@ -147,4 +147,4 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## M. Exact next action
 
-**Owner gates:** sync Railway staging `DATABASE_URL` to refreshed password + redeploy API/web (`RAILWAY_TOKEN` or dashboard); rerun public smokes. **Safe local work** may continue; pause at FRZ-015 AURA creds and FRZ-018 Xero OAuth.
+**Owner gates (Sprint 019):** staging DB **106/106** locally OK; Railway API still **503/28P01** — sync service `DATABASE_URL`, fix **invalid/expired `RAILWAY_TOKEN`**, redeploy API/web, rerun Phase 5/6/8–12 smokes. Local gates pass; pause at FRZ-015 / FRZ-018.

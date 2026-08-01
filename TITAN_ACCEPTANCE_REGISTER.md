@@ -76,8 +76,8 @@
 
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
-| Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E **10/10 GO** (Sprint 017 rerun) — `diagnostic-output/140-staging-phase5-e2e.json`; canonical 17-check at `306ba6e` |
-| Crew/Vehicle assignment | **Verified complete (staging)** | Phase 6 E2E 12/12 GO — crew assign, calendar crew label, site contact E.164; `diagnostic-output/141-staging-phase6-e2e.json` |
+| Lead → Customer → Property → Job | **Verified complete (staging)** — **smoke rerun NO-GO Sprint 019** until Railway DB fixed | Phase 5 E2E **10/10 GO** (Sprint 017); latest rerun **NO-GO** — `140-staging-phase5-e2e.json` |
+| Crew/Vehicle assignment | **Verified complete (staging)** — **smoke rerun NO-GO Sprint 019** | Phase 6 E2E 12/12 GO (Sprint 017); latest rerun **NO-GO** — `141-staging-phase6-e2e.json` |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement + Phase 10 job costing panel + stock movement ledger |
 | Quote/BOQ → Approval | Partially implemented | UX-E quotes; quote edit + internal approval workflow local (Sprint 013); BOQ workspace local foundation |
@@ -97,7 +97,7 @@
 5. ~~**FRZ-011 / Phase 10 (local slice)** — Job costing summary API + panel; stock movement ledger route + UI **DONE**; supplier OCR/Xero bill match remain~~ **DONE (local)** — Sprint 014  
 6. ~~**FRZ-012 / Phase 11 (local slice)** — Job document pack approval workflow + portal share + COC compliance panel **DONE**; supplier OCR + Reports & Compliance Agent remain~~ **DONE (local)** — Sprint 015  
 7. ~~**FRZ-010 / Phase 12 (local slice)** — Job completion/billing chain panel + invoice-from-job + payment prefill + Xero sync UI stubs **DONE**; live Xero OAuth/sync remain~~ **DONE (local)** — Sprint 016  
-8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, no `RAILWAY_TOKEN`)  
+8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018–019 idempotent); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, invalid/unauthorized `RAILWAY_TOKEN`)  
 9. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 10. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 

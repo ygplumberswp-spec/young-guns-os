@@ -158,7 +158,17 @@
 | `diagnostic-output/159-staging-apply-0105-0106.json` | Controlled staging apply 0105–0106 — journal **106** |
 | `diagnostic-output/160-staging-health-ready.json` | Public health ready — **503 DB_UNAVAILABLE** |
 | `diagnostic-output/164-staging-verification-summary.json` | Sprint 018 structured summary |
-| `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | Sprint 018 full staging verification report |
+| `diagnostic-output/staging-backup-2026-08-01T08-25-06-002Z.dump` | **Staging logical backup** (Sprint 019, local only — not in Git) |
+| `diagnostic-output/159-staging-backup-journal-before.json` | Sprint 019 pre-migrate journal **106** + backup meta |
+| `diagnostic-output/160-staging-journal-after-migrate.json` | Sprint 019 post-migrate journal **106** |
+| `diagnostic-output/161-staging-migrate-console.txt` | `migrate-staging-safe.mjs` console (redacted) |
+| `diagnostic-output/162-staging-health-ready.json` | Public health ready — **503/28P01** (Sprint 019) |
+| `diagnostic-output/163-typecheck-staging-ops.txt` | Sprint 019 `pnpm typecheck` |
+| `diagnostic-output/164-pnpm-test-staging-ops.txt` | Sprint 019 `pnpm test` |
+| `diagnostic-output/165-build-staging-ops.txt` | Sprint 019 `pnpm build` |
+| `diagnostic-output/166-staging-verification-summary.json` | Sprint 019 structured staging verification summary |
+| `TITAN_STAGING_VERIFICATION_SPRINT019_REPORT.md` | Sprint 019 full staging verification report |
+| `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | | Sprint 018 full staging verification report |
 
 ## Coverage gaps (Phase 2+ targets)
 
