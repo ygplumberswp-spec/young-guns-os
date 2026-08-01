@@ -42,6 +42,49 @@ export async function saveCartrackConnection(
   return data.connection;
 }
 
+export async function validateCartrackCredentials(
+  accessToken: string,
+  body: SaveCartrackConnectionRequest,
+) {
+  const data = await request<{ result: { valid: boolean; message: string } }>(
+    '/integrations/cartrack/credentials/validate',
+    {
+      method: 'POST',
+      accessToken,
+      body,
+    },
+  );
+  return data.result;
+}
+
+export async function replaceCartrackCredentials(
+  accessToken: string,
+  body: SaveCartrackConnectionRequest,
+): Promise<CartrackConnectionSummary> {
+  const data = await request<{ connection: CartrackConnectionSummary }>(
+    '/integrations/cartrack/credentials',
+    {
+      method: 'PUT',
+      accessToken,
+      body,
+    },
+  );
+  return data.connection;
+}
+
+export async function verifyStoredCartrackConnection(
+  accessToken: string,
+): Promise<CartrackConnectionSummary> {
+  const data = await request<{ connection: CartrackConnectionSummary }>(
+    '/integrations/cartrack/verify-stored',
+    {
+      method: 'POST',
+      accessToken,
+    },
+  );
+  return data.connection;
+}
+
 export async function disconnectCartrack(accessToken: string): Promise<CartrackConnectionSummary> {
   const data = await request<{ connection: CartrackConnectionSummary }>('/integrations/cartrack', {
     method: 'DELETE',

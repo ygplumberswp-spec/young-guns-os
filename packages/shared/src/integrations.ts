@@ -280,6 +280,8 @@ export type UpdateIntegrationWebhookEndpointRequest = {
   isActive?: boolean;
 };
 
+export type IntegrationSyncHealth = 'healthy' | 'degraded' | 'failed' | 'unknown';
+
 export type CartrackConnectionSummary = {
   provider: 'cartrack';
   status: IntegrationConnectionStatus;
@@ -289,6 +291,9 @@ export type CartrackConnectionSummary = {
   lastSyncAt: string | null;
   lastError: string | null;
   connectedAt: string | null;
+  lastCredentialChangeAt: string | null;
+  nextScheduledSyncAt: string | null;
+  syncHealth: IntegrationSyncHealth;
   mappedVehicleCount: number;
   unmappedVehicleCount: number;
   positionCount: number;
@@ -306,11 +311,20 @@ export type IntegrationVehicleMappingSummary = {
   externalRegistration: string | null;
   externalName: string | null;
   status: IntegrationMappingStatus;
+  reviewCategory: import('./vehicle-registration.js').IntegrationMappingReviewCategory;
+  reviewLabel: string;
   vehicleId: string | null;
   vehicleName: string | null;
   vehicleLicensePlate: string | null;
   lastSeenAt: string | null;
   updatedAt: string;
+};
+
+export type ValidateCartrackCredentialsRequest = SaveCartrackConnectionRequest;
+
+export type ValidateCartrackCredentialsResult = {
+  valid: boolean;
+  message: string;
 };
 
 export type UpdateIntegrationVehicleMappingRequest = {

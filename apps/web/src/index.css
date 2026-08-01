@@ -4004,6 +4004,69 @@ a:focus-visible {
   flex-wrap: wrap;
 }
 
+.integration-connection-lock {
+  position: relative;
+}
+
+.integration-connection-lock__menu-wrap {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+}
+
+.integration-connection-lock__menu-trigger {
+  border: 1px solid var(--titan-border);
+  background: transparent;
+  color: var(--titan-text-muted);
+  border-radius: 0.375rem;
+  width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.integration-connection-lock__menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 11rem;
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+}
+
+.integration-connection-lock__menu button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  color: var(--titan-text);
+}
+
+.integration-connection-lock__menu button:hover {
+  background: var(--titan-surface-muted);
+}
+
+.integration-mapping-group {
+  margin-bottom: 1.25rem;
+}
+
+.integration-mapping-group__title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.integration-auto-sync-section {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .integration-table-wrap {
   overflow-x: auto;
 }

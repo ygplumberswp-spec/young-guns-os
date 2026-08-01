@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import { z } from 'zod';
+import { isCompanyOwnerRole } from '@titan/auth';
 import type { IntegrationsService } from '../services/integrations.service.js';
 import { IntegrationsError } from '../services/integrations.service.js';
 import type { XeroSyncService } from '../services/xero-sync.service.js';
@@ -222,7 +223,7 @@ export function createIntegrationsRouter({
   );
 
   router.put('/cartrack', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const auth = getAuth(req);
     const parsed = saveCartrackSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -237,12 +238,80 @@ export function createIntegrationsRouter({
     }
 
     try {
-      const connection = await integrationsService.saveCartrackConnection(companyId, parsed.data);
+      const connection = await integrationsService.saveCartrackConnection(
+        auth.companyId,
+        parsed.data,
+        { userId: auth.userId },
+      );
       res.json({ data: { connection } });
     } catch (error) {
       handleIntegrationsError(res, error);
     }
   });
+
+  router.post(
+    '/cartrack/credentials/validate',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const parsed = saveCartrackSchema.safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid Cartrack credential payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      const result = await integrationsService.validateCartrackCredentials(parsed.data);
+      res.json({ data: { result } });
+    },
+  );
+
+  router.put('/cartrack/credentials', requireOwnerForCredentialReplace, async (req, res) => {
+    const auth = getAuth(req);
+    const parsed = saveCartrackSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid Cartrack credential payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const connection = await integrationsService.replaceCartrackCredentials(
+        auth.companyId,
+        parsed.data,
+        { userId: auth.userId },
+      );
+      res.json({ data: { connection } });
+    } catch (error) {
+      handleIntegrationsError(res, error);
+    }
+  });
+
+  router.post(
+    '/cartrack/verify-stored',
+    requireAnyPermission('integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const connection = await integrationsService.verifyStoredCartrackConnection(companyId);
+        res.json({ data: { connection } });
+      } catch (error) {
+        handleIntegrationsError(res, error);
+      }
+    },
+  );
 
   router.delete('/cartrack', requireAnyPermission('integrations:manage'), async (req, res) => {
     const { companyId } = getAuth(req);
@@ -1198,6 +1267,37 @@ export function createIntegrationsRouter({
   );
 
   return router;
+}
+
+function requireOwnerForCredentialReplace(req: Request, res: Response, next: NextFunction) {
+  const auth = getAuth(req);
+
+  if (
+    !isCompanyOwnerRole({
+      roleName: auth.roleName,
+      permissions: auth.permissions,
+    })
+  ) {
+    res.status(403).json({
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Only the company Owner can replace integration credentials.',
+      },
+    });
+    return;
+  }
+
+  if (!auth.permissions.includes('integrations:manage')) {
+    res.status(403).json({
+      error: {
+        code: 'FORBIDDEN',
+        message: 'integrations:manage permission is required.',
+      },
+    });
+    return;
+  }
+
+  next();
 }
 
 function handleWhatsappError(res: import('express').Response, error: unknown) {

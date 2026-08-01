@@ -37,6 +37,7 @@ export type IntegrationConnectionConfig = {
   businessName?: string;
   businessId?: string;
   environment?: 'test' | 'live';
+  lastCredentialChangeAt?: string;
 };
 
 export const integrationConnections = pgTable('integration_connections', {
