@@ -618,6 +618,22 @@
 
 ---
 
+## Sprint AUTO-SYNC-001 — Integration auto-sync orchestrator (deployed, staging verify pending)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Master integration auto-sync — framework + Xero/Cartrack hooks + UI states |
+| **Result** | **Implemented — staging verify pending gates** — `IntegrationSyncOrchestratorService`, scheduler tick, OAuth/connect hooks, 180s Xero timeout |
+| **Checkpoint** | `4e285b8` on `cursor/titan-frozen-scope-completion` |
+| **Files changed** | Orchestrator, scheduler, `integration-auto-sync.ts`, UI panels, architecture/report docs |
+| **Tests** | `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
+| **Staging verify** | API health OK; auto-sync endpoints require auth; full Xero auto-sync pending `PROVIDERS_ENABLED` + `XERO_SYNC_ENABLED` + `SCHEDULERS_ENABLED` + redeploy |
+| **Approval required?** | **Yes — Owner** — enable staging runtime gates; reconnect Xero or wait for scheduler |
+| **Next phase selected** | Staging Xero auto-sync DB probe (adapt FRZ-018e script); Cartrack when credentials supplied |
+
+---
+
 ## Sprint FRZ-019 — Configuration Studio local audit (PARTIAL)
 
 | Field | Value |
