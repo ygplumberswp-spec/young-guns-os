@@ -58,7 +58,7 @@ export function ProductListPage() {
         error={error}
         isEmpty={(items?.length ?? 0) === 0}
         emptyTitle="No products yet"
-        emptyDescription="Create your first product to start tracking inventory."
+        emptyDescription="Add products and SKUs here — stock levels appear on the Stock tab once items exist."
         emptyAction={
           canWrite ? (
             <Link href="/inventory/products/new">

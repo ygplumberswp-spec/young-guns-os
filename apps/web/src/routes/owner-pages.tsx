@@ -18,6 +18,10 @@ export const CompanySettingsPage = lazyNamed(
   () => import('../pages/settings/CompanySettingsPage'),
   'CompanySettingsPage',
 );
+export const SettingsHubPage = lazyNamed(
+  () => import('../pages/settings/SettingsHubPage'),
+  'SettingsHubPage',
+);
 export const AboutSettingsPage = lazyNamed(
   () => import('../pages/settings/AboutSettingsPage'),
   'AboutSettingsPage',

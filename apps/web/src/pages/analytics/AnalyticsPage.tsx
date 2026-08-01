@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, PageHeader, Panel } from '@titan/ui';
 import type { AnalyticsPeriod, ReportDefinitionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -28,6 +28,7 @@ import {
 } from '../../features/analytics/utils';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
 import { ANALYTICS_PERIOD_OPTIONS, formatMoney, REPORT_TYPE_OPTIONS } from '@titan/shared';
+import { CompactTabs, EmptyState, SummaryCardGrid } from '../../components/ux';
 
 type AnalyticsTab =
   | 'dashboard'
@@ -204,7 +205,7 @@ export function AnalyticsPage() {
       />
 
       <div className="analytics-page__controls">
-        <div className="analytics-page__period">
+        <nav className="analytics-page__period" aria-label="Analytics period">
           {ANALYTICS_PERIOD_OPTIONS.map((option) => (
             <Button
               key={option.value}
@@ -215,23 +216,14 @@ export function AnalyticsPage() {
               {option.label}
             </Button>
           ))}
-        </div>
-        <nav className="analytics-page__tabs" aria-label="Analytics sections">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              className={
-                activeTab === tab.id
-                  ? 'analytics-page__tab analytics-page__tab--active'
-                  : 'analytics-page__tab'
-              }
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
         </nav>
+        <CompactTabs<AnalyticsTab>
+          tabs={tabs}
+          activeId={activeTab}
+          onChange={setActiveTab}
+          maxVisible={5}
+          moreLabel="More analytics"
+        />
       </div>
 
       {actionError ? <p className="form-error">{actionError}</p> : null}
@@ -247,34 +239,37 @@ export function AnalyticsPage() {
         >
           {dashboardQuery.data ? (
             <>
-              <section className="analytics-page__stats" aria-label="Executive KPIs">
-                <StatCard
-                  label="Revenue"
-                  value={formatMoney(
-                    dashboardQuery.data.revenue.totalCents,
-                    dashboardQuery.data.currency,
-                  )}
-                  hint={`${formatChangePercent(dashboardQuery.data.revenue.changePercent)} vs previous period`}
-                />
-                <StatCard
-                  label="Jobs"
-                  value={String(dashboardQuery.data.jobVolume.total)}
-                  hint={`${dashboardQuery.data.jobVolume.completed} completed · ${dashboardQuery.data.jobVolume.active} active`}
-                />
-                <StatCard
-                  label="New customers"
-                  value={String(dashboardQuery.data.customerGrowth.newInPeriod)}
-                  hint={`${dashboardQuery.data.customerGrowth.totalCustomers} total customers`}
-                />
-                <StatCard
-                  label="Outstanding"
-                  value={formatMoney(
-                    dashboardQuery.data.outstandingBalances.totalCents,
-                    dashboardQuery.data.currency,
-                  )}
-                  hint={`${dashboardQuery.data.outstandingBalances.count} open invoice(s)`}
-                />
-              </section>
+              <SummaryCardGrid
+                aria-label="Executive KPIs"
+                items={[
+                  {
+                    label: 'Revenue',
+                    value: formatMoney(
+                      dashboardQuery.data.revenue.totalCents,
+                      dashboardQuery.data.currency,
+                    ),
+                    hint: `${formatChangePercent(dashboardQuery.data.revenue.changePercent)} vs previous period`,
+                  },
+                  {
+                    label: 'Jobs',
+                    value: String(dashboardQuery.data.jobVolume.total),
+                    hint: `${dashboardQuery.data.jobVolume.completed} completed · ${dashboardQuery.data.jobVolume.active} active`,
+                  },
+                  {
+                    label: 'New customers',
+                    value: String(dashboardQuery.data.customerGrowth.newInPeriod),
+                    hint: `${dashboardQuery.data.customerGrowth.totalCustomers} total customers`,
+                  },
+                  {
+                    label: 'Outstanding',
+                    value: formatMoney(
+                      dashboardQuery.data.outstandingBalances.totalCents,
+                      dashboardQuery.data.currency,
+                    ),
+                    hint: `${dashboardQuery.data.outstandingBalances.count} open invoice(s)`,
+                  },
+                ]}
+              />
 
               <div className="analytics-page__grid">
                 <Panel title="Invoice & payment performance">
@@ -695,29 +690,38 @@ export function AnalyticsPage() {
           {enterpriseQuery.data ? (
             <>
               <section className="stat-grid">
-                <StatCard
-                  label="Active KPIs"
-                  value={String(enterpriseQuery.data.stats.activeKpiCount)}
-                />
-                <StatCard
-                  label="Dashboards"
-                  value={String(enterpriseQuery.data.stats.dashboardCount)}
-                />
-                <StatCard
-                  label="Pending insights"
-                  value={String(enterpriseQuery.data.stats.pendingInsightCount)}
-                />
-                <StatCard
-                  label="Scheduled reports"
-                  value={String(enterpriseQuery.data.stats.scheduledReportCount)}
-                />
-                <StatCard
-                  label="Forecasts"
-                  value={String(enterpriseQuery.data.stats.latestForecastCount)}
-                />
-                <StatCard
-                  label="Pending actions"
-                  value={String(enterpriseQuery.data.pendingActionCount)}
+                <SummaryCardGrid
+                  aria-label="Executive BI metrics"
+                  items={[
+                    {
+                      label: 'Active KPIs',
+                      value:
+                        enterpriseQuery.data.stats.activeKpiCount > 0
+                          ? String(enterpriseQuery.data.stats.activeKpiCount)
+                          : '—',
+                    },
+                    {
+                      label: 'Dashboards',
+                      value:
+                        enterpriseQuery.data.stats.dashboardCount > 0
+                          ? String(enterpriseQuery.data.stats.dashboardCount)
+                          : '—',
+                    },
+                    {
+                      label: 'Pending insights',
+                      value:
+                        enterpriseQuery.data.stats.pendingInsightCount > 0
+                          ? String(enterpriseQuery.data.stats.pendingInsightCount)
+                          : '—',
+                    },
+                    {
+                      label: 'Scheduled reports',
+                      value:
+                        enterpriseQuery.data.stats.scheduledReportCount > 0
+                          ? String(enterpriseQuery.data.stats.scheduledReportCount)
+                          : '—',
+                    },
+                  ]}
                 />
               </section>
               <p className="page-muted">{enterpriseQuery.data.summary}</p>

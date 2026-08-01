@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -67,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [sessionBootstrap, setSessionBootstrap] = useState<SessionBootstrapState>('loading');
   const [sessionUxState, setSessionUxState] = useState<StaffSessionUxState | null>('restoring');
+  const sessionWarningDismissedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,22 +181,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    sessionWarningDismissedRef.current = false;
+
     const expiryMs = decodeAccessTokenExpiryMs(accessToken);
     if (!expiryMs) {
       return;
     }
 
     const warnAt = expiryMs - SESSION_EXPIRY_WARNING_MS;
+    let cancelled = false;
+
+    async function attemptSilentRefresh(): Promise<boolean> {
+      try {
+        const result = await api.restoreSession();
+        return result.status === 'authenticated';
+      } catch {
+        return false;
+      }
+    }
+
+    async function showExpiryWarningIfNeeded() {
+      if (cancelled || sessionWarningDismissedRef.current) {
+        return;
+      }
+      const refreshed = await attemptSilentRefresh();
+      if (cancelled || refreshed) {
+        return;
+      }
+      setSessionUxState((current) =>
+        current === 'restored' || current === 'reconnecting' ? 'expiring_soon' : current,
+      );
+    }
+
     const delay = warnAt - Date.now();
     if (delay <= 0) {
+      void showExpiryWarningIfNeeded();
       return;
     }
 
     const timer = window.setTimeout(() => {
-      setSessionUxState((current) => (current === 'restored' ? 'expiring_soon' : current));
+      void showExpiryWarningIfNeeded();
     }, delay);
 
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [accessToken]);
 
   const applyAuth = useCallback((payload: { user: AuthUser; session: AuthSession }) => {
@@ -289,6 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const dismissSessionUxState = useCallback(() => {
+    sessionWarningDismissedRef.current = true;
     setSessionUxState(null);
   }, []);
 

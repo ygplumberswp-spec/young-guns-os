@@ -701,20 +701,21 @@ a:focus-visible {
 }
 
 .app-nav__link--active {
-  background-color: rgba(13, 148, 136, 0.1);
-  color: var(--titan-text);
-  font-weight: 500;
-  border-left-color: #0d9488;
+  background: var(--titan-accent-soft);
+  color: var(--titan-chrome-hi);
+  font-weight: 600;
+  border-left-color: var(--titan-accent);
   padding-left: calc(0.625rem - 3px);
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.12);
 }
 
 .app-nav__link--active .app-nav__icon {
-  color: #5eead4;
+  color: var(--titan-accent);
   opacity: 1;
 }
 
 .app-nav__link:focus-visible {
-  outline: 2px solid #0d9488;
+  outline: 2px solid var(--titan-accent);
   outline-offset: 1px;
 }
 

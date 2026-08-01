@@ -18,6 +18,8 @@ export type NavItemConfig = {
   portalPermission?: PortalAccessPermission;
   /** Client portal: visible when the user has any listed permission. */
   portalPermissions?: PortalAccessPermission[];
+  /** Hidden from primary sidebar — route remains reachable via URL or enterprise index. */
+  navHidden?: boolean;
 };
 
 /** Experiences that receive the full company Business OS nav (subject to permissions). */
@@ -52,7 +54,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
     href: '/mobile-platform/dispatcher',
-    label: 'Dispatcher console',
+    label: 'Live Dispatch',
     permissions: ['dispatch:read', 'mobile:read', '*'],
     experiences: ['dispatcher', 'company_owner', 'manager', 'platform_owner', 'staff'],
   },
@@ -66,14 +68,14 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/marketing', label: 'Marketing', permissions: ['marketing:read', '*'] },
   {
     href: '/aura/agents',
-    label: 'AURA Capabilities',
+    label: 'AURA Team',
     permissions: ['agents:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
-  { href: '/automation', label: 'Automations', permissions: ['automation:read', '*'] },
+  { href: '/automation', label: 'Automation Command Centre', permissions: ['automation:read', '*'] },
   {
     href: '/mission-control',
-    label: 'Mission Control',
+    label: 'Company Health',
     permissions: ['executive:read', 'ops:read', '*'],
   },
   { href: '/integrations', label: 'Integrations', permissions: ['integrations:read', '*'] },
@@ -83,6 +85,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     label: 'Enterprise modules',
     permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
+    navHidden: true,
   },
   {
     href: '/platform-health',
@@ -103,19 +106,19 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['platform_owner'],
   },
   {
-    href: '/settings/company',
+    href: '/settings',
     label: 'Settings',
     permissions: ['settings:manage', 'company:manage', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
   {
     href: '/settings/team',
-    label: 'Users & Access',
+    label: 'Team & Access',
     permissions: ['users:read', 'users:manage', '*'],
   },
   {
     href: '/aura',
-    label: 'Owner AI Chat',
+    label: 'AURA Executive Chat',
     permissions: ['agents:read', 'intelligence:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },

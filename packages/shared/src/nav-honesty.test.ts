@@ -18,19 +18,47 @@ describe('nav honesty (UX-K)', () => {
     assert.deepEqual([...financeLabels].sort(), ['Invoices', 'Payments', 'Quotes']);
   });
 
-  it('UX-052 — dispatcher console is a first-class staff nav item', () => {
+  it('UX-052 — Live Dispatch is a first-class staff nav item', () => {
     const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/mobile-platform/dispatcher');
     assert.ok(item);
-    assert.equal(item?.label, 'Dispatcher console');
+    assert.equal(item?.label, 'Live Dispatch');
     assert.ok(item?.experiences?.includes('dispatcher'));
   });
 
-  it('UX-048 — enterprise modules index is in Owner nav and catalogue is non-empty', () => {
+  it('UX-048 — enterprise modules index remains catalogued but hidden from primary nav', () => {
     const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/enterprise-modules');
     assert.ok(item);
     assert.equal(item?.label, 'Enterprise modules');
+    assert.equal(item?.navHidden, true);
     assert.ok(ENTERPRISE_MODULE_LINKS.length >= 10);
     assert.ok(ENTERPRISE_MODULE_LINKS.every((link) => link.href.startsWith('/')));
+  });
+
+  it('UX-H1 — premium enterprise nav renames are applied', () => {
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/aura/agents')?.label,
+      'AURA Team',
+    );
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/aura')?.label,
+      'AURA Executive Chat',
+    );
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/automation')?.label,
+      'Automation Command Centre',
+    );
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/mission-control')?.label,
+      'Company Health',
+    );
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/settings/team')?.label,
+      'Team & Access',
+    );
+    assert.equal(
+      OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/settings')?.label,
+      'Settings',
+    );
   });
 
   it('Phase 4 — global search is a first-class owner nav item', () => {

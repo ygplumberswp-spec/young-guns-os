@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
 import { AI_NAME } from '@titan/shared';
@@ -15,6 +15,26 @@ import { NavIcon } from '../components/NavIcon';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
 import { SessionStatusBanner } from '../components/SessionStatusBanner';
+import {
+  SearchCommandPalette,
+  useSearchCommandPaletteShortcut,
+} from '../components/ux';
+
+function isNavItemActive(activeLocation: string, href: string): boolean {
+  if (activeLocation === href) {
+    return true;
+  }
+  if (href === '/') {
+    return false;
+  }
+  if (href === '/settings') {
+    return (
+      activeLocation === '/settings' ||
+      (activeLocation.startsWith('/settings/') && !activeLocation.startsWith('/settings/team'))
+    );
+  }
+  return activeLocation.startsWith(`${href}/`) || activeLocation.startsWith(href);
+}
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -34,6 +54,12 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { logoFileId, companyName: profileCompanyName } = useCompanyLocale();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const toggleCommandPalette = useCallback(() => {
+    setCommandPaletteOpen((open) => !open);
+  }, []);
+  useSearchCommandPaletteShortcut(toggleCommandPalette);
 
   useEffect(() => {
     setPendingHref(null);
@@ -90,7 +116,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             {user ? (
               <>
                 <Link
-                  href="/settings/company"
+                  href="/settings"
                   className="app-header__identity"
                   title={`${user.firstName} ${user.lastName} — ${displayCompanyName} · ${user.roleName}`}
                 >
@@ -117,9 +143,13 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </span>
                 </Link>
                 {canSearch ? (
-                  <Link href="/global-search" className="app-header__link">
-                    Search
-                  </Link>
+                  <button
+                    type="button"
+                    className="app-header__link"
+                    onClick={() => setCommandPaletteOpen(true)}
+                  >
+                    Search ⌘K
+                  </button>
                 ) : null}
                 {isTechnician ? (
                   <Link href="/mobile" className="app-header__link">
@@ -152,9 +182,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <div key={group.id} className="app-nav__group">
                 {!sidebarCollapsed ? <p className="app-nav__group-label">{group.label}</p> : null}
                 {items.map((item) => {
-                  const isActive =
-                    activeLocation === item.href ||
-                    (item.href !== '/' && activeLocation.startsWith(item.href));
+                  const isActive = isNavItemActive(activeLocation, item.href);
 
                   return (
                     <Link
@@ -190,6 +218,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       ) : null}
       <SessionStatusBanner state={sessionUxState} onDismiss={dismissSessionUxState} />
+      <SearchCommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        canAccessSearch={canSearch}
+      />
       {children}
     </AppShell>
   );

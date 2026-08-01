@@ -1,9 +1,11 @@
 import { Link, useLocation } from 'wouter';
 
+import { UX_INVENTORY_LABELS } from '../../lib/ux-labels';
+
 const tabs = [
-  { href: '/inventory/products', label: 'Products' },
-  { href: '/inventory/stock', label: 'Stock' },
-  { href: '/inventory/movements', label: 'Movements' },
+  { href: '/inventory/products', label: UX_INVENTORY_LABELS.products },
+  { href: '/inventory/stock', label: UX_INVENTORY_LABELS.stock },
+  { href: '/inventory/movements', label: UX_INVENTORY_LABELS.stockHistory },
 ];
 
 export function InventoryNav() {

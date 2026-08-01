@@ -43,6 +43,8 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/platform-health': 'platform',
   '/release-center': 'platform',
   '/saas-management': 'platform',
+  '/settings': 'platform',
+  '/settings/team': 'platform',
   '/settings/company': 'platform',
   '/aura': 'platform',
 };

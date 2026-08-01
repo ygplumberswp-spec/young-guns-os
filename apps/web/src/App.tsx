@@ -418,6 +418,7 @@ export function App() {
                         <Route path="/settings/about" component={OwnerPages.AboutSettingsPage} />
                         <Route path="/settings/team" component={OwnerPages.TeamSettingsPage} />
                         <Route path="/settings/security" component={OwnerPages.SecuritySettingsPage} />
+                        <Route path="/settings" component={OwnerPages.SettingsHubPage} />
                         <Route path="/" component={OwnerPages.DashboardPage} />
                         <Route path="/:rest*" component={OwnerPages.NotFoundPage} />
                       </Switch>

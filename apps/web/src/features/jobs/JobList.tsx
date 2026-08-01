@@ -1,8 +1,10 @@
+import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, Panel } from '@titan/ui';
+import { Button, Panel } from '@titan/ui';
 import type { JobSummary } from '@titan/shared';
 import { JOB_PRIORITY_OPTIONS, JOB_STATUS_OPTIONS } from '@titan/shared';
 import { hasAnyPermission } from '@titan/auth/browser';
+import { BulkActionBar, EmptyState, MoreMenu } from '../../components/ux';
 
 type JobListProps = {
   jobs: JobSummary[];
@@ -20,8 +22,61 @@ function formatPriority(priority: JobSummary['priority']): string {
 }
 
 export function JobList({ jobs, canWrite, search, onSearchChange }: JobListProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const allSelected = jobs.length > 0 && selectedIds.size === jobs.length;
+
+  const toggleAll = (selected: boolean) => {
+    setSelectedIds(selected ? new Set(jobs.map((job) => job.id)) : new Set());
+  };
+
+  const toggleOne = (jobId: string, selected: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (selected) {
+        next.add(jobId);
+      } else {
+        next.delete(jobId);
+      }
+      return next;
+    });
+  };
+
+  const bulkActions = useMemo(
+    () =>
+      canWrite
+        ? [
+            {
+              id: 'assign',
+              label: 'Assign technician (coming soon)',
+              onSelect: () => undefined,
+              disabled: true,
+            },
+            {
+              id: 'status',
+              label: 'Update status (coming soon)',
+              onSelect: () => undefined,
+              disabled: true,
+            },
+          ]
+        : [],
+    [canWrite],
+  );
+
   return (
     <Panel title="All jobs">
+      <BulkActionBar
+        totalCount={jobs.length}
+        selectedCount={selectedIds.size}
+        allSelected={allSelected}
+        onSelectAll={toggleAll}
+        actions={
+          bulkActions.length > 0 ? (
+            <MoreMenu label="Bulk actions" items={bulkActions} />
+          ) : undefined
+        }
+      />
+
       <div className="jobs-list-toolbar">
         <InputSearch
           value={search}
@@ -51,6 +106,7 @@ export function JobList({ jobs, canWrite, search, onSearchChange }: JobListProps
           <table className="jobs-table">
             <thead>
               <tr>
+                <th aria-label="Select" />
                 <th>Job #</th>
                 <th>Customer</th>
                 <th>Address</th>
@@ -59,11 +115,20 @@ export function JobList({ jobs, canWrite, search, onSearchChange }: JobListProps
                 <th>Status</th>
                 <th>Appointment</th>
                 <th>Technician</th>
+                <th aria-label="Actions" />
               </tr>
             </thead>
             <tbody>
               {jobs.map((job) => (
                 <tr key={job.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(job.id)}
+                      onChange={(event) => toggleOne(job.id, event.target.checked)}
+                      aria-label={`Select job ${job.jobNumber ?? job.title}`}
+                    />
+                  </td>
                   <td>
                     <Link href={`/jobs/${job.id}`} className="jobs-link">
                       {job.jobNumber ?? job.title}
@@ -89,6 +154,30 @@ export function JobList({ jobs, canWrite, search, onSearchChange }: JobListProps
                   </td>
                   <td>{job.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : '—'}</td>
                   <td>{job.assignedUserName ?? '—'}</td>
+                  <td>
+                    <MoreMenu
+                      label="⋯"
+                      items={[
+                        {
+                          id: 'open',
+                          label: 'Open job',
+                          onSelect: () => {
+                            window.location.href = `/jobs/${job.id}`;
+                          },
+                        },
+                        ...(canWrite
+                          ? [
+                              {
+                                id: 'schedule',
+                                label: 'Schedule (coming soon)',
+                                onSelect: () => undefined,
+                                disabled: true,
+                              },
+                            ]
+                          : []),
+                      ]}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>

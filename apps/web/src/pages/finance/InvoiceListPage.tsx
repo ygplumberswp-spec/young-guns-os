@@ -1,15 +1,30 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, INVOICE_STATUS_OPTIONS, type InvoiceSummary } from '@titan/shared';
 import { fetchInvoices } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import {
+  Breadcrumbs,
+  invoiceSyncPending,
+  PageHeader,
+  PrimaryAction,
+  StatusBadge,
+} from '../../components/ux';
 
 function formatStatus(status: InvoiceSummary['status']): string {
   return INVOICE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
+}
+
+function sortInvoicesByDateDesc(invoices: InvoiceSummary[]): InvoiceSummary[] {
+  return [...invoices].sort((a, b) => {
+    const aTime = a.createdAt ? Date.parse(a.createdAt) : 0;
+    const bTime = b.createdAt ? Date.parse(b.createdAt) : 0;
+    return bTime - aTime;
+  });
 }
 
 export function InvoiceListPage() {
@@ -38,6 +53,11 @@ export function InvoiceListPage() {
       }),
   });
 
+  const sortedInvoices = useMemo(
+    () => sortInvoicesByDateDesc(invoices ?? []),
+    [invoices],
+  );
+
   if (!canView) {
     return (
       <div className="finance-page">
@@ -49,19 +69,27 @@ export function InvoiceListPage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="Finance"
-        description="Quotes, invoices, and payment records for your company."
+        breadcrumbs={
+          <Breadcrumbs
+            items={[
+              { label: 'Finance', href: '/finance/invoices' },
+              { label: 'Invoices' },
+            ]}
+          />
+        }
+        title="Invoices"
+        description="Customer billing records — newest first."
         actions={
           canWrite ? (
             <Link href="/finance/invoices/new">
-              <Button>New invoice</Button>
+              <PrimaryAction>New invoice</PrimaryAction>
             </Link>
           ) : undefined
         }
       />
       <FinanceNav />
 
-      <Panel title="Invoices">
+      <Panel title="Invoice list">
         <div className="finance-toolbar">
           <input
             className="titan-input"
@@ -96,13 +124,13 @@ export function InvoiceListPage() {
         <PageLoadState
           isLoading={isLoading}
           error={error}
-          isEmpty={(invoices?.length ?? 0) === 0}
+          isEmpty={sortedInvoices.length === 0}
           emptyTitle={q || status || overdueOnly ? 'No matching invoices' : 'No invoices yet'}
           emptyDescription="Create your first invoice to start billing customers."
           emptyAction={
             canWrite ? (
               <Link href="/finance/invoices/new">
-                <Button>New invoice</Button>
+                <PrimaryAction>New invoice</PrimaryAction>
               </Link>
             ) : undefined
           }
@@ -119,12 +147,16 @@ export function InvoiceListPage() {
                   <th>Status</th>
                   <th>Total</th>
                   <th>Outstanding</th>
+                  <th>Created</th>
                   <th>Due</th>
                 </tr>
               </thead>
               <tbody>
-                {(invoices ?? []).map((invoice) => (
-                  <tr key={invoice.id}>
+                {sortedInvoices.map((invoice) => (
+                  <tr
+                    key={invoice.id}
+                    className={invoice.status === 'cancelled' ? 'ux-row-muted' : undefined}
+                  >
                     <td>
                       <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
                         {invoice.displayInvoiceNumber}
@@ -156,11 +188,20 @@ export function InvoiceListPage() {
                       {invoice.isOverdue ? (
                         <span className="finance-badge--overdue"> · Overdue</span>
                       ) : null}
+                      {invoiceSyncPending(invoice) ? (
+                        <>
+                          {' '}
+                          <StatusBadge label="Sync pending" tone="warning" />
+                        </>
+                      ) : null}
                     </td>
-                    <td className="tabular-nums">{formatMoney(invoice.totalCents ?? invoice.amountCents, invoice.currency)}</td>
+                    <td className="tabular-nums">
+                      {formatMoney(invoice.totalCents ?? invoice.amountCents, invoice.currency)}
+                    </td>
                     <td className="tabular-nums">
                       {formatMoney(invoice.outstandingCents, invoice.currency)}
                     </td>
+                    <td>{invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : '—'}</td>
                     <td>
                       {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
                     </td>

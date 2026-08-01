@@ -23,6 +23,7 @@ export function filterOwnerStaffNav(user: Pick<AuthUser, 'roleName' | 'permissio
 
   const seen = new Set<string>();
   return OWNER_STAFF_NAV_ITEMS.filter((item) => {
+    if (item.navHidden) return false;
     if (seen.has(item.href)) return false;
     if (experience === 'dispatcher' && !DISPATCHER_ALLOWED_HREFS.has(item.href)) return false;
     if (experience === 'accountant' && !ACCOUNTANT_ALLOWED_HREFS.has(item.href)) return false;
