@@ -8,6 +8,11 @@ export { StatusBadge, type StatusBadgeTone } from './StatusBadge';
 export { BulkActionBar, type BulkAction } from './BulkActionBar';
 export { EmptyState } from './EmptyState';
 export { activeSidebarClassName, ACTIVE_SIDEBAR_ITEM_CLASS } from './ActiveSidebarItem';
-export { SearchCommandPalette } from './SearchCommandPalette';
+export { HeaderSearchTrigger } from './HeaderSearchTrigger';
+export {
+  SearchCommandPalette,
+  SearchCommandPaletteShell,
+  useSearchCommandPaletteShortcut,
+} from './SearchCommandPalette';
 export { ApprovalActionCard } from './ApprovalActionCard';
 export { AgentActivityCard } from './AgentActivityCard';

@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
 import { AI_NAME } from '@titan/shared';
@@ -15,7 +15,11 @@ import { NavIcon } from '../components/NavIcon';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
 import { SessionStatusBanner } from '../components/SessionStatusBanner';
-import { SearchCommandPalette } from '../components/ux';
+import {
+  HeaderSearchTrigger,
+  SearchCommandPalette,
+  useSearchCommandPaletteShortcut,
+} from '../components/ux';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -35,6 +39,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   const { logoFileId, companyName: profileCompanyName } = useCompanyLocale();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  const openCommandPalette = useCallback(() => {
+    setCommandPaletteOpen(true);
+  }, []);
 
   useEffect(() => {
     setPendingHref(null);
@@ -46,6 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const groupedNavItems = useMemo(() => groupNavItems(navItems), [navItems]);
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
   const canSearch = user ? canAccessGlobalSearch(user.permissions) : false;
+  useSearchCommandPaletteShortcut(openCommandPalette, canSearch);
   const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
   const preloadContext = useStaffPreloadContext();
 
@@ -87,6 +97,11 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span className="brand-credit">Built by Young Guns Plumbing</span>
             </div>
           </div>
+          {canSearch ? (
+            <div className="app-header__search">
+              <HeaderSearchTrigger onClick={openCommandPalette} />
+            </div>
+          ) : null}
           <div className="app-header__user">
             {user ? (
               <>
@@ -117,11 +132,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </span>
                   </span>
                 </Link>
-                {canSearch ? (
-                  <Link href="/global-search" className="app-header__link">
-                    Search
-                  </Link>
-                ) : null}
                 {isTechnician ? (
                   <Link href="/mobile" className="app-header__link">
                     Field Mobile
@@ -201,7 +211,11 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       ) : null}
       <SessionStatusBanner state={sessionUxState} onDismiss={dismissSessionUxState} />
-      <SearchCommandPalette />
+      <SearchCommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        canAccessSearch={canSearch}
+      />
       {children}
     </AppShell>
   );
