@@ -353,24 +353,25 @@ async function captureFinancePages(token) {
         await page.screenshot({ path: file, fullPage: true });
         const bodyText = await page.locator('body').innerText();
         const onLogin = bodyText.includes('Sign in') && bodyText.includes('Password');
-        const hasHoldOnly =
-          route !== '/finance/receivables' &&
-          (bodyText.includes('coming-soon') || bodyText.includes('Phase 3C') || bodyText.includes('Phase 3D'));
+        const loadFailed = bodyText.includes('Unable to load this section');
         const hasReceivablesData =
           route === '/finance/receivables' &&
-          (bodyText.includes('Total outstanding') || bodyText.includes('Debtors'));
+          !loadFailed &&
+          (bodyText.includes('Aging') || bodyText.includes('Total outstanding'));
         screenshots.push({
           route,
           viewport: viewport.id,
           file: path.relative(repoRoot, file),
           onLogin,
+          loadFailed,
           pass:
             !onLogin &&
+            !loadFailed &&
             (route === '/finance/receivables'
               ? hasReceivablesData
               : route === '/finance/payables'
-                ? bodyText.includes('Bills') && bodyText.includes('ACCPAY')
-                : bodyText.includes('Cash received') && bodyText.includes('invoiced')),
+                ? bodyText.includes('Bills workspace') && bodyText.includes('ACCPAY')
+                : bodyText.includes('7-day forecast') && bodyText.includes('Net cash movement')),
         });
       }
       await context.close();
@@ -452,12 +453,12 @@ async function main() {
 
     report.checks.push({
       name: 'receivables_api',
-      pass: receivables.status === 200 && receivables.json?.data?.receivables,
+      pass: receivables.status === 200 && Boolean(receivables.json?.data?.receivables),
       detail: { status: receivables.status },
     });
     report.checks.push({
       name: 'cashflow_api',
-      pass: cashflow.status === 200 && cashflow.json?.data?.cashFlow,
+      pass: cashflow.status === 200 && Boolean(cashflow.json?.data?.cashFlow),
       detail: { status: cashflow.status },
     });
     report.checks.push({

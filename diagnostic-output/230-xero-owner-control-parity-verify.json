@@ -1,0 +1,287 @@
+{
+  "label": "230-xero-owner-control-parity-verify",
+  "phase": "3-partial",
+  "generatedAt": "2026-08-01T22:03:25.728Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "headSha": "e522d27f56efe3a5a0c425b945e855f4352a8a5f",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "verdict": "GO",
+  "checks": [
+    {
+      "name": "inv_0423_0424_preserved",
+      "pass": true,
+      "detail": {
+        "inv0423": {
+          "present": true,
+          "amountCents": 247250,
+          "totalCents": 247250,
+          "preserved": true
+        },
+        "inv0424": {
+          "present": true,
+          "amountCents": 226639,
+          "totalCents": 226639,
+          "preserved": true
+        },
+        "allPreserved": true
+      }
+    },
+    {
+      "name": "xero_connected",
+      "pass": true,
+      "detail": {
+        "status": "connected",
+        "lastSyncAt": "2026-08-01T20:58:41.455Z",
+        "lastError": null
+      }
+    },
+    {
+      "name": "receivables_api",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "cashflow_api",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "finance_stats_api",
+      "pass": true,
+      "detail": {
+        "status": 200
+      }
+    },
+    {
+      "name": "receivables_ui",
+      "pass": true,
+      "detail": [
+        {
+          "route": "/finance/receivables",
+          "viewport": "1440",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-receivables-1440.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        },
+        {
+          "route": "/finance/receivables",
+          "viewport": "768",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-receivables-768.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "cashflow_ui",
+      "pass": true,
+      "detail": [
+        {
+          "route": "/finance/cashflow",
+          "viewport": "1440",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-cashflow-1440.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        },
+        {
+          "route": "/finance/cashflow",
+          "viewport": "768",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-cashflow-768.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "payables_ui_partial",
+      "pass": true,
+      "detail": [
+        {
+          "route": "/finance/payables",
+          "viewport": "1440",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-payables-1440.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        },
+        {
+          "route": "/finance/payables",
+          "viewport": "768",
+          "file": "diagnostic-output/phase3-finance-staging/phase3--finance-payables-768.png",
+          "onLogin": false,
+          "loadFailed": false,
+          "pass": true
+        }
+      ]
+    },
+    {
+      "name": "outstanding_db_api_match",
+      "pass": true,
+      "detail": {
+        "dbOutstanding": 0,
+        "apiOutstanding": 0
+      }
+    }
+  ],
+  "db": {
+    "xeroConnection": {
+      "status": "connected",
+      "lastSyncAt": "2026-08-01T20:58:41.455Z",
+      "lastError": null
+    },
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "quote_mappings": 0
+    },
+    "entityCounts": {
+      "titan_customers": 678,
+      "titan_invoices": 5,
+      "titan_payments": 0,
+      "titan_quotes": 0,
+      "titan_purchase_orders": 0
+    },
+    "invoiceTotals": {
+      "open_count": 0,
+      "outstanding_cents": "0",
+      "overdue_count": 0
+    },
+    "anchorInvoices": [
+      {
+        "invoice_number": "INV-0423",
+        "amount_cents": 247250,
+        "total_cents": 247250,
+        "amount_paid_cents": 0,
+        "status": "draft",
+        "number_authority": "xero",
+        "xero_invoice_number": "INV-0423"
+      },
+      {
+        "invoice_number": "INV-0424",
+        "amount_cents": 226639,
+        "total_cents": 226639,
+        "amount_paid_cents": 0,
+        "status": "draft",
+        "number_authority": "xero",
+        "xero_invoice_number": "INV-0424"
+      }
+    ],
+    "syncLogEntityTypes": [
+      {
+        "entity_type": "customer",
+        "cnt": 4858
+      },
+      {
+        "entity_type": "invoice",
+        "cnt": 4630
+      },
+      {
+        "entity_type": "bank_transaction",
+        "cnt": 3078
+      }
+    ],
+    "customerValueClassifications": []
+  },
+  "api": {
+    "financeIntelligenceStats": {
+      "status": 200,
+      "ok": true
+    },
+    "receivables": {
+      "status": 200,
+      "overdueCount": 0,
+      "bucketCount": 4
+    },
+    "cashflow": {
+      "status": 200,
+      "inflowCents": 0,
+      "outstandingReceivableCents": 0
+    },
+    "financeStats": {
+      "status": 200,
+      "outstandingCents": 0
+    }
+  },
+  "anchorInvoices": {
+    "inv0423": {
+      "present": true,
+      "amountCents": 247250,
+      "totalCents": 247250,
+      "preserved": true
+    },
+    "inv0424": {
+      "present": true,
+      "amountCents": 226639,
+      "totalCents": 226639,
+      "preserved": true
+    },
+    "allPreserved": true
+  },
+  "screenshots": [
+    {
+      "route": "/finance/receivables",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-receivables-1440.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    },
+    {
+      "route": "/finance/payables",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-payables-1440.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    },
+    {
+      "route": "/finance/cashflow",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-cashflow-1440.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    },
+    {
+      "route": "/finance/receivables",
+      "viewport": "768",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-receivables-768.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    },
+    {
+      "route": "/finance/payables",
+      "viewport": "768",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-payables-768.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    },
+    {
+      "route": "/finance/cashflow",
+      "viewport": "768",
+      "file": "diagnostic-output/phase3-finance-staging/phase3--finance-cashflow-768.png",
+      "onLogin": false,
+      "loadFailed": false,
+      "pass": true
+    }
+  ],
+  "paritySummary": {
+    "receivables": "GO — API + UI from synced ACCREC",
+    "payables": "HOLD — ACCPAY bills not imported; PO commitments only",
+    "cashflow": "PARTIAL — cash vs invoiced separated; bank balance pending",
+    "xeroWrite": "NONE — read-only verification"
+  }
+}
