@@ -172,7 +172,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 6 remainder — job finance quick-actions, mobile job-scoped time, calendar execution labels |
 | **Result** | UX-017 finance strip with Create quote/invoice/payment links; UX-029 mobile time job picker + job #; scheduling calendar crew/vehicle labels from execution tables |
-| **Checkpoint** | `690752e` (UX-017 `d691e73`, UX-029 `04344dd`) |
+| **Checkpoint** | `04344dd` (UX-017 `d691e73`) |
 | **Files changed** | `JobFinanceStrip.tsx`, finance create prefill, `MobileTimePage.tsx`, `scheduling.service.ts`, `scheduling-execution-labels.ts`, control doc updates |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (235 pass), `pnpm build` — pass |
