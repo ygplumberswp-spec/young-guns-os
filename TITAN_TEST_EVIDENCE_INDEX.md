@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 012 Phase 8 business-day timeline local slice  
-**Automated test files:** 50 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 013 Phase 9 quote edit + BOQ workspace local slice  
+**Automated test files:** 52 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **242 pass** (Sprint 012) |
+| `pnpm test` | shared → auth → web → api (sequential) — **248 pass** (Sprint 013) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -105,7 +105,10 @@
 | File | Domain |
 |------|--------|
 | `packages/shared/src/business-day-timeline.test.ts` | Day range parsing, event merge/summary helpers |
+| `packages/shared/src/boq.test.ts` | BOQ CSV/TSV import parser + markup helper |
+| `packages/shared/src/quote-workflow.test.ts` | Quote approval workflow guards |
 | `apps/api/src/services/business-day-timeline.service.ts` | Office timeline aggregation (time entries + workflow events) |
+| `apps/api/src/services/boq.service.ts` | BOQ CRUD + convert-to-quote |
 
 ### Brand / UI
 

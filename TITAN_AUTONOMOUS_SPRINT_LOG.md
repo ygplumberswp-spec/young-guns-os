@@ -214,3 +214,19 @@
 | **Approval required?** | No — local only; staging E2E for FRZ-007 remainder deferred |
 | **Next phase selected** | Phase 9 quotes/BOQs (safe local) or FRZ-015 AURA provider gate (Owner credentials) |
 
+---
+
+## Sprint 013 — Phase 9 quotes, BOQ workspace (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 9 — Quotes, estimates, BOQs, tenders (local slice) |
+| **Result** | Quote edit page; internal approval workflow (draft→review→approved→issue); BOQ workspace API + UI; BOQ→quote conversion |
+| **Checkpoint** | `85c97d6` |
+| **Files changed** | `boq.ts` schema/service/routes, `QuoteEditPage.tsx`, `BoqListPage.tsx`, `BoqDetailPage.tsx`, `BoqCreatePage.tsx`, `finance.service.ts`, `quote-workflow.test.ts`, control docs |
+| **Migration** | `0105_boq_workspace.sql` (boq_documents, boq_line_items, quotes.boq_document_id, si_tenders.quote_id) |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**248** pass: 74 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
+| **Approval required?** | No — local only; migration apply on staging deferred |
+| **Next phase selected** | Phase 10 materials/procurement remainder or FRZ-015 AURA provider gate (Owner credentials) |
+
