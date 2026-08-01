@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildXeroImportSyncMessage,
 } from './xero-import-job.shared.js';
-import { resolveImportedInvoiceNumber } from './xero-sync.service.js';
+import { resolveImportedInvoiceNumber, buildSyncedInvoiceMappingLookup } from './xero-sync.service.js';
 import {
   XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_STALE_JOB_MS,
@@ -22,6 +22,57 @@ test('resolveImportedInvoiceNumber falls back to stable Xero id suffix', () => {
     resolveImportedInvoiceNumber(null, '11111111-2222-3333-4444-555555555555'),
     'XERO-11111111',
   );
+});
+
+test('buildSyncedInvoiceMappingLookup indexes synced rows by xero invoice id', () => {
+  const invoice = {
+    id: 'inv-1',
+    currency: 'ZAR',
+    amountPaidCents: 0,
+    amountCents: 10_000,
+    status: 'sent' as const,
+    invoiceNumber: 'INV-001',
+  };
+  const lookup = buildSyncedInvoiceMappingLookup([
+    {
+      id: 'map-1',
+      companyId: 'co-1',
+      integrationConnectionId: 'conn-1',
+      invoiceId: 'inv-1',
+      xeroInvoiceId: 'xero-a',
+      xeroInvoiceNumber: 'INV-001',
+      xeroReference: null,
+      syncStatus: 'synced',
+      lastSyncedAt: null,
+      lastSuccessfulSyncAt: null,
+      lastError: null,
+      conflictMetadata: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      invoice,
+    },
+    {
+      id: 'map-2',
+      companyId: 'co-1',
+      integrationConnectionId: 'conn-1',
+      invoiceId: 'inv-2',
+      xeroInvoiceId: null,
+      xeroInvoiceNumber: null,
+      xeroReference: null,
+      syncStatus: 'synced',
+      lastSyncedAt: null,
+      lastSuccessfulSyncAt: null,
+      lastError: null,
+      conflictMetadata: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      invoice: { ...invoice, id: 'inv-2' },
+    },
+  ]);
+
+  assert.equal(lookup.size, 1);
+  assert.equal(lookup.get('xero-a')?.invoiceId, 'inv-1');
+  assert.equal(lookup.has('xero-b'), false);
 });
 
 test('buildXeroImportSyncMessage reports success counts', () => {

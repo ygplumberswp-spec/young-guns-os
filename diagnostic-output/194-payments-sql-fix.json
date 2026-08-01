@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "xero-payments-sql-fix-v1",
+  "generatedAt": "2026-08-01T14:30:00.000Z",
+  "repository": "/Users/keanuventer/Downloads/Titan Aura V1",
+  "branch": "cursor/titan-frozen-scope-completion",
+  "productionTouched": false,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "priorFailure": {
+    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "failedStage": "payments",
+    "symptom": "Drizzle relational findMany with invoice relation generated LEFT JOIN LATERAL + json_build_array over full invoices row; query failed on staging during importPaymentBatch"
+  },
+  "rootCause": "importPaymentBatch and syncPayments used db.query.xeroInvoiceMappings.findMany({ with: { invoice: true } }), which emits a lateral join selecting every invoices column. Staging schema drift or Drizzle lateral JSON assembly caused the payments-stage lookup to fail before any payment rows were processed.",
+  "fix": {
+    "file": "apps/api/src/services/xero-sync.service.ts",
+    "change": "Replace relational lateral-join query with explicit innerJoin on xero_invoice_mappings + invoices, selecting only payment-sync fields (currency, amountPaidCents, amountCents, status, invoiceNumber). Shared via loadSyncedInvoiceMappingsForPayments and buildSyncedInvoiceMappingLookup.",
+    "test": "apps/api/src/services/xero-import-sync.test.ts — buildSyncedInvoiceMappingLookup indexes synced rows by xero invoice id"
+  },
+  "stagingSafety": {
+    "activeImportJob": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "doNotRestartFromZero": true,
+    "doNotInterruptBatches": true,
+    "mappingsPreserved": {
+      "customers": 673,
+      "invoices": 5,
+      "payments": 0
+    },
+    "note": "Code fix only; deploy allows active job to resume through payments without manual sync or DB mutation"
+  },
+  "verdict": "FIX_DEPLOY_READY"
+}

@@ -1362,17 +1362,8 @@ export class XeroSyncService {
 
   async syncPayments(companyId: string): Promise<XeroEntitySyncResult> {
     return this.runScopedSync(companyId, 'payments', async (ctx) => {
-      const invoiceMappings = await this.db.query.xeroInvoiceMappings.findMany({
-        where: and(
-          eq(xeroInvoiceMappings.companyId, companyId),
-          eq(xeroInvoiceMappings.syncStatus, 'synced'),
-        ),
-        with: { invoice: { with: { customer: true } } },
-      });
-
-      const mappingByXeroInvoiceId = new Map(
-        invoiceMappings.filter((row) => row.xeroInvoiceId).map((row) => [row.xeroInvoiceId!, row]),
-      );
+      const invoiceMappings = await this.loadSyncedInvoiceMappingsForPayments(companyId);
+      const mappingByXeroInvoiceId = buildSyncedInvoiceMappingLookup(invoiceMappings);
 
       const remotePayments = await ctx.client.listPayments();
 
@@ -2123,17 +2114,8 @@ export class XeroSyncService {
     remotePayments: Awaited<ReturnType<XeroClient['listPaymentsPage']>>,
     counts: XeroImportEntityCounts,
   ): Promise<void> {
-    const invoiceMappings = await this.db.query.xeroInvoiceMappings.findMany({
-      where: and(
-        eq(xeroInvoiceMappings.companyId, ctx.companyId),
-        eq(xeroInvoiceMappings.syncStatus, 'synced'),
-      ),
-      with: { invoice: true },
-    });
-
-    const mappingByXeroInvoiceId = new Map(
-      invoiceMappings.filter((row) => row.xeroInvoiceId).map((row) => [row.xeroInvoiceId!, row]),
-    );
+    const invoiceMappings = await this.loadSyncedInvoiceMappingsForPayments(ctx.companyId);
+    const mappingByXeroInvoiceId = buildSyncedInvoiceMappingLookup(invoiceMappings);
 
     for (const remotePayment of remotePayments) {
       if (!remotePayment.invoiceId) {
@@ -2407,6 +2389,37 @@ export class XeroSyncService {
       );
     }
   }
+
+  /** Explicit join avoids Drizzle relational lateral-join failures on payments stage. */
+  private async loadSyncedInvoiceMappingsForPayments(
+    companyId: string,
+  ): Promise<SyncedInvoiceMappingForPayment[]> {
+    const rows = await this.db
+      .select({
+        mapping: xeroInvoiceMappings,
+        invoice: {
+          id: invoices.id,
+          currency: invoices.currency,
+          amountPaidCents: invoices.amountPaidCents,
+          amountCents: invoices.amountCents,
+          status: invoices.status,
+          invoiceNumber: invoices.invoiceNumber,
+        },
+      })
+      .from(xeroInvoiceMappings)
+      .innerJoin(invoices, eq(xeroInvoiceMappings.invoiceId, invoices.id))
+      .where(
+        and(
+          eq(xeroInvoiceMappings.companyId, companyId),
+          eq(xeroInvoiceMappings.syncStatus, 'synced'),
+        ),
+      );
+
+    return rows.map(({ mapping, invoice }) => ({
+      ...mapping,
+      invoice,
+    }));
+  }
 }
 
 function emptySyncStatus(currency: string): XeroSyncStatusResponse {
@@ -2433,6 +2446,25 @@ function emptySyncStatus(currency: string): XeroSyncStatusResponse {
     customersWithOutstandingCount: 0,
     currency,
   };
+}
+
+export type SyncedInvoiceMappingForPayment = typeof xeroInvoiceMappings.$inferSelect & {
+  invoice: {
+    id: string;
+    currency: string;
+    amountPaidCents: number;
+    amountCents: number;
+    status: (typeof invoices.$inferSelect)['status'];
+    invoiceNumber: string;
+  };
+};
+
+export function buildSyncedInvoiceMappingLookup(
+  rows: SyncedInvoiceMappingForPayment[],
+): Map<string, SyncedInvoiceMappingForPayment> {
+  return new Map(
+    rows.filter((row) => row.xeroInvoiceId).map((row) => [row.xeroInvoiceId!, row]),
+  );
 }
 
 function mapError(error: unknown): string {
