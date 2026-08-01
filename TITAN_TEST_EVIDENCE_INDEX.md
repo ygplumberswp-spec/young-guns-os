@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 022: staging redeploy **GO** (Phase 5 10/10, 6 12/12, 8–12 18/18 public E2E)  
-**Automated test files:** 55 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 028: forbidden-action API matrix (FRZ-001 local automated)  
+**Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **427 pass** (Sprint 025) |
+| `pnpm test` | shared → auth → web → api (sequential) — **498 pass** (Sprint 028) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -46,6 +46,7 @@
 |------|--------|
 | `apps/api/src/lib/tenant-scope.test.ts` | Scope helpers |
 | `apps/api/src/lib/cross-tenant-denial-matrix.test.ts` | **Phase 2 denial matrix** — 7 roles × 11 domains + route wiring + param guard |
+| `apps/api/src/lib/role-forbidden-api-action.test.ts` | **Sprint 028 — forbidden-action API matrix (FRZ-001)** — 10 pilot actions × role denial/allow + route wiring |
 
 ### Lead / job / finance contracts
 
@@ -186,6 +187,7 @@
 | `apps/api/src/services/job-execution-completion-idempotency.test.ts` | Sprint 024 — gated completion clientActionId replay + snapshot duplicate guards |
 | `apps/api/src/routes/mobile-offline-completion.test.ts` | Sprint 024 — `/offline/flush` duplicate replay + `/complete-gated` idempotency API contract |
 | `apps/web/src/lib/role-forbidden-direct-url.test.ts` | Sprint 025 — OwnerStaffRoute + TechnicianRoute forbidden direct URL redirect contract |
+| `apps/api/src/lib/role-forbidden-api-action.test.ts` | Sprint 028 — forbidden-action API permission matrix (10 pilot actions) |
 
 ## Coverage gaps (Phase 2+ targets)
 

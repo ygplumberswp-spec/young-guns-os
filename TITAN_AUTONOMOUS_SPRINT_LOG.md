@@ -480,3 +480,20 @@
 | **Approval required?** | No |
 | **Next phase selected** | Continue safe local Master Directive phases; production still gated |
 
+---
+
+## Sprint 028 — Forbidden-action API matrix (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | RBAC — forbidden-action API permission matrix per pilot domain (Phase 2 extension) |
+| **Result** | `role-forbidden-api-action.ts` — pure pilot-action evaluator (permission + technician owner-module guard); `role-forbidden-api-action.test.ts` — 71 API checks (10 pilot actions × role denial/allow matrix, technician guard, dispatcher/accountant finance boundary, 6 route wiring assertions) |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `role-forbidden-api-action.ts`, `role-forbidden-api-action.test.ts`, `apps/api/package.json`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**498 pass**, +71 forbidden-action API matrix), `pnpm build` — pass |
+| **Staging** | Sprint 022 **GO** — no re-run (regression not requested) |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth; production still gated |
+

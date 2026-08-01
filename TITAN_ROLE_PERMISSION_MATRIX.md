@@ -56,7 +56,7 @@ For each feature marked complete, prove:
 - [ ] Error response uses standard envelope  
 - [ ] Audit event for sensitive mutations  
 
-**Status:** Matrix defined in code; **automated cross-role E2E incomplete** (Phase 2).
+**Status:** Matrix defined in code; **automated forbidden-action API matrix complete** (Sprint 028); cross-role live E2E incomplete.
 
 ---
 
@@ -79,5 +79,8 @@ For each feature marked complete, prove:
 | `packages/shared/src/role-experience-routes.test.ts` | Route prefix blocking |
 | `apps/web/src/lib/role-experience-nav-honesty.test.ts` | Nav visibility |
 | `apps/api/src/lib/tenant-scope.test.ts` | Tenant scope helpers |
+| `apps/api/src/lib/cross-tenant-denial-matrix.test.ts` | Cross-tenant scope + route wiring |
+| `apps/api/src/lib/role-forbidden-api-action.test.ts` | Forbidden-action API permission matrix (Sprint 028) |
+| `apps/web/src/lib/role-forbidden-direct-url.test.ts` | Forbidden direct URL redirect contract |
 
-Phase 2 will extend to forbidden-action API matrix per domain.
+Phase 2 forbidden-action API matrix per domain — **DONE (Sprint 028)**. Live cross-role browser E2E remains open.

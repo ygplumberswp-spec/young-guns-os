@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `2041cc6` (Sprint 020 UX-030) → Sprint 025 role-forbidden direct URL browser tests (post-commit)  
-**Updated (UTC):** 2026-08-01 — Sprint 025: role-forbidden direct URL browser tests (FRZ-002 local automated)  
+**Checkpoint:** `a161943` (Sprint 022 staging GO) → Sprint 028 forbidden-action API matrix (post-commit)  
+**Updated (UTC):** 2026-08-01 — Sprint 028: forbidden-action API matrix (FRZ-001 local automated)  
 
 ---
 
@@ -44,7 +44,7 @@
 
 | Req ID | Freeze § | Summary | Role | DB | API | UI | Permissions | Tenant isolation | Loading/error/retry | Audit | Automated tests | Staging evidence | Provider dep | Approval dep | Classification | Gap | Owner | Commit | Evidence |
 |--------|----------|---------|------|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-| FRZ-001 | §1–2 | Binding scope + definition of complete | All | Partial | Partial | Partial | Partial | Partial | Partial | Partial | **Partial → Phase 2 matrix** | Partial | — | — | Partially implemented | Automated denial matrix (97 tests) for jobs/CRM/leads/finance/inventory/scheduling/team/procurement/fleet; live staging cross-tenant probe still blocked (503/28P01) | Cursor | Sprint 021 | `cross-tenant-denial-matrix.test.ts` |
+| FRZ-001 | §1–2 | Binding scope + definition of complete | All | Partial | Partial | Partial | Partial | Partial | Partial | Partial | **Partial → Phase 2 matrix** | Partial | — | — | Partially implemented | Automated denial matrix (97 cross-tenant + 71 forbidden-action API tests) for jobs/CRM/leads/finance/inventory/scheduling/team/procurement/fleet; live staging cross-tenant probe **GO** (Sprint 022) | Cursor | Sprint 028 | `cross-tenant-denial-matrix.test.ts`, `role-forbidden-api-action.test.ts` |
 | FRZ-002 | §3 | One responsive app, role experiences | All | Yes | Yes | Yes | Yes | Yes | Partial | Partial | Yes | Mocks | — | — | Implemented, not staging-verified | `/my` alias + role guards need live re-proof | Cursor | 8d35bfd | `role-experience-routes.test.ts`, `role-forbidden-direct-url.test.ts` |
 | FRZ-003 | §4 | Locked visual identity (SVG wordmark, fonts, login) | All | N/A | N/A | Partial | N/A | N/A | Partial | N/A | Yes | Staging reports + Sprint 004 shell tests | — | — | Partially implemented | Brand foundation closed; responsive shell contract tests added Phase 3 | Cursor | UX reports | `TitanWordmark.test.ts`, `brand-shell.test.ts` |
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |
@@ -101,9 +101,10 @@
 9. **PLT-008 / MFA login gate** — **DONE (local automated)** — `mfa-login-gate.test.ts` + `login-mfa.test.ts`; staging login MFA click-path still blocked (503/28P01)  
 10. **Auth session expiry UX** — **DONE (local automated)** — `session-refresh.test.ts` + `session-expiry.test.ts`; staging click-path still blocked (503/28P01)  
 11. **OPS-013 / offline duplicate-completion** — **DONE (local automated)** — `mobile-offline-completion.test.ts` + `job-execution-completion-idempotency.test.ts` + route contract; staging click-path still blocked (503/28P01)  
-12. **FRZ-002 / role-forbidden direct URL** — **DONE (local automated)** — `role-forbidden-direct-url.test.ts` + `StaffExperienceRoute` redirect contract; staging click-path still blocked (503/28P01)  
-13. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-14. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+12. **FRZ-002 / role-forbidden direct URL** — **DONE (local automated)** — `role-forbidden-direct-url.test.ts` + `StaffExperienceRoute` redirect contract; staging click-path **GO** (Sprint 022)  
+13. **FRZ-001 / forbidden-action API matrix** — **DONE (local automated)** — `role-forbidden-api-action.test.ts` — 10 pilot actions × role denial/allow + route wiring; live staging probe **GO** (Sprint 022)  
+14. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+15. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 
