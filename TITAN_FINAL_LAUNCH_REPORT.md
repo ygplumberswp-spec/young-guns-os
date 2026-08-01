@@ -131,8 +131,8 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## L. Remaining backlog (launch-critical order)
 
-1. ~~Staging deploy + lead conversion proof~~ **Phase 5/6 verified** — Sprint 017 rerun GO; redeploy HEAD still blocked  
-2. **Migrations `0105`–`0106` on staging DB** — **BLOCKED** (`28P01` staging DB password)  
+1. **Public staging smokes (Phases 5–12)** — **NO-GO** (Railway API DB auth `28P01`); prior Sprint 017 GO superseded until redeploy  
+2. ~~Migrations `0105`–`0106` on staging DB~~ — **APPLIED** (journal **106**, Sprint 018); Railway API still **503/28P01** until service env updated  
 3. **Railway redeploy completion branch** — **BLOCKED** (no `RAILWAY_TOKEN`)  
 4. ~~Quote → invoice → payment chain local~~ **Phase 12 local done** — staging + live Xero proof open  
 5. AURA AI provider verified connection  
@@ -147,4 +147,4 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## M. Exact next action
 
-**Owner gates:** staging Supabase DB password + `RAILWAY_TOKEN` (or dashboard deploy) to apply 0105–0106 and redeploy HEAD. **Safe local work** may continue; pause at FRZ-015 AURA creds and FRZ-018 Xero OAuth.
+**Owner gates:** sync Railway staging `DATABASE_URL` to refreshed password + redeploy API/web (`RAILWAY_TOKEN` or dashboard); rerun public smokes. **Safe local work** may continue; pause at FRZ-015 AURA creds and FRZ-018 Xero OAuth.

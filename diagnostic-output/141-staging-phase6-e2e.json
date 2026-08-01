@@ -1,80 +1,20 @@
 {
   "label": "STAGING-P6",
   "phase": 6,
-  "startedAt": "2026-08-01T07:47:34.727Z",
+  "startedAt": "2026-08-01T08:25:09.972Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "forbiddenRefChecked": true,
   "productionRefTouched": false,
   "results": [
     {
       "name": "staging_api_ready",
-      "status": "PASS",
-      "detail": "database=connected"
-    },
-    {
-      "name": "owner_signup",
-      "status": "PASS",
-      "detail": "93a9dcba-79ef-4007-9204-8195062e2adc"
-    },
-    {
-      "name": "technician_role_lookup",
-      "status": "PASS",
-      "detail": "2655fb80-cc2b-4548-88bc-2b6596a7885c"
-    },
-    {
-      "name": "technician_provision",
-      "status": "PASS",
-      "detail": "393564ab-41b4-4e0c-8234-5f0730d047ce,07102bac-1803-41ac-a471-096c1489fb4e"
-    },
-    {
-      "name": "lead_create",
-      "status": "PASS",
-      "detail": "47d3ab6f-1b79-4ed2-93ca-bd89c799a1f8"
-    },
-    {
-      "name": "job_create",
-      "status": "PASS",
-      "detail": "JOB-000001"
-    },
-    {
-      "name": "job_schedule",
-      "status": "PASS",
-      "detail": "2026-08-03T07:48:04.307Z"
-    },
-    {
-      "name": "crew_assign",
-      "status": "PASS",
-      "detail": "2"
-    },
-    {
-      "name": "crew_readback",
-      "status": "PASS",
-      "detail": "2 members"
-    },
-    {
-      "name": "calendar_crew_label",
-      "status": "PASS",
-      "detail": "Tech Alpha"
-    },
-    {
-      "name": "calendar_site_contact_mobile",
-      "status": "PASS",
-      "detail": "+27825559876"
-    },
-    {
-      "name": "cross_tenant_crew_denied",
-      "status": "PASS",
-      "detail": "job=404, crew=200"
+      "status": "FAIL",
+      "detail": "{\"error\":{\"code\":\"DB_UNAVAILABLE\",\"message\":\"Database is not reachable\",\"detail\":{\"reason\":\"28P01\",\"host\":\"aws-0-eu-west-1.pooler.supabase.com\",\"port\":5432,\"sslmode\":null,\"isSupabaseDirect\":false,\"isSupabasePooler\":true}}}"
     }
   ],
   "totals": {
-    "passed": 12,
+    "passed": 0,
     "failed": 0
   },
-  "verdict": "GO",
-  "completedAt": "2026-08-01T07:48:17.514Z",
-  "job": {
-    "jobId": "fbc80694-9861-4caf-b5b0-af3340b1a753",
-    "jobNumber": "JOB-000001"
-  }
+  "verdict": "NO-GO"
 }

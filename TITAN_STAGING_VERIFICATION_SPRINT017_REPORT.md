@@ -154,3 +154,7 @@ Evidence: `diagnostic-output/156-staging-verification-summary.json`
 | `diagnostic-output/141-staging-phase6-e2e.json` | Phase 6 rerun |
 | `diagnostic-output/142-staging-phase8-12-e2e.json` | Phase 8–12 smoke |
 | `packages/db/scripts/staging-phase8-12-public-e2e.mjs` | New smoke runner |
+
+---
+
+**Superseded for migrations / backup (Sprint 018):** See `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` — local staging creds fixed; journal **106**; public Railway health still **503/28P01**.

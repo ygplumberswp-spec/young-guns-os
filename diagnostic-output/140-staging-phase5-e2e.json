@@ -1,72 +1,20 @@
 {
   "label": "STAGING-P5",
   "phase": 5,
-  "startedAt": "2026-08-01T07:47:34.525Z",
+  "startedAt": "2026-08-01T08:25:09.970Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "forbiddenRefChecked": true,
   "productionRefTouched": false,
   "results": [
     {
       "name": "staging_api_ready",
-      "status": "PASS",
-      "detail": "database=connected"
-    },
-    {
-      "name": "owner_signup",
-      "status": "PASS",
-      "detail": "31c64b3a-0fca-4226-807c-39048d75ee0e"
-    },
-    {
-      "name": "lead_create",
-      "status": "PASS",
-      "detail": "0cbd3b25-7f0e-4626-8083-2ad45ebe9b94"
-    },
-    {
-      "name": "lead_convert_chain",
-      "status": "PASS",
-      "detail": "JOB-000001"
-    },
-    {
-      "name": "customer_readable",
-      "status": "PASS",
-      "detail": "Keanu Staging Test"
-    },
-    {
-      "name": "property_address_no_placeholder",
-      "status": "PASS",
-      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
-    },
-    {
-      "name": "job_snapshot_no_placeholder",
-      "status": "PASS",
-      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
-    },
-    {
-      "name": "site_contact_mobile_e164",
-      "status": "PASS",
-      "detail": "+27825551234"
-    },
-    {
-      "name": "convert_idempotent",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "name": "cross_tenant_job_denied",
-      "status": "PASS",
-      "detail": "404"
+      "status": "FAIL",
+      "detail": "{\"error\":{\"code\":\"DB_UNAVAILABLE\",\"message\":\"Database is not reachable\",\"detail\":{\"reason\":\"28P01\",\"host\":\"aws-0-eu-west-1.pooler.supabase.com\",\"port\":5432,\"sslmode\":null,\"isSupabaseDirect\":false,\"isSupabasePooler\":true}}}"
     }
   ],
   "totals": {
-    "passed": 10,
+    "passed": 0,
     "failed": 0
   },
-  "verdict": "GO",
-  "completedAt": "2026-08-01T07:48:05.974Z",
-  "conversion": {
-    "customerId": "4886a855-e0be-420a-8b7b-38d1630c6df1",
-    "propertyId": "2dde18f6-81fb-4794-99ce-82281e07569b",
-    "jobId": "715d0287-166a-43cd-9443-807afd525942",
-    "jobNumber": "JOB-000001"
-  }
+  "verdict": "NO-GO"
 }

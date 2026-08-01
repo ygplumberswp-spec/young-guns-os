@@ -294,3 +294,18 @@
 | **Approval required?** | Staging DB password + Railway token (Owner); production untouched |
 | **Next phase selected** | Pause at staging credential gates; safe local work continues; FRZ-015 / FRZ-018 Owner gates |
 
+---
+
+## Sprint 018 — Staging ops (backup, 0105–0106 apply, smokes)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Staging-only — pg_dump backup, journal 0105–0106, redeploy attempt, public smokes |
+| **Result** | Backup **PASS**; journal **104→106** via controlled apply; `migrate-staging-safe.mjs` drizzle-kit no-op (exit 4 post-check); Railway redeploy **BLOCKED** (no token); public health **503/28P01**; Phase 5/6/8–12 smokes **NO-GO** (DB on Railway) |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | Sprint 018 report, diagnostic JSON/txt, control docs |
+| **Migration** | `0105_boq_workspace`, `0106_job_document_packs` — **APPLIED on staging DB** |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**105** pass), `pnpm build` — pass |
+| **Approval required?** | Railway `DATABASE_URL` sync + `RAILWAY_TOKEN` or dashboard redeploy |
+| **Next phase selected** | Owner updates Railway staging env; rerun public smokes; optional drizzle-kit migrator investigation |

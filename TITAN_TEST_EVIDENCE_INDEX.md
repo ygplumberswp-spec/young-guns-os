@@ -153,6 +153,13 @@
 
 ---
 
+| `diagnostic-output/staging-pg-dump-2026-08-01T08-20-02.dump` | **Staging logical backup** (~3.4 MB, local only — not in Git) |
+| `diagnostic-output/157-staging-backup-journal-before.json` | Sprint 018 pre-migrate journal (104) + backup meta |
+| `diagnostic-output/159-staging-apply-0105-0106.json` | Controlled staging apply 0105–0106 — journal **106** |
+| `diagnostic-output/160-staging-health-ready.json` | Public health ready — **503 DB_UNAVAILABLE** |
+| `diagnostic-output/164-staging-verification-summary.json` | Sprint 018 structured summary |
+| `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | Sprint 018 full staging verification report |
+
 ## Coverage gaps (Phase 2+ targets)
 
 - Cross-tenant API denial matrix (automated)  

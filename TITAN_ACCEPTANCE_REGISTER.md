@@ -4,7 +4,7 @@
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Checkpoint:** `767b947` (Sprint 017 staging verification)  
-**Updated (UTC):** 2026-08-01 — Sprint 017 staging verification (Phases 5–12 smoke; migrations 0105–0106 blocked)  
+**Updated (UTC):** 2026-08-01 — Sprint 018: migrations 0105–0106 on staging DB (journal 106); public API smokes blocked (Railway DB 28P01)  
 
 ---
 
@@ -52,10 +52,10 @@
 | FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | **Staging Phase 6 E2E 12/12** + UX-B 35/35 | Cartrack optional | — | **Verified complete (staging)** | Crew assign + calendar labels + cross-tenant job denial on Railway staging | Cursor | Sprint 011 | `diagnostic-output/141-staging-phase6-e2e.json` |
 | FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | **Blocked staging** — route 404 on deployed API | — | Deploy | Partially implemented | Local slice done; staging smoke blocked until Railway redeploy HEAD | Cursor | Sprint 012/017 | `142-staging-phase8-12-e2e.json` |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
-| FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Blocked staging** — `/api/v1/boq` 404 + migration 0105 | — | Deploy + DB creds | Partially implemented | BOQ local foundation done; staging apply blocked | Cursor | Sprint 013/017 | `boq.test.ts`, `156-staging-verification-summary.json` |
+| FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Blocked staging** — Railway DB `28P01`; BOQ routes need redeploy after env fix | — | Deploy + DB creds | Partially implemented | BOQ local foundation done; staging DB migrated; Railway env/redeploy blocked | Cursor | Sprint 013/017 | `boq.test.ts`, `156-staging-verification-summary.json` |
 | FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV + job completion/billing panel local (Sprint 016); live Xero # authority + entity sync require OAuth | Cursor | Sprint 016 | `job-finance-workflow.test.ts`, `JobCompletionFinancePanel.tsx`, `XeroSyncPanel.tsx` |
 | FRZ-011 | §12 | Materials, PO, job costing chain | Owner/Procurement | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Partial staging** — stock levels pass; movements 404 | Xero bills | Deploy | Partially implemented | Job costing local; staging movements route undeployed | Cursor | Sprint 014/017 | `142-staging-phase8-12-e2e.json` |
-| FRZ-012 | §13 | Documents, OCR, reports, COC, job packs | All roles | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Blocked staging** — packs route 404 + migration 0106 | AI provider | Deploy + DB creds | Partially implemented | Job pack local foundation; staging blocked | Cursor | Sprint 015/017 | `job-document-pack.test.ts`, `156-staging-verification-summary.json` |
+| FRZ-012 | §13 | Documents, OCR, reports, COC, job packs | All roles | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Blocked staging** — Railway DB `28P01`; pack routes need redeploy after env fix | AI provider | Deploy + DB creds | Partially implemented | Job pack local foundation; staging blocked | Cursor | Sprint 015/017 | `job-document-pack.test.ts`, `156-staging-verification-summary.json` |
 | FRZ-013 | §14 | Workforce/HR/labour-law AURA team | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | HR legal | Partially implemented | Draft-only discipline; no auto-dismiss | Cursor | — | HR modules |
 | FRZ-014 | §15 | Xero data quality + marketing consent | Owner/Marketing | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-H staging | Xero | Send approval | Partially implemented | Classifier closed; live send blocked | Cursor | UX-H | `marketing-eligibility.test.ts` |
 | FRZ-015 | §16 | AURA specialist departments + orchestration | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | Mocks | **AI provider** | — | Blocked by credential/provider | AURA chat needs verified provider connection | Owner | — | AI-001, AI-006 |
@@ -97,7 +97,7 @@
 5. ~~**FRZ-011 / Phase 10 (local slice)** — Job costing summary API + panel; stock movement ledger route + UI **DONE**; supplier OCR/Xero bill match remain~~ **DONE (local)** — Sprint 014  
 6. ~~**FRZ-012 / Phase 11 (local slice)** — Job document pack approval workflow + portal share + COC compliance panel **DONE**; supplier OCR + Reports & Compliance Agent remain~~ **DONE (local)** — Sprint 015  
 7. ~~**FRZ-010 / Phase 12 (local slice)** — Job completion/billing chain panel + invoice-from-job + payment prefill + Xero sync UI stubs **DONE**; live Xero OAuth/sync remain~~ **DONE (local)** — Sprint 016  
-8. **Staging migrations 0105–0106 + Railway redeploy** — **BLOCKED** (DB password `28P01`, no `RAILWAY_TOKEN`) — Sprint 017  
+8. **Staging migrations 0105–0106** — **DONE** (journal 106, Sprint 018); **Railway redeploy + public smokes** — **BLOCKED** (Railway API `28P01`, no `RAILWAY_TOKEN`)  
 9. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 10. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
