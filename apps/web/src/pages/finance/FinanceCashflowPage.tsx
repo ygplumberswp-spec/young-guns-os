@@ -29,6 +29,7 @@ export function FinanceCashflowPage() {
 
   const currency = cashFlow?.currency ?? 'ZAR';
   const fmt = (cents: number) => formatMoney(cents, currency);
+  const holdValue = '—';
 
   return (
     <div className="finance-page owner-page-content">
@@ -46,19 +47,20 @@ export function FinanceCashflowPage() {
         {cashFlow ? (
           <>
             <SummaryCardGrid columns={4} className="finance-receivables-summary">
-              <StatCard label="Cash received (MTD)" value={fmt(cashFlow.inflowCents)} hint="Payments recorded this month" />
-              <StatCard label="Money spent (commitments)" value={fmt(cashFlow.outflowCents)} hint="Open purchase orders — not Xero ACCPAY bills" />
-              <StatCard label="Receivables outstanding" value={fmt(cashFlow.outstandingReceivableCents)} hint="Invoiced but not yet collected" />
-              <StatCard label="Payables outstanding" value={fmt(cashFlow.outstandingPayableCents)} hint="Procurement PO commitments" />
-            </SummaryCardGrid>
-
-            <SummaryCardGrid columns={4} className="finance-receivables-summary">
-              <StatCard label="7-day forecast" value={fmt(cashFlow.weeklyForecastCents)} hint="Estimated net position" />
-              <StatCard label="30-day forecast" value={fmt(cashFlow.monthlyForecastCents)} hint="Estimated net position" />
               <StatCard
-                label="Bank balance"
-                value="—"
-                hint="Bank balance requires authorised Xero bank feed — Phase 3D completion"
+                label="Invoiced revenue (MTD)"
+                value={fmt(cashFlow.invoicedRevenueCents)}
+                hint="ACCREC invoice totals this month — not cash received"
+              />
+              <StatCard
+                label="Cash received (MTD)"
+                value={fmt(cashFlow.inflowCents)}
+                hint="Payments recorded this month"
+              />
+              <StatCard
+                label="Money spent (commitments)"
+                value={fmt(cashFlow.outflowCents)}
+                hint="Open purchase orders — not Xero ACCPAY bills"
               />
               <StatCard
                 label="Net cash movement"
@@ -67,10 +69,45 @@ export function FinanceCashflowPage() {
               />
             </SummaryCardGrid>
 
+            <SummaryCardGrid columns={4} className="finance-receivables-summary">
+              <StatCard
+                label="Receivables outstanding"
+                value={fmt(cashFlow.outstandingReceivableCents)}
+                hint="Invoiced but not yet collected"
+              />
+              <StatCard
+                label="Payables outstanding"
+                value={fmt(cashFlow.outstandingPayableCents)}
+                hint="Procurement PO commitments — ACCPAY bills not imported"
+              />
+              <StatCard label="7-day forecast" value={fmt(cashFlow.weeklyForecastCents)} hint="Estimated net position" />
+              <StatCard label="30-day forecast" value={fmt(cashFlow.monthlyForecastCents)} hint="Estimated net position" />
+            </SummaryCardGrid>
+
+            <SummaryCardGrid columns={4} className="finance-receivables-summary">
+              <StatCard
+                label="Bank balance"
+                value={cashFlow.bankBalanceAvailable && cashFlow.bankBalanceCents != null ? fmt(cashFlow.bankBalanceCents) : holdValue}
+                hint="Requires authorised Xero bank feed — not surfaced yet"
+              />
+              <StatCard label="Payroll commitments" value={holdValue} hint="HR Phase 12 — not available" />
+              <StatCard label="VAT/tax estimate" value={holdValue} hint="Requires tax rate parity" />
+              <StatCard
+                label="Monthly/overhead target"
+                value={cashFlow.activeBudgetTargetCents != null ? fmt(cashFlow.activeBudgetTargetCents) : holdValue}
+                hint={cashFlow.activeBudgetTargetCents != null ? 'Active finance budgets' : 'No active budgets configured'}
+              />
+            </SummaryCardGrid>
+
             <Panel title="Cashflow summary" className="owner-page-content__section">
               <p className="finance-cashflow-summary">{cashFlow.summary}</p>
               {cashFlow.cashShortageWarning ? (
                 <p className="finance-cashflow-warning">Shortage warning — review receivables and payables.</p>
+              ) : null}
+              {cashFlow.bankTransactionSyncCount > 0 ? (
+                <p className="finance-source-note">
+                  {cashFlow.bankTransactionSyncCount} Xero bank transaction(s) mirrored in sync logs (read-only).
+                </p>
               ) : null}
               <div className="finance-cashflow-links">
                 <Link href="/finance/receivables">Receivables</Link>
@@ -80,12 +117,12 @@ export function FinanceCashflowPage() {
               </div>
             </Panel>
 
-            <Panel title="Phase 3D — remaining items" className="owner-page-content__section">
+            <Panel title="Phase 3D — items on HOLD" className="owner-page-content__section">
               <ul className="finance-hold-list">
+                <li>Bank balance — Xero bank account balance not authorised in UI</li>
+                <li>Supplier bills (Xero ACCPAY) — dedicated import route requires Owner approval</li>
                 <li>Payroll commitments — HR Phase 12</li>
-                <li>Supplier bills (Xero ACCPAY) — dedicated import route required</li>
                 <li>VAT/tax estimate — requires tax rate parity</li>
-                <li>Monthly/overhead targets — Finance Intelligence budgets</li>
               </ul>
             </Panel>
 

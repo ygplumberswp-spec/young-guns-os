@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, lte } from 'drizzle-orm';
 import type {
   CashFlowIntelligence,
   CreateFinanceBudgetLineRequest,
@@ -14,6 +14,7 @@ import type {
   FinanceRecommendationSummary,
   FinanceRiskSignal,
   GenerateFinanceForecastRequest,
+  PayablesIntelligence,
   ProfitabilityIntelligence,
   ReceivablesIntelligence,
   UpdateFinanceBudgetRequest,
@@ -26,6 +27,7 @@ import {
   financeForecastSnapshots,
   financeRecommendations,
   payments,
+  xeroSyncLogs,
 } from '@titan/db';
 import type { AnalyticsService } from './analytics.service.js';
 import type { FinanceService } from './finance.service.js';
@@ -68,7 +70,7 @@ export class FinanceIntelligenceService {
   }
 
   async getCashFlowIntelligence(companyId: string): Promise<CashFlowIntelligence> {
-    const [monthlyFinance, weeklyFinance, invoiceRows, paymentRows, purchaseOrderRows, stats] =
+    const [monthlyFinance, weeklyFinance, invoiceRows, paymentRows, purchaseOrderRows, stats, budgets, bankTxRow] =
       await Promise.all([
         this.deps.analyticsService.getFinanceAnalytics(companyId, { period: 'monthly' }),
         this.deps.analyticsService.getFinanceAnalytics(companyId, { period: 'weekly' }),
@@ -76,6 +78,17 @@ export class FinanceIntelligenceService {
         this.deps.financeService.listPayments(companyId),
         this.deps.procurementService.listPurchaseOrders(companyId),
         this.deps.financeService.getStats(companyId),
+        this.listBudgets(companyId),
+        this.deps.db
+          .select({ count: count() })
+          .from(xeroSyncLogs)
+          .where(
+            and(
+              eq(xeroSyncLogs.companyId, companyId),
+              eq(xeroSyncLogs.entityType, 'bank_transaction'),
+              eq(xeroSyncLogs.status, 'success'),
+            ),
+          ),
       ]);
 
     const outstandingReceivableCents = monthlyFinance.cashFlow.outstandingCents;
@@ -84,8 +97,15 @@ export class FinanceIntelligenceService {
       .reduce((sum, row) => sum + row.totalCostCents, 0);
 
     const inflowCents = monthlyFinance.cashFlow.inflowCents;
+    const invoicedRevenueCents = monthlyFinance.cashFlow.invoicedCents;
     const outflowCents = outstandingPayableCents;
     const currentPositionCents = inflowCents - outstandingReceivableCents;
+    const bankTransactionSyncCount = Number(bankTxRow[0]?.count ?? 0);
+    const activeBudgets = budgets.filter((row) => row.status === 'active');
+    const activeBudgetTargetCents =
+      activeBudgets.length > 0
+        ? activeBudgets.reduce((sum, row) => sum + row.totalBudgetedCents, 0)
+        : null;
 
     const now = new Date();
     const weekAhead = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -120,13 +140,62 @@ export class FinanceIntelligenceService {
       currency: stats.currency,
       currentPositionCents,
       inflowCents,
+      invoicedRevenueCents,
       outflowCents,
       outstandingReceivableCents,
       outstandingPayableCents,
       weeklyForecastCents,
       monthlyForecastCents,
       cashShortageWarning,
-      summary: `Cash inflow ${(inflowCents / 100).toFixed(2)} ${stats.currency}, receivables ${(outstandingReceivableCents / 100).toFixed(2)}, payables ${(outstandingPayableCents / 100).toFixed(2)}${cashShortageWarning ? ' — shortage warning' : ''}.`,
+      bankBalanceCents: null,
+      bankBalanceAvailable: false,
+      bankTransactionSyncCount,
+      activeBudgetTargetCents,
+      payrollCommitmentsAvailable: false,
+      vatEstimateAvailable: false,
+      summary: `Cash received ${(inflowCents / 100).toFixed(2)} ${stats.currency}, invoiced ${(invoicedRevenueCents / 100).toFixed(2)}, receivables ${(outstandingReceivableCents / 100).toFixed(2)}, payables ${(outstandingPayableCents / 100).toFixed(2)}${cashShortageWarning ? ' — shortage warning' : ''}.`,
+    };
+  }
+
+  async getPayablesIntelligence(companyId: string): Promise<PayablesIntelligence> {
+    const [purchaseOrderRows, stats, bankTxRow] = await Promise.all([
+      this.deps.procurementService.listPurchaseOrders(companyId),
+      this.deps.financeService.getStats(companyId),
+      this.deps.db
+        .select({ count: count() })
+        .from(xeroSyncLogs)
+        .where(
+          and(
+            eq(xeroSyncLogs.companyId, companyId),
+            eq(xeroSyncLogs.entityType, 'bank_transaction'),
+            eq(xeroSyncLogs.status, 'success'),
+          ),
+        ),
+    ]);
+
+    const openOrders = purchaseOrderRows.filter((row) =>
+      ['approved', 'ordered', 'received'].includes(row.status),
+    );
+    const poCashRequirementCents = openOrders.reduce((sum, row) => sum + row.totalCostCents, 0);
+    const unapprovedPurchaseCount = purchaseOrderRows.filter((row) => row.status === 'draft').length;
+    const unmatchedBankTransactionCount = Number(bankTxRow[0]?.count ?? 0);
+
+    const accpayAvailable = false;
+    const summary = accpayAvailable
+      ? `Supplier bills outstanding from Xero ACCPAY.`
+      : `Xero ACCPAY bills not imported — PO cash requirement ${(poCashRequirementCents / 100).toFixed(2)} ${stats.currency}${unmatchedBankTransactionCount > 0 ? `, ${unmatchedBankTransactionCount} bank transaction(s) in sync logs awaiting reconciliation` : ''}.`;
+
+    return {
+      currency: stats.currency,
+      accpayAvailable,
+      supplierBillsOutstandingCents: null,
+      overdueBillsCents: null,
+      dueIn7DaysCents: null,
+      dueIn30DaysCents: null,
+      poCashRequirementCents,
+      unapprovedPurchaseCount,
+      unmatchedBankTransactionCount,
+      summary,
     };
   }
 

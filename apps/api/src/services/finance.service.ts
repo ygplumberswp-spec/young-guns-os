@@ -878,9 +878,23 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
   };
 }
 
+type XeroInvoiceMappingSummary = Pick<
+  typeof xeroInvoiceMappings.$inferSelect,
+  | 'id'
+  | 'companyId'
+  | 'invoiceId'
+  | 'xeroInvoiceId'
+  | 'xeroInvoiceNumber'
+  | 'xeroReference'
+  | 'syncStatus'
+  | 'lastSyncedAt'
+  | 'lastSuccessfulSyncAt'
+  | 'lastError'
+>;
+
 function toInvoiceSummary(
   row: InvoiceWithRelations & Record<string, any>,
-  mapping?: typeof xeroInvoiceMappings.$inferSelect,
+  mapping?: XeroInvoiceMappingSummary,
 ): InvoiceSummary {
   const xeroSyncStatus = mapping?.syncStatus ?? null;
   const xeroInvoiceNumber =

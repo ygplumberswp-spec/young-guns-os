@@ -1,8 +1,8 @@
 # TITAN Owner Daily Operating Model Report
 
-**Phase:** 3 — Finance, Xero parity and daily money control (partial)  
+**Phase:** 3 — Finance, Xero parity and daily money control (full)  
 **Branch:** `cursor/titan-owner-operating-model-final`  
-**Generated (UTC):** 2026-08-01T22:05:00.000Z  
+**Generated (UTC):** 2026-08-01T22:30:00.000Z  
 **Production touched:** NO  
 
 ---
@@ -13,18 +13,20 @@
 
 1. **Dashboard → Money Today** (Phase 2) — overdue, outstanding, deposits, partial payments from real records.
 2. **Finance → Receivables** (Phase 3B) — outstanding, aging buckets, debtors table, collection priorities.
-3. **Finance → Cashflow** (Phase 3D partial) — cash received vs committed outflows; invoiced revenue linked separately.
-4. **Finance → Invoices / Payments** — source records for drill-down.
+3. **Finance → Cashflow** (Phase 3D) — invoiced revenue vs cash received on separate cards; 7/30-day forecasts; net cash movement.
+4. **Finance → Bills & Payables** (Phase 3C) — honest HOLD for ACCPAY; PO commitments and bank tx sync count where available.
+5. **Finance → Invoices / Payments** — source records for drill-down.
 
 ### What is explicitly separated
 
 | Metric | Meaning | Where |
 |--------|---------|-------|
-| Invoiced revenue | ACCREC invoice totals | Invoices list |
-| Cash received | Payment records | Payments list |
-| Outstanding receivables | Unpaid invoice balances | Receivables |
-| Payables | Supplier bills | HOLD — PO commitments only |
-| Bank balance | Xero bank feed | HOLD — not authorised in UI yet |
+| Invoiced revenue | ACCREC invoice totals (MTD) | Cashflow card + Invoices list |
+| Cash received | Payment records (MTD) | Cashflow card + Payments list |
+| Outstanding receivables | Unpaid invoice balances | Receivables + Cashflow |
+| Payables | Supplier bills (ACCPAY) | **HOLD** — PO commitments only |
+| Bank balance | Xero bank feed | **HOLD** — not authorised in UI |
+| Bank transactions | Sync log mirror count | Payables + Cashflow notes |
 
 Never mix invoiced revenue with cash received on the same card without labelling.
 
@@ -46,7 +48,8 @@ Never mix invoiced revenue with cash received on the same card without labelling
 
 - Read-only verification only in Phase 3 — no Xero writes, no manual sync as normal workflow.
 - INV-0423 and INV-0424 amounts preserved at header level.
-- Customer Value UI refresh from prior consolidation (`44b2b4d` / cache invalidation hook) — bd6da8b not cherry-picked (already equivalent).
+- Bank transactions: 3078+ sync logs on staging (read-only mirror, not reconciled UI).
+- ACCPAY bills: not imported — Owner approval required before import route.
 
 ---
 
@@ -55,22 +58,23 @@ Never mix invoiced revenue with cash received on the same card without labelling
 | Artifact | Verdict |
 |----------|---------|
 | `230-xero-owner-control-parity-verify.json` | **GO** |
-| Screenshots `diagnostic-output/phase3-finance-staging/` | Receivables, Payables partial, Cashflow |
+| Screenshots `diagnostic-output/phase3-finance-staging/` | Receivables, Payables, Cashflow |
 | Xero connected + anchor invoices | PASS |
+| Payables API `/finance-intelligence/payables` | PASS |
 
 ---
 
-## HOLD items (full Phase 3 completion)
+## HOLD items (Owner approval required)
 
-| Item | Phase |
-|------|-------|
-| Xero ACCPAY bills import + payables table | 3C |
-| Bank balance in cashflow | 3D |
-| Payment mappings / allocation parity | Phase 5 |
-| Promise-to-pay workflow | Phase 5 |
-| Unallocated payments tracking | Phase 5 |
-| Payroll / VAT estimates in cashflow | Phase 12 / tax parity |
-| Full contact→customer classification at scale | Ongoing import |
+| Item | Phase | Blocker |
+|------|-------|---------|
+| Xero ACCPAY bills import + payables table | 3C | Migration + import route (`supplier_bill` stub) |
+| Bank balance in cashflow | 3D | Bank account balance not in sync log model |
+| Payment mappings / allocation parity | Phase 5 | 0 payment_mappings on staging |
+| Promise-to-pay workflow | Phase 5 | Not implemented |
+| Unallocated payments tracking | Phase 5 | Not implemented |
+| Payroll / VAT estimates in cashflow | Phase 12 / tax | Not wired |
+| Full contact→customer classification at scale | Ongoing | 678 customers vs 4858 sync logs |
 
 ---
 
@@ -78,8 +82,9 @@ Never mix invoiced revenue with cash received on the same card without labelling
 
 1. Open **Dashboard** — action queue for overdue invoices, unassigned jobs, approvals.
 2. Open **Receivables** — confirm who owes money and aging.
-3. Open **Cashflow** — confirm cash vs invoiced separation and 7/30-day forecast signals.
-4. Drill into **Invoices** or **Customers** for follow-up — no fake zeroes when data unavailable.
+3. Open **Cashflow** — compare invoiced revenue (MTD) vs cash received (MTD); review 7/30-day forecast.
+4. Open **Payables** — review PO commitments; note ACCPAY HOLD until import approved.
+5. Drill into **Invoices** or **Customers** for follow-up — no fake zeroes when data unavailable.
 
 ---
 

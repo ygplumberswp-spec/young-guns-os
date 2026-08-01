@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'wouter';
 import { EmptyState, PageLoadState, Panel, StatCard } from '@titan/ui';
 import { formatMoney } from '@titan/shared';
-import { fetchCashFlowIntelligence } from '../../lib/finance-intelligence-api';
+import { fetchPayablesIntelligence } from '../../lib/finance-intelligence-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
@@ -13,10 +13,10 @@ export function FinancePayablesPage() {
   const { accessToken, user } = useAuth();
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
 
-  const { data: cashFlow, error, isLoading } = useStaffCachedQuery({
+  const { data: payables, error, isLoading } = useStaffCachedQuery({
     queryKey: 'finance/payables-workspace',
     enabled: canView,
-    fetcher: async () => fetchCashFlowIntelligence(accessToken!),
+    fetcher: async () => fetchPayablesIntelligence(accessToken!),
   });
 
   if (!canView) {
@@ -27,52 +27,85 @@ export function FinancePayablesPage() {
     );
   }
 
-  const currency = cashFlow?.currency ?? 'ZAR';
+  const currency = payables?.currency ?? 'ZAR';
   const fmt = (cents: number) => formatMoney(cents, currency);
-  const hasPoCommitments = (cashFlow?.outstandingPayableCents ?? 0) > 0;
+  const hasPoCommitments = (payables?.poCashRequirementCents ?? 0) > 0;
+  const holdValue = '—';
 
   return (
     <div className="finance-page owner-page-content">
       <FinanceNav />
       <PageHeader
         title="Bills & Payables"
-        description="Supplier bills and payables — Xero ACCPAY import is not yet wired; procurement commitments shown where available."
+        description="Supplier bills and payables — Xero ACCPAY import requires Owner approval; procurement commitments shown where available."
         breadcrumbs={[
           { label: 'Finance', href: '/finance/quotes' },
           { label: 'Bills & Payables', href: '/finance/payables' },
         ]}
       />
 
-      <PageLoadState isLoading={isLoading && !cashFlow} error={error ?? null} loadingLabel="Loading payables…">
-        {cashFlow ? (
+      <PageLoadState isLoading={isLoading && !payables} error={error ?? null} loadingLabel="Loading payables…">
+        {payables ? (
           <>
             <SummaryCardGrid columns={4} className="finance-receivables-summary">
               <StatCard
                 label="Supplier bills outstanding"
-                value="—"
+                value={payables.accpayAvailable ? fmt(payables.supplierBillsOutstandingCents ?? 0) : holdValue}
                 hint="Xero ACCPAY bills — import route not yet live"
               />
-              <StatCard label="Overdue bills" value="—" hint="Requires ACCPAY parity" />
-              <StatCard label="Due in 7 days" value="—" hint="Requires ACCPAY parity" />
-              <StatCard label="Due in 30 days" value="—" hint="Requires ACCPAY parity" />
+              <StatCard
+                label="Overdue bills"
+                value={payables.accpayAvailable ? fmt(payables.overdueBillsCents ?? 0) : holdValue}
+                hint="Requires ACCPAY parity"
+              />
+              <StatCard
+                label="Due in 7 days"
+                value={payables.accpayAvailable ? fmt(payables.dueIn7DaysCents ?? 0) : holdValue}
+                hint="Requires ACCPAY parity"
+              />
+              <StatCard
+                label="Due in 30 days"
+                value={payables.accpayAvailable ? fmt(payables.dueIn30DaysCents ?? 0) : holdValue}
+                hint="Requires ACCPAY parity"
+              />
             </SummaryCardGrid>
 
             <SummaryCardGrid columns={4} className="finance-receivables-summary">
               <StatCard
                 label="PO cash requirement"
-                value={hasPoCommitments ? fmt(cashFlow.outstandingPayableCents) : '—'}
+                value={hasPoCommitments ? fmt(payables.poCashRequirementCents) : holdValue}
                 hint="Approved/ordered purchase orders only"
               />
-              <StatCard label="Unapproved purchases" value="—" hint="Procurement Phase 9" />
-              <StatCard label="Unmatched bank transactions" value="—" hint="Xero bank tx reconciliation — read-only" />
-              <StatCard label="Cash requirement (partial)" value={hasPoCommitments ? fmt(cashFlow.outstandingPayableCents) : '—'} hint="Not full payables picture" />
+              <StatCard
+                label="Unapproved purchases"
+                value={payables.unapprovedPurchaseCount > 0 ? String(payables.unapprovedPurchaseCount) : holdValue}
+                hint="Draft purchase orders awaiting approval"
+              />
+              <StatCard
+                label="Unmatched bank transactions"
+                value={payables.unmatchedBankTransactionCount > 0 ? String(payables.unmatchedBankTransactionCount) : holdValue}
+                hint="Xero bank tx in sync logs — not reconciled to bills"
+              />
+              <StatCard
+                label="Cash requirement (partial)"
+                value={hasPoCommitments ? fmt(payables.poCashRequirementCents) : holdValue}
+                hint="Not full payables picture without ACCPAY"
+              />
             </SummaryCardGrid>
 
             <Panel title="Bills workspace" className="owner-page-content__section">
-              <EmptyState
-                title="Xero ACCPAY bills — Phase 3C completion"
-                description="Supplier bills from Xero are not imported into a dedicated payables table yet. Procurement purchase-order commitments are the only payables signal available today."
-              />
+              {payables.accpayAvailable ? (
+                <EmptyState
+                  title="No supplier bills"
+                  description="When Xero ACCPAY bills are imported, supplier payables appear here."
+                />
+              ) : (
+                <EmptyState
+                  title="Xero ACCPAY bills — Owner approval required"
+                  description="Supplier bills from Xero are not imported into a dedicated payables table yet. Procurement purchase-order commitments and bank transaction sync logs are the only payables signals available today."
+                />
+              )}
+              <p className="finance-cashflow-summary">{payables.summary}</p>
               <div className="finance-cashflow-links">
                 <Link href="/procurement/purchase-orders">Purchase orders</Link>
                 <Link href="/finance/cashflow">Cashflow</Link>
@@ -81,7 +114,7 @@ export function FinancePayablesPage() {
             </Panel>
 
             <p className="finance-source-note">
-              Source: partial — procurement POs only · Full ACCPAY parity tracked in XERO_TITAN_FULL_PARITY_MATRIX.md
+              Source: partial — procurement POs + {payables.unmatchedBankTransactionCount} bank tx sync log(s) · Full ACCPAY parity tracked in XERO_TITAN_FULL_PARITY_MATRIX.md
             </p>
           </>
         ) : null}

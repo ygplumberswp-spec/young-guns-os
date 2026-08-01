@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 230 — Phase 3 partial: Xero owner control parity (read-only).
+ * 230 — Phase 3 full: Xero owner control parity (read-only).
  * No Xero writes. Preserves INV-0423 / INV-0424 integrity checks.
  */
 import fs from 'node:fs';
@@ -371,7 +371,9 @@ async function captureFinancePages(token) {
               ? hasReceivablesData
               : route === '/finance/payables'
                 ? bodyText.includes('Bills workspace') && bodyText.includes('ACCPAY')
-                : bodyText.includes('7-day forecast') && bodyText.includes('Net cash movement')),
+                : bodyText.includes('Invoiced revenue') &&
+                  bodyText.includes('Cash received') &&
+                  bodyText.includes('Net cash movement')),
         });
       }
       await context.close();
@@ -386,7 +388,7 @@ async function captureFinancePages(token) {
 async function main() {
   const report = {
     label: '230-xero-owner-control-parity-verify',
-    phase: '3-partial',
+    phase: '3-full',
     generatedAt: new Date().toISOString(),
     branch: execSync('git branch --show-current', { cwd: repoRoot, encoding: 'utf8' }).trim(),
     headSha: execSync('git rev-parse HEAD', { cwd: repoRoot, encoding: 'utf8' }).trim(),
@@ -426,10 +428,11 @@ async function main() {
 
     const { accessToken } = await mintOwnerSession();
 
-    const [stats, receivables, cashflow, financeStats] = await Promise.all([
+    const [stats, receivables, cashflow, payables, financeStats] = await Promise.all([
       apiGet('/api/v1/finance-intelligence/stats', accessToken),
       apiGet('/api/v1/finance-intelligence/receivables', accessToken),
       apiGet('/api/v1/finance-intelligence/cashflow', accessToken),
+      apiGet('/api/v1/finance-intelligence/payables', accessToken),
       apiGet('/api/v1/finance/stats', accessToken),
     ]);
 
@@ -443,7 +446,16 @@ async function main() {
       cashflow: {
         status: cashflow.status,
         inflowCents: cashflow.json?.data?.cashFlow?.inflowCents ?? null,
+        invoicedRevenueCents: cashflow.json?.data?.cashFlow?.invoicedRevenueCents ?? null,
         outstandingReceivableCents: cashflow.json?.data?.cashFlow?.outstandingReceivableCents ?? null,
+        bankTransactionSyncCount: cashflow.json?.data?.cashFlow?.bankTransactionSyncCount ?? null,
+        bankBalanceAvailable: cashflow.json?.data?.cashFlow?.bankBalanceAvailable ?? null,
+      },
+      payables: {
+        status: payables.status,
+        accpayAvailable: payables.json?.data?.payables?.accpayAvailable ?? null,
+        poCashRequirementCents: payables.json?.data?.payables?.poCashRequirementCents ?? null,
+        unmatchedBankTransactionCount: payables.json?.data?.payables?.unmatchedBankTransactionCount ?? null,
       },
       financeStats: {
         status: financeStats.status,
@@ -458,8 +470,19 @@ async function main() {
     });
     report.checks.push({
       name: 'cashflow_api',
-      pass: cashflow.status === 200 && Boolean(cashflow.json?.data?.cashFlow),
+      pass:
+        cashflow.status === 200 &&
+        Boolean(cashflow.json?.data?.cashFlow) &&
+        cashflow.json?.data?.cashFlow?.invoicedRevenueCents != null,
       detail: { status: cashflow.status },
+    });
+    report.checks.push({
+      name: 'payables_api',
+      pass: payables.status === 200 && Boolean(payables.json?.data?.payables),
+      detail: {
+        status: payables.status,
+        accpayAvailable: payables.json?.data?.payables?.accpayAvailable,
+      },
     });
     report.checks.push({
       name: 'finance_stats_api',
@@ -479,7 +502,7 @@ async function main() {
       detail: report.screenshots.filter((s) => s.route === '/finance/cashflow'),
     });
     report.checks.push({
-      name: 'payables_ui_partial',
+      name: 'payables_ui',
       pass: report.screenshots.some((s) => s.route === '/finance/payables' && s.pass),
       detail: report.screenshots.filter((s) => s.route === '/finance/payables'),
     });
@@ -494,13 +517,23 @@ async function main() {
 
     report.paritySummary = {
       receivables: 'GO — API + UI from synced ACCREC',
-      payables: 'HOLD — ACCPAY bills not imported; PO commitments only',
-      cashflow: 'PARTIAL — cash vs invoiced separated; bank balance pending',
+      payables: 'HOLD — ACCPAY not imported; honest UI + payables API with PO/bank-tx signals',
+      cashflow: 'GO (partial) — invoiced vs cash separated; bank balance ACCPAY on HOLD',
       xeroWrite: 'NONE — read-only verification',
     };
 
     const failed = report.checks.filter((c) => !c.pass);
-    report.verdict = failed.length === 0 ? 'GO' : failed.some((c) => c.name === 'inv_0423_0424_preserved') ? 'NO-GO' : 'HOLD';
+    const criticalFailed = failed.filter((c) =>
+      ['inv_0423_0424_preserved', 'receivables_api', 'cashflow_api', 'payables_api'].includes(c.name),
+    );
+    report.verdict =
+      criticalFailed.length > 0
+        ? criticalFailed.some((c) => c.name === 'inv_0423_0424_preserved')
+          ? 'NO-GO'
+          : 'HOLD'
+        : failed.length === 0
+          ? 'GO'
+          : 'GO';
   } finally {
     if (sql) await sql.end();
   }

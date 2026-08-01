@@ -12,13 +12,40 @@ export type FinanceForecastType = 'weekly' | 'monthly';
 export type CashFlowIntelligence = {
   currency: string;
   currentPositionCents: number;
+  /** Cash received in the current period — never conflated with invoiced revenue. */
   inflowCents: number;
+  /** Invoiced revenue in the current period — separate from cash received. */
+  invoicedRevenueCents: number;
   outflowCents: number;
   outstandingReceivableCents: number;
   outstandingPayableCents: number;
   weeklyForecastCents: number;
   monthlyForecastCents: number;
   cashShortageWarning: boolean;
+  /** Bank balance from Xero feed — null when not authorised/surfaced. */
+  bankBalanceCents: number | null;
+  bankBalanceAvailable: boolean;
+  /** Read-only count of bank transactions mirrored in xero_sync_logs. */
+  bankTransactionSyncCount: number;
+  /** Sum of active budget targets — null when no active budgets. */
+  activeBudgetTargetCents: number | null;
+  payrollCommitmentsAvailable: boolean;
+  vatEstimateAvailable: boolean;
+  summary: string;
+};
+
+export type PayablesIntelligence = {
+  currency: string;
+  /** True when Xero ACCPAY bills are imported into a dedicated payables table. */
+  accpayAvailable: boolean;
+  supplierBillsOutstandingCents: number | null;
+  overdueBillsCents: number | null;
+  dueIn7DaysCents: number | null;
+  dueIn30DaysCents: number | null;
+  poCashRequirementCents: number;
+  unapprovedPurchaseCount: number;
+  /** Bank transactions in sync logs not yet reconciled to bills. */
+  unmatchedBankTransactionCount: number;
   summary: string;
 };
 

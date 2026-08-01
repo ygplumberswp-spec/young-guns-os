@@ -124,6 +124,12 @@ export function createFinanceIntelligenceRouter({
     res.json({ data: { receivables } });
   });
 
+  router.get('/payables', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const payables = await financeIntelligenceService.getPayablesIntelligence(companyId);
+    res.json({ data: { payables } });
+  });
+
   router.get('/expenses', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const expenses = await financeIntelligenceService.getExpenseIntelligence(companyId);
