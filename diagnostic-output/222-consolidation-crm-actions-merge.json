@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "consolidation-crm-actions-merge-v1",
+  "label": "222-consolidation-crm-actions-merge",
+  "generatedAt": "2026-08-01T19:01:15.332870Z",
+  "worktrees": {
+    "integrationLock": "/Users/keanuventer/Downloads/Titan Aura V1",
+    "consolidation": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation"
+  },
+  "branches": {
+    "integrationLock": "cursor/integration-lock-auto-sync",
+    "consolidation": "cursor/titan-final-product-consolidation"
+  },
+  "compare": {
+    "integrationLockTipAtStart": "bb65fb82d5a65135aa8b64732a1aadb18a37995f",
+    "integrationLockCrmRangeEnd": "aae33275a1c783d9579828d232081994299718ab",
+    "consolidationTipAtStart": "dfb7189a90aa735610e5b1bcb985ad5b08545d95",
+    "mergeBaseWithConsolidation": "5f585d3aefa2f59a80c9dc256023df894a025e9c",
+    "alreadyInConsolidation": [
+      "fb2e88e feat(crm): always-visible row actions on customers, leads and jobs",
+      "5f585d3 fix(crm): return JSON on delete and cascade customer activities"
+    ],
+    "missingFromConsolidationBeforeMerge": [
+      "1112cc5 fix(crm): fallback customer list when value metrics unavailable",
+      "aae3327 fix(crm): always render customer list from CRM API first",
+      "bb65fb8 docs(ux): record owner actions staging verification GO 22/22"
+    ]
+  },
+  "cherryPick": {
+    "status": "applied",
+    "sourceCommits": [
+      {
+        "source": "1112cc5",
+        "result": "e37643b"
+      },
+      {
+        "source": "aae3327",
+        "result": "174507b"
+      },
+      {
+        "source": "bb65fb8",
+        "result": "5723957"
+      }
+    ],
+    "followUpFixCommit": {
+      "sha": "6a349ad20383c86b758b84e1572d27978a636f06",
+      "message": "fix(consolidation): CRM-first customer list with typed value fallback",
+      "reason": "Merge aae3327 CRM-first fetch with consolidation classifyCustomerValueFromEvidence fallback for typecheck"
+    },
+    "newConsolidationTip": "6a349ad20383c86b758b84e1572d27978a636f06"
+  },
+  "validation": {
+    "typecheck": "pass",
+    "webTests": {
+      "count": 136,
+      "pass": 136
+    }
+  },
+  "deployCoordination": {
+    "parallelAgent": "8b7fd442",
+    "parallelAgentTarget": "dfb7189 (initial consolidation deploy, not completed at task start)",
+    "actionTaken": "Pushed 6a349ad and redeployed staging web+API from consolidation worktree (supersedes dfb7189-only deploy)",
+    "environment": "staging",
+    "productionTouched": false,
+    "services": [
+      {
+        "name": "young-guns-os",
+        "role": "api",
+        "url": "https://young-guns-os-staging.up.railway.app",
+        "deploymentAttempts": [
+          {
+            "id": "b1f0b5da-a8f7-48ca-9f01-4c55f9efc912",
+            "status": "SKIPPED"
+          },
+          {
+            "id": "01b48519-924e-4e22-a979-a9484cb335b2",
+            "status": "SUCCESS",
+            "method": "railway redeploy after up"
+          }
+        ],
+        "activeDeploymentId": "01b48519-924e-4e22-a979-a9484cb335b2"
+      },
+      {
+        "name": "comfortable-determination",
+        "role": "web",
+        "url": "https://comfortable-determination-staging.up.railway.app",
+        "deploymentAttempts": [
+          {
+            "id": "d61436c4-013d-4457-a4b6-1f29bb0ac01f",
+            "status": "SUCCESS"
+          }
+        ],
+        "activeDeploymentId": "d61436c4-013d-4457-a4b6-1f29bb0ac01f"
+      }
+    ],
+    "healthChecks": {
+      "api_ready": {
+        "url": "/api/v1/health/ready",
+        "status": 200,
+        "database": "connected"
+      },
+      "web_root": {
+        "status": 200
+      },
+      "web_dashboard": {
+        "status": 200
+      },
+      "web_scheduling": {
+        "status": 200
+      }
+    }
+  },
+  "crmActionsStaging": {
+    "verdict": "GO",
+    "score": "22/22",
+    "script": "packages/db/scripts/staging-owner-actions-verify.mjs (integration-lock worktree)",
+    "evidence": "/Users/keanuventer/Downloads/Titan Aura V1/diagnostic-output/214-owner-actions-staging-verify.json",
+    "note": "Post-deploy verification against consolidation tip deploy; customers/leads/jobs list actions confirmed"
+  }
+}
