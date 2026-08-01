@@ -62,8 +62,22 @@ export function LiveOperationsPanel({
                   </strong>
                 </Link>
                 <StatusBadge
-                  tone={job.isDelayed ? 'warning' : job.status === 'in_progress' ? 'info' : 'neutral'}
-                  label={job.isDelayed ? 'Delayed' : job.status.replace(/_/g, ' ')}
+                  tone={
+                    job.delayRisk === 'high' || job.isDelayed
+                      ? 'warning'
+                      : job.delayRisk === 'watch'
+                        ? 'info'
+                        : job.status === 'in_progress'
+                          ? 'info'
+                          : 'neutral'
+                  }
+                  label={
+                    job.isDelayed
+                      ? 'Delayed'
+                      : job.delayRisk === 'watch'
+                        ? 'Delay risk'
+                        : job.status.replace(/_/g, ' ')
+                  }
                 />
               </div>
               <p className="exec-live-ops__meta">
@@ -73,8 +87,9 @@ export function LiveOperationsPanel({
               </p>
               <p className="exec-live-ops__times">
                 {formatTime(job.scheduledAt)}
-                {job.scheduledEndAt ? ` – ${formatTime(job.scheduledEndAt)}` : ''}
+                {job.expectedFinishAt ? ` – ${formatTime(job.expectedFinishAt)}` : ''}
                 {job.nextJobTitle ? ` · Next: ${job.nextJobTitle}` : ''}
+                {job.gpsTimestamp ? ` · GPS ${formatTime(job.gpsTimestamp)}` : ''}
               </p>
             </li>
           ))}

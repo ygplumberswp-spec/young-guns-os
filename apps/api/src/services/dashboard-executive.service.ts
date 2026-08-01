@@ -1,8 +1,9 @@
-import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, lt, notExists, sql } from 'drizzle-orm';
 import type {
   ExecutiveCompletedJob,
   ExecutiveDashboardSummary,
   ExecutiveLiveJob,
+  ExecutiveOwnerActionItem,
   ExecutiveTeamMember,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -13,6 +14,7 @@ import {
   leads,
   mobileTimeEntries,
   payments,
+  quotes,
   users,
 } from '@titan/db';
 import type { CompanyDayPlanService } from './company-day-plan.service.js';
@@ -42,6 +44,12 @@ function endOfLocalDay(): Date {
   return end;
 }
 
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
 function displayName(row: {
   firstName: string | null;
   lastName: string | null;
@@ -58,6 +66,7 @@ export class DashboardExecutiveService {
     const start = startOfLocalDay();
     const end = endOfLocalDay();
     const now = new Date();
+    const dueWeekEnd = addDays(now, 7);
 
     const [
       jobsStats,
@@ -75,6 +84,11 @@ export class DashboardExecutiveService {
       draftInvoices,
       leadCount,
       messageCount,
+      depositsToday,
+      partialPaymentsToday,
+      jobsPaidInFullToday,
+      pendingQuotes,
+      completedNotInvoiced,
     ] = await Promise.all([
       this.deps.jobsService.getStats(companyId),
       this.deps.financeService.getStats(companyId),
@@ -143,7 +157,10 @@ export class DashboardExecutiveService {
         .select({ count: sql<number>`count(*)::int` })
         .from(leads)
         .where(
-          and(eq(leads.companyId, companyId), inArray(leads.status, ['new', 'contacted', 'qualified', 'opportunity'])),
+          and(
+            eq(leads.companyId, companyId),
+            inArray(leads.status, ['new', 'contacted', 'qualified', 'opportunity']),
+          ),
         ),
       this.deps.db
         .select({ count: sql<number>`count(*)::int` })
@@ -155,12 +172,80 @@ export class DashboardExecutiveService {
             lt(communications.createdAt, end),
           ),
         ),
+      this.deps.db
+        .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
+        .from(payments)
+        .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+        .where(
+          and(
+            eq(payments.companyId, companyId),
+            eq(invoices.stage, 'deposit'),
+            gte(payments.paidAt, start),
+            lt(payments.paidAt, end),
+          ),
+        ),
+      this.deps.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(payments)
+        .innerJoin(invoices, eq(payments.invoiceId, invoices.id))
+        .where(
+          and(
+            eq(payments.companyId, companyId),
+            eq(invoices.status, 'partial'),
+            gte(payments.paidAt, start),
+            lt(payments.paidAt, end),
+          ),
+        ),
+      this.deps.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(invoices)
+        .where(
+          and(
+            eq(invoices.companyId, companyId),
+            eq(invoices.status, 'paid'),
+            isNotNull(invoices.jobId),
+            gte(invoices.updatedAt, start),
+            lt(invoices.updatedAt, end),
+          ),
+        ),
+      this.deps.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(quotes)
+        .where(
+          and(
+            eq(quotes.companyId, companyId),
+            inArray(quotes.status, ['sent', 'internal_review', 'approved_for_sending']),
+          ),
+        ),
+      this.deps.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(jobs)
+        .where(
+          and(
+            eq(jobs.companyId, companyId),
+            eq(jobs.status, 'completed'),
+            gte(jobs.updatedAt, start),
+            lt(jobs.updatedAt, end),
+            notExists(
+              this.deps.db
+                .select({ id: invoices.id })
+                .from(invoices)
+                .where(and(eq(invoices.jobId, jobs.id), eq(invoices.companyId, companyId))),
+            ),
+          ),
+        ),
     ]);
 
-    const scheduledCount = calendar.events.filter((event) => event.status === 'scheduled').length;
-    const inProgressCount = calendar.events.filter((event) => event.status === 'in_progress').length;
+    const scheduledEvents = calendar.events.filter((event) => event.status === 'scheduled');
+    const inProgressEvents = calendar.events.filter((event) => event.status === 'in_progress');
+    const scheduledCount = scheduledEvents.length;
+    const inProgressCount = inProgressEvents.length;
     const completedCount = completedJobs.length;
     const delayedCount = delayedJobs.length;
+    const assignedCount = calendar.events.filter((event) => Boolean(event.assignedUserId)).length;
+    const unassignedCount = calendar.events.filter(
+      (event) => !event.assignedUserId && event.status === 'scheduled',
+    ).length;
 
     const activePlans = todayPlan.sections.top_priorities.filter((plan) => plan.status === 'active');
     const waitingApproval = activePlans.filter((plan) => plan.approvalRequired).length;
@@ -181,16 +266,55 @@ export class DashboardExecutiveService {
       }
     }
 
-    const teamToday = this.buildTeamToday(teamMembers, jobsByAssignee, activeTimeEntries, delayedJobs);
+    const teamToday = this.buildTeamToday(
+      teamMembers,
+      jobsByAssignee,
+      activeTimeEntries,
+      delayedJobs,
+      calendar.events,
+    );
     const liveOperations = this.buildLiveOperations(todayJobs, delayedJobs, calendar.events);
     const completedToday = await this.buildCompletedToday(companyId, completedJobs);
 
-    const needsAttention = activePlans.length;
+    const outstandingItems = intelligenceDashboard.outstandingInvoices.items;
+    const overdueItems = outstandingItems.filter((item) => {
+      if (item.status === 'overdue') return true;
+      if (!item.dueDate) return false;
+      return new Date(item.dueDate).getTime() < now.getTime();
+    });
+    const overdueCents = overdueItems.reduce(
+      (sum, item) => sum + Math.max(0, item.amountCents - item.amountPaidCents),
+      0,
+    );
+    const dueThisWeekCount = outstandingItems.filter((item) => {
+      if (!item.dueDate) return false;
+      const due = new Date(item.dueDate);
+      return due >= now && due <= dueWeekEnd;
+    }).length;
+
+    const travellingCount = teamToday.filter((member) => member.status === 'travelling').length;
+    const onSiteCount = teamToday.filter((member) => member.status === 'on_site').length;
+    const workingCount = teamToday.filter((member) => member.status === 'working').length;
+    const lateCount = teamToday.filter((member) => member.isLate).length;
+    const missingCheckInCount = teamToday.filter((member) => member.missingCheckIn).length;
+
+    const actionQueue = this.buildOwnerActionQueue({
+      unassignedCount,
+      delayedCount,
+      overdueCount: overdueItems.length,
+      pendingQuotes: pendingQuotes[0]?.count ?? 0,
+      completedNotInvoiced: completedNotInvoiced[0]?.count ?? 0,
+      waitingApproval: intelligenceDashboard.pendingApprovals.count + waitingApproval,
+      lowStockCount: intelligenceDashboard.lowStockCount,
+      fleetIssueCount: intelligenceDashboard.fleetIssues.count,
+      schedulingConflicts: intelligenceDashboard.schedulingConflicts,
+      followUpCount: intelligenceDashboard.customerFollowUps.count,
+    });
+
+    const needsAttention = activePlans.length + actionQueue.length;
     const summaryParts: string[] = [];
-    if (needsAttention > 0) {
-      summaryParts.push(
-        `${needsAttention} priorit${needsAttention === 1 ? 'y' : 'ies'} need attention`,
-      );
+    if (actionQueue.length > 0) {
+      summaryParts.push(`${actionQueue.length} action${actionQueue.length === 1 ? '' : 's'} in queue`);
     }
     if (waitingApproval > 0) {
       summaryParts.push(`${waitingApproval} waiting approval`);
@@ -208,51 +332,63 @@ export class DashboardExecutiveService {
         href: '/automation',
       }));
 
-    for (const invoice of intelligenceDashboard.outstandingInvoices.items.slice(0, 1)) {
-      if (invoice.status === 'overdue') {
-        criticalIssues.push({
-          id: invoice.id,
-          title: `Overdue invoice ${invoice.invoiceNumber}`,
-          description: `${invoice.customerName} — follow up for payment.`,
-          href: `/finance/invoices/${invoice.id}`,
-        });
-      }
+    for (const invoice of overdueItems.slice(0, 2)) {
+      criticalIssues.push({
+        id: invoice.id,
+        title: `Overdue invoice ${invoice.invoiceNumber}`,
+        description: `${invoice.customerName} — follow up for payment.`,
+        href: `/finance/invoices/${invoice.id}`,
+      });
     }
 
     return {
       generatedAt: now.toISOString(),
       header: {
         jobsToday: jobsStats.todayScheduledCount,
-        prioritiesToday: activePlans.length,
+        prioritiesToday: actionQueue.length,
         teamWorking: workingUserIds.size,
         approvalsWaiting: intelligenceDashboard.pendingApprovals.count + waitingApproval,
       },
       todayAtAGlance: {
         jobs: {
           scheduled: scheduledCount,
+          assigned: assignedCount,
+          travelling: travellingCount,
+          onSite: onSiteCount,
           inProgress: inProgressCount,
           completed: completedCount,
           delayed: delayedCount,
+          unassigned: unassignedCount,
           href: '/jobs?filter=today',
         },
         team: {
+          working: workingCount,
           available: teamToday.filter((member) => member.status === 'available').length,
-          travelling: teamToday.filter((member) => member.status === 'travelling').length,
-          onSite: teamToday.filter((member) => member.status === 'on_site').length,
+          travelling: travellingCount,
+          onSite: onSiteCount,
           offDuty: teamToday.filter((member) => member.status === 'off_duty').length,
+          late: lateCount,
+          missingCheckIn: missingCheckInCount,
         },
         money: {
           invoicedTodayCents: todayInvoices[0]?.total ?? 0,
           paymentsTodayCents: todayPayments[0]?.total ?? 0,
           outstandingCents: intelligenceDashboard.outstandingInvoices.totalOutstandingCents,
+          overdueCents,
+          dueThisWeekCount,
+          depositsTodayCents: depositsToday[0]?.total ?? 0,
+          partialPaymentsTodayCount: partialPaymentsToday[0]?.count ?? 0,
+          jobsPaidInFullTodayCount: jobsPaidInFullToday[0]?.count ?? 0,
           draftCount: draftInvoices[0]?.count ?? 0,
           currency: financeStats.currency,
+          syncState: 'ready',
         },
         customerActivity: {
-          leads: leadCount[0]?.count ?? 0,
-          followUps: intelligenceDashboard.customerFollowUps.count,
-          messages: messageCount[0]?.count ?? 0,
-          returning: 0,
+          newLeads: leadCount[0]?.count ?? 0,
+          followUpsDue: intelligenceDashboard.customerFollowUps.count,
+          unreadMessages: messageCount[0]?.count ?? 0,
+          returningCustomers: null,
+          complaintsEscalations: null,
         },
       },
       liveOperations,
@@ -263,9 +399,138 @@ export class DashboardExecutiveService {
         blocked: blockedCount,
         summaryLine: summaryParts.length > 0 ? summaryParts.join(' · ') : 'All clear for today',
         criticalIssues,
+        actionQueue,
       },
       teamToday,
     };
+  }
+
+  private buildOwnerActionQueue(input: {
+    unassignedCount: number;
+    delayedCount: number;
+    overdueCount: number;
+    pendingQuotes: number;
+    completedNotInvoiced: number;
+    waitingApproval: number;
+    lowStockCount: number;
+    fleetIssueCount: number;
+    schedulingConflicts: number;
+    followUpCount: number;
+  }): ExecutiveOwnerActionItem[] {
+    const queue: ExecutiveOwnerActionItem[] = [];
+
+    if (input.unassignedCount > 0) {
+      queue.push({
+        id: 'unassigned-jobs',
+        category: 'Scheduling',
+        title: 'Unassigned jobs today',
+        description: 'Assign technicians before customers wait.',
+        count: input.unassignedCount,
+        href: '/scheduling',
+        priority: 'critical',
+      });
+    }
+    if (input.delayedCount > 0) {
+      queue.push({
+        id: 'delayed-jobs',
+        category: 'Operations',
+        title: 'Delayed jobs',
+        description: 'Jobs past scheduled start — review dispatch.',
+        count: input.delayedCount,
+        href: '/jobs?filter=delayed',
+        priority: 'critical',
+      });
+    }
+    if (input.overdueCount > 0) {
+      queue.push({
+        id: 'overdue-invoices',
+        category: 'Finance',
+        title: 'Overdue invoices',
+        description: 'Debtors needing follow-up from Xero-backed records.',
+        count: input.overdueCount,
+        href: '/finance/invoices?overdueOnly=true',
+        priority: 'high',
+      });
+    }
+    if (input.completedNotInvoiced > 0) {
+      queue.push({
+        id: 'completed-not-invoiced',
+        category: 'Finance',
+        title: 'Completed jobs not invoiced',
+        description: 'Work finished today without an invoice link.',
+        count: input.completedNotInvoiced,
+        href: '/jobs?status=completed',
+        priority: 'high',
+      });
+    }
+    if (input.pendingQuotes > 0) {
+      queue.push({
+        id: 'quotes-awaiting',
+        category: 'Sales',
+        title: 'Quotes awaiting action',
+        description: 'Sent or pending approval — follow up or approve.',
+        count: input.pendingQuotes,
+        href: '/finance/quotes',
+        priority: 'normal',
+      });
+    }
+    if (input.waitingApproval > 0) {
+      queue.push({
+        id: 'approvals-waiting',
+        category: 'Approvals',
+        title: 'Items waiting approval',
+        description: 'Workflow, AURA or WhatsApp drafts need Owner decision.',
+        count: input.waitingApproval,
+        href: '/aura/todays-plan',
+        priority: 'high',
+      });
+    }
+    if (input.followUpCount > 0) {
+      queue.push({
+        id: 'customer-follow-ups',
+        category: 'Customers',
+        title: 'Customer follow-ups due',
+        description: 'CRM follow-ups from live tenant records.',
+        count: input.followUpCount,
+        href: '/customers',
+        priority: 'normal',
+      });
+    }
+    if (input.lowStockCount > 0) {
+      queue.push({
+        id: 'stock-blockers',
+        category: 'Inventory',
+        title: 'Low stock items',
+        description: 'Parts may block jobs — review inventory.',
+        count: input.lowStockCount,
+        href: '/inventory',
+        priority: 'normal',
+      });
+    }
+    if (input.fleetIssueCount > 0) {
+      queue.push({
+        id: 'fleet-alerts',
+        category: 'Fleet',
+        title: 'Fleet alerts',
+        description: 'Vehicles out of service or maintenance.',
+        count: input.fleetIssueCount,
+        href: '/fleet/alerts',
+        priority: 'normal',
+      });
+    }
+    if (input.schedulingConflicts > 0) {
+      queue.push({
+        id: 'scheduling-conflicts',
+        category: 'Scheduling',
+        title: 'Scheduling conflicts',
+        description: 'Overlaps or resource conflicts need review.',
+        count: input.schedulingConflicts,
+        href: '/scheduling',
+        priority: 'high',
+      });
+    }
+
+    return queue;
   }
 
   private buildLiveOperations(
@@ -297,18 +562,31 @@ export class DashboardExecutiveService {
             ? new Date(job.scheduledAt).getTime() < now && job.status === 'scheduled'
             : false);
 
+        const suburb = job.addressDisplay?.split(',').pop()?.trim() ?? null;
+        let delayRisk: ExecutiveLiveJob['delayRisk'] = 'none';
+        if (isDelayed) {
+          delayRisk = 'high';
+        } else if (job.scheduledEndAt && new Date(job.scheduledEndAt).getTime() - now < 30 * 60_000) {
+          delayRisk = 'watch';
+        }
+
         return {
           id: job.id,
           jobNumber: job.jobNumber,
           title: job.title,
           customerName: job.customerName,
-          suburb: job.addressDisplay?.split(',').pop()?.trim() ?? null,
+          suburb,
+          areaLabel: suburb,
           status: job.status,
           technicianName: job.assignedUserName,
+          vehicleRegistration: null,
           scheduledAt: job.scheduledAt,
           scheduledEndAt: job.scheduledEndAt,
+          expectedFinishAt: job.scheduledEndAt,
           nextJobTitle: next?.title ?? null,
           isDelayed,
+          delayRisk,
+          gpsTimestamp: null,
         };
       });
   }
@@ -360,6 +638,7 @@ export class DashboardExecutiveService {
     >,
     timeEntries: Array<{ userId: string; entryType: string; endedAt: Date | null }>,
     delayedJobs: Array<{ assignedUserId: string | null; scheduledAt: Date | null }>,
+    calendarEvents: Array<{ assignedUserId: string | null; status: string }>,
   ): ExecutiveTeamMember[] {
     const technicians = teamMembers.filter((member) => {
       const role = member.role?.name?.toLowerCase() ?? '';
@@ -374,13 +653,16 @@ export class DashboardExecutiveService {
       const inProgress = assigned.find((job) => job.status === 'in_progress');
       const next = assigned.find((job) => job.status === 'scheduled');
       const openEntry = timeEntries.find((entry) => entry.userId === member.id && !entry.endedAt);
+      const hasScheduledToday = calendarEvents.some(
+        (event) => event.assignedUserId === member.id && event.status === 'scheduled',
+      );
 
       let status: ExecutiveTeamMember['status'] = 'available';
       if (openEntry?.entryType === 'travel') {
         status = 'travelling';
       } else if (openEntry?.entryType === 'job_time' || inProgress) {
         status = 'on_site';
-      } else if (assigned.length === 0) {
+      } else if (assigned.length === 0 && !hasScheduledToday) {
         status = 'off_duty';
       } else if (inProgress || assigned.length > 0) {
         status = 'working';
@@ -393,6 +675,12 @@ export class DashboardExecutiveService {
           job.scheduledAt.getTime() < now,
       );
 
+      const missingCheckIn =
+        hasScheduledToday &&
+        !openEntry &&
+        !inProgress &&
+        assigned.some((job) => job.status === 'scheduled');
+
       return {
         userId: member.id,
         name: displayName(member),
@@ -400,6 +688,7 @@ export class DashboardExecutiveService {
         currentTask: inProgress?.title ?? null,
         nextTask: next?.title ?? null,
         isLate: Boolean(lateJob),
+        missingCheckIn,
       };
     });
   }

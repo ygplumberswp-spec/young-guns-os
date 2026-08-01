@@ -67,6 +67,9 @@ export function TeamTodayPanel({
               <div className="exec-team-today__status">
                 <StatusBadge tone={statusTone(member.status)} label={STATUS_LABELS[member.status]} />
                 {member.isLate ? <StatusBadge tone="warning" label="Late" /> : null}
+                {member.missingCheckIn ? (
+                  <StatusBadge tone="warning" label="Missing check-in" />
+                ) : null}
               </div>
             </li>
           ))}

@@ -9,32 +9,46 @@ export type ExecutiveHeaderCounts = {
 
 export type ExecutiveGlanceJobs = {
   scheduled: number;
+  assigned: number;
+  travelling: number;
+  onSite: number;
   inProgress: number;
   completed: number;
   delayed: number;
+  unassigned: number;
   href: string;
 };
 
 export type ExecutiveGlanceTeam = {
+  working: number;
   available: number;
   travelling: number;
   onSite: number;
   offDuty: number;
+  late: number;
+  missingCheckIn: number;
 };
 
 export type ExecutiveGlanceMoney = {
-  invoicedTodayCents: number;
-  paymentsTodayCents: number;
-  outstandingCents: number;
-  draftCount: number;
+  invoicedTodayCents: number | null;
+  paymentsTodayCents: number | null;
+  outstandingCents: number | null;
+  overdueCents: number | null;
+  dueThisWeekCount: number | null;
+  depositsTodayCents: number | null;
+  partialPaymentsTodayCount: number | null;
+  jobsPaidInFullTodayCount: number | null;
+  draftCount: number | null;
   currency: string;
+  syncState: 'ready' | 'syncing' | 'unavailable';
 };
 
 export type ExecutiveGlanceCustomerActivity = {
-  leads: number;
-  followUps: number;
-  messages: number;
-  returning: number;
+  newLeads: number | null;
+  followUpsDue: number | null;
+  unreadMessages: number | null;
+  returningCustomers: number | null;
+  complaintsEscalations: number | null;
 };
 
 export type ExecutiveTodayAtAGlance = {
@@ -50,12 +64,17 @@ export type ExecutiveLiveJob = {
   title: string;
   customerName: string;
   suburb: string | null;
+  areaLabel: string | null;
   status: string;
   technicianName: string | null;
+  vehicleRegistration: string | null;
   scheduledAt: string | null;
   scheduledEndAt: string | null;
+  expectedFinishAt: string | null;
   nextJobTitle: string | null;
   isDelayed: boolean;
+  delayRisk: 'none' | 'watch' | 'high';
+  gpsTimestamp: string | null;
 };
 
 export type ExecutiveCompletedJob = {
@@ -70,6 +89,16 @@ export type ExecutiveCompletedJob = {
   cocRequired: boolean;
 };
 
+export type ExecutiveOwnerActionItem = {
+  id: string;
+  category: string;
+  title: string;
+  description: string;
+  count: number;
+  href: string;
+  priority: 'critical' | 'high' | 'normal';
+};
+
 export type ExecutivePrioritiesSummary = {
   needsAttention: number;
   waitingApproval: number;
@@ -81,6 +110,7 @@ export type ExecutivePrioritiesSummary = {
     description: string;
     href: string;
   }>;
+  actionQueue: ExecutiveOwnerActionItem[];
 };
 
 export type ExecutiveTeamMember = {
@@ -90,6 +120,7 @@ export type ExecutiveTeamMember = {
   currentTask: string | null;
   nextTask: string | null;
   isLate: boolean;
+  missingCheckIn: boolean;
 };
 
 export type ExecutiveDashboardSummary = {

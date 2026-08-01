@@ -1236,6 +1236,68 @@ a:focus-visible {
   cursor: pointer;
 }
 
+.exec-owner-action-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exec-owner-action-queue__item {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface);
+}
+
+.exec-owner-action-queue__item--critical {
+  border-color: color-mix(in srgb, var(--titan-warning) 45%, var(--titan-border));
+}
+
+.exec-owner-action-queue__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.exec-owner-action-queue__category {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--titan-text-muted);
+}
+
+.exec-owner-action-queue__count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--titan-accent);
+}
+
+.exec-owner-action-queue__title {
+  display: block;
+  font-weight: 600;
+  color: var(--titan-text);
+  text-decoration: none;
+}
+
+.exec-owner-action-queue__title:hover {
+  color: var(--titan-accent);
+}
+
+.exec-owner-action-queue__desc {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--titan-text-secondary);
+}
+
+.exec-owner-action-queue__footer {
+  margin-top: 0.85rem;
+}
+
 .exec-live-ops,
 .exec-completed-today,
 .exec-team-today,

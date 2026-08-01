@@ -12,6 +12,20 @@ type TodayAtAGlanceGridProps = {
   onRetry?: () => void;
 };
 
+function formatCount(value: number | null | undefined, unavailableLabel = '—'): string {
+  if (value == null) return unavailableLabel;
+  return String(value);
+}
+
+function formatMoneyValue(
+  cents: number | null | undefined,
+  formatMoney: (cents: number, currency: string) => string,
+  currency: string,
+): string {
+  if (cents == null) return '—';
+  return formatMoney(cents, currency);
+}
+
 export function TodayAtAGlanceGrid({
   data,
   isLoading = false,
@@ -47,34 +61,43 @@ export function TodayAtAGlanceGrid({
 
   if (!data) return null;
 
+  const { jobs, team, money, customerActivity } = data;
+  const moneyUnavailable = money.syncState !== 'ready';
+
   const cards = [
     {
       id: 'jobs',
       label: 'Jobs Today',
-      value: String(data.jobs.scheduled + data.jobs.inProgress + data.jobs.completed),
-      hint: `${data.jobs.scheduled} scheduled · ${data.jobs.inProgress} in progress · ${data.jobs.completed} done · ${data.jobs.delayed} delayed`,
-      href: data.jobs.href,
+      value: formatCount(jobs.scheduled + jobs.inProgress + jobs.completed),
+      hint: `${jobs.scheduled} scheduled · ${jobs.assigned} assigned · ${jobs.travelling} travelling · ${jobs.onSite} on site · ${jobs.unassigned} unassigned · ${jobs.delayed} delayed`,
+      href: jobs.href,
     },
     {
       id: 'team',
       label: 'Team Status',
-      value: String(data.team.onSite + data.team.travelling + data.team.available),
-      hint: `${data.team.available} available · ${data.team.travelling} travelling · ${data.team.onSite} on site · ${data.team.offDuty} off duty`,
+      value: formatCount(team.working + team.onSite + team.travelling),
+      hint: `${team.working} working · ${team.available} available · ${team.travelling} travelling · ${team.onSite} on site · ${team.late} late · ${team.missingCheckIn} missing check-in`,
       href: '/scheduling',
     },
     {
       id: 'money',
       label: 'Money Today',
-      value: formatMoney(data.money.paymentsTodayCents, data.money.currency),
-      hint: `${formatMoney(data.money.invoicedTodayCents, data.money.currency)} invoiced · ${formatMoney(data.money.outstandingCents, data.money.currency)} outstanding · ${data.money.draftCount} drafts`,
+      value: moneyUnavailable
+        ? '—'
+        : formatMoneyValue(money.paymentsTodayCents, formatMoney, money.currency),
+      hint: moneyUnavailable
+        ? 'Finance totals temporarily unavailable'
+        : `${formatMoneyValue(money.invoicedTodayCents, formatMoney, money.currency)} invoiced · ${formatMoneyValue(money.outstandingCents, formatMoney, money.currency)} outstanding · ${formatMoneyValue(money.overdueCents, formatMoney, money.currency)} overdue · ${money.dueThisWeekCount ?? '—'} due this week · ${formatMoneyValue(money.depositsTodayCents, formatMoney, money.currency)} deposits · ${money.partialPaymentsTodayCount ?? 0} partial payments · ${money.jobsPaidInFullTodayCount ?? 0} paid in full`,
       href: '/finance/invoices',
     },
     {
       id: 'customers',
       label: 'Customer Activity',
-      value: String(data.customerActivity.leads + data.customerActivity.followUps),
-      hint: `${data.customerActivity.leads} leads · ${data.customerActivity.followUps} follow-ups · ${data.customerActivity.messages} messages · ${data.customerActivity.returning} returning`,
-      href: '/crm',
+      value: formatCount(
+        (customerActivity.newLeads ?? 0) + (customerActivity.followUpsDue ?? 0),
+      ),
+      hint: `${formatCount(customerActivity.newLeads)} new leads · ${formatCount(customerActivity.followUpsDue)} follow-ups · ${formatCount(customerActivity.unreadMessages)} messages · ${formatCount(customerActivity.returningCustomers)} returning · ${formatCount(customerActivity.complaintsEscalations)} escalations`,
+      href: '/leads',
     },
   ];
 

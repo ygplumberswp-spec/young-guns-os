@@ -6,7 +6,7 @@ import { SectionErrorBoundary } from '../../components/ux';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
-import { PrioritiesSummaryPanel } from './PrioritiesSummaryPanel';
+import { OwnerActionCentrePanel } from './OwnerActionCentrePanel';
 import { TeamTodayPanel } from './TeamTodayPanel';
 import { TodayAtAGlanceGrid } from './TodayAtAGlanceGrid';
 
@@ -61,10 +61,12 @@ export function ExecutiveDashboard() {
         </div>
 
         <div className="exec-dashboard-grid">
-          <SectionErrorBoundary sectionName="Priorities">
-            <PrioritiesSummaryPanel
-              priorities={summary?.priorities ?? null}
+          <SectionErrorBoundary sectionName="Owner action centre">
+            <OwnerActionCentrePanel
+              items={summary?.priorities.actionQueue ?? []}
               isLoading={isLoading}
+              error={loadError}
+              onRetry={() => void summaryQuery.refetch()}
             />
           </SectionErrorBoundary>
           <SectionErrorBoundary sectionName="Team today" onRetry={() => void summaryQuery.refetch()}>
