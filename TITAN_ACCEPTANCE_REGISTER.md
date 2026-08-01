@@ -4,7 +4,7 @@
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Checkpoint:** `a161943` (Sprint 022 staging GO) → Sprint 028 forbidden-action API matrix (post-commit)  
-**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL (OAuth connected; import verify deferred); FRZ-019 local audit PARTIAL  
+**Updated (UTC):** 2026-08-01 — FRZ-018d Xero staging NO-GO (OAuth connected; sync not DB-corroborated); FRZ-019 local audit PARTIAL  
 
 ---
 
@@ -61,7 +61,7 @@
 | FRZ-015 | §16 | AURA specialist departments + orchestration | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Staging verify GO** (Sprint FRZ-015b) | **AI provider** | — | Partially implemented | Owner configured Railway; live synthetic AURA 12/12 PASS | Owner | Sprint FRZ-015b | `TITAN_FRZ015_AURA_STAGING_REPORT.md`, `170-frz015-aura-staging-verify-go.json` |
 | FRZ-016 | §17 | Multi-AI gateway + controlled self-learning | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | None | **AI provider** | Policy approval | Partially implemented | Gateway exists; live provider + policy gates open | Owner | — | `ai-orchestration` routes |
 | FRZ-017 | §18 | Marketing/sales/digital presence | Owner | Partial | Partial | Partial | Yes | Yes | Partial | Partial | Partial | UX-H gates | Meta/Google | Publish approval | Partially implemented | Execute/send paths honest but not live | Cursor | UX-H | MKT module |
-| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **PARTIAL** — OAuth connected (Young Guns Plumbing); live import verify deferred (Sprint FRZ-018c) | **Multi** | OAuth | Partially implemented | DB corroborated connected org + audit; tenant isolation PASS; live import needs Owner session token | Owner | Sprint FRZ-018c | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `174-frz018c-xero-staging-readonly-verify.json` |
+| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **NO-GO** — OAuth connected (Young Guns Plumbing); Owner sync signal not DB-corroborated — 0 sync logs/mappings (Sprint FRZ-018d) | **Multi** | OAuth | Partially implemented | OAuth + tenant isolation PASS; sync/import not evidenced in staging DB after Owner Sync click | Owner | Sprint FRZ-018d | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `175-frz018d-xero-staging-post-sync-verify.json` |
 | FRZ-019 | §20 | Owner Configuration Studio | Owner | Yes | Yes | Partial | Owner | Yes | Partial | Yes | Partial | **Local audit PARTIAL** (Sprint FRZ-019) | — | Config publish | Partially implemented | Settings surfaces exist; draft/preview/version/rollback missing per §20 | Cursor | Sprint FRZ-019 | `TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md`, `173-frz019-config-studio-audit.json` |
 | FRZ-020 | §21 | Controlled AURA Developer Studio | Owner | Partial | Partial | Partial | Owner | Yes | Partial | Yes | Partial | None | — | Prod deploy | Partially implemented | Workflow exists; prod isolation must be proven | Cursor | — | Developer portal |
 | FRZ-021 | §22 | Build-control protocol | Team | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | — | — | Verified complete | This completion run follows protocol | Cursor | Phase 0 | Master directive |
@@ -104,7 +104,7 @@
 12. **FRZ-002 / role-forbidden direct URL** — **DONE (local automated)** — `role-forbidden-direct-url.test.ts` + `StaffExperienceRoute` redirect contract; staging click-path **GO** (Sprint 022)  
 13. **FRZ-001 / forbidden-action API matrix** — **DONE (local automated)** — `role-forbidden-api-action.test.ts` — 10 pilot actions × role denial/allow + route wiring; live staging probe **GO** (Sprint 022)  
 14. **FRZ-015** — AURA provider verified connection — **GO** (Sprint FRZ-015b: Owner configured Railway; live synthetic verify 12/12; see `TITAN_FRZ015_AURA_STAGING_REPORT.md`)  
-15. **FRZ-018** — Xero OAuth staging connect — **PARTIAL** (OAuth connected Young Guns Plumbing; live read-only import verify deferred — Owner session token or UI Sync)  
+15. **FRZ-018** — Xero OAuth staging connect — **NO-GO** (OAuth connected Young Guns Plumbing; Owner Sync click not DB-corroborated — retry sync + FRZ-018e)  
 16. **FRZ-019** — Configuration Studio local audit — **PARTIAL** (direct-save settings; version/rollback TBD)  
 
 ---

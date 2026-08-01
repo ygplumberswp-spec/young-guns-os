@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL (OAuth connected; import verify deferred)  
+**Updated (UTC):** 2026-08-01 — FRZ-018d Xero staging NO-GO (OAuth connected; sync not DB-corroborated)  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -24,7 +24,7 @@
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
 | **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018c PARTIAL** — Young Guns Plumbing connected; `xero_connected` audit; 0 sync logs | Connected (Owner UI) | **OAuth connected — import not staging-verified** | Optional: Owner session token re-run or staging UI Sync for read-only import verify |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018d NO-GO** — OAuth connected; Owner Sync not DB-corroborated; 0 sync logs | Connected (Owner UI) | **OAuth connected — sync/import not evidenced** | Owner retry sync (dashboard Sync now or entity buttons); check UI error + Railway logs |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

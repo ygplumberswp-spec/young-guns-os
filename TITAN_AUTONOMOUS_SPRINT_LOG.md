@@ -585,6 +585,23 @@
 
 ---
 
+## Sprint FRZ-018d — Xero staging post-sync verify (NO-GO)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018d — Post-Owner Sync read-only staging verification |
+| **Result** | **NO-GO** — Owner signal "xero synced" not DB-corroborated: `last_sync_at` null, 0 sync logs, 0 mappings, 0 jobs; OAuth still connected (Young Guns Plumbing); 12 PASS / 4 FAIL / 1 PARTIAL |
+| **Checkpoint** | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `diagnostic-output/175-frz018d-xero-staging-post-sync-verify.json` |
+| **Owner signal** | "xero synced" — Sync clicked on staging `/integrations/xero` |
+| **Live financial writes** | **Not performed** |
+| **FRZ-015 re-run** | **Not performed** |
+| **Migration** | None |
+| **Approval required?** | **Yes — Owner** — retry sync; note UI error if any |
+| **Next phase selected** | Owner retry sync → FRZ-018e; FRZ-019 config version schema (local) |
+
+---
+
 ## Sprint FRZ-019 — Configuration Studio local audit (PARTIAL)
 
 | Field | Value |

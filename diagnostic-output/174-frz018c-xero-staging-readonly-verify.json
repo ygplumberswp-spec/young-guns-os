@@ -1,7 +1,7 @@
 {
   "schemaVersion": "frz018c-staging-readonly-verify-v1",
   "sprint": "FRZ-018c",
-  "startedAt": "2026-08-01T10:27:10.008Z",
+  "startedAt": "2026-08-01T10:29:49.154Z",
   "branch": "cursor/titan-frozen-scope-completion",
   "priorCheckpoint": "a67f648",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
@@ -34,7 +34,7 @@
     {
       "name": "probe_signup_session",
       "status": "PASS",
-      "detail": "92eef2db…"
+      "detail": "26c082a5…"
     },
     {
       "name": "credential_gate_oauthConfigured",
@@ -172,5 +172,5 @@
     "skipped": 0,
     "partial": 8
   },
-  "completedAt": "2026-08-01T10:27:27.983Z"
+  "completedAt": "2026-08-01T10:30:05.091Z"
 }
