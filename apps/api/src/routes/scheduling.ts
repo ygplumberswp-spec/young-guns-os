@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { SchedulingService } from '../services/scheduling.service.js';
 import { SchedulingError } from '../services/scheduling.service.js';
+import {
+  BusinessDayTimelineError,
+  BusinessDayTimelineService,
+} from '../services/business-day-timeline.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -114,6 +118,35 @@ export function createSchedulingRouter({
     },
   );
 
+  router.get(
+    '/day-timeline',
+    requireAnyPermission('dispatch:read', 'dispatch:write', 'workforce:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const dateParam = typeof req.query.date === 'string' ? req.query.date : null;
+      const userIdParam = typeof req.query.userId === 'string' ? req.query.userId : null;
+
+      if (!dateParam) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Day timeline requires a date query parameter (YYYY-MM-DD)',
+          },
+        });
+        return;
+      }
+
+      const timelineService = new BusinessDayTimelineService(db);
+
+      try {
+        const timeline = await timelineService.getDayTimeline(companyId, dateParam, userIdParam);
+        res.json({ data: timeline });
+      } catch (error) {
+        handleTimelineError(res, error);
+      }
+    },
+  );
+
   router.post('/jobs/:jobId/schedule', requireAnyPermission('dispatch:write'), async (req, res) => {
     const auth = getAuth(req);
     const parsed = scheduleJobSchema.safeParse(req.body);
@@ -175,6 +208,20 @@ export function createSchedulingRouter({
   );
 
   return router;
+}
+
+function handleTimelineError(res: import('express').Response, error: unknown) {
+  if (error instanceof BusinessDayTimelineError) {
+    res.status(error.code === 'VALIDATION_ERROR' ? 400 : 400).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  throw error;
 }
 
 function handleSchedulingError(res: import('express').Response, error: unknown) {

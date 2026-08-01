@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useParams } from 'wouter';
+import { Link, useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
@@ -734,9 +734,16 @@ export function MobileJobDetailPage() {
       </Panel>
 
       <Panel title="Labour" description={`Crew total ${labourTotal} min`}>
-        <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
-          Start my labour
-        </Button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <Button type="button" disabled={busy} onClick={() => void handleStartLabour()}>
+            Start my labour
+          </Button>
+          <Link href={`/mobile/time?jobId=${encodeURIComponent(jobId ?? '')}`}>
+            <Button type="button" variant="secondary">
+              Time & attendance
+            </Button>
+          </Link>
+        </div>
         <ul className="portal-list" style={{ marginTop: '0.75rem' }}>
           {workspace.laborTimeEntries.map((entry) => (
             <li key={entry.id}>

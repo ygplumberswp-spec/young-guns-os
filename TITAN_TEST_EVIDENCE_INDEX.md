@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 011 Phase 5 **17/17** + Phase 6 **12/12** staging E2E  
-**Automated test files:** 49 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 012 Phase 8 business-day timeline local slice  
+**Automated test files:** 50 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **235 pass** (Sprint 009) |
+| `pnpm test` | shared → auth → web → api (sequential) — **242 pass** (Sprint 012) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -99,6 +99,13 @@
 | `apps/web/src/features/jobs/crew-assignment-utils.test.ts` | Crew assignment draft validation (2–4 members, primary, uniqueness) |
 | `apps/web/src/features/finance/build-job-finance-action-href.test.ts` | Job detail finance quick-action href builder (UX-017) |
 | `apps/api/src/services/scheduling-execution-labels.test.ts` | Calendar crew/vehicle label formatting from execution tables |
+
+### Workforce / business-day timeline (Phase 8)
+
+| File | Domain |
+|------|--------|
+| `packages/shared/src/business-day-timeline.test.ts` | Day range parsing, event merge/summary helpers |
+| `apps/api/src/services/business-day-timeline.service.ts` | Office timeline aggregation (time entries + workflow events) |
 
 ### Brand / UI
 

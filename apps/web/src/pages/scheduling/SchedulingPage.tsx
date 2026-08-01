@@ -76,6 +76,9 @@ export function SchedulingPage() {
         description="Calendar view of scheduled jobs and team assignments."
         actions={
           <div className="scheduling-page__actions">
+            <Link href="/workforce/day-timeline">
+              <Button variant="secondary">Day timeline</Button>
+            </Link>
             <Link href={`/aura?scheduling=1`}>
               <Button variant="secondary">Ask {AI_NAME}</Button>
             </Link>

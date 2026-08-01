@@ -311,6 +311,10 @@ export function App() {
                         />
                         <Route path="/finance/payments" component={OwnerPages.PaymentListPage} />
                         <Route path="/scheduling" component={OwnerPages.SchedulingPage} />
+                        <Route
+                          path="/workforce/day-timeline"
+                          component={OwnerPages.BusinessDayTimelinePage}
+                        />
                         <Route path="/jobs/new" component={OwnerPages.JobCreatePage} />
                         <Route path="/jobs/:id" component={OwnerPages.JobDetailPage} />
                         <Route path="/jobs" component={OwnerPages.JobListPage} />

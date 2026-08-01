@@ -114,7 +114,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | OPS-003 | `/leads` and `/sales-intelligence` overlap (+ convert gap Critical above) | PARTIAL | Single nav entry — **UX-019** |
 | OPS-004 | Standalone contacts entity missing | MISSING | Spec if needed |
 | OPS-013 / UX-044 | ~~Offline observability-only~~ | **CLOSED (staging web)** | IndexedDB queue + flush + states; optional store packaging later |
-| OPS-014 / UX-029 | Time tracking job-linked in office + mobile UI | **CLOSED (local)** | Office execution labour rollup + mobile job-scoped time |
+| OPS-014 / UX-029 | Time tracking job-linked in office + mobile UI | **CLOSED (local)** | Office day timeline + execution labour rollup + mobile job-scoped time/break/travel |
 | FIN-009–010 | Outstanding surfaced on home (**UX-I**); richer cash-flow analytics still open | PARTIAL | Home outstanding ✓ — deeper cash panels later |
 | FIN-012–013 | Stripe missing; EFT manual only | MISSING / PARTIAL | Product decision |
 | FLT-004–005 | Trips/events derived heuristically | PARTIAL | Prefer provider trip/event APIs |

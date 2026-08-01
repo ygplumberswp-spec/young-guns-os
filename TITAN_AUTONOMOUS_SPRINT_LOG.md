@@ -198,3 +198,19 @@
 | **Approval required?** | Staging DB password + Railway token for local migrate/redeploy only |
 | **Next phase selected** | Field execution UX-B re-run on current commit; FRZ-015 AURA provider gate |
 
+---
+
+## Sprint 012 — Phase 8 business-day timeline (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 8 — Business-day timeline, attendance and labour (local slice) |
+| **Result** | Office day-timeline API + page; mobile break/travel time entries; job→time deep-link |
+| **Checkpoint** | *(pending commit)* |
+| **Files changed** | `business-day-timeline.ts`, `business-day-timeline.service.ts`, `BusinessDayTimelinePage.tsx`, `MobileTimePage.tsx`, `MobileJobDetailPage.tsx`, scheduling route `/day-timeline`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**242** pass: 68 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
+| **Approval required?** | No — local only; staging E2E for FRZ-007 remainder deferred |
+| **Next phase selected** | Phase 9 quotes/BOQs (safe local) or FRZ-015 AURA provider gate (Owner credentials) |
+

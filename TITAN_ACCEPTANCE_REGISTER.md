@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `2aaee26` (pre Sprint 011 commit)  
-**Updated (UTC):** 2026-08-01 — Phase 5 re-verification **17/17 GO** + Phase 6 staging **12/12 GO**  
+**Checkpoint:** `eb5edc8` (pre Sprint 012 commit)  
+**Updated (UTC):** 2026-08-01 — Phase 8 business-day timeline local slice (Sprint 012)  
 
 ---
 
@@ -50,7 +50,7 @@
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |
 | FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Staging Phase 5 E2E 17/17** | — | — | Partially implemented | Audit history + record links + finance empty state verified staging; job detail finance strip local (UX-017) | Cursor | Sprint 011 | `TITAN_PHASE5_STAGING_REPORT.md`, `140-staging-phase5-e2e.json` |
 | FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | **Staging Phase 6 E2E 12/12** + UX-B 35/35 | Cartrack optional | — | **Verified complete (staging)** | Crew assign + calendar labels + cross-tenant job denial on Railway staging | Cursor | Sprint 011 | `diagnostic-output/141-staging-phase6-e2e.json` |
-| FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Mobile `/mobile/time` job picker + job # on entries (UX-029); full day timeline incomplete | Cursor | Sprint 009 | `MobileTimePage.tsx`, OPS-014 |
+| FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Office `/workforce/day-timeline` merges time entries + workflow events; mobile break/travel logging; AURA opening/closing brief still open | Cursor | Sprint 012 | `BusinessDayTimelinePage.tsx`, OPS-014 |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
 | FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | — | Quote send | Partially implemented | BOQ workspace + plan quotes largely missing | Cursor | UX-E | `finance-contract.test.ts` |
 | FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV works; live Xero # authority open | Cursor | UX-E | FIN-002, FIN-007 |
@@ -92,8 +92,9 @@
 
 1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
 2. ~~**FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; scheduling calendar execution labels **local complete**; staging E2E proof still required~~ **DONE** — see `diagnostic-output/141-staging-phase6-e2e.json` (12/12 GO)  
-3. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-4. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+3. **FRZ-007 / Phase 8** — Office business-day timeline local slice **DONE**; AURA opening/closing brief + full event taxonomy remain  
+4. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+5. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

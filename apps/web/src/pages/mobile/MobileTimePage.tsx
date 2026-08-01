@@ -82,6 +82,29 @@ export function MobileTimePage() {
     }
   }
 
+  async function handleSimpleEntry(
+    entryType: 'break_start' | 'break_end' | 'travel',
+    notes?: string,
+  ) {
+    if (!accessToken) return;
+    setIsSubmitting(true);
+    setActionError(null);
+    try {
+      await createMobileTimeEntry(accessToken, {
+        entryType,
+        jobId: entryType === 'travel' && selectedJobId ? selectedJobId : undefined,
+        notes,
+      });
+      await entriesQuery.refetch();
+    } catch (err) {
+      setActionError(
+        err instanceof MobileApiClientError ? err.message : 'Unable to record time entry',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   async function handleJobTime() {
     if (!accessToken || !selectedJobId) {
       setActionError('Select a job before logging on-site time');
@@ -161,7 +184,7 @@ export function MobileTimePage() {
       </Panel>
 
       <Panel title="Shift clock">
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Button disabled={isSubmitting} onClick={() => void handleShiftClock('clock_in')}>
             Clock in
           </Button>
@@ -171,6 +194,27 @@ export function MobileTimePage() {
             onClick={() => void handleShiftClock('clock_out')}
           >
             Clock out
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={() => void handleSimpleEntry('break_start', 'Break start')}
+          >
+            Break start
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={isSubmitting}
+            onClick={() => void handleSimpleEntry('break_end', 'Break end')}
+          >
+            Break end
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={isSubmitting || !selectedJobId}
+            onClick={() => void handleSimpleEntry('travel', 'Travel to job')}
+          >
+            Log travel
           </Button>
         </div>
       </Panel>
