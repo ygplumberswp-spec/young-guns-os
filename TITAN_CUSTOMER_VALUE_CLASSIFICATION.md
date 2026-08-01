@@ -122,6 +122,22 @@ Marketing eligibility extended via `isMarketingEligibleCustomerValue()` (paying 
 
 ---
 
+## Post-Xero-import automation (CV-001b)
+
+When a Xero background import job settles with `status=completed` and `integration_connections.last_sync_at` is populated:
+
+1. **`BackgroundWorkOrchestratorService.handleXeroImportJobSettled`** — invalidates customer value caches, recomputes metrics, emits `xero.import.completed`, records idempotent `cvMetricsRefreshJobId` on the Xero connector config.
+2. **Scheduler tick fallback** — `IntegrationSyncOrchestratorService.refreshPendingCustomerValueMetrics` runs each 60s tick for tenants where import completed but CV refresh flag is missing (e.g. API restart during import).
+3. **Staging watcher** — `diagnostic-output/cv-post-xero-import-watch.mjs` polls read-only every 60s (max 4h) and reruns the classification probe when import completes; writes `diagnostic-output/185-cv-post-xero-import-complete.json`.
+
+While import is `pending`/`running` (or Xero connected but `last_sync_at` is null), `GET /api/v1/customers/value-metrics` returns `dataCompleteness: partial` and UI shows:
+
+> **Xero import in progress — customer classifications are partial**
+
+Contacts mapped from Xero without qualifying invoices remain `prospect_contact` — never `paying_customer`.
+
+---
+
 ## Code map
 
 | Layer | Path |

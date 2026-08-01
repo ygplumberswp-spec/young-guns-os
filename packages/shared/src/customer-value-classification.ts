@@ -77,6 +77,10 @@ export type CustomerValueMetrics = {
   notes: string[];
 };
 
+/** Shown in CRM/dashboard when Xero background import is still running. */
+export const CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE =
+  'Xero import in progress — customer classifications are partial';
+
 export type CustomerValueClassificationEvidence = {
   code: string;
   detail: string;

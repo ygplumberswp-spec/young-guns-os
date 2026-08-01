@@ -64,7 +64,8 @@ export type TenantDomainEventType =
   | BusinessEventType
   | 'document.uploaded'
   | 'invoice.updated'
-  | 'payment.recorded';
+  | 'payment.recorded'
+  | 'xero.import.completed';
 
 export type TenantDomainEvent = {
   companyId: string;

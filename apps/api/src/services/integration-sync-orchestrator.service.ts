@@ -43,6 +43,8 @@ type AutoSyncConnectorConfig = {
     lastRecordsProcessed?: number | null;
     lastError?: string | null;
     initialSyncCompleted?: boolean;
+    cvMetricsRefreshAt?: string | null;
+    cvMetricsRefreshJobId?: string | null;
   };
 };
 
@@ -869,6 +871,160 @@ export class IntegrationSyncOrchestratorService {
       initialSyncCompleted:
         input.trigger === 'initial' && input.result.success ? true : undefined,
     });
+  }
+
+  async hasCustomerValueMetricsRefreshedForJob(
+    companyId: string,
+    syncJobId: string,
+  ): Promise<boolean> {
+    const connector = await this.deps.db.query.integrationConnectors.findFirst({
+      where: and(
+        eq(integrationConnectors.companyId, companyId),
+        eq(integrationConnectors.connectorKey, 'xero'),
+      ),
+    });
+    if (!connector) return false;
+    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
+    return config.autoSync?.cvMetricsRefreshJobId === syncJobId;
+  }
+
+  async markCustomerValueMetricsRefreshed(
+    companyId: string,
+    syncJobId: string,
+  ): Promise<void> {
+    const connector = await this.deps.db.query.integrationConnectors.findFirst({
+      where: and(
+        eq(integrationConnectors.companyId, companyId),
+        eq(integrationConnectors.connectorKey, 'xero'),
+      ),
+    });
+    if (!connector) return;
+
+    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
+    await this.deps.db
+      .update(integrationConnectors)
+      .set({
+        config: {
+          ...config,
+          autoSync: {
+            ...config.autoSync,
+            cvMetricsRefreshAt: new Date().toISOString(),
+            cvMetricsRefreshJobId: syncJobId,
+          },
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationConnectors.id, connector.id));
+  }
+
+  async hasTwoWayReadVerifyQueuedForJob(
+    companyId: string,
+    syncJobId: string,
+  ): Promise<boolean> {
+    const connector = await this.deps.db.query.integrationConnectors.findFirst({
+      where: and(
+        eq(integrationConnectors.companyId, companyId),
+        eq(integrationConnectors.connectorKey, 'xero'),
+      ),
+    });
+    if (!connector) return false;
+    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
+    return config.autoSync?.twoWayReadVerifyJobId === syncJobId;
+  }
+
+  async markTwoWayReadVerifyQueued(companyId: string, syncJobId: string): Promise<void> {
+    const connector = await this.deps.db.query.integrationConnectors.findFirst({
+      where: and(
+        eq(integrationConnectors.companyId, companyId),
+        eq(integrationConnectors.connectorKey, 'xero'),
+      ),
+    });
+    if (!connector) return;
+
+    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
+    await this.deps.db
+      .update(integrationConnectors)
+      .set({
+        config: {
+          ...config,
+          autoSync: {
+            ...config.autoSync,
+            twoWayReadVerifyJobId: syncJobId,
+            twoWayReadVerifyQueuedAt: new Date().toISOString(),
+          },
+        },
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationConnectors.id, connector.id));
+  }
+
+  /**
+   * Scheduler-tick fallback: refresh CV metrics once after Xero import completes
+   * when the settled hook did not run (e.g. API restart during import).
+   */
+  async refreshPendingCustomerValueMetrics(
+    customerValueService: import('./customer-value-classification.service.js').CustomerValueClassificationService,
+  ): Promise<number> {
+    const connections = await this.deps.db
+      .select({
+        companyId: integrationConnections.companyId,
+        lastSyncAt: integrationConnections.lastSyncAt,
+      })
+      .from(integrationConnections)
+      .where(
+        and(
+          eq(integrationConnections.provider, 'xero'),
+          isNotNull(integrationConnections.lastSyncAt),
+        ),
+      );
+
+    let refreshed = 0;
+
+    for (const connection of connections) {
+      const activeImport = await this.deps.db
+        .select({ id: integrationSyncJobs.id })
+        .from(integrationSyncJobs)
+        .where(
+          and(
+            eq(integrationSyncJobs.companyId, connection.companyId),
+            eq(integrationSyncJobs.provider, 'xero'),
+            eq(integrationSyncJobs.syncScope, 'import'),
+            inArray(integrationSyncJobs.status, ['pending', 'running']),
+          ),
+        )
+        .limit(1);
+
+      if (activeImport.length > 0) continue;
+
+      const latestCompleted = await this.deps.db
+        .select({ id: integrationSyncJobs.id })
+        .from(integrationSyncJobs)
+        .where(
+          and(
+            eq(integrationSyncJobs.companyId, connection.companyId),
+            eq(integrationSyncJobs.provider, 'xero'),
+            eq(integrationSyncJobs.syncScope, 'import'),
+            eq(integrationSyncJobs.status, 'completed'),
+          ),
+        )
+        .orderBy(desc(integrationSyncJobs.completedAt))
+        .limit(1);
+
+      const latestJobId = latestCompleted[0]?.id;
+      if (!latestJobId) continue;
+
+      const alreadyRefreshed = await this.hasCustomerValueMetricsRefreshedForJob(
+        connection.companyId,
+        latestJobId,
+      );
+      if (alreadyRefreshed) continue;
+
+      await customerValueService.refreshValueMetrics(connection.companyId);
+      await this.markCustomerValueMetricsRefreshed(connection.companyId, latestJobId);
+      refreshed += 1;
+    }
+
+    return refreshed;
   }
 
   private async recordAudit(

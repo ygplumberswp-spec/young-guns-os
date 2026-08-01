@@ -348,3 +348,48 @@ describe('tenant isolation contract', () => {
     assert.equal(b.isProspect, true);
   });
 });
+
+describe('CV-001 post-Xero-import metrics', () => {
+  it('returns partial dataCompleteness while Xero import is in progress', () => {
+    const summaries = Array.from({ length: 675 }, (_, index) => ({
+      ...classifyCustomerValueFromEvidence({
+        customerId: `contact-${index}`,
+        customerName: `Contact ${index}`,
+        customerStatus: 'active',
+        isSupplierOnly: false,
+        xeroContactId: `xero-${index}`,
+        asOf: AS_OF,
+        invoices: [],
+      }),
+      computedAt: AS_OF,
+    }));
+
+    const metrics = aggregateCustomerValueMetrics(summaries, { xeroImportInProgress: true });
+    assert.equal(metrics.dataCompleteness, 'partial');
+    assert.equal(metrics.xeroImportInProgress, true);
+  });
+
+  it('keeps paying count at zero when only Xero contact mappings exist (no invoice evidence)', () => {
+    const summaries = Array.from({ length: 675 }, (_, index) => ({
+      ...classifyCustomerValueFromEvidence({
+        customerId: `contact-${index}`,
+        customerName: `Contact ${index}`,
+        customerStatus: 'active',
+        isSupplierOnly: false,
+        xeroContactId: `xero-${index}`,
+        asOf: AS_OF,
+        invoices: [],
+      }),
+      computedAt: AS_OF,
+    }));
+
+    const metrics = aggregateCustomerValueMetrics(summaries);
+    const paying = metrics.buckets.find((bucket) => bucket.classification === 'paying_customer');
+    const prospects = metrics.buckets.find((bucket) => bucket.classification === 'prospect_contact');
+
+    assert.equal(paying?.count, 0);
+    assert.equal(prospects?.count, 675);
+    assert.equal(metrics.totals.qualifyingCustomers, 0);
+    assert.equal(metrics.dataCompleteness, 'complete');
+  });
+});

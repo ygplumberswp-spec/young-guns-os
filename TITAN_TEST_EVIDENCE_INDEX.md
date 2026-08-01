@@ -77,8 +77,9 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `packages/shared/src/nav-honesty.test.ts` | Nav capability honesty |
 | `apps/api/src/services/xero-oauth.test.ts` | Xero OAuth |
 | `apps/api/src/services/xero-import-sync.test.ts` | Xero import |
-| `packages/shared/src/customer-value-classification.test.ts` | **Customer value classification (CV-001)** |
+| `packages/shared/src/customer-value-classification.test.ts` | **Customer value classification (CV-001 / CV-001b post-import)** |
 | `apps/api/src/services/customer-value-classification.test.ts` | Customer value metrics contract + tenant isolation |
+| `apps/api/src/services/background-work-orchestrator.test.ts` | **CV-001b — metrics refresh on Xero import complete** |
 | `packages/shared/src/n8n-orchestration.test.ts` | n8n signing |
 | `apps/api/src/lib/n8n-signing.test.ts` | n8n HMAC |
 
@@ -232,6 +233,9 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `packages/db/scripts/probe-183-whatsapp-enrichment.mjs` | Read-only staging WA + Xero import state probe |
 | `diagnostic-output/183-whatsapp-enrichment-requirements.json` | Requirements + staging WhatsApp connection state (read-only) |
 | `diagnostic-output/118-migration-0107-whatsapp-enrichment-disposable.json` | Migration 0107 disposable DB PASS |
+| `diagnostic-output/182-customer-value-classification-staging-probe.json` | **CV-001** Young Guns customer value metrics (read-only) |
+| `diagnostic-output/185-cv-post-xero-import-complete.json` | **CV-001b** post-Xero-import classification probe (auto watcher) |
+| `diagnostic-output/cv-post-xero-import-watch.mjs` | CV-001b read-only poll + auto-probe script |
 | `TITAN_STAGING_DATA_CLEANUP_MANIFEST.md` | Non-destructive cleanup manifest — **awaiting Owner approval** |
 
 ## Coverage gaps (Phase 2+ targets)

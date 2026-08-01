@@ -1,0 +1,29 @@
+{
+  "label": "185-cv-post-xero-import-complete",
+  "generatedAt": "2026-08-01T11:45:57.885Z",
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "verdict": "IMPORT_FAILED",
+  "startedAt": "2026-08-01T11:45:57.888Z",
+  "completedAt": null,
+  "pollIntervalMs": 60000,
+  "maxWaitMs": 14400000,
+  "targetJobPrefix": "8e6aec9b",
+  "importStatusAtStart": {
+    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "jobStatus": "failed",
+    "lastSyncAt": null,
+    "importComplete": false
+  },
+  "importStatusAtComplete": {
+    "jobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "jobStatus": "failed",
+    "lastSyncAt": null,
+    "importComplete": false
+  },
+  "probe": null,
+  "notes": [
+    "Xero import job ended with status=failed"
+  ],
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf"
+}

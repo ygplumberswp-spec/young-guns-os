@@ -89,3 +89,9 @@ export function invalidateBackgroundWorkReadCaches(companyId: string) {
 export function invalidateMissionControlReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:mission-control`);
 }
+
+/** Clears customer value classification read caches for a tenant. */
+export function invalidateCustomerValueReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:customers/value-metrics`);
+  apiReadCache.invalidatePrefix(`${companyId}:customers`);
+}

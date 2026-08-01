@@ -1,6 +1,7 @@
 import { Link } from 'wouter';
 import { EmptyState, LoadingState, Panel } from '@titan/ui';
 import type { CustomerValueMetricBucket } from '@titan/shared';
+import { CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE } from '@titan/shared';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { fetchCustomerValueMetrics } from '../../lib/customer-value-api-client';
 import { useAuth } from '../../lib/auth-context';
@@ -38,8 +39,8 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
     <Panel
       title="Customer value"
       description={
-        metrics?.xeroImportInProgress
-          ? 'Counts may be partial while Xero background import is running.'
+        metrics?.dataCompleteness === 'partial' || metrics?.xeroImportInProgress
+          ? CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE
           : 'Invoiced vs paid customers — click a metric to filter the CRM list.'
       }
     >
@@ -48,7 +49,7 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
       ) : metricsQuery.error && metrics === undefined ? (
         <EmptyState
           title="Customer value metrics unavailable"
-          description={metricsQuery.error.message || 'Try again shortly.'}
+          description={String(metricsQuery.error || 'Try again shortly.')}
         />
       ) : !metrics || metrics.totals.customerRecords === 0 ? (
         <EmptyState
@@ -57,9 +58,9 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
         />
       ) : (
         <>
-          {metrics.dataCompleteness === 'partial' ? (
+          {metrics.dataCompleteness === 'partial' || metrics.xeroImportInProgress ? (
             <p className="page-muted" role="status">
-              Partial data — Xero import in progress. Cash received never includes unpaid invoices.
+              {CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE}
             </p>
           ) : null}
           <div className={compact ? 'dashboard-metrics dashboard-metrics--compact' : 'dashboard-metrics'}>

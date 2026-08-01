@@ -5,11 +5,13 @@ import type {
 } from '@titan/shared';
 import { mapIntegrationAutoSyncUiStateToBackgroundWork } from '@titan/shared';
 import type { BackgroundWorkQueueService } from './background-work-queue.service.js';
+import type { CustomerValueClassificationService } from './customer-value-classification.service.js';
 import type { IntegrationSyncOrchestratorService } from './integration-sync-orchestrator.service.js';
 import type { TenantDomainEventBus } from './tenant-domain-event-bus.service.js';
-import type { XeroSyncService } from './xero-sync.service.js';
+import type { XeroTwoWayVerifyService } from './xero-two-way-verify.service.js';
 import {
   invalidateBackgroundWorkReadCaches,
+  invalidateCustomerValueReadCaches,
   invalidateIntegrationReadCaches,
 } from './api-read-cache.js';
 
@@ -18,6 +20,8 @@ export type BackgroundWorkOrchestratorDeps = {
   backgroundWorkQueue: BackgroundWorkQueueService;
   domainEventBus: TenantDomainEventBus;
   xeroSyncService: XeroSyncService;
+  customerValueClassificationService: CustomerValueClassificationService;
+  xeroTwoWayVerifyService?: XeroTwoWayVerifyService;
 };
 
 export class BackgroundWorkOrchestratorService {
@@ -34,8 +38,8 @@ export class BackgroundWorkOrchestratorService {
       await this.handleJobCompleted(event, backgroundWorkQueue);
     });
 
-    domainEventBus.subscribe('job.scheduled', async (event) => {
-      invalidateBackgroundWorkReadCaches(event.companyId);
+    domainEventBus.subscribe('xero.import.completed', async (event) => {
+      await this.handleXeroImportCompleted(event);
     });
   }
 
@@ -43,15 +47,21 @@ export class BackgroundWorkOrchestratorService {
     integrationJobsProcessed: number;
     scheduledSyncs: { processed: number; skipped: number; errors: number };
     domainFollowupsPending: number;
+    customerValueMetricsRefreshed: number;
   }> {
     const scheduledSyncs = await this.deps.integrationSyncOrchestrator.runScheduledSyncs();
     const domainFollowupsPending =
       await this.deps.backgroundWorkQueue.processPendingDomainFollowups();
+    const customerValueMetricsRefreshed =
+      await this.deps.integrationSyncOrchestrator.refreshPendingCustomerValueMetrics(
+        this.deps.customerValueClassificationService,
+      );
 
     return {
       integrationJobsProcessed: scheduledSyncs.processed,
       scheduledSyncs,
       domainFollowupsPending,
+      customerValueMetricsRefreshed,
     };
   }
 
@@ -92,6 +102,100 @@ export class BackgroundWorkOrchestratorService {
 
   publishDomainEvent(event: TenantDomainEvent): void {
     this.deps.domainEventBus.publish(event);
+  }
+
+  /**
+   * Post-import hooks — CV-001 metrics refresh + two-way read verify queue.
+   * Each hook is idempotent per syncJobId; they do not block one another.
+   */
+  async handleXeroImportJobSettled(input: XeroImportJobSettledInput): Promise<void> {
+    await this.deps.integrationSyncOrchestrator.handleXeroImportJobSettled(input);
+
+    if (!input.result.success) {
+      return;
+    }
+
+    const recordsProcessed =
+      input.result.contacts.pulledCount +
+      input.result.invoices.pulledCount +
+      input.result.payments.pulledCount +
+      input.result.bankTransactions.pulledCount;
+
+    const alreadyRefreshed =
+      await this.deps.integrationSyncOrchestrator.hasCustomerValueMetricsRefreshedForJob(
+        input.companyId,
+        input.syncJobId,
+      );
+
+    if (!alreadyRefreshed) {
+      await this.refreshCustomerValueMetricsAfterXeroImport({
+        companyId: input.companyId,
+        syncJobId: input.syncJobId,
+        recordsProcessed,
+      });
+    }
+
+    const verifyAlreadyQueued =
+      await this.deps.integrationSyncOrchestrator.hasTwoWayReadVerifyQueuedForJob(
+        input.companyId,
+        input.syncJobId,
+      );
+
+    if (!verifyAlreadyQueued && this.deps.xeroTwoWayVerifyService) {
+      await this.deps.xeroTwoWayVerifyService.queuePostImportVerification({
+        companyId: input.companyId,
+        syncJobId: input.syncJobId,
+      });
+      await this.deps.integrationSyncOrchestrator.markTwoWayReadVerifyQueued(
+        input.companyId,
+        input.syncJobId,
+      );
+    }
+  }
+
+  private async refreshCustomerValueMetricsAfterXeroImport(input: {
+    companyId: string;
+    syncJobId: string;
+    recordsProcessed: number;
+  }): Promise<void> {
+    invalidateCustomerValueReadCaches(input.companyId);
+    invalidateIntegrationReadCaches(input.companyId);
+    invalidateBackgroundWorkReadCaches(input.companyId);
+
+    const metrics = await this.deps.customerValueClassificationService.refreshValueMetrics(
+      input.companyId,
+    );
+
+    await this.deps.integrationSyncOrchestrator.markCustomerValueMetricsRefreshed(
+      input.companyId,
+      input.syncJobId,
+    );
+
+    this.deps.domainEventBus.publish({
+      companyId: input.companyId,
+      eventType: 'xero.import.completed',
+      entityType: 'integration_sync_job',
+      entityId: input.syncJobId,
+      idempotencyKey: `xero.import.completed:${input.syncJobId}`,
+      payload: {
+        syncJobId: input.syncJobId,
+        recordsProcessed: input.recordsProcessed,
+        dataCompleteness: metrics.dataCompleteness,
+        customerRecords: metrics.totals.customerRecords,
+        qualifyingCustomers: metrics.totals.qualifyingCustomers,
+        payingCustomers:
+          metrics.buckets.find(
+            (bucket: { classification: string; count: number }) =>
+              bucket.classification === 'paying_customer',
+          )?.count ?? 0,
+      },
+    });
+  }
+
+  private async handleXeroImportCompleted(event: TenantDomainEvent): Promise<void> {
+    invalidateCustomerValueReadCaches(event.companyId);
+    invalidateIntegrationReadCaches(event.companyId);
+    invalidateBackgroundWorkReadCaches(event.companyId);
   }
 
   private async handleLeadConverted(

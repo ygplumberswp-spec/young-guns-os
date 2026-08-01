@@ -8,11 +8,24 @@ import {
   aggregateCustomerValueMetrics,
   classifyCustomerValueFromEvidence,
   customerMatchesValueFilter,
+  CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE,
   isCustomerValueClassificationFilterKey,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { companies, customers, integrationSyncJobs, invoices, xeroCustomerMappings } from '@titan/db';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  companies,
+  customers,
+  integrationConnections,
+  integrationSyncJobs,
+  invoices,
+  xeroCustomerMappings,
+} from '@titan/db';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateCustomerValueReadCaches,
+} from './api-read-cache.js';
 
 export class CustomerValueClassificationError extends Error {
   constructor(
@@ -31,17 +44,30 @@ export class CustomerValueClassificationService {
 
   async getValueMetrics(companyId: string): Promise<CustomerValueMetrics> {
     const cacheKey = buildTenantCacheKey(companyId, 'customers/value-metrics');
-    return cachedTenantRead(cacheKey, async () => {
-      const summaries = await this.loadClassificationSummaries(companyId);
-      const xeroImportInProgress = await this.isXeroImportInProgress(companyId);
-      const notes: string[] = [];
-      if (xeroImportInProgress) {
-        notes.push(
-          'Xero background import in progress — invoice/payment counts may be partial until sync completes.',
-        );
-      }
-      return aggregateCustomerValueMetrics(summaries, { xeroImportInProgress, notes });
-    }, CACHE_TTLS.stats);
+    return cachedTenantRead(
+      cacheKey,
+      async () => {
+        const summaries = await this.loadClassificationSummaries(companyId);
+        const xeroState = await this.resolveXeroImportState(companyId);
+        const notes: string[] = [];
+        const partial =
+          xeroState.importInProgress || (xeroState.xeroConnected && !xeroState.lastSyncAt);
+        if (partial) {
+          notes.push(CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE);
+        }
+        return aggregateCustomerValueMetrics(summaries, {
+          xeroImportInProgress: partial,
+          notes,
+        });
+      },
+      CACHE_TTLS.stats,
+    );
+  }
+
+  /** Invalidates cached metrics and recomputes fresh classification summaries. */
+  async refreshValueMetrics(companyId: string): Promise<CustomerValueMetrics> {
+    invalidateCustomerValueReadCaches(companyId);
+    return this.getValueMetrics(companyId);
   }
 
   async listCustomersWithClassification(
@@ -185,26 +211,59 @@ export class CustomerValueClassificationService {
     });
   }
 
-  private async isXeroImportInProgress(companyId: string): Promise<boolean> {
+  private async resolveXeroImportState(companyId: string): Promise<{
+    importInProgress: boolean;
+    xeroConnected: boolean;
+    lastSyncAt: string | null;
+    hasInvoiceEvidence: boolean;
+  }> {
     try {
-      const rows = await this.db
-        .select({ status: integrationSyncJobs.status })
-        .from(integrationSyncJobs)
-        .where(
-          and(
-            eq(integrationSyncJobs.companyId, companyId),
-            eq(integrationSyncJobs.provider, 'xero'),
-            eq(integrationSyncJobs.syncScope, 'import'),
-            or(
-              eq(integrationSyncJobs.status, 'pending'),
-              eq(integrationSyncJobs.status, 'running'),
+      const [importJobs, connection, invoiceEvidence] = await Promise.all([
+        this.db
+          .select({ status: integrationSyncJobs.status })
+          .from(integrationSyncJobs)
+          .where(
+            and(
+              eq(integrationSyncJobs.companyId, companyId),
+              eq(integrationSyncJobs.provider, 'xero'),
+              eq(integrationSyncJobs.syncScope, 'import'),
+              or(
+                eq(integrationSyncJobs.status, 'pending'),
+                eq(integrationSyncJobs.status, 'running'),
+              ),
             ),
-          ),
-        )
-        .limit(1);
-      return rows.length > 0;
+          )
+          .limit(1),
+        this.db
+          .select({ lastSyncAt: integrationConnections.lastSyncAt })
+          .from(integrationConnections)
+          .where(
+            and(
+              eq(integrationConnections.companyId, companyId),
+              eq(integrationConnections.provider, 'xero'),
+            ),
+          )
+          .limit(1),
+        this.db
+          .select({ id: invoices.id })
+          .from(invoices)
+          .where(eq(invoices.companyId, companyId))
+          .limit(1),
+      ]);
+
+      return {
+        importInProgress: importJobs.length > 0,
+        xeroConnected: connection.length > 0,
+        lastSyncAt: connection[0]?.lastSyncAt?.toISOString() ?? null,
+        hasInvoiceEvidence: invoiceEvidence.length > 0,
+      };
     } catch {
-      return false;
+      return {
+        importInProgress: false,
+        xeroConnected: false,
+        lastSyncAt: null,
+        hasInvoiceEvidence: false,
+      };
     }
   }
 }

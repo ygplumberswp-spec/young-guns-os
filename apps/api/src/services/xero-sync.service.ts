@@ -83,6 +83,7 @@ type SyncFromXeroOptions = {
 
 export type XeroImportJobSettledInput = {
   companyId: string;
+  syncJobId: string;
   trigger?: IntegrationSyncTrigger;
   result: XeroImportSyncResult;
 };
@@ -558,6 +559,7 @@ export class XeroSyncService {
 
     await this.importJobSettledHandler?.({
       companyId,
+      syncJobId,
       trigger: state.trigger,
       result,
     });

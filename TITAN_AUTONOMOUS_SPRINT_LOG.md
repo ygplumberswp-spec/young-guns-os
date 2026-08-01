@@ -700,3 +700,19 @@
 | **Approval required?** | **Yes — Owner** — cleanup manifest before delete |
 | **Next phase selected** | Phase A Xero GO → Phase B approved cleanup → Phase F binding enforcement |
 
+---
+
+## Sprint CV-001b — Post-Xero-import customer value recalculation
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | CV-001b — automatic customer value metrics refresh after Xero import |
+| **Result** | **Implemented** — scheduler hook + settled handler + staging watcher |
+| **Import at start** | Job `8e6aec9b…` **running**; `last_sync_at` null; 682 contacts / 673 mappings / 3 invoices |
+| **Automation** | `BackgroundWorkOrchestratorService.handleXeroImportJobSettled` + 60s tick fallback + `cv-post-xero-import-watch.mjs` |
+| **UI partial copy** | `Xero import in progress — customer classifications are partial` |
+| **Evidence** | `diagnostic-output/185-cv-post-xero-import-complete.json` (pending import completion) |
+| **Staging touched** | Read-only poll only — import **not interrupted** |
+| **Tests** | `customer-value-classification.test.ts` (partial + paying=0), `background-work-orchestrator.test.ts` (import complete hook) |
+
