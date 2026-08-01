@@ -45,10 +45,14 @@
       "secureSessionVerify184": "9 PASS / 2 PARTIAL / 0 FAIL"
     }
   },
+  "commitSha": "f4d92eb",
   "deploy": {
     "railwayCli": "npx @railway/cli (ygplumberswp@gmail.com)",
     "services": ["young-guns-os (API)", "comfortable-determination (web)"],
-    "note": "DB migration applied live; code redeploy triggers after git push"
+    "apiDeploymentId": "c39d4340-f11c-4e43-86ac-6782f39dfb42",
+    "webDeploymentId": "2d3cc538-d39b-49e9-9b1a-794a74e41867",
+    "status": "deployed",
+    "note": "DB migration 0108 applied live before code deploy; both services healthy"
   },
   "overall": "GO"
 }
