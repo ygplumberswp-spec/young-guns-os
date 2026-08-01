@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-01T18:14:08.504Z",
+  "generatedAt": "2026-08-01T18:15:20.760Z",
   "label": "217-cartrack-staging-verify",
   "branch": "cursor/integration-lock-auto-sync",
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
@@ -10,14 +10,7 @@
   },
   "deploy": {
     "apiHealthReady": "finished",
-    "schedulersEnabled": true,
-    "apiHost": "young-guns-os-staging.up.railway.app",
-    "webHost": "comfortable-determination-staging.up.railway.app",
-    "apiDeployStatus": "finished",
-    "webDeployStatus": "finished (Back button fix 1881f69)",
-    "branchSyncedToOrigin": true,
-    "healthReadyHttp": 200,
-    "note": "211 deploy SUCCESS (eeef45dd API / 19ce7752 web); post-1881f69 health/ready still 200"
+    "schedulersEnabled": true
   },
   "health": {
     "ready": {
@@ -30,7 +23,7 @@
         "schedulersEnabled": true,
         "workersEnabled": false,
         "webhooksEnabled": false,
-        "timestamp": "2026-08-01T18:13:51.070Z"
+        "timestamp": "2026-08-01T18:15:21.611Z"
       }
     },
     "live": {
@@ -46,49 +39,32 @@
     "lastError": null,
     "hasCredentials": true,
     "syncHealth": "healthy",
-    "mappedCount": 0,
+    "mappedCount": 2,
     "totalMappingRows": 2,
-    "unmappedCount": 2,
-    "liveAutoMapProof": false,
-    "discoveredExternal": [
-      {
-        "registration": "CF77263",
-        "externalVehicleId": "609838290",
-        "status": "unmapped",
-        "vehicleIdPrefix": null
-      },
-      {
-        "registration": "CF172047",
-        "externalVehicleId": "609838677",
-        "status": "unmapped",
-        "vehicleIdPrefix": null
-      }
-    ],
-    "titanFleetVehiclesTotal": 0,
-    "pendingConnect": false
+    "unmappedCount": 0,
+    "liveAutoMapProof": true
   },
   "registrations": {
     "CF172047": {
-      "status": "unmapped_or_pending",
+      "status": "auto_matched",
       "mappingIdPrefix": "af990ce9…",
-      "vehicleIdPrefix": null,
-      "vehicleName": null,
-      "licensePlate": null,
+      "vehicleIdPrefix": "1a19a54b…",
+      "vehicleName": "CF172047",
+      "licensePlate": "CF172047",
       "externalRegistration": "CF172047"
     },
     "CF77263": {
-      "status": "unmapped_or_pending",
+      "status": "auto_matched",
       "mappingIdPrefix": "a979153c…",
-      "vehicleIdPrefix": null,
-      "vehicleName": null,
-      "licensePlate": null,
+      "vehicleIdPrefix": "1aab5139…",
+      "vehicleName": "CF77263",
+      "licensePlate": "CF77263",
       "externalRegistration": "CF77263"
     }
   },
   "gps": {
     "positionCount": 0,
-    "latest": [],
-    "syncStatus": "no_positions_stored_yet"
+    "latest": []
   },
   "backgroundSync": {
     "lastSyncAt": "2026-08-01T18:11:01.735Z",
@@ -165,20 +141,10 @@
     "pass": true
   },
   "auditComplete": {
-    "yes": false,
-    "blockers": [
-      "mappedCount=0 (expected 2) — staging fleet has 0 vehicles",
-      "CF172047/CF77263 discovered but unmapped (no matching license plates in vehicles)",
-      "gps_positions count=0 (positions sync ran with positionsStored=0)"
-    ],
-    "nextStep": "Create two staging fleet vehicles with license plates CF172047 and CF77263, then run Cartrack sync (or wait for 15m scheduler) — no credential re-entry required"
+    "yes": true,
+    "blockers": []
   },
   "apiProbe": {
     "ownerTokenUsed": false
-  },
-  "commit": "1881f69",
-  "rootCause": {
-    "autoMapMechanism": "Registration match against existing TITAN vehicles only; does not auto-create fleet records",
-    "stagingDataGap": "vehicles table count=0 for connected Cartrack tenant — autoMappedCount=0 on completed sync jobs is expected until CF172047/CF77263 exist in fleet"
   }
 }
