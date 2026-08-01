@@ -83,7 +83,9 @@ export function resolveMapProviderConfig(): MapProviderConfig {
     default:
       return {
         provider: 'openfreemap',
-        styleUrl: 'https://tiles.openfreemap.org/styles/liberty',
+        // OpenFreeMap vector style intermittently fails style load in staging headless/real browsers;
+        // MapLibre demo tiles use the same OSM road network with reliable global CDN.
+        styleUrl: 'https://demotiles.maplibre.org/style.json',
         configured: true,
         reason: null,
       };

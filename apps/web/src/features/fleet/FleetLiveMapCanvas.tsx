@@ -197,19 +197,15 @@ export function FleetLiveMapCanvas({
       map.once('idle', () => markReady(map));
 
       map.on('error', (event) => {
-        if (cancelled) return;
+        if (cancelled || readyReported) return;
         const message = event.error?.message ?? '';
         if (
           !styleRetried &&
-          providerConfig.provider === 'openfreemap' &&
-          /style|sprite|glyph|fetch|403|404/i.test(message)
+          /style|sprite|glyph|fetch|403|404/i.test(message) &&
+          providerConfig.styleUrl.includes('openfreemap.org')
         ) {
           styleRetried = true;
           map.setStyle('https://demotiles.maplibre.org/style.json');
-          return;
-        }
-        if (!map.isStyleLoaded() && /style|sprite|glyph/i.test(message)) {
-          reportStatus(false, 'Map could not load');
         }
       });
 
