@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   aggregateCustomerValueMetrics,
   classifyCustomerValueFromEvidence,
@@ -9,6 +10,21 @@ import {
 const AS_OF = '2026-08-01T12:00:00.000Z';
 
 describe('CustomerValueClassificationService contract', () => {
+  it('loadClassificationSummaries avoids undeployed xero mapping columns', () => {
+    const source = readFileSync(
+      new URL('./customer-value-classification.service.ts', import.meta.url),
+      'utf8',
+    );
+    const fnStart = source.indexOf('private async loadClassificationSummaries');
+    const fnEnd = source.indexOf('private async resolveXeroImportState', fnStart);
+    const fn = source.slice(fnStart, fnEnd);
+
+    assert.match(fn, /customerId:\s*xeroCustomerMappings\.customerId/);
+    assert.match(fn, /xeroContactId:\s*xeroCustomerMappings\.xeroContactId/);
+    assert.doesNotMatch(fn, /\.select\(\)\s*\n\s*\.from\(xeroCustomerMappings\)/);
+    assert.doesNotMatch(fn, /conflictMetadata|conflict_metadata/);
+  });
+
   it('aggregates metrics without duplicate primary customer records', () => {
     const summaries = [
       {

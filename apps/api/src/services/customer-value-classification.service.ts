@@ -177,7 +177,10 @@ export class CustomerValueClassificationService {
       .where(and(eq(invoices.companyId, companyId), inArray(invoices.customerId, ids)));
 
     const mappingRows = await this.db
-      .select()
+      .select({
+        customerId: xeroCustomerMappings.customerId,
+        xeroContactId: xeroCustomerMappings.xeroContactId,
+      })
       .from(xeroCustomerMappings)
       .where(
         and(
