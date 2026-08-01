@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation, useRoute } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation, useRoute } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
 import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -10,6 +10,9 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
+import { PageHeader } from '../../components/ux';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
+import { useTitanNotify } from '../../components/ux/TitanNotifications';
 
 type DraftLine = {
   key: string;
@@ -59,6 +62,34 @@ export function QuoteEditPage() {
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'quote',
+    recordId: quoteId,
+    enabled: canWrite && !isLoading && Boolean(quoteId),
+    getPayload: () => ({
+      jobId,
+      title,
+      status,
+      validUntil,
+      notes,
+      scopeOfWork,
+      exclusions,
+      paymentTerms,
+      lines,
+      belowFloorOverride,
+      belowFloorReason,
+      customerId,
+    }),
+    getMeta: () => ({
+      title: title || 'Edit quote',
+      completionPct: title.trim() ? 60 : 30,
+    }),
+  });
+
+  const { notify } = useTitanNotify();
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/quotes/${quoteId}`);
@@ -127,6 +158,25 @@ export function QuoteEditPage() {
     };
   }, [accessToken, canWrite, navigate, quoteId]);
 
+  useEffect(() => {
+    if (isLoading) return;
+    draftShell.touchField();
+  }, [
+    isLoading,
+    jobId,
+    title,
+    status,
+    validUntil,
+    notes,
+    scopeOfWork,
+    exclusions,
+    paymentTerms,
+    lines,
+    belowFloorOverride,
+    belowFloorReason,
+    draftShell,
+  ]);
+
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
@@ -194,6 +244,8 @@ export function QuoteEditPage() {
         belowFloorReason: belowFloorOverride ? belowFloorReason.trim() : null,
       });
       invalidateQuotes();
+      draftShell.markSubmitted();
+      notify({ variant: 'saved', message: 'Quote updated', dedupeKey: `quote-updated-${quoteId}` });
       navigate(`/finance/quotes/${quoteId}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to update quote');
@@ -209,13 +261,17 @@ export function QuoteEditPage() {
       <PageHeader
         title="Edit quote"
         description="Update draft quote lines, scope and approval status."
-        actions={
-          <Link href={`/finance/quotes/${quoteId}`}>
-            <Button variant="secondary">Cancel</Button>
-          </Link>
+        showBack
+        backFallbackHref={`/finance/quotes/${quoteId}`}
+        onBackNavigate={() =>
+          draftShell.guard.guardNavigation(() => navigate(`/finance/quotes/${quoteId}`))
         }
       />
       <FinanceNav />
+      {draftShell.autosave.statusLabel ? (
+        <p className="finance-draft-status">{draftShell.autosave.statusLabel}</p>
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>

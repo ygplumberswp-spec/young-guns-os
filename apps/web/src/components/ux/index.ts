@@ -1,4 +1,6 @@
 export { PageHeader } from './PageHeader';
+export { BackButton } from './BackButton';
+export { TitanNotificationsProvider, useTitanNotify, type TitanNotifyVariant } from './TitanNotifications';
 export { Breadcrumbs, type BreadcrumbItem } from './Breadcrumbs';
 export { SummaryCardGrid } from './SummaryCardGrid';
 export { PrimaryAction } from './PrimaryAction';

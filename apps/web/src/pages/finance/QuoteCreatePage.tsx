@@ -1,16 +1,20 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation, useSearch } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation, useSearch } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { CustomerSummary, JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
 import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { createQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
+import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { PageHeader } from '../../components/ux';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
+import { useTitanNotify } from '../../components/ux/TitanNotifications';
 
 type DraftLine = {
   key: string;
@@ -64,6 +68,36 @@ export function QuoteCreatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'quote',
+    enabled: canWrite && !isLoading,
+    getPayload: () => ({
+      customerId,
+      jobId,
+      title,
+      status,
+      validUntil,
+      notes,
+      scopeOfWork,
+      exclusions,
+      paymentTerms,
+      useSimpleAmount,
+      amount,
+      lines,
+      belowFloorOverride,
+      belowFloorReason,
+    }),
+    getMeta: () => ({
+      title: title || 'New quote',
+      customerLabel: customers.find((customer) => customer.id === customerId)?.name ?? null,
+      completionPct: title.trim() && customerId ? 40 : customerId ? 20 : 5,
+    }),
+  });
+
+  const { notify } = useTitanNotify();
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/quotes');
@@ -120,6 +154,62 @@ export function QuoteCreatePage() {
       cancelled = true;
     };
   }, [accessToken, search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const draftId = params.get('draftId');
+    if (!accessToken || !draftId) return;
+
+    let cancelled = false;
+    void fetchDraft(accessToken, draftId).then((draft) => {
+      if (cancelled || draft.recordType !== 'quote') return;
+      const payload = draft.payload;
+      if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
+      if (typeof payload.jobId === 'string') setJobId(payload.jobId);
+      if (typeof payload.title === 'string') setTitle(payload.title);
+      if (typeof payload.status === 'string') setStatus(payload.status as QuoteStatus);
+      if (typeof payload.validUntil === 'string') setValidUntil(payload.validUntil);
+      if (typeof payload.notes === 'string') setNotes(payload.notes);
+      if (typeof payload.scopeOfWork === 'string') setScopeOfWork(payload.scopeOfWork);
+      if (typeof payload.exclusions === 'string') setExclusions(payload.exclusions);
+      if (typeof payload.paymentTerms === 'string') setPaymentTerms(payload.paymentTerms);
+      if (typeof payload.useSimpleAmount === 'boolean') setUseSimpleAmount(payload.useSimpleAmount);
+      if (typeof payload.amount === 'string') setAmount(payload.amount);
+      if (Array.isArray(payload.lines)) setLines(payload.lines as DraftLine[]);
+      if (typeof payload.belowFloorOverride === 'boolean') {
+        setBelowFloorOverride(payload.belowFloorOverride);
+      }
+      if (typeof payload.belowFloorReason === 'string') {
+        setBelowFloorReason(payload.belowFloorReason);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, search]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    draftShell.touchField();
+  }, [
+    isLoading,
+    customerId,
+    jobId,
+    title,
+    status,
+    validUntil,
+    notes,
+    scopeOfWork,
+    exclusions,
+    paymentTerms,
+    useSimpleAmount,
+    amount,
+    lines,
+    belowFloorOverride,
+    belowFloorReason,
+    draftShell,
+  ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 
@@ -208,6 +298,8 @@ export function QuoteCreatePage() {
         clientActionId,
       });
       invalidateQuotes();
+      draftShell.markSubmitted();
+      notify({ variant: 'saved', message: 'Quote created', dedupeKey: 'quote-created' });
       navigate(`/finance/quotes/${quote.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create quote');
@@ -223,13 +315,15 @@ export function QuoteCreatePage() {
       <PageHeader
         title="New quote"
         description="Create a quote linked to a customer and optional job."
-        actions={
-          <Link href="/finance/quotes">
-            <Button variant="secondary">Back to quotes</Button>
-          </Link>
-        }
+        showBack
+        backFallbackHref="/finance/quotes"
+        onBackNavigate={() => draftShell.guard.guardNavigation(() => navigate('/finance/quotes'))}
       />
       <FinanceNav />
+      {draftShell.autosave.statusLabel ? (
+        <p className="finance-draft-status">{draftShell.autosave.statusLabel}</p>
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       {customers.length === 0 ? (

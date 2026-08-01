@@ -489,3 +489,16 @@ export const SecuritySettingsPage = lazyNamed(
   () => import('../pages/settings/SecuritySettingsPage'),
   'SecuritySettingsPage',
 );
+export const DocumentsRecordsSettingsPage = lazyNamed(
+  () => import('../pages/settings/DocumentsRecordsSettingsPage'),
+  'DocumentsRecordsSettingsPage',
+);
+export const NotificationsSettingsPage = lazyNamed(
+  () => import('../pages/settings/NotificationsSettingsPage'),
+  'NotificationsSettingsPage',
+);
+export const DataProtectionSettingsPage = lazyNamed(
+  () => import('../pages/settings/DataProtectionSettingsPage'),
+  'DataProtectionSettingsPage',
+);
+export const DraftsPage = lazyNamed(() => import('../pages/drafts/DraftsPage'), 'DraftsPage');

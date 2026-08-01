@@ -9,6 +9,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PortalRouteShell } from './components/PortalRouteShell';
 import { AppLayout } from './layouts/AppLayout';
 import { PageRouteSuspense } from './components/PageRouteSuspense';
+import { TitanNotificationsProvider } from './components/ux';
 import * as OwnerPages from './routes/owner-pages';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -54,8 +55,9 @@ export function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <PreloadCoordinator />
-        <Switch>
+        <TitanNotificationsProvider>
+          <PreloadCoordinator />
+          <Switch>
           <Route path="/auth/login" component={LoginPage} />
           <Route path="/auth/signup" component={SignupPage} />
           <Route path="/auth/accept-invite" component={AcceptInvitePage} />
@@ -216,6 +218,19 @@ export function App() {
                         <Route path="/release" component={OwnerPages.ReleasePage} />
                         <Route path="/settings" component={OwnerPages.SettingsIndexPage} />
                         <Route path="/settings/billing" component={OwnerPages.OwnerBillingPage} />
+                        <Route
+                          path="/settings/documents-records"
+                          component={OwnerPages.DocumentsRecordsSettingsPage}
+                        />
+                        <Route
+                          path="/settings/notifications"
+                          component={OwnerPages.NotificationsSettingsPage}
+                        />
+                        <Route
+                          path="/settings/advanced/data-protection"
+                          component={OwnerPages.DataProtectionSettingsPage}
+                        />
+                        <Route path="/drafts" component={OwnerPages.DraftsPage} />
                         <Route path="/evolution" component={OwnerPages.EvolutionPage} />
                         <Route path="/mission-control" component={OwnerPages.MissionControlPage} />
                         <Route path="/knowledge" component={OwnerPages.KnowledgeGraphPage} />
@@ -429,6 +444,7 @@ export function App() {
             </ProtectedRoute>
           </Route>
         </Switch>
+        </TitanNotificationsProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

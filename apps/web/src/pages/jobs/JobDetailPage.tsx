@@ -38,6 +38,7 @@ import { canAccessDocuments, canManageDocuments } from '../../features/documents
 import { JobCrewAssignmentPanel } from '../../features/jobs/JobCrewAssignmentPanel';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
+import { useRecordRecentView } from '../../hooks/useRecordRecentView';
 
 export function JobDetailPage() {
   const [, params] = useRoute('/jobs/:id');
@@ -67,6 +68,18 @@ export function JobDetailPage() {
   const [accessInstructions, setAccessInstructions] = useState('');
 
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
+
+  useRecordRecentView(
+    job
+      ? {
+          id: job.id,
+          kind: 'job',
+          title: job.title,
+          href: `/jobs/${job.id}`,
+        }
+      : null,
+  );
+
   const canViewSchedule = useMemo(
     () => (user ? canAccessScheduling(user.permissions) : false),
     [user],

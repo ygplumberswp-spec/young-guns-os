@@ -15,6 +15,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canAccessFinance, canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { useRecordRecentView } from '../../hooks/useRecordRecentView';
 
 function formatStatus(status: QuoteDetail['status']): string {
   return QUOTE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
@@ -51,6 +52,17 @@ export function QuoteDetailPage() {
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
+
+  useRecordRecentView(
+    quote
+      ? {
+          id: quote.id,
+          kind: 'quote',
+          title: quote.title,
+          href: `/finance/quotes/${quote.id}`,
+        }
+      : null,
+  );
 
   const loadQuote = useCallback(async () => {
     if (!accessToken || !quoteId) return;

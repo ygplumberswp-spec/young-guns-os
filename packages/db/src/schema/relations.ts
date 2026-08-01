@@ -265,6 +265,7 @@ import {
   quotes,
 } from './quotes';
 import { boqDocuments, boqLineItems } from './boq';
+import { draftWorkspace } from './draft-workspace';
 import { jobDocumentPackItems, jobDocumentPacks } from './job-document-packs';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
@@ -603,6 +604,23 @@ export const boqLineItemsRelations = relations(boqLineItems, ({ one }) => ({
   company: one(companies, {
     fields: [boqLineItems.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const draftWorkspaceRelations = relations(draftWorkspace, ({ one }) => ({
+  company: one(companies, {
+    fields: [draftWorkspace.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [draftWorkspace.userId],
+    references: [users.id],
+    relationName: 'draftWorkspaceOwner',
+  }),
+  lastEditedBy: one(users, {
+    fields: [draftWorkspace.lastEditedByUserId],
+    references: [users.id],
+    relationName: 'draftWorkspaceLastEditor',
   }),
 }));
 

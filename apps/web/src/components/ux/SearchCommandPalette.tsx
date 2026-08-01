@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { canAccessGlobalSearch } from '../../features/global-search/utils';
 import { useAuth } from '../../lib/auth-context';
+import { filterRecentItemsByRbac, readRecentItems } from '../../lib/recent-items';
 
 type SearchCommandPaletteProps = {
   open: boolean;
@@ -25,7 +26,16 @@ export function SearchCommandPalette({
   canAccessSearch = true,
 }: SearchCommandPaletteProps) {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [query, setQuery] = useState('');
+
+  const recentItems = useMemo(() => {
+    if (!user) return [];
+    return filterRecentItemsByRbac(
+      readRecentItems(user.companyId, user.id),
+      user.permissions,
+    ).slice(0, 6);
+  }, [user]);
 
   useEffect(() => {
     if (!open) {
@@ -93,6 +103,27 @@ export function SearchCommandPalette({
             'Global search requires search permissions. Cmd+K / Ctrl+K toggles this palette.'
           )}
         </p>
+        {recentItems.length > 0 ? (
+          <div className="ux-command-palette__recent">
+            <p className="ux-command-palette__recent-title">Recently viewed</p>
+            <ul className="ux-command-palette__recent-list">
+              {recentItems.map((item) => (
+                <li key={`${item.kind}-${item.id}`} className="ux-command-palette__recent-item">
+                  <button
+                    type="button"
+                    className="ux-command-palette__recent-link"
+                    onClick={() => {
+                      onClose();
+                      navigate(item.href);
+                    }}
+                  >
+                    {item.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
     </div>
   );

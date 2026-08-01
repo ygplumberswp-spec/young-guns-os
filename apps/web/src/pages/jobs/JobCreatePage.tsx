@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useSearch } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation, useSearch } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type {
   CreateJobDocumentInput,
   CustomerPropertySummary,
@@ -29,6 +29,11 @@ import {
   JOB_DOCUMENT_ACCEPT,
   titleFromFileName,
 } from '../../features/jobs/job-document-attach';
+import { PageHeader } from '../../components/ux';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
+import { fetchDraft } from '../../lib/drafts-api';
+import { useTitanNotify } from '../../components/ux/TitanNotifications';
+import { Link } from 'wouter';
 
 type SiteMode = 'existing' | 'new';
 
@@ -101,6 +106,46 @@ export function JobCreatePage() {
     [jobType, suburb, street, siteContactName, selectedCustomer?.name],
   );
 
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'job',
+    enabled: canWrite && !isLoading,
+    getPayload: () => ({
+      customerId,
+      siteMode,
+      propertyId,
+      street,
+      suburb,
+      city,
+      province,
+      postalCode,
+      unit,
+      propertyName,
+      siteContactName,
+      siteContactMobile,
+      siteContactEmail,
+      siteContactDiffers,
+      jobType,
+      description,
+      priority,
+      appointmentLocal,
+      assignedUserId,
+      accessInstructions,
+      notes,
+      customerVisibleNotes,
+      docTitle,
+      documentCount: documents.length,
+    }),
+    getMeta: () => ({
+      title: titlePreview,
+      customerLabel: selectedCustomer?.name ?? (siteContactName || null),
+      completionPct: street.trim() && customerId ? 45 : 15,
+    }),
+  });
+
+  const { notify } = useTitanNotify();
+
   const emailPlaceholderWarning =
     siteContactEmail.trim() && isValidEmailAddress(siteContactEmail)
       ? isPlaceholderEmail(siteContactEmail)
@@ -161,6 +206,89 @@ export function JobCreatePage() {
       cancelled = true;
     };
   }, [accessToken, search]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    const draftId = params.get('draftId');
+    if (!accessToken || !draftId) return;
+
+    let cancelled = false;
+    void fetchDraft(accessToken, draftId).then((draft) => {
+      if (cancelled || draft.recordType !== 'job') return;
+      const payload = draft.payload;
+      if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
+      if (payload.siteMode === 'existing' || payload.siteMode === 'new') {
+        setSiteMode(payload.siteMode);
+      }
+      if (typeof payload.propertyId === 'string') setPropertyId(payload.propertyId);
+      if (typeof payload.street === 'string') setStreet(payload.street);
+      if (typeof payload.suburb === 'string') setSuburb(payload.suburb);
+      if (typeof payload.city === 'string') setCity(payload.city);
+      if (typeof payload.province === 'string') setProvince(payload.province);
+      if (typeof payload.postalCode === 'string') setPostalCode(payload.postalCode);
+      if (typeof payload.unit === 'string') setUnit(payload.unit);
+      if (typeof payload.propertyName === 'string') setPropertyName(payload.propertyName);
+      if (typeof payload.siteContactName === 'string') setSiteContactName(payload.siteContactName);
+      if (typeof payload.siteContactMobile === 'string') {
+        setSiteContactMobile(payload.siteContactMobile);
+      }
+      if (typeof payload.siteContactEmail === 'string') setSiteContactEmail(payload.siteContactEmail);
+      if (typeof payload.siteContactDiffers === 'boolean') {
+        setSiteContactDiffers(payload.siteContactDiffers);
+      }
+      if (typeof payload.jobType === 'string') setJobType(payload.jobType);
+      if (typeof payload.description === 'string') setDescription(payload.description);
+      if (typeof payload.priority === 'string') setPriority(payload.priority as JobPriority);
+      if (typeof payload.appointmentLocal === 'string') {
+        setAppointmentLocal(payload.appointmentLocal);
+      }
+      if (typeof payload.assignedUserId === 'string') setAssignedUserId(payload.assignedUserId);
+      if (typeof payload.accessInstructions === 'string') {
+        setAccessInstructions(payload.accessInstructions);
+      }
+      if (typeof payload.notes === 'string') setNotes(payload.notes);
+      if (typeof payload.customerVisibleNotes === 'string') {
+        setCustomerVisibleNotes(payload.customerVisibleNotes);
+      }
+      if (typeof payload.docTitle === 'string') setDocTitle(payload.docTitle);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, search]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    draftShell.touchField();
+  }, [
+    isLoading,
+    customerId,
+    siteMode,
+    propertyId,
+    street,
+    suburb,
+    city,
+    province,
+    postalCode,
+    unit,
+    propertyName,
+    siteContactName,
+    siteContactMobile,
+    siteContactEmail,
+    siteContactDiffers,
+    jobType,
+    description,
+    priority,
+    appointmentLocal,
+    assignedUserId,
+    accessInstructions,
+    notes,
+    customerVisibleNotes,
+    docTitle,
+    documents.length,
+    draftShell,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -318,6 +446,8 @@ export function JobCreatePage() {
       });
 
       invalidateJobs();
+      draftShell.markSubmitted();
+      notify({ variant: 'saved', message: 'Job created', dedupeKey: 'job-created' });
       navigate(`/jobs/${job.id}`);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to create job');
@@ -369,12 +499,14 @@ export function JobCreatePage() {
       <PageHeader
         title="New job"
         description="Book Young Guns work with a full site handoff for dispatch and technicians."
-        actions={
-          <Link href="/jobs">
-            <Button variant="secondary">Back to jobs</Button>
-          </Link>
-        }
+        showBack
+        backFallbackHref="/jobs"
+        onBackNavigate={() => draftShell.guard.guardNavigation(() => navigate('/jobs'))}
       />
+      {draftShell.autosave.statusLabel ? (
+        <p className="jobs-draft-status">{draftShell.autosave.statusLabel}</p>
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
 
       {error ? (
         <p className="form-error" role="alert">
