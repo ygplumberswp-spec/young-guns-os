@@ -1,7 +1,7 @@
 import { hasAnyPermission } from '@titan/auth/browser';
 
 export function canAccessScheduling(permissions: string[]): boolean {
-  return hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write']);
+  return hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write', 'mobile:read']);
 }
 
 export function canManageScheduling(permissions: string[]): boolean {
