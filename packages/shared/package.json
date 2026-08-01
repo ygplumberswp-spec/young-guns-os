@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build && node --test dist/drafts.test.js dist/tenant-capability-routing.test.js dist/cache-keys.test.js dist/role-experience-routes.test.js dist/nav-honesty.test.js dist/contact-validation.test.js dist/job-contract.test.js dist/job-execution.test.js dist/integration-capability.test.js dist/marketing-eligibility.test.js dist/customer-value-classification.test.js dist/whatsapp-contact-enrichment.test.js dist/young-guns-ops.test.js dist/n8n-orchestration.test.js dist/business-day-timeline.test.js dist/boq.test.js dist/quote-workflow.test.js dist/job-costing.test.js dist/job-document-pack.test.js dist/job-finance-workflow.test.js"
+    "test": "npm run build && node --test dist/drafts.test.js dist/tenant-capability-routing.test.js dist/cache-keys.test.js dist/role-experience-routes.test.js dist/nav-honesty.test.js dist/contact-validation.test.js dist/job-contract.test.js dist/job-execution.test.js dist/integration-capability.test.js dist/marketing-eligibility.test.js dist/customer-value-classification.test.js dist/whatsapp-contact-enrichment.test.js dist/young-guns-ops.test.js dist/n8n-orchestration.test.js dist/business-day-timeline.test.js dist/boq.test.js dist/quote-workflow.test.js dist/job-costing.test.js dist/job-document-pack.test.js dist/job-finance-workflow.test.js dist/day-planning.test.js"
   },
   "devDependencies": {
     "typescript": "catalog:"
