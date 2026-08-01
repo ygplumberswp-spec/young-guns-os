@@ -184,7 +184,7 @@ async function main() {
     token,
     body: {
       contactName: `${LABEL} Lead ${suffix}`,
-      contactPhone: `083${suffix.slice(0, 7)}`,
+      contactPhone: `082555${suffix.slice(0, 4)}`,
       suburb: 'Observatory',
       street: `14 Lead Lane ${suffix}`,
       city: 'Cape Town',
