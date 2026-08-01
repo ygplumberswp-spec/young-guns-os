@@ -99,7 +99,8 @@ export function createCrmRouter({
     requireAnyPermission('customers:read', 'customers:write'),
     async (req, res) => {
       const { companyId } = getAuth(req);
-      const customers = await crmService.listCustomers(companyId);
+      const search = typeof req.query.q === 'string' ? req.query.q : null;
+      const customers = await crmService.listCustomers(companyId, search);
       res.json({ data: { customers } });
     },
   );

@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import type {
   CreateCustomerActivityRequest,
   CreateCustomerPropertyRequest,
@@ -14,6 +14,7 @@ import {
   buildJobAddressDisplay,
   isValidEmailAddress,
   isValidSaPhone,
+  normalizeSaMobile,
   normalizeSaPhone,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -63,13 +64,76 @@ export type AuraCrmContext = {
 export class CrmService {
   constructor(private readonly db: DatabaseClient) {}
 
-  async listCustomers(companyId: string): Promise<CustomerSummary[]> {
-    const rows = await this.db.query.customers.findMany({
-      where: eq(customers.companyId, companyId),
-      orderBy: [desc(customers.updatedAt)],
-    });
+  async listCustomers(companyId: string, search?: string | null): Promise<CustomerSummary[]> {
+    const q = search?.trim();
+    let customerRows: Array<typeof customers.$inferSelect>;
 
-    return rows.map(toCustomerSummary);
+    if (!q) {
+      customerRows = await this.db.query.customers.findMany({
+        where: eq(customers.companyId, companyId),
+        orderBy: [desc(customers.updatedAt)],
+      });
+    } else {
+      const pattern = `%${escapeLike(q)}%`;
+      const normalizedMobile = normalizeSaMobile(q);
+      const mobileDigits = (normalizedMobile ?? q).replace(/\D/g, '');
+      const mobileDigitPattern =
+        mobileDigits.length >= 9 ? `%${escapeLike(mobileDigits.slice(-9))}%` : null;
+      const mobileMatchers = [
+        ...(normalizedMobile
+          ? [
+              ilike(customers.phone, `%${escapeLike(normalizedMobile)}%`),
+            ]
+          : []),
+        ...(mobileDigitPattern ? [ilike(customers.phone, mobileDigitPattern)] : []),
+      ];
+
+      const matches = await this.db
+        .select({ customer: customers })
+        .from(customers)
+        .leftJoin(
+          cxCustomerProperties,
+          and(
+            eq(cxCustomerProperties.customerId, customers.id),
+            eq(cxCustomerProperties.companyId, companyId),
+          ),
+        )
+        .where(
+          and(
+            eq(customers.companyId, companyId),
+            or(
+              ilike(customers.name, pattern),
+              ilike(customers.email, pattern),
+              ilike(customers.phone, pattern),
+              ilike(customers.contactPerson, pattern),
+              ilike(cxCustomerProperties.addressLine1, pattern),
+              ilike(cxCustomerProperties.suburb, pattern),
+              ilike(cxCustomerProperties.city, pattern),
+              ilike(cxCustomerProperties.postalCode, pattern),
+              ...mobileMatchers,
+            ),
+          ),
+        )
+        .orderBy(desc(customers.updatedAt));
+
+      const seen = new Set<string>();
+      customerRows = [];
+      for (const row of matches) {
+        if (seen.has(row.customer.id)) continue;
+        seen.add(row.customer.id);
+        customerRows.push(row.customer);
+      }
+    }
+
+    const addressByCustomerId = await loadPrimaryAddressDisplays(
+      this.db,
+      companyId,
+      customerRows.map((row) => row.id),
+    );
+
+    return customerRows.map((row) =>
+      toCustomerSummary(row, addressByCustomerId.get(row.id) ?? null),
+    );
   }
 
   async getCustomer(companyId: string, customerId: string): Promise<CustomerDetail | null> {
@@ -472,13 +536,17 @@ export class CrmService {
   }
 }
 
-function toCustomerSummary(row: typeof customers.$inferSelect): CustomerSummary {
+function toCustomerSummary(
+  row: typeof customers.$inferSelect,
+  primaryAddressDisplay: string | null = null,
+): CustomerSummary {
   return {
     id: row.id,
     name: row.name,
     contactPerson: row.contactPerson,
     email: row.email,
     phone: row.phone,
+    primaryAddressDisplay,
     status: row.status,
     isSupplierOnly: row.isSupplierOnly,
     doNotContact: row.doNotContact,
@@ -527,4 +595,44 @@ function normalizeCustomerPhone(value: string | null | undefined): string | null
     );
   }
   return normalizeSaPhone(trimmed);
+}
+
+async function loadPrimaryAddressDisplays(
+  db: DatabaseClient,
+  companyId: string,
+  customerIds: string[],
+): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>();
+  if (customerIds.length === 0) {
+    return map;
+  }
+
+  const rows = await db.query.cxCustomerProperties.findMany({
+    where: and(
+      eq(cxCustomerProperties.companyId, companyId),
+      inArray(cxCustomerProperties.customerId, customerIds),
+    ),
+    orderBy: [desc(cxCustomerProperties.isPrimary), desc(cxCustomerProperties.updatedAt)],
+  });
+
+  for (const row of rows) {
+    if (map.has(row.customerId)) continue;
+    map.set(
+      row.customerId,
+      buildJobAddressDisplay({
+        street: row.addressLine1,
+        suburb: row.suburb,
+        city: row.city,
+        province: row.province,
+        postalCode: row.postalCode,
+        unit: row.unitNumber ?? row.addressLine2,
+      }),
+    );
+  }
+
+  return map;
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_');
 }

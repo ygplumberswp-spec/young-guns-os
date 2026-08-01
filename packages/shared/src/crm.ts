@@ -12,6 +12,8 @@ export type CustomerSummary = {
   contactPerson: string | null;
   email: string | null;
   phone: string | null;
+  /** Primary property address when one exists */
+  primaryAddressDisplay: string | null;
   status: CustomerStatus;
   isSupplierOnly: boolean;
   doNotContact: boolean;

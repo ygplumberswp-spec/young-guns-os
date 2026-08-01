@@ -15,8 +15,12 @@ export async function fetchCrmStats(accessToken: string): Promise<CrmStats> {
   return request<CrmStats>('/crm/stats', { accessToken });
 }
 
-export async function fetchCustomers(accessToken: string): Promise<CustomerSummary[]> {
-  const data = await request<{ customers: CustomerSummary[] }>('/crm/customers', {
+export async function fetchCustomers(
+  accessToken: string,
+  search?: string,
+): Promise<CustomerSummary[]> {
+  const query = search?.trim() ? `?q=${encodeURIComponent(search.trim())}` : '';
+  const data = await request<{ customers: CustomerSummary[] }>(`/crm/customers${query}`, {
     accessToken,
   });
 

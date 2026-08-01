@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, PageHeader, PageLoadState } from '@titan/ui';
 import { fetchCustomers } from '../../lib/crm-api';
@@ -9,10 +9,17 @@ import { canAccessCrm, canManageCustomers, CustomerList } from '../../features/c
 
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const canView = useMemo(() => (user ? canAccessCrm(user.permissions) : false), [user]);
 
   const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebouncedSearch(search), 250);
+    return () => window.clearTimeout(handle);
+  }, [search]);
 
   const {
     data: customers,
@@ -21,9 +28,9 @@ export function CustomerListPage() {
     isStale,
     refetch,
   } = useStaffCachedQuery({
-    queryKey: 'crm/customers',
+    queryKey: `crm/customers:${debouncedSearch}`,
     enabled: canView,
-    fetcher: async () => fetchCustomers(accessToken!),
+    fetcher: async () => fetchCustomers(accessToken!, debouncedSearch),
   });
 
   if (!canView) {
@@ -38,7 +45,7 @@ export function CustomerListPage() {
     <div className="crm-page">
       <PageHeader
         title="Customers"
-        description="Manage customer records for your company."
+        description="Search by name, phone, email or property address."
         actions={
           canWrite ? (
             <Link href="/crm/new">
@@ -53,12 +60,17 @@ export function CustomerListPage() {
       <PageLoadState
         isLoading={isLoading && customers === undefined}
         error={error && customers === undefined ? error : null}
-        isEmpty={(customers?.length ?? 0) === 0}
+        isEmpty={false}
         emptyTitle="No customers yet"
         emptyDescription="Add your first customer to start building your CRM."
         loadingLabel="Loading customers…"
       >
-        <CustomerList customers={customers ?? []} canWrite={canWrite} />
+        <CustomerList
+          customers={customers ?? []}
+          canWrite={canWrite}
+          search={search}
+          onSearchChange={setSearch}
+        />
       </PageLoadState>
     </div>
   );

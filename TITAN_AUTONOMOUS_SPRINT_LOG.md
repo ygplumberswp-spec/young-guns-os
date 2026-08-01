@@ -58,9 +58,25 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 2 — Tenant isolation, RBAC, audit hardening |
 | **Result** | Complete (local test expansion) |
-| **Checkpoint** | (pending commit) |
+| **Checkpoint** | `a619b01` |
 | **Files changed** | `tenant-scope.test.ts` (expanded), `packages/auth/src/tokens.test.ts` (MFA challenge tokens), auth package test script |
 | **Migration** | None — `0094` role matrix apply deferred (staging approval gate) |
 | **Tests** | `pnpm test` — 209 pass (96 API, 23 auth, 59 shared, 31 web) |
 | **Approval required?** | No |
-| **Next phase selected** | Phase 3 — per master plan (CRM/ops or next safe backlog item) |
+| **Next phase selected** | Phase 5 prep — CRM list search (OPS-001 / UX-013) |
+
+---
+
+## Sprint 003 — CRM customer search and address column
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 5 prep — Customer list search (OPS-001 / UX-013) |
+| **Result** | Complete |
+| **Checkpoint** | (pending commit) |
+| **Files changed** | `packages/shared/src/crm.ts`, `crm.service.ts`, `crm.ts` route, `crm-api.ts`, `CustomerListPage.tsx`, `CustomerList.tsx` |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (209 pass), `pnpm build` — pass |
+| **Approval required?** | No |
+| **Next phase selected** | Phase 3 — Locked TITAN brand, login and responsive shell |
