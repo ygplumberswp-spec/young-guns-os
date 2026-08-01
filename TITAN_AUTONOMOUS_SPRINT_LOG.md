@@ -35,6 +35,32 @@
 
 ---
 
-## Sprint 001 — (pending)
+## Sprint 001 — Phase 1 foundation
 
-Phase 1 — baseline typecheck, lint, build, auth/envelope fixes.
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 1 — Foundation, deployment, auth and session reliability |
+| **Result** | Complete |
+| **Checkpoint** | `07a1093` |
+| **Files changed** | API envelope (`enterprise-unified-communications.ts`), MFA login gate (auth service, routes, web login/MFA pages) |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (94), `pnpm build` — pass |
+| **Approval required?** | No |
+| **Next phase selected** | Phase 2 — Tenant isolation, RBAC, audit hardening |
+
+---
+
+## Sprint 002 — Phase 2 tenant isolation hardening
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 2 — Tenant isolation, RBAC, audit hardening |
+| **Result** | Complete (local test expansion) |
+| **Checkpoint** | (pending commit) |
+| **Files changed** | `tenant-scope.test.ts` (expanded), `packages/auth/src/tokens.test.ts` (MFA challenge tokens), auth package test script |
+| **Migration** | None — `0094` role matrix apply deferred (staging approval gate) |
+| **Tests** | `pnpm test` — 209 pass (96 API, 23 auth, 59 shared, 31 web) |
+| **Approval required?** | No |
+| **Next phase selected** | Phase 3 — per master plan (CRM/ops or next safe backlog item) |
