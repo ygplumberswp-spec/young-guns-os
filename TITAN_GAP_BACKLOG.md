@@ -98,6 +98,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | FLT-002 | Cartrack live not credential-verified here | BLOCKED | Deferred from UX-I (Option A) → controlled provider-integration phase |
 | FLT-003 / FLT-006 | Drivers + geofences missing | MISSING | Spec + implement |
 | COM-001 | WhatsApp live send needs Meta credentials | BLOCKED | Deferred from UX-I (Option A) → controlled provider-integration phase (honesty closed under UX-G) |
+| COM-013 | WhatsApp customer contact enrichment (missing mobile for legitimate customers) | **PARTIAL (scaffold)** | Binding spec + types + service + routes; queues behind Xero import; staging WA **disconnected** — see `TITAN_WHATSAPP_CONTACT_ENRICHMENT.md` |
 | COM-003 | WhatsApp human takeover missing | MISSING | Handoff state + UI |
 | COM-008 | Google Calendar planned only | BUILT BUT NOT CONNECTED | OAuth + sync |
 | MKT-001 | ~~Reactivation without buyer eligibility~~ **CLOSED staging gates (UX-H)**; live send OUT | PARTIAL | Depends on CD-007 / Decision 3 — **UX-026** |

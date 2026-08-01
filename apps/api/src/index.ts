@@ -438,9 +438,6 @@ const integrationSyncOrchestratorService = new IntegrationSyncOrchestratorServic
   businessIntegrationsService,
 });
 integrationPlatformService.setSyncOrchestrator(integrationSyncOrchestratorService);
-xeroSyncService.setImportJobSettledHandler((input) =>
-  integrationSyncOrchestratorService.handleXeroImportJobSettled(input),
-);
 xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
   void integrationSyncOrchestratorService
     .onProviderConnected({
@@ -460,8 +457,12 @@ const backgroundWorkOrchestratorService = new BackgroundWorkOrchestratorService(
   backgroundWorkQueue: backgroundWorkQueueService,
   domainEventBus: tenantDomainEventBus,
   xeroSyncService,
+  customerValueClassificationService,
 });
 backgroundWorkOrchestratorService.registerDomainEventHandlers();
+xeroSyncService.setImportJobSettledHandler((input) =>
+  backgroundWorkOrchestratorService.handleXeroImportJobSettled(input),
+);
 integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
   void integrationSyncOrchestratorService
     .onProviderConnected({
@@ -1373,6 +1374,14 @@ app.use(
     crmService,
     teamService,
     db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/customers',
+  createCustomersRouter({
+    customerValueClassificationService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

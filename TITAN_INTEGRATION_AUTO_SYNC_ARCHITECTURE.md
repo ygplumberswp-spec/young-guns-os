@@ -71,6 +71,7 @@ Single tenant-safe orchestration layer:
 | **Cartrack** | **FULL** | Auto initial on credential save hook; incremental polling |
 | **Email / Yoco** | PARTIAL | Orchestrator can run verification sync when connected |
 | **WhatsApp / OpenAI / Gemini / n8n** | PARTIAL | Status + honest states; no full polling backend |
+| **WhatsApp contact enrichment** | **PARTIAL (scaffold)** | `WhatsappContactEnrichmentService` queues behind Xero import; migration `0107`; never imports WA contacts as customers — `TITAN_WHATSAPP_CONTACT_ENRICHMENT.md` |
 | **Google Maps / Calendar / Meta / Stripe** | STUB | Honest `not_configured` — no fake data |
 
 ---
@@ -108,4 +109,6 @@ Without these gates, orchestrator queues honestly but does not execute live sync
 - `apps/api/src/services/integration-sync-orchestrator.service.ts`
 - `apps/api/src/workers/integration-sync.scheduler.ts`
 - `packages/shared/src/integration-auto-sync.ts`
+- `packages/shared/src/whatsapp-contact-enrichment.ts`
+- `apps/api/src/services/whatsapp-contact-enrichment.service.ts`
 - `apps/web/src/features/integrations/IntegrationAutoSyncStatusPanel.tsx`

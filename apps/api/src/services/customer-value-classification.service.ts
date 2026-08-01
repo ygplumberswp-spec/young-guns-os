@@ -31,7 +31,7 @@ export class CustomerValueClassificationService {
 
   async getValueMetrics(companyId: string): Promise<CustomerValueMetrics> {
     const cacheKey = buildTenantCacheKey(companyId, 'customers/value-metrics');
-    return cachedTenantRead(cacheKey, CACHE_TTLS.stats, async () => {
+    return cachedTenantRead(cacheKey, async () => {
       const summaries = await this.loadClassificationSummaries(companyId);
       const xeroImportInProgress = await this.isXeroImportInProgress(companyId);
       const notes: string[] = [];
@@ -41,7 +41,7 @@ export class CustomerValueClassificationService {
         );
       }
       return aggregateCustomerValueMetrics(summaries, { xeroImportInProgress, notes });
-    });
+    }, CACHE_TTLS.stats);
   }
 
   async listCustomersWithClassification(

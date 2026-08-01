@@ -192,6 +192,10 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `apps/api/src/lib/customer-visible-job-eta.test.ts` | UX-030 customer-visible job ETA helper tests |
 | `apps/api/src/routes/session-refresh.test.ts` | Sprint 023 — `/auth/refresh` SESSION_MISSING vs SESSION_EXPIRED contract |
 | `apps/web/src/lib/session-expiry.test.ts` | Sprint 023 — bootstrap classification + ProtectedRoute redirect/banner contract |
+| `apps/web/src/lib/secure-session.test.ts` | Secure session — 15 regression scenario contracts + JWT expiry decode |
+| `packages/auth/src/secure-session.test.ts` | Access TTL defaults, step-up token verify |
+| `diagnostic-output/184-secure-session-staging-verify.json` | Staging health + refresh contract + protected route shells |
+| `TITAN_SECURE_SESSION_ARCHITECTURE.md` | Secure persistent session architecture + GLOBAL BINDING reference |
 | `apps/web/src/lib/mobile-offline-completion.test.ts` | Sprint 024 — mobile completion submit gate + offline flush tally contract |
 | `apps/api/src/services/job-execution-completion-idempotency.test.ts` | Sprint 024 — gated completion clientActionId replay + snapshot duplicate guards |
 | `apps/api/src/routes/mobile-offline-completion.test.ts` | Sprint 024 — `/offline/flush` duplicate replay + `/complete-gated` idempotency API contract |
@@ -217,6 +221,17 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `TITAN_COMPLETE_APP_AUDIT.md` | **Complete-app audit** — 27 areas classified |
 | `diagnostic-output/180-staging-data-cleanup-audit.json` | Staging data cleanup manifest evidence (1 preserve, 59 E2E candidates) |
 | `diagnostic-output/181-complete-app-audit.json` | Complete-app audit structured evidence |
+| `TITAN_WHATSAPP_CONTACT_ENRICHMENT.md` | **BINDING** — WhatsApp customer contact enrichment spec |
+| `packages/shared/src/whatsapp-contact-enrichment.ts` | Match classifier + enrichment metrics types |
+| `packages/shared/src/whatsapp-contact-enrichment.test.ts` | Match classification unit tests (exact/review/conflict) |
+| `apps/api/src/services/whatsapp-contact-enrichment.service.ts` | Enrichment service scaffold + review queue |
+| `apps/api/src/services/whatsapp-contact-enrichment.test.ts` | Tenant isolation + no Xero silent write + no duplicate create |
+| `apps/api/src/routes/whatsapp-enrichment.ts` | `GET metrics`, `GET reviews`, `POST approve` |
+| `packages/db/drizzle/0107_whatsapp_contact_enrichment.sql` | `customer_contact_sources` + `whatsapp_match_reviews` |
+| `packages/db/scripts/test-0107-whatsapp-enrichment.mjs` | Disposable DB migration verify |
+| `packages/db/scripts/probe-183-whatsapp-enrichment.mjs` | Read-only staging WA + Xero import state probe |
+| `diagnostic-output/183-whatsapp-enrichment-requirements.json` | Requirements + staging WhatsApp connection state (read-only) |
+| `diagnostic-output/118-migration-0107-whatsapp-enrichment-disposable.json` | Migration 0107 disposable DB PASS |
 | `TITAN_STAGING_DATA_CLEANUP_MANIFEST.md` | Non-destructive cleanup manifest — **awaiting Owner approval** |
 
 ## Coverage gaps (Phase 2+ targets)

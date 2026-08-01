@@ -67,6 +67,7 @@ export * from './xero-sync-logs';
 export * from './whatsapp-connections';
 export * from './whatsapp-templates';
 export * from './whatsapp-messages';
+export * from './whatsapp-contact-enrichment';
 export * from './agent-runs';
 export * from './agent-tasks';
 export * from './recruiting-candidates';

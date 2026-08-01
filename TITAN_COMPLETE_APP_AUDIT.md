@@ -57,6 +57,7 @@ TITAN has substantial implementation (~155 web pages, 84 API route modules) but 
 | **Staging data hygiene** | **FAIL** | (1) — 59 E2E tenants in DB; cleanup manifest ready, **awaiting Owner approval** | `180-staging-data-cleanup-audit.json` |
 | **Cartrack live fleet** | NOT_AUDITED | — | Credentials not configured on staging |
 | **WhatsApp live** | NOT_AUDITED | — | Meta credentials gate |
+| **WhatsApp contact enrichment** | PARTIAL | (3)(7) — Scaffold COM-013; queues behind Xero; staging disconnected | `TITAN_WHATSAPP_CONTACT_ENRICHMENT.md`, `183-whatsapp-enrichment-requirements.json` |
 | **Meta / advertising** | NOT_AUDITED | — | Stub; no credentials |
 | **Sage (future)** | NOT_AUDITED | — | Not in codebase |
 
