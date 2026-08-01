@@ -1,15 +1,15 @@
-# PRINT-001 — Printing and Document Output (Binding Stub)
+# PRN-001 — Complete-App Printing and PDF Output (Binding Stub)
 
-**Status:** **QUEUED** — pipeline entry only; full implementation pending  
+**Status:** **QUEUED** — pipeline entry only; supersedes prior PRINT-001 queue label  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Pipeline phase:** 7 (after JOB-DEL-001)  
+**Pipeline phase:** 7 (immediately after JOB-DEL-001)  
 **Updated (UTC):** 2026-08-01  
 
 ---
 
 ## Purpose
 
-Provide truthful Preview / Print / Save PDF / Email-WhatsApp output for operational and financial documents using native device printing and print-optimized layouts — without requiring printer IP configuration inside TITAN for normal use.
+Complete-app Preview / Print / Save PDF output for operational and financial documents using native Wi-Fi / AirPrint / browser printing and professional Young Guns Plumbing A4 templates — without printer IP configuration inside TITAN for normal use.
 
 ---
 
@@ -17,41 +17,36 @@ Provide truthful Preview / Print / Save PDF / Email-WhatsApp output for operatio
 
 | Rule | Enforcement |
 |------|-------------|
-| Native print only (default) | AirPrint, Android print, browser print — device confirms print success |
-| No printer IP in TITAN | Office printer setup stays on device/OS; no TITAN printer host config for standard flows |
-| Version integrity | PDF/print uses immutable document snapshot or version ref where applicable |
-| Tenant isolation | Print/PDF/export scoped to authenticated tenant |
-| Sensitive doc audit | Job cards, invoices, COCs, payroll-adjacent docs → `security_audit_logs` |
-| Approved comms only | Email/WhatsApp share via existing approved comms workflow |
-| Truthful failure UX | TITAN opens print UI; does not claim "printed" until user/device confirms |
+| Native print only (default) | Wi-Fi / AirPrint / Android print / browser print — device confirms print success |
+| No printer IP in TITAN | Office printer setup stays on device/OS |
+| Role security first | RBAC + tenant isolation before any printable output renders |
+| Version integrity | PDF/print uses immutable document snapshot or version ref |
+| Sensitive doc audit | Job cards, invoices, COCs → `security_audit_logs` |
+| Approved comms only | Email/WhatsApp via approved comms workflow when phase executes |
+| Bulk print gated | Owner / authorized office staff only |
+| Truthful failure UX | TITAN opens print UI; does not claim "printed" until device confirms |
 
 ---
 
 ## Document types (initial)
 
 - Job card  
-- Quote (YG A4 template, VAT, totals, signatures)  
+- Quote (YG A4, VAT, totals, signatures)  
 - Invoice  
 - Certificate of Compliance (COC)  
-- Delivery note / PO (procurement)  
+- Delivery note / PO  
 
 ---
 
-## Implementation deliverables (when phase executes)
+## Staging evidence (when executed)
 
-- Shared print components (`PrintPreview`, bulk print gate)  
-- `@media print` CSS + Young Guns A4 templates  
-- PDF service scaffold (server primary, client fallback)  
-- Per-document print templates  
-- Bulk print (Owner/office, permission-gated)  
-- Tests: permissions, page breaks, multi-page, bulk, duplicate-click  
-- Staging evidence: `diagnostic-output/191-print-document-output-verify.json`  
+`diagnostic-output/191-prn-complete-app-print-verify.json` — one check per core document type.
 
 ---
 
 ## Gates
 
+- **QUEUED** until pipeline/working-tree permit  
 - Does **not** block Xero import recovery  
 - Does **not** conflict with subagent `7443e5b5` JOB-DEL-001 lifecycle work  
-- Soft dependency on YGP-001 for quote/invoice presentation  
-- Sequenced after JOB-DEL-001; independent of PHSL/GSL  
+- Sequenced immediately after JOB-DEL-001; independent of PHSL/GSL  

@@ -5,18 +5,18 @@
 
 ---
 
-## Sprint PRINT-001 — Printing and document output (QUEUED)
+## Sprint PRN-001 — Complete-app printing and PDF output (QUEUED)
 
 | Field | Value |
 |-------|--------|
 | **Timestamp (UTC)** | 2026-08-01 |
-| **Phase** | PRINT-001 — Preview / Print / Save PDF / Email-WhatsApp; native device print; YG A4 templates |
-| **Result** | **QUEUED** — pipeline Phase 7 entry added; binding stub only; no implementation |
-| **Pipeline** | `TITAN_AUTO_WORK_PIPELINE.md` Phase 7 (after JOB-DEL-001; independent of PHSL/GSL) |
-| **Hard gates** | No production; no printer IP config; no interrupt Xero import or 7443e5b5 lifecycle work |
-| **Evidence (when executed)** | `diagnostic-output/191-print-document-output-verify.json` per core document type |
-| **Deliverables** | `TITAN_PRINTING_AND_DOCUMENT_OUTPUT.md`, shared print components, PDF scaffold, per-doc templates |
-| **Next phase selected** | Implement after JOB-DEL-001 PASS or in parallel once staging migration window clear |
+| **Phase** | PRN-001 — Complete-app Preview / Print / Save PDF; native Wi-Fi/AirPrint/browser; YG A4 templates |
+| **Result** | **QUEUED** — pipeline Phase 7 (consolidates prior PRINT-001 entry); binding stub only |
+| **Pipeline** | `TITAN_AUTO_WORK_PIPELINE.md` Phase 7 — immediately after JOB-DEL-001 |
+| **Hard gates** | No production; no printer IP in TITAN; RBAC before render; no interrupt Xero import or 7443e5b5 |
+| **Evidence (when executed)** | `diagnostic-output/191-prn-complete-app-print-verify.json` per core document type |
+| **Deliverables** | Shared print components, `@media print`, PDF scaffold, per-doc templates, bulk print (Owner/office) |
+| **Next phase selected** | Implement when pipeline/working-tree permit after JOB-DEL-001 |
 
 ---
 
