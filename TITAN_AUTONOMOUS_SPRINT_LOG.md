@@ -207,7 +207,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 8 — Business-day timeline, attendance and labour (local slice) |
 | **Result** | Office day-timeline API + page; mobile break/travel time entries; job→time deep-link |
-| **Checkpoint** | *(pending commit)* |
+| **Checkpoint** | `ec79a82` |
 | **Files changed** | `business-day-timeline.ts`, `business-day-timeline.service.ts`, `BusinessDayTimelinePage.tsx`, `MobileTimePage.tsx`, `MobileJobDetailPage.tsx`, scheduling route `/day-timeline`, control docs |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (**242** pass: 68 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
