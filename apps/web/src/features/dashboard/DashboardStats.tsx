@@ -16,6 +16,7 @@ import { scheduleDashboardBackgroundPrep } from '../../lib/route-prefetch-regist
 import { DASHBOARD_METRICS } from './constants';
 import { DashboardMetricIcon } from './DashboardMetricIcon';
 import { DashboardWelcome } from './DashboardWelcome';
+import { SummaryCardGrid } from '../../components/ux';
 import { CustomerValueMetricsPanel } from '../crm/CustomerValueMetricsPanel';
 
 export function DashboardStats() {
@@ -230,7 +231,7 @@ export function DashboardStats() {
         hasAnyData={hasAnyData}
         summaryLine={summaryLine}
       />
-      <section className="dashboard-stats" aria-label="Business metrics">
+      <SummaryCardGrid columns={4} className="dashboard-stats">
         {metrics.map((metric) => (
           <div key={metric.id} className="dashboard-stat-card">
             {metric.loading ? (
@@ -254,7 +255,7 @@ export function DashboardStats() {
             )}
           </div>
         ))}
-      </section>
+      </SummaryCardGrid>
       {canViewCustomers ? <CustomerValueMetricsPanel compact /> : null}
     </>
   );

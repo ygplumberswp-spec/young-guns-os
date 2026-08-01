@@ -1,4 +1,5 @@
 import type { PortalAccessPermission } from './portal.js';
+import { NAV_LABELS } from './nav-labels.js';
 
 export type StaffExperience =
   | 'platform_owner'
@@ -52,7 +53,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
     href: '/mobile-platform/dispatcher',
-    label: 'Dispatcher console',
+    label: NAV_LABELS.liveDispatch,
     permissions: ['dispatch:read', 'mobile:read', '*'],
     experiences: ['dispatcher', 'company_owner', 'manager', 'platform_owner', 'staff'],
   },
@@ -66,14 +67,14 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/marketing', label: 'Marketing', permissions: ['marketing:read', '*'] },
   {
     href: '/aura/agents',
-    label: 'AURA Capabilities',
+    label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
-  { href: '/automation', label: 'Automations', permissions: ['automation:read', '*'] },
+  { href: '/automation', label: NAV_LABELS.automationCommandCentre, permissions: ['automation:read', '*'] },
   {
     href: '/mission-control',
-    label: 'Mission Control',
+    label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
   },
   { href: '/integrations', label: 'Integrations', permissions: ['integrations:read', '*'] },
@@ -82,7 +83,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     href: '/enterprise-modules',
     label: 'Enterprise modules',
     permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
-    experiences: [...COMPANY_BUSINESS_EXPERIENCES],
+    experiences: ['platform_owner'],
   },
   {
     href: '/platform-health',
@@ -110,12 +111,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   },
   {
     href: '/settings/team',
-    label: 'Users & Access',
+    label: NAV_LABELS.teamAndAccess,
     permissions: ['users:read', 'users:manage', '*'],
   },
   {
     href: '/aura',
-    label: 'Owner AI Chat',
+    label: NAV_LABELS.auraExecutiveChat,
     permissions: ['agents:read', 'intelligence:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
@@ -134,6 +135,7 @@ export const DISPATCHER_ALLOWED_HREFS = new Set([
   '/communications/messages',
   '/documents',
   '/mobile-platform/dispatcher',
+  '/dispatch-intelligence',
   '/settings/team',
 ]);
 

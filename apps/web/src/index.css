@@ -4964,3 +4964,220 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   outline: 2px solid var(--titan-accent, #0f766e);
   outline-offset: 2px;
 }
+
+/* —— UX hardening Phase 1 —— */
+.session-status-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+  padding: 0.65rem 1rem;
+  border-radius: var(--titan-radius-md);
+  font-size: 0.8125rem;
+  border: 1px solid var(--titan-border-subtle);
+}
+
+.session-status-banner--info {
+  background: var(--titan-accent-soft);
+  color: var(--titan-text);
+}
+
+.session-status-banner--warning {
+  background: var(--titan-warning-soft);
+  color: #fcd34d;
+}
+
+.session-status-banner--error {
+  background: var(--titan-danger-soft);
+  color: #fecaca;
+}
+
+.session-status-banner__dismiss {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-decoration: underline;
+}
+
+.app-nav__group--expanded .app-nav__group-label {
+  color: var(--titan-accent);
+  font-weight: 600;
+}
+
+.app-nav__link--active {
+  background-color: var(--titan-accent-soft);
+  color: var(--titan-text);
+  font-weight: 700;
+  border-left-color: var(--titan-accent);
+}
+
+.app-nav__link--active .app-nav__icon {
+  color: var(--titan-accent);
+  opacity: 1;
+}
+
+.ux-breadcrumbs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.ux-breadcrumbs__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ux-breadcrumbs__link {
+  color: var(--titan-text-secondary);
+}
+
+.ux-breadcrumbs__link:hover {
+  color: var(--titan-accent);
+}
+
+.ux-breadcrumbs__current {
+  color: var(--titan-text);
+}
+
+.ux-summary-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.ux-summary-grid--cols-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.ux-summary-grid--cols-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ux-summary-grid--cols-4 {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.ux-compact-tabs__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+}
+
+.ux-compact-tabs__tab {
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--titan-radius-sm);
+  font-size: 0.8125rem;
+  color: var(--titan-text-secondary);
+  border: 1px solid transparent;
+}
+
+.ux-compact-tabs__tab:hover {
+  background: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.ux-compact-tabs__tab--active {
+  background: var(--titan-accent-soft);
+  color: var(--titan-text);
+  font-weight: 600;
+  border-color: rgba(34, 211, 238, 0.35);
+}
+
+.ux-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  margin-left: 0.35rem;
+}
+
+.ux-status-badge--sync {
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+}
+
+.ux-bulk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--titan-surface-muted);
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
+}
+
+.ux-more-menu {
+  position: relative;
+}
+
+.ux-more-menu__trigger {
+  border: 1px solid var(--titan-border);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  border-radius: var(--titan-radius-sm);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.ux-more-menu__panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 10rem;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: var(--titan-surface-raised);
+  border: 1px solid var(--titan-border-strong);
+  border-radius: var(--titan-radius-md);
+  box-shadow: var(--titan-shadow-md);
+  z-index: 20;
+}
+
+.ux-more-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.55rem;
+  border: none;
+  background: transparent;
+  color: var(--titan-text);
+  font-size: 0.8125rem;
+  border-radius: var(--titan-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.finance-table__row--muted {
+  opacity: 0.55;
+}
+
+.finance-table__sort {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dashboard-header__status {
+  display: block;
+  margin: -0.5rem 0 1rem;
+  font-size: 0.8125rem;
+  color: var(--titan-text-secondary);
+}

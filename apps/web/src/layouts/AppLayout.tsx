@@ -15,6 +15,7 @@ import { NavIcon } from '../components/NavIcon';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
 import { SessionStatusBanner } from '../components/SessionStatusBanner';
+import { SearchCommandPalette } from '../components/ux';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -148,8 +149,17 @@ export function AppLayout({ children }: AppLayoutProps) {
             </button>
           </div>
           <nav className="app-nav" aria-label="Main navigation">
-            {groupedNavItems.map(({ group, items }) => (
-              <div key={group.id} className="app-nav__group">
+            {groupedNavItems.map(({ group, items }) => {
+              const groupHasActive = items.some(
+                (entry) =>
+                  activeLocation === entry.href ||
+                  (entry.href !== '/' && activeLocation.startsWith(entry.href)),
+              );
+              return (
+              <div
+                key={group.id}
+                className={`app-nav__group${groupHasActive ? ' app-nav__group--expanded' : ''}`}
+              >
                 {!sidebarCollapsed ? <p className="app-nav__group-label">{group.label}</p> : null}
                 {items.map((item) => {
                   const isActive =
@@ -176,7 +186,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                   );
                 })}
               </div>
-            ))}
+            );
+            })}
           </nav>
         </div>
       }
@@ -190,6 +201,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       ) : null}
       <SessionStatusBanner state={sessionUxState} onDismiss={dismissSessionUxState} />
+      <SearchCommandPalette />
       {children}
     </AppShell>
   );

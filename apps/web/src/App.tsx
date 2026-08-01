@@ -214,6 +214,7 @@ export function App() {
                         <Route path="/release-center" component={OwnerPages.ReleaseCenterPage} />
                         <Route path="/go-live" component={OwnerPages.GoLivePage} />
                         <Route path="/release" component={OwnerPages.ReleasePage} />
+                        <Route path="/settings" component={OwnerPages.SettingsIndexPage} />
                         <Route path="/settings/billing" component={OwnerPages.OwnerBillingPage} />
                         <Route path="/evolution" component={OwnerPages.EvolutionPage} />
                         <Route path="/mission-control" component={OwnerPages.MissionControlPage} />

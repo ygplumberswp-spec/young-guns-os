@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'wouter';
+import { CompactTabs } from '../../components/ux';
 
 const tabs = [
   { href: '/finance/quotes', label: 'Quotes' },
@@ -8,19 +8,5 @@ const tabs = [
 ];
 
 export function FinanceNav() {
-  const [location] = useLocation();
-
-  return (
-    <nav className="finance-nav" aria-label="Finance sections">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.href}
-          href={tab.href}
-          className={`finance-nav__link ${location.startsWith(tab.href) ? 'finance-nav__link--active' : ''}`}
-        >
-          {tab.label}
-        </Link>
-      ))}
-    </nav>
-  );
+  return <CompactTabs tabs={tabs} ariaLabel="Finance sections" maxVisible={4} />;
 }

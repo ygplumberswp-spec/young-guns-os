@@ -71,4 +71,11 @@ describe('staff session expiry redirect contract', () => {
     assert.equal(SESSION_EXPIRED_PAGE_PATH, '/auth/session-expired');
     assert.equal(SESSION_EXPIRED_LOGIN_PATH, '/auth/login?reason=session_expired');
   });
+
+  it('expiring_soon banner copy reflects refresh failure not preemptive warning', () => {
+    assert.match(
+      'Unable to refresh your session — sign in again if prompted',
+      /Unable to refresh/,
+    );
+  });
 });

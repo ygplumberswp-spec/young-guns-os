@@ -11,6 +11,8 @@ import {
   updateTeamMemberRole,
   updateTeamMemberStatus,
 } from '../../lib/team-api';
+import { NAV_LABELS } from '@titan/shared';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -169,9 +171,10 @@ export function TeamSettingsPage() {
   return (
     <>
       <PageHeader
-        title="Users & Access"
+        title={NAV_LABELS.teamAndAccess}
         description="Manage users, canonical roles and invitations. Owner/Admin/Member/Client/Platform Owner cannot be invited. Only Platform Owner may assign Company Owner. You cannot change your own role."
       />
+      <SettingsNav />
 
       {actionError ? <p className="settings-alert settings-alert--error">{actionError}</p> : null}
 

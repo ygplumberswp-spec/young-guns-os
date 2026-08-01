@@ -20,6 +20,7 @@ import { getCachedCompanyProfile } from '../../lib/company-profile-cache';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { CompanyMediaImage } from '../../features/company/CompanyMediaImage';
 import { useAuth } from '../../lib/auth-context';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 export function CompanySettingsPage() {
   const { accessToken, user } = useAuth();
@@ -275,6 +276,7 @@ export function CompanySettingsPage() {
         title="Company Profile"
         description="Business information used by AURA to understand your workspace. No demo data — fill in your real company details."
       />
+      <SettingsNav />
 
       {error ? <p className="settings-alert settings-alert--error">{error}</p> : null}
       {success ? <p className="settings-alert settings-alert--success">{success}</p> : null}

@@ -4,11 +4,13 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import type { AuthSession, AuthUser, StaffSessionUxState } from '@titan/shared';
 import * as api from './api-client';
+import { proactiveRefreshSession } from './api-client';
 import * as teamApi from './team-api';
 import { clearAllQueryCache, clearQueryCacheForScope } from './query-cache';
 import { resetPreloadSession } from './preload-coordinator';
@@ -67,6 +69,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [sessionBootstrap, setSessionBootstrap] = useState<SessionBootstrapState>('loading');
   const [sessionUxState, setSessionUxState] = useState<StaffSessionUxState | null>('restoring');
+  const sessionUxDismissedRef = useRef<string | null>(null);
+
+  const publishSessionUx = useCallback(
+    (next: StaffSessionUxState | null) => {
+      if (!next || next === 'restored') {
+        setSessionUxState(next);
+        return;
+      }
+      const dismissKey = accessToken ? `${accessToken}:${next}` : null;
+      if (dismissKey && sessionUxDismissedRef.current === dismissKey) {
+        return;
+      }
+      setSessionUxState(next);
+    },
+    [accessToken],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -179,23 +197,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    sessionUxDismissedRef.current = null;
+
     const expiryMs = decodeAccessTokenExpiryMs(accessToken);
     if (!expiryMs) {
       return;
     }
 
-    const warnAt = expiryMs - SESSION_EXPIRY_WARNING_MS;
-    const delay = warnAt - Date.now();
+    let cancelled = false;
+    const refreshAt = expiryMs - SESSION_EXPIRY_WARNING_MS;
+
+    async function attemptSilentRefresh() {
+      if (cancelled) {
+        return;
+      }
+
+      const result = await proactiveRefreshSession();
+      if (cancelled) {
+        return;
+      }
+
+      if (result.status === 'refreshed') {
+        setAccessToken(result.session.accessToken);
+        if (result.user?.id) {
+          setUser(result.user);
+        }
+        setSessionBootstrap('authenticated');
+        setSessionUxState('restored');
+        return;
+      }
+
+      if (result.status === 'expired') {
+        publishSessionUx('sign_in_again');
+      } else if (result.status === 'unreachable') {
+        publishSessionUx('connection_lost');
+      }
+    }
+
+    const delay = refreshAt - Date.now();
     if (delay <= 0) {
-      return;
+      void attemptSilentRefresh();
+      return () => {
+        cancelled = true;
+      };
     }
 
     const timer = window.setTimeout(() => {
-      setSessionUxState((current) => (current === 'restored' ? 'expiring_soon' : current));
+      void attemptSilentRefresh();
     }, delay);
 
-    return () => window.clearTimeout(timer);
-  }, [accessToken]);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [accessToken, publishSessionUx]);
 
   const applyAuth = useCallback((payload: { user: AuthUser; session: AuthSession }) => {
     setUser((previous) => {
@@ -289,8 +344,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const dismissSessionUxState = useCallback(() => {
-    setSessionUxState(null);
-  }, []);
+    setSessionUxState((current) => {
+      if (current && accessToken) {
+        sessionUxDismissedRef.current = `${accessToken}:${current}`;
+      }
+      return null;
+    });
+  }, [accessToken]);
 
   const value = useMemo<AuthContextValue>(
     () => ({

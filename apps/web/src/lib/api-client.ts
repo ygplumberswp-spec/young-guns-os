@@ -47,7 +47,13 @@ function timeoutSignal(timeoutMs: number): AbortSignal {
   return controller.signal;
 }
 
-let refreshPromise: Promise<AuthSession | null> | null = null;
+type RefreshOutcome =
+  | { status: 'refreshed'; session: AuthSession; user: AuthUser }
+  | { status: 'expired' }
+  | { status: 'unreachable' }
+  | { status: 'missing' };
+
+let refreshPromise: Promise<RefreshOutcome> | null = null;
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const payload = (await response.json()) as ApiResponse<T>;
@@ -145,28 +151,73 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 }
 
-async function refreshAccessToken(): Promise<AuthSession | null> {
-  if (!refreshPromise) {
-    refreshPromise = withCrossTabRefreshLock(async () => {
+async function executeRefreshRequest(): Promise<RefreshOutcome> {
+  try {
+    const response = await fetch(`${apiBase()}/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (response.status === 401) {
+      let code = '';
       try {
-        const response = await fetch(`${apiBase()}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-        });
-
-        if (!response.ok) {
-          publishStaffSessionEvent({ type: 'session_expired' });
-          return null;
-        }
-
-        const data = await parseResponse<{ user: AuthUser; session: AuthSession }>(response);
-        return data.session;
+        const payload = (await response.json()) as { error?: { code?: string } };
+        code = String(payload?.error?.code ?? '');
       } catch {
-        return null;
+        code = '';
+      }
+      if (code === 'SESSION_MISSING') {
+        return { status: 'missing' };
+      }
+      publishStaffSessionEvent({ type: 'session_expired' });
+      return { status: 'expired' };
+    }
+
+    if (response.status >= 500) {
+      return { status: 'unreachable' };
+    }
+
+    if (!response.ok) {
+      publishStaffSessionEvent({ type: 'session_expired' });
+      return { status: 'expired' };
+    }
+
+    const data = await parseResponse<{ user: AuthUser; session: AuthSession }>(response);
+    publishStaffSessionEvent({
+      type: 'refresh',
+      accessToken: data.session.accessToken,
+      expiresIn: data.session.expiresIn,
+    });
+    return { status: 'refreshed', session: data.session, user: data.user };
+  } catch {
+    return { status: 'unreachable' };
+  }
+}
+
+export type ProactiveRefreshResult = RefreshOutcome['status'];
+
+async function refreshAccessToken(): Promise<AuthSession | null> {
+  const result = await proactiveRefreshSession();
+  return result.status === 'refreshed' ? result.session : null;
+}
+
+/** Cookie-based refresh with explicit outcome for silent renewal and session UX. */
+export async function proactiveRefreshSession(): Promise<RefreshOutcome> {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      try {
+        const session = await withCrossTabRefreshLock(async () => {
+          const outcome = await executeRefreshRequest();
+          return outcome.status === 'refreshed' ? outcome.session : null;
+        });
+        if (session) {
+          return { status: 'refreshed' as const, session, user: {} as AuthUser };
+        }
+        return executeRefreshRequest();
       } finally {
         refreshPromise = null;
       }
-    });
+    })();
   }
 
   return refreshPromise;

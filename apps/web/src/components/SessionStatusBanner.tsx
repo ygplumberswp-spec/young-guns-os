@@ -5,7 +5,7 @@ const LABELS: Record<StaffSessionUxState, string> = {
   restored: 'Session restored',
   connection_lost: 'Connection temporarily lost',
   reconnecting: 'Reconnecting…',
-  expiring_soon: 'Session expiring soon — stay signed in automatically',
+  expiring_soon: 'Unable to refresh your session — sign in again if prompted',
   sign_in_again: 'Sign in again to continue',
   account_locked: 'Account locked or revoked',
 };

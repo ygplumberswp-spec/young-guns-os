@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { PageLoadState } from '@titan/ui';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobList';
+import { BulkActionBar, MoreMenu, PageHeader, PrimaryAction } from '../../components/ux';
 
 export function JobListPage() {
   const { accessToken, user } = useAuth();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
@@ -29,6 +31,9 @@ export function JobListPage() {
     fetcher: async () => fetchJobs(accessToken!, debouncedSearch),
   });
 
+  const jobRows = jobs ?? [];
+  const allSelected = jobRows.length > 0 && selectedIds.size === jobRows.length;
+
   if (!canView) {
     return (
       <div className="jobs-page">
@@ -42,13 +47,45 @@ export function JobListPage() {
       <PageHeader
         title="Jobs"
         description="Operational job board — number, site, priority and technician."
+        breadcrumbs={[{ label: 'Operations', href: '/jobs' }, { label: 'Jobs' }]}
         actions={
-          canWrite ? (
-            <Link href="/jobs/new">
-              <Button>Create job</Button>
-            </Link>
-          ) : undefined
+          <>
+            {canWrite ? (
+              <Link href="/jobs/new">
+                <PrimaryAction>Create job</PrimaryAction>
+              </Link>
+            ) : null}
+            <MoreMenu
+              items={[
+                { id: 'export', label: 'Export list (scaffold)', disabled: true },
+                { id: 'archive', label: 'Archive selected (scaffold)', disabled: !canWrite },
+              ]}
+            />
+          </>
         }
+      />
+
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        totalCount={jobRows.length}
+        allSelected={allSelected}
+        onSelectAll={(checked) => {
+          setSelectedIds(checked ? new Set(jobRows.map((job) => job.id)) : new Set());
+        }}
+        actions={[
+          {
+            id: 'assign',
+            label: 'Assign technician',
+            disabled: !canWrite || selectedIds.size === 0,
+            onClick: () => undefined,
+          },
+          {
+            id: 'status',
+            label: 'Update status',
+            disabled: !canWrite || selectedIds.size === 0,
+            onClick: () => undefined,
+          },
+        ]}
       />
 
       <PageLoadState
@@ -59,7 +96,14 @@ export function JobListPage() {
         emptyDescription="Create a job to track work for your customers."
         loadingLabel="Loading jobs…"
       >
-        <JobList jobs={jobs ?? []} canWrite={canWrite} search={search} onSearchChange={setSearch} />
+        <JobList
+          jobs={jobRows}
+          canWrite={canWrite}
+          search={search}
+          onSearchChange={setSearch}
+          selectedIds={selectedIds}
+          onSelectedIdsChange={setSelectedIds}
+        />
       </PageLoadState>
     </div>
   );

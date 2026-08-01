@@ -122,7 +122,14 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M12 2l3 7h7l-5.5 4 2 7-6.5-4.5L5.5 20l2-7L2 9h7z" />
     </>
   ),
-  'AURA Capabilities': (
+  'Live Dispatch': (
+    <>
+      <path d="M12 2a10 10 0 1 0 10 10" />
+      <path d="M12 6v6l4 2" />
+      <circle cx="12" cy="12" r="2" />
+    </>
+  ),
+  'AURA Team': (
     <>
       <circle cx="12" cy="12" r="3" />
       <path d="M12 2v2" />
@@ -135,7 +142,7 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M17.66 6.34l1.41-1.41" />
     </>
   ),
-  Automations: (
+  'Automation Command Centre': (
     <>
       <path d="M12 2v4" />
       <path d="M12 18v4" />
@@ -147,7 +154,7 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M16.24 7.76l2.83-2.83" />
     </>
   ),
-  'Mission Control': (
+  'Company Health': (
     <>
       <circle cx="12" cy="12" r="10" />
       <circle cx="12" cy="12" r="3" />
@@ -199,9 +206,17 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M18.36 5.64l1.42-1.42" />
     </>
   ),
-  'Owner AI Chat': (
+  'AURA Executive Chat': (
     <>
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+    </>
+  ),
+  'Team & Access': (
+    <>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
   default: (
