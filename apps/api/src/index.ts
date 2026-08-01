@@ -33,10 +33,12 @@ import { CompanyService } from './services/company.service.js';
 import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
 import { createCrmRouter } from './routes/crm.js';
+import { createCustomersRouter } from './routes/customers.js';
 import { createMarketingEligibilityRouter } from './routes/marketing-eligibility.js';
 import { createJobsRouter } from './routes/jobs.js';
 import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
+import { CustomerValueClassificationService } from './services/customer-value-classification.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
@@ -365,6 +367,7 @@ const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   teamService,
 });
 const crmService = new CrmService(db);
+const customerValueClassificationService = new CustomerValueClassificationService(db);
 const marketingEligibilityService = new MarketingEligibilityService(db);
 const jobsService = new JobsService(db);
 const schedulingService = new SchedulingService(db);
