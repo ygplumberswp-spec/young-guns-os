@@ -1,21 +1,21 @@
 {
   "label": "SECURE-SESSION-184",
-  "startedAt": "2026-08-01T11:51:08.010Z",
-  "finishedAt": "2026-08-01T11:51:11.982Z",
+  "startedAt": "2026-08-01T11:55:09.730Z",
+  "finishedAt": "2026-08-01T11:55:13.968Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "webOrigin": "https://comfortable-determination-staging.up.railway.app",
-  "summary": "7 PASS / 3 PARTIAL / 1 FAIL",
-  "overall": "NO-GO",
+  "summary": "9 PASS / 2 PARTIAL / 0 FAIL",
+  "overall": "PARTIAL",
   "results": [
     {
       "name": "api_health",
-      "status": "FAIL",
-      "detail": "status=404"
+      "status": "PASS",
+      "detail": "status=200"
     },
     {
       "name": "api_ready",
-      "status": "PARTIAL",
-      "detail": "status=404"
+      "status": "PASS",
+      "detail": "ready"
     },
     {
       "name": "web_health",

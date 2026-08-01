@@ -52,14 +52,14 @@ async function main() {
   }
 
   // API health
-  const health = await fetchJson(`${API_ORIGIN}/health`);
+  const health = await fetchJson(`${API_ORIGIN}/api/v1/health`);
   if (health.status === 200) {
     pass(results, 'api_health', `status=${health.status}`);
   } else {
     fail(results, 'api_health', `status=${health.status}`);
   }
 
-  const ready = await fetchJson(`${API_ORIGIN}/health/ready`);
+  const ready = await fetchJson(`${API_ORIGIN}/api/v1/health/ready`);
   if (ready.status === 200) {
     pass(results, 'api_ready', 'ready');
   } else {
