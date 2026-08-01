@@ -7,11 +7,25 @@
 
 ---
 
-## App-Wide Visual Alignment and Layout Balance Polish
+## App-Wide Visual Alignment and Layout Balance
 
 ### Summary
 
-Introduced a global centered content container and layout design tokens so owner-facing pages no longer feel left-stretched or inconsistently padded. Mission Control (Company Health) received a balanced two-column dashboard layout. High-traffic surfaces (Executive Dashboard, Finance, Leads/CRM, AURA, Scheduling) inherit the shared wrapper without functional changes.
+Introduced a global centered content container and layout design tokens so owner-facing pages no longer feel left-stretched or inconsistently padded. Company Health is now an executive workspace with eight business-health areas. High-traffic surfaces (Executive Dashboard, Finance, Leads/CRM, AURA, Scheduling) inherit the shared wrapper without functional changes.
+
+### Addendum gap-fill (commit `491e397`)
+
+| Requirement | Status |
+|-------------|--------|
+| Global `AppContentContainer` (1400px centered) | Done — `AppLayout` wraps all owner routes |
+| Page spacing rhythm tokens | Done — `layout-grid.css` title/tabs/filters/cards gaps |
+| Company Health executive redesign | Done — overall status, compact stats, `CompanyHealthAreasGrid` (8 areas) |
+| Today's Plan removed from Company Health | Done — lives at `/aura/todays-plan` only |
+| Platform Health → Settings → Advanced | Done — `/settings/advanced/platform-health`; legacy redirect |
+| Technical modules off Company Health | Done — `PlatformTechnicalSystemsPanel` on Platform Health |
+| Excessive Company Health tabs removed | Done — Overview + Alerts only (simple mode) |
+| Responsive layouts | Done — 2-col health grid stacks at 900px; tab nav wraps |
+| Preserved functionality | CAL-001, finance/Xero, drafts, Business Rules, quick actions intact |
 
 ### Design tokens (`apps/web/src/styles/layout-grid.css`)
 
@@ -37,7 +51,10 @@ Introduced a global centered content container and layout design tokens so owner
 
 | File | Change |
 |------|--------|
-| `apps/web/src/pages/mission-control/MissionControlPage.tsx` | Stat cards via `SummaryCardGrid`; **Today's Plan** + **Business overview** side-by-side on desktop (`mission-control-dashboard__split`); systems panel full-width below; stacks on mobile |
+| `apps/web/src/pages/mission-control/MissionControlPage.tsx` | Executive overview: overall status banner, conditional stat cards, `CompanyHealthAreasGrid`; no Today's Plan or technical systems |
+| `apps/web/src/features/mission-control/CompanyHealthAreasGrid.tsx` | **New** — eight owner-facing business health area cards |
+| `apps/web/src/features/mission-control/company-health-areas.ts` | **New** — focus area config + technical module filter |
+| `apps/web/src/features/platform-health/PlatformTechnicalSystemsPanel.tsx` | **New** — deployment/release/knowledge-graph technical snapshots |
 
 ### App-wide alignment pass
 
@@ -70,7 +87,7 @@ pnpm --filter @titan/web run test
 ### Staging deploy
 
 - **Target:** Railway `comfortable-determination` (web) — staging environment `sweet-victory`
-- **Commit:** `5a4162f` on `cursor/visual-alignment-polish`
+- **Commit:** `491e397` on `cursor/visual-alignment-polish`
 - **Deploy:** Triggered via `railway up` from `apps/web` (build logs on Railway dashboard)
 - **URL:** https://comfortable-determination-staging.up.railway.app
 - **API:** Not deployed (layout-only; no API changes)
