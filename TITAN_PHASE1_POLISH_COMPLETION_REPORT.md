@@ -117,13 +117,13 @@
 
 | Check | Result |
 |-------|--------|
-| `pnpm run typecheck` | ✅ Pass |
+| `pnpm run typecheck` | ✅ Pass (2026-08-01 re-verify) |
 | `pnpm --filter @titan/web run build` | ✅ Pass |
 | `pnpm --filter @titan/api run build` | ✅ Pass |
-| Draft key dedupe test (`packages/shared`) | ✅ Pass |
+| Draft key dedupe test (`packages/shared`) | ✅ Pass (122 shared tests) |
 | BackButton routing test | ✅ Pass |
 | Notify dedupe test | ✅ Pass |
-| Web test suite (121 tests) | ✅ Pass |
+| Web test suite | ✅ Pass (121 tests) |
 
 ---
 
@@ -131,9 +131,15 @@
 
 | Step | Result |
 |------|--------|
-| Migration `0112_draft_workspace` | See staging apply output below |
-| Railway redeploy API + web | See deploy output below |
-| Health 200 | See verify below |
+| Migration `0112_draft_workspace` | ✅ Already applied (`{"status":"already_applied","tag":"0112_draft_workspace"}`) |
+| Railway redeploy API (`young-guns-os`) | ✅ SUCCESS · deploy `469667fc-2935-4c98-92c5-dc48208ffa43` · commit `2b6851d` |
+| Railway redeploy web (`comfortable-determination`) | ✅ SUCCESS · deploy `be4ccfab-33ed-4958-a9ca-137aeaf4be90` · commit `2b6851d` |
+| API `/api/v1/health/ready` | ✅ 200 · database connected |
+| Web `/` and `/healthz` | ✅ 200 |
+| Web `/drafts` route | ✅ 200 (SPA shell) |
+| API `/api/v1/drafts` unauthenticated | ✅ 401 (expected) |
+
+Evidence: `diagnostic-output/209-phase1-polish-staging.json`
 
 ---
 
