@@ -1,0 +1,58 @@
+{
+  "generatedAt": "2026-08-01T19:48:15.828Z",
+  "label": "226-cartrack-live-map-final-verify",
+  "branch": "cursor/cartrack-live-map-final",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "rootCause": {
+    "summary": "GPS import returned positionsStored=0 because /vehicles/status vehicle_id values did not match mapping external_vehicle_id keys and parser missed nested/PascalCase coordinates.",
+    "endpoint": "GET /vehicles/status (fallback GET /positions)",
+    "fix": "Registration fallback mapping, improved Cartrack status parser, deduped fresh-only GPS inserts, /fleet/live-map route + 3s client poll."
+  },
+  "health": {
+    "ready": {
+      "httpStatus": 200,
+      "body": {
+        "status": "ready",
+        "database": "connected",
+        "redis": "not_configured",
+        "providersEnabled": true,
+        "schedulersEnabled": true,
+        "workersEnabled": false,
+        "webhooksEnabled": false,
+        "timestamp": "2026-08-01T19:48:16.578Z"
+      }
+    }
+  },
+  "cartrack": {
+    "CF172047": {
+      "hasLatestPosition": false
+    },
+    "CF77263": {
+      "hasLatestPosition": false
+    }
+  },
+  "gps": {},
+  "liveMap": {
+    "route": "/fleet/live-map",
+    "webRootHttpStatus": 200,
+    "webLiveMapHttpStatus": 200,
+    "apiEndpoint": "/api/v1/fleet/live-map",
+    "clientPollMsVisible": 3000,
+    "clientPollMsHidden": 60000,
+    "dedupeUnchangedPayload": true,
+    "inflightGuard": true
+  },
+  "polling": {
+    "liveDispatchHook": "useCartrackLivePositions (3s visible / 60s hidden)",
+    "fleetLiveMapHook": "useFleetLiveMap (3s visible / 60s hidden)",
+    "pageVisibilityApi": true
+  },
+  "permissions": {},
+  "deploy": {},
+  "verdict": "HOLD",
+  "blockers": [
+    "OWNER_ACCESS_TOKEN not set — authenticated GPS proof skipped",
+    "Both CF172047 and CF77263 must have stored GPS positions after deploy"
+  ]
+}
