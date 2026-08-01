@@ -188,7 +188,51 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 - `/settings` → apps/web/src/pages/settings/SettingsIndexPage.tsx
 
 
-## 6. WhatsApp / Email support status
+## 6. Customers, Leads and Jobs — Edit, Delete and Quick Actions Verification
+
+**Branch:** `cursor/integration-lock-auto-sync` · **Commit:** `aae3327`  
+**Staging:** https://comfortable-determination-staging.up.railway.app  
+**Evidence:** `diagnostic-output/214-owner-actions-staging-verify.json` (22/22 GO)
+
+### Implementation summary
+
+| Area | Status | Notes |
+|------|--------|-------|
+| Actions column (Edit ✎ + More ⋮) | **Working** | `RowActionsCell` on Customers, Leads, Jobs — always visible, not hover-only |
+| Status badges + row tint | **Working** | `StatusBadgeDropdown` + `StatusRowAccent` via `packages/shared/src/crm-list-ui.ts` |
+| Bulk actions | **Working** | Checkboxes + `BulkActionBar` on all three lists |
+| Customer Edit + Archive/Delete | **Working** | Edit opens `#edit` form; paying/invoiced → archive only (400 blocked delete) |
+| Lead Accept/Pending/Decline + Delete | **Working** | Status dropdown + row menu; delete blocked when converted/linked |
+| Job Edit + Cancel/Archive | **Working** | Full row menu; empty draft delete owner-only; linked job → cancel (400) |
+| Saving indicator | **Working** | Saving… / Saved / Failed inline via `InlineSaveIndicator` |
+| Back button | **Working** | Visible on all list + detail pages verified |
+
+### Staging verification (real records, disposable Owner tenant)
+
+| Page | Result | Screenshot |
+|------|--------|------------|
+| `/crm` (Customers) | PASS — Actions column, Edit, More, status badge | `diagnostic-output/owner-actions-screenshots/customers_list-actions.png` |
+| `/crm/:id#edit` | PASS — Edit form opens and saves | API: `customer_edit_save` |
+| `/leads` | PASS — Actions, status tint (Declined=red), bulk bar | `diagnostic-output/owner-actions-screenshots/leads_list-actions.png` |
+| `/leads/:id#edit` | PASS — Lead edit panel opens | Playwright: `lead_detail_edit_opens` |
+| `/jobs` | PASS — Actions, status dropdown, bulk assign/schedule | `diagnostic-output/owner-actions-screenshots/jobs_list-actions.png` |
+| `/jobs/:id#edit` | PASS — Job edit form opens and saves | API: `job_edit_save` |
+
+### API gates verified
+
+- `DELETE /crm/customers/:id` — blocked 400 when customer has linked jobs; owner-only
+- `DELETE /leads/:id` — eligible leads deleted; converted/linked blocked
+- `PATCH` status changes emit audit events (`customer.status_changed`, `lead.status_changed`)
+
+### Files changed (key)
+
+- `apps/web/src/components/ux/RowActionsCell.tsx`, `StatusBadgeDropdown.tsx`, `StatusRowAccent.tsx`
+- `apps/web/src/features/crm/CustomerList.tsx`, `features/leads/LeadListTable.tsx`, `features/jobs/JobList.tsx`
+- `packages/shared/src/crm-list-ui.ts`
+- `apps/api/src/routes/crm.ts`, `leads.ts`, `jobs.ts` — DELETE endpoints
+- `packages/db/scripts/staging-owner-actions-verify.mjs`
+
+## 7. WhatsApp / Email support status
 
 | Channel | Status |
 |---------|--------|
@@ -197,7 +241,7 @@ All other **134 staff routes** show back via `shouldShowBackButton` + `PageHeade
 | Email (IMAP/SMTP) | Real connection lock + auto incoming; send/delete/forward approval |
 | Gmail/M365 OAuth | Roadmap — not faked |
 
-## 7. Cartrack evidence
+## 8. Cartrack evidence
 
 - Registration normalize: `packages/shared/src/vehicle-registration.ts`
 - Auto-map on connect/sync: `apps/api/src/services/integrations.service.ts`
