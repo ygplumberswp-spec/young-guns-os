@@ -1,0 +1,46 @@
+{
+  "label": "214-cv-001b-marker-fix",
+  "generatedAt": "2026-08-01T19:50:00.000Z",
+  "branch": "cursor/xero-payments-hotfix",
+  "commit": "f03dc24",
+  "rootCause": "Post-import connector config used read-modify-write patches that clobbered cvMetricsRefreshJobId. handleXeroImportJobSettled wrote lastSuccessAt via updateConnectorOutcomeMeta before CV mark, and subsequent autoSync patches (outcome meta, two-way verify queue) could overwrite the marker when merging stale autoSync snapshots.",
+  "fixSummary": {
+    "filesChanged": [
+      "apps/api/src/services/integration-sync-orchestrator.service.ts",
+      "apps/api/src/services/background-work-orchestrator.service.ts",
+      "apps/api/src/services/integration-sync-orchestrator.test.ts",
+      "apps/api/src/services/background-work-orchestrator.test.ts"
+    ],
+    "changes": [
+      "Added mergeAutoSyncState + patchConnectorAutoSync to preserve cvMetricsRefreshJobId/cvMetricsRefreshAt and two-way verify markers across connector config updates.",
+      "Reordered handleXeroImportJobSettled: CV refresh + mark runs before integration outcome meta patch.",
+      "Wrapped CV refresh failures in try/catch so import settle completes; scheduler fallback retries refreshPendingCustomerValueMetrics.",
+      "Added unit tests for call order and marker preservation."
+    ]
+  },
+  "buildTestResults": {
+    "typecheck": "PASS",
+    "targetedUnitTests": {
+      "command": "npx tsx --test src/services/background-work-orchestrator.test.ts src/services/integration-sync-orchestrator.test.ts",
+      "result": "PASS (8/8)"
+    },
+    "fullApiTestSuite": "SKIPPED — pre-existing workspace test failures unrelated to this change"
+  },
+  "deployStatus": {
+    "pushed": true,
+    "remoteBranch": "origin/cursor/xero-payments-hotfix",
+    "railwayStagingDeploy": "NOT_RUN — no local railway project link; push ready for staging API redeploy",
+    "preservedHotfix": "Xero payments query fix unchanged on branch"
+  },
+  "gate187Expectation": {
+    "newImports": "PASS — cv_auto_recalc_fired should set cvMetricsRefreshJobId on next successful import settle",
+    "existingStagingState": "PENDING — job 8e6aec9b already completed with null marker; refreshPendingCustomerValueMetrics scheduler tick should backfill within ~60s after deploy if SCHEDULERS_ENABLED=true. Re-run diagnostic-output/187-xero-import-recovery-verify.mjs after deploy + tick.",
+    "ifSchedulersDisabled": "Run 187 after enabling SCHEDULERS_ENABLED on staging API or trigger next import completion"
+  },
+  "constraintsHonoured": {
+    "stagingOnly": true,
+    "noProduction": true,
+    "noMigrationsApplied": true,
+    "xeroHotfixPreserved": true
+  }
+}
