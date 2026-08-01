@@ -133,7 +133,7 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 1. Staging deploy + lead conversion proof (`8d35bfd`)  
 2. Migrations `0094`–`0104` on staging DB  
-3. Quote → invoice → payment chain staging proof  
+3. ~~Quote → invoice → payment chain staging proof~~ **local office chain Phase 12** — Sprint 016; staging + live Xero proof still open  
 4. AURA AI provider verified connection  
 5. Xero OAuth staging (read-only first)  
 6. MFA login enforcement  

@@ -53,7 +53,7 @@
 | FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Office `/workforce/day-timeline` merges time entries + workflow events; mobile break/travel logging; AURA opening/closing brief still open | Cursor | Sprint 012 | `BusinessDayTimelinePage.tsx`, OPS-014 |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
 | FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | — | Quote send | Partially implemented | BOQ workspace local foundation + quote edit/approval workflow; plan quotes + Excel/PDF import remain | Cursor | Sprint 013 | `boq.test.ts`, `quote-workflow.test.ts` |
-| FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV works; live Xero # authority open | Cursor | UX-E | FIN-002, FIN-007 |
+| FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV + job completion/billing panel local (Sprint 016); live Xero # authority + entity sync require OAuth | Cursor | Sprint 016 | `job-finance-workflow.test.ts`, `JobCompletionFinancePanel.tsx`, `XeroSyncPanel.tsx` |
 | FRZ-011 | §12 | Materials, PO, job costing chain | Owner/Procurement | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-F staging | Xero bills | — | Partially implemented | Job costing panel + stock movement ledger UI local (Sprint 014); supplier OCR/Xero bill match still open | Cursor | Sprint 014 `4a31e46` | `job-costing.test.ts`, `StockMovementsPage.tsx` |
 | FRZ-012 | §13 | Documents, OCR, reports, COC, job packs | All roles | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | UX-B docs | AI provider | Send approval | Partially implemented | Job pack approval + portal share local (Sprint 015); supplier OCR + Reports & Compliance Agent remain | Cursor | Sprint 015 | `job-document-pack.test.ts`, `JobPackDetailPage.tsx` |
 | FRZ-013 | §14 | Workforce/HR/labour-law AURA team | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | HR legal | Partially implemented | Draft-only discipline; no auto-dismiss | Cursor | — | HR modules |
@@ -81,7 +81,7 @@
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement + Phase 10 job costing panel + stock movement ledger |
 | Quote/BOQ → Approval | Partially implemented | UX-E quotes; quote edit + internal approval workflow local (Sprint 013); BOQ workspace local foundation |
-| Invoice → Payment | Partially implemented | UX-E; live Xero blocked |
+| Invoice → Payment | Partially implemented | UX-E + Phase 12 local: invoice-from-job, payment prefill, completion/billing chain panel; live Xero blocked |
 | Profit | Partially implemented | Quote margin + job gross-profit estimate on job detail (authorized roles) |
 | Follow-up/Marketing | Partially implemented | UX-H gates; no live send |
 | Reporting | Partially implemented | Analytics partial |
@@ -96,8 +96,9 @@
 4. ~~**FRZ-009 / Phase 9** — Quote edit + approval workflow + BOQ workspace local foundation **DONE**; plan quotes + supplier PDF match remain~~ **DONE** — Sprint 013 `85c97d6`  
 5. ~~**FRZ-011 / Phase 10 (local slice)** — Job costing summary API + panel; stock movement ledger route + UI **DONE**; supplier OCR/Xero bill match remain~~ **DONE (local)** — Sprint 014  
 6. ~~**FRZ-012 / Phase 11 (local slice)** — Job document pack approval workflow + portal share + COC compliance panel **DONE**; supplier OCR + Reports & Compliance Agent remain~~ **DONE (local)** — Sprint 015  
-7. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-8. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+7. ~~**FRZ-010 / Phase 12 (local slice)** — Job completion/billing chain panel + invoice-from-job + payment prefill + Xero sync UI stubs **DONE**; live Xero OAuth/sync remain~~ **DONE (local)** — Sprint 016  
+8. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+9. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

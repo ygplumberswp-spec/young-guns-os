@@ -262,3 +262,19 @@
 | **Approval required?** | No — local only; migrations 0105–0106 apply on staging deferred |
 | **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth, or Phase 12 quote-to-cash remainder (safe local) |
 
+---
+
+## Sprint 016 — Phase 12 completion / invoice / payment / Xero chain (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 12 — Completion / invoice / payment / Xero finance chain remainder (local slice) |
+| **Result** | Job completion snapshot on execution summary; `JobCompletionFinancePanel` with Booked→Completed→Invoiced→Paid chain; invoice-from-job API (`POST /finance/jobs/:jobId/invoices`); payment prefill by invoice/job; Xero entity sync panel with honest OAuth blocking |
+| **Checkpoint** | pending commit |
+| **Files changed** | `job-finance-workflow.ts`, `JobCompletionFinancePanel.tsx`, `XeroSyncPanel.tsx`, `finance.service.ts`, `job-execution.service.ts`, `PaymentCreatePage.tsx`, `InvoiceDetailPage.tsx`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**265** pass: 91 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
+| **Approval required?** | No — local only; live Xero OAuth/sync still FRZ-018 |
+| **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth staging connect, staging migrations 0105–0106 apply |
+
