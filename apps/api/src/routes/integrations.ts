@@ -329,6 +329,16 @@ export function createIntegrationsRouter({
     },
   );
 
+  router.get(
+    '/cartrack/tracking',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'dispatch:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const tracking = await integrationsService.buildFleetTrackingContext(companyId);
+      res.json({ data: { tracking } });
+    },
+  );
+
   router.patch(
     '/cartrack/mappings/:mappingId',
     requireAnyPermission('integrations:manage'),

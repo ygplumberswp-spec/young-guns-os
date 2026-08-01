@@ -8,6 +8,7 @@ import { fetchMobileDispatcherWorkspace } from '../../lib/enterprise-mobile-api-
 import { useAuth } from '../../lib/auth-context';
 import { canAccessMobilePlatform, formatDeviceStatus } from '../../features/mobile-platform/utils';
 import { LiveDispatchNav } from '../../features/dispatch/LiveDispatchNav';
+import { LiveDispatchPositionsPanel } from '../../features/dispatch/LiveDispatchPositionsPanel';
 import { PageHeader } from '../../components/ux';
 
 export function MobileDispatcherPage() {
@@ -97,6 +98,8 @@ export function MobileDispatcherPage() {
               value={workspace.activeTrackingProvider?.replace(/_/g, ' ') ?? 'None active'}
             />
           </div>
+
+          <LiveDispatchPositionsPanel accessToken={accessToken} />
 
           <Panel title="Technician Status">
             {workspace.technicianStatuses.length === 0 ? (

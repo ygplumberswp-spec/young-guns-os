@@ -203,8 +203,16 @@ export function PersonalCommunicationsIntelligencePage() {
     <div className="page">
       <PageHeader
         title="Personal Communications Intelligence"
-        description="WhatsApp business assistant with classification, privacy boundaries, and approval-gated actions."
+        description="Separate from WhatsApp Business — intelligence and approval-gated actions only. Direct personal WhatsApp session pairing is not supported."
       />
+      <Panel title="Personal WhatsApp account status">
+        <p className="page-muted">
+          <strong>Status: Blocked / unsupported for direct connection.</strong> TITAN does not store
+          personal WhatsApp session keys or simulate a personal account connection. Incoming
+          business-context analysis may use authorised WhatsApp Business data only. Outgoing messages,
+          deletes, and consequential actions require Owner approval with audit evidence.
+        </p>
+      </Panel>
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
       <div className="tab-row">

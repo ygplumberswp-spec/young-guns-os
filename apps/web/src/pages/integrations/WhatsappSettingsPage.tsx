@@ -1,6 +1,7 @@
 import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button, Input, Panel } from '@titan/ui';
+import { isCompanyOwnerRole } from '@titan/auth/browser';
 import type {
   WhatsappConnectionSummary,
   WhatsappStats,
@@ -20,8 +21,8 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
+import { IntegrationConnectionLock } from '../../features/integrations/IntegrationConnectionLock';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
-import { formatConnectionStatus } from '../../features/integrations/formatters';
 
 export function WhatsappSettingsPage() {
   const { accessToken, user } = useAuth();
@@ -31,7 +32,12 @@ export function WhatsappSettingsPage() {
   const [accessTokenField, setAccessTokenField] = useState('');
   const [phoneNumberId, setPhoneNumberId] = useState('');
   const [businessAccountId, setBusinessAccountId] = useState('');
-  const [webhookVerifyToken, setWebhookVerifyToken] = useState('');
+  const [formValues, setFormValues] = useState({
+    accessToken: '',
+    phoneNumberId: '',
+    businessAccountId: '',
+    webhookVerifyToken: '',
+  });
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [testMessage, setTestMessage] = useState('');
   const [templateName, setTemplateName] = useState('');
@@ -46,6 +52,13 @@ export function WhatsappSettingsPage() {
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
+  const isOwner = useMemo(
+    () =>
+      user
+        ? isCompanyOwnerRole({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
 
   async function loadPageData() {
     if (!accessToken || !canView) return;
@@ -55,6 +68,12 @@ export function WhatsappSettingsPage() {
     setTemplates(data.templates);
     if (data.connection.phoneNumberId) setPhoneNumberId(data.connection.phoneNumberId);
     if (data.connection.businessAccountId) setBusinessAccountId(data.connection.businessAccountId);
+    setFormValues((current) => ({
+      accessToken: '',
+      phoneNumberId: data.connection.phoneNumberId ?? current.phoneNumberId,
+      businessAccountId: data.connection.businessAccountId ?? current.businessAccountId,
+      webhookVerifyToken: '',
+    }));
   }
 
   useEffect(() => {
@@ -95,13 +114,14 @@ export function WhatsappSettingsPage() {
 
     try {
       const updated = await saveWhatsappConnection(accessToken, {
-        accessToken: accessTokenField,
-        phoneNumberId,
-        businessAccountId,
-        webhookVerifyToken: webhookVerifyToken.trim() || null,
+        accessToken: formValues.accessToken || accessTokenField || undefined,
+        phoneNumberId: formValues.phoneNumberId || phoneNumberId,
+        businessAccountId: formValues.businessAccountId || businessAccountId,
+        webhookVerifyToken: formValues.webhookVerifyToken.trim() || null,
       });
       setConnection(updated);
       setAccessTokenField('');
+      setFormValues((current) => ({ ...current, accessToken: '', webhookVerifyToken: '' }));
       setSuccess('WhatsApp Business connected successfully.');
       await loadPageData();
     } catch (err) {
@@ -221,97 +241,56 @@ export function WhatsappSettingsPage() {
       />
       <IntegrationsNav />
 
-      {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="form-success">{success}</p> : null}
+      {connection ? (
+        <IntegrationConnectionLock
+          providerName="WhatsApp Business"
+          status={connection.status}
+          isConnected={connection.hasCredentials}
+          canManage={canManage}
+          isOwner={isOwner}
+          isBusy={isSaving}
+          error={error}
+          success={success}
+          statusRows={[
+            {
+              label: 'Phone number',
+              value: connection.displayPhoneNumber ?? connection.phoneNumberId ?? '—',
+            },
+            { label: 'Business account ID', value: connection.businessAccountId ?? '—' },
+            { label: 'Webhook URL', value: connection.webhookUrl },
+            {
+              label: 'Verify token',
+              value: connection.webhookVerifyTokenHint ?? 'Generated on connect',
+            },
+          ]}
+          connectFields={[
+            {
+              key: 'accessToken',
+              label: 'Access token',
+              type: 'password',
+              autoComplete: 'new-password',
+            },
+            { key: 'phoneNumberId', label: 'Phone number ID', autoComplete: 'off' },
+            { key: 'businessAccountId', label: 'Business account ID (WABA)', autoComplete: 'off' },
+            {
+              key: 'webhookVerifyToken',
+              label: 'Webhook verify token (optional)',
+              required: false,
+              autoComplete: 'off',
+            },
+          ]}
+          connectValues={formValues}
+          onConnectValueChange={(key, value) =>
+            setFormValues((current) => ({ ...current, [key]: value }))
+          }
+          onConnect={handleConnect}
+          onDisconnect={handleDisconnect}
+          onReplaceCredentials={handleConnect}
+          connectHelpText="Messages sync in the background after connect. Sending templates or campaigns requires existing approval rules. Access tokens are never returned to the browser."
+        />
+      ) : null}
 
       <div className="integrations-grid">
-        <Panel title="Connection status">
-          {connection ? (
-            <dl className="integrations-detail-list">
-              <div>
-                <dt>Status</dt>
-                <dd>{formatConnectionStatus(connection.status)}</dd>
-              </div>
-              <div>
-                <dt>Phone number</dt>
-                <dd>{connection.displayPhoneNumber ?? connection.phoneNumberId ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Business account ID</dt>
-                <dd>{connection.businessAccountId ?? '—'}</dd>
-              </div>
-              <div>
-                <dt>Webhook URL</dt>
-                <dd>
-                  <code>{connection.webhookUrl}</code>
-                </dd>
-              </div>
-              <div>
-                <dt>Verify token</dt>
-                <dd>{connection.webhookVerifyTokenHint ?? 'Generated on connect'}</dd>
-              </div>
-              {connection.lastError ? (
-                <div>
-                  <dt>Last error</dt>
-                  <dd className="form-error">{connection.lastError}</dd>
-                </div>
-              ) : null}
-            </dl>
-          ) : null}
-
-          {canManage ? (
-            <form className="integrations-form" onSubmit={(event) => void handleConnect(event)}>
-              <Input
-                label="Access token"
-                type="password"
-                value={accessTokenField}
-                onChange={(event) => setAccessTokenField(event.target.value)}
-                placeholder={
-                  connection?.hasCredentials ? 'Leave blank to keep current token' : undefined
-                }
-                required={!connection?.hasCredentials}
-              />
-              <Input
-                label="Phone number ID"
-                value={phoneNumberId}
-                onChange={(event) => setPhoneNumberId(event.target.value)}
-                required
-              />
-              <Input
-                label="Business account ID (WABA)"
-                value={businessAccountId}
-                onChange={(event) => setBusinessAccountId(event.target.value)}
-                required
-              />
-              <Input
-                label="Webhook verify token (optional)"
-                value={webhookVerifyToken}
-                onChange={(event) => setWebhookVerifyToken(event.target.value)}
-                placeholder="Auto-generated if empty"
-              />
-              <div className="integrations-form__actions">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving
-                    ? 'Connecting…'
-                    : connection?.status === 'connected'
-                      ? 'Update connection'
-                      : 'Connect WhatsApp'}
-                </Button>
-                {connection?.status === 'connected' ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={isSaving}
-                    onClick={() => void handleDisconnect()}
-                  >
-                    Disconnect
-                  </Button>
-                ) : null}
-              </div>
-            </form>
-          ) : null}
-        </Panel>
-
         <Panel title="Message statistics">
           {stats ? (
             <dl className="integrations-detail-list">

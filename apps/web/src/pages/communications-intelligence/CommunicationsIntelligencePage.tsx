@@ -20,6 +20,11 @@ import {
   fetchCommunicationsSmsRecords,
   fetchCommunicationsTimeline,
 } from '../../lib/communications-intelligence-api-client';
+import {
+  matchesUnifiedCommunicationChannel,
+  UnifiedCommunicationsChannelFilter,
+} from '../../features/communications/UnifiedCommunicationsChannelFilter';
+import type { UnifiedCommunicationChannelFilter as ChannelFilter } from '../../features/communications/UnifiedCommunicationsChannelFilter';
 
 type CommsTab = 'dashboard' | 'timeline' | 'calls' | 'email' | 'sms' | 'drafts';
 
@@ -55,6 +60,7 @@ export function CommunicationsIntelligencePage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [draftSubject, setDraftSubject] = useState('');
   const [draftBody, setDraftBody] = useState('');
+  const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all');
 
   const canView = useMemo(() => (user ? canAccess(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canWrite(user.permissions) : false), [user]);
@@ -156,12 +162,15 @@ export function CommunicationsIntelligencePage() {
   ];
 
   const analytics = dashboard?.analytics;
+  const filteredTimeline = timeline.filter((entry) =>
+    matchesUnifiedCommunicationChannel(entry.channel, channelFilter, entry.metadata),
+  );
 
   return (
     <div className="portal-page">
       <PageHeader
-        title="Communications Intelligence"
-        description="Unified voice, WhatsApp, email, SMS, portal, and support communications — all from real tenant data."
+        title="Unified Communications"
+        description="WhatsApp Business, email, SMS, calls, portal, and support messages in one workspace — linked to customers, jobs, and invoices where available."
       />
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -239,19 +248,23 @@ export function CommunicationsIntelligencePage() {
 
       {activeTab === 'timeline' ? (
         <Panel title="Customer communication timeline">
-          {timeline.length === 0 ? (
+          <UnifiedCommunicationsChannelFilter value={channelFilter} onChange={setChannelFilter} />
+          {filteredTimeline.length === 0 ? (
             <EmptyState
               title="No timeline events"
               description="Events appear from calls, messages, and support records."
             />
           ) : (
             <ul className="portal-list">
-              {timeline.map((entry) => (
+              {filteredTimeline.map((entry) => (
                 <li key={`${entry.channel}-${entry.id}`}>
                   <strong>{entry.title}</strong>
                   <span>
-                    {entry.channel} · {entry.customerName ?? 'Unknown customer'} ·{' '}
-                    {entry.occurredAt}
+                    {entry.channel} · {entry.customerName ?? 'Unknown customer'}
+                    {entry.entityType && entry.entityId
+                      ? ` · ${entry.entityType} ${entry.entityId.slice(0, 8)}`
+                      : ''}{' '}
+                    · {entry.occurredAt}
                   </span>
                   <span>{entry.preview}</span>
                 </li>

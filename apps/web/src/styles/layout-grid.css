@@ -1,0 +1,229 @@
+/* TITAN app-wide layout grid — content width, padding, vertical rhythm */
+
+:root {
+  --titan-content-max-width: 87.5rem; /* 1400px */
+  --titan-content-max-width-narrow: 80rem; /* 1280px */
+  --titan-page-padding: clamp(0.75rem, 2vw, 1.5rem);
+  --titan-section-gap: 1.25rem;
+  --titan-rhythm-title: 0;
+  --titan-rhythm-subtitle: 0.375rem;
+  --titan-rhythm-tabs: 1rem;
+  --titan-rhythm-filters: 0.875rem;
+  --titan-rhythm-cards: 1rem;
+  --titan-rhythm-tables: 1.25rem;
+  --titan-bp-mobile: 48rem; /* 768px */
+  --titan-bp-tablet: 64rem; /* 1024px */
+  --titan-bp-desktop-sm: 75rem; /* 1200px */
+  --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-summary-card-min: 16rem;
+  --titan-summary-grid-gap: var(--titan-rhythm-cards);
+  --titan-touch-target-min: 2.75rem; /* 44px */
+}
+
+.app-content-container {
+  width: 100%;
+  max-width: var(--titan-content-max-width);
+  margin-inline: auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  overflow-x: clip;
+}
+
+.app-content-container--narrow {
+  max-width: var(--titan-content-max-width-narrow);
+}
+
+.app-content-container--wide {
+  max-width: none;
+}
+
+.page-shell,
+.automation-page,
+.finance-page,
+.scheduling-page,
+.dashboard,
+.settings-page,
+.integrations-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  min-width: 0;
+  width: 100%;
+}
+
+.ux-page-header {
+  margin-bottom: var(--titan-rhythm-subtitle);
+}
+
+.page-shell .titan-tab-nav,
+.automation-page .titan-tab-nav {
+  margin-bottom: var(--titan-rhythm-tabs);
+}
+
+.mission-control-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+.mission-control-dashboard__split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.mission-control-dashboard__split .titan-panel {
+  height: 100%;
+}
+
+.mission-control-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.aura-business-dashboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: var(--titan-section-gap);
+  align-items: start;
+}
+
+.aura-business-dashboard .aura-intelligence__summary {
+  grid-column: 1 / -1;
+}
+
+.mission-control-stats {
+  justify-items: stretch;
+}
+
+@media (max-width: 767px) {
+  .aura-business-dashboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ux-summary-grid,
+.stat-grid {
+  display: grid;
+  gap: var(--titan-summary-grid-gap);
+  width: 100%;
+  min-width: 0;
+  justify-items: stretch;
+}
+
+.ux-summary-grid > *,
+.stat-grid > * {
+  min-width: 0;
+}
+
+.ux-summary-grid--cols-4,
+.stat-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .ux-summary-grid--cols-4,
+  .stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fit, minmax(var(--titan-summary-card-min), 1fr));
+  }
+}
+
+.ux-summary-grid--cols-3 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ux-summary-grid--cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.ux-summary-grid--cols-2 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (min-width: 768px) {
+  .ux-summary-grid--cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-stats.ux-summary-grid {
+  gap: 0.875rem;
+}
+
+.dashboard-stat-card,
+.exec-dashboard-glance__link,
+.stat-grid .stat-card {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .dashboard-stat-card__link,
+  .exec-dashboard-glance__link {
+    min-height: var(--titan-touch-target-min);
+  }
+}
+
+@media (max-width: 767px) {
+  .mission-control-dashboard__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.company-health-areas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--titan-section-gap);
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023px) {
+  .company-health-areas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

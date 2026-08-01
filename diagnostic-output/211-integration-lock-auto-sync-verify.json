@@ -1,63 +1,76 @@
 {
-  "generatedAt": "2026-08-01T20:00:00.000Z",
+  "generatedAt": "2026-08-01T20:10:00.000Z",
   "branch": "cursor/integration-lock-auto-sync",
-  "baseline": "cursor/titan-frozen-scope-completion",
+  "commitPending": true,
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "visualPolishReconciliation": {
+    "subagent95ca7eb4": "Responsive grid absorbed from Titan-Aura-Visual-Polish layout-grid.css into this branch; duplicate ux-summary-grid rules removed from index.css. No separate visual-polish merge required.",
+    "skippedDuplicateWork": ["InlineSaveIndicator", "StatusBadgeDropdown", "MultiStatusFilter component files — not duplicated; filter pills CSS added for unified comms only"]
+  },
   "rootCause": {
-    "credentialOverwrite": {
-      "summary": "Connected Cartrack settings kept an editable credential form with browser autofill enabled (autocomplete=username/current-password). Owner profile email could populate the username field while the API username hint correctly stayed masked. Submitting Update connection sent invalid credentials; failed validation set status=error without replacing encrypted credentials, but broke the connected UX and surfaced Cartrack rejected the provided credentials.",
-      "fixes": [
-        "Hide credential form when connected; show read-only connection card",
-        "Disable autofill on credential fields (autocomplete=off / new-password)",
-        "Validate-before-save on replace; preserve stored credentials and connected status on failure",
-        "Owner-only replace flow with confirmation dialog",
-        "POST /integrations/cartrack/verify-stored to re-test encrypted credentials without browser secrets",
-        "Audit log on credential save/replace"
-      ]
-    },
-    "autoMapGap": {
-      "summary": "Auto-mapping only ran during manual sync and used trim+lowercase only (no separator normalisation). CF172047 vs CF-172047 would not match. Initial background sync depended on SCHEDULERS_ENABLED gate and orchestrator hook — mapping did not run at connect when sync never fired.",
-      "fixes": [
-        "Shared normalizeVehicleRegistration strips spaces/hyphens/separators before exact match",
-        "Ambiguous duplicate plates left for review instead of guessing",
-        "Auto-map audit entries for each automatic mapping",
-        "Connect hook triggers integration-sync-orchestrator initial Cartrack sync",
-        "UI groups mappings: Automatically matched vs Needs review categories"
-      ]
+    "cartrackCredentialOverwrite": "Editable credential form remained visible when connected with browser autofill (username/current-password). Owner email could appear in username field. Failed replace set status=error without replacing encrypted credentials, breaking UX.",
+    "autoMapGap": "Registration match used trim+lowercase only; separator variants (CF-172047) missed. Auto-map only ran on manual sync, not reliably on connect when scheduler gate off."
+  },
+  "responsiveLayout": {
+    "status": "implemented",
+    "cssFile": "apps/web/src/styles/layout-grid.css",
+    "breakpoints": {
+      "mobile_lt_768": "1 card per row",
+      "tablet_768_1023": "2 cards per row",
+      "laptop_1024_1439": "2 cards per row",
+      "desktop_1200_1439": "3 cards per row (cols-4 grids)",
+      "large_gte_1440": "4 cards per row"
     }
+  },
+  "cartrack": {
+    "autoMapNormalization": "packages/shared/src/vehicle-registration.ts",
+    "expectedStaging": {
+      "CF172047": "auto_matched",
+      "CF77263": "auto_matched",
+      "mappedCount": 2
+    },
+    "liveDispatchPollMs": 3000,
+    "hiddenPollMs": 60000,
+    "stalePositionMs": 120000,
+    "trackingEndpoint": "GET /api/v1/integrations/cartrack/tracking"
   },
   "credentialSecurity": {
     "passwordNeverReturned": true,
-    "usernameMaskedInSummary": true,
     "validateBeforeReplace": true,
-    "failedReplacePreservesStoredCredentials": true,
-    "ownerOnlyReplaceEndpoint": "PUT /integrations/cartrack/credentials",
-    "autofillDisabledOnForms": true
+    "ownerOnlyReplace": "PUT /integrations/cartrack/credentials",
+    "verifyStored": "POST /integrations/cartrack/verify-stored",
+    "autofillDisabled": true
   },
   "autoSyncSchedules": {
-    "cartrack": {
-      "defaultIntervalMinutes": 15,
-      "orchestrator": "IntegrationSyncOrchestratorService",
-      "initialSyncOnConnect": true,
-      "entities": ["vehicles", "positions", "trips", "events", "geofences", "drivers"]
-    },
-    "xero": { "defaultIntervalMinutes": 20, "implementation": "full" },
-    "email": { "defaultIntervalMinutes": 60, "implementation": "partial" },
-    "whatsapp": { "implementation": "partial", "notes": "status + webhooks; messaging sync scaffold" },
-    "yoco": { "defaultIntervalMinutes": 60, "implementation": "partial" }
+    "cartrack": { "minutes": 15, "entities": ["vehicles", "positions", "trips", "events", "geofences", "drivers"] },
+    "xero": { "minutes": 20 },
+    "email": { "minutes": 60 },
+    "whatsapp": { "notes": "webhook + message indexing; send requires approval" }
   },
-  "expectedStagingAutoMap": {
-    "CF172047": "unique exact match → auto_mapped",
-    "CF77263": "unique exact match → auto_mapped",
-    "mappedCountTarget": 2
+  "whatsappBusiness": {
+    "connectionLock": true,
+    "backgroundSync": "existing whatsapp service + orchestrator partial",
+    "sendApproval": "existing RBAC + draft flows"
+  },
+  "personalWhatsapp": {
+    "status": "blocked_unsupported",
+    "reason": "No personal session pairing architecture — intelligence page documents blocked status; never simulated"
+  },
+  "email": {
+    "smtpConnectionLock": true,
+    "gmailM365OAuth": "documented as roadmap — not faked"
+  },
+  "unifiedCommunications": {
+    "page": "/communications-intelligence",
+    "channelFilters": ["whatsapp", "personal_whatsapp", "email", "sms", "phone", "portal", "support", "system"],
+    "entityLinking": "timeline entries expose entityType/entityId when present"
   },
   "verification": {
     "typecheck": "PASS",
     "sharedTests": "135 pass",
     "apiTests": "356 pass",
-    "build": "pending",
-    "stagingDeploy": "pending-owner-review",
-    "stagingProbe": "Run after deploy: verify-stored + GET /integrations/cartrack/mappings"
+    "build": "PASS",
+    "stagingDeploy": "pending-after-push"
   }
 }

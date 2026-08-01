@@ -4067,6 +4067,30 @@ a:focus-visible {
   gap: 0.75rem;
 }
 
+.ux-multi-status-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+
+.ux-multi-status-filter__pill {
+  border: 1px solid var(--titan-border-subtle);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  border-radius: 999px;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.ux-multi-status-filter__pill--active {
+  background: var(--titan-accent-soft);
+  border-color: rgba(34, 211, 238, 0.35);
+  color: var(--titan-text);
+  font-weight: 600;
+}
+
 .integration-table-wrap {
   overflow-x: auto;
 }
@@ -6131,22 +6155,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   color: var(--titan-text);
 }
 
-.ux-summary-grid {
-  display: grid;
-  gap: 1rem;
-}
-
-.ux-summary-grid--cols-2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.ux-summary-grid--cols-3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.ux-summary-grid--cols-4 {
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-}
+/* Summary card grids — responsive rules live in styles/layout-grid.css */
 
 .ux-compact-tabs__row {
   display: flex;

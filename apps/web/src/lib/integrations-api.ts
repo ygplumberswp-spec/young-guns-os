@@ -3,6 +3,7 @@ import type {
   CartrackSyncResult,
   EmailConnectionSummary,
   EmailSyncResult,
+  FleetTrackingContext,
   IntegrationVehicleMappingSummary,
   SaveCartrackConnectionRequest,
   SaveEmailConnectionRequest,
@@ -101,6 +102,14 @@ export async function fetchCartrackMappings(
     { accessToken },
   );
   return data.mappings;
+}
+
+export async function fetchCartrackTracking(accessToken: string): Promise<FleetTrackingContext> {
+  const data = await request<{ tracking: FleetTrackingContext }>(
+    '/integrations/cartrack/tracking',
+    { accessToken },
+  );
+  return data.tracking;
 }
 
 export async function updateCartrackMapping(
