@@ -8,6 +8,10 @@ export function canManageDocuments(permissions: string[]): boolean {
   return hasAnyPermission(permissions, ['documents:write']);
 }
 
+export function newDocumentClientActionId(prefix = 'document'): string {
+  return `${prefix}-${crypto.randomUUID()}`;
+}
+
 export function formatFileSize(bytes: number | null | undefined): string {
   if (bytes == null || bytes <= 0) {
     return '—';

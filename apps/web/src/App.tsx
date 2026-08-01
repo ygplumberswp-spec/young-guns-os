@@ -244,6 +244,14 @@ export function App() {
                           path="/documents/categories"
                           component={OwnerPages.CategoryListPage}
                         />
+                        <Route
+                          path="/documents/job-packs/:id"
+                          component={OwnerPages.JobPackDetailPage}
+                        />
+                        <Route
+                          path="/documents/job-packs"
+                          component={OwnerPages.JobPackListPage}
+                        />
                         <Route path="/documents/:id" component={OwnerPages.DocumentDetailPage} />
                         <Route path="/documents" component={OwnerPages.DocumentListPage} />
                         <Route

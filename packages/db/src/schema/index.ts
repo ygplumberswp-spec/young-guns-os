@@ -16,6 +16,7 @@ export * from './jobs';
 export * from './job-execution';
 export * from './quotes';
 export * from './boq';
+export * from './job-document-packs';
 export * from './invoices';
 export * from './payments';
 export * from './inventory-locations';

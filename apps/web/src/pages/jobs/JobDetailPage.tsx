@@ -31,7 +31,10 @@ import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
 import { JobFinanceStrip } from '../../features/finance/JobFinanceStrip';
 import { canAccessFinance, canManageFinance, canViewFinanceProfit, canViewJobCosting } from '../../features/finance/utils';
 import { JobCostingPanel } from '../../features/jobs/JobCostingPanel';
+import { JobCompliancePanel } from '../../features/jobs/JobCompliancePanel';
+import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
+import { canAccessDocuments, canManageDocuments } from '../../features/documents/utils';
 import { JobCrewAssignmentPanel } from '../../features/jobs/JobCrewAssignmentPanel';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
@@ -90,6 +93,14 @@ export function JobDetailPage() {
   );
   const canViewProfit = useMemo(
     () => (user ? canViewFinanceProfit(user.permissions, user.roleName) : false),
+    [user],
+  );
+  const canViewDocuments = useMemo(
+    () => (user ? canAccessDocuments(user.permissions) : false),
+    [user],
+  );
+  const canWriteDocuments = useMemo(
+    () => (user ? canManageDocuments(user.permissions) : false),
     [user],
   );
 
@@ -830,6 +841,17 @@ export function JobDetailPage() {
             </div>
           ) : null}
         </Panel>
+
+        {canViewDocuments && accessToken ? (
+          <JobDocumentPackPanel
+            accessToken={accessToken}
+            jobId={job.id}
+            jobTitle={job.title}
+            canWrite={canWriteDocuments}
+          />
+        ) : null}
+
+        <JobCompliancePanel job={job} execution={execution} />
 
         {canViewSchedule && accessToken ? (
           <JobSchedulePanel

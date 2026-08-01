@@ -6,7 +6,14 @@ const tabs = [
     label: 'Documents',
     match: (location: string) =>
       location === '/documents' ||
-      (location.startsWith('/documents/') && !location.startsWith('/documents/categories')),
+      (location.startsWith('/documents/') &&
+        !location.startsWith('/documents/categories') &&
+        !location.startsWith('/documents/job-packs')),
+  },
+  {
+    href: '/documents/job-packs',
+    label: 'Job packs',
+    match: (location: string) => location.startsWith('/documents/job-packs'),
   },
   {
     href: '/documents/categories',

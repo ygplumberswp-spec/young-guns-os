@@ -259,6 +259,7 @@ import {
   quotes,
 } from './quotes';
 import { boqDocuments, boqLineItems } from './boq';
+import { jobDocumentPackItems, jobDocumentPacks } from './job-document-packs';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
@@ -596,6 +597,49 @@ export const boqLineItemsRelations = relations(boqLineItems, ({ one }) => ({
   company: one(companies, {
     fields: [boqLineItems.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const jobDocumentPacksRelations = relations(jobDocumentPacks, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [jobDocumentPacks.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [jobDocumentPacks.jobId],
+    references: [jobs.id],
+  }),
+  customer: one(customers, {
+    fields: [jobDocumentPacks.customerId],
+    references: [customers.id],
+  }),
+  createdBy: one(users, {
+    fields: [jobDocumentPacks.createdByUserId],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [jobDocumentPacks.approvedByUserId],
+    references: [users.id],
+  }),
+  sentBy: one(users, {
+    fields: [jobDocumentPacks.sentByUserId],
+    references: [users.id],
+  }),
+  items: many(jobDocumentPackItems),
+}));
+
+export const jobDocumentPackItemsRelations = relations(jobDocumentPackItems, ({ one }) => ({
+  pack: one(jobDocumentPacks, {
+    fields: [jobDocumentPackItems.packId],
+    references: [jobDocumentPacks.id],
+  }),
+  company: one(companies, {
+    fields: [jobDocumentPackItems.companyId],
+    references: [companies.id],
+  }),
+  document: one(documents, {
+    fields: [jobDocumentPackItems.documentId],
+    references: [documents.id],
   }),
 }));
 

@@ -184,6 +184,14 @@ export const DocumentDetailPage = lazyNamed(
   () => import('../pages/documents/DocumentDetailPage'),
   'DocumentDetailPage',
 );
+export const JobPackListPage = lazyNamed(
+  () => import('../pages/documents/JobPackListPage'),
+  'JobPackListPage',
+);
+export const JobPackDetailPage = lazyNamed(
+  () => import('../pages/documents/JobPackDetailPage'),
+  'JobPackDetailPage',
+);
 export const CategoryListPage = lazyNamed(
   () => import('../pages/documents/CategoryListPage'),
   'CategoryListPage',

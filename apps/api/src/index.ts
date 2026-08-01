@@ -40,10 +40,12 @@ import { CrmService } from './services/crm.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
+import { JobDocumentPackService } from './services/job-document-pack.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { createBoqRouter } from './routes/boq.js';
+import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
 import { BoqService } from './services/boq.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
@@ -518,6 +520,7 @@ const leadConversionService = new LeadConversionService(db, notificationService,
 const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
 const jobCostingService = new JobCostingService(db);
+const jobDocumentPackService = new JobDocumentPackService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
   db,
   jobsService,
@@ -1352,6 +1355,16 @@ app.use(
   '/api/v1/boq',
   createBoqRouter({
     boqService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/job-document-packs',
+  createJobDocumentPackRouter({
+    jobDocumentPackService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
