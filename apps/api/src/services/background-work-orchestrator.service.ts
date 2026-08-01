@@ -110,9 +110,8 @@ export class BackgroundWorkOrchestratorService {
    * Each hook is idempotent per syncJobId; they do not block one another.
    */
   async handleXeroImportJobSettled(input: XeroImportJobSettledInput): Promise<void> {
-    await this.deps.integrationSyncOrchestrator.handleXeroImportJobSettled(input);
-
     if (!input.result.success) {
+      await this.deps.integrationSyncOrchestrator.handleXeroImportJobSettled(input);
       return;
     }
 
@@ -129,12 +128,26 @@ export class BackgroundWorkOrchestratorService {
       );
 
     if (!alreadyRefreshed) {
-      await this.refreshCustomerValueMetricsAfterXeroImport({
-        companyId: input.companyId,
-        syncJobId: input.syncJobId,
-        recordsProcessed,
-      });
+      try {
+        await this.refreshCustomerValueMetricsAfterXeroImport({
+          companyId: input.companyId,
+          syncJobId: input.syncJobId,
+          recordsProcessed,
+        });
+      } catch (error: unknown) {
+        console.error(
+          '[background-work-orchestrator] CV-001b post-import refresh failed; scheduler tick will retry',
+          {
+            companyId: input.companyId,
+            syncJobId: input.syncJobId,
+            error,
+          },
+        );
+      }
     }
+
+    // Outcome meta runs after CV mark so incremental/outcome patches cannot clobber cvMetricsRefreshJobId.
+    await this.deps.integrationSyncOrchestrator.handleXeroImportJobSettled(input);
 
     const verifyAlreadyQueued =
       await this.deps.integrationSyncOrchestrator.hasTwoWayReadVerifyQueuedForJob(
