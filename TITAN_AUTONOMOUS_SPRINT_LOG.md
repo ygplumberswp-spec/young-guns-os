@@ -811,3 +811,35 @@
 | **Approval required?** | **Yes — Owner** — Railway dashboard redeploy or valid Railway auth for CLI |
 | **Next automatic** | Read-only 187 poll; flag if stage → invoices/payments before deploy confirmed |
 
+
+---
+
+## Sprint 196 — Staging deploy ancestry verify (payments SQL fix)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Verify Railway staging commit includes `162cbf4` before Xero payments stage |
+| **Result** | **DEPLOY OUTDATED** — claimed SHA `9ce5545a` not a git object locally; ancestry check failed |
+| **Payments fix in git** | **Yes** at `162cbf4451024591c3a861b49e023a0daab5407d` (`loadSyncedInvoiceMappingsForPayments` + explicit `innerJoin`) |
+| **Branch tip** | `85eab07` on `cursor/titan-frozen-scope-completion` (includes fix) |
+| **187 probe** | Job `81c5b8d8` **running**, checkpoint **invoices** p3; recovery OK; duplicates none |
+| **Staging health** | `/health` ok; `/health/ready` ready (workersEnabled=false) |
+| **Deploy attempt** | **BLOCKED** — Railway CLI unauthorized, `RAILWAY_TOKEN` unset |
+| **Evidence** | `diagnostic-output/196-deploy-ancestry-verify.json`, fresh `187-xero-import-recovery-verify.json` |
+| **Approval required?** | **Yes — Owner** — confirm Railway deploy SHA or redeploy branch tip `85eab07` via dashboard |
+| **Next step** | Owner redeploy `titan-staging-api` from `cursor/titan-frozen-scope-completion`; re-run 196 ancestry once deploy SHA known |
+
+
+### Sprint 196 follow-up (fresh 187 probe)
+
+| Field | Value |
+|-------|--------|
+| **Probe at (UTC)** | 2026-08-01T12:43:29Z |
+| **187 verdict** | IN_PROGRESS — checkpoint safe (recovery OK) |
+| **Stage / page** | **invoices** p**4** (was p3); contacts complete |
+| **Heartbeat** | 2026-08-01T12:42:42Z — `waiting_next_batch` |
+| **Mappings** | customers 673, invoices 5, payments 0 |
+| **Duplicates** | none |
+| **Deploy** | Still **DEPLOY OUTDATED** — `9ce5545a` not in git (likely Railway build/deploy id); cannot verify `162cbf4` ancestry |
+| **Escalation** | **URGENT** — redeploy before job reaches **payments** stage |
