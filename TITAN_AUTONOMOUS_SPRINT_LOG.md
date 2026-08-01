@@ -106,25 +106,9 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 4 — Owner Command Centre and universal navigation |
 | **Result** | Complete (local) |
-| **Checkpoint** | _(this commit)_ |
-| **Files changed** | Dashboard quick actions + clickable KPIs + attention panel; global search nav/header + clickable results; portal nav dedupe; search matching improvements |
+| **Checkpoints** | `66da253`, `9717439` |
+| **Files changed** | Dashboard quick actions, attention panel, clickable KPIs (+ overdue card), global search nav/header + entity routes, portal nav dedupe, search matching improvements |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test` — pass |
 | **Approval required?** | No |
-| **Next phase selected** | Phase 5 — Staging lead→job E2E (**approval gate**: staging deploy) |
-
----
-
-## Sprint 005 — Phase 4 Owner Command Centre
-
-| Field | Value |
-|-------|--------|
-| **Timestamp (UTC)** | 2026-08-01 |
-| **Phase** | 4 — Owner Command Centre and universal navigation |
-| **Result** | Complete (local) |
-| **Checkpoint** | `66da253` |
-| **Files changed** | Dashboard quick actions, attention panel, KPI deep-links, global search nav/header, entity route mapping, portal nav dedupe |
-| **Migration** | None |
-| **Tests** | `pnpm typecheck`, `pnpm test` (225 pass), `pnpm build` — pass |
-| **Approval required?** | No |
-| **Next phase selected** | Phase 5 — Customer, property, lead and job contract (safe local items) |
+| **Next phase selected** | Phase 5 — Customer/property/lead/job contract (**approval gate**: staging deploy for E2E proof) |
