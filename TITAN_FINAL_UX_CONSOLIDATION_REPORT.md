@@ -70,6 +70,9 @@ pnpm --filter @titan/web run test
 ### Staging deploy
 
 - **Target:** Railway `comfortable-determination` (web) — staging environment `sweet-victory`
+- **Commit:** `5a4162f` on `cursor/visual-alignment-polish`
+- **Deploy:** Triggered via `railway up` from `apps/web` (build logs on Railway dashboard)
+- **URL:** https://comfortable-determination-staging.up.railway.app
 - **API:** Not deployed (layout-only; no API changes)
 
 ---
