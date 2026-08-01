@@ -45,6 +45,8 @@ type AutoSyncConnectorConfig = {
     initialSyncCompleted?: boolean;
     cvMetricsRefreshAt?: string | null;
     cvMetricsRefreshJobId?: string | null;
+    twoWayReadVerifyJobId?: string | null;
+    twoWayReadVerifyQueuedAt?: string | null;
   };
 };
 

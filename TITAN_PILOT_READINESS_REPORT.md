@@ -18,10 +18,10 @@ Pilot sign-off requires compliance with `TITAN_BINDING_ACCEPTANCE_RULE.md` acros
 | Gate | Status | Evidence | Blocker |
 |------|--------|----------|---------|
 | **Operational chain** | PARTIAL | Phase 5 **10/10 GO**, Phase 6 **12/12 GO** (Sprint 017 rerun); Phases 8–12 staging blocked (deploy + DB creds) | Railway redeploy + migrations 0105–0106; live Xero |
-| **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
+| **Security** | PARTIAL | Code-level RBAC; secure persistent session local **GO** (`TITAN_SECURE_SESSION_ARCHITECTURE.md`); cross-tenant E2E incomplete | Phase 2 matrix; staging session click-path with Owner token |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
-| **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
-| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; GLOBAL-AUTOSYNC-179 **PARTIAL** — Xero OAuth connected, schedule seeded, background import running | Await full Xero import |
+| **Financial** | PARTIAL | UX-E staging; Xero two-way scaffold (Sprint 186) — read ~71%, write ~25% | Import GO + verify queue; Owner write test |
+| **Provider truth** | PARTIAL | FRZ-015 **GO**; Xero import `8e6aec9b…` running; two-way **NOT GO** | Await import complete + `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md` |
 
 ---
 

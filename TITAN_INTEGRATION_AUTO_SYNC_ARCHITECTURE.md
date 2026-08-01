@@ -67,7 +67,7 @@ Single tenant-safe orchestration layer:
 
 | Provider | Status | Notes |
 |----------|--------|-------|
-| **Xero** | **FULL** | Auto initial on OAuth callback hook; incremental via scheduler; **background import jobs** with checkpoint resume |
+| **Xero** | **FULL (read)** / **SCAFFOLD (write)** | Auto initial on OAuth callback hook; incremental via scheduler; **background import jobs** with checkpoint resume; **XeroWriteApprovalGate** blocks TITAN→Xero without approval — see `TITAN_XERO_TWO_WAY_SYNC.md` |
 | **Cartrack** | **FULL** | Auto initial on credential save hook; incremental polling |
 | **Email / Yoco** | PARTIAL | Orchestrator can run verification sync when connected |
 | **WhatsApp / OpenAI / Gemini / n8n** | PARTIAL | Status + honest states; no full polling backend |

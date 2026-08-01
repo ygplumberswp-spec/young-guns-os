@@ -47,6 +47,8 @@ Per `TITAN_BINDING_ACCEPTANCE_RULE.md` and `TITAN_COMPLETE_APP_AUDIT.md`:
 
 **Evidence scripts:** `frz018g-xero-background-sync-verify.mjs`, `frz018f-auto-sync-schedulers-verify.mjs`, `global-autosync-staging-verify.mjs`
 
+**After GO — two-way verify:** `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md` (steps 1–9; coordinates with CV-001 via separate `twoWayReadVerifyJobId` flag)
+
 **Owner signal optional:** reply **"xero synced"** when UI shows **Synced**.
 
 ---
@@ -140,3 +142,6 @@ Per `TITAN_BINDING_ACCEPTANCE_RULE.md` and `TITAN_COMPLETE_APP_AUDIT.md`:
 | `diagnostic-output/180-staging-data-cleanup-audit.json` | Machine-readable company classification |
 | `TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md` | App-wide sync framework |
 | `TITAN_INTEGRATION_AUTO_SYNC_REPORT.md` | Integration auto-sync status |
+| `TITAN_XERO_TWO_WAY_SYNC.md` | Two-way binding spec + entity matrix |
+| `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md` | Post-import verify steps 1–9 |
+| `diagnostic-output/186-xero-two-way-readiness.json` | Two-way readiness (read-only) |

@@ -77,6 +77,10 @@ Tests must evidence binding criteria where applicable: `background-work.test.ts`
 | `packages/shared/src/nav-honesty.test.ts` | Nav capability honesty |
 | `apps/api/src/services/xero-oauth.test.ts` | Xero OAuth |
 | `apps/api/src/services/xero-import-sync.test.ts` | Xero import |
+| `packages/shared/src/xero-two-way-sync.test.ts` | **Xero two-way binding (Sprint 186)** |
+| `apps/api/src/services/xero-write-approval-gate.test.ts` | **Write approval gate** |
+| `apps/api/src/services/xero-mapping-conflict.test.ts` | **Mapping conflict detection** |
+| `apps/api/src/services/xero-two-way-sync.test.ts` | **Idempotent mapping / official number** |
 | `packages/shared/src/customer-value-classification.test.ts` | **Customer value classification (CV-001 / CV-001b post-import)** |
 | `apps/api/src/services/customer-value-classification.test.ts` | Customer value metrics contract + tenant isolation |
 | `apps/api/src/services/background-work-orchestrator.test.ts` | **CV-001b — metrics refresh on Xero import complete** |

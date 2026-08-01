@@ -60,6 +60,9 @@ import { IntegrationApiManagementService } from './services/integration-api-mana
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
+import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
+import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
+import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
@@ -393,11 +396,15 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   hubService: integrationHubService,
   xeroOAuthService,
 });
+const xeroWriteApprovalGate = new XeroWriteApprovalGate(db);
+const xeroMappingConflictService = new XeroMappingConflictService(db);
 const xeroSyncService = XeroSyncService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
   xeroOAuthService,
+  writeApprovalGate: xeroWriteApprovalGate,
+  mappingConflictService: xeroMappingConflictService,
 });
 const integrationsService = IntegrationsService.create({
   db,
@@ -452,12 +459,14 @@ xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
 const tenantDomainEventBus = new TenantDomainEventBus(db);
 bindTenantDomainEventBus(tenantDomainEventBus);
 const backgroundWorkQueueService = new BackgroundWorkQueueService(db);
+const xeroTwoWayVerifyService = new XeroTwoWayVerifyService(db, backgroundWorkQueueService);
 const backgroundWorkOrchestratorService = new BackgroundWorkOrchestratorService({
   integrationSyncOrchestrator: integrationSyncOrchestratorService,
   backgroundWorkQueue: backgroundWorkQueueService,
   domainEventBus: tenantDomainEventBus,
   xeroSyncService,
   customerValueClassificationService,
+  xeroTwoWayVerifyService,
 });
 backgroundWorkOrchestratorService.registerDomainEventHandlers();
 xeroSyncService.setImportJobSettledHandler((input) =>

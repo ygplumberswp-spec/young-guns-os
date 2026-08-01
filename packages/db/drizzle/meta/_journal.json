@@ -743,6 +743,20 @@
       "when": 1754154000000,
       "tag": "0106_job_document_packs",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1754157600000,
+      "tag": "0108_secure_session_enhancements",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1754161200000,
+      "tag": "0109_xero_two_way_sync_scaffolding",
+      "breakpoints": true
     }
   ]
 }

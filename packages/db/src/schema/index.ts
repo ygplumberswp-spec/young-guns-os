@@ -63,6 +63,7 @@ export * from './xero-customer-mappings';
 export * from './xero-quote-mappings';
 export * from './xero-invoice-mappings';
 export * from './xero-payment-mappings';
+export * from './xero-write-approvals';
 export * from './xero-sync-logs';
 export * from './whatsapp-connections';
 export * from './whatsapp-templates';

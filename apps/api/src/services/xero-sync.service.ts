@@ -71,6 +71,8 @@ type XeroSyncServiceDeps = {
   encryptionKey?: string;
   hubService?: IntegrationHubService;
   xeroOAuthService?: XeroOAuthService;
+  writeApprovalGate?: import('./xero-write-approval-gate.service.js').XeroWriteApprovalGate;
+  mappingConflictService?: import('./xero-mapping-conflict.service.js').XeroMappingConflictService;
 };
 
 type SyncFromXeroOptions = {
@@ -99,16 +101,28 @@ type SyncContext = {
 
 export class XeroSyncService {
   private importJobSettledHandler?: XeroImportJobSettledHandler;
+  private readonly writeApprovalGate?: import('./xero-write-approval-gate.service.js').XeroWriteApprovalGate;
+  private readonly mappingConflictService?: import('./xero-mapping-conflict.service.js').XeroMappingConflictService;
 
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly hubService?: IntegrationHubService,
     private readonly xeroOAuthService?: XeroOAuthService,
-  ) {}
+    deps?: Pick<XeroSyncServiceDeps, 'writeApprovalGate' | 'mappingConflictService'>,
+  ) {
+    this.writeApprovalGate = deps?.writeApprovalGate;
+    this.mappingConflictService = deps?.mappingConflictService;
+  }
 
   static create(deps: XeroSyncServiceDeps): XeroSyncService {
-    return new XeroSyncService(deps.db, deps.encryptionKey, deps.hubService, deps.xeroOAuthService);
+    return new XeroSyncService(
+      deps.db,
+      deps.encryptionKey,
+      deps.hubService,
+      deps.xeroOAuthService,
+      deps,
+    );
   }
 
   setImportJobSettledHandler(handler: XeroImportJobSettledHandler): void {
@@ -746,6 +760,13 @@ export class XeroSyncService {
 
       for (const customer of rows) {
         try {
+          await this.assertEntityWriteApproved({
+            companyId,
+            entityType: 'contact',
+            entityId: customer.id,
+            operation: 'contact_update',
+          });
+
           const existingMapping = await this.db.query.xeroCustomerMappings.findFirst({
             where: and(
               eq(xeroCustomerMappings.companyId, companyId),
@@ -836,6 +857,13 @@ export class XeroSyncService {
 
       for (const quote of rows) {
         try {
+          await this.assertEntityWriteApproved({
+            companyId,
+            entityType: 'quote',
+            entityId: quote.id,
+            operation: 'quote_create',
+          });
+
           const customerMapping = await this.db.query.xeroCustomerMappings.findFirst({
             where: and(
               eq(xeroCustomerMappings.companyId, companyId),
@@ -931,6 +959,13 @@ export class XeroSyncService {
 
       for (const invoice of rows) {
         try {
+          await this.assertEntityWriteApproved({
+            companyId,
+            entityType: 'invoice',
+            entityId: invoice.id,
+            operation: 'invoice_create',
+          });
+
           const customerMapping = await this.db.query.xeroCustomerMappings.findFirst({
             where: and(
               eq(xeroCustomerMappings.companyId, companyId),
@@ -988,7 +1023,13 @@ export class XeroSyncService {
             .where(eq(invoices.id, invoice.id));
 
           updatedCount += existingMapping?.xeroInvoiceId ? 1 : 0;
-          await this.upsertInvoiceMapping(ctx, invoice.id, xeroInvoiceId, 'synced');
+          const officialNumber = resolveImportedInvoiceNumber(
+            remote.invoiceNumber,
+            xeroInvoiceId,
+          );
+          await this.upsertInvoiceMapping(ctx, invoice.id, xeroInvoiceId, 'synced', null, {
+            xeroInvoiceNumber: officialNumber,
+          });
 
           await this.writeLog(ctx, {
             entityType: 'invoice',
@@ -1503,6 +1544,11 @@ export class XeroSyncService {
     xeroInvoiceId: string | null,
     syncStatus: 'synced' | 'failed' | 'pending' | 'out_of_sync',
     lastError?: string | null,
+    extras?: {
+      xeroInvoiceNumber?: string | null;
+      xeroReference?: string | null;
+      conflictMetadata?: Record<string, unknown> | null;
+    },
   ) {
     const now = new Date();
     const existing = await this.db.query.xeroInvoiceMappings.findFirst({
@@ -1517,6 +1563,9 @@ export class XeroSyncService {
         .update(xeroInvoiceMappings)
         .set({
           xeroInvoiceId: xeroInvoiceId ?? existing.xeroInvoiceId,
+          xeroInvoiceNumber: extras?.xeroInvoiceNumber ?? existing.xeroInvoiceNumber,
+          xeroReference: extras?.xeroReference ?? existing.xeroReference,
+          conflictMetadata: extras?.conflictMetadata ?? existing.conflictMetadata,
           syncStatus,
           lastSyncedAt: now,
           lastSuccessfulSyncAt: syncStatus === 'synced' ? now : existing.lastSuccessfulSyncAt,
@@ -1532,6 +1581,9 @@ export class XeroSyncService {
       integrationConnectionId: ctx.connection.id,
       invoiceId,
       xeroInvoiceId,
+      xeroInvoiceNumber: extras?.xeroInvoiceNumber ?? null,
+      xeroReference: extras?.xeroReference ?? null,
+      conflictMetadata: extras?.conflictMetadata ?? null,
       syncStatus,
       lastSyncedAt: now,
       lastSuccessfulSyncAt: syncStatus === 'synced' ? now : null,
@@ -1647,6 +1699,34 @@ export class XeroSyncService {
         const currency = remote.currencyCode ?? ctx.connection.config.baseCurrency ?? 'USD';
 
         if (existingMapping) {
+          const conflict = this.mappingConflictService?.detectInvoiceConflict(
+            { invoiceNumber: existingMapping.xeroInvoiceNumber, amountCents },
+            { invoiceNumber: remote.invoiceNumber, amountCents },
+          );
+
+          if (conflict) {
+            await this.mappingConflictService?.recordConflict({
+              companyId: ctx.companyId,
+              entityType: 'invoice',
+              entityId: existingMapping.invoiceId,
+              conflict,
+            });
+            await this.upsertInvoiceMapping(
+              ctx,
+              existingMapping.invoiceId,
+              remote.invoiceId,
+              'out_of_sync',
+              conflict.message,
+              {
+                xeroInvoiceNumber: invoiceNumber,
+                conflictMetadata: conflict as unknown as Record<string, unknown>,
+              },
+            );
+            counts.updatedCount += 1;
+            counts.pulledCount += 1;
+            continue;
+          }
+
           await this.db
             .update(invoices)
             .set({
@@ -1670,6 +1750,8 @@ export class XeroSyncService {
             existingMapping.invoiceId,
             remote.invoiceId,
             'synced',
+            null,
+            { xeroInvoiceNumber: invoiceNumber },
           );
           counts.updatedCount += 1;
           counts.pulledCount += 1;
@@ -1706,7 +1788,9 @@ export class XeroSyncService {
           throw new XeroSyncError('CREATE_FAILED', 'Unable to create invoice from Xero');
         }
 
-        await this.upsertInvoiceMapping(ctx, createdInvoice.id, remote.invoiceId, 'synced');
+        await this.upsertInvoiceMapping(ctx, createdInvoice.id, remote.invoiceId, 'synced', null, {
+          xeroInvoiceNumber: invoiceNumber,
+        });
         counts.createdCount += 1;
         counts.pulledCount += 1;
 
@@ -1973,6 +2057,42 @@ export class XeroSyncService {
       action: input.action,
       status: input.status,
       message: input.message ?? null,
+    });
+  }
+
+  /** Stub import stages — activated after migration 0109 + post-import verify GO. */
+  async importCreditNotesStub(_companyId: string): Promise<{ status: 'stub'; message: string }> {
+    return {
+      status: 'stub',
+      message: 'Credit note import stage not active — see TITAN_XERO_TWO_WAY_SYNC.md',
+    };
+  }
+
+  async importSupplierBillsStub(_companyId: string): Promise<{ status: 'stub'; message: string }> {
+    return {
+      status: 'stub',
+      message: 'Supplier bill import stage not active — see TITAN_XERO_TWO_WAY_SYNC.md',
+    };
+  }
+
+  private async assertEntityWriteApproved(input: {
+    companyId: string;
+    entityType: string;
+    entityId: string;
+    operation: import('@titan/shared').XeroWriteOperation;
+  }): Promise<void> {
+    if (!this.writeApprovalGate) {
+      throw new XeroSyncError(
+        'WRITE_NOT_APPROVED',
+        'Xero write approval gate is required for TITAN → Xero sync',
+      );
+    }
+
+    await this.writeApprovalGate.assertWriteApproved({
+      companyId: input.companyId,
+      entityType: input.entityType,
+      entityId: input.entityId,
+      operation: input.operation,
     });
   }
 

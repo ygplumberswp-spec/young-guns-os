@@ -8,6 +8,7 @@ import type { BackgroundWorkQueueService } from './background-work-queue.service
 import type { CustomerValueClassificationService } from './customer-value-classification.service.js';
 import type { IntegrationSyncOrchestratorService } from './integration-sync-orchestrator.service.js';
 import type { TenantDomainEventBus } from './tenant-domain-event-bus.service.js';
+import type { XeroSyncService, XeroImportJobSettledInput } from './xero-sync.service.js';
 import type { XeroTwoWayVerifyService } from './xero-two-way-verify.service.js';
 import {
   invalidateBackgroundWorkReadCaches,
