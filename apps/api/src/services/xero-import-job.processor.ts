@@ -177,11 +177,7 @@ export function buildImportSyncResult(
   syncJobId: string,
   syncedAt: string | null,
 ): XeroImportSyncResult {
-  const totalFailed =
-    state.contacts.failedCount +
-    state.invoices.failedCount +
-    state.payments.failedCount +
-    state.bankTransactions.failedCount;
+  const totalFailed = sumImportFailureCounts(state);
   const success = state.failedStage == null && totalFailed === 0;
 
   return {
@@ -280,6 +276,43 @@ export function touchImportHeartbeat(
 ): void {
   state.heartbeatAt = new Date(nowMs).toISOString();
   state.activity = activity;
+}
+
+export function getStageCounts(
+  state: XeroImportJobState,
+  stage: XeroImportStage,
+): XeroImportEntityCounts {
+  switch (stage) {
+    case 'contacts':
+      return state.contacts;
+    case 'invoices':
+      return state.invoices;
+    case 'payments':
+      return state.payments;
+    case 'bank_transactions':
+      return state.bankTransactions;
+  }
+}
+
+/** Drop per-record failure tallies from stages already finished before the resume checkpoint. */
+export function clearStaleStageFailuresOnResume(state: XeroImportJobState): void {
+  const currentIndex = XERO_IMPORT_STAGES.indexOf(state.checkpoint.stage);
+  if (currentIndex <= 0) {
+    return;
+  }
+
+  for (let index = 0; index < currentIndex; index += 1) {
+    getStageCounts(state, XERO_IMPORT_STAGES[index]!).failedCount = 0;
+  }
+}
+
+export function sumImportFailureCounts(state: XeroImportJobState): number {
+  return (
+    state.contacts.failedCount +
+    state.invoices.failedCount +
+    state.payments.failedCount +
+    state.bankTransactions.failedCount
+  );
 }
 
 export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boolean {

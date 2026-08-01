@@ -35,10 +35,12 @@ import {
   advanceToNextStage,
   buildImportJobProgress,
   buildImportSyncResult,
+  clearStaleStageFailuresOnResume,
   createInitialImportJobState,
   importJobStateToSummary,
   isStageComplete,
   parseImportJobState,
+  sumImportFailureCounts,
   XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_MAX_PAGES_PER_BATCH,
   XERO_IMPORT_STALE_JOB_MS,
@@ -512,6 +514,7 @@ export class XeroSyncService {
     resumeState.nextRetryAt = null;
     resumeState.resumedFromAbandoned = true;
     resumeState.trigger = 'resume';
+    clearStaleStageFailuresOnResume(resumeState);
 
     await this.db
       .update(integrationSyncJobs)
@@ -618,11 +621,7 @@ export class XeroSyncService {
     state: XeroImportJobState,
     markComplete = false,
   ): Promise<XeroImportSyncResult> {
-    const totalFailed =
-      state.contacts.failedCount +
-      state.invoices.failedCount +
-      state.payments.failedCount +
-      state.bankTransactions.failedCount;
+    const totalFailed = sumImportFailureCounts(state);
     const success = markComplete && state.failedStage == null && totalFailed === 0;
     const now = new Date();
     const result = buildImportSyncResult(
@@ -914,6 +913,7 @@ export class XeroSyncService {
       state.abandoned = false;
       state.resumedFromAbandoned = true;
       state.trigger = 'resume';
+      clearStaleStageFailuresOnResume(state);
 
       await this.db
         .update(integrationSyncJobs)
