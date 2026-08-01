@@ -56,19 +56,16 @@ export function CustomerListPage() {
         return fetchCustomersWithClassification(accessToken!, debouncedSearch);
       } catch {
         const fallback = await fetchCustomers(accessToken!, debouncedSearch);
-        const computedAt = new Date().toISOString();
         return fallback.map((customer) => ({
           ...customer,
           valueClassification: {
-            ...classifyCustomerValueFromEvidence({
-              customerId: customer.id,
-              customerName: customer.name,
-              customerStatus: customer.status,
-              isSupplierOnly: false,
-              xeroContactId: null,
-              invoices: [],
-            }),
-            computedAt,
+            isVerifiedInvoiced: false,
+            isPayingCustomer: false,
+            isFullyPaid: false,
+            isOverdueDebtor: false,
+            isUnpaidDebtor: false,
+            isPartiallyPaid: false,
+            isProspect: false,
           },
         }));
       }
