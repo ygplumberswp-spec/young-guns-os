@@ -405,7 +405,7 @@ export function createLeadsRouter({
     try {
       const auth = getAuth(req);
       await leadsService.deleteLead(auth, getRouteParam(req.params.id));
-      res.status(204).send();
+      res.json({ data: { deleted: true } });
     } catch (error) {
       handleLeadsError(res, error);
     }

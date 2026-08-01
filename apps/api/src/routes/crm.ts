@@ -204,13 +204,16 @@ export function createCrmRouter({
           customerId,
         );
         const isOwner =
-          auth.roleName === 'Company Owner' || auth.permissions.includes('*');
+          auth.permissions.includes('*') ||
+          auth.roleName === 'Company Owner' ||
+          auth.roleName === 'Owner' ||
+          auth.roleName.toLowerCase() === 'owner';
         await crmService.deleteCustomer(auth.companyId, customerId, {
           classification,
           actorUserId: auth.userId,
           isOwner,
         });
-        res.status(204).send();
+        res.json({ data: { deleted: true } });
       } catch (error) {
         handleCrmError(res, error);
       }

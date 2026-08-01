@@ -483,6 +483,21 @@ export class CrmService {
       );
     }
 
+    await this.db
+      .delete(customerActivities)
+      .where(
+        and(eq(customerActivities.companyId, companyId), eq(customerActivities.customerId, customerId)),
+      );
+
+    await this.db
+      .delete(cxCustomerProperties)
+      .where(
+        and(
+          eq(cxCustomerProperties.companyId, companyId),
+          eq(cxCustomerProperties.customerId, customerId),
+        ),
+      );
+
     const deleted = await this.db
       .delete(customers)
       .where(and(eq(customers.id, customerId), eq(customers.companyId, companyId)))

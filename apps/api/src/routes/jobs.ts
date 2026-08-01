@@ -305,7 +305,7 @@ export function createJobsRouter({
         getRouteParam(req.params.jobId),
         { isOwner },
       );
-      res.status(204).send();
+      res.json({ data: { deleted: true } });
     } catch (error) {
       handleJobsError(res, error);
     }
