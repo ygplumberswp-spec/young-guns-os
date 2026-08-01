@@ -4656,23 +4656,71 @@ a:focus-visible {
   margin: 0;
 }
 
-.fleet-live-map-leaflet-host {
+.fleet-live-map-maplibre-host {
   flex: 1;
   min-height: 22rem;
   width: 100%;
   z-index: 0;
 }
 
-.fleet-live-map-leaflet-host .leaflet-container {
+.fleet-live-map-maplibre-host .maplibregl-map,
+.fleet-live-map-maplibre-host .maplibregl-canvas {
   width: 100%;
   height: 100%;
   min-height: 22rem;
-  font: inherit;
 }
 
-.fleet-live-map-leaflet-marker {
+.fleet-live-map-maplibre-marker {
   background: transparent;
   border: 0;
+  cursor: pointer;
+}
+
+.fleet-live-map-shell--fallback {
+  min-height: 22rem;
+  padding: 0.85rem;
+}
+
+.fleet-live-map-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.fleet-live-map-fallback__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.fleet-live-map-fallback__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--titan-text);
+}
+
+.fleet-live-map-fallback__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fleet-live-map-fallback__item {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.5rem;
+  background: var(--titan-surface);
+  font-size: 0.85rem;
+}
+
+.fleet-live-map-fallback__item span {
+  color: var(--titan-text-muted);
 }
 
 .fleet-live-map-marker-pin {
@@ -4793,8 +4841,8 @@ a:focus-visible {
     overflow: auto;
   }
 
-  .fleet-live-map-leaflet-host,
-  .fleet-live-map-leaflet-host .leaflet-container,
+  .fleet-live-map-maplibre-host,
+  .fleet-live-map-maplibre-host .maplibregl-map,
   .fleet-live-map-shell {
     min-height: 18rem;
   }

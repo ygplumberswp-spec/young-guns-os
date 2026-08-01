@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
+import maplibregl from 'maplibre-gl';
 import type { FleetLiveMapVehicle, FleetMovementDisplayState } from '@titan/shared';
 import { FLEET_MOVEMENT_LABELS } from '@titan/shared';
 import { Button } from '@titan/ui';
-import 'leaflet/dist/leaflet.css';
-
-const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const OSM_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+import { resolveMapProviderConfig } from '../../lib/map-provider';
+import { FleetMapFallbackList } from './FleetMapFallbackList';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 const MARKER_COLORS: Record<FleetMovementDisplayState, string> = {
   driving: '#16a34a',
@@ -19,6 +17,9 @@ const MARKER_COLORS: Record<FleetMovementDisplayState, string> = {
   tracker_offline: '#dc2626',
   unknown: '#64748b',
 };
+
+const TRAILS_SOURCE = 'fleet-trails';
+const TRAILS_LAYER = 'fleet-trails-line';
 
 type FleetLiveMapCanvasProps = {
   vehicles: FleetLiveMapVehicle[];
@@ -41,13 +42,52 @@ function markerLabel(vehicle: FleetLiveMapVehicle): string {
   return vehicle.registration ?? vehicle.name ?? 'VEH';
 }
 
-function buildMarkerHtml(vehicle: FleetLiveMapVehicle, selected: boolean): string {
+function buildMarkerElement(vehicle: FleetLiveMapVehicle, selected: boolean): HTMLSpanElement {
   const label = markerLabel(vehicle);
   const short = label.length > 10 ? label.slice(-6) : label;
   const color = MARKER_COLORS[vehicle.displayState];
-  const staleClass = vehicle.isStale ? ' is-stale' : '';
-  const selectedClass = selected ? ' is-selected' : '';
-  return `<span class="fleet-live-map-marker-pin fleet-live-map-marker--${vehicle.displayState}${staleClass}${selectedClass}" style="--marker-color:${color}">${short}</span>`;
+  const el = document.createElement('span');
+  el.className = `fleet-live-map-marker-pin fleet-live-map-marker--${vehicle.displayState}${
+    vehicle.isStale ? ' is-stale' : ''
+  }${selected ? ' is-selected' : ''}`;
+  el.style.setProperty('--marker-color', color);
+  el.textContent = short;
+  el.title = `${label} · ${FLEET_MOVEMENT_LABELS[vehicle.displayState]}`;
+  return el;
+}
+
+type TrailFeatureCollection = {
+  type: 'FeatureCollection';
+  features: Array<{
+    type: 'Feature';
+    properties: { vehicleId: string; selected: boolean };
+    geometry: {
+      type: 'LineString';
+      coordinates: [number, number][];
+    };
+  }>;
+};
+
+function buildTrailGeoJson(
+  vehicles: FleetLiveMapVehicle[],
+  selectedVehicleId: string | null,
+): TrailFeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: vehicles
+      .filter((vehicle) => vehicle.trailToday.length >= 2)
+      .map((vehicle) => ({
+        type: 'Feature',
+        properties: {
+          vehicleId: vehicle.vehicleId,
+          selected: selectedVehicleId === vehicle.vehicleId,
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: vehicle.trailToday.map((point) => [point.longitude, point.latitude]),
+        },
+      })),
+  };
 }
 
 export function FleetLiveMapCanvas({
@@ -58,12 +98,13 @@ export function FleetLiveMapCanvas({
 }: FleetLiveMapCanvasProps) {
   const shellRef = useRef<HTMLDivElement>(null);
   const mapHostRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
-  const markersLayerRef = useRef<L.LayerGroup | null>(null);
-  const trailsLayerRef = useRef<L.LayerGroup | null>(null);
-  const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map());
   const fitOnceRef = useRef(false);
-  const [mapError, setMapError] = useState<string | null>(null);
+  const providerConfig = resolveMapProviderConfig();
+  const [mapError, setMapError] = useState<string | null>(
+    providerConfig.configured ? null : 'Map could not load',
+  );
   const [mapReady, setMapReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
@@ -82,142 +123,143 @@ export function FleetLiveMapCanvas({
     if (!map) return;
     const positioned = positionedVehicles(vehicles);
     if (positioned.length === 0) return;
-    const bounds = L.latLngBounds(
-      positioned.map((vehicle) => [vehicle.latitude!, vehicle.longitude!] as L.LatLngTuple),
-    );
-    map.fitBounds(bounds.pad(0.25), { maxZoom: 16, animate: true });
+    const bounds = new maplibregl.LngLatBounds();
+    for (const vehicle of positioned) {
+      bounds.extend([vehicle.longitude!, vehicle.latitude!]);
+    }
+    map.fitBounds(bounds, { padding: 48, maxZoom: 16, duration: 500 });
   }, [vehicles]);
 
   useEffect(() => {
     const host = mapHostRef.current;
-    if (!host) return;
+    if (!host || !providerConfig.configured) {
+      reportStatus(false, mapError ?? 'Map could not load');
+      return;
+    }
 
     let cancelled = false;
-    let tileErrors = 0;
 
-    const map = L.map(host, {
-      zoomControl: true,
-      attributionControl: true,
-    }).setView([-33.8293, 18.7174], 14);
+    const map = new maplibregl.Map({
+      container: host,
+      style: providerConfig.styleUrl,
+      center: [18.7174, -33.8293],
+      zoom: 14,
+      attributionControl: { compact: true },
+    });
 
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     mapRef.current = map;
-    markersLayerRef.current = L.layerGroup().addTo(map);
-    trailsLayerRef.current = L.layerGroup().addTo(map);
 
-    const tileLayer = L.tileLayer(OSM_TILE_URL, {
-      attribution: OSM_ATTRIBUTION,
-      maxZoom: 19,
+    map.on('load', () => {
+      if (cancelled) return;
+      map.addSource(TRAILS_SOURCE, {
+        type: 'geojson',
+        data: buildTrailGeoJson(vehicles, selectedVehicleId),
+      });
+      map.addLayer({
+        id: TRAILS_LAYER,
+        type: 'line',
+        source: TRAILS_SOURCE,
+        paint: {
+          'line-color': [
+            'case',
+            ['get', 'selected'],
+            '#2563eb',
+            'rgba(37, 99, 235, 0.55)',
+          ],
+          'line-width': ['case', ['get', 'selected'], 4, 2],
+        },
+      });
+      reportStatus(true, null);
+      requestAnimationFrame(() => map.resize());
     });
-    tileLayerRef.current = tileLayer;
 
-    tileLayer.on('tileerror', () => {
-      tileErrors += 1;
-      if (tileErrors >= 3 && !cancelled) {
-        reportStatus(false, 'Map tiles failed to load. Check network or try again.');
+    map.on('error', (event) => {
+      if (cancelled) return;
+      const message = event.error?.message ?? '';
+      if (/tile|style|fetch|network|403|404/i.test(message)) {
+        reportStatus(false, 'Map could not load');
       }
     });
-
-    tileLayer.on('load', () => {
-      if (!cancelled && tileErrors === 0) {
-        reportStatus(true, null);
-      }
-    });
-
-    tileLayer.addTo(map);
 
     const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize();
+      map.resize();
     });
     resizeObserver.observe(host);
-
-    requestAnimationFrame(() => {
-      map.invalidateSize();
-      reportStatus(true, null);
-    });
 
     return () => {
       cancelled = true;
       resizeObserver.disconnect();
+      for (const marker of markersRef.current.values()) {
+        marker.remove();
+      }
+      markersRef.current.clear();
       map.remove();
       mapRef.current = null;
-      markersLayerRef.current = null;
-      trailsLayerRef.current = null;
-      tileLayerRef.current = null;
       fitOnceRef.current = false;
     };
-  }, [reportStatus, retryKey]);
+  }, [providerConfig.configured, providerConfig.styleUrl, reportStatus, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const map = mapRef.current;
-    const markersLayer = markersLayerRef.current;
-    const trailsLayer = trailsLayerRef.current;
-    if (!map || !markersLayer || !trailsLayer) return;
+    if (!map || !mapReady) return;
 
-    markersLayer.clearLayers();
-    trailsLayer.clearLayers();
+    const source = map.getSource(TRAILS_SOURCE) as maplibregl.GeoJSONSource | undefined;
+    source?.setData(buildTrailGeoJson(vehicles, selectedVehicleId));
 
     const positioned = positionedVehicles(vehicles);
-    if (positioned.length === 0) {
-      return;
-    }
-
-    for (const vehicle of vehicles) {
-      if (vehicle.trailToday.length >= 2) {
-        trailsLayer.addLayer(
-          L.polyline(
-            vehicle.trailToday.map(
-              (point) => [point.latitude, point.longitude] as L.LatLngTuple,
-            ),
-            {
-              color:
-                selectedVehicleId === vehicle.vehicleId
-                  ? 'var(--titan-accent, #2563eb)'
-                  : 'rgba(37, 99, 235, 0.55)',
-              weight: selectedVehicleId === vehicle.vehicleId ? 4 : 2,
-            },
-          ),
-        );
-      }
-    }
+    const seen = new Set<string>();
 
     for (const vehicle of positioned) {
+      seen.add(vehicle.vehicleId);
       const selected = selectedVehicleId === vehicle.vehicleId;
-      const icon = L.divIcon({
-        className: 'fleet-live-map-leaflet-marker',
-        html: buildMarkerHtml(vehicle, selected),
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
-      });
-      const marker = L.marker([vehicle.latitude!, vehicle.longitude!], { icon });
-      marker.bindTooltip(
-        `${markerLabel(vehicle)} · ${FLEET_MOVEMENT_LABELS[vehicle.displayState]}`,
-        { direction: 'top', offset: [0, -18] },
-      );
-      marker.on('click', () => onSelect(vehicle.vehicleId));
-      markersLayer.addLayer(marker);
-
-      if (selected) {
-        marker.openTooltip();
+      const existing = markersRef.current.get(vehicle.vehicleId);
+      if (existing) {
+        existing.setLngLat([vehicle.longitude!, vehicle.latitude!]);
+        const root = existing.getElement();
+        root.replaceChildren(buildMarkerElement(vehicle, selected));
+      } else {
+        const root = document.createElement('div');
+        root.className = 'fleet-live-map-maplibre-marker';
+        root.appendChild(buildMarkerElement(vehicle, selected));
+        root.addEventListener('click', () => onSelect(vehicle.vehicleId));
+        const marker = new maplibregl.Marker({
+          element: root,
+          anchor: 'center',
+        })
+          .setLngLat([vehicle.longitude!, vehicle.latitude!])
+          .addTo(map);
+        markersRef.current.set(vehicle.vehicleId, marker);
       }
     }
 
-    if (!fitOnceRef.current) {
+    for (const [vehicleId, marker] of markersRef.current.entries()) {
+      if (!seen.has(vehicleId)) {
+        marker.remove();
+        markersRef.current.delete(vehicleId);
+      }
+    }
+
+    if (!fitOnceRef.current && positioned.length > 0) {
       fitOnceRef.current = true;
       fitAllVehicles();
     } else if (selectedVehicleId) {
       const selected = positioned.find((vehicle) => vehicle.vehicleId === selectedVehicleId);
       if (selected) {
-        map.panTo([selected.latitude!, selected.longitude!], { animate: true });
+        map.easeTo({
+          center: [selected.longitude!, selected.latitude!],
+          duration: 400,
+        });
       }
     }
 
-    requestAnimationFrame(() => map.invalidateSize());
-  }, [vehicles, selectedVehicleId, onSelect, fitAllVehicles]);
+    requestAnimationFrame(() => map.resize());
+  }, [vehicles, selectedVehicleId, onSelect, fitAllVehicles, mapReady]);
 
   useEffect(() => {
     function handleFullscreenChange() {
       setIsFullscreen(document.fullscreenElement === shellRef.current);
-      mapRef.current?.invalidateSize();
+      mapRef.current?.resize();
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -247,6 +289,21 @@ export function FleetLiveMapCanvas({
         <p className="page-muted fleet-live-map-empty">
           Waiting for first automatic GPS update from Cartrack background sync.
         </p>
+        {vehicles.length > 0 ? (
+          <FleetMapFallbackList vehicles={vehicles} message="No GPS coordinates yet" />
+        ) : null}
+      </div>
+    );
+  }
+
+  if (!providerConfig.configured || (mapError && !mapReady)) {
+    return (
+      <div className="fleet-live-map-shell fleet-live-map-shell--fallback">
+        <FleetMapFallbackList
+          vehicles={vehicles}
+          onRetry={retryMap}
+          message={mapError ?? providerConfig.reason ?? 'Map could not load'}
+        />
       </div>
     );
   }
@@ -258,7 +315,7 @@ export function FleetLiveMapCanvas({
     >
       <div className="fleet-live-map-toolbar">
         <span className="page-muted fleet-live-map-toolbar__meta">
-          {mapReady ? `${positioned.length} on map` : 'Loading map…'}
+          {mapReady ? `${positioned.length} on map · ${providerConfig.provider}` : 'Loading map…'}
         </span>
         <div className="fleet-live-map-toolbar__actions">
           <Button variant="secondary" type="button" onClick={fitAllVehicles}>
@@ -269,7 +326,7 @@ export function FleetLiveMapCanvas({
           </Button>
           {mapError ? (
             <Button variant="secondary" type="button" onClick={retryMap}>
-              Retry map
+              Retry
             </Button>
           ) : null}
         </div>
@@ -278,13 +335,13 @@ export function FleetLiveMapCanvas({
       {mapError ? (
         <div className="fleet-live-map-error" role="alert">
           <p>{mapError}</p>
-          <p className="page-muted">Vehicle list on the left remains available while the map recovers.</p>
+          <FleetMapFallbackList vehicles={vehicles} onRetry={retryMap} message={mapError} />
         </div>
       ) : null}
 
       <div
         ref={mapHostRef}
-        className="fleet-live-map-leaflet-host"
+        className="fleet-live-map-maplibre-host"
         aria-label="Fleet live map"
         data-map-ready={mapReady ? 'true' : 'false'}
       />

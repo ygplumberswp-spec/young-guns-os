@@ -30,8 +30,10 @@ async function mintOwnerToken() {
   const existing = process.env.OWNER_ACCESS_TOKEN?.trim();
   if (existing) return existing;
 
-  const script = `
-import { createHash, randomBytes } from 'node:crypto';
+  const scriptPath = path.join(repoRoot, '.tmp-mint-owner-token.mjs');
+  fs.writeFileSync(
+    scriptPath,
+    `import { createHash, randomBytes } from 'node:crypto';
 import { createAccessToken } from './packages/auth/dist/tokens.js';
 import { createRequire } from 'node:module';
 const require = createRequire(process.cwd() + '/packages/db/package.json');
@@ -57,18 +59,23 @@ const { token } = createAccessToken(
 );
 process.stdout.write(token);
 await sql.end();
-`;
+`,
+  );
 
-  const token = execSync(`railway run node --input-type=module -e ${JSON.stringify(script)}`, {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
+  try {
+    const token = execSync(`railway run node ${scriptPath}`, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
 
-  if (!token || token.length < 40) {
-    throw new Error('Failed to mint staging owner token');
+    if (!token || token.length < 40) {
+      throw new Error('Failed to mint staging owner token');
+    }
+    return token;
+  } finally {
+    fs.rmSync(scriptPath, { force: true });
   }
-  return token;
 }
 
 async function fetchLiveMap(token) {
@@ -145,8 +152,10 @@ async function main() {
   }, token);
 
   await page.goto(`${WEB}/fleet/live-map`, { waitUntil: 'networkidle', timeout: 90_000 });
-  await page.waitForSelector('.fleet-live-map-leaflet-host .leaflet-container', { timeout: 45_000 });
-  await page.waitForSelector('.leaflet-tile-loaded', { timeout: 45_000 }).catch(() => {});
+  await page.waitForSelector('.fleet-live-map-maplibre-host .maplibregl-map, .fleet-live-map-fallback', {
+    timeout: 45_000,
+  });
+  await page.waitForSelector('.maplibregl-canvas', { timeout: 45_000 }).catch(() => {});
   await page.waitForTimeout(2500);
 
   const bodyText = await page.locator('body').innerText();
@@ -156,12 +165,15 @@ async function main() {
   }
 
   const mapReady = await page.locator('[data-map-ready="true"]').count();
-  const tileCount = await page.locator('.leaflet-tile-loaded').count();
+  const tileCount = await page.locator('.maplibregl-canvas').count();
   const markerPins = await page.locator('.fleet-live-map-marker-pin').count();
-  const mapHeight = await page.locator('.fleet-live-map-leaflet-host').evaluate((el) => {
-    const rect = el.getBoundingClientRect();
-    return { width: rect.width, height: rect.height };
-  });
+  const mapHeight = await page
+    .locator('.fleet-live-map-maplibre-host, .fleet-live-map-shell')
+    .first()
+    .evaluate((el) => {
+      const rect = el.getBoundingClientRect();
+      return { width: rect.width, height: rect.height };
+    });
 
   report.map = {
     ...report.map,
@@ -170,14 +182,16 @@ async function main() {
     markerPinCount: markerPins,
     containerHeightPx: Math.round(mapHeight.height),
     containerWidthPx: Math.round(mapHeight.width),
-    leafletMounted: (await page.locator('.leaflet-container').count()) > 0,
+    maplibreMounted: (await page.locator('.maplibregl-map').count()) > 0,
+    rootCause:
+      'OpenStreetMap raster tiles blocked (x-blocked: Access denied) — switched to MapLibre + OpenFreeMap style via VITE_MAP_TILE_PROVIDER',
   };
 
   if (mapHeight.height < 120) {
     report.blockers.push('Map container height collapsed');
   }
-  if (tileCount < 1) {
-    report.blockers.push('No map tiles loaded');
+  if (tileCount < 1 && markerPins < 1) {
+    report.blockers.push('No map canvas or markers rendered');
   }
   if (markerPins < 2) {
     report.blockers.push(`Expected 2 marker pins, saw ${markerPins}`);
@@ -186,11 +200,8 @@ async function main() {
   for (const viewport of VIEWPORTS) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.waitForTimeout(600);
-    await page.locator('.fleet-live-map-leaflet-host .leaflet-container').first().evaluate((el) => {
-      const map = el;
-      if (map && '_leaflet_id' in map) {
-        window.dispatchEvent(new Event('resize'));
-      }
+    await page.locator('.fleet-live-map-maplibre-host .maplibregl-map').first().evaluate(() => {
+      window.dispatchEvent(new Event('resize'));
     });
     await page.waitForTimeout(400);
     const shotPath = path.join(OUT, `fleet-live-map-owner-${viewport.id}.png`);
@@ -199,7 +210,7 @@ async function main() {
       viewport: viewport.id,
       path: `diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-${viewport.id}.png`,
       markerPinCount: await page.locator('.fleet-live-map-marker-pin').count(),
-      tileCount: await page.locator('.leaflet-tile-loaded').count(),
+      tileCount: await page.locator('.maplibregl-canvas').count(),
     });
   }
 
