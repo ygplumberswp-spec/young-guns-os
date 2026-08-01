@@ -1,4 +1,10 @@
-import { createHash } from 'node:crypto';
+function stableHashHex(value: string): string {
+  let hash = 5381;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(i);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
 
 /** Entity types participating in Xero ↔ TITAN two-way sync. */
 export type XeroTwoWayEntityType =
@@ -117,12 +123,9 @@ export function buildXeroWriteIdempotencyKey(input: {
   entityId: string;
   payloadVersion?: string;
 }): string {
-  return createHash('sha256')
-    .update(
-      `${input.companyId}:${input.operation}:${input.entityId}:${input.payloadVersion ?? 'v1'}`,
-    )
-    .digest('hex')
-    .slice(0, 32);
+  return stableHashHex(
+    `${input.companyId}:${input.operation}:${input.entityId}:${input.payloadVersion ?? 'v1'}`,
+  ).slice(0, 32);
 }
 
 export function detectXeroMappingConflict(input: {

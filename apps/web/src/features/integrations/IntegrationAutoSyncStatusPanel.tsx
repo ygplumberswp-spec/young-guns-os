@@ -81,44 +81,79 @@ export function IntegrationAutoSyncStatusPanel({
             <dd>{status.recordsProcessed}</dd>
           </div>
         ) : null}
-        {importJob &&
-        (importJob.status === 'queued' ||
-          importJob.status === 'running' ||
-          importJob.status === 'pending') ? (
+        {importJob ? (
           <>
             <div>
-              <dt>Current stage</dt>
-              <dd>
-                {importJob.currentStage
-                  ? IMPORT_STAGE_LABELS[importJob.currentStage]
-                  : 'Starting'}
-              </dd>
+              <dt>Import status</dt>
+              <dd>{importJob.uiStatusLabel ?? importJob.status}</dd>
             </div>
-            <div>
-              <dt>Contacts processed</dt>
-              <dd>
-                {importJob.contacts.createdCount} new / {importJob.contacts.updatedCount} updated
-              </dd>
-            </div>
-            <div>
-              <dt>Invoices processed</dt>
-              <dd>
-                {importJob.invoices.createdCount} new / {importJob.invoices.updatedCount} updated
-              </dd>
-            </div>
-            <div>
-              <dt>Payments processed</dt>
-              <dd>
-                {importJob.payments.createdCount} new / {importJob.payments.updatedCount} updated
-              </dd>
-            </div>
-            <div>
-              <dt>Bank transactions processed</dt>
-              <dd>
-                {importJob.bankTransactions.createdCount} new /{' '}
-                {importJob.bankTransactions.updatedCount} updated
-              </dd>
-            </div>
+            {(importJob.status === 'queued' ||
+              importJob.status === 'running' ||
+              importJob.status === 'pending' ||
+              importJob.uiStatus === 'resuming' ||
+              importJob.uiStatus === 'retrying' ||
+              importJob.uiStatus === 'partial' ||
+              importJob.uiStatus === 'waiting') ? (
+              <>
+                <div>
+                  <dt>Current stage</dt>
+                  <dd>
+                    {importJob.currentStage
+                      ? IMPORT_STAGE_LABELS[importJob.currentStage]
+                      : 'Starting'}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Checkpoint</dt>
+                  <dd>
+                    {IMPORT_STAGE_LABELS[importJob.checkpoint.stage]} · contacts p
+                    {importJob.checkpoint.contactsPage}, invoices p
+                    {importJob.checkpoint.invoicesPage}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Processed records</dt>
+                  <dd>{importJob.processedCount}</dd>
+                </div>
+                <div>
+                  <dt>Contacts processed</dt>
+                  <dd>
+                    {importJob.contacts.createdCount} new / {importJob.contacts.updatedCount} updated
+                  </dd>
+                </div>
+                <div>
+                  <dt>Invoices processed</dt>
+                  <dd>
+                    {importJob.invoices.createdCount} new / {importJob.invoices.updatedCount} updated
+                  </dd>
+                </div>
+                <div>
+                  <dt>Payments processed</dt>
+                  <dd>
+                    {importJob.payments.createdCount} new / {importJob.payments.updatedCount} updated
+                  </dd>
+                </div>
+                <div>
+                  <dt>Bank transactions processed</dt>
+                  <dd>
+                    {importJob.bankTransactions.createdCount} new /{' '}
+                    {importJob.bankTransactions.updatedCount} updated
+                  </dd>
+                </div>
+                {importJob.nextRetryAt ? (
+                  <div>
+                    <dt>Next retry</dt>
+                    <dd>{new Date(importJob.nextRetryAt).toLocaleString()}</dd>
+                  </div>
+                ) : null}
+                {importJob.heartbeatAt ? (
+                  <div>
+                    <dt>Last activity</dt>
+                    <dd>{new Date(importJob.heartbeatAt).toLocaleString()}</dd>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </>
         ) : null}
         {status.failureCount > 0 ? (

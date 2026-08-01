@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type {
   XeroAccountingAuraContext,
   XeroEntitySyncResult,
@@ -27,7 +27,7 @@ import {
   xeroSyncLogs,
 } from '@titan/db';
 import { decryptXeroCredentials, isXeroOAuthCredentials } from '../lib/crypto.js';
-import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError } from '../lib/xero.client.js';
+import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError, XERO_PAGE_SIZE, XERO_RATE_LIMIT_BASE_DELAY_MS } from '../lib/xero.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { XeroOAuthService } from './xero-oauth.service.js';
 import { invalidateIntegrationReadCaches } from './api-read-cache.js';
@@ -42,6 +42,9 @@ import {
   XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_MAX_PAGES_PER_BATCH,
   XERO_IMPORT_STALE_JOB_MS,
+  XERO_IMPORT_STALL_THRESHOLD_MS,
+  XERO_IMPORT_PENDING_STALE_MS,
+  XERO_IMPORT_LEASE_MS,
 } from './xero-import-job.processor.js';
 import {
   buildXeroImportSyncMessage,
@@ -61,8 +64,10 @@ export class XeroSyncError extends Error {
 
 /** @deprecated Use XERO_IMPORT_BATCH_BUDGET_MS — kept for legacy test assertions. */
 export const XERO_IMPORT_OVERALL_TIMEOUT_MS = XERO_IMPORT_BATCH_BUDGET_MS;
-export { XERO_IMPORT_STALE_JOB_MS, XERO_IMPORT_BATCH_BUDGET_MS, XERO_IMPORT_MAX_PAGES_PER_BATCH };
+export { XERO_IMPORT_STALE_JOB_MS, XERO_IMPORT_BATCH_BUDGET_MS, XERO_IMPORT_MAX_PAGES_PER_BATCH, XERO_IMPORT_STALL_THRESHOLD_MS };
 export { buildXeroImportSyncMessage, summarizeCounts };
+
+const XERO_IMPORT_WORKER_ID = `${process.env.HOSTNAME ?? 'worker'}-${process.pid}`;
 
 const processingImportJobs = new Set<string>();
 
@@ -199,6 +204,7 @@ export class XeroSyncService {
       state,
       job.status === 'completed' ? job.completedAt?.toISOString() ?? null : null,
       job.errorMessage ?? state.stageError,
+      job.status,
     );
   }
 
@@ -281,6 +287,7 @@ export class XeroSyncService {
 
   async processPendingImportJobs(limit = 10): Promise<number> {
     await this.failStaleImportJobs();
+    await this.resumeAbandonedImportJobs(limit);
 
     const jobs = await this.db.query.integrationSyncJobs.findMany({
       where: and(
@@ -295,6 +302,11 @@ export class XeroSyncService {
     let processed = 0;
 
     for (const job of jobs) {
+      const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+      if (state.nextRetryAt && new Date(state.nextRetryAt) > new Date()) {
+        continue;
+      }
+
       await this.processImportJobBatch(job.id);
       processed += 1;
     }
@@ -326,6 +338,16 @@ export class XeroSyncService {
         );
       }
 
+      const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+
+      if (state.nextRetryAt && new Date(state.nextRetryAt) > new Date()) {
+        return null;
+      }
+
+      if (job.status === 'running' && !this.canAcquireImportJobLease(state)) {
+        return null;
+      }
+
       if (job.status === 'pending') {
         await this.db
           .update(integrationSyncJobs)
@@ -333,31 +355,46 @@ export class XeroSyncService {
           .where(eq(integrationSyncJobs.id, syncJobId));
       }
 
-      const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+      this.renewImportJobLease(state);
+      await this.persistImportJobState(syncJobId, state, 'processing');
+
       const ctx = await this.createSyncContext(job.companyId);
       ctx.syncJobId = syncJobId;
 
       const deadlineAt = Date.now() + XERO_IMPORT_BATCH_BUDGET_MS;
       let allStagesComplete = false;
+      let waitingForRetry = false;
 
-      while (Date.now() < deadlineAt && !state.failedStage) {
+      while (Date.now() < deadlineAt && !state.failedStage && !waitingForRetry) {
         const batchResult = await this.processCurrentImportStageBatch(ctx, state, deadlineAt);
+
+        await this.persistImportJobState(
+          syncJobId,
+          state,
+          batchResult.rateLimited ? 'rate_limited' : 'processing',
+        );
 
         if (state.failedStage) {
           break;
         }
 
+        if (batchResult.rateLimited) {
+          waitingForRetry = true;
+          break;
+        }
+
         if (batchResult.stageComplete) {
+          await this.persistImportJobState(syncJobId, state, 'processing');
           if (!advanceToNextStage(state)) {
             allStagesComplete = true;
             break;
           }
+          await this.persistImportJobState(syncJobId, state, 'processing');
         } else if (batchResult.budgetExhausted) {
+          await this.persistImportJobState(syncJobId, state, 'waiting_next_batch');
           break;
         }
       }
-
-      await this.persistImportJobState(syncJobId, state);
 
       if (state.failedStage || !allStagesComplete) {
         if (!state.failedStage) {
@@ -420,7 +457,7 @@ export class XeroSyncService {
       };
     }
 
-    const deadline = Date.now() + XERO_IMPORT_STALE_JOB_MS;
+    const deadline = Date.now() + XERO_IMPORT_STALL_THRESHOLD_MS * 4;
 
     while (Date.now() < deadline) {
       const result = await this.processImportJobBatch(queued.jobId);
@@ -458,29 +495,39 @@ export class XeroSyncService {
       ),
     });
 
-    const resumeState = parseImportJobState(
-      failedJob?.resultSummary as Record<string, unknown> | null,
+    if (!failedJob) {
+      throw new XeroSyncError('NOT_FOUND', 'Sync job not found');
+    }
+
+    let resumeState = parseImportJobState(
+      failedJob.resultSummary as Record<string, unknown> | null,
     );
+
+    if (!resumeState.checkpoint?.stage || resumeState.abandoned) {
+      resumeState = await this.reconstructImportCheckpointFromMappings(companyId, resumeState);
+    }
+
     resumeState.failedStage = null;
     resumeState.stageError = null;
-
-    const queued = await this.enqueueImportSync(companyId, undefined, {
-      jobType: 'manual',
-      trigger: 'manual',
-    });
+    resumeState.nextRetryAt = null;
+    resumeState.resumedFromAbandoned = true;
+    resumeState.trigger = 'resume';
 
     await this.db
       .update(integrationSyncJobs)
       .set({
+        status: 'pending',
+        errorMessage: null,
+        completedAt: null,
         resultSummary: importJobStateToSummary(resumeState),
       })
-      .where(eq(integrationSyncJobs.id, queued.jobId));
+      .where(eq(integrationSyncJobs.id, syncJobId));
 
-    const deadline = Date.now() + XERO_IMPORT_STALE_JOB_MS;
+    const deadline = Date.now() + XERO_IMPORT_STALL_THRESHOLD_MS * 4;
 
     while (Date.now() < deadline) {
-      const result = await this.processImportJobBatch(queued.jobId);
-      const progress = await this.getImportJobProgress(companyId, queued.jobId);
+      const result = await this.processImportJobBatch(syncJobId);
+      const progress = await this.getImportJobProgress(companyId, syncJobId);
 
       if (progress && (progress.status === 'completed' || progress.status === 'failed') && result) {
         return {
@@ -511,7 +558,7 @@ export class XeroSyncService {
             result.payments.skippedCount +
             result.bankTransactions.skippedCount,
           syncedAt: result.syncedAt ?? new Date().toISOString(),
-          syncJobId: queued.jobId,
+          syncJobId,
         };
       }
 
@@ -528,13 +575,40 @@ export class XeroSyncService {
     );
   }
 
-  private async persistImportJobState(syncJobId: string, state: XeroImportJobState): Promise<void> {
+  private async persistImportJobState(
+    syncJobId: string,
+    state: XeroImportJobState,
+    activity: import('@titan/shared').XeroImportActivity = 'processing',
+  ): Promise<void> {
+    const now = new Date();
+    state.heartbeatAt = now.toISOString();
+    state.activity = activity;
+    this.renewImportJobLease(state);
+
     await this.db
       .update(integrationSyncJobs)
       .set({
         resultSummary: importJobStateToSummary(state),
       })
       .where(eq(integrationSyncJobs.id, syncJobId));
+  }
+
+  private canAcquireImportJobLease(state: XeroImportJobState): boolean {
+    if (!state.processingLeaseExpiresAt || !state.processingLeaseOwner) {
+      return true;
+    }
+
+    const leaseExpires = new Date(state.processingLeaseExpiresAt).getTime();
+    if (leaseExpires <= Date.now()) {
+      return true;
+    }
+
+    return state.processingLeaseOwner === XERO_IMPORT_WORKER_ID;
+  }
+
+  private renewImportJobLease(state: XeroImportJobState): void {
+    state.processingLeaseOwner = XERO_IMPORT_WORKER_ID;
+    state.processingLeaseExpiresAt = new Date(Date.now() + XERO_IMPORT_LEASE_MS).toISOString();
   }
 
   private async finalizeImportJob(
@@ -586,7 +660,7 @@ export class XeroSyncService {
     ctx: SyncContext,
     state: XeroImportJobState,
     deadlineAt: number,
-  ): Promise<{ stageComplete: boolean; budgetExhausted: boolean }> {
+  ): Promise<{ stageComplete: boolean; budgetExhausted: boolean; rateLimited?: boolean }> {
     const stage = state.checkpoint.stage;
     let pagesProcessed = 0;
     let lastBatchSize = 0;
@@ -639,6 +713,13 @@ export class XeroSyncService {
         budgetExhausted,
       };
     } catch (error) {
+      if (error instanceof XeroError && error.code === 'RATE_LIMIT') {
+        state.nextRetryAt = new Date(Date.now() + XERO_RATE_LIMIT_BASE_DELAY_MS * 2).toISOString();
+        state.activity = 'rate_limited';
+        state.stageError = error.message;
+        return { stageComplete: false, budgetExhausted: true, rateLimited: true };
+      }
+
       state.failedStage = stage;
       state.stageError =
         error instanceof XeroError && error.code === 'TIMEOUT'
@@ -709,41 +790,263 @@ export class XeroSyncService {
   }
 
   /**
-   * Marks abandoned/stale Xero import jobs as failed.
-   * Does not delete imported business data or mappings.
+   * Marks stalled Xero import jobs as failed while preserving checkpoint metadata.
+   * Uses per-batch heartbeat — not total import duration from startedAt.
    */
   async failStaleImportJobs(
     companyId?: string,
-    olderThanMs: number = XERO_IMPORT_STALE_JOB_MS,
+    _olderThanMs?: number,
   ): Promise<number> {
-    const cutoff = new Date(Date.now() - olderThanMs);
     const conditions = [
       eq(integrationSyncJobs.provider, 'xero'),
       eq(integrationSyncJobs.syncScope, 'import'),
       inArray(integrationSyncJobs.status, ['pending', 'running']),
-      lt(integrationSyncJobs.startedAt, cutoff),
     ];
 
     if (companyId) {
       conditions.push(eq(integrationSyncJobs.companyId, companyId));
     }
 
-    const updated = await this.db
-      .update(integrationSyncJobs)
-      .set({
-        status: 'failed',
-        completedAt: new Date(),
-        errorMessage: 'Abandoned: Xero import exceeded the time limit or was interrupted.',
-        resultSummary: {
-          abandoned: true,
-          failedStage: null,
-          reason: 'stale_running_job',
-        },
-      })
-      .where(and(...conditions))
-      .returning({ id: integrationSyncJobs.id });
+    const jobs = await this.db.query.integrationSyncJobs.findMany({
+      where: and(...conditions),
+    });
 
-    return updated.length;
+    const now = Date.now();
+    let abandoned = 0;
+
+    for (const job of jobs) {
+      const state = parseImportJobState(job.resultSummary as Record<string, unknown> | null);
+      const heartbeatMs = state.heartbeatAt
+        ? new Date(state.heartbeatAt).getTime()
+        : job.startedAt.getTime();
+      const thresholdMs =
+        job.status === 'pending' ? XERO_IMPORT_PENDING_STALE_MS : XERO_IMPORT_STALL_THRESHOLD_MS;
+
+      if (now - heartbeatMs < thresholdMs) {
+        continue;
+      }
+
+      const summary = {
+        ...importJobStateToSummary(state),
+        abandoned: true,
+        abandonReason: job.status === 'pending' ? 'stale_pending_job' : 'stale_running_job',
+        abandonedAt: new Date().toISOString(),
+        activity: 'stalled' as const,
+      };
+
+      await this.db
+        .update(integrationSyncJobs)
+        .set({
+          status: 'failed',
+          completedAt: new Date(),
+          errorMessage:
+            'Abandoned: Xero import worker stalled (no heartbeat while running). Checkpoint preserved for auto-resume.',
+          resultSummary: summary,
+        })
+        .where(eq(integrationSyncJobs.id, job.id));
+
+      abandoned += 1;
+    }
+
+    return abandoned;
+  }
+
+  /**
+   * Re-enqueues failed/abandoned import jobs from checkpoint without creating a new job.
+   */
+  async resumeAbandonedImportJobs(limit = 10): Promise<number> {
+    const failedJobs = await this.db.query.integrationSyncJobs.findMany({
+      where: and(
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+        eq(integrationSyncJobs.status, 'failed'),
+      ),
+      orderBy: [desc(integrationSyncJobs.startedAt)],
+      limit: 50,
+    });
+
+    let resumed = 0;
+
+    for (const job of failedJobs) {
+      if (resumed >= limit) {
+        break;
+      }
+
+      const summary = job.resultSummary as Record<string, unknown> | null;
+      let state = parseImportJobState(summary);
+      const legacyAbandon =
+        typeof job.errorMessage === 'string' &&
+        /abandoned|time limit|interrupted/i.test(job.errorMessage);
+      const recoverable =
+        state.abandoned === true ||
+        legacyAbandon ||
+        summary?.checkpoint != null ||
+        state.contacts.pulledCount > 0 ||
+        state.completedStages.length > 0;
+
+      if (!recoverable || state.failedStage) {
+        continue;
+      }
+
+      const activeJob = await this.db.query.integrationSyncJobs.findFirst({
+        where: and(
+          eq(integrationSyncJobs.companyId, job.companyId),
+          eq(integrationSyncJobs.provider, 'xero'),
+          eq(integrationSyncJobs.syncScope, 'import'),
+          inArray(integrationSyncJobs.status, ['pending', 'running']),
+          ne(integrationSyncJobs.id, job.id),
+        ),
+      });
+
+      if (activeJob) {
+        continue;
+      }
+
+      if (!summary?.checkpoint || state.abandoned || legacyAbandon) {
+        state = await this.reconstructImportCheckpointFromMappings(job.companyId, state);
+      }
+
+      state.failedStage = null;
+      state.stageError = null;
+      state.nextRetryAt = null;
+      state.abandoned = false;
+      state.resumedFromAbandoned = true;
+      state.trigger = 'resume';
+
+      await this.db
+        .update(integrationSyncJobs)
+        .set({
+          status: 'pending',
+          errorMessage: null,
+          completedAt: null,
+          resultSummary: importJobStateToSummary(state),
+        })
+        .where(eq(integrationSyncJobs.id, job.id));
+
+      void this.processImportJobBatch(job.id).catch((error: unknown) => {
+        console.error('[xero-sync] Auto-resume import batch failed', {
+          companyId: job.companyId,
+          syncJobId: job.id,
+          error,
+        });
+      });
+
+      resumed += 1;
+    }
+
+    return resumed;
+  }
+
+  private async reconstructImportCheckpointFromMappings(
+    companyId: string,
+    partialState: XeroImportJobState,
+  ): Promise<XeroImportJobState> {
+    const [customerRows, invoiceRows, paymentRows, bankRows] = await Promise.all([
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(xeroCustomerMappings)
+        .where(
+          and(
+            eq(xeroCustomerMappings.companyId, companyId),
+            eq(xeroCustomerMappings.syncStatus, 'synced'),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(xeroInvoiceMappings)
+        .where(
+          and(
+            eq(xeroInvoiceMappings.companyId, companyId),
+            eq(xeroInvoiceMappings.syncStatus, 'synced'),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(xeroPaymentMappings)
+        .where(
+          and(
+            eq(xeroPaymentMappings.companyId, companyId),
+            eq(xeroPaymentMappings.syncStatus, 'synced'),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(xeroSyncLogs)
+        .where(
+          and(
+            eq(xeroSyncLogs.companyId, companyId),
+            eq(xeroSyncLogs.entityType, 'bank_transaction'),
+            eq(xeroSyncLogs.status, 'success'),
+          ),
+        ),
+    ]);
+
+    const customerCount = customerRows[0]?.count ?? 0;
+    const invoiceCount = invoiceRows[0]?.count ?? 0;
+    const paymentCount = paymentRows[0]?.count ?? 0;
+    const bankCount = bankRows[0]?.count ?? 0;
+
+    const state: XeroImportJobState = {
+      ...partialState,
+      completedStages: [...partialState.completedStages],
+      contacts: {
+        ...partialState.contacts,
+        pulledCount: Math.max(partialState.contacts.pulledCount, customerCount),
+      },
+      invoices: {
+        ...partialState.invoices,
+        pulledCount: Math.max(partialState.invoices.pulledCount, invoiceCount),
+      },
+      payments: {
+        ...partialState.payments,
+        pulledCount: Math.max(partialState.payments.pulledCount, paymentCount),
+      },
+      bankTransactions: {
+        ...partialState.bankTransactions,
+        pulledCount: Math.max(partialState.bankTransactions.pulledCount, bankCount),
+      },
+    };
+
+    const completed = new Set(state.completedStages);
+
+    if (customerCount > 0) {
+      state.checkpoint.contactsPage = Math.max(1, Math.ceil(customerCount / XERO_PAGE_SIZE));
+      if (invoiceCount > 0 || paymentCount > 0 || bankCount > 0 || customerCount >= XERO_PAGE_SIZE) {
+        completed.add('contacts');
+      }
+    }
+
+    if (invoiceCount > 0) {
+      state.checkpoint.invoicesPage = Math.max(1, Math.ceil(invoiceCount / XERO_PAGE_SIZE));
+      if (paymentCount > 0 || bankCount > 0) {
+        completed.add('invoices');
+      }
+    }
+
+    if (paymentCount > 0) {
+      state.checkpoint.paymentsPage = Math.max(1, Math.ceil(paymentCount / XERO_PAGE_SIZE));
+      if (bankCount > 0) {
+        completed.add('payments');
+      }
+    }
+
+    if (bankCount > 0) {
+      state.checkpoint.bankTransactionsPage = Math.max(1, Math.ceil(bankCount / XERO_PAGE_SIZE));
+    }
+
+    state.completedStages = [...completed];
+
+    if (!completed.has('contacts')) {
+      state.checkpoint.stage = 'contacts';
+    } else if (!completed.has('invoices')) {
+      state.checkpoint.stage = 'invoices';
+    } else if (!completed.has('payments')) {
+      state.checkpoint.stage = 'payments';
+    } else if (!completed.has('bank_transactions')) {
+      state.checkpoint.stage = 'bank_transactions';
+    }
+
+    return state;
   }
 
   async syncCustomers(companyId: string): Promise<XeroEntitySyncResult> {

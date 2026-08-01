@@ -311,11 +311,14 @@ export function XeroSyncPanel({
         </div>
       ) : null}
 
-      {importProgress &&
-      (importProgress.status === 'queued' ||
-        importProgress.status === 'running' ||
-        importProgress.status === 'pending') ? (
-        <p className="page-muted">Background import: {formatImportJobProgress(importProgress)}</p>
+      {importProgress ? (
+        <p className="page-muted">
+          Background import ({importProgress.uiStatusLabel ?? importProgress.status}):{' '}
+          {formatImportJobProgress(importProgress)}
+          {importProgress.nextRetryAt
+            ? ` · next retry ${new Date(importProgress.nextRetryAt).toLocaleString()}`
+            : ''}
+        </p>
       ) : null}
 
       {isLoading ? <p className="page-muted">Loading sync counters…</p> : null}

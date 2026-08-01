@@ -11,6 +11,8 @@ function buildOrchestrator(overrides: Record<string, unknown> = {}) {
       handleXeroImportJobSettled: async () => undefined,
       hasCustomerValueMetricsRefreshedForJob: async () => false,
       markCustomerValueMetricsRefreshed: async () => undefined,
+      hasTwoWayReadVerifyQueuedForJob: async () => false,
+      markTwoWayReadVerifyQueued: async () => undefined,
       ...(overrides.integrationSyncOrchestrator as object),
     },
     backgroundWorkQueue: {
@@ -126,6 +128,8 @@ test('BackgroundWorkOrchestratorService refreshes customer value metrics on Xero
       markCustomerValueMetricsRefreshed: async () => {
         markCalls += 1;
       },
+      hasTwoWayReadVerifyQueuedForJob: async () => false,
+      markTwoWayReadVerifyQueued: async () => undefined,
     },
     domainEventBus: {
       subscribe: () => () => undefined,

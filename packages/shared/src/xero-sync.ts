@@ -38,7 +38,38 @@ export type XeroImportSyncResult = {
   syncJobId?: string;
 };
 
-export type XeroImportJobStatus = 'queued' | 'pending' | 'running' | 'completed' | 'failed';
+export type XeroImportJobStatus =
+  | 'queued'
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed';
+
+/** UI-facing import status — extends DB job status with recovery/rate-limit states. */
+export type XeroImportJobDisplayStatus =
+  | XeroImportJobStatus
+  | 'resuming'
+  | 'retrying'
+  | 'partial'
+  | 'waiting';
+
+export type XeroImportActivity =
+  | 'processing'
+  | 'waiting_next_batch'
+  | 'rate_limited'
+  | 'stalled';
+
+export const XERO_IMPORT_UI_STATUS_LABELS: Record<XeroImportJobDisplayStatus, string> = {
+  queued: 'Queued',
+  pending: 'Queued',
+  running: 'Running',
+  completed: 'Synced',
+  failed: 'Failed',
+  resuming: 'Resuming',
+  retrying: 'Retrying',
+  partial: 'Partial',
+  waiting: 'Waiting for next batch',
+};
 
 export type XeroImportCheckpoint = {
   stage: XeroImportStage;
@@ -51,8 +82,11 @@ export type XeroImportCheckpoint = {
 export type XeroImportJobProgress = {
   jobId: string;
   status: XeroImportJobStatus;
+  uiStatus: XeroImportJobDisplayStatus;
+  uiStatusLabel: string;
   currentStage: XeroImportStage | null;
   completedStages: XeroImportStage[];
+  checkpoint: XeroImportCheckpoint;
   contacts: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
@@ -60,7 +94,70 @@ export type XeroImportJobProgress = {
   failedStage: XeroImportStage | null;
   message: string | null;
   syncedAt: string | null;
+  heartbeatAt: string | null;
+  nextRetryAt: string | null;
+  activity: XeroImportActivity | null;
+  processedCount: number;
 };
+
+export function deriveXeroImportJobUiStatus(input: {
+  jobStatus: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  activity?: XeroImportActivity | null;
+  nextRetryAt?: string | null;
+  hasPartialProgress?: boolean;
+  resumedFromAbandoned?: boolean;
+}): { uiStatus: XeroImportJobDisplayStatus; uiStatusLabel: string } {
+  const now = Date.now();
+  const retryPending =
+    input.nextRetryAt != null && new Date(input.nextRetryAt).getTime() > now;
+
+  if (input.jobStatus === 'completed') {
+    return { uiStatus: 'completed', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.completed };
+  }
+
+  if (input.jobStatus === 'failed') {
+    if (input.hasPartialProgress) {
+      return { uiStatus: 'partial', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.partial };
+    }
+    return { uiStatus: 'failed', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.failed };
+  }
+
+  if (input.resumedFromAbandoned && (input.jobStatus === 'pending' || input.jobStatus === 'running')) {
+    return { uiStatus: 'resuming', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.resuming };
+  }
+
+  if (input.activity === 'rate_limited' || (retryPending && input.jobStatus === 'running')) {
+    return { uiStatus: 'retrying', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.retrying };
+  }
+
+  if (input.activity === 'waiting_next_batch' || input.jobStatus === 'pending') {
+    return { uiStatus: 'waiting', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.waiting };
+  }
+
+  if (input.jobStatus === 'running' && input.hasPartialProgress) {
+    return { uiStatus: 'partial', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.partial };
+  }
+
+  if (input.jobStatus === 'running') {
+    return { uiStatus: 'running', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.running };
+  }
+
+  return { uiStatus: 'queued', uiStatusLabel: XERO_IMPORT_UI_STATUS_LABELS.queued };
+}
+
+export function sumXeroImportProcessedCounts(input: {
+  contacts: XeroImportEntityCounts;
+  invoices: XeroImportEntityCounts;
+  payments: XeroImportEntityCounts;
+  bankTransactions: XeroImportEntityCounts;
+}): number {
+  return (
+    input.contacts.pulledCount +
+    input.invoices.pulledCount +
+    input.payments.pulledCount +
+    input.bankTransactions.pulledCount
+  );
+}
 
 export type XeroEnqueueImportResult = {
   jobId: string;

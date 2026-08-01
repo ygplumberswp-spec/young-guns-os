@@ -1,10 +1,15 @@
 import type {
   IntegrationSyncTrigger,
+  XeroImportActivity,
   XeroImportCheckpoint,
   XeroImportEntityCounts,
   XeroImportJobProgress,
   XeroImportStage,
   XeroImportSyncResult,
+} from '@titan/shared';
+import {
+  deriveXeroImportJobUiStatus,
+  sumXeroImportProcessedCounts,
 } from '@titan/shared';
 import { XERO_PAGE_SIZE } from '../lib/xero.client.js';
 import {
@@ -16,8 +21,14 @@ import {
 
 /** Per-batch wall-clock budget — each scheduler tick processes within this window. */
 export const XERO_IMPORT_BATCH_BUDGET_MS = 45_000;
-/** Background import jobs idle longer than this are marked abandoned. */
-export const XERO_IMPORT_STALE_JOB_MS = 30 * 60_000;
+/** Running import jobs with no heartbeat longer than this are marked stalled (not total duration). */
+export const XERO_IMPORT_STALL_THRESHOLD_MS = 15 * 60_000;
+/** Pending import jobs never picked up by a worker are abandoned after this window. */
+export const XERO_IMPORT_PENDING_STALE_MS = 30 * 60_000;
+/** Worker lease duration — prevents two workers on the same tenant import. */
+export const XERO_IMPORT_LEASE_MS = 2 * 60_000;
+/** @deprecated Use XERO_IMPORT_STALL_THRESHOLD_MS — kept for legacy imports/tests. */
+export const XERO_IMPORT_STALE_JOB_MS = XERO_IMPORT_STALL_THRESHOLD_MS;
 /** Max entity pages processed per batch tick. */
 export const XERO_IMPORT_MAX_PAGES_PER_BATCH = 5;
 
@@ -66,6 +77,15 @@ export function importJobStateToSummary(state: XeroImportJobState): Record<strin
     stageError: state.stageError,
     idempotencyKey: state.idempotencyKey,
     trigger: state.trigger,
+    heartbeatAt: state.heartbeatAt ?? null,
+    nextRetryAt: state.nextRetryAt ?? null,
+    activity: state.activity ?? null,
+    processingLeaseOwner: state.processingLeaseOwner ?? null,
+    processingLeaseExpiresAt: state.processingLeaseExpiresAt ?? null,
+    resumedFromAbandoned: state.resumedFromAbandoned ?? false,
+    abandoned: state.abandoned ?? false,
+    abandonedAt: state.abandonedAt ?? null,
+    abandonReason: state.abandonReason ?? null,
   };
 }
 
@@ -93,6 +113,19 @@ export function parseImportJobState(
     idempotencyKey:
       typeof summary?.idempotencyKey === 'string' ? summary.idempotencyKey : undefined,
     trigger: summary?.trigger as IntegrationSyncTrigger | undefined,
+    heartbeatAt: typeof summary?.heartbeatAt === 'string' ? summary.heartbeatAt : null,
+    nextRetryAt: typeof summary?.nextRetryAt === 'string' ? summary.nextRetryAt : null,
+    activity: (summary?.activity as XeroImportActivity | null | undefined) ?? null,
+    processingLeaseOwner:
+      typeof summary?.processingLeaseOwner === 'string' ? summary.processingLeaseOwner : null,
+    processingLeaseExpiresAt:
+      typeof summary?.processingLeaseExpiresAt === 'string'
+        ? summary.processingLeaseExpiresAt
+        : null,
+    resumedFromAbandoned: summary?.resumedFromAbandoned === true,
+    abandoned: summary?.abandoned === true,
+    abandonedAt: typeof summary?.abandonedAt === 'string' ? summary.abandonedAt : null,
+    abandonReason: typeof summary?.abandonReason === 'string' ? summary.abandonReason : null,
   };
 }
 
@@ -102,12 +135,29 @@ export function buildImportJobProgress(
   state: XeroImportJobState,
   syncedAt: string | null,
   message: string | null,
+  jobStatus: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled',
 ): XeroImportJobProgress {
+  const processedCount = sumXeroImportProcessedCounts(state);
+  const hasPartialProgress =
+    processedCount > 0 ||
+    state.completedStages.length > 0 ||
+    state.abandoned === true;
+  const { uiStatus, uiStatusLabel } = deriveXeroImportJobUiStatus({
+    jobStatus,
+    activity: state.activity,
+    nextRetryAt: state.nextRetryAt,
+    hasPartialProgress,
+    resumedFromAbandoned: state.resumedFromAbandoned,
+  });
+
   return {
     jobId,
     status,
+    uiStatus,
+    uiStatusLabel,
     currentStage: state.failedStage ? state.failedStage : state.checkpoint.stage,
     completedStages: state.completedStages,
+    checkpoint: state.checkpoint,
     contacts: state.contacts,
     invoices: state.invoices,
     payments: state.payments,
@@ -115,6 +165,10 @@ export function buildImportJobProgress(
     failedStage: state.failedStage,
     message,
     syncedAt,
+    heartbeatAt: state.heartbeatAt ?? null,
+    nextRetryAt: state.nextRetryAt ?? null,
+    activity: state.activity ?? null,
+    processedCount,
   };
 }
 
@@ -178,6 +232,73 @@ export function advanceToNextStage(state: XeroImportJobState): boolean {
 
   state.checkpoint.stage = XERO_IMPORT_STAGES[currentIndex + 1]!;
   return true;
+}
+
+export function generateImportLeaseOwner(): string {
+  return `worker-${process.pid}-${Date.now().toString(36)}`;
+}
+
+export function isImportLeaseHeldByOther(
+  state: XeroImportJobState,
+  owner: string,
+  nowMs: number = Date.now(),
+): boolean {
+  if (!state.processingLeaseOwner || state.processingLeaseOwner === owner) {
+    return false;
+  }
+
+  if (!state.processingLeaseExpiresAt) {
+    return true;
+  }
+
+  return new Date(state.processingLeaseExpiresAt).getTime() > nowMs;
+}
+
+export function acquireImportLease(
+  state: XeroImportJobState,
+  owner: string,
+  leaseMs: number,
+  nowMs: number = Date.now(),
+): void {
+  state.processingLeaseOwner = owner;
+  state.processingLeaseExpiresAt = new Date(nowMs + leaseMs).toISOString();
+}
+
+export function releaseImportLease(state: XeroImportJobState, owner: string): void {
+  if (state.processingLeaseOwner !== owner) {
+    return;
+  }
+
+  state.processingLeaseOwner = null;
+  state.processingLeaseExpiresAt = null;
+}
+
+export function touchImportHeartbeat(
+  state: XeroImportJobState,
+  activity: XeroImportActivity = 'processing',
+  nowMs: number = Date.now(),
+): void {
+  state.heartbeatAt = new Date(nowMs).toISOString();
+  state.activity = activity;
+}
+
+export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boolean {
+  const processed =
+    state.contacts.pulledCount +
+    state.invoices.pulledCount +
+    state.payments.pulledCount +
+    state.bankTransactions.pulledCount;
+
+  return (
+    processed > 0 ||
+    state.completedStages.length > 0 ||
+    state.abandoned === true ||
+    state.checkpoint.contactsPage > 1 ||
+    state.checkpoint.invoicesPage > 1 ||
+    state.checkpoint.paymentsPage > 1 ||
+    state.checkpoint.bankTransactionsPage > 1 ||
+    state.checkpoint.stage !== 'contacts'
+  );
 }
 
 function parseCounts(value: unknown): XeroImportEntityCounts {

@@ -1,5 +1,6 @@
 import type {
   IntegrationSyncTrigger,
+  XeroImportActivity,
   XeroImportCheckpoint,
   XeroImportEntityCounts,
   XeroImportStage,
@@ -16,6 +17,15 @@ export type XeroImportJobState = {
   stageError: string | null;
   idempotencyKey?: string;
   trigger?: IntegrationSyncTrigger;
+  heartbeatAt?: string | null;
+  nextRetryAt?: string | null;
+  activity?: XeroImportActivity | null;
+  processingLeaseOwner?: string | null;
+  processingLeaseExpiresAt?: string | null;
+  resumedFromAbandoned?: boolean;
+  abandoned?: boolean;
+  abandonedAt?: string | null;
+  abandonReason?: string | null;
 };
 
 export function emptyImportCounts(): XeroImportEntityCounts {
