@@ -1,0 +1,540 @@
+{
+  "label": "220-xero-phase2-final-verify",
+  "generatedAt": "2026-08-01T19:30:30.120Z",
+  "followUpFrom": "c90779e8",
+  "overlapCheck": {
+    "agentSessionC2db31b1": "219 artifact present — see prior219Artifact",
+    "prior219Artifact": "diagnostic-output/219-cv-phase2-go-verify.json"
+  },
+  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
+  "branch": "cursor/xero-payments-hotfix",
+  "pollIntervalMs": 180000,
+  "maxWaitMs": 3600000,
+  "pollDurationMs": 2537038,
+  "timeline": [
+    {
+      "at": "2026-08-01T18:48:15.104Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 8,
+        "pulledCount": 700,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T18:47:16.804Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T18:51:15.788Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 9,
+        "pulledCount": 800,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T18:49:16.576Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T18:54:16.621Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 10,
+        "pulledCount": 900,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T18:52:44.177Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T18:57:17.354Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 11,
+        "pulledCount": 1000,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T18:56:36.182Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:00:18.073Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 11,
+        "pulledCount": 1000,
+        "activity": "processing",
+        "heartbeatAt": "2026-08-01T18:57:32.191Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:03:18.837Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 13,
+        "pulledCount": 1200,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:03:18.048Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:06:19.653Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 15,
+        "pulledCount": 1400,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:06:16.702Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:09:20.416Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 18,
+        "pulledCount": 1700,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:09:16.658Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:12:21.158Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 21,
+        "pulledCount": 2000,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:12:18.456Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:15:21.934Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 22,
+        "pulledCount": 2100,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:14:17.152Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:18:22.555Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 24,
+        "pulledCount": 2300,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:18:16.705Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:21:23.282Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 26,
+        "pulledCount": 2500,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:21:16.613Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:24:24.054Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 29,
+        "pulledCount": 2800,
+        "activity": "processing",
+        "heartbeatAt": "2026-08-01T19:24:23.287Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:27:25.907Z",
+      "activeCount": 1,
+      "activeJobs": [
+        {
+          "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+          "status": "running"
+        }
+      ],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "running",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T17:55:21.150Z",
+        "completedAt": null,
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 31,
+        "pulledCount": 3000,
+        "activity": "waiting_next_batch",
+        "heartbeatAt": "2026-08-01T19:27:17.937Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ]
+      }
+    },
+    {
+      "at": "2026-08-01T19:30:26.655Z",
+      "activeCount": 0,
+      "activeJobs": [],
+      "job93144ea8": {
+        "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+        "status": "completed",
+        "errorMessage": null,
+        "startedAt": "2026-08-01T19:29:23.007Z",
+        "completedAt": "2026-08-01T19:29:25.040Z",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 33,
+        "pulledCount": 3078,
+        "activity": "processing",
+        "heartbeatAt": "2026-08-01T19:29:24.521Z",
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments",
+          "bank_transactions"
+        ]
+      }
+    }
+  ],
+  "bankTransactionsProgress": [
+    {
+      "at": "2026-08-01T18:48:15.104Z",
+      "page": 8,
+      "pulledCount": 700,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T18:51:15.788Z",
+      "page": 9,
+      "pulledCount": 800,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T18:54:16.621Z",
+      "page": 10,
+      "pulledCount": 900,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T18:57:17.354Z",
+      "page": 11,
+      "pulledCount": 1000,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:00:18.073Z",
+      "page": 11,
+      "pulledCount": 1000,
+      "activity": "processing"
+    },
+    {
+      "at": "2026-08-01T19:03:18.837Z",
+      "page": 13,
+      "pulledCount": 1200,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:06:19.653Z",
+      "page": 15,
+      "pulledCount": 1400,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:09:20.416Z",
+      "page": 18,
+      "pulledCount": 1700,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:12:21.158Z",
+      "page": 21,
+      "pulledCount": 2000,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:15:21.934Z",
+      "page": 22,
+      "pulledCount": 2100,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:18:22.555Z",
+      "page": 24,
+      "pulledCount": 2300,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:21:23.282Z",
+      "page": 26,
+      "pulledCount": 2500,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:24:24.054Z",
+      "page": 29,
+      "pulledCount": 2800,
+      "activity": "processing"
+    },
+    {
+      "at": "2026-08-01T19:27:25.907Z",
+      "page": 31,
+      "pulledCount": 3000,
+      "activity": "waiting_next_batch"
+    },
+    {
+      "at": "2026-08-01T19:30:26.655Z",
+      "page": 33,
+      "pulledCount": 3078,
+      "activity": "processing"
+    }
+  ],
+  "importJob93144ea8Outcome": {
+    "id": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+    "status": "completed",
+    "errorMessage": null,
+    "startedAt": "2026-08-01T19:29:23.007Z",
+    "completedAt": "2026-08-01T19:29:25.040Z",
+    "stage": "bank_transactions",
+    "bankTransactionsPage": 33,
+    "pulledCount": 3078,
+    "activity": "processing",
+    "heartbeatAt": "2026-08-01T19:29:24.521Z",
+    "completedStages": [
+      "contacts",
+      "invoices",
+      "payments",
+      "bank_transactions"
+    ]
+  },
+  "quiescenceAchieved": true,
+  "verify187": {
+    "artifact": "diagnostic-output/187-xero-import-recovery-verify.mjs",
+    "outputArtifact": "diagnostic-output/187-xero-import-recovery-verify.json",
+    "exitCode": 0,
+    "verdict": "PASS"
+  },
+  "cv_auto_recalc_fired": "PASS",
+  "cvMetricsRefreshJobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+  "cvMetricsRefreshAt": "2026-08-01T19:29:27.509Z",
+  "verdict187": "PASS",
+  "phase2Go": "yes",
+  "notes": []
+}

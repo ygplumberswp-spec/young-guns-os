@@ -1,15 +1,15 @@
 {
   "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T18:55:01.354Z",
+  "generatedAt": "2026-08-01T19:30:26.871Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
   "targetJobPrefix": "8e6aec9b",
-  "verdict": "IN_PROGRESS",
+  "verdict": "PASS",
   "checks": [
     {
       "name": "job_status_completed",
-      "pass": false
+      "pass": true
     },
     {
       "name": "last_sync_at_populated",
@@ -34,7 +34,7 @@
     },
     {
       "name": "cv_auto_recalc_fired",
-      "pass": false
+      "pass": true
     },
     {
       "name": "recovery_checkpoint_or_resuming",
@@ -49,34 +49,35 @@
   },
   "importJob": {
     "jobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
-    "jobStatus": "running",
+    "jobStatus": "completed",
     "errorMessage": null,
     "checkpoint": {
       "stage": "bank_transactions",
       "contactsPage": 8,
       "invoicesPage": 7,
       "paymentsPage": 7,
-      "bankTransactionsPage": 10
+      "bankTransactionsPage": 33
     },
-    "heartbeatAt": "2026-08-01T18:52:44.177Z",
-    "activity": "waiting_next_batch",
-    "resumedFromAbandoned": false,
+    "heartbeatAt": "2026-08-01T19:29:24.521Z",
+    "activity": "processing",
+    "resumedFromAbandoned": true,
     "contactsPulled": 0,
     "invoicesPulled": 0,
     "completedStages": [
       "contacts",
       "invoices",
-      "payments"
+      "payments",
+      "bank_transactions"
     ]
   },
   "connection": {
     "status": "connected",
-    "lastSyncAt": "2026-08-01T17:37:22.876Z",
+    "lastSyncAt": "2026-08-01T19:29:24.777Z",
     "lastError": null
   },
   "cvMetrics": {
-    "cvMetricsRefreshJobId": null,
-    "cvMetricsRefreshAt": null
+    "cvMetricsRefreshJobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+    "cvMetricsRefreshAt": "2026-08-01T19:29:27.509Z"
   },
   "duplicateMappingRegression": {
     "duplicateCustomerContactIds": 0,
