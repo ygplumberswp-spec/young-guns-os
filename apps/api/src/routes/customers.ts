@@ -33,7 +33,18 @@ function handleError(error: unknown, res: import('express').Response) {
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
-  throw error;
+
+  const message =
+    error instanceof Error && /xero|sync|import/i.test(error.message)
+      ? 'Customer value is updating from Xero'
+      : 'Customer value metrics are temporarily unavailable';
+
+  res.status(503).json({
+    error: {
+      code: 'CUSTOMER_VALUE_UNAVAILABLE',
+      message,
+    },
+  });
 }
 
 export function createCustomersRouter({

@@ -38,6 +38,10 @@ export const TeamSettingsPage = lazyNamed(
   () => import('../pages/settings/TeamSettingsPage'),
   'TeamSettingsPage',
 );
+export const DashboardSettingsPage = lazyNamed(
+  () => import('../pages/settings/DashboardSettingsPage'),
+  'DashboardSettingsPage',
+);
 export const CustomerListPage = lazyNamed(
   () => import('../pages/crm/CustomerListPage'),
   'CustomerListPage',

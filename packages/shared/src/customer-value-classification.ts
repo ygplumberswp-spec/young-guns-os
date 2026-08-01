@@ -81,6 +81,24 @@ export type CustomerValueMetrics = {
 export const CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE =
   'Xero import in progress — customer classifications are partial';
 
+/** Dashboard empty state when contacts exist but none have verified invoice evidence. */
+export const CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE =
+  'No verified customer value data yet';
+
+/** Dashboard status while Xero sync is refreshing classifications. */
+export const CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE =
+  'Customer value is updating from Xero';
+
+/** Verified customer buckets — excludes prospect/supplier-only Xero contacts. */
+export const CUSTOMER_VALUE_VERIFIED_FILTER_KEYS = [
+  'verified_invoiced_customer',
+  'paying_customer',
+  'fully_paid_customer',
+  'partially_paid_customer',
+  'unpaid_debtor',
+  'overdue_debtor',
+] as const satisfies ReadonlyArray<CustomerValueClassificationFilterKey>;
+
 export type CustomerValueClassificationEvidence = {
   code: string;
   detail: string;

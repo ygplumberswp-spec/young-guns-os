@@ -1045,6 +1045,200 @@ a:focus-visible {
   gap: 0.875rem;
 }
 
+/* Executive owner dashboard — premium overview */
+.exec-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.exec-dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--titan-bg) 88%, var(--titan-accent) 12%) 0%,
+    var(--titan-surface) 100%
+  );
+  box-shadow: var(--titan-shadow-sm);
+}
+
+.exec-dashboard-header__greeting {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--titan-chrome-bright, var(--titan-text));
+}
+
+.exec-dashboard-header__summary {
+  margin: 0.35rem 0 0;
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+}
+
+.exec-dashboard-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.exec-dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.exec-dashboard-section__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--titan-chrome-mid, var(--titan-text));
+}
+
+.exec-dashboard-glance__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--titan-radius-md);
+}
+
+.exec-dashboard-glance__link:hover .titan-stat-card,
+.exec-dashboard-glance__link:focus-visible .titan-stat-card {
+  border-color: color-mix(in srgb, var(--titan-accent) 45%, var(--titan-border-subtle));
+  box-shadow: var(--titan-shadow-glow);
+}
+
+.exec-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+.exec-dashboard-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.exec-dashboard-skeleton__row {
+  height: 2.75rem;
+  border-radius: var(--titan-radius-md);
+  background: linear-gradient(
+    90deg,
+    var(--titan-surface-muted) 0%,
+    color-mix(in srgb, var(--titan-surface-hover) 70%, var(--titan-accent) 30%) 50%,
+    var(--titan-surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: exec-dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes exec-dashboard-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.exec-dashboard-section__error {
+  padding: 0.75rem 1rem;
+  border-radius: var(--titan-radius-md);
+  border: 1px solid var(--titan-border-subtle);
+  background: var(--titan-surface-muted);
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+}
+
+.exec-dashboard-retry {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-sm);
+  background: var(--titan-surface);
+  color: var(--titan-text);
+  cursor: pointer;
+}
+
+.exec-live-ops,
+.exec-completed-today,
+.exec-team-today,
+.exec-priorities-critical {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.exec-live-ops__card,
+.exec-completed-today__row,
+.exec-team-today__row {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface-muted);
+}
+
+.exec-live-ops__head,
+.exec-completed-today__row,
+.exec-team-today__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.exec-live-ops__meta,
+.exec-live-ops__times,
+.exec-completed-today__meta,
+.exec-team-today__task {
+  margin: 0.25rem 0 0;
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.exec-completed-today__badges,
+.exec-team-today__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.exec-priorities-summary {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--titan-text);
+}
+
+.exec-priorities-critical li span {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 960px) {
+  .exec-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .exec-dashboard-header__actions {
+    width: 100%;
+  }
+}
+
+
 .dashboard-panel-empty {
   border: 1px solid var(--titan-border-subtle);
   background-color: var(--titan-surface-muted);
