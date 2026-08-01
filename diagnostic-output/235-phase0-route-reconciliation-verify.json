@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "phase0-route-reconciliation-v1",
+  "label": "235-phase0-route-reconciliation-verify",
+  "generatedAt": "2026-08-01T21:01:32.702Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "verdict": "PASS",
+  "phase0Gate": {
+    "priorGap": {
+      "inventoriedTotal": 158,
+      "classifiedSum": 151,
+      "unaccounted": 7,
+      "rootCause": "Seven auth/guest-login routes inventoried in executive summary but excluded from GO/HOLD/NO-GO table (staff + mobile + portal only)"
+    },
+    "reconciliation": {
+      "sevenRoutesResolved": [
+        {
+          "route": "/auth/login",
+          "pageName": "Staff Login",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Public (unauthenticated guest)",
+          "sourceOfTruth": "TITAN auth API + session cookies",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "Primary staff login; MFA gate when configured",
+          "requiredAction": "None — operational"
+        },
+        {
+          "route": "/auth/signup",
+          "pageName": "Staff Signup",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Public (tenant-gated signup)",
+          "sourceOfTruth": "TITAN auth API",
+          "status": "active",
+          "verdict": "HOLD",
+          "reason": "Signup may be disabled per tenant; not daily ops path",
+          "requiredAction": "Verify tenant signup policy on staging"
+        },
+        {
+          "route": "/auth/accept-invite",
+          "pageName": "Accept Staff Invite",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Public (invite token)",
+          "sourceOfTruth": "TITAN invite tokens",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "Team onboarding flow wired",
+          "requiredAction": "None"
+        },
+        {
+          "route": "/auth/recovery",
+          "pageName": "Password Recovery",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Public",
+          "sourceOfTruth": "TITAN auth API",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "Password reset flow",
+          "requiredAction": "None"
+        },
+        {
+          "route": "/auth/mfa",
+          "pageName": "MFA Challenge",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Authenticated (MFA pending)",
+          "sourceOfTruth": "TITAN MFA session",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "MFA gate at login (PLT-008 closed)",
+          "requiredAction": "None"
+        },
+        {
+          "route": "/auth/session-expired",
+          "pageName": "Session Expired",
+          "routeType": "auth",
+          "module": "Authentication",
+          "roleAccess": "Public (session UX)",
+          "sourceOfTruth": "Client session state",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "Honest session expiry UX",
+          "requiredAction": "None"
+        },
+        {
+          "route": "/my/login",
+          "pageName": "Portal Login",
+          "routeType": "auth",
+          "module": "Customer Portal",
+          "roleAccess": "Public (portal guest)",
+          "sourceOfTruth": "TITAN portal auth API",
+          "status": "active",
+          "verdict": "GO",
+          "reason": "Canonical portal guest login (POR-007); counted in auth bucket not portal nav",
+          "requiredAction": "None"
+        }
+      ],
+      "postInventoryDrift": [
+        {
+          "route": "/developer",
+          "pageName": "Developer Portal",
+          "routeType": "staff",
+          "module": "Enterprise / Orphan",
+          "roleAccess": "Owner (direct URL)",
+          "sourceOfTruth": "TITAN DB / mock or scaffold",
+          "status": "legacy",
+          "verdict": "NO-GO",
+          "reason": "Enterprise developer scaffold — not in Phase 0 inventory",
+          "requiredAction": "Hidden from sidebar; Platform Owner direct URL only"
+        },
+        {
+          "route": "/developers",
+          "pageName": "Developers",
+          "routeType": "staff",
+          "module": "Enterprise / Orphan",
+          "roleAccess": "Owner (direct URL)",
+          "sourceOfTruth": "TITAN DB / mock or scaffold",
+          "status": "legacy",
+          "verdict": "NO-GO",
+          "reason": "Duplicate enterprise developer entry — decorative",
+          "requiredAction": "Consolidate with /developer in future phase"
+        }
+      ],
+      "correctedTotals": {
+        "staffRoutes": 138,
+        "mobileRoutes": 9,
+        "portalRoutes": 9,
+        "authRoutes": 7,
+        "totalInventoried": 163,
+        "go": 62,
+        "hold": 46,
+        "noGo": 55,
+        "classifiedSum": 163,
+        "sidebarLinkedStaff": 22
+      },
+      "arithmeticCheck": "163 = 62 + 46 + 55"
+    }
+  },
+  "matrixFixes": [
+    "Added Auth routes section with 7 classified routes",
+    "Added /developer and /developers to staff matrix (135 staff routes)",
+    "Updated GO/HOLD/NO-GO summary to include auth + discovered staff",
+    "Role matrix: added /finance/receivables|payables|cashflow Phase 1 HOLD routes",
+    "Data matrix: noted Phase 1 finance hold pages — no fake Xero data"
+  ],
+  "finalPhase0Verdict": "PASS — arithmetic reconciles; Phase 1 may proceed"
+}

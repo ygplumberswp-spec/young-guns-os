@@ -121,7 +121,9 @@ Allowed hrefs per `ACCOUNTANT_ALLOWED_HREFS`:
 | `/finance/quotes` | ✓ | read | read | ✓ | ✗ | ✗ |
 | `/finance/invoices` | ✓ | read | read | ✓ | ✗ | `/my/finance` |
 | `/finance/payments` | ✓ | read | read | ✓ | ✗ | ✗ |
-| `/finance/receivables` *(Phase 3)* | ✓ | read | ✗ | ✓ | ✗ | ✗ |
+| `/finance/receivables` *(Phase 1 route, Phase 3 backend)* | ✓ | read | ✗ | ✓ | ✗ | ✗ |
+| `/finance/payables` *(Phase 1 route, Phase 3 backend)* | ✓ | read | ✗ | ✓ | ✗ | ✗ |
+| `/finance/cashflow` *(Phase 1 route, Phase 3 backend)* | ✓ | read | ✗ | ✓ | ✗ | ✗ |
 | `/fleet/live-map` | ✓ | read | read | ✗ | ✗ | ✗ |
 | `/mobile-platform/dispatcher` | ✓ | read | ✓ | ✗ | ✗ | ✗ |
 | `/inventory/*`, `/procurement` | ✓ | ✓ | read | read | materials | ✗ |
@@ -156,8 +158,8 @@ Allowed hrefs per `ACCOUNTANT_ALLOWED_HREFS`:
 
 | Phase | Role requirement | Gap |
 |-------|-----------------|-----|
-| 1 | Consistent nav per role; no Settings duplication | Office Staff split between Dispatcher/Accountant not unified as "Office Staff" UX |
-| 3 | Owner-only receivables/margins; Admin finance without Owner-only | Receivables route missing; margin panels may leak (FRZ-004) |
+| 1 | Consistent nav per role; no Settings duplication | **Phase 1 DONE** — grouped sidebar; Settings via header workspace; role-filtered nav tests pass |
+| 3 | Owner-only receivables/margins; Admin finance without Owner-only | Receivables routes live (HOLD empty); margin panels may leak (FRZ-004) |
 | 5 | Technician minimum payment visibility | Partial — job payment strip exists; deposit rules not complete |
 | 10 | Job payment ledger role visibility | Payment ledger model incomplete; technician sees minimum only |
 | 15 | Same app, correct experience after login | Experience routing exists; live E2E per role not proven |
@@ -191,4 +193,4 @@ Allowed hrefs per `ACCOUNTANT_ALLOWED_HREFS`:
 
 ---
 
-**Phase 0 complete — stopped before Phase 1 implementation per instructions.**
+**Phase 0 complete @ 235. Phase 1 global organisation complete @ 236 — stopped before Phase 2.**

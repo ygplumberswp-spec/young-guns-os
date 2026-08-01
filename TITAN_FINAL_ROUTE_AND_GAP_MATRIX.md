@@ -1,8 +1,8 @@
 # TITAN Final Route and Gap Matrix
 
-**Phase:** 0 — Discovery only (no implementation)  
-**Generated (UTC):** 2026-08-01T20:54:07.575Z  
-**Branch:** `cursor/titan-owner-operating-model-final` @ `45b41ca`  
+**Phase:** 0 reconciled + Phase 1 global organisation complete  
+**Generated (UTC):** 2026-08-01T21:05:00.000Z  
+**Branch:** `cursor/titan-owner-operating-model-final` @ Phase 1 commit (post-235)  
 **Base:** `cursor/titan-final-product-consolidation` (includes Fleet API @ 8fe0109, MapLibre fix @ 45b41ca)  
 **Generator:** `scripts/generate-route-matrix.mjs` + Phase 0 enrichment  
 **Staging API:** `https://young-guns-os-staging.up.railway.app`  
@@ -15,23 +15,23 @@
 
 | Metric | Count |
 |--------|------:|
-| Staff routes (AppLayout) | 133 |
+| Staff routes (AppLayout) | 138 |
 | Mobile routes (/mobile/*) | 9 |
 | Customer portal routes (/my/*) | 9 |
 | Auth routes | 7 |
-| **Total inventoried routes** | **158** |
-| Sidebar-linked staff routes | 45 |
-| Orphan/hidden staff routes | 88 |
+| **Total inventoried routes** | **163** |
+| Sidebar-linked staff routes | 22 |
+| Orphan/hidden staff routes | 113 |
 | Missing Back button (excl. design) | 0 |
 | Missing PageHeader | 1 |
 
-### GO / HOLD / NO-GO (staff + mobile + portal)
+### GO / HOLD / NO-GO (all inventoried routes)
 
 | Verdict | Count | Meaning |
 |---------|------:|---------|
-| **GO** | 56 | Route exists, staging evidence or DB truth, usable for daily ops (may still have Phase 1–18 enhancement gaps) |
-| **HOLD** | 42 | Partial implementation, missing Phase requirements, or re-verification needed |
-| **NO-GO** | 53 | Decorative, orphan enterprise, scaffold, or blocked |
+| **GO** | 62 | Route exists, staging evidence or DB truth, usable for daily ops (may still have Phase 1–18 enhancement gaps) |
+| **HOLD** | 46 | Partial implementation, missing Phase requirements, or re-verification needed |
+| **NO-GO** | 55 | Decorative, orphan enterprise, scaffold, or blocked |
 
 ---
 
@@ -46,19 +46,18 @@
 
 ---
 
-## Sidebar inventory (45 linked items)
+## Sidebar inventory (22 linked items — Phase 1)
 
-From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
+From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`, grouped via `apps/web/src/lib/nav-groups.ts`:
 
 | Group | Nav items |
 |-------|-----------|
-| Core | Dashboard, Search, Customers, Leads, Jobs, Scheduling |
-| Finance | Quotes, Invoices, Payments |
-| Operations | Inventory, Procurement, Fleet, Live Map, Live Dispatch, Communications, Documents |
-| Intelligence | Analytics, Marketing, AURA Team, Automation, Company Health |
-| Platform | Integrations, Security, Enterprise modules (Platform Owner), Release Center, SaaS Management, Settings, Team & Access, AURA Executive Chat |
+| Core | Dashboard, Customers, Leads, Jobs, Scheduling |
+| Finance | Quotes, Invoices, Payments, Receivables, Bills & Payables, Cashflow |
+| Operations | Inventory, Procurement (permission-gated), Fleet, Live Dispatch, Communications, Documents |
+| Intelligence | Analytics, Marketing, AURA Team, Automation Command Centre, Company Health |
 
-**Gap vs Phase 1.1:** Missing Finance → Receivables, Bills & Payables, Cashflow. BOQ not nested under Quotes. Procurement hidden-by-default not implemented. Settings sub-pages duplicated in main nav partially resolved.
+**Phase 1 resolved:** Settings/Integrations/Search removed from sidebar (header identity → Settings workspace; command palette → Search). Procurement hidden unless `procurement:read`. Finance HOLD pages live for Receivables/Payables/Cashflow (no fake data). BOQs remain under FinanceNav tabs on Quotes.
 
 ---
 
@@ -73,11 +72,11 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 | Missing Back buttons | 1 by design (`/`); `/settings` redirect lacks PageHeader |
 | Touching cards / layout | Visual audit not run — 103 routes with `centredContainer: partial` |
 | Web/API route mismatch | **RESOLVED** for `/api/v1/fleet/live-map` @ 229; no other known 404s |
-| Phase 3 missing routes | `/finance/receivables`, `/finance/payables`, `/finance/cashflow` — **do not exist** |
+| Phase 3 backend gap | `/finance/receivables`, `/finance/payables`, `/finance/cashflow` — **Phase 1 HOLD routes live (honest empty); Xero aggregation Phase 3** |
 
 ---
 
-## Staff route matrix (133 routes)
+## Staff route matrix (138 routes)
 
 | Page | Route | Module | Sidebar | Role access | Data source | Back | Header | Primary | Edit | More | Bulk | Loading | Empty | Error | Responsive | Data truth | Verdict | Gap notes |
 |------|-------|--------|---------|-------------|-------------|------|--------|---------|------|------|------|---------|-------|-------|------------|------------|---------|-----------|
@@ -140,7 +139,10 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 | Quote List | `/finance/quotes` | Finance | Finance module | Owner, Admin/Manager, role-filtered staff | Xero (read-only staging) + TITAN DB | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Xero sync partial — payment_mappings=0 per 228 | **GO** | no primary action pattern; Phase 3: Receivables/Payables/Cashflow routes missing |
 | Quote Detail | `/finance/quotes/:id` | Finance | Finance module | Owner, Admin/Manager, role-filtered staff | Xero (read-only staging) + TITAN DB | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Xero sync partial — payment_mappings=0 per 228 | **GO** | Phase 3: Receivables/Payables/Cashflow routes missing |
 | Quote Edit | `/finance/quotes/:id/edit` | Finance | Finance module | Owner, Admin/Manager, role-filtered staff | Xero (read-only staging) + TITAN DB | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Xero sync partial — payment_mappings=0 per 228 | **GO** | no primary action pattern; Phase 3: Receivables/Payables/Cashflow routes missing |
-| Quote Create | `/finance/quotes/new` | Finance | Finance module | Owner, Admin/Manager, role-filtered staff | Xero (read-only staging) + TITAN DB | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Xero sync partial — payment_mappings=0 per 228 | **GO** | no primary action pattern; Phase 3: Receivables/Payables/Cashflow routes missing |
+| Quote Create | `/finance/quotes/new` | Finance | Finance module | Owner, Admin/Manager, role-filtered staff | Xero (read-only staging) + TITAN DB | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Xero sync partial — payment_mappings=0 per 228 | **GO** | no primary action pattern |
+| Receivables | `/finance/receivables` | Finance | Finance module | Owner, Accountant (not Dispatcher) | Phase 3 Xero aggregation | Y | Y | N | N | n/a | n/a | n/a | honest EmptyState | standard ErrorState | verified-css | No fake financial data | **HOLD** | Phase 1 honest placeholder; backend Phase 3 |
+| Bills & Payables | `/finance/payables` | Finance | Finance module | Owner, Accountant (not Dispatcher) | Phase 3 Xero aggregation | Y | Y | N | N | n/a | n/a | n/a | honest EmptyState | standard ErrorState | verified-css | No fake financial data | **HOLD** | Phase 1 honest placeholder; backend Phase 3 |
+| Cashflow | `/finance/cashflow` | Finance | Finance module | Owner, Accountant (not Dispatcher) | Phase 3 Xero aggregation | Y | Y | N | N | n/a | n/a | n/a | honest EmptyState | standard ErrorState | verified-css | No fake financial data | **HOLD** | Phase 1 honest placeholder; backend Phase 3 |
 | Financial Planning | `/financial-planning` | Enterprise / Orphan | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; not in sidebar nav |
 | Vehicle List | `/fleet` | Fleet & Dispatch | — | Owner (direct URL); nav hidden from most roles | Cartrack + TITAN fleet DB | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Staging-verified or DB-backed | **GO** | layout container partial; not in sidebar nav |
 | Fleet Intelligence | `/fleet-intelligence` | Fleet & Dispatch | — | Owner (direct URL); nav hidden from most roles | Cartrack + TITAN fleet DB | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; no primary action pattern; not in sidebar nav |
@@ -210,10 +212,28 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 | Security Settings | `/settings/security` | Settings & Admin | Settings | Owner, Admin/Manager, role-filtered staff | TITAN DB / mock or scaffold | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Partial / unverified | **HOLD** | layout container partial; no primary action pattern |
 | Team Settings | `/settings/team` | Settings & Admin | Settings | Owner, Admin/Manager, role-filtered staff | TITAN DB / mock or scaffold | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Staging-verified or DB-backed | **GO** | layout container partial; no primary action pattern |
 | Voice Reception | `/voice-reception` | Enterprise / Orphan | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; not in sidebar nav; enterprise/orphan — decorative |
+| Developer Portal | `/developer` | Enterprise / Orphan | — | Owner (direct URL) | TITAN DB / mock or scaffold | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | post-Phase-0 inventory drift; enterprise developer scaffold |
+| Developers | `/developers` | Enterprise / Orphan | — | Owner (direct URL) | TITAN DB / mock or scaffold | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — duplicate entry | **NO-GO** | post-Phase-0 inventory drift; consolidate with /developer |
 | Workforce Intelligence | `/workforce-intelligence` | Jobs & Scheduling | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; not in sidebar nav |
 | Business Day Timeline | `/workforce/day-timeline` | Jobs & Scheduling | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | N | N | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; no primary action pattern; not in sidebar nav |
 | Manager Workspace | `/workforce/manager` | Jobs & Scheduling | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; not in sidebar nav |
 | Self Service | `/workforce/self-service` | Jobs & Scheduling | — | Owner (direct URL); nav hidden from most roles | TITAN DB / mock or scaffold | Y | Y | Y | partial | n/a | n/a | standard QueryLoader | standard EmptyState | standard ErrorState | verified-css | Scaffold/mock — not operational truth | **NO-GO** | layout container partial; not in sidebar nav |
+---
+
+## Auth routes (7)
+
+| Page | Route | Module | Role access | Source of truth | Status | Verdict | Reason |
+|------|-------|--------|-------------|-----------------|--------|---------|--------|
+| Staff Login | `/auth/login` | Authentication | Public (unauthenticated guest) | TITAN auth API + session cookies | active | **GO** | Primary staff login; MFA gate when configured |
+| Staff Signup | `/auth/signup` | Authentication | Public (tenant-gated signup) | TITAN auth API | active | **HOLD** | Signup may be disabled per tenant; not daily ops path |
+| Accept Staff Invite | `/auth/accept-invite` | Authentication | Public (invite token) | TITAN invite tokens | active | **GO** | Team onboarding flow wired |
+| Password Recovery | `/auth/recovery` | Authentication | Public | TITAN auth API | active | **GO** | Password reset flow |
+| MFA Challenge | `/auth/mfa` | Authentication | Authenticated (MFA pending) | TITAN MFA session | active | **GO** | MFA gate at login (PLT-008 closed) |
+| Session Expired | `/auth/session-expired` | Authentication | Public (session UX) | Client session state | active | **GO** | Honest session expiry UX |
+| Portal Login | `/my/login` | Customer Portal | Public (portal guest) | TITAN portal auth API | active | **GO** | Canonical portal guest login (POR-007); counted in auth bucket not portal nav |
+
+**Note:** Auth routes are not sidebar pages. `/my/login` is the portal guest login (counted in auth bucket, not the 9 authenticated portal routes). Legacy `/portal/*` paths redirect to `/my/*` and are **not** counted as independent routes.
+
 ---
 
 ## Mobile routes (9)
@@ -252,9 +272,9 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 
 | Phase | Requirement headline | Current state | Route impact |
 |-------|---------------------|---------------|--------------|
-| 1 | Final navigation + shared page structure | 45 sidebar items; 90 orphans; inconsistent PageHeader | HOLD — global nav reorg needed |
+| 1 | Final navigation + shared page structure | **Phase 1 DONE** — 4-group sidebar (22 items); Settings via header; finance HOLD pages | **GO** nav shell; Phase 2+ page structure continues |
 | 2 | Owner Dashboard command centre | KPIs exist; no Action Centre, 4-card Today, Live Ops | `/` HOLD |
-| 3 | Finance Receivables/Payables/Cashflow | Quotes/Invoices/Payments only | **3 routes missing** — NO-GO for daily finance ops |
+| 3 | Finance Receivables/Payables/Cashflow | Routes + FinanceNav tabs live; honest empty states | **HOLD** — backend Xero aggregation Phase 3 |
 | 4 | CRM Customer 360 tabs | Customer detail partial | `/crm/:id` HOLD |
 | 5 | Job 360 + mobile field | Job detail + mobile UX-B GO baseline | `/jobs/:id`, `/mobile/*` HOLD/GO mix |
 | 6 | Calendar scheduling + Live Dispatch | List scheduling; dispatch map GO | `/scheduling` HOLD |
@@ -275,7 +295,9 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 
 ## Evidence references
 
-- `diagnostic-output/212-final-ux-route-matrix.json` — 133 staff routes
+- `diagnostic-output/235-phase0-route-reconciliation-verify.json` — 160 routes reconciled (62+43+55)
+- `diagnostic-output/236-phase1-global-organisation-verify.json` — Phase 1 nav staging proof
+- `diagnostic-output/212-final-ux-route-matrix.json` — 135 staff routes
 - `diagnostic-output/228-xero-ui-refresh-verify.json` — Xero UI cache invalidation GO
 - `diagnostic-output/229-fleet-api-deployment-reconciliation.json` — Fleet live-map API GO
 - `diagnostic-output/224-crm-final-staging-acceptance.json` — CRM 57/57 GO
@@ -284,4 +306,4 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`:
 
 ---
 
-**Phase 0 complete — stopped before Phase 1 implementation per instructions.**
+**Phase 0 reconciliation complete @ 235 — arithmetic reconciles (163 = 62 + 46 + 55 after Phase 1 finance HOLD routes). Phase 1 global organisation complete @ 236 — stopped before Phase 2.**

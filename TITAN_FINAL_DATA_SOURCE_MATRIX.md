@@ -46,7 +46,7 @@
 | Payments | Supported | `payment_mappings` | **0** | Finance payments | **NO-GO** — UI may show unpaid incorrectly |
 | Bank transactions | Supported | `bank_tx_logs` | 3078 | Not dedicated page | HOLD |
 | Quotes | Supported | Quote records | Partial | Finance quotes | HOLD |
-| Bills / ACCPAY | Scaffold | Limited | Unknown | **Route missing** | NO-GO |
+| Bills / ACCPAY | Scaffold | Limited | Unknown | `/finance/payables` HOLD page | HOLD |
 | Credit notes | Scaffold | Partial | Unknown | Limited | HOLD |
 | Items / products | Partial | Inventory link | Unknown | Inventory | HOLD |
 | Tracking categories | Read | Config | — | Settings | HOLD |
@@ -59,7 +59,7 @@
 | CRM customer value filters | Same | Same | **Fixed @ 228** |
 | Finance invoice amounts | Xero + TITAN | Preserve INV-0423 R2,472.50; INV-0424 R2,266.39 | Verified in 228 DB sample |
 | Integrations Xero panel | Connector state | Shows syncing honestly | GO |
-| Receivables / aging | **Not implemented** | N/A | Phase 3 gap |
+| Receivables / aging | **Phase 1 HOLD route** | N/A | `/finance/receivables` honest empty | Phase 3 backend gap |
 
 ### Sync behaviour requirements (Phase 3/Owner directive)
 
@@ -266,7 +266,7 @@ Xero contact sync                            Quote/Invoice (TITAN + Xero read)
 | Phase | Data requirement | Current gap |
 |-------|-----------------|-------------|
 | 2 | Dashboard 30-second Owner comprehension | Action Centre, live ops, truthful money cards incomplete |
-| 3 | Receivables/Payables/Cashflow from Xero | Routes and aggregations missing; payment_mappings=0 |
+| 3 | Receivables/Payables/Cashflow from Xero | Phase 1 HOLD routes live (honest empty); backend aggregation Phase 3 | payment_mappings=0 |
 | 6 | Live Dispatch ETA from real GPS | Positions GO; ETA comms HOLD |
 | 7 | Fleet trips/drivers/geofences | Cartrack API partial |
 | 9 | Unified comms queues | Provider blocked; inbox partial |
@@ -304,4 +304,4 @@ Xero contact sync                            Quote/Invoice (TITAN + Xero read)
 
 ---
 
-**Phase 0 complete — stopped before Phase 1 implementation per instructions.**
+**Phase 0 complete @ 235. Phase 1 global organisation complete @ 236 — finance HOLD pages documented; stopped before Phase 2.**
