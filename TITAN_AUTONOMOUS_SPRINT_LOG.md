@@ -122,7 +122,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 5 — Customer, property, lead and job contract (local slice) |
 | **Result** | Partial — CRM properties first-class in UI |
-| **Checkpoint** | (pending commit) |
+| **Checkpoint** | `c8045f5` |
 | **Files changed** | `CustomerPropertiesPanel.tsx`, `CustomerDetailPage.tsx`, `JobCreatePage.tsx` query prefill, CRM property styles |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (225 pass), `pnpm build` — pass |
