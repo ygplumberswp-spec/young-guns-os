@@ -4,6 +4,7 @@
  * Usage:
  *   node packages/db/scripts/staging-crm-final-acceptance.mjs
  */
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -514,7 +515,7 @@ async function main() {
     schemaVersion: 'crm-final-staging-acceptance-v1',
     label: LABEL,
     branch: 'cursor/titan-final-product-consolidation',
-    commitSha: '04f3999',
+    commitSha: process.env.ACCEPTANCE_COMMIT_SHA || execSync('git rev-parse --short HEAD', { cwd: repoRoot }).toString().trim(),
     startedAt: new Date().toISOString(),
     apiOrigin: API_ORIGIN,
     webOrigin: WEB_ORIGIN,
@@ -522,9 +523,9 @@ async function main() {
     viewportsTested: VIEWPORTS.map((v) => v.id),
     actionsClicked: [],
     screenshots: [],
-    codeChanges: false,
-    redeployed: false,
-    deployId: null,
+    codeChanges: process.env.ACCEPTANCE_CODE_CHANGES === 'true',
+    redeployed: process.env.ACCEPTANCE_REDEPLOYED === 'true',
+    deployId: process.env.ACCEPTANCE_DEPLOY_ID || null,
     results: [],
   };
 
