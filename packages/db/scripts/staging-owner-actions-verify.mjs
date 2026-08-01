@@ -14,7 +14,7 @@ import { chromium } from '@playwright/test';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../../..');
-const outPath = path.resolve(repoRoot, 'diagnostic-output/214-owner-actions-staging-verify.json');
+const outPath = path.resolve(repoRoot, 'diagnostic-output/222-owner-actions-staging-verify.json');
 const screenshotDir = path.resolve(repoRoot, 'diagnostic-output/owner-actions-screenshots');
 const FORBIDDEN = 'rshuiaghmtrvvilhqpwm';
 const LABEL = 'STAGING-OWNER-ACTIONS';
@@ -184,7 +184,7 @@ async function main() {
     token,
     body: {
       contactName: `${LABEL} Lead ${suffix}`,
-      contactPhone: `082555${suffix.slice(0, 4)}`,
+      contactPhone: '0825551234',
       suburb: 'Observatory',
       street: `14 Lead Lane ${suffix}`,
       city: 'Cape Town',
@@ -226,9 +226,6 @@ async function main() {
     if (decline.status === 200) pass(report.results, 'lead_decline', 'lost');
     else fail(report.results, 'lead_decline', JSON.stringify(decline.json?.error));
 
-    const delLead = await api(`/api/v1/leads/${leadId}`, { method: 'DELETE', token });
-    if (delLead.status === 200 || delLead.status === 204) pass(report.results, 'lead_delete_eligible', 'deleted');
-    else fail(report.results, 'lead_delete_eligible', JSON.stringify(delLead.json?.error));
   }
 
   const jobRes = await api('/api/v1/jobs', {
@@ -305,6 +302,12 @@ async function main() {
       else fail(report.results, 'job_detail_edit_opens', 'Edit form not visible');
     }
     await browser.close();
+  if (leadId) {
+    const delLead = await api(`/api/v1/leads/${leadId}`, { method: 'DELETE', token });
+    if (delLead.status === 200 || delLead.status === 204) pass(report.results, 'lead_delete_eligible', 'deleted');
+    else fail(report.results, 'lead_delete_eligible', JSON.stringify(delLead.json?.error));
+  }
+
   } catch (err) {
     fail(report.results, 'playwright_ui_checks', err instanceof Error ? err.message : String(err));
   }

@@ -1,0 +1,121 @@
+{
+  "schemaVersion": "owner-actions-staging-verify-v1",
+  "label": "STAGING-OWNER-ACTIONS",
+  "startedAt": "2026-08-01T19:03:31.067Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "owner.actions.e4ae8f91@staging-owner-actions.test"
+    },
+    {
+      "name": "customer_create",
+      "status": "PASS",
+      "detail": "b16182b0-cea3-4400-bf3e-91d0776fc74e"
+    },
+    {
+      "name": "customer_edit_save",
+      "status": "PASS",
+      "detail": "STAGING-OWNER-ACTIONS Customer e4ae8f91 Updated"
+    },
+    {
+      "name": "lead_create",
+      "status": "PASS",
+      "detail": "69b3d802-8453-4559-aa91-1e715f0aa3d2"
+    },
+    {
+      "name": "lead_accept_qualify",
+      "status": "PASS",
+      "detail": "qualified"
+    },
+    {
+      "name": "lead_pending",
+      "status": "PASS",
+      "detail": "awaiting_information"
+    },
+    {
+      "name": "lead_decline",
+      "status": "PASS",
+      "detail": "lost"
+    },
+    {
+      "name": "job_create",
+      "status": "PASS",
+      "detail": "f8543c54-9256-4307-94a0-84eb7e5608db"
+    },
+    {
+      "name": "job_edit_save",
+      "status": "PASS",
+      "detail": "scheduled"
+    },
+    {
+      "name": "job_archive_cancel",
+      "status": "PASS",
+      "detail": "cancelled"
+    },
+    {
+      "name": "customer_unsafe_delete_blocked",
+      "status": "PASS",
+      "detail": "400"
+    },
+    {
+      "name": "customers_list_actions_column_visible",
+      "status": "PASS",
+      "detail": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/owner-actions-screenshots/customers_list-actions.png"
+    },
+    {
+      "name": "customers_list_back_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "customer_detail_edit_opens",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "leads_list_actions_column_visible",
+      "status": "PASS",
+      "detail": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/owner-actions-screenshots/leads_list-actions.png"
+    },
+    {
+      "name": "leads_list_back_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "jobs_list_actions_column_visible",
+      "status": "PASS",
+      "detail": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/owner-actions-screenshots/jobs_list-actions.png"
+    },
+    {
+      "name": "jobs_list_back_button_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "job_detail_edit_opens",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "lead_delete_eligible",
+      "status": "PASS",
+      "detail": "deleted"
+    }
+  ],
+  "screenshotsDir": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/owner-actions-screenshots",
+  "totals": {
+    "passed": 21,
+    "failed": 0
+  },
+  "verdict": "GO",
+  "finishedAt": "2026-08-01T19:04:45.105Z"
+}

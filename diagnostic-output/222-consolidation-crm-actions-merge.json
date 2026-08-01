@@ -1,119 +1,66 @@
 {
-  "schemaVersion": "consolidation-crm-actions-merge-v1",
-  "label": "222-consolidation-crm-actions-merge",
-  "generatedAt": "2026-08-01T19:01:15.332870Z",
-  "worktrees": {
-    "integrationLock": "/Users/keanuventer/Downloads/Titan Aura V1",
-    "consolidation": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation"
+  "label": "CONSOLIDATION-222-crm-actions-merge",
+  "generatedAt": "2026-08-01T19:05:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "parentSessions": ["0388addc", "aa7e6088", "6625a45a"],
+  "branch": "cursor/titan-final-product-consolidation",
+  "consolidationBaseSha": "dfb7189a90aa735610e5b1bcb985ad5b08545d95",
+  "integrationLockSourceSha": "aae33275a1c783d9579828d232081994299718ab",
+  "mergeStrategy": "Prior subagent cherry-picks on consolidation (174507b, e37643b, 6a349ad); no additional git merge required at worker start",
+  "crmCommitsIntegrated": [
+    { "sha": "5f585d3", "summary": "fix(crm): return JSON on delete and cascade customer activities" },
+    { "sha": "e37643b", "summary": "fix(crm): fallback customer list when value metrics unavailable (integration-lock 1112cc5 equivalent)" },
+    { "sha": "174507b", "summary": "fix(crm): always render customer list from CRM API first (integration-lock aae3327 equivalent)" },
+    { "sha": "5723957", "summary": "docs(ux): owner actions staging verification GO 22/22" },
+    { "sha": "6a349ad", "summary": "fix(consolidation): CRM-first customer list with typed value fallback" },
+    { "sha": "65965f2", "summary": "docs: 221-consolidation-staging-deploy.json" }
+  ],
+  "preservedConsolidationAreas": [
+    "CAL-001 scheduling calendar (ef9ca26, f067c2e)",
+    "Cartrack integration lock UI",
+    "Dashboard card spacing (f85155f)",
+    "Xero CV-001b fixes (753c84e, e8b814b)"
+  ],
+  "localVerification": {
+    "typecheck": "PASS",
+    "sharedTests": "PASS (130)",
+    "apiTests": "PASS (369)",
+    "webTests": "PASS (136)",
+    "webBuild": "PASS"
   },
-  "branches": {
-    "integrationLock": "cursor/integration-lock-auto-sync",
-    "consolidation": "cursor/titan-final-product-consolidation"
+  "stagingDeploy": {
+    "webService": "comfortable-determination",
+    "webDeploymentId": "4ac4d99b-ec6e-4793-b946-bbad60a72b35",
+    "webStatus": "SUCCESS",
+    "webBundleHash": "index-BJauY9le.js",
+    "priorWebDeploymentId": "7389d330-e605-49e5-a940-7ceeaa71ee78",
+    "apiRedeployed": false,
+    "apiDeploymentId": "3653e7bd-9989-4c1f-903c-7c6b02c4a35c",
+    "apiNotes": "No API file changes since dfb7189 deploy; CRM delete JSON already on staging API"
   },
-  "compare": {
-    "integrationLockTipAtStart": "bb65fb82d5a65135aa8b64732a1aadb18a37995f",
-    "integrationLockCrmRangeEnd": "aae33275a1c783d9579828d232081994299718ab",
-    "consolidationTipAtStart": "dfb7189a90aa735610e5b1bcb985ad5b08545d95",
-    "mergeBaseWithConsolidation": "5f585d3aefa2f59a80c9dc256023df894a025e9c",
-    "alreadyInConsolidation": [
-      "fb2e88e feat(crm): always-visible row actions on customers, leads and jobs",
-      "5f585d3 fix(crm): return JSON on delete and cascade customer activities"
-    ],
-    "missingFromConsolidationBeforeMerge": [
-      "1112cc5 fix(crm): fallback customer list when value metrics unavailable",
-      "aae3327 fix(crm): always render customer list from CRM API first",
-      "bb65fb8 docs(ux): record owner actions staging verification GO 22/22"
-    ]
+  "stagingUrls": {
+    "web": "https://comfortable-determination-staging.up.railway.app",
+    "api": "https://young-guns-os-staging.up.railway.app"
   },
-  "cherryPick": {
-    "status": "applied",
-    "sourceCommits": [
-      {
-        "source": "1112cc5",
-        "result": "e37643b"
-      },
-      {
-        "source": "aae3327",
-        "result": "174507b"
-      },
-      {
-        "source": "bb65fb8",
-        "result": "5723957"
-      }
-    ],
-    "followUpFixCommit": {
-      "sha": "6a349ad20383c86b758b84e1572d27978a636f06",
-      "message": "fix(consolidation): CRM-first customer list with typed value fallback",
-      "reason": "Merge aae3327 CRM-first fetch with consolidation classifyCustomerValueFromEvidence fallback for typecheck"
-    },
-    "newConsolidationTip": "6a349ad20383c86b758b84e1572d27978a636f06"
-  },
-  "validation": {
-    "typecheck": "pass",
-    "webTests": {
-      "count": 136,
-      "pass": 136
-    }
-  },
-  "deployCoordination": {
-    "parallelAgent": "8b7fd442",
-    "parallelAgentTarget": "dfb7189 (initial consolidation deploy, not completed at task start)",
-    "actionTaken": "Pushed 6a349ad and redeployed staging web+API from consolidation worktree (supersedes dfb7189-only deploy)",
-    "environment": "staging",
-    "productionTouched": false,
-    "services": [
-      {
-        "name": "young-guns-os",
-        "role": "api",
-        "url": "https://young-guns-os-staging.up.railway.app",
-        "deploymentAttempts": [
-          {
-            "id": "b1f0b5da-a8f7-48ca-9f01-4c55f9efc912",
-            "status": "SKIPPED"
-          },
-          {
-            "id": "01b48519-924e-4e22-a979-a9484cb335b2",
-            "status": "SUCCESS",
-            "method": "railway redeploy after up"
-          }
-        ],
-        "activeDeploymentId": "01b48519-924e-4e22-a979-a9484cb335b2"
-      },
-      {
-        "name": "comfortable-determination",
-        "role": "web",
-        "url": "https://comfortable-determination-staging.up.railway.app",
-        "deploymentAttempts": [
-          {
-            "id": "d61436c4-013d-4457-a4b6-1f29bb0ac01f",
-            "status": "SUCCESS"
-          }
-        ],
-        "activeDeploymentId": "d61436c4-013d-4457-a4b6-1f29bb0ac01f"
-      }
-    ],
-    "healthChecks": {
-      "api_ready": {
-        "url": "/api/v1/health/ready",
-        "status": 200,
-        "database": "connected"
-      },
-      "web_root": {
-        "status": 200
-      },
-      "web_dashboard": {
-        "status": 200
-      },
-      "web_scheduling": {
-        "status": 200
-      }
-    }
-  },
-  "crmActionsStaging": {
+  "ownerActionsVerify": {
+    "script": "packages/db/scripts/staging-owner-actions-verify.mjs",
+    "report": "diagnostic-output/222-owner-actions-staging-verify.json",
     "verdict": "GO",
-    "score": "22/22",
-    "script": "packages/db/scripts/staging-owner-actions-verify.mjs (integration-lock worktree)",
-    "evidence": "/Users/keanuventer/Downloads/Titan Aura V1/diagnostic-output/214-owner-actions-staging-verify.json",
-    "note": "Post-deploy verification against consolidation tip deploy; customers/leads/jobs list actions confirmed"
-  }
+    "passed": 21,
+    "failed": 0
+  },
+  "areaResults": {
+    "customers_crm": "GO",
+    "leads": "GO",
+    "jobs": "GO",
+    "rowActionsVisible": "GO",
+    "bulkActions": "CODE+UNIT (BulkActionBar tests); staging click-path not automated in verify script",
+    "confirmationDialogs": "PARTIAL (unsafe delete blocked API PASS)",
+    "rbacAudit": "PARTIAL (customer delete blocked PASS; full audit stream not re-run)",
+    "mobileActions": "NOT RUN (desktop Playwright 1280px only)",
+    "tenantIsolation": "PASS via shared unit tests; staging script uses isolated signup tenant"
+  },
+  "readyForOwnerReview": true,
+  "doNotMergeMain": true
 }
