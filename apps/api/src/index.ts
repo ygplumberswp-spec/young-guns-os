@@ -39,6 +39,7 @@ import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
+import { JobCostingService } from './services/job-costing.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
@@ -516,6 +517,7 @@ const leadConversionService = new LeadConversionService(db, notificationService,
 );
 const mobileSyncService = new MobileSyncService(db);
 const jobExecutionService = new JobExecutionService(db, stockMovementsService);
+const jobCostingService = new JobCostingService(db);
 const technicianWorkflowService = new TechnicianWorkflowService(
   db,
   jobsService,
@@ -1318,6 +1320,7 @@ app.use(
   createJobsRouter({
     jobsService,
     jobExecutionService,
+    jobCostingService,
     mobileWorkforceService,
     teamService,
     db,
@@ -1359,6 +1362,7 @@ app.use(
   '/api/v1/inventory',
   createInventoryRouter({
     inventoryService,
+    stockMovementsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

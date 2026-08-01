@@ -2,6 +2,7 @@ import type {
   AssignJobCrewRequest,
   AuthorizeJobMaterialLineRequest,
   CreateJobRequest,
+  JobCostingSummary,
   JobCrewMemberSummary,
   JobDetail,
   JobExecutionSummary,
@@ -136,6 +137,16 @@ export async function returnJobMaterialLine(
     { accessToken, method: 'POST', body },
   );
   return data.materialLine;
+}
+
+export async function fetchJobCostingSummary(
+  accessToken: string,
+  jobId: string,
+): Promise<JobCostingSummary> {
+  const data = await request<{ summary: JobCostingSummary }>(`/jobs/${jobId}/costing`, {
+    accessToken,
+  });
+  return data.summary;
 }
 
 export function newJobsClientActionId(prefix: string): string {

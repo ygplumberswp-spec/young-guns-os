@@ -5,6 +5,7 @@ import type {
   JobDetail,
   JobExecutionSummary,
   JobFinanceSummary,
+  JobCostingSummary,
   JobMaterialLineSummary,
   JobPriority,
   JobStatus,
@@ -15,6 +16,7 @@ import { ApiClientError } from '../../lib/api-client';
 import {
   authorizeJobMaterialLine,
   fetchJob,
+  fetchJobCostingSummary,
   fetchJobExecution,
   fetchJobMaterialLines,
   newJobsClientActionId,
@@ -27,7 +29,8 @@ import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
 import { JobFinanceStrip } from '../../features/finance/JobFinanceStrip';
-import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { canAccessFinance, canManageFinance, canViewFinanceProfit, canViewJobCosting } from '../../features/finance/utils';
+import { JobCostingPanel } from '../../features/jobs/JobCostingPanel';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobCrewAssignmentPanel } from '../../features/jobs/JobCrewAssignmentPanel';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
@@ -40,6 +43,7 @@ export function JobDetailPage() {
   const [job, setJob] = useState<JobDetail | null>(null);
   const [execution, setExecution] = useState<JobExecutionSummary | null>(null);
   const [financeSummary, setFinanceSummary] = useState<JobFinanceSummary | null>(null);
+  const [jobCosting, setJobCosting] = useState<JobCostingSummary | null>(null);
   const [materialLines, setMaterialLines] = useState<JobMaterialLineSummary[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderSummary[]>([]);
   const [materialBusyId, setMaterialBusyId] = useState<string | null>(null);
@@ -78,6 +82,14 @@ export function JobDetailPage() {
   );
   const canViewProcurement = useMemo(
     () => (user ? canAccessProcurement(user.permissions) : false),
+    [user],
+  );
+  const canViewCosting = useMemo(
+    () => (user ? canViewJobCosting(user.permissions) : false),
+    [user],
+  );
+  const canViewProfit = useMemo(
+    () => (user ? canViewFinanceProfit(user.permissions, user.roleName) : false),
     [user],
   );
 
@@ -208,6 +220,29 @@ export function JobDetailPage() {
       cancelled = true;
     };
   }, [accessToken, jobId, canViewFinance]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCosting() {
+      if (!accessToken || !jobId || !canViewCosting) {
+        setJobCosting(null);
+        return;
+      }
+
+      try {
+        const summary = await fetchJobCostingSummary(accessToken, jobId);
+        if (!cancelled) setJobCosting(summary);
+      } catch {
+        if (!cancelled) setJobCosting(null);
+      }
+    }
+
+    void loadCosting();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, jobId, canViewCosting]);
 
   useEffect(() => {
     let cancelled = false;
@@ -384,6 +419,10 @@ export function JobDetailPage() {
             financeSummary={financeSummary}
             canManageFinance={canWriteFinance}
           />
+        ) : null}
+
+        {canViewCosting ? (
+          <JobCostingPanel jobId={job.id} costing={jobCosting} showProfit={canViewProfit} />
         ) : null}
 
         <Panel title="Job details">

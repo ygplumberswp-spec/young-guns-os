@@ -116,6 +116,10 @@ export const StockOverviewPage = lazyNamed(
   () => import('../pages/inventory/StockOverviewPage'),
   'StockOverviewPage',
 );
+export const StockMovementsPage = lazyNamed(
+  () => import('../pages/inventory/StockMovementsPage'),
+  'StockMovementsPage',
+);
 export const SupplierListPage = lazyNamed(
   () => import('../pages/procurement/SupplierListPage'),
   'SupplierListPage',

@@ -5,6 +5,7 @@ import { JobsError } from '../services/jobs.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
+import type { JobCostingService } from '../services/job-costing.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { DatabaseClient } from '@titan/db';
@@ -133,17 +134,25 @@ const returnMaterialLineSchema = z.object({
   clientActionId: z.string().trim().min(1).max(200),
 });
 
-function hasCostVisibility(auth: { permissions: string[] }): boolean {
+function hasCostVisibility(auth: { permissions: string[]; roleName?: string | null }): boolean {
   return (
     auth.permissions.includes('*') ||
     auth.permissions.includes('inventory:write') ||
-    auth.permissions.includes('finance:write')
+    auth.permissions.includes('finance:write') ||
+    auth.permissions.includes('finance:read') ||
+    auth.permissions.includes('procurement:read')
   );
+}
+
+function canViewJobProfit(auth: { permissions: string[]; roleName?: string | null }): boolean {
+  if (auth.permissions.includes('*') || auth.permissions.includes('finance:write')) return true;
+  return ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? '');
 }
 
 type JobsRouterDeps = {
   jobsService: JobsService;
   jobExecutionService: JobExecutionService;
+  jobCostingService: JobCostingService;
   mobileWorkforceService: MobileWorkforceService;
   teamService: TeamService;
   db: DatabaseClient;
@@ -162,6 +171,7 @@ function getRouteParam(value: string | string[]): string {
 export function createJobsRouter({
   jobsService,
   jobExecutionService,
+  jobCostingService,
   mobileWorkforceService,
   teamService,
   db,
@@ -499,6 +509,32 @@ export function createJobsRouter({
         res.json({ data: { materialLine } });
       } catch (error) {
         handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/:jobId/costing',
+    requireAnyPermission('jobs:read', 'jobs:write', 'finance:read', 'finance:write'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!hasCostVisibility(auth)) {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Job costing is restricted to authorized finance roles' },
+        });
+        return;
+      }
+
+      try {
+        const summary = await jobCostingService.getJobCostingSummary(
+          auth.companyId,
+          getRouteParam(req.params.jobId),
+          { includeProfit: canViewJobProfit(auth) },
+        );
+        res.json({ data: { summary } });
+      } catch (error) {
+        handleJobsError(res, error);
       }
     },
   );

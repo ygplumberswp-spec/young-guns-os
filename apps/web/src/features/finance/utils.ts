@@ -17,6 +17,16 @@ export function canViewFinanceProfit(
   return ['Company Owner', 'Accountant', 'Manager'].includes(roleName ?? '');
 }
 
+export function canViewJobCosting(permissions: string[]): boolean {
+  return hasAnyPermission(permissions, [
+    'finance:read',
+    'finance:write',
+    'inventory:write',
+    'procurement:read',
+    '*',
+  ]);
+}
+
 export function newFinanceClientActionId(prefix = 'finance'): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return `${prefix}-${crypto.randomUUID()}`;

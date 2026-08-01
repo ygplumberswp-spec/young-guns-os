@@ -3,6 +3,7 @@ import { Link, useLocation } from 'wouter';
 const tabs = [
   { href: '/inventory/products', label: 'Products' },
   { href: '/inventory/stock', label: 'Stock' },
+  { href: '/inventory/movements', label: 'Movements' },
 ];
 
 export function InventoryNav() {

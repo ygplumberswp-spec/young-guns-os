@@ -272,6 +272,10 @@ export function App() {
                         <Route path="/inventory/products" component={OwnerPages.ProductListPage} />
                         <Route path="/inventory/stock" component={OwnerPages.StockOverviewPage} />
                         <Route
+                          path="/inventory/movements"
+                          component={OwnerPages.StockMovementsPage}
+                        />
+                        <Route
                           path="/procurement/purchase-orders/new"
                           component={OwnerPages.PurchaseOrderCreatePage}
                         />
