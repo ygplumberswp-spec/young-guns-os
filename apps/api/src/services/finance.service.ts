@@ -11,6 +11,7 @@ import type {
   InvoiceSummary,
   JobFinanceChip,
   JobFinanceSummary,
+  JobListFinanceSnapshot,
   PaymentDetail,
   PaymentSummary,
   QuoteDetail,
@@ -25,6 +26,8 @@ import {
   formatMoney,
   resolveEffectiveInvoiceOutstandingCents,
   resolveEffectiveInvoiceTotalCents,
+  deriveJobListFinanceSnapshot,
+  deriveJobPaymentLedger,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -583,7 +586,76 @@ export class FinanceService {
         });
       }
     }
-    return { jobId, quotes: quotesOut, invoices: invoicesOut, payments: paymentsOut, chips };
+    return {
+      jobId,
+      quotes: quotesOut,
+      invoices: invoicesOut,
+      payments: paymentsOut,
+      chips,
+      ledger: deriveJobPaymentLedger({
+        quotes: quotesOut,
+        invoices: invoicesOut,
+        payments: paymentsOut,
+        currency,
+      }),
+    };
+  }
+
+  /** Batch payment ledger snapshots for job list enrichment (integer cents, tenant-scoped). */
+  async batchJobFinanceSnapshots(companyId: string, jobIds: string[]): Promise<Map<string, JobListFinanceSnapshot>> {
+    const result = new Map<string, JobListFinanceSnapshot>();
+    if (jobIds.length === 0) return result;
+
+    const [quoteRows, invoiceRows] = await Promise.all([
+      this.db.query.quotes.findMany({
+        where: and(eq(quotes.companyId, companyId), inArray(quotes.jobId, jobIds)),
+        with: { customer: true, job: true },
+        orderBy: [desc(quotes.updatedAt)],
+      }),
+      this.db.query.invoices.findMany({
+        where: and(eq(invoices.companyId, companyId), inArray(invoices.jobId, jobIds)),
+        with: { customer: true, job: true, quote: true },
+        orderBy: [desc(invoices.updatedAt)],
+      }),
+    ]);
+
+    const invoiceIds = invoiceRows.map((row) => row.id);
+    const paymentRows =
+      invoiceIds.length > 0
+        ? await this.db.query.payments.findMany({
+            where: and(eq(payments.companyId, companyId), inArray(payments.invoiceId, invoiceIds)),
+            with: { invoice: { with: { customer: true } } },
+            orderBy: [desc(payments.paidAt)],
+          })
+        : [];
+
+    const quotesByJob = groupRowsByJobId(quoteRows);
+    const invoicesByJob = groupRowsByJobId(invoiceRows);
+    const paymentsByJob = new Map<string, PaymentSummary[]>();
+
+    for (const paymentRow of paymentRows) {
+      const jobId = paymentRow.invoice?.jobId;
+      if (!jobId) continue;
+      const list = paymentsByJob.get(jobId) ?? [];
+      list.push(toPaymentSummary(paymentRow));
+      paymentsByJob.set(jobId, list);
+    }
+
+    for (const jobId of jobIds) {
+      const quotesOut = (quotesByJob.get(jobId) ?? []).map((row) => toQuoteSummary(row));
+      const invoicesOut = (invoicesByJob.get(jobId) ?? []).map((row) => toInvoiceSummary(row));
+      const paymentsOut = paymentsByJob.get(jobId) ?? [];
+      result.set(
+        jobId,
+        deriveJobListFinanceSnapshot({
+          quotes: quotesOut,
+          invoices: invoicesOut,
+          payments: paymentsOut,
+        }),
+      );
+    }
+
+    return result;
   }
 
   async getStats(companyId: string): Promise<FinanceStats> {
@@ -870,6 +942,7 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     totalCents: row.totalCents ?? row.amountCents,
     currency: row.currency,
     validUntil: row.validUntil ? row.validUntil.toISOString() : null,
+    depositPercent: row.depositPercent ?? null,
     issuedAt: row.issuedAt?.toISOString() ?? null,
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -1020,4 +1093,15 @@ function parseRequiredDate(value: string): Date {
 
 function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function groupRowsByJobId<T extends { jobId: string | null }>(rows: T[]): Map<string, T[]> {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    if (!row.jobId) continue;
+    const list = grouped.get(row.jobId) ?? [];
+    list.push(row);
+    grouped.set(row.jobId, list);
+  }
+  return grouped;
 }

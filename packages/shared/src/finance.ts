@@ -143,6 +143,7 @@ export type QuoteSummary = {
   totalCents: number;
   currency: string;
   validUntil: string | null;
+  depositPercent?: number | null;
   issuedAt: string | null;
   acceptedAt: string | null;
   createdAt: string;
@@ -280,12 +281,15 @@ export type JobFinanceChip = {
   internalOnly?: boolean;
 };
 
+import type { JobPaymentLedger } from './job-payment-ledger.js';
+
 export type JobFinanceSummary = {
   jobId: string;
   chips: JobFinanceChip[];
   quotes: QuoteSummary[];
   invoices: InvoiceSummary[];
   payments: PaymentSummary[];
+  ledger: JobPaymentLedger;
 };
 
 export type CreateQuoteRequest = {

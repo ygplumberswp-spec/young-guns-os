@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import type { FinanceService } from '../services/finance.service.js';
 import type { JobsService } from '../services/jobs.service.js';
 import { JobsError } from '../services/jobs.service.js';
 import type { TeamService } from '../services/team.service.js';
@@ -9,6 +10,7 @@ import type { JobCostingService } from '../services/job-costing.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { DatabaseClient } from '@titan/db';
+import { hasAnyPermission } from '@titan/auth';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import {
@@ -151,6 +153,7 @@ function canViewJobProfit(auth: { permissions: string[]; roleName?: string | nul
 
 type JobsRouterDeps = {
   jobsService: JobsService;
+  financeService: FinanceService;
   jobExecutionService: JobExecutionService;
   jobCostingService: JobCostingService;
   mobileWorkforceService: MobileWorkforceService;
@@ -170,6 +173,7 @@ function getRouteParam(value: string | string[]): string {
 
 export function createJobsRouter({
   jobsService,
+  financeService,
   jobExecutionService,
   jobCostingService,
   mobileWorkforceService,
@@ -217,10 +221,18 @@ export function createJobsRouter({
   );
 
   router.get('/', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const auth = getAuth(req);
     const search = typeof req.query.q === 'string' ? req.query.q : null;
-    const jobsList = await jobsService.listJobs(companyId, search);
-    res.json({ data: { jobs: jobsList } });
+    const jobsList = await jobsService.listJobs(auth.companyId, search);
+    const canViewFinance = hasAnyPermission(auth.permissions, ['finance:read', 'finance:write']);
+    const financeByJob = canViewFinance
+      ? await financeService.batchJobFinanceSnapshots(
+          auth.companyId,
+          jobsList.map((job) => job.id),
+        )
+      : new Map();
+    const enriched = await jobsService.enrichJobSummariesForList(auth.companyId, jobsList, financeByJob);
+    res.json({ data: { jobs: enriched } });
   });
 
   router.post('/', requireAnyPermission('jobs:write'), async (req, res) => {

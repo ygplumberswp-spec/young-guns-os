@@ -5,6 +5,7 @@ import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { canAccessJobs, canManageJobs, JobList } from '../../features/jobs/JobList';
+import { canAccessFinance } from '../../features/finance/utils';
 import { PageHeader, PrimaryAction } from '../../components/ux';
 
 export function JobListPage() {
@@ -15,6 +16,10 @@ export function JobListPage() {
 
   const canView = useMemo(() => (user ? canAccessJobs(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
+  const canViewFinance = useMemo(
+    () => (user ? canAccessFinance(user.permissions) : false),
+    [user],
+  );
 
   useEffect(() => {
     const handle = window.setTimeout(() => setDebouncedSearch(search), 250);
@@ -66,6 +71,7 @@ export function JobListPage() {
         <JobList
           jobs={jobs ?? []}
           canWrite={canWrite}
+          canViewFinance={canViewFinance}
           accessToken={accessToken}
           search={search}
           onSearchChange={setSearch}

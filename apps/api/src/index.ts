@@ -1453,6 +1453,7 @@ app.use(
   '/api/v1/jobs',
   createJobsRouter({
     jobsService,
+    financeService,
     jobExecutionService,
     jobCostingService,
     mobileWorkforceService,

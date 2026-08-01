@@ -7622,6 +7622,26 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   gap: 1rem;
 }
 
+.job-360 .job-finance-ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.jobs-table-wrap.leads-list {
+  overflow-x: auto;
+}
+
+.jobs-table.crm-table--compact th,
+.jobs-table.crm-table--compact td {
+  white-space: nowrap;
+}
+
+.jobs-table.crm-table--compact td.leads-table__primary {
+  white-space: normal;
+  min-width: 10rem;
+}
+
 .ux-bulk-review__list {
   list-style: none;
   margin: 0 0 1rem;

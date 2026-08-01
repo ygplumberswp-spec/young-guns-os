@@ -3,12 +3,15 @@ import type {
   CreateJobRequest,
   JobDetail,
   JobDocumentLink,
+  JobListFinanceSnapshot,
   JobsStats,
   JobSummary,
   UpdateJobRequest,
 } from '@titan/shared';
 import {
   buildJobAddressDisplay,
+  deriveJobLifecycleLabel,
+  deriveJobPaymentLedger,
   generateJobTitle,
   isPlaceholderEmail,
   isValidEmailAddress,
@@ -22,9 +25,13 @@ import {
   cxCustomerProperties,
   documents,
   invoices,
+  jobDocumentPacks,
+  jobVehicleAssignments,
   jobs,
+  mobileTimeEntries,
   securityAuditLogs,
   users,
+  vehicles,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
@@ -148,6 +155,97 @@ export class JobsService {
         assignedUser: row.assignedUser,
       }),
     );
+  }
+
+  async enrichJobSummariesForList(
+    companyId: string,
+    summaries: JobSummary[],
+    financeByJob: Map<string, JobListFinanceSnapshot>,
+  ): Promise<JobSummary[]> {
+    if (summaries.length === 0) return summaries;
+
+    const jobIds = summaries.map((job) => job.id);
+
+    const [vehicleRows, labourRows, packRows] = await Promise.all([
+      this.db
+        .select({
+          jobId: jobVehicleAssignments.jobId,
+          vehicleName: vehicles.name,
+        })
+        .from(jobVehicleAssignments)
+        .innerJoin(vehicles, eq(jobVehicleAssignments.vehicleId, vehicles.id))
+        .where(
+          and(
+            eq(jobVehicleAssignments.companyId, companyId),
+            inArray(jobVehicleAssignments.jobId, jobIds),
+            sql`${jobVehicleAssignments.unassignedAt} is null`,
+          ),
+        ),
+      this.db
+        .select({
+          jobId: mobileTimeEntries.jobId,
+          totalMinutes: sql<number>`coalesce(sum(${mobileTimeEntries.durationMinutes}), 0)::int`,
+        })
+        .from(mobileTimeEntries)
+        .where(
+          and(eq(mobileTimeEntries.companyId, companyId), inArray(mobileTimeEntries.jobId, jobIds)),
+        )
+        .groupBy(mobileTimeEntries.jobId),
+      this.db.query.jobDocumentPacks.findMany({
+        where: and(eq(jobDocumentPacks.companyId, companyId), inArray(jobDocumentPacks.jobId, jobIds)),
+        orderBy: [desc(jobDocumentPacks.updatedAt)],
+      }),
+    ]);
+
+    const vehicleByJob = new Map(vehicleRows.map((row) => [row.jobId, row.vehicleName ?? null]));
+    const labourByJob = new Map(labourRows.map((row) => [row.jobId!, row.totalMinutes]));
+    const packByJob = new Map<string, string>();
+    for (const pack of packRows) {
+      if (!packByJob.has(pack.jobId)) packByJob.set(pack.jobId, pack.status);
+    }
+
+    return summaries.map((job) => {
+      const finance = financeByJob.get(job.id) ?? null;
+      const ledger = finance
+        ? {
+            paymentState: finance.paymentState,
+            hasFinanceData: finance.hasFinanceData,
+          }
+        : deriveJobPaymentLedger({ quotes: [], invoices: [], payments: [] });
+
+      const estimatedDurationMinutes =
+        job.scheduledAt && job.scheduledEndAt
+          ? Math.max(
+              0,
+              Math.round(
+                (new Date(job.scheduledEndAt).getTime() - new Date(job.scheduledAt).getTime()) /
+                  60_000,
+              ),
+            )
+          : null;
+      const actualMinutes = labourByJob.get(job.id);
+      const actualDurationMinutes = actualMinutes && actualMinutes > 0 ? actualMinutes : null;
+
+      return {
+        ...job,
+        suburb: job.suburb,
+        executionPhase: job.executionPhase,
+        vehicleName: vehicleByJob.get(job.id) ?? null,
+        estimatedDurationMinutes,
+        actualDurationMinutes,
+        lifecycleLabel: deriveJobLifecycleLabel({
+          status: job.status,
+          executionPhase: job.executionPhase,
+          quoteStatus: finance?.quoteStatus ?? null,
+          invoiceStatus: finance?.invoiceStatus ?? null,
+          ledger,
+        }),
+        finance,
+        documentPackStatus: packByJob.get(job.id) ?? null,
+        cocStatus: null,
+        nextAction: null,
+      };
+    });
   }
 
   async getJob(companyId: string, jobId: string): Promise<JobDetail | null> {
@@ -850,6 +948,7 @@ function toJobSummary(job: JobWithRelations): JobSummary {
     priority: job.priority ?? 'normal',
     status: job.status,
     addressDisplay,
+    suburb: job.snapshotSuburb ?? null,
     siteContactMobile: job.snapshotSiteContactMobile ?? null,
     scheduledAt: job.scheduledAt ? job.scheduledAt.toISOString() : null,
     scheduledEndAt: job.scheduledEndAt ? job.scheduledEndAt.toISOString() : null,
@@ -857,6 +956,15 @@ function toJobSummary(job: JobWithRelations): JobSummary {
     assignedUserName: job.assignedUser
       ? `${job.assignedUser.firstName} ${job.assignedUser.lastName}`
       : null,
+    executionPhase: job.executionPhase ?? null,
+    vehicleName: null,
+    estimatedDurationMinutes: null,
+    actualDurationMinutes: null,
+    lifecycleLabel: null,
+    finance: null,
+    cocStatus: null,
+    documentPackStatus: null,
+    nextAction: null,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
     etaAt: null,

@@ -44,6 +44,7 @@ export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-document-pack.js';
 export * from './job-finance-workflow.js';
+export * from './job-payment-ledger.js';
 export * from './fleet.js';
 export * from './fleet-owner.js';
 export * from './integrations.js';

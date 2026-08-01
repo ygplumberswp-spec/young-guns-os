@@ -29,6 +29,9 @@ export type JobSiteContactSnapshot = {
   differsFromCustomer: boolean;
 };
 
+import type { JobExecutionPhase } from './job-execution.js';
+import type { JobLifecycleLabel, JobListFinanceSnapshot } from './job-payment-ledger.js';
+
 export type JobSummary = {
   id: string;
   jobNumber: string | null;
@@ -40,11 +43,21 @@ export type JobSummary = {
   priority: JobPriority;
   status: JobStatus;
   addressDisplay: string | null;
+  suburb?: string | null;
   siteContactMobile: string | null;
   scheduledAt: string | null;
   scheduledEndAt: string | null;
   assignedUserId: string | null;
   assignedUserName: string | null;
+  executionPhase?: JobExecutionPhase | null;
+  vehicleName?: string | null;
+  estimatedDurationMinutes?: number | null;
+  actualDurationMinutes?: number | null;
+  lifecycleLabel?: JobLifecycleLabel | null;
+  finance?: JobListFinanceSnapshot | null;
+  cocStatus?: string | null;
+  documentPackStatus?: string | null;
+  nextAction?: string | null;
   createdAt: string;
   updatedAt: string;
   /** Customer-visible technician ETA when tracking applies (portal/mobile). */

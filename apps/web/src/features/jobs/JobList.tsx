@@ -4,6 +4,7 @@ import { hasAnyPermission } from '@titan/auth/browser';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import type { JobStatus, JobSummary } from '@titan/shared';
 import {
+  formatMoney,
   getJobDeleteEligibility,
   getJobStatusTone,
   JOB_PRIORITY_OPTIONS,
@@ -26,6 +27,7 @@ import {
 type JobListProps = {
   jobs: JobSummary[];
   canWrite: boolean;
+  canViewFinance?: boolean;
   accessToken: string | null;
   search: string;
   onSearchChange: (value: string) => void;
@@ -35,6 +37,19 @@ type JobListProps = {
 };
 
 type RowSaveState = Record<string, InlineSaveState>;
+
+function formatFinanceCents(cents: number | null | undefined, currency: string): string {
+  if (cents == null) return '—';
+  return formatMoney(cents, currency);
+}
+
+function formatDuration(minutes: number | null | undefined): string {
+  if (minutes == null || minutes <= 0) return '—';
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+}
 
 function formatPriority(priority: JobSummary['priority']): string {
   return JOB_PRIORITY_OPTIONS.find((option) => option.value === priority)?.label ?? priority;
@@ -47,6 +62,7 @@ function formatStatus(status: JobSummary['status']): string {
 export function JobList({
   jobs,
   canWrite,
+  canViewFinance = false,
   accessToken,
   search,
   onSearchChange,
@@ -326,8 +342,22 @@ export function JobList({
                 <th>Job #</th>
                 <th className="leads-table__hide-mobile">Customer</th>
                 <th className="leads-table__hide-mobile">Address</th>
+                <th className="leads-table__hide-mobile">Suburb</th>
+                <th className="leads-table__hide-mobile">Job type</th>
+                <th className="leads-table__hide-mobile">Priority</th>
+                <th>Status</th>
                 <th className="leads-table__hide-mobile">Appointment</th>
                 <th className="leads-table__hide-mobile">Technician</th>
+                <th className="leads-table__hide-mobile">Vehicle</th>
+                <th className="leads-table__hide-mobile">Duration</th>
+                {canViewFinance ? (
+                  <>
+                    <th className="leads-table__hide-mobile">Payment</th>
+                    <th className="leads-table__hide-mobile">Balance</th>
+                  </>
+                ) : null}
+                <th className="leads-table__hide-mobile">Quote</th>
+                <th className="leads-table__hide-mobile">Invoice</th>
                 <th className="leads-table__actions-col">Actions</th>
               </tr>
             </thead>
@@ -335,6 +365,8 @@ export function JobList({
               {filteredJobs.map((job) => {
                 const tone = getJobStatusTone(job.status);
                 const saveState = rowSaveState[job.id] ?? 'idle';
+                const finance = job.finance;
+                const currency = finance?.currency ?? 'ZAR';
 
                 return (
                   <StatusRowAccent key={job.id} tone={tone} className="jobs-table__row">
@@ -353,28 +385,13 @@ export function JobList({
                         <Link href={`/jobs/${job.id}`} className="jobs-link">
                           {job.jobNumber ?? job.title}
                         </Link>
-                        <StatusBadgeDropdown
-                          label={formatStatus(job.status)}
-                          tone={tone}
-                          canChange={canWrite && saveState !== 'saving'}
-                          saveState={saveState}
-                          options={JOB_QUICK_STATUS_ACTIONS.map((action) => ({
-                            id: action.id,
-                            label: action.label,
-                            disabled: action.targetStatus === job.status,
-                          }))}
-                          onSelect={(actionId) => {
-                            const action = JOB_QUICK_STATUS_ACTIONS.find((a) => a.id === actionId);
-                            if (action) void changeJobStatus(job, action.targetStatus);
-                          }}
-                        />
                       </div>
                       <div className="leads-table__mobile-meta">
                         <span>{job.customerName}</span>
-                        <span>{job.addressDisplay ?? '—'}</span>
-                        <span className={`jobs-priority jobs-priority--${job.priority}`}>
-                          {formatPriority(job.priority)}
-                        </span>
+                        <span>{job.lifecycleLabel ?? formatStatus(job.status)}</span>
+                        {canViewFinance && finance?.hasFinanceData ? (
+                          <span>{finance.paymentStateLabel}</span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="leads-table__hide-mobile">
@@ -383,10 +400,53 @@ export function JobList({
                       </Link>
                     </td>
                     <td className="leads-table__hide-mobile">{job.addressDisplay ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">{job.suburb ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">{job.jobType ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">
+                      <span className={`jobs-priority jobs-priority--${job.priority}`}>
+                        {formatPriority(job.priority)}
+                      </span>
+                    </td>
+                    <td>
+                      <StatusBadgeDropdown
+                        label={job.lifecycleLabel ?? formatStatus(job.status)}
+                        tone={tone}
+                        canChange={canWrite && saveState !== 'saving'}
+                        saveState={saveState}
+                        options={JOB_QUICK_STATUS_ACTIONS.map((action) => ({
+                          id: action.id,
+                          label: action.label,
+                          disabled: action.targetStatus === job.status,
+                        }))}
+                        onSelect={(actionId) => {
+                          const action = JOB_QUICK_STATUS_ACTIONS.find((a) => a.id === actionId);
+                          if (action) void changeJobStatus(job, action.targetStatus);
+                        }}
+                      />
+                    </td>
                     <td className="leads-table__hide-mobile">
                       {job.scheduledAt ? new Date(job.scheduledAt).toLocaleString() : '—'}
                     </td>
                     <td className="leads-table__hide-mobile">{job.assignedUserName ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">{job.vehicleName ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">
+                      {formatDuration(job.estimatedDurationMinutes)}
+                      {job.actualDurationMinutes ? ` / ${formatDuration(job.actualDurationMinutes)}` : ''}
+                    </td>
+                    {canViewFinance ? (
+                      <>
+                        <td className="leads-table__hide-mobile">
+                          {finance?.hasFinanceData ? finance.paymentStateLabel : '—'}
+                        </td>
+                        <td className="leads-table__hide-mobile">
+                          {finance?.hasFinanceData
+                            ? formatFinanceCents(finance.balanceOwingCents, currency)
+                            : '—'}
+                        </td>
+                      </>
+                    ) : null}
+                    <td className="leads-table__hide-mobile">{finance?.quoteStatus ?? '—'}</td>
+                    <td className="leads-table__hide-mobile">{finance?.invoiceStatus ?? '—'}</td>
                     <td className="leads-table__actions-col">
                       <RowActionsCell
                         editHref={`/jobs/${job.id}#edit`}
