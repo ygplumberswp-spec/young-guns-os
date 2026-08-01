@@ -370,17 +370,28 @@ export type FleetLiveMapMovementState =
 
 export type FleetLiveMapVehicle = {
   vehicleId: string;
+  name: string | null;
   registration: string | null;
   driverName: string | null;
+  technicianName: string | null;
   latitude: number | null;
   longitude: number | null;
   speedKmh: number | null;
   heading: number | null;
   ignitionOn: boolean | null;
   movementState: FleetLiveMapMovementState;
+  displayState: import('./fleet-owner.js').FleetMovementDisplayState;
   recordedAt: string | null;
   address: string | null;
   isStale: boolean;
+  isTrackerOffline: boolean;
+  odometerKm: number | null;
+  fuelPercent: number | null;
+  todayDistanceKm: number | null;
+  tripStartedAt: string | null;
+  externalTrackerId: string | null;
+  currentJob: import('./fleet-owner.js').FleetJobLink | null;
+  nextJob: import('./fleet-owner.js').FleetJobLink | null;
   trailToday: Array<{
     latitude: number;
     longitude: number;
