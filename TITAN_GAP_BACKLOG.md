@@ -2,10 +2,24 @@
 
 **Project:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Generated (UTC):** 2026-07-31  
-**Updated (UTC):** 2026-07-31 — Controlled staging isolated harness **CONDITIONAL GO** (75/0); cloud Railway URLs **BLOCKED_OWNER_ACTIONS**; provider sandbox **NO-GO**  
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE  
 
-**Source:** `TITAN_MASTER_ACCEPTANCE_REGISTER.md` + binding decisions + `TITAN_OPERATIONAL_UX_AUDIT.md`  
+**Source:** `TITAN_MASTER_ACCEPTANCE_REGISTER.md` + binding decisions + `TITAN_OPERATIONAL_UX_AUDIT.md` + `TITAN_BINDING_ACCEPTANCE_RULE.md`  
 **Mode:** Audit/docs only — no code, credential, database, migration, Git or deployment changes.
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+All gap items must be closed per `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria + ordinary-user must-not list). New backlog entries for binding violations:
+
+| ID | Gap | Type | Binding criterion |
+|----|-----|------|-------------------|
+| BIND-001 | Enterprise intelligence pages decorative | FAIL | (2) useful-function |
+| BIND-002 | 59 E2E staging tenants in visible DB | FAIL | (1) legitimate data — cleanup manifest ready |
+| BIND-003 | App-wide live UI without refresh | PARTIAL | (3) automatic updates |
+| BIND-004 | Domain events not on full business chain | PARTIAL | (3) automatic updates |
+| BIND-005 | Uniform SA phone/ZAR/VAT not app-wide | PARTIAL | (4) consistent UX |
 
 ---
 

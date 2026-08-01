@@ -1,7 +1,14 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — GLOBAL-AUTOSYNC-179 framework PARTIAL (DB 5 PASS; API owner token optional)  
-**Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE + complete-app audit  
+
+**Automated test files:** 56+ (`*.test.ts`, excluding `.tmp-origin-build`)
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+Tests must evidence binding criteria where applicable: `background-work.test.ts`, `tenant-domain-event-bus.test.ts`, `integration-sync-orchestrator.test.ts`, `xero-sync.service.test.ts`, cross-tenant and session tests. **Staging verification** (criterion 10) recorded in `diagnostic-output/181-complete-app-audit.json`.
 
 ---
 

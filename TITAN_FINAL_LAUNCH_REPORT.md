@@ -1,8 +1,14 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018d Xero staging NO-GO (OAuth connected; sync not DB-corroborated)  
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE  
 **Status:** **NOT LAUNCH-READY**
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+Commercial launch requires every module to pass `TITAN_BINDING_ACCEPTANCE_RULE.md`. Estimated verified complete remains **~27%** of traceability rows; binding audit identifies **3 FAIL** areas (staging data hygiene, enterprise decorative pages, Gmail honesty card) blocking trustworthy launch UX.
 
 ---
 

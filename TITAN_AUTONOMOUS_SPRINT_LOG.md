@@ -685,3 +685,18 @@
 | **Staging touched** | No |
 | **Next phase selected** | `company_config_versions` draft/publish slice (local, disposable migration)
 
+---
+
+## Sprint BINDING-RULE-001 — Global binding acceptance rule + complete-app audit
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Global binding rule — clean data, uniform UX, useful-function, automatic updates |
+| **Result** | **Audit complete** — rule added to 7 control docs; complete-app audit **2 PASS / 18 PARTIAL / 3 FAIL / 4 NOT_AUDITED** |
+| **Checkpoint** | `TITAN_BINDING_ACCEPTANCE_RULE.md`, `TITAN_COMPLETE_APP_AUDIT.md`, `181-complete-app-audit.json` |
+| **Destructive** | **None** — cleanup manifest awaits Owner approval |
+| **Xero import** | **Not interrupted** — job running; 573+ contact mappings at audit time |
+| **Approval required?** | **Yes — Owner** — cleanup manifest before delete |
+| **Next phase selected** | Phase A Xero GO → Phase B approved cleanup → Phase F binding enforcement |
+

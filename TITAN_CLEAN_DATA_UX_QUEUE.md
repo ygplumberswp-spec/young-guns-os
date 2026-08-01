@@ -3,7 +3,24 @@
 **Status:** **QUEUED** — Phase A in progress (Xero background import)  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Staging ref:** `cpkuwtaipjxeipvbssvn` only — production never touched  
-**Updated (UTC):** 2026-08-01
+**Updated (UTC):** 2026-08-01 — BINDING-RULE-001 queued after Phase A  
+
+---
+
+## Phase F — Binding rule enforcement (queued after Phase A)
+
+Per `TITAN_BINDING_ACCEPTANCE_RULE.md` and `TITAN_COMPLETE_APP_AUDIT.md`:
+
+| Step | Action | Gate |
+|------|--------|------|
+| F1 | Close Xero import GO | Auto |
+| F2 | Owner approves cleanup manifest | **Owner** |
+| F3 | Hide or complete decorative enterprise pages | Engineering |
+| F4 | Extend domain events to full business chain | Engineering |
+| F5 | Embed live background-work status on operational pages | Engineering |
+| F6 | Uniform data standard (SA phone, ZAR, VAT) audit + fixes | Engineering |
+| F7 | Useful-function sweep on all visible controls | Engineering |
+| F8 | Staging smoke per binding criterion 10 | Auto + Owner |
 
 ---
 

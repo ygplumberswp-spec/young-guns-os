@@ -4,7 +4,17 @@
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Checkpoint:** `a161943` (Sprint 022 staging GO) → Sprint 028 forbidden-action API matrix (post-commit)  
-**Updated (UTC):** 2026-08-01 — AUTO-SYNC-001 orchestrator deployed (`4e285b8`); Xero auto-sync pending staging gates  
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE + complete-app audit  
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+**Authoritative text:** `TITAN_BINDING_ACCEPTANCE_RULE.md`
+
+Every freeze section (FRZ-001 … FRZ-023) and traceability row is subject to the **10 completion criteria**: verified data, useful wiring, automatic module updates, consistent UX, role correctness, tenant isolation, truthful UI states, retry/idempotency, audit evidence, staging verification.
+
+Classification **Verified complete** requires binding-rule compliance — not code existence alone. See `TITAN_COMPLETE_APP_AUDIT.md` for module-level PASS/PARTIAL/FAIL register.
 
 ---
 

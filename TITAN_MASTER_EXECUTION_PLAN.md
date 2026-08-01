@@ -10,6 +10,19 @@
 
 ---
 
+## GLOBAL BINDING ACCEPTANCE RULE
+
+**Authoritative text:** `TITAN_BINDING_ACCEPTANCE_RULE.md`  
+**Architecture:** `TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md`, `TITAN_INTEGRATION_AUTO_SYNC_ARCHITECTURE.md`
+
+No feature, module, dashboard, role experience, API workflow, mobile screen, AURA capability, document, report, automation, integration, or future provider (including Sage) is **complete** unless it satisfies all **10 binding criteria** (legitimate data, fully wired, automatic dependent updates, consistent UX, correct role, tenant isolation, truthful states, retry/duplicate prevention, audit evidence, staging verification).
+
+Ordinary users must not manually sync routine data, refresh for normal updates, re-enter data across modules, or use decorative controls. **Sync now / Retry / Reconnect / Refresh** are fallback only. Automatic sync does not bypass approval gates for financial writes, customer sends, publishing, spend, permissions, destructive actions, or production changes.
+
+**Complete-app audit:** `TITAN_COMPLETE_APP_AUDIT.md` — **2 PASS / 18 PARTIAL / 3 FAIL / 4 NOT_AUDITED** (2026-08-01).
+
+---
+
 ## Executive summary
 
 TITAN has substantial implementation across 108 web routes, 84 API route modules, 104 SQL migrations (latest `0104`), and 45 automated test files. **Code existence is not completion.** Current verified-complete rate against the 116-row traceability register is **~27% VERIFIED LIVE** with **41 PARTIAL**, **17 MISSING**, and **5 provider-blocked** items.

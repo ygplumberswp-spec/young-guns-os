@@ -2,8 +2,14 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — GLOBAL-AUTOSYNC-179 PARTIAL (Xero background import + schedule seeded)  
-**Verdict:** **NOT PILOT-READY** (await full Xero import completion + remaining chain gaps)
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE  
+**Verdict:** **NOT PILOT-READY** (binding rule not met for most modules; Xero import in progress)
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+Pilot sign-off requires compliance with `TITAN_BINDING_ACCEPTANCE_RULE.md` across operational chain, security, reliability, financial, and provider truth gates. Current complete-app audit: **2 PASS / 18 PARTIAL / 3 FAIL** — see `TITAN_COMPLETE_APP_AUDIT.md`.
 
 ---
 

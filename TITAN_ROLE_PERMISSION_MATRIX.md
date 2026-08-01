@@ -1,7 +1,13 @@
 # TITAN Role Permission Matrix
 
-**Updated (UTC):** 2026-08-01 — Phase 0  
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE  
 **Sources:** `packages/auth/src/rbac-matrix.ts`, `packages/shared/src/role-experience.ts`, `packages/db/drizzle/0094_canonical_role_matrix.sql`
+
+---
+
+## GLOBAL BINDING ACCEPTANCE RULE
+
+Role experiences must satisfy `TITAN_BINDING_ACCEPTANCE_RULE.md` criteria **(5)** correct role and **(6)** tenant isolation. Matrix rows alone do not mark features complete — staging verification per role path required.
 
 ---
 
