@@ -4,6 +4,7 @@ import { Link, useSearch } from 'wouter';
 import { Button, PageLoadState } from '@titan/ui';
 import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
 import { fetchCustomersByClassification, fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
+import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { CacheStaleNotice } from '../../components/CacheStaleNotice';
@@ -44,14 +45,30 @@ export function CustomerListPage() {
     queryKey: `crm/customers-ui:${classificationFilter ?? 'all'}:${debouncedSearch}`,
     enabled: canView,
     fetcher: async () => {
-      if (classificationFilter) {
-        return fetchCustomersByClassification(
-          accessToken!,
-          classificationFilter,
-          debouncedSearch,
-        );
+      try {
+        if (classificationFilter) {
+          return fetchCustomersByClassification(
+            accessToken!,
+            classificationFilter,
+            debouncedSearch,
+          );
+        }
+        return fetchCustomersWithClassification(accessToken!, debouncedSearch);
+      } catch {
+        const fallback = await fetchCustomers(accessToken!, debouncedSearch);
+        return fallback.map((customer) => ({
+          ...customer,
+          valueClassification: {
+            isVerifiedInvoiced: false,
+            isPayingCustomer: false,
+            isFullyPaid: false,
+            isOverdueDebtor: false,
+            isUnpaidDebtor: false,
+            isPartiallyPaid: false,
+            isProspect: false,
+          },
+        }));
       }
-      return fetchCustomersWithClassification(accessToken!, debouncedSearch);
     },
   });
 

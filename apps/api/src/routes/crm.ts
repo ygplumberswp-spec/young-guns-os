@@ -199,10 +199,9 @@ export function createCrmRouter({
       try {
         const auth = getAuth(req);
         const customerId = getRouteParam(req.params.customerId);
-        const classification = await customerValueClassificationService.getCustomerClassification(
-          auth.companyId,
-          customerId,
-        );
+        const classification = await customerValueClassificationService
+          .getCustomerClassification(auth.companyId, customerId)
+          .catch(() => null);
         const isOwner =
           auth.permissions.includes('*') ||
           auth.roleName === 'Company Owner' ||
