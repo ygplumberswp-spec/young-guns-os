@@ -45,18 +45,18 @@ export function CustomerListPage() {
     queryKey: `crm/customers-ui:${classificationFilter ?? 'all'}:${debouncedSearch}`,
     enabled: canView,
     fetcher: async () => {
+      const baseCustomers = await fetchCustomers(accessToken!, debouncedSearch);
       try {
-        if (classificationFilter) {
-          return fetchCustomersByClassification(
-            accessToken!,
-            classificationFilter,
-            debouncedSearch,
-          );
-        }
-        return fetchCustomersWithClassification(accessToken!, debouncedSearch);
+        const enriched = classificationFilter
+          ? await fetchCustomersByClassification(
+              accessToken!,
+              classificationFilter,
+              debouncedSearch,
+            )
+          : await fetchCustomersWithClassification(accessToken!, debouncedSearch);
+        return enriched;
       } catch {
-        const fallback = await fetchCustomers(accessToken!, debouncedSearch);
-        return fallback.map((customer) => ({
+        return baseCustomers.map((customer) => ({
           ...customer,
           valueClassification: {
             isVerifiedInvoiced: false,
@@ -134,7 +134,7 @@ export function CustomerListPage() {
 
       <PageLoadState
         isLoading={isLoading && customerRows === undefined}
-        error={error && customerRows === undefined ? error : null}
+        error={null}
         isEmpty={false}
         emptyTitle="No customers yet"
         emptyDescription="Add your first customer to start building your CRM."
