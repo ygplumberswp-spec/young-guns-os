@@ -10,9 +10,9 @@
 
 | Phase | ID | Status | Commit | Evidence |
 |-------|-----|--------|--------|----------|
-| 1 | Xero recovery fix | **PASS** (code) / **IN_PROGRESS** (staging deploy) | pending | `diagnostic-output/187-xero-import-recovery-verify.json` |
-| 2 | Xero import GO | **IN_PROGRESS** | — | `187-xero-import-recovery-verify.json`, `185-cv-post-xero-import-complete.json` |
-| 3 | SPI-001 Supplier Price Intelligence | **PASS** (code/tests) / **FAIL** (staging migration pending) | pending | `189-spi001-staging-verify.json` |
+| 1 | Xero recovery fix | **PASS** (code) / **IN_PROGRESS** (staging deploy) | `9bec8c3` | `diagnostic-output/187-xero-import-recovery-verify.json` |
+| 2 | Xero import GO | **IN_PROGRESS** | — | `187`, `185-cv-post-xero-import-complete.json` |
+| 3 | SPI-001 Supplier Price Intelligence | **PASS** (code/tests) / **FAIL** (staging migration) | `0b6b911` | `189-spi001-staging-verify.json` |
 | 4 | YGP-001 Young Guns Pricing | **QUEUED** | — | blocked until SPI-001 staging PASS |
 | 5 | E2E margin flow verify | **QUEUED** | — | `188-supplier-to-margin-e2e-verify.json` |
 
