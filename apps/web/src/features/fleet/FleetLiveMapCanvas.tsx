@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import type { FleetLiveMapVehicle, FleetMovementDisplayState } from '@titan/shared';
 import { FLEET_MOVEMENT_LABELS } from '@titan/shared';
@@ -112,6 +112,7 @@ export function FleetLiveMapCanvas({
   const [mapReady, setMapReady] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
+  const positioned = useMemo(() => positionedVehicles(vehicles), [vehicles]);
 
   const reportStatus = useCallback(
     (ready: boolean, error: string | null) => {
@@ -136,7 +137,11 @@ export function FleetLiveMapCanvas({
 
   useEffect(() => {
     const host = mapHostRef.current;
-    if (!host || !providerConfig.configured) {
+    if (positioned.length === 0 || !host) {
+      // Map host is not mounted until GPS vehicles exist — wait without surfacing an error.
+      return;
+    }
+    if (!providerConfig.configured) {
       reportStatus(false, providerConfig.reason ?? 'Map could not load');
       return;
     }
@@ -237,7 +242,14 @@ export function FleetLiveMapCanvas({
       mapRef.current = null;
       fitOnceRef.current = false;
     };
-  }, [providerConfig.configured, providerConfig.provider, providerConfig.styleUrl, reportStatus, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    positioned.length,
+    providerConfig.configured,
+    providerConfig.provider,
+    providerConfig.styleUrl,
+    reportStatus,
+    retryKey,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const map = mapRef.current;
@@ -319,8 +331,6 @@ export function FleetLiveMapCanvas({
     reportStatus(false, null);
     setRetryKey((value) => value + 1);
   }
-
-  const positioned = positionedVehicles(vehicles);
 
   if (positioned.length === 0) {
     return (
