@@ -427,3 +427,20 @@
 | **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
 | **Approval required?** | No — local only |
 | **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes |
+
+---
+
+## Sprint 026 — APP_URL placeholder heuristic fix (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Staging deploy blocker — `isPlaceholderPublicUrl` false positive |
+| **Result** | Root cause: `host.includes('comfortable-determination')` rejected legitimate `comfortable-determination-staging.up.railway.app` (documented in `.env.staging.example`). Narrowed to docs slug `comfortable-determination-url` + `your-` prefixes; regression test for live staging web origin |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `apps/api/src/lib/public-url.ts`, `apps/api/src/lib/public-url.test.ts` |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
+| **Staging** | Requires Railway redeploy with this commit for API to bind; separate `DATABASE_URL` sync still required for DB health |
+| **Approval required?** | No — validation fix only |
+| **Next phase selected** | Railway redeploy API/web with fix; rerun public smokes after DB + APP_URL gates green |

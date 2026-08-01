@@ -9,7 +9,9 @@ export function isPlaceholderPublicUrl(url: string): boolean {
     const host = new URL(url.trim()).hostname.toLowerCase();
     return (
       host.includes('your-') ||
-      host.includes('comfortable-determination') ||
+      host.includes('your_') ||
+      // Railway docs slug YOUR-COMFORTABLE-DETERMINATION-URL — not live *-staging hosts.
+      host.includes('comfortable-determination-url') ||
       host.endsWith('.invalid') ||
       host === 'example.com' ||
       host.endsWith('.example.com') ||
