@@ -32,7 +32,7 @@
 | Jobs | **GO** | — | No |
 | Scheduling | **HOLD** | CAL-001 gaps: resize, team filter, overlap layout; staging screenshot pack missing | Yes (gaps) |
 | Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 187 PASS | No |
-| Cartrack / Fleet Live Map | **HOLD** | mapped=2 + credentials locked (217) but GPS positionCount=0; `/mobile-platform/dispatcher` console exists (3s poll code) but no map tiles; authenticated position proof missing | Yes (GPS proof + map tiles) |
+| Cartrack / Fleet Live Map | **HOLD** | Branch `cursor/cartrack-live-map-final` fixes GPS parser + `/fleet/live-map`; staging deploy + authenticated GPS proof for CF172047/CF77263 still required post-deploy | Yes (deploy + GPS proof) |
 | Communications | **HOLD** | Unified workspace not implemented; WhatsApp blocked (owner creds); email not fully verified | Yes (workspace) |
 | AURA | **GO** | Routes exist; content scoped per directive | No |
 | Settings | **HOLD** | `/settings` index missing PageHeader (1 route gap) | Yes (minor) |
@@ -158,22 +158,22 @@ Full matrix below. Staging click-through for all 134 routes not automated.
 
 ## 7. Cartrack and Fleet Live Map
 
-**Probes:** `217-cartrack-staging-verify.json` · `218-cartrack-fleet-seed-verify.json` · code `useCartrackLivePositions.ts`
+**Probes:** `217-cartrack-staging-verify.json` · `226-cartrack-live-map-final-verify.json` · code `cartrack.client.ts` · `useFleetLiveMap.ts`
 
 | Check | Result |
 |-------|--------|
 | CF172047 / CF77263 mapped | 2 (auto_matched per 217/218) |
 | Credentials locked | YES (`hasCredentials: true`, connection lock per 211) |
-| last_sync_at | 2026-08-01T18:11:01.735Z (217) |
-| Duplicate mappings | 0 (217 duplicates.pass) |
-| GPS positions stored | **0** (217 positionCount) |
-| `/fleet` | 200 — `FleetDispatchBoard` honest banner: no live map tiles |
-| Live Dispatch console | `/mobile-platform/dispatcher` → 200 — `LiveDispatchPositionsPanel` |
-| 3s visible / 60s hidden poll | PASS (code — `LIVE_POLL_MS=3000`, `HIDDEN_POLL_MS=60000`) |
-| Map tile UI | **NOT IMPLEMENTED** |
-| Authenticated staging probe | **NOT RUN** (no OWNER_ACCESS_TOKEN / DATABASE_URL this session) |
+| Root cause (GPS=0) | `/vehicles/status` vehicle_id ≠ mapping external_vehicle_id; parser missed nested/PascalCase lat/lng |
+| Fix branch | `cursor/cartrack-live-map-final` @ post-679e3b9 |
+| GPS import fix | Registration fallback mapping + `/positions` fallback + fresh-only deduped inserts |
+| `/fleet/live-map` route | **ADDED** (web + `GET /api/v1/fleet/live-map`) |
+| Live Dispatch console | `/mobile-platform/dispatcher` → shared tracking source |
+| 3s visible / 60s hidden poll | PASS (code — `LIVE_POLL_MS=3000`, `HIDDEN_POLL_MS=60000`, inflight guard) |
+| Permissions probe | `GET /integrations/cartrack/permissions` (read endpoints only) |
+| GPS positions stored (staging) | **Pending post-deploy proof** (217 baseline: 0) |
 
-**Verdict: HOLD** — vehicle mapping and credential lock proven; GPS position count zero and no map tiles. Live Dispatch route exists but authenticated proof of non-empty positions not captured.
+**Verdict: HOLD** — code fix + live map route implemented; **GO requires staging deploy and authenticated proof that both vehicles have non-zero GPS positions with auto-updating `last_sync_at`.**
 
 ---
 
@@ -182,7 +182,7 @@ Full matrix below. Staging click-through for all 134 routes not automated.
 | Provider | Status | CONNECT ONCE → LOCK → AUTO-SYNC |
 |----------|--------|----------------------------------|
 | Xero | Connected — Phase 2 GO (220) | Verified |
-| Cartrack | Connected — mapped=2, GPS 0 (217) | Verified (credentials lock) |
+| Cartrack | Connected — mapped=2; GPS fix on branch 226 | Verified (credentials lock) |
 | WhatsApp Business | Blocked — owner credentials | Pattern ready |
 | Personal WhatsApp | Unsupported — honest banner | N/A |
 | SMTP / Email | Ready to configure | Verified (211) |
@@ -385,7 +385,7 @@ Run on consolidation branch @ `4c14050` (2026-08-01T19:42Z): typecheck PASS · A
 ## 14. Owner review checklist
 
 1. Staging click-through on dashboard at 1440/1280/1024/768/375
-2. Cartrack live GPS refresh + Fleet Live Map route decision
+2. Cartrack staging deploy + authenticated GPS proof for CF172047/CF77263 on `/fleet/live-map`
 3. Communications unified workspace scope
 4. CAL-001 gap-fill (resize, team filter)
 5. `/settings` PageHeader gap

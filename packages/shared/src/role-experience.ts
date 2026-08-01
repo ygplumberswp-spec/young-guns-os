@@ -52,6 +52,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/procurement', label: 'Procurement', permissions: ['procurement:read', '*'] },
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
+    href: '/fleet/live-map',
+    label: NAV_LABELS.fleetLiveMap,
+    permissions: ['fleet:read', 'dispatch:read', '*'],
+  },
+  {
     href: '/mobile-platform/dispatcher',
     label: NAV_LABELS.liveDispatch,
     permissions: ['dispatch:read', 'mobile:read', '*'],
@@ -128,6 +133,7 @@ export const DISPATCHER_ALLOWED_HREFS = new Set([
   '/finance/payments',
   '/communications/messages',
   '/documents',
+  '/fleet/live-map',
   '/mobile-platform/dispatcher',
   '/dispatch-intelligence',
   '/settings/team',

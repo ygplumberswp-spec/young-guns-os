@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { FleetService } from '../services/fleet.service.js';
 import { FleetError } from '../services/fleet.service.js';
+import type { IntegrationsService } from '../services/integrations.service.js';
+import { IntegrationsError } from '../services/integrations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -34,6 +36,7 @@ const updateVehicleSchema = z.object({
 
 type FleetRouterDeps = {
   fleetService: FleetService;
+  integrationsService: IntegrationsService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -49,6 +52,7 @@ function getRouteParam(value: string | string[]): string {
 
 export function createFleetRouter({
   fleetService,
+  integrationsService,
   teamService,
   jwtSecret,
   authService,
@@ -73,6 +77,17 @@ export function createFleetRouter({
     const { companyId } = getAuth(req);
     const assignees = await fleetService.listAssignees(companyId);
     res.json({ data: { assignees } });
+  });
+
+  router.get('/live-map', requireAnyPermission('fleet:read', 'fleet:write', 'dispatch:read'), async (req, res) => {
+    const { companyId } = getAuth(req);
+
+    try {
+      const snapshot = await integrationsService.buildFleetLiveMapSnapshot(companyId);
+      res.json({ data: snapshot });
+    } catch (error) {
+      handleIntegrationsError(res, error);
+    }
   });
 
   router.get('/vehicles', requireAnyPermission('fleet:read', 'fleet:write'), async (req, res) => {
@@ -159,6 +174,27 @@ function handleFleetError(res: import('express').Response, error: unknown) {
         ? 404
         : error.code === 'VALIDATION_ERROR'
           ? 400
+          : 400;
+
+    res.status(status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  throw error;
+}
+
+function handleIntegrationsError(res: import('express').Response, error: unknown) {
+  if (error instanceof IntegrationsError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'NOT_CONNECTED' || error.code === 'SYNC_IN_PROGRESS'
+          ? 409
           : 400;
 
     res.status(status).json({

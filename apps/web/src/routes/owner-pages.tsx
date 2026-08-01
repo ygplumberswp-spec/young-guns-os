@@ -172,6 +172,10 @@ export const VehicleDetailPage = lazyNamed(
   () => import('../pages/fleet/VehicleDetailPage'),
   'VehicleDetailPage',
 );
+export const FleetLiveMapPage = lazyNamed(
+  () => import('../pages/fleet/FleetLiveMapPage'),
+  'FleetLiveMapPage',
+);
 export const MessageListPage = lazyNamed(
   () => import('../pages/communications/MessageListPage'),
   'MessageListPage',
