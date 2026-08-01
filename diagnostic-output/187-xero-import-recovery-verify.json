@@ -1,6 +1,6 @@
 {
   "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T12:26:02.630Z",
+  "generatedAt": "2026-08-01T12:31:05.433Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -53,12 +53,12 @@
     "errorMessage": null,
     "checkpoint": {
       "stage": "contacts",
-      "contactsPage": 3,
+      "contactsPage": 5,
       "invoicesPage": 1,
       "paymentsPage": 1,
       "bankTransactionsPage": 1
     },
-    "heartbeatAt": "2026-08-01T12:25:39.959Z",
+    "heartbeatAt": "2026-08-01T12:29:39.941Z",
     "activity": "processing",
     "resumedFromAbandoned": false,
     "contactsPulled": 0,
@@ -68,7 +68,7 @@
   "connection": {
     "status": "connected",
     "lastSyncAt": null,
-    "lastError": "Xero sync failed during payments. Failed query: select \"xeroInvoiceMappings\".\"id\", \"xeroInvoiceMappings\".\"company_id\", \"xeroInvoiceMappings\".\"integration_connection_id\", \"xeroInvoiceMappings\".\"invoice_id\", \"xeroInvoiceMappings\".\"xero_invoice_id\", \"xeroInvoiceMappings\".\"xero_invoice_number\", \"xeroInvoiceMappings\".\"xero_reference\", \"xeroInvoiceMappings\".\"sync_status\", \"xeroInvoiceMappings\".\"last_synced_at\", \"xeroInvoiceMappings\".\"last_successful_sync_at\", \"xeroInvoiceMappings\".\"last_error\", \"xeroInvoiceMappings\".\"conflict_metadata\", \"xeroInvoiceMappings\".\"created_at\", \"xeroInvoiceMappings\".\"updated_at\", \"xeroInvoiceMappings_invoice\".\"data\" as \"invoice\" from \"xero_invoice_mappings\" \"xeroInvoiceMappings\" left join lateral (select json_build_array(\"xeroInvoiceMappings_invoice\".\"id\", \"xeroInvoiceMappings_invoice\".\"company_id\", \"xeroInvoiceMappings_invoice\".\"customer_id\", \"xeroInvoiceMappings_invoice\".\"job_id\", \"xeroInvoiceMappings_invoice\".\"quote_id\", \"xeroInvoiceMappings_invoice\".\"property_id\", \"xeroInvoiceMappings_invoice\".\"quote_version_number\", \"xeroInvoiceMappings_invoice\".\"stage\", \"xeroInvoiceMappings_invoice\".\"invoice_number\", \"xeroInvoiceMappings_invoice\".\"internal_number\", \"xeroInvoiceMappings_invoice\".\"xero_invoice_number\", \"xeroInvoiceMappings_invoice\".\"xero_reference\", \"xeroInvoiceMappings_invoice\".\"number_authority\", \"xeroInvoiceMappings_invoice\".\"title\", \"xeroInvoiceMappings_invoice\".\"status\", \"xeroInvoiceMappings_invoice\".\"amount_cents\", \"xeroInvoiceMappings_invoice\".\"subtotal_cents\", \"xeroInvoiceMappings_invoice\".\"vat_cents\", \"xeroInvoiceMappings_invoice\".\"total_cents\", \"xeroInvoiceMappings_invoice\".\"amount_paid_cents\", \"xeroInvoiceMappings_invoice\".\"currency\", \"xeroInvoiceMappings_invoice\".\"due_date\", \"xeroInvoiceMappings_invoice\".\"payment_terms\", \"xeroInvoiceMappings_invoice\".\"billing_name\", \"xeroInvoiceMappings_invoice\".\"billing_email\", \"xeroInvoiceMappings_invoice\".\"billing_phone\", \"xeroInvoiceMappings_invoice\".\"notes\", \"xeroInvoiceMappings_invoice\".\"cancel_reason\", \"xeroInvoiceMappings_invoice\".\"client_action_id\", \"xeroInvoiceMappings_invoice\".\"issued_at\", \"xeroInvoiceMappings_invoice\".\"created_at\", \"xeroInvoiceMappings_invoice\".\"updated_at\") as \"data\" from (select * from \"invoices\" \"xeroInvoiceMappings_invoice\" where \"xeroInvoiceMappings_invoice\".\"id\" = \"xeroInvoiceMappings\".\"invoice_id\" limit $1) \"xeroInvoiceMappings_invoice\") \"xeroInvoiceMappings_invoice\" on true where (\"xeroInvoiceMappings\".\"company_id\" = $2 and \"xeroInvoiceMappings\".\"sync_status\" = $3)\nparams: 1,095aef76-fef5-4139-af37-a42f2d7e2faf,synced Contacts 0 new / 0 updated, invoices 0 new / 0 updated, payments 0 new / 0 updated, bank transactions 0 new / 0 updated. Imported 0 new and updated 0 existing records. Last sync was not updated."
+    "lastError": null
   },
   "cvMetrics": {
     "cvMetricsRefreshJobId": null,

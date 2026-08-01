@@ -29,5 +29,12 @@
     },
     "note": "Code fix only; deploy allows active job to resume through payments without manual sync or DB mutation"
   },
-  "verdict": "FIX_DEPLOY_READY"
+  "verdict": "FIX_DEPLOY_READY",
+  "deployStatus": {
+    "pushedToOrigin": true,
+    "headCommit": "4a24b89",
+    "stagingDeployVerified": false,
+    "blocker": "RAILWAY_TOKEN unset; no commit hash on /health/ready",
+    "mustBeLiveBefore": "active job 81c5b8d8 reaches payments stage"
+  }
 }

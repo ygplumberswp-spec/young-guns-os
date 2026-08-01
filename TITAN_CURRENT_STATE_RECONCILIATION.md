@@ -1,11 +1,11 @@
 # TITAN Current-State Reconciliation
 
-**Generated (UTC):** 2026-08-01T12:26:00Z  
-**Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
-**Branch:** `cursor/titan-frozen-scope-completion` @ `1ebd09f`  
+**Generated (UTC):** 2026-08-01T12:31:30Z  
+**Repository:** `/Users/keanuventer/Downloads/Titan Aura V1` (active; `titan-os-source` has no commits)  
+**Branch:** `cursor/titan-frozen-scope-completion` @ `4a24b89`  
 **Staging ref:** `cpkuwtaipjxeipvbssvn` only — production `rshuiaghmtrvvilhqpwm` **never touched**  
-**Merged resume work:** `bf815d2f`, `cc48def9` → `diagnostic-output/192-cursor-resume-reconciliation.json`  
-**Machine evidence:** `diagnostic-output/193-current-state-reconciliation.json`
+**Merged resume work:** Sprint 192 + payments fix `162cbf4`/`4a24b89`  
+**Machine evidence:** `diagnostic-output/195-cursor-resume-reconciliation.json`, `187-xero-import-recovery-verify.json`
 
 ---
 
@@ -16,7 +16,8 @@
 | Git sync | Up to date with `origin/cursor/titan-frozen-scope-completion` |
 | Worktrees | 1 — no duplicate workers |
 | Staging API | **ready** — `database=connected`, `providersEnabled=true` |
-| Active Xero import | Job `81c5b8d8…` **running**, heartbeat fresh, checkpoint preserved |
+| Active Xero import | Job `81c5b8d8…` **running**, contacts **p5**, heartbeat fresh (12:29:39Z) |
+| Payments SQL fix | **`162cbf4`** committed+pushed; staging deploy **unverified** (no Railway CLI/token) |
 | Customer mappings | **673** — 0 duplicates |
 | `last_sync_at` | **null** — GO gate not met |
 | Local journal latest | `0109_xero_two_way_sync_scaffolding` (+ SQL files `0107`, `0110` not in journal) |
@@ -54,7 +55,8 @@
 | **FRZ-022** | Internal pilot milestone | **BLOCKED** | `TITAN_PILOT_READINESS_REPORT.md` | Owner pilot sign-off; Xero GO + chain gaps |
 | **FRZ-023** | Full business chain acceptance / launch | **PARTIAL** | `TITAN_FINAL_LAUNCH_REPORT.md` | ~27% verified; NOT LAUNCH-READY |
 | **PIPE-1** | Xero recovery fix (heartbeat / auto-resume) | **VERIFIED PASS** (code) / **IMPLEMENTED — STAGING VERIFICATION REQUIRED** (GO) | `9bec8c3` | Recovery deployed; job `81c5b8d8` running with heartbeat |
-| **PIPE-2** | Xero import GO gate | **PARTIAL** (active) | `187` | 673 contacts mapped; `last_sync_at` null; CV auto not fired |
+| **PIPE-1b** | Xero payments SQL fix (lateral join) | **VERIFIED PASS** (code/tests) / **IMPLEMENTED — STAGING VERIFICATION REQUIRED** (deploy) | `162cbf4`, `4a24b89` | Fix before payments stage; prior job `8e6aec9b` failed here |
+| **PIPE-2** | Xero import GO gate | **ACTIVE** | `187` | 673 contacts mapped; contacts p5; `last_sync_at` null; CV auto not fired |
 | **PIPE-3** | SPI-001 Supplier Price Intelligence | **IMPLEMENTED — STAGING VERIFICATION REQUIRED** (code) / **FAILED** (staging DB) | `0b6b911` | Migration `0110` not applied — deferred during import |
 | **PIPE-4** | YGP-001 Young Guns Pricing | **QUEUED** | — | Hard gate: SPI-001 staging PASS |
 | **PIPE-5** | E2E margin flow verify | **QUEUED** | — | After YGP-001 |
@@ -114,15 +116,17 @@
 | `GET /api/v1/health/ready` | **ready**, database connected, providersEnabled=true, workersEnabled=false |
 | `187-xero-import-recovery-verify.mjs` | **IN_PROGRESS** — job running, heartbeat updating, 673 mappings, 0 dupes |
 | Prior failed job `8e6aec9b…` | **failed** at payments (invoice lateral join SQL error) — mappings preserved |
-| Active job `81c5b8d8…` | **running** contacts page 3, activity `processing` |
+| Active job `81c5b8d8…` | **running** contacts page **5**, activity `processing`, heartbeat 12:29:39Z |
+| Payments fix deploy | **UNVERIFIED** — pushed `162cbf4`; confirm before payments stage |
 
 ---
 
 ## Exact next automatic action
 
-1. **Poll read-only** — re-run `diagnostic-output/187-xero-import-recovery-verify.mjs` every few minutes until `verdict=PASS` (`completed`, `last_sync_at` populated, `cvMetricsRefreshJobId` set).
-2. **On GO** — auto-trigger CV-001b post-import verify (`185-cv-post-xero-import-complete.json`); queue two-way verify per `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md`.
-3. **When quiescent** — apply migrations `0107`, `0108`, `0109`, `0110` on staging (safe window only).
-4. **Continue pipeline** — YGP → margin → JOB-DEL → PRN → PHSL → GSL → perf → frozen scope → pilot → launch.
+1. **Poll read-only** — re-run `diagnostic-output/187-xero-import-recovery-verify.mjs` until `verdict=PASS` (`completed`, `last_sync_at` populated, `cvMetricsRefreshJobId` set).
+2. **Before payments stage** — confirm staging API includes `162cbf4` (Railway redeploy if auto-deploy did not pick up push).
+3. **On GO** — auto-trigger CV-001b post-import verify; queue two-way verify per `TITAN_XERO_TWO_WAY_VERIFY_QUEUE.md`.
+4. **When quiescent** — apply migrations `0107`, `0108`, `0109`, `0110` on staging (safe window only).
+5. **Continue pipeline** — YGP → margin → JOB-DEL → PRN → PHSL → GSL → perf → frozen scope → pilot → launch.
 
 **Do not:** manual Xero Sync, restart import from zero, apply migrations during batches, touch production, implement JOB-DEL/PRN until import quiescent.

@@ -5,6 +5,22 @@
 
 ---
 
+## Sprint 195 — Cursor resume + payments SQL fix verification
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Safe resume after Cursor close; verify payments lateral-join fix; read-only Xero poll |
+| **Result** | **RESUME_SAFE** — payments fix committed (`162cbf4`/`4a24b89`); import **IN_PROGRESS** at contacts p5 |
+| **Repo** | `/Users/keanuventer/Downloads/Titan Aura V1` (active; `titan-os-source` empty) |
+| **Staging** | `/health/ready` 200; DB connected; job `81c5b8d8…` heartbeat 12:29:39Z |
+| **Tests** | 336 pass including `buildSyncedInvoiceMappingLookup` payments fix |
+| **Deploy** | Recovery `9bec8c3` confirmed; payments fix deploy **unverified** (no Railway CLI/token) |
+| **Evidence** | `diagnostic-output/195-cursor-resume-reconciliation.json`, updated `187` probe |
+| **Next phase selected** | Read-only monitor Xero; confirm `162cbf4` on staging before payments stage |
+
+---
+
 ## Sprint 192 — Cursor safe resume reconciliation
 
 | Field | Value |
