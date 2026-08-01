@@ -43,7 +43,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | AI-006 | False connected impressions from UI grouping | PARTIAL | Trust | Same as Decisions 4 + 6 |
 | OPS-008–011, OPS-015 | Job card capture + gated complete | **IMPLEMENTED (staging UX-B)** | Field techs can finish jobs in mobile UI | Staging E2E 35/35 — **UX-028** |
 | POR-005 / POR-006 | Technician write UI + crew-scoped access | **IMPLEMENTED (staging UX-B)** | Unassigned tech denied; finance denied | Keep hardening portal/client surfaces — **UX-028** |
-| POR-003 / OPS-016 | ETA in API, not shown on client jobs UI | BUILT BUT NOT VISIBLE / PARTIAL | Client promise | Render ETA on `/my` (and aliased `/portal`) — **UX-030** |
+| POR-003 / OPS-016 | ETA on portal job **detail** + **list** (`etaAt`, Sprint 020) | **PARTIAL (local)** | Live en-route map depth open | Staging proof after Railway redeploy — **UX-030** |
 | FIN-005 / FIN-007 | Xero connect/import live path not acceptance-proven this audit | BLOCKED | Core accounting | Staging Sync after Decision 3 classifier — **UX-006–011, UX-021** |
 | FLT-008 | ~~Honest Maps/ETA surfaces missing~~ **UX-I CLOSED staging** (live Maps SDK/Directions still OUT) | PARTIAL | Live provider ETA still open | Honest address/deep-link + capability states — **UX-024, UX-043 ✓**; live Maps deferred |
 | PLT-008 | MFA built but not enforced at login | **CLOSED (Sprint 001/005)** | Security | Login MFA gate + `/auth/login/mfa` + web challenge flow |

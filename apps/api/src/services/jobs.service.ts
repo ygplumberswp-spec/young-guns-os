@@ -806,6 +806,7 @@ function toJobSummary(job: JobWithRelations): JobSummary {
       : null,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
+    etaAt: null,
   };
 }
 

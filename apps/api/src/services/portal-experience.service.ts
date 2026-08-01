@@ -1,3 +1,4 @@
+import { resolveCustomerVisibleJobEtaAt } from '../lib/customer-visible-job-eta.js';
 import { and, desc, eq, ne, or, sql } from 'drizzle-orm';
 import type {
   AcceptQuoteRequest,
@@ -233,11 +234,13 @@ export class PortalExperienceService {
       job.scheduledEndAt?.toISOString() ?? job.scheduledAt?.toISOString() ?? null;
     let liveTracking: PortalJobTrackingDetail['liveTracking'] = null;
 
-    const trackingEligible =
-      Boolean(job.assignedUserId) &&
-      job.status !== 'cancelled' &&
-      job.status !== 'completed' &&
-      (job.status === 'scheduled' || job.status === 'in_progress' || job.status === 'new');
+    const customerEtaAt = resolveCustomerVisibleJobEtaAt({
+      assignedUserId: job.assignedUserId,
+      status: job.status,
+      scheduledAt: job.scheduledAt,
+      scheduledEndAt: job.scheduledEndAt,
+    });
+    const trackingEligible = customerEtaAt !== null;
 
     if (trackingEligible) {
       const activeTracking = await getActiveEnRouteTracking(this.db, scope.companyId, jobId);
@@ -255,7 +258,7 @@ export class PortalExperienceService {
 
     // Customer-visible ETA: live en-route estimate when tracking is active;
     // otherwise scheduled appointment window when the job is still open (OPS-016 / POR-003).
-    const etaAt = liveTracking?.etaAt ?? (trackingEligible ? scheduledEta : null);
+    const etaAt = liveTracking?.etaAt ?? customerEtaAt;
 
     return {
       job: {
@@ -924,6 +927,12 @@ function toJobSummary(
       : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    etaAt: resolveCustomerVisibleJobEtaAt({
+      assignedUserId: row.assignedUserId,
+      status: row.status,
+      scheduledAt: row.scheduledAt,
+      scheduledEndAt: row.scheduledEndAt,
+    }),
   };
 }
 

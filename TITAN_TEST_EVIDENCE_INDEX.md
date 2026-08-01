@@ -170,6 +170,8 @@
 | `TITAN_STAGING_VERIFICATION_SPRINT019_REPORT.md` | Sprint 019 full staging verification report |
 | `TITAN_STAGING_VERIFICATION_SPRINT018_REPORT.md` | | Sprint 018 full staging verification report |
 
+| `apps/api/src/lib/customer-visible-job-eta.test.ts` | UX-030 customer-visible job ETA helper tests |
+
 ## Coverage gaps (Phase 2+ targets)
 
 - Cross-tenant API denial matrix (automated)  

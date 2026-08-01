@@ -47,6 +47,8 @@ export type JobSummary = {
   assignedUserName: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Customer-visible technician ETA when tracking applies (portal/mobile). */
+  etaAt: string | null;
 };
 
 export type JobDocumentLink = {

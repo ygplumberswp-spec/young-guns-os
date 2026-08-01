@@ -326,3 +326,19 @@
 | **Approval required?** | Sync Railway staging `DATABASE_URL` + valid `RAILWAY_TOKEN` or dashboard redeploy |
 | **Next phase selected** | Owner Railway env sync; rerun public smokes; safe local Master Directive pause at FRZ-015 / FRZ-018 |
 
+
+---
+
+## Sprint 020 — UX-030 portal job list ETA (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | POR-003 / OPS-016 — customer-visible ETA on `/my/jobs` list |
+| **Result** | `resolveCustomerVisibleJobEtaAt` helper; portal/mobile job summaries include `etaAt`; `PortalJobsPage` renders ETA row |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `customer-visible-job-eta.ts`, `mobile.service.ts`, `portal-experience.service.ts`, `PortalJobsPage.tsx`, `JobSummary` type |
+| **Migration** | None |
+| **Tests** | `customer-visible-job-eta.test.ts` (3 pass); `pnpm typecheck`, `pnpm test`, `pnpm build` — pass |
+| **Approval required?** | No — local only; staging proof waits on Railway DB fix |
+| **Next phase selected** | Owner Railway env sync + public smokes; Phase 2 cross-tenant denial matrix (automated) |

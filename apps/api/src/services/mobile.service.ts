@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { resolveCustomerVisibleJobEtaAt } from '../lib/customer-visible-job-eta.js';
 import type {
   MobileAlertSummary,
   MobileApprovalSummary,
@@ -608,5 +609,11 @@ function toMobileJobSummary(
       : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    etaAt: resolveCustomerVisibleJobEtaAt({
+      assignedUserId: row.assignedUserId,
+      status: row.status,
+      scheduledAt: row.scheduledAt,
+      scheduledEndAt: row.scheduledEndAt,
+    }),
   };
 }

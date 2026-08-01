@@ -5,13 +5,7 @@ import type { PortalJobTrackingDetail } from '@titan/shared';
 import { PortalApiClientError, fetchPortalJob } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
-
-function formatWhen(value: string | null | undefined): string | null {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString();
-}
+import { formatPortalWhen } from '../../lib/portal-datetime';
 
 export function PortalJobDetailPage() {
   const params = useParams<{ jobId: string }>();
@@ -44,8 +38,8 @@ export function PortalJobDetailPage() {
     };
   }, [accessToken, jobId]);
 
-  const etaLabel = formatWhen(detail?.liveTracking?.etaAt ?? detail?.job.etaAt ?? null);
-  const scheduledLabel = formatWhen(detail?.job.scheduledAt ?? null);
+  const etaLabel = formatPortalWhen(detail?.liveTracking?.etaAt ?? detail?.job.etaAt ?? null);
+  const scheduledLabel = formatPortalWhen(detail?.job.scheduledAt ?? null);
 
   return (
     <div className="portal-page">
@@ -141,7 +135,7 @@ export function PortalJobDetailPage() {
                 {detail.timeline.map((entry) => (
                   <li key={entry.id}>
                     <strong>{entry.title}</strong>
-                    <span className="tabular-nums">{formatWhen(entry.occurredAt)}</span>
+                    <span className="tabular-nums">{formatPortalWhen(entry.occurredAt)}</span>
                     {entry.description ? <span>{entry.description}</span> : null}
                   </li>
                 ))}

@@ -4,6 +4,7 @@ import { EmptyState, PageHeader, Panel } from '@titan/ui';
 import { PortalApiClientError, fetchPortalJobs } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';
 import { toPortalNestedHref } from '../../lib/portal-routing';
+import { formatPortalWhen } from '../../lib/portal-datetime';
 
 export function PortalJobsPage() {
   const { accessToken } = usePortalAuth();
@@ -51,6 +52,10 @@ export function PortalJobsPage() {
                       Scheduled {new Date(job.scheduledAt).toLocaleString()}
                     </span>
                   ) : null}
+                  {job.etaAt ? (
+                    <span className="tabular-nums">ETA {formatPortalWhen(job.etaAt)}</span>
+                  ) : null}
+
                 </Link>
               </li>
             ))}
