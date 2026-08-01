@@ -5,6 +5,19 @@
 
 ---
 
+## Sprint FRZ-018g — Xero background import jobs
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018g — Xero background sync architecture + staging verify |
+| **Result** | **PARTIAL** — background job running past 90s; contacts 49→85; full sync pending |
+| **Checkpoint** | `3120483` |
+| **Tests** | 310 pass (typecheck + build pass) |
+| **Staging** | `178-frz018g-xero-background-sync-verify.json` — job running, no new 90s timeout |
+
+---
+
 ## Sprint 000 — Phase 0 audit baseline
 
 | Field | Value |

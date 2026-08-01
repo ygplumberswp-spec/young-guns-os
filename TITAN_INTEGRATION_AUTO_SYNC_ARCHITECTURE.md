@@ -24,7 +24,7 @@
 2. No scheduled incremental polling runner (schedule table existed but unused).
 3. No unified tenant-safe orchestrator (duplicate ad-hoc sync paths).
 4. UI lacked truthful auto-sync states (last/next sync, retry, corrective action).
-5. Xero 90s timeout caused FRZ-018e partial contact import failures.
+5. Xero 90s timeout caused FRZ-018e partial contact import failures — **fixed in `3120483`** via background batch jobs (no synchronous 90s/180s whole-sync wall clock).
 
 ---
 
@@ -65,7 +65,7 @@ Single tenant-safe orchestration layer:
 
 | Provider | Status | Notes |
 |----------|--------|-------|
-| **Xero** | **FULL** | Auto initial on OAuth callback hook; incremental via scheduler; timeout raised to 180s |
+| **Xero** | **FULL** | Auto initial on OAuth callback hook; incremental via scheduler; **background import jobs** with checkpoint resume |
 | **Cartrack** | **FULL** | Auto initial on credential save hook; incremental polling |
 | **Email / Yoco** | PARTIAL | Orchestrator can run verification sync when connected |
 | **WhatsApp / OpenAI / Gemini / n8n** | PARTIAL | Status + honest states; no full polling backend |

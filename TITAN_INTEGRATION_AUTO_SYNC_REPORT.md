@@ -9,7 +9,7 @@
 
 ## Summary
 
-Implemented a unified **IntegrationSyncOrchestrator** with scheduled polling, OAuth/connect hooks, truthful UI states, and Xero timeout fix (90s → 180s). Manual Sync now is recovery-only in UI copy and de-emphasized placement.
+Implemented a unified **IntegrationSyncOrchestrator** with scheduled polling, OAuth/connect hooks, truthful UI states, and **Xero background import jobs** (checkpointed paginated batches, 45s per-tick budget — no whole-sync 90s wall clock). Manual Sync now is recovery-only in UI copy and de-emphasized placement; sync POST returns immediately and UI polls `/integrations/xero/sync/status`.
 
 ---
 

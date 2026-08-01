@@ -5,7 +5,26 @@
 **Production ref blocked:** `rshuiaghmtrvvilhqpwm` — not accessed  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Updated (UTC):** 2026-08-01  
-**Verdict:** **PARTIAL** — Owner enabled `SCHEDULERS_ENABLED=true`; OAuth connected (Young Guns Plumbing); 49 contacts imported (prior manual sync); no `integration_sync_schedules` row yet (OAuth predates auto-sync deploy); scheduler-driven sync not yet evidenced; `last_sync_at` null; invoices/payments/bank pending
+**Verdict:** **PARTIAL** — Background import architecture deployed (`3120483`); scheduler processing pending job past 90s without timeout; contacts 49→85+; `last_sync_at` pending full stage completion; invoices/payments/bank pending
+
+---
+
+## FRZ-018g background sync architecture verification (2026-08-01)
+
+**Commit:** `3120483` — checkpointed batch import jobs; HTTP enqueue returns immediately.
+
+| Check | Result |
+|-------|--------|
+| Root cause (90s timeout) | **IDENTIFIED** — `XERO_IMPORT_OVERALL_TIMEOUT_MS = 90_000` in deployed `xero-sync.service.ts` (commit `7741976`); staging had not yet run new architecture |
+| Background job enqueued | **PASS-DB** — pending import job inserted; scheduler picked up |
+| Job survives 90s wall clock | **PASS-DB** — job `8e6aec9b…` still `running` after 90s+ (no new 90s failure) |
+| Contacts import progressing | **PASS-DB** — customer mappings 49 → 85 during background run |
+| Checkpoint metadata | **PARTIAL** — `result_summary` checkpoint populates on new-code batches |
+| `last_sync_at` | **PARTIAL** — null until all stages complete (by design) |
+| API health | **PASS** — `/api/v1/health/ready` database connected |
+| Owner API enqueue test | **PARTIAL** — no `OWNER_ACCESS_TOKEN`; DB enqueue path used |
+
+Evidence: `diagnostic-output/178-frz018g-xero-background-sync-verify.json`
 
 ---
 
