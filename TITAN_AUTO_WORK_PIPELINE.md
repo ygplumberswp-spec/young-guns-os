@@ -17,6 +17,15 @@
 | 5 | E2E margin flow verify | **QUEUED** | — | `188-supplier-to-margin-e2e-verify.json` |
 | 6 | JOB-DEL-001 Job cancel, archive & safe test delete | **QUEUED** | — | `diagnostic-output/190-job-delete-blocker-audit.json` |
 | 7 | PRN-001 Complete-app printing and PDF output | **QUEUED** | — | `diagnostic-output/191-prn-complete-app-print-verify.json` |
+| 8 | PHSL-001 Pricing-list hygiene | **QUEUED** | — | After PRN-001; reference only — no new CL-001 spec |
+| 9 | GSL-001 General supplier-list hygiene | **QUEUED** | — | After PHSL-001 |
+| 10 | PERF-001 Performance / speed / reliability | **QUEUED** | — | `TITAN_MASTER_EXECUTION_PLAN.md` Phase 22 |
+| 11 | WFM-001 Workforce / timesheet / overtime | **PARTIAL** | UX-B, FRZ-013 | Full HR/legal gates open |
+| 12 | PRV-001 Remaining providers (Cartrack, WhatsApp live, Meta) | **PARTIAL / NOT AUDITED** | — | `TITAN_PROVIDER_STATE_REGISTER.md` |
+| 13 | SEC-001 Security completion (MFA, session click-path, matrix) | **IMPLEMENTED — STAGING VERIFY** | `4410a02` | `184-secure-session-staging-verify.json` |
+| 14 | FRZ-SCOPE Frozen-scope binding enforcement | **QUEUED** | — | `TITAN_CLEAN_DATA_UX_QUEUE.md` Phases B–F |
+| 15 | FRZ-022 Internal pilot readiness | **BLOCKED** | — | `TITAN_PILOT_READINESS_REPORT.md` — Owner sign-off |
+| 16 | FRZ-023 Final launch acceptance | **QUEUED** | — | `TITAN_FINAL_LAUNCH_REPORT.md` |
 
 ---
 
@@ -189,3 +198,65 @@ Does **not** block Xero recovery, SPI-001, or JOB-DEL-001 implementation.
 ### Sequencing
 
 Runs **immediately after Phase 6 (JOB-DEL-001)**. May run **in parallel** with PHSL/GSL when added — complete-app printing is independent of supplier-list hygiene work.
+
+---
+
+## Phase 8 — PHSL-001 Pricing-list hygiene
+
+**Status:** **QUEUED** — reference row only; runs after Phase 7 (PRN-001).  
+**Binding:** Existing pricing/supplier docs — no new CL-001 spec, no scope expansion.
+
+---
+
+## Phase 9 — GSL-001 General supplier-list hygiene
+
+**Status:** **QUEUED** — after PHSL-001.  
+**Gate:** Xero GO + SPI-001 staging PASS preferred.
+
+---
+
+## Phase 10 — PERF-001 Performance / speed / reliability
+
+**Status:** **QUEUED** — maps to `TITAN_MASTER_EXECUTION_PLAN.md` Phase 22 (observability, backup, recovery, performance).  
+**Evidence (when executed):** perf/load smoke artifacts under `diagnostic-output/`.
+
+---
+
+## Phase 11 — WFM-001 Workforce / timesheet / overtime
+
+**Status:** **PARTIAL** — mobile time + day timeline local (UX-B, FRZ-013); full labour-law / HR approval gates open.  
+**Freeze ref:** FRZ-013 §14.
+
+---
+
+## Phase 12 — PRV-001 Remaining providers
+
+**Status:** **PARTIAL / NOT AUDITED** — Cartrack live, WhatsApp live send, Meta/Google ads; honest stubs on staging.  
+**Register:** `TITAN_PROVIDER_STATE_REGISTER.md`.
+
+---
+
+## Phase 13 — SEC-001 Security completion
+
+**Status:** **IMPLEMENTED — STAGING VERIFICATION REQUIRED** — MFA login gate + secure session (`4410a02`); forbidden-action matrix local GO; Owner token click-path partial.  
+**Evidence:** `184-secure-session-staging-verify.json`, Sprint 028 tests.
+
+---
+
+## Phase 14 — FRZ-SCOPE Frozen-scope binding enforcement
+
+**Status:** **QUEUED** — `TITAN_CLEAN_DATA_UX_QUEUE.md` Phases B–F after Xero GO (cleanup manifest, decorative pages, domain events, uniform UX).
+
+---
+
+## Phase 15 — FRZ-022 Internal pilot readiness
+
+**Status:** **BLOCKED** — Owner pilot sign-off; operational chain + Xero GO required.  
+**Report:** `TITAN_PILOT_READINESS_REPORT.md`.
+
+---
+
+## Phase 16 — FRZ-023 Final launch acceptance
+
+**Status:** **QUEUED** — after pilot PASS.  
+**Report:** `TITAN_FINAL_LAUNCH_REPORT.md`.
