@@ -1,8 +1,9 @@
 # TITAN Final UX Consolidation Report
 
-**Generated:** 2026-08-01T19:45:00.000Z  
+**Generated:** 2026-08-01T19:42:14.000Z  
 **Branch:** `cursor/titan-final-product-consolidation`  
-**Tip SHA:** `f20524c` (`f20524c76e28b5f86c34f985b98a619bd472b902`)  
+**Tip SHA:** `4c14050` (`4c14050b225511aef160a78e5accf131d81aae2e`)  
+**Code base (pre-report):** `f20524c` (CRM 224 acceptance)  
 **Prior consolidation:** `04f3999`  
 **Production touched:** NO  
 **Migrations 0107–0110 applied:** NO  
@@ -31,7 +32,7 @@
 | Jobs | **GO** | — | No |
 | Scheduling | **HOLD** | CAL-001 gaps: resize, team filter, overlap layout; staging screenshot pack missing | Yes (gaps) |
 | Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 187 PASS | No |
-| Cartrack / Fleet Live Map | **HOLD** | mapped=2 (217/218) but GPS positionCount=0; no Fleet Live Map route; live tiles NOT IMPLEMENTED | Yes (map route + GPS proof) |
+| Cartrack / Fleet Live Map | **HOLD** | mapped=2 + credentials locked (217) but GPS positionCount=0; `/mobile-platform/dispatcher` console exists (3s poll code) but no map tiles; authenticated position proof missing | Yes (GPS proof + map tiles) |
 | Communications | **HOLD** | Unified workspace not implemented; WhatsApp blocked (owner creds); email not fully verified | Yes (workspace) |
 | AURA | **GO** | Routes exist; content scoped per directive | No |
 | Settings | **HOLD** | `/settings` index missing PageHeader (1 route gap) | Yes (minor) |
@@ -48,8 +49,8 @@
 
 | Check | Result |
 |-------|--------|
-| Branch | `cursor/titan-final-product-consolidation` @ `f20524c` |
-| CRM tip matches expected | YES (`f20524c` — chore(diagnostics): CRM final staging acceptance pass 224) |
+| Branch | `cursor/titan-final-product-consolidation` @ `4c14050` |
+| CRM acceptance code base | YES (`f20524c` — 224 GO 57/57) |
 | Web deploy matches CRM acceptance | YES (`313001b5`) |
 | API deploy | `01b48519` (SUCCESS 2026-08-01 20:56 +02:00; supersedes `3653e7bd`) |
 | Production untouched | YES |
@@ -157,31 +158,37 @@ Full matrix below. Staging click-through for all 134 routes not automated.
 
 ## 7. Cartrack and Fleet Live Map
 
-**Probes:** `217-cartrack-staging-verify.json` · `218-cartrack-fleet-seed-verify.json`
+**Probes:** `217-cartrack-staging-verify.json` · `218-cartrack-fleet-seed-verify.json` · code `useCartrackLivePositions.ts`
 
 | Check | Result |
 |-------|--------|
 | CF172047 / CF77263 mapped | 2 (auto_matched per 217/218) |
-| last_sync_at | 2026-08-01T18:11:01Z (217) |
-| GPS positions | **0** |
-| Fleet Live Map route | **NOT FOUND** — `/fleet` stored-data only |
-| Live map tiles | NOT IMPLEMENTED |
+| Credentials locked | YES (`hasCredentials: true`, connection lock per 211) |
+| last_sync_at | 2026-08-01T18:11:01.735Z (217) |
+| Duplicate mappings | 0 (217 duplicates.pass) |
+| GPS positions stored | **0** (217 positionCount) |
+| `/fleet` | 200 — `FleetDispatchBoard` honest banner: no live map tiles |
+| Live Dispatch console | `/mobile-platform/dispatcher` → 200 — `LiveDispatchPositionsPanel` |
+| 3s visible / 60s hidden poll | PASS (code — `LIVE_POLL_MS=3000`, `HIDDEN_POLL_MS=60000`) |
+| Map tile UI | **NOT IMPLEMENTED** |
+| Authenticated staging probe | **NOT RUN** (no OWNER_ACCESS_TOKEN / DATABASE_URL this session) |
 
-**Verdict: HOLD** — mapping proof from 217/218; live GPS and map route proof incomplete. 225 re-run blocked (no staging DATABASE_URL).
+**Verdict: HOLD** — vehicle mapping and credential lock proven; GPS position count zero and no map tiles. Live Dispatch route exists but authenticated proof of non-empty positions not captured.
 
 ---
 
 ## 8. Integrations and communications
 
-| Provider | Status |
-|----------|--------|
-| Xero | Connected — Phase 2 GO |
-| Cartrack | Connected (217) — GPS 0 |
-| OpenAI (AURA) | Connected staging |
-| WhatsApp | Blocked |
-| Email | Ready/Incomplete |
-| Gmail / Google Maps | Unsupported |
-| Yoco | Incomplete |
+| Provider | Status | CONNECT ONCE → LOCK → AUTO-SYNC |
+|----------|--------|----------------------------------|
+| Xero | Connected — Phase 2 GO (220) | Verified |
+| Cartrack | Connected — mapped=2, GPS 0 (217) | Verified (credentials lock) |
+| WhatsApp Business | Blocked — owner credentials | Pattern ready |
+| Personal WhatsApp | Unsupported — honest banner | N/A |
+| SMTP / Email | Ready to configure | Verified (211) |
+| Gmail | Unsupported — roadmap card | N/A |
+| M365 | Unsupported — roadmap card | N/A |
+| Payments (Yoco) | Incomplete — profile sync only | Partial |
 
 Unified Communications workspace: NOT implemented.
 
@@ -226,7 +233,7 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 
 ## 12. Tests / build (local)
 
-Run on consolidation branch `f20524c`: typecheck PASS · API 369 · Web 136 · build PASS.
+Run on consolidation branch @ `4c14050` (2026-08-01T19:42Z): typecheck PASS · API 369 · Web 136 · build PASS · staging health 200.
 
 ## 13. Route matrix (134 staff routes)
 
