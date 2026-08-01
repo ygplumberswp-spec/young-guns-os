@@ -2392,13 +2392,14 @@ export class XeroSyncService {
     }
   }
 
-  /** Explicit join avoids Drizzle relational lateral-join failures on payments stage. */
+  /** Explicit join + narrow select avoids lateral joins and staging schema drift. */
   private async loadSyncedInvoiceMappingsForPayments(
     companyId: string,
   ): Promise<SyncedInvoiceMappingForPayment[]> {
     const rows = await this.db
       .select({
-        mapping: xeroInvoiceMappings,
+        invoiceId: xeroInvoiceMappings.invoiceId,
+        xeroInvoiceId: xeroInvoiceMappings.xeroInvoiceId,
         invoice: {
           id: invoices.id,
           currency: invoices.currency,
@@ -2417,10 +2418,7 @@ export class XeroSyncService {
         ),
       );
 
-    return rows.map(({ mapping, invoice }) => ({
-      ...mapping,
-      invoice,
-    }));
+    return rows;
   }
 }
 
@@ -2450,12 +2448,14 @@ function emptySyncStatus(currency: string): XeroSyncStatusResponse {
   };
 }
 
-export type SyncedInvoiceMappingForPayment = typeof xeroInvoiceMappings.$inferSelect & {
+export type SyncedInvoiceMappingForPayment = {
+  invoiceId: string;
+  xeroInvoiceId: string | null;
   invoice: {
     id: string;
     currency: string;
-    amountPaidCents: number;
-    amountCents: number;
+    amountPaidCents: number | null;
+    amountCents: number | null;
     status: (typeof invoices.$inferSelect)['status'];
     invoiceNumber: string;
   };

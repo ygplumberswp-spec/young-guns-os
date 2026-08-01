@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   buildXeroImportSyncMessage,
 } from './xero-import-job.shared.js';
@@ -36,37 +37,13 @@ test('buildSyncedInvoiceMappingLookup indexes synced rows by xero invoice id', (
   };
   const lookup = buildSyncedInvoiceMappingLookup([
     {
-      id: 'map-1',
-      companyId: 'co-1',
-      integrationConnectionId: 'conn-1',
       invoiceId: 'inv-1',
       xeroInvoiceId: 'xero-a',
-      xeroInvoiceNumber: 'INV-001',
-      xeroReference: null,
-      syncStatus: 'synced',
-      lastSyncedAt: null,
-      lastSuccessfulSyncAt: null,
-      lastError: null,
-      conflictMetadata: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       invoice,
     },
     {
-      id: 'map-2',
-      companyId: 'co-1',
-      integrationConnectionId: 'conn-1',
       invoiceId: 'inv-2',
       xeroInvoiceId: null,
-      xeroInvoiceNumber: null,
-      xeroReference: null,
-      syncStatus: 'synced',
-      lastSyncedAt: null,
-      lastSuccessfulSyncAt: null,
-      lastError: null,
-      conflictMetadata: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
       invoice: { ...invoice, id: 'inv-2' },
     },
   ]);
@@ -74,6 +51,20 @@ test('buildSyncedInvoiceMappingLookup indexes synced rows by xero invoice id', (
   assert.equal(lookup.size, 1);
   assert.equal(lookup.get('xero-a')?.invoiceId, 'inv-1');
   assert.equal(lookup.has('xero-b'), false);
+});
+
+test('loadSyncedInvoiceMappingsForPayments select avoids undeployed mapping columns', () => {
+  const source = readFileSync(
+    new URL('./xero-sync.service.ts', import.meta.url),
+    'utf8',
+  );
+  const fnStart = source.indexOf('private async loadSyncedInvoiceMappingsForPayments');
+  const fnEnd = source.indexOf('function emptySyncStatus', fnStart);
+  const fn = source.slice(fnStart, fnEnd);
+
+  assert.doesNotMatch(fn, /mapping:\s*xeroInvoiceMappings/);
+  assert.match(fn, /invoiceId:\s*xeroInvoiceMappings\.invoiceId/);
+  assert.doesNotMatch(fn, /conflictMetadata|conflict_metadata/);
 });
 
 test('buildXeroImportSyncMessage reports success counts', () => {
