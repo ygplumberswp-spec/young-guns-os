@@ -4753,6 +4753,23 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 @media (max-width: 414px) {
+  .auth-stage {
+    padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  }
+
+  .auth-stage__wordmark {
+    width: min(100%, 13rem);
+  }
+
+  .auth-stage__inner {
+    max-width: 100%;
+  }
+
+  .app-header__wordmark {
+    width: 5.5rem;
+  }
+
   .leads-toolbar {
     flex-direction: column;
     align-items: stretch;

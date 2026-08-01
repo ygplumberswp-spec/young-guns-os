@@ -74,9 +74,25 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 5 prep — Customer list search (OPS-001 / UX-013) |
 | **Result** | Complete |
-| **Checkpoint** | (pending commit) |
+| **Checkpoint** | `509cbb5` |
 | **Files changed** | `packages/shared/src/crm.ts`, `crm.service.ts`, `crm.ts` route, `crm-api.ts`, `CustomerListPage.tsx`, `CustomerList.tsx` |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (209 pass), `pnpm build` — pass |
 | **Approval required?** | No |
-| **Next phase selected** | Phase 3 — Locked TITAN brand, login and responsive shell |
+| **Next phase selected** | Phase 4 — Owner Command Centre and universal navigation |
+
+---
+
+## Sprint 004 — Phase 3 brand shell hardening
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 3 — Locked TITAN brand, login and responsive shell |
+| **Result** | Complete (local) |
+| **Checkpoint** | (pending commit) |
+| **Files changed** | `auth-shell.test.ts`, `index.css` (414px auth safe-area + wordmark) |
+| **Migration** | None |
+| **Tests** | Web tests 36 pass (includes brand shell contracts) |
+| **Approval required?** | No |
+| **Next phase selected** | Phase 4 — Owner Command Centre and navigation |
