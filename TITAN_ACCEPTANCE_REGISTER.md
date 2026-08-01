@@ -4,7 +4,7 @@
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Checkpoint:** `a161943` (Sprint 022 staging GO) → Sprint 028 forbidden-action API matrix (post-commit)  
-**Updated (UTC):** 2026-08-01 — Sprint 028: forbidden-action API matrix (FRZ-001 local automated)  
+**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging readiness BLOCKED (credential gate)  
 
 ---
 
@@ -61,7 +61,7 @@
 | FRZ-015 | §16 | AURA specialist departments + orchestration | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Staging verify GO** (Sprint FRZ-015b) | **AI provider** | — | Partially implemented | Owner configured Railway; live synthetic AURA 12/12 PASS | Owner | Sprint FRZ-015b | `TITAN_FRZ015_AURA_STAGING_REPORT.md`, `170-frz015-aura-staging-verify-go.json` |
 | FRZ-016 | §17 | Multi-AI gateway + controlled self-learning | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | None | **AI provider** | Policy approval | Partially implemented | Gateway exists; live provider + policy gates open | Owner | — | `ai-orchestration` routes |
 | FRZ-017 | §18 | Marketing/sales/digital presence | Owner | Partial | Partial | Partial | Yes | Yes | Partial | Partial | Partial | UX-H gates | Meta/Google | Publish approval | Partially implemented | Execute/send paths honest but not live | Cursor | UX-H | MKT module |
-| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | Preflight + **Xero static ready** | **Multi** | OAuth | Partially implemented | OAuth routes + unit tests pass; staging Xero env absent, gates off; Owner OAuth not attempted | Owner | — | `TITAN_FRZ015_AURA_STAGING_REPORT.md` §6, `xero-oauth.test.ts` |
+| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **BLOCKED** — Xero creds + `XERO_SYNC_ENABLED` absent on staging | **Multi** | OAuth | Blocked by credential/provider | Code + unit tests ready; live probe `oauthConfigured=false`, `OAUTH_NOT_CONFIGURED`; Owner credential gate | Owner | FRZ-018 | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `171-frz018-xero-staging-readiness.json` |
 | FRZ-019 | §20 | Owner Configuration Studio | Owner | Yes | Yes | Partial | Owner | Yes | Partial | Yes | Partial | None | — | Config publish | Partially implemented | Studio pages exist; rollback/version depth TBD | Cursor | — | Platform pages |
 | FRZ-020 | §21 | Controlled AURA Developer Studio | Owner | Partial | Partial | Partial | Owner | Yes | Partial | Yes | Partial | None | — | Prod deploy | Partially implemented | Workflow exists; prod isolation must be proven | Cursor | — | Developer portal |
 | FRZ-021 | §22 | Build-control protocol | Team | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | — | — | Verified complete | This completion run follows protocol | Cursor | Phase 0 | Master directive |

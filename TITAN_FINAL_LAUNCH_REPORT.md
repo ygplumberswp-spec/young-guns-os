@@ -1,7 +1,7 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify GO  
+**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging BLOCKED (credential gate)  
 **Status:** **NOT LAUNCH-READY**
 
 ---
@@ -14,7 +14,7 @@
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
 | **Highest remaining risk** | Field mobile UX-B re-run on current commit + live provider credentials |
-| **Current gate** | FRZ-018 Xero OAuth — **PAUSE GATE** (FRZ-015 AURA **GO**) |
+| **Current gate** | FRZ-018 Xero OAuth — **BLOCKED** (Owner credential gate; FRZ-015 AURA **GO**) |
 
 ---
 

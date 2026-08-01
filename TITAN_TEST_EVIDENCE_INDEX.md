@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify GO  
+**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging BLOCKED (credential gate)  
 **Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -191,6 +191,8 @@
 | `TITAN_FRZ015_AURA_STAGING_REPORT.md` | **FRZ-015 staging verify — GO** (Owner configured; live synthetic 12/12) |
 | `diagnostic-output/169-frz015-aura-staging-verify.json` | FRZ-015 blocked probe (credential absent) |
 | `diagnostic-output/170-frz015-aura-staging-verify-go.json` | **FRZ-015 GO** — live synthetic AURA staging verify (12/12, no secrets) |
+| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging readiness — BLOCKED** (Xero creds + sync gate absent) |
+| `diagnostic-output/171-frz018-xero-staging-readiness.json` | FRZ-018 structured probe — oauthConfigured=false, OAUTH_NOT_CONFIGURED, no secrets |
 
 ## Coverage gaps (Phase 2+ targets)
 

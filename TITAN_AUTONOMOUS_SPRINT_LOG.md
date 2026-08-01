@@ -531,3 +531,21 @@
 | **Approval required?** | No — Owner already configured |
 | **Next phase selected** | FRZ-018 Xero OAuth staging connect (Owner browser); safe local Master Directive work |
 
+---
+
+## Sprint FRZ-018 — Xero staging readiness (BLOCKED)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018 — Xero OAuth staging readiness (Phase A inspection + live probe, no OAuth) |
+| **Result** | **BLOCKED** — staging `oauthConfigured=false`; `POST /oauth/start` → `OAUTH_NOT_CONFIGURED`; `XERO_SYNC_ENABLED` and Xero client creds absent on Railway (inferred); code + 301 unit tests pass |
+| **Checkpoint** | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `diagnostic-output/171-frz018-xero-staging-readiness.json` |
+| **Staging API** | `/health/ready` **200** `providersEnabled=true`; authenticated Xero status honest disconnected |
+| **Callback URL** | `https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback` |
+| **Live financial writes** | **Not performed** |
+| **FRZ-015 re-run** | **Not performed** |
+| **Migration** | None |
+| **Approval required?** | **Yes — Owner** — Railway Xero creds + `XERO_SYNC_ENABLED=true` + Xero app redirect URI |
+| **Next phase selected** | Owner completes FRZ-018 credential gate → Phase C browser OAuth; parallel safe local FRZ-019 Configuration Studio audit |
+
