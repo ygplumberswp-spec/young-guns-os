@@ -34,21 +34,52 @@ import { invalidateIntegrationReadCaches } from './api-read-cache.js';
 const MAX_BACKOFF_MINUTES = 240;
 const MAX_CONSECUTIVE_FAILURES = 8;
 
-type AutoSyncConnectorConfig = {
-  autoSync?: {
-    consecutiveFailures?: number;
-    nextRetryAt?: string | null;
-    lastAttemptAt?: string | null;
-    lastSuccessAt?: string | null;
-    lastRecordsProcessed?: number | null;
-    lastError?: string | null;
-    initialSyncCompleted?: boolean;
-    cvMetricsRefreshAt?: string | null;
-    cvMetricsRefreshJobId?: string | null;
-    twoWayReadVerifyJobId?: string | null;
-    twoWayReadVerifyQueuedAt?: string | null;
-  };
+type AutoSyncState = {
+  consecutiveFailures?: number;
+  nextRetryAt?: string | null;
+  lastAttemptAt?: string | null;
+  lastSuccessAt?: string | null;
+  lastRecordsProcessed?: number | null;
+  lastError?: string | null;
+  initialSyncCompleted?: boolean;
+  cvMetricsRefreshAt?: string | null;
+  cvMetricsRefreshJobId?: string | null;
+  twoWayReadVerifyJobId?: string | null;
+  twoWayReadVerifyQueuedAt?: string | null;
 };
+
+type AutoSyncConnectorConfig = {
+  autoSync?: AutoSyncState;
+};
+
+/** Idempotency markers — must survive unrelated autoSync patches (read-modify-write). */
+const AUTO_SYNC_MARKER_KEYS = [
+  'cvMetricsRefreshJobId',
+  'cvMetricsRefreshAt',
+  'twoWayReadVerifyJobId',
+  'twoWayReadVerifyQueuedAt',
+] as const satisfies ReadonlyArray<keyof AutoSyncState>;
+
+function mergeAutoSyncState(
+  existing: AutoSyncState | undefined,
+  patch: Partial<AutoSyncState>,
+): AutoSyncState {
+  const merged: AutoSyncState = { ...existing };
+
+  for (const [key, value] of Object.entries(patch) as Array<[keyof AutoSyncState, unknown]>) {
+    if (value !== undefined) {
+      merged[key] = value as never;
+    }
+  }
+
+  for (const key of AUTO_SYNC_MARKER_KEYS) {
+    if (patch[key] === undefined && existing?.[key] != null) {
+      merged[key] = existing[key];
+    }
+  }
+
+  return merged;
+}
 
 export class IntegrationSyncOrchestratorError extends Error {
   constructor(
@@ -771,10 +802,11 @@ export class IntegrationSyncOrchestratorService {
     );
   }
 
-  private async updateConnectorAttemptMeta(
+  private async patchConnectorAutoSync(
     companyId: string,
     provider: AutoSyncProviderKey,
-    patch: { lastAttemptAt: string },
+    patch: Partial<AutoSyncState>,
+    connectorRowPatch?: { lastSyncAt?: Date | null; lastError?: string | null },
   ): Promise<void> {
     const connector = await this.deps.db.query.integrationConnectors.findFirst({
       where: and(
@@ -788,19 +820,31 @@ export class IntegrationSyncOrchestratorService {
     }
 
     const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
+
     await this.deps.db
       .update(integrationConnectors)
       .set({
+        ...(connectorRowPatch?.lastSyncAt !== undefined
+          ? { lastSyncAt: connectorRowPatch.lastSyncAt }
+          : {}),
+        ...(connectorRowPatch?.lastError !== undefined
+          ? { lastError: connectorRowPatch.lastError }
+          : {}),
         config: {
           ...config,
-          autoSync: {
-            ...config.autoSync,
-            lastAttemptAt: patch.lastAttemptAt,
-          },
+          autoSync: mergeAutoSyncState(config.autoSync, patch),
         },
         updatedAt: new Date(),
       })
       .where(eq(integrationConnectors.id, connector.id));
+  }
+
+  private async updateConnectorAttemptMeta(
+    companyId: string,
+    provider: AutoSyncProviderKey,
+    patch: { lastAttemptAt: string },
+  ): Promise<void> {
+    await this.patchConnectorAutoSync(companyId, provider, patch);
   }
 
   private async updateConnectorOutcomeMeta(
@@ -832,29 +876,25 @@ export class IntegrationSyncOrchestratorService {
       Math.max(5, 5 * 2 ** Math.min(consecutiveFailures, 6)),
     );
 
-    await this.deps.db
-      .update(integrationConnectors)
-      .set({
+    await this.patchConnectorAutoSync(
+      companyId,
+      provider,
+      {
+        consecutiveFailures,
+        lastRecordsProcessed: input.recordsProcessed,
+        lastError: input.success ? null : input.message,
+        lastSuccessAt: input.success ? new Date().toISOString() : config.autoSync?.lastSuccessAt,
+        initialSyncCompleted:
+          input.initialSyncCompleted ?? config.autoSync?.initialSyncCompleted ?? input.success,
+        nextRetryAt: input.success
+          ? null
+          : new Date(Date.now() + backoffMinutes * 60_000).toISOString(),
+      },
+      {
         lastSyncAt: input.success ? new Date() : connector.lastSyncAt,
         lastError: input.success ? null : input.message,
-        config: {
-          ...config,
-          autoSync: {
-            ...config.autoSync,
-            consecutiveFailures,
-            lastRecordsProcessed: input.recordsProcessed,
-            lastError: input.success ? null : input.message,
-            lastSuccessAt: input.success ? new Date().toISOString() : config.autoSync?.lastSuccessAt,
-            initialSyncCompleted:
-              input.initialSyncCompleted ?? config.autoSync?.initialSyncCompleted ?? input.success,
-            nextRetryAt: input.success
-              ? null
-              : new Date(Date.now() + backoffMinutes * 60_000).toISOString(),
-          },
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(integrationConnectors.id, connector.id));
+      },
+    );
   }
 
   async handleXeroImportJobSettled(input: {
@@ -896,29 +936,10 @@ export class IntegrationSyncOrchestratorService {
     companyId: string,
     syncJobId: string,
   ): Promise<void> {
-    const connector = await this.deps.db.query.integrationConnectors.findFirst({
-      where: and(
-        eq(integrationConnectors.companyId, companyId),
-        eq(integrationConnectors.connectorKey, 'xero'),
-      ),
+    await this.patchConnectorAutoSync(companyId, 'xero', {
+      cvMetricsRefreshAt: new Date().toISOString(),
+      cvMetricsRefreshJobId: syncJobId,
     });
-    if (!connector) return;
-
-    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
-    await this.deps.db
-      .update(integrationConnectors)
-      .set({
-        config: {
-          ...config,
-          autoSync: {
-            ...config.autoSync,
-            cvMetricsRefreshAt: new Date().toISOString(),
-            cvMetricsRefreshJobId: syncJobId,
-          },
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(integrationConnectors.id, connector.id));
   }
 
   async hasTwoWayReadVerifyQueuedForJob(
@@ -937,29 +958,10 @@ export class IntegrationSyncOrchestratorService {
   }
 
   async markTwoWayReadVerifyQueued(companyId: string, syncJobId: string): Promise<void> {
-    const connector = await this.deps.db.query.integrationConnectors.findFirst({
-      where: and(
-        eq(integrationConnectors.companyId, companyId),
-        eq(integrationConnectors.connectorKey, 'xero'),
-      ),
+    await this.patchConnectorAutoSync(companyId, 'xero', {
+      twoWayReadVerifyJobId: syncJobId,
+      twoWayReadVerifyQueuedAt: new Date().toISOString(),
     });
-    if (!connector) return;
-
-    const config = (connector.config ?? {}) as AutoSyncConnectorConfig;
-    await this.deps.db
-      .update(integrationConnectors)
-      .set({
-        config: {
-          ...config,
-          autoSync: {
-            ...config.autoSync,
-            twoWayReadVerifyJobId: syncJobId,
-            twoWayReadVerifyQueuedAt: new Date().toISOString(),
-          },
-        },
-        updatedAt: new Date(),
-      })
-      .where(eq(integrationConnectors.id, connector.id));
   }
 
   /**
@@ -1023,9 +1025,20 @@ export class IntegrationSyncOrchestratorService {
       );
       if (alreadyRefreshed) continue;
 
-      await customerValueService.refreshValueMetrics(connection.companyId);
-      await this.markCustomerValueMetricsRefreshed(connection.companyId, latestJobId);
-      refreshed += 1;
+      try {
+        await customerValueService.refreshValueMetrics(connection.companyId);
+        await this.markCustomerValueMetricsRefreshed(connection.companyId, latestJobId);
+        refreshed += 1;
+      } catch (error: unknown) {
+        console.error(
+          '[integration-sync-orchestrator] CV-001b scheduler fallback refresh failed',
+          {
+            companyId: connection.companyId,
+            syncJobId: latestJobId,
+            error,
+          },
+        );
+      }
     }
 
     return refreshed;

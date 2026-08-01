@@ -120,13 +120,17 @@ test('BackgroundWorkOrchestratorService refreshes customer value metrics on Xero
   const published: string[] = [];
   let refreshCalls = 0;
   let markCalls = 0;
+  const callOrder: string[] = [];
 
   const orchestrator = buildOrchestrator({
     integrationSyncOrchestrator: {
-      handleXeroImportJobSettled: async () => undefined,
+      handleXeroImportJobSettled: async () => {
+        callOrder.push('integrationHandle');
+      },
       hasCustomerValueMetricsRefreshedForJob: async () => false,
       markCustomerValueMetricsRefreshed: async () => {
         markCalls += 1;
+        callOrder.push('markCv');
       },
       hasTwoWayReadVerifyQueuedForJob: async () => false,
       markTwoWayReadVerifyQueued: async () => undefined,
@@ -140,6 +144,7 @@ test('BackgroundWorkOrchestratorService refreshes customer value metrics on Xero
     customerValueClassificationService: {
       refreshValueMetrics: async () => {
         refreshCalls += 1;
+        callOrder.push('refreshCv');
         return {
           dataCompleteness: 'complete',
           totals: { customerRecords: 675, qualifyingCustomers: 3 },
@@ -166,4 +171,42 @@ test('BackgroundWorkOrchestratorService refreshes customer value metrics on Xero
   assert.equal(refreshCalls, 1);
   assert.equal(markCalls, 1);
   assert.deepEqual(published, ['xero.import.completed']);
+  assert.deepEqual(callOrder, ['refreshCv', 'markCv', 'integrationHandle']);
+});
+
+test('BackgroundWorkOrchestratorService records connector outcome even when CV refresh throws', async () => {
+  let integrationHandleCalls = 0;
+
+  const orchestrator = buildOrchestrator({
+    integrationSyncOrchestrator: {
+      handleXeroImportJobSettled: async () => {
+        integrationHandleCalls += 1;
+      },
+      hasCustomerValueMetricsRefreshedForJob: async () => false,
+      markCustomerValueMetricsRefreshed: async () => undefined,
+      hasTwoWayReadVerifyQueuedForJob: async () => false,
+      markTwoWayReadVerifyQueued: async () => undefined,
+    },
+    customerValueClassificationService: {
+      refreshValueMetrics: async () => {
+        throw new Error('classification temporarily unavailable');
+      },
+    },
+  });
+
+  await orchestrator.handleXeroImportJobSettled({
+    companyId: 'company-1',
+    syncJobId: '8e6aec9b-2d99-493c-85b8-75f61d7f414b',
+    trigger: 'initial',
+    result: {
+      success: true,
+      message: 'Import complete',
+      contacts: { pulledCount: 675, failedCount: 0 },
+      invoices: { pulledCount: 120, failedCount: 0 },
+      payments: { pulledCount: 80, failedCount: 0 },
+      bankTransactions: { pulledCount: 0, failedCount: 0 },
+    },
+  } as never);
+
+  assert.equal(integrationHandleCalls, 1);
 });
