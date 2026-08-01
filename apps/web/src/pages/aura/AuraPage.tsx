@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { AGENT_REGISTRY, AI_NAME, NAV_LABELS, type AgentKey, type AgentTaskSummary } from '@titan/shared';
-import { hasAgentManagePermission, hasAnyPermission } from '@titan/auth/browser';
+import { hasAgentManagePermission, hasAnyPermission, canWriteCompanyMemory } from '@titan/auth/browser';
 import { useSearch } from 'wouter';
 import { EmptyState, LoadingState } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
@@ -128,7 +128,13 @@ export function AuraPage() {
   );
 
   const canWriteMemory = useMemo(
-    () => (user ? hasAnyPermission(user.permissions, ['intelligence:write']) : false),
+    () =>
+      user
+        ? canWriteCompanyMemory({
+            roleName: user.roleName,
+            permissions: user.permissions,
+          })
+        : false,
     [user],
   );
 

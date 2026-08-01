@@ -9,7 +9,7 @@ import { AiComparisonError } from '../services/ai-comparison.service.js';
 import type { AiProviderResilienceService } from '../services/ai-provider-resilience.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
-import { requireAnyPermission } from '../middleware/rbac.js';
+import { requireAnyPermission, requireCompanyMemoryWrite } from '../middleware/rbac.js';
 
 const providerKeySchema = z.enum([
   'openai',
@@ -475,7 +475,7 @@ export function createAiOrchestrationRouter({
     res.json({ data: { resilience } });
   });
 
-  router.post('/memory-sync', requireWrite, async (req, res) => {
+  router.post('/memory-sync', requireWrite, requireCompanyMemoryWrite(), async (req, res) => {
     const auth = getAuth(req);
     const parsed = memorySyncSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -486,7 +486,12 @@ export function createAiOrchestrationRouter({
     }
 
     const result = await aiMemorySyncService.syncApprovedContext(
-      { companyId: auth.companyId, userId: auth.userId },
+      {
+        companyId: auth.companyId,
+        userId: auth.userId,
+        roleName: auth.roleName,
+        permissions: auth.permissions,
+      },
       parsed.data,
     );
     res.status(201).json({ data: result });

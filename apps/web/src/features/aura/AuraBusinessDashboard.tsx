@@ -1,14 +1,12 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState } from '@titan/ui';
 import type { Recommendation } from '@titan/shared';
-import { useState } from 'react';
-import { ApiClientError } from '../../lib/api-client';
 import {
-  createAuraMemory,
   fetchIntelligenceDashboard,
   fetchRecommendations,
 } from '../../lib/intelligence-api';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { AuraQuickMemoryInput } from './AuraQuickMemoryInput';
 
 type AuraBusinessDashboardProps = {
   accessToken: string;
@@ -16,11 +14,6 @@ type AuraBusinessDashboardProps = {
 };
 
 export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusinessDashboardProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [memoryDraft, setMemoryDraft] = useState('');
-  const [isSavingMemory, setIsSavingMemory] = useState(false);
-  const [memorySuccess, setMemorySuccess] = useState<string | null>(null);
-
   const dashboardQuery = useCachedQuery({
     queryKey: 'intelligence/dashboard',
     accessToken,
@@ -42,29 +35,7 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
   const isLoading =
     (dashboardQuery.isLoading && !dashboard) ||
     (recommendationsQuery.isLoading && recommendationsQuery.data === undefined);
-  const loadError = error ?? dashboardQuery.error ?? recommendationsQuery.error;
-
-  async function handleSaveMemory() {
-    if (!canWriteMemory || !memoryDraft.trim()) return;
-
-    setIsSavingMemory(true);
-    setMemorySuccess(null);
-    setError(null);
-
-    try {
-      await createAuraMemory(accessToken, {
-        information: memoryDraft.trim(),
-        category: 'business_rule',
-        importance: 4,
-      });
-      setMemoryDraft('');
-      setMemorySuccess('Business rule saved to company memory.');
-    } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to save memory');
-    } finally {
-      setIsSavingMemory(false);
-    }
-  }
+  const loadError = dashboardQuery.error ?? recommendationsQuery.error;
 
   if (isLoading) {
     return <LoadingState label="Loading business intelligence…" />;
@@ -118,15 +89,15 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
   }
 
   return (
-    <div className="aura-business-dashboard">
-      <p className="page-muted">{dashboard.greeting.message}</p>
+    <div className="aura-business-dashboard aura-intelligence">
+      <p className="aura-intelligence__greeting">{dashboard.greeting.message}</p>
       {recommendations.length === 0 ? (
         <EmptyState
           title="No recommendations yet"
           description="Recommendations are generated from real tenant data when sufficient evidence is available."
         />
       ) : (
-        <ul className="simple-list">
+        <ul className="aura-intelligence__list">
           {recommendations.slice(0, 5).map((item: Recommendation) => (
             <li key={item.id}>
               <strong>{item.title}</strong> — {item.description}
@@ -135,24 +106,7 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
           ))}
         </ul>
       )}
-      {canWriteMemory ? (
-        <div className="aura-memory-form">
-          <textarea
-            className="settings-textarea"
-            value={memoryDraft}
-            onChange={(event) => setMemoryDraft(event.target.value)}
-            placeholder="Enter a business rule for AURA to remember…"
-            rows={3}
-          />
-          <Button
-            disabled={isSavingMemory || !memoryDraft.trim()}
-            onClick={() => void handleSaveMemory()}
-          >
-            {isSavingMemory ? 'Saving…' : 'Save to company memory'}
-          </Button>
-          {memorySuccess ? <p className="form-success">{memorySuccess}</p> : null}
-        </div>
-      ) : null}
+      {canWriteMemory ? <AuraQuickMemoryInput accessToken={accessToken} /> : null}
     </div>
   );
 }

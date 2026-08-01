@@ -67,6 +67,7 @@ export * from './whatsapp-contact-enrichment.js';
 export * from './agent-runtime.js';
 export * from './recruiting.js';
 export * from './intelligence.js';
+export * from './aura-memory-utils.js';
 export * from './mobile.js';
 export * from './analytics.js';
 export * from './agent-orchestration.js';

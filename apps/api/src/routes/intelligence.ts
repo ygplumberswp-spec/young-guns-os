@@ -6,7 +6,7 @@ import { MemoryError } from '../services/memory.service.js';
 import type { RecommendationsService } from '../services/recommendations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
-import { requireAnyPermission } from '../middleware/rbac.js';
+import { requireAnyPermission, requireCompanyMemoryWrite } from '../middleware/rbac.js';
 
 const memoryCategorySchema = z.enum(['business_rule', 'preference', 'process', 'note']);
 
@@ -20,6 +20,7 @@ const updateMemorySchema = z.object({
   category: memoryCategorySchema.optional(),
   information: z.string().trim().min(1).max(4000).optional(),
   importance: z.number().int().min(1).max(5).optional(),
+  enabled: z.boolean().optional(),
 });
 
 type IntelligenceRouterDeps = {
@@ -83,8 +84,12 @@ export function createIntelligenceRouter({
     },
   );
 
-  router.post('/memory', requireAnyPermission('intelligence:write'), async (req, res) => {
-    const { companyId, userId } = getAuth(req);
+  router.post(
+    '/memory',
+    requireAnyPermission('intelligence:write'),
+    requireCompanyMemoryWrite(),
+    async (req, res) => {
+    const auth = getAuth(req);
     const parsed = createMemorySchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -99,15 +104,20 @@ export function createIntelligenceRouter({
     }
 
     try {
-      const memory = await memoryService.createMemory({ companyId, userId }, parsed.data);
+      const memory = await memoryService.createMemory(auth, parsed.data);
       res.status(201).json({ data: { memory } });
     } catch (error) {
       handleMemoryError(res, error);
     }
-  });
+    },
+  );
 
-  router.patch('/memory/:id', requireAnyPermission('intelligence:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
+  router.patch(
+    '/memory/:id',
+    requireAnyPermission('intelligence:write'),
+    requireCompanyMemoryWrite(),
+    async (req, res) => {
+    const auth = getAuth(req);
     const parsed = updateMemorySchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -123,19 +133,24 @@ export function createIntelligenceRouter({
 
     try {
       const memoryId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const memory = await memoryService.updateMemory(companyId, memoryId, parsed.data);
+      const memory = await memoryService.updateMemory(auth, memoryId, parsed.data);
       res.json({ data: { memory } });
     } catch (error) {
       handleMemoryError(res, error);
     }
-  });
+    },
+  );
 
-  router.delete('/memory/:id', requireAnyPermission('intelligence:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
-    const memoryId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  router.delete(
+    '/memory/:id',
+    requireAnyPermission('intelligence:write'),
+    requireCompanyMemoryWrite(),
+    async (req, res) => {
+    const auth = getAuth(req);
 
     try {
-      const deleted = await memoryService.deleteMemory(companyId, memoryId);
+      const memoryId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+      const deleted = await memoryService.deleteMemory(auth, memoryId);
 
       if (!deleted) {
         res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Memory not found' } });
@@ -146,14 +161,17 @@ export function createIntelligenceRouter({
     } catch (error) {
       handleMemoryError(res, error);
     }
-  });
+    },
+  );
 
   return router;
 }
 
 function handleMemoryError(res: import('express').Response, error: unknown) {
   if (error instanceof MemoryError) {
-    res.status(error.code === 'NOT_FOUND' ? 404 : 400).json({
+    const status =
+      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : error.code === 'DUPLICATE' ? 409 : 400;
+    res.status(status).json({
       error: {
         code: error.code,
         message: error.message,

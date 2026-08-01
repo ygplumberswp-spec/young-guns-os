@@ -122,7 +122,9 @@ export type AuraMemorySummary = {
   category: AuraMemoryCategory;
   information: string;
   importance: number;
+  enabled: boolean;
   createdByUserId: string | null;
+  updatedByUserId: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -137,4 +139,5 @@ export type UpdateAuraMemoryRequest = {
   category?: AuraMemoryCategory;
   information?: string;
   importance?: number;
+  enabled?: boolean;
 };
