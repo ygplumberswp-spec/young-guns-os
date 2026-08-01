@@ -1,12 +1,15 @@
-import { FormEvent, useState } from 'react';
-import { Link, useSearch } from 'wouter';
+import { FormEvent, useEffect, useState } from 'react';
+import { Link, useLocation, useSearch } from 'wouter';
+import { getStaffHomePath } from '@titan/auth/browser';
 import { Button, Input } from '@titan/ui';
 import { AuthLayout } from '../../layouts/AuthLayout';
 import { GuestRoute } from '../../components/ProtectedRoute';
+import { useAuth } from '../../lib/auth-context';
+import { ApiClientError, MFA_CHALLENGE_STORAGE_KEY } from '../../lib/api-client';
+import { toStaffIdentity } from '../../lib/role-experience';
 
 /**
- * Branded auth support surfaces. Password recovery and MFA challenge UIs are
- * presentation-ready; they do not invent backend flows that do not exist.
+ * Branded auth support surfaces. Password recovery remains honest until reset API exists.
  * Session-expired is also shown on /auth/login?reason=session_expired.
  */
 
@@ -39,15 +42,50 @@ export function MfaChallengePage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const required = params.get('required') === '1';
+  const { completeLoginMfa } = useAuth();
+  const [, setLocation] = useLocation();
   const [code, setCode] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [challengeToken, setChallengeToken] = useState<string | null>(null);
 
-  function handleSubmit(event: FormEvent) {
+  useEffect(() => {
+    const token = sessionStorage.getItem(MFA_CHALLENGE_STORAGE_KEY);
+    setChallengeToken(token);
+  }, []);
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    // No MFA verify endpoint is wired for staff login yet — stay truthful.
-    setMessage(
-      'MFA verification is not active for this sign-in path. Continue from Sign in, or ask your Owner to confirm security policy.',
-    );
+    setError(null);
+
+    if (!challengeToken) {
+      setError('Your sign-in session expired. Return to sign in and try again.');
+      return;
+    }
+
+    if (!code.trim()) {
+      setError('Enter the authentication code from your authenticator app.');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await completeLoginMfa({
+        mfaChallengeToken: challengeToken,
+        code: code.trim(),
+      });
+      sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY);
+      setLocation(getStaffHomePath(toStaffIdentity(result.user)));
+    } catch (err) {
+      if (err instanceof ApiClientError && err.code === 'MFA_CHALLENGE_EXPIRED') {
+        sessionStorage.removeItem(MFA_CHALLENGE_STORAGE_KEY);
+        setChallengeToken(null);
+      }
+      setError(err instanceof ApiClientError ? err.message : 'Unable to verify authentication code');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -57,24 +95,36 @@ export function MfaChallengePage() {
           <h2 className="auth-card__title">Multi-factor authentication</h2>
           <p className="auth-card__subtitle">
             {required
-              ? 'Your company requires an additional verification step.'
-              : 'MFA challenges appear here when your company policy requires them after password sign-in.'}
+              ? 'Enter the code from your authenticator app to finish signing in.'
+              : 'Complete the additional verification step to access your workspace.'}
           </p>
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <Input
-              label="Authentication code"
-              name="mfaCode"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="000000"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-            {message ? <p className="auth-error" role="alert">{message}</p> : null}
-            <Button type="submit" variant="secondary">
-              Verify code
-            </Button>
-          </form>
+          {!challengeToken ? (
+            <p className="auth-error" role="alert">
+              Your verification session expired.{' '}
+              <Link href="/auth/login">Return to sign in</Link> and try again.
+            </p>
+          ) : (
+            <form className="auth-form" onSubmit={handleSubmit}>
+              <Input
+                label="Authentication code"
+                name="mfaCode"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="000000"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                required
+              />
+              {error ? (
+                <p className="auth-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Verifying…' : 'Verify and continue'}
+              </Button>
+            </form>
+          )}
           <p className="auth-card__footer">
             <Link href="/auth/login">Return to sign in</Link>
           </p>

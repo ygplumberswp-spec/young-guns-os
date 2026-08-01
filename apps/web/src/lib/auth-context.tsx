@@ -37,7 +37,11 @@ type AuthContextValue = {
   login: (input: {
     email: string;
     password: string;
-  }) => Promise<{ user: AuthUser; session: AuthSession }>;
+  }) => Promise<api.LoginResponse>;
+  completeLoginMfa: (input: {
+    mfaChallengeToken: string;
+    code: string;
+  }) => Promise<api.AuthPayload>;
   acceptInvite: (input: {
     token: string;
     firstName: string;
@@ -147,6 +151,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (input: { email: string; password: string }) => {
       const result = await api.login(input);
+      if (api.isLoginMfaChallenge(result)) {
+        return result;
+      }
+      applyAuth(result);
+      return result;
+    },
+    [applyAuth],
+  );
+
+  const completeLoginMfa = useCallback(
+    async (input: { mfaChallengeToken: string; code: string }) => {
+      const result = await api.completeLoginMfa(input);
       applyAuth(result);
       return result;
     },
@@ -193,10 +209,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionBootstrap,
       signup,
       login,
+      completeLoginMfa,
       acceptInvite,
       logout,
     }),
-    [user, accessToken, isLoading, sessionBootstrap, signup, login, acceptInvite, logout],
+    [user, accessToken, isLoading, sessionBootstrap, signup, login, completeLoginMfa, acceptInvite, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

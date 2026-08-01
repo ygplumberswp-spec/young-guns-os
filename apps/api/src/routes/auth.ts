@@ -1,10 +1,11 @@
 import { Router, type Response } from 'express';
 import type { Logger } from 'pino';
 import { z } from 'zod';
-import { validatePasswordStrength } from '@titan/auth';
+import { validatePasswordStrength, createMfaLoginChallengeToken, verifyMfaLoginChallengeToken } from '@titan/auth';
 import type { AuthService } from '../services/auth.service.js';
 import { AuthError } from '../services/auth.service.js';
 import type { EnterpriseSecurityService } from '../services/enterprise-security.service.js';
+import { EnterpriseSecurityError } from '../services/enterprise-security.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { buildRefreshCookieOptions } from '../lib/auth-cookies.js';
 import { aiRoutingCache } from '../services/ai-routing-cache.js';
@@ -21,6 +22,11 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1).max(128),
+});
+
+const loginMfaSchema = z.object({
+  mfaChallengeToken: z.string().trim().min(1),
+  code: z.string().trim().min(1).max(20),
 });
 
 const acceptInviteSchema = z.object({
@@ -131,11 +137,52 @@ export function createAuthRouter({
 
     try {
       authLog?.debug({ email: parsed.data.email }, 'Looking up user and verifying password');
-      const result = await authService.login({
+      const credentials = await authService.verifyLoginCredentials({
         ...parsed.data,
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip,
       });
+
+      if (enterpriseSecurityService) {
+        const mfa = await enterpriseSecurityService.resolveLoginMfaRequirement(
+          credentials.companyId,
+          credentials.userId,
+        );
+
+        if (mfa.enrollmentRequired) {
+          res.status(403).json({
+            error: {
+              code: 'MFA_ENROLLMENT_REQUIRED',
+              message:
+                'Your company requires multi-factor authentication. Ask an administrator to help you enroll before signing in.',
+            },
+          });
+          return;
+        }
+
+        if (mfa.challengeRequired) {
+          const challenge = createMfaLoginChallengeToken(
+            credentials.userId,
+            credentials.companyId,
+            jwtSecret,
+          );
+          authLog?.info({ userId: credentials.userId }, 'Login paused — MFA challenge issued');
+          res.json({
+            data: {
+              mfaRequired: true as const,
+              mfaChallengeToken: challenge.token,
+              expiresIn: challenge.expiresIn,
+            },
+          });
+          return;
+        }
+      }
+
+      const result = await authService.issueSessionForUser(
+        credentials.userId,
+        req.headers['user-agent'],
+        req.ip,
+      );
 
       authLog?.info(
         {
@@ -172,6 +219,92 @@ export function createAuthRouter({
           metadata: { email: parsed.data.email },
         });
       }
+      handleAuthError(res, error, authLog);
+    }
+  });
+
+  router.post('/login/mfa', async (req, res) => {
+    const parsed = loginMfaSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid MFA verification payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    if (!enterpriseSecurityService) {
+      res.status(503).json({
+        error: {
+          code: 'MFA_UNAVAILABLE',
+          message: 'Multi-factor authentication is not available',
+        },
+      });
+      return;
+    }
+
+    try {
+      const { userId, companyId } = verifyMfaLoginChallengeToken(
+        parsed.data.mfaChallengeToken,
+        jwtSecret,
+      );
+
+      await enterpriseSecurityService.verifyLoginMfaCode(
+        companyId,
+        userId,
+        parsed.data.code,
+      );
+
+      const result = await authService.issueSessionForUser(
+        userId,
+        req.headers['user-agent'],
+        req.ip,
+      );
+
+      authLog?.info({ userId: result.user.id }, 'MFA login succeeded — JWT issued');
+
+      await recordSecurityLoginEvent(enterpriseSecurityService, authLog, {
+        companyId: result.user.companyId,
+        userId: result.user.id,
+        eventType: 'login_success',
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+        metadata: { mfaVerified: true },
+      });
+
+      setRefreshCookie(res, result.refreshToken, isProduction);
+
+      res.json({
+        data: {
+          user: result.user,
+          session: result.session,
+        },
+      });
+    } catch (error) {
+      if (error instanceof EnterpriseSecurityError && error.code === 'MFA_INVALID_CODE') {
+        res.status(401).json({
+          error: {
+            code: error.code,
+            message: error.message,
+          },
+        });
+        return;
+      }
+
+      if (error instanceof Error && error.message.includes('MFA challenge')) {
+        res.status(401).json({
+          error: {
+            code: 'MFA_CHALLENGE_EXPIRED',
+            message: 'Your verification session expired. Sign in again to continue.',
+          },
+        });
+        return;
+      }
+
       handleAuthError(res, error, authLog);
     }
   });

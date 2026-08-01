@@ -5,7 +5,7 @@ import { AuthLayout } from '../../layouts/AuthLayout';
 import { Button, Input } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import { toStaffIdentity } from '../../lib/role-experience';
-import { ApiClientError } from '../../lib/api-client';
+import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY } from '../../lib/api-client';
 import { GuestRoute } from '../../components/ProtectedRoute';
 
 export function LoginPage() {
@@ -32,8 +32,13 @@ function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      const session = await login({ email, password });
-      const homePath = session?.user ? getStaffHomePath(toStaffIdentity(session.user)) : '/';
+      const result = await login({ email, password });
+      if (isLoginMfaChallenge(result)) {
+        sessionStorage.setItem(MFA_CHALLENGE_STORAGE_KEY, result.mfaChallengeToken);
+        setLocation('/auth/mfa?required=1');
+        return;
+      }
+      const homePath = result.user ? getStaffHomePath(toStaffIdentity(result.user)) : '/';
       setLocation(homePath);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sign in');

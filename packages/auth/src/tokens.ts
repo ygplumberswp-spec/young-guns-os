@@ -48,6 +48,47 @@ export function verifyAccessToken(token: string, secret: string): AccessTokenPay
   };
 }
 
+export type MfaLoginChallengePayload = {
+  purpose: 'mfa_login';
+  sub: string;
+  companyId: string;
+};
+
+const MFA_LOGIN_CHALLENGE_TTL_SECONDS = 5 * 60;
+
+export function createMfaLoginChallengeToken(
+  userId: string,
+  companyId: string,
+  secret: string,
+): { token: string; expiresIn: number } {
+  const token = jwt.sign(
+    { purpose: 'mfa_login', sub: userId, companyId } satisfies MfaLoginChallengePayload,
+    secret,
+    { expiresIn: MFA_LOGIN_CHALLENGE_TTL_SECONDS },
+  );
+
+  return { token, expiresIn: MFA_LOGIN_CHALLENGE_TTL_SECONDS };
+}
+
+export function verifyMfaLoginChallengeToken(
+  token: string,
+  secret: string,
+): { userId: string; companyId: string } {
+  const decoded = jwt.verify(token, secret);
+
+  if (typeof decoded !== 'object' || decoded === null) {
+    throw new Error('Invalid MFA challenge token');
+  }
+
+  const payload = decoded as Partial<MfaLoginChallengePayload>;
+
+  if (payload.purpose !== 'mfa_login' || !payload.sub || !payload.companyId) {
+    throw new Error('Invalid MFA challenge token payload');
+  }
+
+  return { userId: payload.sub, companyId: payload.companyId };
+}
+
 export function generateRefreshToken(): string {
   return randomBytes(48).toString('base64url');
 }

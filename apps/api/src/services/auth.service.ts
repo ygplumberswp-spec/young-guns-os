@@ -135,13 +135,20 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
+    const credentials = await this.verifyLoginCredentials(input);
+    return this.issueSessionForUser(
+      credentials.userId,
+      input.userAgent,
+      input.ipAddress,
+    );
+  }
+
+  async verifyLoginCredentials(
+    input: LoginInput,
+  ): Promise<{ userId: string; companyId: string }> {
     const email = input.email.trim().toLowerCase();
     const user = await this.db.query.users.findFirst({
       where: eq(users.email, email),
-      with: {
-        company: true,
-        role: true,
-      },
     });
 
     if (!user || !user.isActive) {
@@ -154,12 +161,20 @@ export class AuthService {
       throw new AuthError('INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
+    return { userId: user.id, companyId: user.companyId };
+  }
+
+  async issueSessionForUser(
+    userId: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResult> {
     await this.db
       .update(users)
       .set({ lastLoginAt: new Date(), updatedAt: new Date() })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, userId));
 
-    return this.createSessionForUser(this.db, user.id, input.userAgent, input.ipAddress);
+    return this.createSessionForUser(this.db, userId, userAgent, ipAddress);
   }
 
   async logout(refreshToken: string): Promise<void> {

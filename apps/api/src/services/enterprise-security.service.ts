@@ -519,6 +519,48 @@ export class EnterpriseSecurityService {
     };
   }
 
+  async resolveLoginMfaRequirement(companyId: string, userId: string) {
+    const [policy, mfa] = await Promise.all([
+      this.getTenantPolicy(companyId),
+      this.getMfaSettings({ companyId, userId }),
+    ]);
+
+    const policyRequired = policy.mfaRequired;
+    const enrolled = mfa.enabled && Boolean(mfa.verifiedAt);
+
+    return {
+      policyRequired,
+      enrolled,
+      challengeRequired: enrolled,
+      enrollmentRequired: policyRequired && !enrolled,
+    };
+  }
+
+  async verifyLoginMfaCode(companyId: string, userId: string, verificationCode: string) {
+    const row = await this.db.query.securityMfaSettings.findFirst({
+      where: and(
+        eq(securityMfaSettings.companyId, companyId),
+        eq(securityMfaSettings.userId, userId),
+      ),
+    });
+
+    if (!row?.enabled || !row.verifiedAt || !row.totpSecretEncrypted) {
+      throw new EnterpriseSecurityError('MFA_NOT_ENABLED', 'Multi-factor authentication is not enabled');
+    }
+
+    const secret = decryptSecret(row.totpSecretEncrypted, this.encryptionKey);
+    if (!verifyTotpCode(secret, verificationCode.trim())) {
+      throw new EnterpriseSecurityError('MFA_INVALID_CODE', 'Invalid verification code');
+    }
+
+    await this.recordAuditLog({
+      companyId,
+      category: 'security',
+      action: 'mfa_login_verified',
+      userId,
+    });
+  }
+
   async listTrustedDevices(
     companyId: string,
     userId?: string,

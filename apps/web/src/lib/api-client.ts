@@ -175,6 +175,20 @@ export type AuthPayload = {
   session: AuthSession;
 };
 
+export type LoginMfaChallenge = {
+  mfaRequired: true;
+  mfaChallengeToken: string;
+  expiresIn: number;
+};
+
+export type LoginResponse = AuthPayload | LoginMfaChallenge;
+
+export function isLoginMfaChallenge(value: LoginResponse): value is LoginMfaChallenge {
+  return 'mfaRequired' in value && value.mfaRequired === true;
+}
+
+export const MFA_CHALLENGE_STORAGE_KEY = 'titan_mfa_challenge';
+
 export type RestoreSessionResult =
   | { status: 'authenticated'; payload: AuthPayload }
   | { status: 'missing' }
@@ -195,8 +209,19 @@ export async function signup(body: {
   });
 }
 
-export async function login(body: { email: string; password: string }): Promise<AuthPayload> {
-  return request<AuthPayload>('/auth/login', {
+export async function login(body: { email: string; password: string }): Promise<LoginResponse> {
+  return request<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body,
+    skipAuthRefresh: true,
+  });
+}
+
+export async function completeLoginMfa(body: {
+  mfaChallengeToken: string;
+  code: string;
+}): Promise<AuthPayload> {
+  return request<AuthPayload>('/auth/login/mfa', {
     method: 'POST',
     body,
     skipAuthRefresh: true,

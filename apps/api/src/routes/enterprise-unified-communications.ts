@@ -106,7 +106,7 @@ function getRouteParam(value: string | string[]): string {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseUnifiedCommunicationsError) {
     const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 500;
-    res.status(status).json({ error: error.code, message: error.message });
+    res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
   throw error;
@@ -138,14 +138,14 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
     const dashboard = await deps.enterpriseUnifiedCommunicationsService.getDashboard(
       getAuth(req).companyId,
     );
-    res.json({ dashboard });
+    res.json({ data: { dashboard } });
   });
 
   router.get('/aura-context', requireRead, async (req, res) => {
     const context = await deps.enterpriseUnifiedCommunicationsService.buildAuraContext(
       getAuth(req).companyId,
     );
-    res.json({ context });
+    res.json({ data: { context } });
   });
 
   router.get('/customers/:customerId/center', requireRead, async (req, res) => {
@@ -155,7 +155,7 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
           getAuth(req).companyId,
           getRouteParam(req.params.customerId),
         );
-      res.json({ center });
+      res.json({ data: { center } });
     } catch (error) {
       handleError(error, res);
     }
@@ -165,7 +165,7 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
     const timeline = await deps.enterpriseUnifiedCommunicationsService.syncTimelineFromModules(
       getAuth(req).companyId,
     );
-    res.json({ timeline });
+    res.json({ data: { timeline } });
   });
 
   router.post('/providers', requireManage, async (req, res) => {
@@ -176,10 +176,10 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
         { companyId: auth.companyId, userId: auth.userId },
         body,
       );
-      res.status(201).json({ provider });
+      res.status(201).json({ data: { provider } });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: error.message } });
         return;
       }
       handleError(error, res);
@@ -193,7 +193,7 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
         { companyId: auth.companyId, userId: auth.userId },
         getRouteParam(req.params.providerId),
       );
-      res.json({ provider });
+      res.json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
     }
@@ -206,7 +206,7 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
         { companyId: auth.companyId, userId: auth.userId },
         getRouteParam(req.params.providerId),
       );
-      res.json({ provider });
+      res.json({ data: { provider } });
     } catch (error) {
       handleError(error, res);
     }
@@ -220,10 +220,10 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
         { companyId: auth.companyId, userId: auth.userId },
         body,
       );
-      res.status(201).json({ campaign });
+      res.status(201).json({ data: { campaign } });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: error.message } });
         return;
       }
       handleError(error, res);
@@ -239,10 +239,10 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
           { companyId: auth.companyId, userId: auth.userId },
           body,
         );
-      res.status(201).json({ notification });
+      res.status(201).json({ data: { notification } });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: error.message } });
         return;
       }
       handleError(error, res);
@@ -253,7 +253,7 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
     const snapshot = await deps.enterpriseUnifiedCommunicationsService.captureAnalytics(
       getAuth(req).companyId,
     );
-    res.json({ snapshot });
+    res.json({ data: { snapshot } });
   });
 
   router.patch('/config', requireManage, async (req, res) => {
@@ -264,10 +264,10 @@ export function createEnterpriseUnifiedCommunicationsRouter(deps: RouterDeps): R
         { companyId: auth.companyId, userId: auth.userId },
         body,
       );
-      res.json({ config });
+      res.json({ data: { config } });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: error.message } });
         return;
       }
       handleError(error, res);

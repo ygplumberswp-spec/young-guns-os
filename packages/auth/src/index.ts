@@ -68,10 +68,13 @@ export { hashPassword, verifyPassword, validatePasswordStrength } from './passwo
 export {
   createAccessToken,
   verifyAccessToken,
+  createMfaLoginChallengeToken,
+  verifyMfaLoginChallengeToken,
   generateRefreshToken,
   hashRefreshToken,
   REFRESH_TOKEN_TTL_MS,
   type AccessTokenPayload,
+  type MfaLoginChallengePayload,
 } from './tokens.js';
 export {
   createPortalAccessToken,
