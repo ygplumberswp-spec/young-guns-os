@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-08-01T21:22:22.584Z",
+  "label": "227-owner-fleet-cartrack-parity-verify",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "252e9f1",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "targetVehicles": ["CF172047", "CF77263"],
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "endpoint": "/api/v1/fleet/live-map",
+    "status": 200,
+    "vehicleCount": 2,
+    "registrations": ["CF77263", "CF172047"],
+    "cartrackConnected": true
+  },
+  "map": {
+    "provider": "openfreemap",
+    "styleUrl": "https://demotiles.maplibre.org/style.json",
+    "mapReady": true,
+    "maplibreCanvasCount": 1,
+    "markerPinCount": 2,
+    "interactiveTiles": true,
+    "pollIntervalMs": 3000
+  },
+  "screenshotPath": "diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-1440.png",
+  "relatedEvidence": "diagnostic-output/228-fleet-live-map-owner-visual-verify.json",
+  "verdict": "GO",
+  "blockers": []
+}

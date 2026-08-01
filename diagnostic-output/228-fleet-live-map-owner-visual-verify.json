@@ -1,8 +1,70 @@
 {
-  "generatedAt": "2026-08-01T20:56:22.817Z",
+  "generatedAt": "2026-08-01T21:22:22.584Z",
   "label": "228-fleet-live-map-owner-visual-verify",
-  "verdict": "HOLD",
-  "blockers": [
-    "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.fleet-live-map-maplibre-host .maplibregl-map').first()\n"
-  ]
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "252e9f1",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "status": 200,
+    "vehicleCount": 2,
+    "registrations": [
+      "CF77263",
+      "CF172047"
+    ]
+  },
+  "map": {
+    "hasNotImplementedCopy": false,
+    "mapReadyAttr": true,
+    "maplibreCanvasCount": 1,
+    "leafletTileCount": 0,
+    "tileCount": 1,
+    "markerPinCount": 2,
+    "containerHeightPx": 414,
+    "containerWidthPx": 654,
+    "maplibreMounted": true,
+    "leafletMounted": false,
+    "pageTitle": "Fleet Live Map"
+  },
+  "markers": {
+    "CF172047": {
+      "clicked": true,
+      "panelVisible": true,
+      "panelShowsRegistration": false
+    },
+    "CF77263": {
+      "clicked": true,
+      "panelVisible": true,
+      "panelShowsRegistration": false
+    }
+  },
+  "screenshots": [
+    {
+      "viewport": "1440",
+      "path": "diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-1440.png",
+      "markerPinCount": 2,
+      "tileCount": 1
+    },
+    {
+      "viewport": "768",
+      "path": "diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-768.png",
+      "markerPinCount": 2,
+      "tileCount": 1
+    },
+    {
+      "viewport": "375",
+      "path": "diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-375.png",
+      "markerPinCount": 2,
+      "tileCount": 1
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": []
 }

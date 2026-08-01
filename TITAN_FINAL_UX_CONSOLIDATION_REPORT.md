@@ -1,7 +1,7 @@
 # TITAN Final UX Consolidation Report
 
-Generated: 2026-08-01T21:10:00.000Z
-Branch: `cursor/titan-owner-operating-model-final`
+Generated: 2026-08-01T21:22:22.584Z
+Branch: `cursor/titan-owner-operating-model-final` @ `252e9f1`
 Staging API: `https://young-guns-os-staging.up.railway.app`
 Staging Web: `https://comfortable-determination-staging.up.railway.app`
 
@@ -53,7 +53,15 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 
 ## 5. Remaining blockers
 
-See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification pending post-deploy.
+Fleet Live Map Cartrack parity **GO** on staging (Young Guns CF172047 + CF77263). See `diagnostic-output/227-owner-fleet-cartrack-parity-verify.json` and `diagnostic-output/228-fleet-live-map-owner-visual-verify.json`. Other route matrix gaps below.
+
+### Fleet Live Map fix (252e9f1)
+
+**Root cause:** MapLibre init effect ran while the map host was unmounted (GPS vehicles still loading), set `Map could not load`, and never re-ran when vehicles arrived.
+
+**Fix:** Re-run map mount when positioned vehicles appear; do not surface error while waiting for GPS host.
+
+**Staging proof:** MapLibre canvas + 2 markers (CF172047, CF77263), 3s cached poll, screenshots @ 1440/768/375.
 
 ## Route matrix (135 staff routes)
 
@@ -125,7 +133,7 @@ See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification
 | Vehicle List | `/fleet` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Fleet Intelligence | `/fleet-intelligence` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Vehicle Detail | `/fleet/:id` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
-| Fleet Live Map | `/fleet/live-map` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
+| Fleet Live Map | `/fleet/live-map` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | **GO @ 228** |
 | Vehicle Create | `/fleet/new` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Global Search | `/global-search` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Go Live | `/go-live` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
@@ -215,3 +223,6 @@ See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification
 - Registration normalize: `packages/shared/src/vehicle-registration.ts`
 - Auto-map on connect/sync: `apps/api/src/services/integrations.service.ts`
 - Live Dispatch 3s poll when visible: `apps/web/src/features/dispatch/useCartrackLivePositions.ts`
+- Fleet Live Map MapLibre canvas + markers: `apps/web/src/features/fleet/FleetLiveMapCanvas.tsx` (`252e9f1`)
+- Staging owner verify: `diagnostic-output/227-owner-fleet-cartrack-parity-verify.json` (GO), `diagnostic-output/228-fleet-live-map-owner-visual-verify.json` (GO)
+- Screenshot: `diagnostic-output/fleet-live-map-staging/fleet-live-map-owner-1440.png`

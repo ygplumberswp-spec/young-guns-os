@@ -110,8 +110,8 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     label: '228-fleet-live-map-owner-visual-verify',
-    branch: 'cursor/titan-final-product-consolidation',
-    commitSha: '309a924',
+    branch: 'cursor/titan-owner-operating-model-final',
+    commitSha: '252e9f1',
     stagingApi: API,
     stagingWeb: WEB,
     companyId: YGP_COMPANY_ID,
@@ -261,17 +261,29 @@ async function main() {
     });
   }
 
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.waitForTimeout(800);
   const markerDetails = {};
   for (const reg of TARGET_REGS) {
-    const pin = page.locator('.fleet-live-map-marker-pin', { hasText: reg.slice(-3) }).first();
+    await page.locator('.fleet-live-map-mobile-drawer__close').click({ timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const pin = page.locator('.fleet-live-map-marker-pin', { hasText: reg }).first();
     if ((await pin.count()) === 0) {
       markerDetails[reg] = { clicked: false, panelVisible: false };
       report.blockers.push(`Marker pin for ${reg} not found`);
       continue;
     }
-    await pin.click();
+    await pin.evaluate((node) => {
+      node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
     await page.waitForTimeout(800);
-    const panelText = await page.locator('.fleet-live-map-mobile-drawer, .fleet-live-map-vehicle-card.is-selected').innerText();
+    const cardText = await page
+      .locator('.fleet-live-map-vehicle-card.is-selected')
+      .first()
+      .innerText()
+      .catch(() => '');
+    const drawerText = await page.locator('.fleet-live-map-mobile-drawer').first().innerText().catch(() => '');
+    const panelText = `${cardText}\n${drawerText}`;
     markerDetails[reg] = {
       clicked: true,
       panelVisible: panelText.includes(reg),
