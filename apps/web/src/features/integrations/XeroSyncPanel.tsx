@@ -20,6 +20,8 @@ import {
   syncXeroPayments,
 } from '../../lib/integrations-api';
 import { IntegrationAutoSyncStatusPanel } from './IntegrationAutoSyncStatusPanel';
+import { invalidateAfterXeroSyncSettled } from '../../lib/cache-invalidation';
+import { useStaffCacheScope } from '../../lib/use-scoped-cached-query';
 
 type XeroSyncPanelProps = {
   accessToken: string;
@@ -100,6 +102,7 @@ export function XeroSyncPanel({
   canManage,
   onConnectionChange,
 }: XeroSyncPanelProps) {
+  const cacheScope = useStaffCacheScope();
   const [status, setStatus] = useState<XeroSyncStatusResponse | null>(null);
   const [autoSyncStatus, setAutoSyncStatus] = useState<IntegrationProviderAutoSyncStatus | null>(
     null,
@@ -150,6 +153,12 @@ export function XeroSyncPanel({
     };
   }, [loadStatus]);
 
+  function invalidatePostSyncCaches() {
+    if (cacheScope) {
+      invalidateAfterXeroSyncSettled(cacheScope, accessToken);
+    }
+  }
+
   async function runScopedSync(
     scope: string,
     action: () => Promise<{
@@ -173,6 +182,7 @@ export function XeroSyncPanel({
         `${scope} sync finished — ${result.createdCount} created, ${result.updatedCount} updated, ${result.pulledCount} pulled, ${result.failedCount} failed.`,
       );
       await loadStatus();
+      invalidatePostSyncCaches();
       await onConnectionChange?.();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : `Unable to sync ${scope}`);
@@ -234,6 +244,7 @@ export function XeroSyncPanel({
       }
 
       await loadStatus();
+      invalidatePostSyncCaches();
       await onConnectionChange?.();
     } catch (err) {
       if (err instanceof ApiClientError) {

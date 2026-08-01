@@ -63,6 +63,18 @@ const INTEGRATION_MUTATION_PREFIXES = [
   'integration-platform',
   'background-work',
 ] as const;
+const XERO_SYNC_SETTLED_PREFIXES = [
+  ...INTEGRATION_MUTATION_PREFIXES,
+  'customers/value-metrics',
+  'crm/customers',
+  'crm/stats',
+  'finance/invoices',
+  'finance/payments',
+  'finance/stats',
+  'dashboard/executive-summary',
+  'integrations/hub-dashboard',
+  'integrations/platform-dashboard',
+] as const;
 const TEAM_MUTATION_PREFIXES = ['team/members', 'team/invites', 'team/roles'] as const;
 
 export function invalidateAfterCustomerMutation(
@@ -105,6 +117,14 @@ export function invalidateAfterIntegrationMutation(
   accessToken: string | null,
 ): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...INTEGRATION_MUTATION_PREFIXES]);
+}
+
+/** Invalidate finance/CRM/dashboard caches after Xero sync settles (background or manual). */
+export function invalidateAfterXeroSyncSettled(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
+  invalidateStaffQueryPrefixes(scope, accessToken, [...XERO_SYNC_SETTLED_PREFIXES]);
 }
 
 export function invalidateAfterTeamMutation(

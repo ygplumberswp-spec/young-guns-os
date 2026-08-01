@@ -16,6 +16,7 @@ import {
   companies,
   customers,
   integrationConnections,
+  integrationConnectors,
   integrationSyncJobs,
   invoices,
   xeroCustomerMappings,
@@ -221,21 +222,21 @@ export class CustomerValueClassificationService {
     hasInvoiceEvidence: boolean;
   }> {
     try {
-      const [importJobs, connection, invoiceEvidence] = await Promise.all([
+      const activeImportFilter = and(
+        eq(integrationSyncJobs.companyId, companyId),
+        eq(integrationSyncJobs.provider, 'xero'),
+        eq(integrationSyncJobs.syncScope, 'import'),
+        or(
+          eq(integrationSyncJobs.status, 'pending'),
+          eq(integrationSyncJobs.status, 'running'),
+        ),
+      );
+
+      const [importJobs, connection, invoiceEvidence, connector, activeJob] = await Promise.all([
         this.db
           .select({ status: integrationSyncJobs.status })
           .from(integrationSyncJobs)
-          .where(
-            and(
-              eq(integrationSyncJobs.companyId, companyId),
-              eq(integrationSyncJobs.provider, 'xero'),
-              eq(integrationSyncJobs.syncScope, 'import'),
-              or(
-                eq(integrationSyncJobs.status, 'pending'),
-                eq(integrationSyncJobs.status, 'running'),
-              ),
-            ),
-          )
+          .where(activeImportFilter)
           .limit(1),
         this.db
           .select({ lastSyncAt: integrationConnections.lastSyncAt })
@@ -252,10 +253,41 @@ export class CustomerValueClassificationService {
           .from(invoices)
           .where(eq(invoices.companyId, companyId))
           .limit(1),
+        this.db
+          .select({ config: integrationConnectors.config })
+          .from(integrationConnectors)
+          .where(
+            and(
+              eq(integrationConnectors.companyId, companyId),
+              eq(integrationConnectors.connectorKey, 'xero'),
+            ),
+          )
+          .limit(1),
+        this.db
+          .select({ resultSummary: integrationSyncJobs.resultSummary })
+          .from(integrationSyncJobs)
+          .where(activeImportFilter)
+          .limit(1),
       ]);
 
+      const connectorConfig = (connector[0]?.config ?? {}) as {
+        autoSync?: { cvMetricsRefreshJobId?: string | null };
+      };
+      const cvAlreadyRefreshed = Boolean(connectorConfig.autoSync?.cvMetricsRefreshJobId);
+      const jobSummary = (activeJob[0]?.resultSummary ?? {}) as {
+        trigger?: string;
+        completedStages?: string[];
+      };
+      const invoiceStagesComplete = ['contacts', 'invoices', 'payments'].every((stage) =>
+        (jobSummary.completedStages ?? []).includes(stage),
+      );
+      const incrementalBankTxOnly =
+        cvAlreadyRefreshed &&
+        jobSummary.trigger === 'incremental' &&
+        invoiceStagesComplete;
+
       return {
-        importInProgress: importJobs.length > 0,
+        importInProgress: importJobs.length > 0 && !incrementalBankTxOnly,
         xeroConnected: connection.length > 0,
         lastSyncAt: connection[0]?.lastSyncAt?.toISOString() ?? null,
         hasInvoiceEvidence: invoiceEvidence.length > 0,

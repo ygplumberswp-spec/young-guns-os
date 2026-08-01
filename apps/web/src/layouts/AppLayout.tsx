@@ -20,6 +20,7 @@ import {
   SearchCommandPalette,
   useSearchCommandPaletteShortcut,
 } from '../components/ux';
+import { useXeroSyncCacheRefresh } from '../hooks/use-xero-sync-cache-refresh';
 
 function companyInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -58,6 +59,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   useSearchCommandPaletteShortcut(openCommandPalette, canSearch);
   const displayCompanyName = profileCompanyName ?? user?.companyName ?? 'Company';
   const preloadContext = useStaffPreloadContext();
+  useXeroSyncCacheRefresh();
 
   const handleNavIntent = (href: string) => {
     if (preloadContext) {

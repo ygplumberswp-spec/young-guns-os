@@ -30,6 +30,7 @@ export const QUERY_CACHE_POLICIES: Record<string, CachePolicyName> = {
   'mission-control/dashboard': 'summary',
   'agents/stats': 'summary',
   'background-work/status': 'fast',
+  'customers/value-metrics': 'fast',
   'aura/conversations': 'list',
   'tenant-capabilities/list': 'config',
   'mobile/workforce-dashboard': 'fast',

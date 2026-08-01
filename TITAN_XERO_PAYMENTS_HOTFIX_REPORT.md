@@ -105,3 +105,37 @@ Constraints honoured: staging only, no Xero writes, no reset/restart, no manual 
 | Duplicate regression | PASS |
 
 **Overall verdict:** `HOTFIX_VERIFIED_PAYMENTS_PASSED` — import job cleared payments and is progressing through bank_transactions.
+
+---
+
+## Addendum — 228 Xero UI refresh (2026-08-01)
+
+**Verdict:** `GO` (staging deploy complete; owner browser re-check recommended)
+
+### Root cause
+
+1. **API partial flag:** After import `93144ea8` completed and CV metrics refreshed, scheduler started incremental job `ca479272` (bank_transactions). Legacy `resolveXeroImportState` treated *any* running import as `xeroImportInProgress=true`, keeping Customer Value in perpetual "Updating from Xero" despite fresh DB data.
+2. **Frontend cache:** No invalidation of `customers/value-metrics`, finance, CRM, or dashboard query keys when Xero sync settled — pages kept stale React Query cache until manual browser refresh.
+
+### Stale pages (before fix)
+
+- Dashboard → Customer value panel
+- CRM customer value filters
+
+### DB vs API vs UI (Young Guns `095aef76…`)
+
+| Signal | DB | Legacy API/UI | After fix |
+|--------|-----|---------------|-----------|
+| Job 93144ea8 | completed, CV refresh marker set | — | — |
+| Active job ca479272 | running, incremental, invoice stages done | partial/updating | complete (bank-tx-only bypass) |
+| last_sync_at | 2026-08-01T19:29:24Z | visible after cache expiry | invalidated on sync settle |
+| INV-0423/0424 | draft, totals preserved | 0 qualifying customers (by design) | unchanged |
+
+### Deploy
+
+| Service | Deployment ID |
+|---------|----------------|
+| young-guns-os (API) | `dc1cf1fc-5803-4fa8-b4ea-840c5caaf989` |
+| comfortable-determination (web) | `2949e7a8-d2ac-4bff-b3b1-97c71c90d210` |
+
+**Evidence:** `diagnostic-output/228-xero-ui-refresh-verify.json`
