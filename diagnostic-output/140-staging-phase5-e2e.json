@@ -1,0 +1,72 @@
+{
+  "label": "STAGING-P5",
+  "phase": 5,
+  "startedAt": "2026-08-01T07:11:22.628Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "forbiddenRefChecked": true,
+  "productionRefTouched": false,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "a9437e19-3d45-41a0-ab1e-8525d1b78c45"
+    },
+    {
+      "name": "lead_create",
+      "status": "PASS",
+      "detail": "4b84dbeb-0816-46c7-b3ce-836ddbdceece"
+    },
+    {
+      "name": "lead_convert_chain",
+      "status": "PASS",
+      "detail": "JOB-000001"
+    },
+    {
+      "name": "customer_readable",
+      "status": "PASS",
+      "detail": "Keanu Staging Test"
+    },
+    {
+      "name": "property_address_no_placeholder",
+      "status": "PASS",
+      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
+    },
+    {
+      "name": "job_snapshot_no_placeholder",
+      "status": "PASS",
+      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
+    },
+    {
+      "name": "site_contact_mobile_e164",
+      "status": "PASS",
+      "detail": "+27825551234"
+    },
+    {
+      "name": "convert_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cross_tenant_job_denied",
+      "status": "PASS",
+      "detail": "404"
+    }
+  ],
+  "totals": {
+    "passed": 10,
+    "failed": 0
+  },
+  "verdict": "GO",
+  "completedAt": "2026-08-01T07:11:53.260Z",
+  "conversion": {
+    "customerId": "85346fd2-13ff-4100-8f85-6cd8e453c121",
+    "propertyId": "f6561dc9-6a8a-4bc1-a70f-4e6a94122648",
+    "jobId": "654a31f4-d9bb-4d65-99fc-5998ad14bc89",
+    "jobNumber": "JOB-000001"
+  }
+}

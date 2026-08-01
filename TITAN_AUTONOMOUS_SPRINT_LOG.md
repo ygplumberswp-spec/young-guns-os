@@ -128,3 +128,21 @@
 | **Tests** | `pnpm typecheck`, `pnpm test` (225 pass), `pnpm build` — pass |
 | **Approval required?** | Staging E2E for full Phase 5 sign-off — **yes (deploy gate)** |
 | **Next phase selected** | Phase 5 remainder or Phase 6 scheduling (safe local) |
+
+---
+
+## Sprint 007 — Phase 5 staging verification + Phase 6 dispatch handoff (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 5 staging sign-off + Phase 6 scheduling/dispatcher start |
+| **Result** | Phase 5 **GO** (public E2E 10/10); Phase 6 UX-036 local closure |
+| **Checkpoint** | Pending commit |
+| **Files changed** | `staging-phase5-public-e2e.mjs`, `TITAN_PHASE5_STAGING_REPORT.md`, dispatch intel → job create links, control doc updates |
+| **Migration** | Local staging apply **blocked** (`28P01`); live API implies `0099+` |
+| **Tests** | `pnpm typecheck`, `pnpm test` (228 pass), `pnpm build` — pass |
+| **Staging E2E** | `diagnostic-output/140-staging-phase5-e2e.json` — **10/10 GO** |
+| **Deploy** | Railway CLI/token **blocked** — staging API already live |
+| **Approval required?** | Staging DB password + Railway token for local migrate/redeploy |
+| **Next phase selected** | Phase 6 remainder — crew/vehicle assignment staging proof |

@@ -4,7 +4,7 @@
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Checkpoint:** `8d35bfd`  
-**Updated (UTC):** 2026-08-01 — Phase 0 audit  
+**Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
 
 ---
 
@@ -48,7 +48,7 @@
 | FRZ-002 | §3 | One responsive app, role experiences | All | Yes | Yes | Yes | Yes | Yes | Partial | Partial | Yes | Mocks | — | — | Implemented, not staging-verified | `/my` alias + role guards need live re-proof | Cursor | 8d35bfd | `role-experience-routes.test.ts` |
 | FRZ-003 | §4 | Locked visual identity (SVG wordmark, fonts, login) | All | N/A | N/A | Partial | N/A | N/A | Partial | N/A | Yes | Staging reports + Sprint 004 shell tests | — | — | Partially implemented | Brand foundation closed; responsive shell contract tests added Phase 3 | Cursor | UX reports | `TitanWordmark.test.ts`, `brand-shell.test.ts` |
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |
-| FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | Staging UX-A/D | — | — | Partially implemented | Lead convert fix at 8d35bfd; staging re-verify required | Cursor | 8d35bfd | `jobs-contract.test.ts`, UX-D report |
+| FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Staging Phase 5 E2E 10/10** | — | — | Partially implemented | Lead convert verified staging 2026-08-01; CRM properties panel local | Cursor | Phase 5 | `TITAN_PHASE5_STAGING_REPORT.md` |
 | FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Staging UX-B 35/35 | Cartrack optional | — | Implemented, not staging-verified | Staging E2E not re-run on current commit | Cursor | b9bd4b0 | `TITAN_UX_B_CLOSURE_VERIFICATION_REPORT.md` |
 | FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Time tracking job-linked; full day timeline incomplete | Cursor | — | OPS-014 |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
@@ -76,7 +76,7 @@
 
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
-| Lead → Customer → Property → Job | Implemented, not staging-verified | Code `8d35bfd`; staging E2E pending |
+| Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E 10/10 GO — `diagnostic-output/140-staging-phase5-e2e.json` |
 | Crew/Vehicle assignment | Partially implemented | UX-D scheduling cards; crew model in DB |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement |
@@ -90,8 +90,8 @@
 
 ## Next verification targets (ordered)
 
-1. **FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`  
-2. **FRZ-010 / FRZ-012** — Quote → invoice → payment chain on staging (no live Xero write)  
+1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
+2. **FRZ-006 / Phase 6** — Scheduling/dispatcher crew assignment staging proof  
 3. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 4. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 

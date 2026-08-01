@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 006  
-**Automated test files:** 46 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 007 (Phase 5 staging + Phase 6 start)  
+**Automated test files:** 47 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) |
+| `pnpm test` | shared → auth → web → api (sequential) — **228 pass** (Sprint 007) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -91,11 +91,13 @@
 | `apps/web/src/lib/route-prefetch-registry.test.ts` | Prefetch registry |
 | `apps/api/src/services/api-read-cache.test.ts` | API read cache |
 
-### Brand / UI
+### Dispatch / scheduling (Phase 6)
 
 | File | Domain |
 |------|--------|
-### Brand & shell
+| `apps/web/src/features/dispatch/build-job-create-href.test.ts` | Dispatch intel → job create deep-link |
+
+### Brand / UI
 
 | File | Domain |
 |------|--------|
@@ -124,6 +126,9 @@
 | `TITAN_UX_*_STAGING_REPORT.md` | UX tranches A–K |
 | `TITAN_STAGING_TEST_RESULTS.md` | Staging harness 75/0 |
 | `diagnostic-output/*.json` | Playwright diagnostics |
+| `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 10/10 GO** |
+| `TITAN_PHASE5_STAGING_REPORT.md` | Phase 5 staging verification report |
+| `packages/db/scripts/staging-phase5-public-e2e.mjs` | Phase 5 public API E2E runner |
 | `scripts/phase3-operational-verify.mjs` | Operational verification |
 | `scripts/ux-audit.mjs` | UX audit runner |
 

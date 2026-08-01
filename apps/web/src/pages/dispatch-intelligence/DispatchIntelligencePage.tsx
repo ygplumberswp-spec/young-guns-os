@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
 import type { DispatchOperationsDashboard } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
@@ -16,6 +17,7 @@ import {
   fetchTechnicianMatching,
   generateDispatchRecommendations,
 } from '../../lib/dispatch-intelligence-api-client';
+import { buildJobCreateHref } from '../../features/dispatch/build-job-create-href';
 
 type DispatchTab =
   'dashboard' | 'receptionist' | 'queue' | 'matching' | 'emergency' | 'callbacks' | 'actions';
@@ -212,6 +214,32 @@ export function DispatchIntelligencePage() {
     );
   }
 
+  function renderJobHandoff(options: {
+    customerId?: string | null;
+    phoneNumber?: string | null;
+    jobId?: string | null;
+  }) {
+    if (options.jobId) {
+      return (
+        <Link href={`/jobs/${options.jobId}`} className="text-sm font-medium text-blue-700 hover:underline">
+          View job
+        </Link>
+      );
+    }
+
+    const createHref = buildJobCreateHref({
+      customerId: options.customerId,
+      siteContactMobile: options.phoneNumber,
+      from: 'dispatch-intelligence',
+    });
+
+    return (
+      <Link href={createHref} className="text-sm font-medium text-blue-700 hover:underline">
+        Create job
+      </Link>
+    );
+  }
+
   const tabs: Array<{ id: DispatchTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'receptionist', label: 'Receptionist' },
@@ -227,6 +255,11 @@ export function DispatchIntelligencePage() {
       <PageHeader
         title="Dispatch Command Centre"
         description="AI receptionist intelligence, call queue analytics, technician matching, and dispatch recommendations."
+        actions={
+          <Link href={buildJobCreateHref({ from: 'dispatch-intelligence' })}>
+            <Button variant="primary">Create job</Button>
+          </Link>
+        }
       />
 
       {error ? (
@@ -295,11 +328,16 @@ export function DispatchIntelligencePage() {
               <ul className="divide-y divide-slate-200">
                 {summaries.map((summary) => (
                   <li key={summary.id} className="py-3">
-                    <p className="font-medium">{summary.summary}</p>
-                    <p className="text-sm text-slate-500">
-                      Priority {summary.priorityScore}
-                      {summary.emergencyDetected ? ' · Emergency detected' : ''}
-                    </p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{summary.summary}</p>
+                        <p className="text-sm text-slate-500">
+                          Priority {summary.priorityScore}
+                          {summary.emergencyDetected ? ' · Emergency detected' : ''}
+                        </p>
+                      </div>
+                      {renderJobHandoff({ customerId: summary.customerId })}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -357,12 +395,17 @@ export function DispatchIntelligencePage() {
             />
           ) : (
             <ul className="divide-y divide-slate-200">
-              {assessments.map((assessment) => (
-                <li key={assessment.id} className="py-3">
-                  <p className="font-medium">{assessment.emergencyType.replace(/_/g, ' ')}</p>
-                  <p className="text-sm text-slate-500">Priority {assessment.priority}</p>
-                </li>
-              ))}
+                {assessments.map((assessment) => (
+                  <li key={assessment.id} className="py-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{assessment.emergencyType.replace(/_/g, ' ')}</p>
+                        <p className="text-sm text-slate-500">Priority {assessment.priority}</p>
+                      </div>
+                      {renderJobHandoff({ jobId: assessment.jobId })}
+                    </div>
+                  </li>
+                ))}
             </ul>
           )}
         </Panel>
@@ -392,10 +435,18 @@ export function DispatchIntelligencePage() {
               <ul className="divide-y divide-slate-200">
                 {callbacks.map((callback) => (
                   <li key={callback.id} className="py-3">
-                    <p className="font-medium">
-                      {callback.phoneNumber ?? callback.customerName ?? 'Callback request'}
-                    </p>
-                    <p className="text-sm text-slate-500">{callback.status}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">
+                          {callback.phoneNumber ?? callback.customerName ?? 'Callback request'}
+                        </p>
+                        <p className="text-sm text-slate-500">{callback.status}</p>
+                      </div>
+                      {renderJobHandoff({
+                        customerId: callback.customerId,
+                        phoneNumber: callback.phoneNumber,
+                      })}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -443,8 +494,13 @@ export function DispatchIntelligencePage() {
               <ul className="divide-y divide-slate-200">
                 {recommendations.map((item) => (
                   <li key={item.id} className="py-3">
-                    <p className="font-medium">{item.subject}</p>
-                    <p className="text-sm text-slate-500">{item.recommendation}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{item.subject}</p>
+                        <p className="text-sm text-slate-500">{item.recommendation}</p>
+                      </div>
+                      {renderJobHandoff({ jobId: item.jobId })}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -460,8 +516,13 @@ export function DispatchIntelligencePage() {
               <ul className="divide-y divide-slate-200">
                 {actions.map((action) => (
                   <li key={action.id} className="py-3">
-                    <p className="font-medium">{action.subject}</p>
-                    <p className="text-sm text-slate-500">{action.status}</p>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium">{action.subject}</p>
+                        <p className="text-sm text-slate-500">{action.status}</p>
+                      </div>
+                      {renderJobHandoff({ jobId: action.jobId })}
+                    </div>
                   </li>
                 ))}
               </ul>

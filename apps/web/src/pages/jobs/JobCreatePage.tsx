@@ -133,11 +133,16 @@ export function JobCreatePage() {
           const params = new URLSearchParams(search);
           const preCustomerId = params.get('customerId');
           const prePropertyId = params.get('propertyId');
+          const preSiteContactMobile = params.get('siteContactMobile');
           pendingPropertyIdRef.current = prePropertyId;
           if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
             setCustomerId(preCustomerId);
           } else {
             setCustomerId(customerData[0]?.id ?? '');
+          }
+          if (preSiteContactMobile) {
+            setSiteContactMobile(preSiteContactMobile);
+            setSiteContactDiffers(true);
           }
         }
       } catch (err) {

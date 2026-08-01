@@ -133,7 +133,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | PLT-005 | Dual branding paths | PARTIAL | Single branding source |
 | PLT-012 | Release controls not deploy-verified | VERIFIED WITH MOCKS | Staging dry-run |
 | UX-034 | Users & Access lacks Young Guns role descriptions | PARTIAL | Role purpose copy — **PLT-003** |
-| UX-036 | Dispatch Intelligence not tied to job create | PARTIAL | Deep-link to New Job — **OPS-006** |
+| UX-036 | Dispatch Intelligence not tied to job create | **CLOSED (Phase 6 local)** | Deep-link to New Job from dispatch intel — **OPS-006** |
 | UX-038 | Analytics KPI definitions not on home | PARTIAL | Definitions + home cards — Dashboard |
 
 ---
@@ -236,7 +236,7 @@ Full screen matrix + acceptance tests: **`TITAN_OPERATIONAL_UX_AUDIT.md`**.
 | UX-033 | **CLOSED (UX-J)** | Automation / n8n visibility | AUT-002 |
 | UX-034 | Medium | Role descriptions for YG | PLT-003 |
 | UX-035 | **CLOSED (UX-I)** | Cape Town / SANS/COC ops config | YG-001–002 |
-| UX-036 | Medium | Dispatch intel → job create | OPS-006 |
+| UX-036 | Medium | Dispatch intel → job create | **CLOSED (Phase 6 local)** |
 | UX-037 | High | ~~Real document upload evidence~~ **CLOSED staging** | OPS-008 |
 | UX-038 | Medium | Analytics definitions on home | Dashboard |
 | UX-039 | Low | Mission Control orphaned | POR-001 |

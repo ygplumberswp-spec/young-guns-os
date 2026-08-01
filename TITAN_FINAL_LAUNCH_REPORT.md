@@ -1,7 +1,7 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 0 baseline  
+**Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
 **Status:** **NOT LAUNCH-READY**
 
 ---
@@ -13,8 +13,8 @@
 | **Verified complete (116-row register)** | **31 / 116 (~27%)** |
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
-| **Highest remaining risk** | Staging migration/state drift + unverified lead→job chain on deploy |
-| **Current gate** | Phase 0 complete → Phase 1 local foundation verification |
+| **Highest remaining risk** | Phase 6 crew/vehicle assignment + local staging DB credential drift |
+| **Current gate** | Phase 5 staging E2E **GO** → Phase 6 scheduling/dispatcher |
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Phase | Scope | Outcome | Commit | Evidence |
 |------:|-------|---------|--------|----------|
-| 0 | Repository and acceptance audit | Control documents created | Pending Phase 0 commit | This report + registers |
+| 5 | Phase 5 staging E2E — lead → customer → property → job | **GO 10/10** | Pending Sprint 007 commit | `TITAN_PHASE5_STAGING_REPORT.md` |
 
 ---
 

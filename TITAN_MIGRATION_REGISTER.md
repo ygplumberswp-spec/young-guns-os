@@ -1,6 +1,6 @@
 # TITAN Migration Register
 
-**Updated (UTC):** 2026-08-01 — Phase 0  
+**Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
 **ORM:** Drizzle (PostgreSQL / Supabase)  
 **Latest file:** `packages/db/drizzle/0104_n8n_hybrid_orchestration.sql`  
 **Journal count:** 104 entries  
@@ -11,12 +11,12 @@
 
 | Migration | Name | Purpose | Staging status | Production status | Rollback |
 |-----------|------|---------|----------------|-------------------|----------|
-| 0094 | `canonical_role_matrix` | Binding role remaps + platform Owner rules | Conditional — pre-check required | **NOT APPLIED — approval gate** | `.down.sql` exists |
-| 0095 | `job_operational_contract` | Job # counters, snapshots, search | Staging cutover reported | Approval gate | Forward-only |
+| 0094 | `canonical_role_matrix` | Binding role remaps + platform Owner rules | Indirect — UX tranches + Phase 5 E2E | **NOT APPLIED — approval gate** | `.down.sql` exists |
+| 0095 | `job_operational_contract` | Job # counters, snapshots, search | Staging cutover + Phase 5 E2E | Approval gate | Forward-only |
 | 0096 | `job_execution_crew_contract` | Crew assignments | Staging reports | Approval gate | Forward-only |
 | 0097 | `job_evidence_offline_contract` | Evidence storage + offline | Staging UX-B | Approval gate | Forward-only |
 | 0098 | `job_material_used_trigger` | Materials ledger | Staging UX-F | Approval gate | Forward-only |
-| 0099 | `lead_intake_conversion` | Lead convert transactional | Staging UX-D | Approval gate | Forward-only |
+| 0099 | `lead_intake_conversion` | Lead convert transactional | **Phase 5 E2E 10/10 GO** | Approval gate | Forward-only |
 | 0100 | `quote_to_cash_finance` | Quote/invoice/payment stages | Staging UX-E | Approval gate | Forward-only |
 | 0101 | `inventory_procurement_loop` | PO + stock | Staging UX-F | Approval gate | Forward-only |
 | 0102 | `comms_honesty` | Truthful comms states | Staging UX-G | Approval gate | Forward-only |
@@ -65,6 +65,6 @@ Reports:
 
 ## Current gap
 
-Staging and production journal versions must be **independently verified** on next deploy attempt. Phase 0 did not query live databases (no credentials exposed).
+Local staging DB password in `apps/api/.env.staging.local` returns **`28P01`** — row-count verification blocked. Live staging API + Phase 5 E2E confirm lead-conversion schema behaviour (`0099+`). Exact journal count **104** not confirmed from this machine.
 
-**Next action:** Staging journal verification — **approval gate** if production URL required.
+**Next action:** Owner refresh staging DB password; optional Railway redeploy of completion branch.

@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 0 baseline  
-**Verdict:** **NOT PILOT-READY**
+**Updated (UTC):** 2026-08-01 — Phase 5 staging partial gate  
+**Verdict:** **NOT PILOT-READY** (crew/vehicle chain open)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Gate | Status | Evidence | Blocker |
 |------|--------|----------|---------|
-| **Operational chain** | FAIL | Partial staging UX reports; `8d35bfd` not re-verified | Staging deploy + E2E |
+| **Operational chain** | PARTIAL | Phase 5 lead→job **10/10 GO** on staging API | Phase 6 schedule/assign proof |
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
@@ -33,7 +33,7 @@ Required path:
 
 | Step | Status |
 |------|--------|
-| Lead convert | Code at `8d35bfd` — **staging not re-run** |
+| Lead convert | **PASS** — Phase 5 staging E2E 10/10 (`TITAN_PHASE5_STAGING_REPORT.md`) |
 | Schedule/assign | Partial — UX-D |
 | Mobile execution | Staging UX-B closed prior commit |
 | Finance chain | UX-E staging — no live Xero |
