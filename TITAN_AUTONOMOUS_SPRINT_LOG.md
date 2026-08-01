@@ -497,3 +497,20 @@
 | **Approval required?** | No — local only |
 | **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth; production still gated |
 
+---
+
+## Sprint FRZ-015 — AURA provider staging verification (BLOCKED)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-015 — AURA OpenAI provider staging verify (Owner-approved, staging only) |
+| **Result** | **BLOCKED** — `apps/api/.env.staging.local` has no `AURA_OPENAI_API_KEY`; Railway `/health/ready` reports `providersEnabled=false`; no `RAILWAY_TOKEN` or staging test auth on host; no live AURA message test run |
+| **Checkpoint** | `TITAN_FRZ015_AURA_STAGING_REPORT.md`, `diagnostic-output/169-frz015-aura-staging-verify.json` |
+| **Staging API** | `/health/live` **200**, `/health/ready` **200** `database=connected` |
+| **Unit tests** | `pnpm --filter @titan/api test` — **301 pass** (includes xero-oauth + aura-context-routing) |
+| **FRZ-018 static** | Xero OAuth routes present; staging Xero env absent; gates off; Owner OAuth not attempted |
+| **Migration** | None |
+| **Approval required?** | **Yes — Owner** — Railway `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED=true` + redeploy |
+| **Next phase selected** | Owner completes FRZ-015 credential gate; then FRZ-018 Xero OAuth staging connect (Owner browser) |
+

@@ -1,7 +1,7 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 5 **17/17** + Phase 6 office **12/12** staging E2E  
+**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify BLOCKED  
 **Status:** **NOT LAUNCH-READY**
 
 ---
@@ -14,7 +14,7 @@
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
 | **Highest remaining risk** | Field mobile UX-B re-run on current commit + live provider credentials |
-| **Current gate** | FRZ-015 AURA provider; FRZ-018 Xero OAuth (Owner approval) |
+| **Current gate** | FRZ-015 AURA provider — **BLOCKED** (staging key absent, `PROVIDERS_ENABLED=false`); FRZ-018 Xero OAuth — **PAUSE GATE** |
 
 ---
 
@@ -147,4 +147,4 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## M. Exact next action
 
-**Owner gates (Sprint 019):** staging DB **106/106** locally OK; Railway API still **503/28P01** — sync service `DATABASE_URL`, fix **invalid/expired `RAILWAY_TOKEN`**, redeploy API/web, rerun Phase 5/6/8–12 smokes. Local gates pass; pause at FRZ-015 / FRZ-018.
+**FRZ-015 (BLOCKED):** Owner → Railway `titan-staging-api` Variables → staging-only `AURA_OPENAI_API_KEY`, `PROVIDERS_ENABLED=true`, redeploy → engineering reruns `scripts/aura-stage2-verify.mjs` against staging. **FRZ-018 (PAUSE):** After gates enabled, Owner completes Xero OAuth in browser on staging — no live financial writes until approved. Evidence: `TITAN_FRZ015_AURA_STAGING_REPORT.md`.

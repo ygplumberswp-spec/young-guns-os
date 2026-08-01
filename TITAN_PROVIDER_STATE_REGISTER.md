@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — Phase 0  
+**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -10,7 +10,8 @@
 | State | Count |
 |-------|------:|
 | Connected (verified this cycle) | 0 |
-| Configured locally, not verified | 1 (OpenAI env — prior session log only) |
+| Configured locally (dev only), not staging-verified | 1 (OpenAI in `apps/api/.env` — dev file) |
+| Staging verified | 0 |
 | Disconnected / not configured | Most |
 | Honesty-only (no backend) | 2 (gmail, n8n UI cards) |
 | Planned registry entry | 5 |
@@ -22,8 +23,8 @@
 
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
-| **OpenAI (AURA)** | AURA Chat, AI orchestration | `apps/api/.env` → `AURA_OPENAI_API_KEY` | Server env only | Not re-verified Phase 0 | May show Ready if key set | **Unverified this cycle** | Owner: confirm credential; Stage 2 verify |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | Prior OAuth work; not this cycle | Varies | **Blocked** | Staging OAuth — Owner approval |
+| **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **FRZ-015 BLOCKED** — staging key absent, gate off | Gated off on Railway | **Blocked — staging credential** | Owner: Railway `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED=true`, redeploy |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | FRZ-018 static — routes OK, live OAuth not attempted | Honest disconnected | **Blocked — staging creds + gates** | Owner: Xero app creds + enable gates + OAuth connect |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

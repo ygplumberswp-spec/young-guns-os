@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 028: forbidden-action API matrix (FRZ-001 local automated)  
+**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify BLOCKED  
 **Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -188,11 +188,13 @@
 | `apps/api/src/routes/mobile-offline-completion.test.ts` | Sprint 024 — `/offline/flush` duplicate replay + `/complete-gated` idempotency API contract |
 | `apps/web/src/lib/role-forbidden-direct-url.test.ts` | Sprint 025 — OwnerStaffRoute + TechnicianRoute forbidden direct URL redirect contract |
 | `apps/api/src/lib/role-forbidden-api-action.test.ts` | Sprint 028 — forbidden-action API permission matrix (10 pilot actions) |
+| `TITAN_FRZ015_AURA_STAGING_REPORT.md` | **FRZ-015 staging verify — BLOCKED** (credential + gate) |
+| `diagnostic-output/169-frz015-aura-staging-verify.json` | FRZ-015 structured credential/config/staging probe evidence (no secrets) |
 
 ## Coverage gaps (Phase 2+ targets)
 
 - Live Xero sync integration (staging, read-only)  
-- AURA provider connection e2e  
+- AURA provider connection e2e — **blocked at FRZ-015 Owner credential gate**  
 
 ---
 

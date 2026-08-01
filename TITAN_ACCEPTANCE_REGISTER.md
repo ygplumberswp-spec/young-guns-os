@@ -58,10 +58,10 @@
 | FRZ-012 | §13 | Documents, OCR, reports, COC, job packs | All roles | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Staging packs smoke GO** (Sprint 022) | AI provider | — | Partially implemented | Pack routes live; document-link validation verified | Cursor | Sprint 015/022 | `142-staging-phase8-12-e2e.json` |
 | FRZ-013 | §14 | Workforce/HR/labour-law AURA team | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | HR legal | Partially implemented | Draft-only discipline; no auto-dismiss | Cursor | — | HR modules |
 | FRZ-014 | §15 | Xero data quality + marketing consent | Owner/Marketing | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-H staging | Xero | Send approval | Partially implemented | Classifier closed; live send blocked | Cursor | UX-H | `marketing-eligibility.test.ts` |
-| FRZ-015 | §16 | AURA specialist departments + orchestration | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | Mocks | **AI provider** | — | Blocked by credential/provider | AURA chat needs verified provider connection | Owner | — | AI-001, AI-006 |
+| FRZ-015 | §16 | AURA specialist departments + orchestration | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | **Staging verify BLOCKED** (Sprint FRZ-015) | **AI provider** | — | Blocked by credential/provider | Staging: no `AURA_OPENAI_API_KEY`, `PROVIDERS_ENABLED=false` on Railway; Owner action required | Owner | — | `TITAN_FRZ015_AURA_STAGING_REPORT.md`, `169-frz015-aura-staging-verify.json` |
 | FRZ-016 | §17 | Multi-AI gateway + controlled self-learning | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | None | **AI provider** | Policy approval | Partially implemented | Gateway exists; live provider + policy gates open | Owner | — | `ai-orchestration` routes |
 | FRZ-017 | §18 | Marketing/sales/digital presence | Owner | Partial | Partial | Partial | Yes | Yes | Partial | Partial | Partial | UX-H gates | Meta/Google | Publish approval | Partially implemented | Execute/send paths honest but not live | Cursor | UX-H | MKT module |
-| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | Preflight | **Multi** | OAuth | Partially implemented | Honesty improved; live creds not verified | Owner | — | `TITAN_PRODUCTION_PROVIDER_PREFLIGHT_REPORT.md` |
+| FRZ-018 | §19 | Integrations truthful provider states | Owner | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | Preflight + **Xero static ready** | **Multi** | OAuth | Partially implemented | OAuth routes + unit tests pass; staging Xero env absent, gates off; Owner OAuth not attempted | Owner | — | `TITAN_FRZ015_AURA_STAGING_REPORT.md` §6, `xero-oauth.test.ts` |
 | FRZ-019 | §20 | Owner Configuration Studio | Owner | Yes | Yes | Partial | Owner | Yes | Partial | Yes | Partial | None | — | Config publish | Partially implemented | Studio pages exist; rollback/version depth TBD | Cursor | — | Platform pages |
 | FRZ-020 | §21 | Controlled AURA Developer Studio | Owner | Partial | Partial | Partial | Owner | Yes | Partial | Yes | Partial | None | — | Prod deploy | Partially implemented | Workflow exists; prod isolation must be proven | Cursor | — | Developer portal |
 | FRZ-021 | §22 | Build-control protocol | Team | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | — | — | Verified complete | This completion run follows protocol | Cursor | Phase 0 | Master directive |
@@ -103,8 +103,8 @@
 11. **OPS-013 / offline duplicate-completion** — **DONE (local automated)** — `mobile-offline-completion.test.ts` + `job-execution-completion-idempotency.test.ts` + route contract; staging click-path still blocked (503/28P01)  
 12. **FRZ-002 / role-forbidden direct URL** — **DONE (local automated)** — `role-forbidden-direct-url.test.ts` + `StaffExperienceRoute` redirect contract; staging click-path **GO** (Sprint 022)  
 13. **FRZ-001 / forbidden-action API matrix** — **DONE (local automated)** — `role-forbidden-api-action.test.ts` — 10 pilot actions × role denial/allow + route wiring; live staging probe **GO** (Sprint 022)  
-14. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-15. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+14. **FRZ-015** — AURA provider verified connection — **BLOCKED** (Sprint FRZ-015: staging key absent, `PROVIDERS_ENABLED=false`; see `TITAN_FRZ015_AURA_STAGING_REPORT.md`)  
+15. **FRZ-018** — Xero OAuth staging connect (Owner approval) — **PAUSE GATE** (code ready; staging creds + gates off)  
 
 ---
 
