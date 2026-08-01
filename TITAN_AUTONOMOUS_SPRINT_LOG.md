@@ -514,3 +514,20 @@
 | **Approval required?** | **Yes — Owner** — Railway `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED=true` + redeploy |
 | **Next phase selected** | Owner completes FRZ-015 credential gate; then FRZ-018 Xero OAuth staging connect (Owner browser) |
 
+---
+
+## Sprint FRZ-015b — AURA provider staging verification (GO)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-015 — AURA OpenAI provider staging verify (Owner configured, staging only) |
+| **Result** | **GO** — Owner configured Railway; `/health/ready` `providersEnabled=true`; live synthetic AURA verify **12/12 PASS** |
+| **Checkpoint** | `TITAN_FRZ015_AURA_STAGING_REPORT.md`, `diagnostic-output/170-frz015-aura-staging-verify-go.json` |
+| **Staging API** | `/health/ready` **200** `database=connected`, `providersEnabled=true` |
+| **Live tests** | Signup, providers list (OpenAI healthy), conversation create, synthetic "Reply OK" → assistant `OK`, tenant isolation 404, unauth 401 |
+| **FRZ-018 static** | Xero OAuth routes present; live OAuth not attempted (pause gate) |
+| **Migration** | None |
+| **Approval required?** | No — Owner already configured |
+| **Next phase selected** | FRZ-018 Xero OAuth staging connect (Owner browser); safe local Master Directive work |
+

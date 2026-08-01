@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify  
+**Updated (UTC):** 2026-08-01 — FRZ-015 staging verify GO  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -9,13 +9,13 @@
 
 | State | Count |
 |-------|------:|
-| Connected (verified this cycle) | 0 |
-| Configured locally (dev only), not staging-verified | 1 (OpenAI in `apps/api/.env` — dev file) |
-| Staging verified | 0 |
+| Connected (verified this cycle) | 1 (OpenAI AURA — staging) |
+| Configured locally (dev only), not staging-verified | 0 |
+| Staging verified | 1 |
 | Disconnected / not configured | Most |
 | Honesty-only (no backend) | 2 (gmail, n8n UI cards) |
 | Planned registry entry | 5 |
-| Blocked — credential required | 5+ |
+| Blocked — credential required | 4+ |
 
 ---
 
@@ -23,7 +23,7 @@
 
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
-| **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **FRZ-015 BLOCKED** — staging key absent, gate off | Gated off on Railway | **Blocked — staging credential** | Owner: Railway `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED=true`, redeploy |
+| **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
 | **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | FRZ-018 static — routes OK, live OAuth not attempted | Honest disconnected | **Blocked — staging creds + gates** | Owner: Xero app creds + enable gates + OAuth connect |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
