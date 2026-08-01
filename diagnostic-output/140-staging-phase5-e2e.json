@@ -1,20 +1,72 @@
 {
   "label": "STAGING-P5",
   "phase": 5,
-  "startedAt": "2026-08-01T08:29:54.556Z",
+  "startedAt": "2026-08-01T09:06:35.384Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "forbiddenRefChecked": true,
   "productionRefTouched": false,
   "results": [
     {
       "name": "staging_api_ready",
-      "status": "FAIL",
-      "detail": "{\"error\":{\"code\":\"DB_UNAVAILABLE\",\"message\":\"Database is not reachable\",\"detail\":{\"reason\":\"28P01\",\"host\":\"aws-0-eu-west-1.pooler.supabase.com\",\"port\":5432,\"sslmode\":null,\"isSupabaseDirect\":false,\"isSupabasePooler\":true}}}"
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "e40f11da-53f5-49ff-82a1-9be56ad0751c"
+    },
+    {
+      "name": "lead_create",
+      "status": "PASS",
+      "detail": "693ef87c-1e0b-4a66-8ebf-70313fd4ea1b"
+    },
+    {
+      "name": "lead_convert_chain",
+      "status": "PASS",
+      "detail": "JOB-000001"
+    },
+    {
+      "name": "customer_readable",
+      "status": "PASS",
+      "detail": "Keanu Staging Test"
+    },
+    {
+      "name": "property_address_no_placeholder",
+      "status": "PASS",
+      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
+    },
+    {
+      "name": "job_snapshot_no_placeholder",
+      "status": "PASS",
+      "detail": "12 Lower Main Road — Observatory, Cape Town, Western Cape, 7925"
+    },
+    {
+      "name": "site_contact_mobile_e164",
+      "status": "PASS",
+      "detail": "+27825551234"
+    },
+    {
+      "name": "convert_idempotent",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "cross_tenant_job_denied",
+      "status": "PASS",
+      "detail": "404"
     }
   ],
   "totals": {
-    "passed": 0,
+    "passed": 10,
     "failed": 0
   },
-  "verdict": "NO-GO"
+  "verdict": "GO",
+  "completedAt": "2026-08-01T09:07:05.063Z",
+  "conversion": {
+    "customerId": "b67da9d4-4cff-45c2-a0f4-ee691ab068e6",
+    "propertyId": "54d21ed1-1aad-4cf0-b385-7c08c9cab5fe",
+    "jobId": "58f98d1f-0210-4a5e-9082-f01dae7fc298",
+    "jobNumber": "JOB-000001"
+  }
 }

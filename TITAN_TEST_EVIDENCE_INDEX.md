@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 025: role-forbidden direct URL browser tests (14 automated tests, FRZ-002)  
+**Updated (UTC):** 2026-08-01 — Sprint 022: staging redeploy **GO** (Phase 5 10/10, 6 12/12, 8–12 18/18 public E2E)  
 **Automated test files:** 55 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---

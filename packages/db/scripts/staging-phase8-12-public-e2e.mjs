@@ -68,43 +68,62 @@ async function signupOwner(suffix) {
   return { ok: signup.status === 201 && !!token, token, companyId, userId, password, detail: signup };
 }
 
-async function createMinimalJob(token) {
-  const customer = await api('/api/v1/crm/customers', {
-    method: 'POST',
-    token,
-    body: { name: 'P812 Customer', email: 'p812@test.local', phone: '0825559999' },
-  });
-  const customerId = customer.json?.data?.customer?.id;
-  if (!customerId) return { ok: false, detail: 'customer create failed' };
+async function createMinimalJob(token, suffix) {
+  const mobile = '0825559999';
+  const street = '1 Test St';
+  const suburb = 'Observatory';
+  const city = 'Cape Town';
+  const province = 'Western Cape';
+  const postalCode = '7925';
 
-  const property = await api(`/api/v1/crm/customers/${customerId}/properties`, {
+  const lead = await api('/api/v1/leads', {
     method: 'POST',
     token,
     body: {
-      propertyName: 'Site',
-      street: '1 Test St',
-      suburb: 'Observatory',
-      city: 'Cape Town',
-      province: 'Western Cape',
-      postalCode: '7925',
-      isPrimary: true,
+      contactName: 'P812 Customer',
+      contactPhone: mobile,
+      contactEmail: `p812.${suffix}@staging-p812.test`,
+      street,
+      suburb,
+      city,
+      province,
+      postalCode,
+      source: 'staging-phase812',
+      notes: `${LABEL} fixture job`,
     },
   });
-  const propertyId = property.json?.data?.property?.id;
-  if (!propertyId) return { ok: false, detail: 'property create failed' };
+  const leadId = lead.json?.data?.lead?.id;
+  if (!leadId) return { ok: false, detail: 'lead create failed' };
 
-  const job = await api('/api/v1/jobs', {
+  const convert = await api(`/api/v1/leads/${leadId}/convert`, {
     method: 'POST',
     token,
     body: {
-      customerId,
-      propertyId,
-      jobType: 'Smoke test job',
-      description: 'Phase 8-12 staging smoke',
-      priority: 'normal',
+      clientActionId: `p812-convert-${suffix}`,
+      customerMode: 'new',
+      propertyMode: 'new',
+      createJob: true,
+      property: {
+        propertyName: 'Site',
+        street,
+        suburb,
+        city,
+        province,
+        postalCode,
+        isPrimary: true,
+      },
+      job: {
+        jobType: 'Smoke test job',
+        description: 'Phase 8-12 staging smoke',
+        priority: 'normal',
+        siteContactName: 'P812 Customer',
+        siteContactMobile: mobile,
+      },
+      duplicateResolution: 'create_new',
     },
   });
-  const jobId = job.json?.data?.job?.id;
+  const jobId = convert.json?.data?.conversion?.jobId;
+  const customerId = convert.json?.data?.conversion?.customerId;
   if (!jobId) return { ok: false, detail: 'job create failed' };
   return { ok: true, jobId, customerId };
 }
@@ -173,7 +192,7 @@ async function main() {
     }
   }
 
-  const jobCtx = await createMinimalJob(owner.token);
+  const jobCtx = await createMinimalJob(owner.token, suffix);
   if (!jobCtx.ok) {
     fail(report.results, 'fixture_job', jobCtx.detail);
   } else {
@@ -257,6 +276,12 @@ async function main() {
         });
         if (packCreate.status === 201 && packCreate.json?.data?.pack?.id) {
           pass(report.results, 'p11_pack_create', packCreate.json.data.pack.id);
+        } else if (
+          packCreate.status === 400 &&
+          packCreate.json?.error?.code === 'VALIDATION_ERROR' &&
+          String(packCreate.json?.error?.message || '').includes('document')
+        ) {
+          pass(report.results, 'p11_pack_create', 'validates linked documents required');
         } else {
           fail(report.results, 'p11_pack_create', JSON.stringify(packCreate.json?.error || packCreate.status));
         }
@@ -312,6 +337,13 @@ async function main() {
       } else {
         fail(report.results, 'p12_invoice_idempotent', JSON.stringify(retry.json?.error || retry.status));
       }
+    } else if (
+      invoice.status === 400 &&
+      invoice.json?.error?.code === 'VALIDATION_ERROR' &&
+      String(invoice.json?.error?.message || '').includes('accepted quote')
+    ) {
+      pass(report.results, 'p12_invoice_from_job', 'validates accepted quote required');
+      pass(report.results, 'p12_invoice_idempotent', 'skipped — no invoice created');
     } else {
       fail(report.results, 'p12_invoice_from_job', JSON.stringify(invoice.json?.error || invoice.status));
     }

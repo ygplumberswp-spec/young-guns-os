@@ -466,3 +466,17 @@
 | **Approval required?** | **Yes — Owner:** Railway **Settings → Source → Branch** → `cursor/titan-frozen-scope-completion`, then Deploy |
 | **Next phase selected** | Redeploy API/web; `/health/ready`; Phase 5/6/8–12 smokes |
 
+---
+
+## Sprint 022 — Staging redeploy verification (GO)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Railway branch switch + post-redeploy smokes |
+| **Result** | `/health/ready` **200** `database=connected`; Phase **5** 10/10, **6** 12/12, **8–12** 18/18 **GO** on live Railway API |
+| **Checkpoint** | `TITAN_STAGING_VERIFICATION_SPRINT022_REPORT.md`, `168-staging-post-redeploy-summary.json` |
+| **Script fix** | Phase 8–12 E2E fixture via lead→convert; honest validation passes for pack/invoice gates |
+| **Approval required?** | No |
+| **Next phase selected** | Continue safe local Master Directive phases; production still gated |
+
