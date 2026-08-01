@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging BLOCKED (credential gate)  
+**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH (credential gate passed)  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -24,7 +24,7 @@
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
 | **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018 BLOCKED** — live probe `oauthConfigured=false` | Honest disconnected | **Blocked — XERO creds + XERO_SYNC_ENABLED** | Owner: Railway Xero creds + `XERO_SYNC_ENABLED=true` + redirect URI + browser OAuth |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018b PAUSE-OAUTH** — `oauthConfigured=true`; probe tenant disconnected | Honest `configured_unverified` | **Configured — awaiting Owner browser OAuth** | Owner: Sign in with Xero at staging web `/integrations/xero`; then re-run read-only import verify |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging BLOCKED (credential gate)  
-**Verdict:** **NOT PILOT-READY** (FRZ-018 Xero OAuth credentials + remaining chain gaps)
+**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH (credential gate passed)  
+**Verdict:** **NOT PILOT-READY** (FRZ-018 Owner browser OAuth + remaining chain gaps)
 
 ---
 
@@ -15,7 +15,7 @@
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
-| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **BLOCKED** — Xero creds absent | FRZ-018 Owner Xero credential gate |
+| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **PAUSE-OAUTH** — Xero cred gate passed | FRZ-018 Owner browser OAuth |
 
 ---
 
@@ -122,4 +122,4 @@ Minimum for pilot:
 
 ## Exact blocker for pilot sign-off
 
-**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **BLOCKED** — staging probe `oauthConfigured=false`; Owner must set `XERO_CLIENT_ID`/`XERO_CLIENT_SECRET` + `XERO_SYNC_ENABLED=true` on Railway and register redirect URI in Xero app before browser OAuth.
+**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **PAUSE-OAUTH** — credential gate passed (`oauthConfigured=true`); Owner browser OAuth at staging `/integrations/xero` before read-only import verify.

@@ -1,96 +1,88 @@
-# FRZ-018 Xero Integration — Staging Readiness Report
+# FRZ-018 Xero Integration — Staging Read-Only Verification Report
 
-**Requirement:** FRZ-018 — Integrations truthful provider states (Xero OAuth)  
+**Requirement:** FRZ-018 — Integrations truthful provider states (Xero OAuth + read-only import)  
 **Scope:** Staging only (`https://young-guns-os-staging.up.railway.app`)  
 **Production ref blocked:** `rshuiaghmtrvvilhqpwm` — not accessed  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Updated (UTC):** 2026-08-01  
-**Verdict:** **BLOCKED** — Xero OAuth credentials and `XERO_SYNC_ENABLED` absent on staging Railway
+**Verdict:** **PAUSE-OAUTH** — credential gate passed; Owner browser OAuth required before read-only import verify
 
 ---
 
 ## Executive summary
 
-Phase A inspection complete. Code, unit tests, and honest provider states are ready for read-only verification. Staging Railway does **not** expose a configured Xero OAuth app: live probe returns `oauthConfigured=false` and `POST /integrations/xero/oauth/start` → `OAUTH_NOT_CONFIGURED`. Owner must configure Xero app credentials and enable sync gate before browser OAuth (Phase C). No live financial writes, no OAuth login, and no FRZ-015 re-run performed.
+Owner signal "xero configured" confirmed on staging: `oauthConfigured=true`, `POST /integrations/xero/oauth/start` returns a valid Xero authorize URL (no `OAUTH_NOT_CONFIGURED`). Probe tenant remains honestly disconnected (`hasCredentials=false`) — import checklist items deferred until Owner completes **Sign in with Xero** in browser. Pre-OAuth gates pass: tenant isolation, truthful provider status, sync blocked when disconnected, token refresh covered in code + unit tests. No live financial writes to Xero, no OAuth automation, no FRZ-015 re-run.
 
 ---
 
 ## 1. Credential discovery (no secret values)
 
-| Variable | Staging (inferred) | Local `.env.staging.example` | Local `apps/api/.env.staging.local` |
-|----------|-------------------|------------------------------|-------------------------------------|
-| `PROVIDERS_ENABLED` | **Present** (`true`) | placeholder `false` | absent |
-| `XERO_SYNC_ENABLED` | **Absent / false** | placeholder `false` | absent |
-| `XERO_CLIENT_ID` | **Absent** | commented out | absent |
-| `XERO_CLIENT_SECRET` | **Absent** | commented out | absent |
-| `XERO_REDIRECT_URI` | **Absent** (optional) | commented out | absent |
-| `INTEGRATIONS_ENCRYPTION_KEY` | **Present** (API boots) | placeholder | absent |
+| Variable | Staging (inferred) | Prior run (171) | This run (172) |
+|----------|-------------------|-----------------|----------------|
+| `PROVIDERS_ENABLED` | Present | Present | Present |
+| `XERO_SYNC_ENABLED` | **Present (inferred)** | Absent | Present via `oauthConfigured=true` |
+| `XERO_CLIENT_ID` | **Present (inferred)** | Absent | Present via OAuth start success |
+| `XERO_CLIENT_SECRET` | **Present (inferred)** | Absent | Present via OAuth start success |
+| `INTEGRATIONS_ENCRYPTION_KEY` | Present | Present | Present |
 
-| Source | Result |
-|--------|--------|
-| Railway CLI | `RAILWAY_TOKEN` absent — variables not listed locally |
-| Public `/health/ready` | `providersEnabled=true`, `database=connected` |
-| Authenticated `GET /integrations/xero` | `oauthConfigured=false`, `status=disconnected` |
-| `POST /integrations/xero/oauth/start` | `400 OAUTH_NOT_CONFIGURED` |
-
-Structured evidence: `diagnostic-output/171-frz018-xero-staging-readiness.json`
+Structured evidence: `diagnostic-output/172-frz018-xero-staging-readonly-verify.json`
 
 ---
 
-## 2. Xero app redirect URI (Owner must register)
+## 2. OAuth URL (Owner action)
 
-Register **exactly** this redirect URI in the Xero Developer portal (staging app):
+**Web entry:** `https://comfortable-determination-staging.up.railway.app/integrations/xero`  
+**Callback (Xero app):** `https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback`
 
-```
-https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback
-```
-
-If `XERO_REDIRECT_URI` is unset on Railway, the API uses this same default via `API_PUBLIC_URL` (`resolveXeroOAuthConfig` in `apps/api/src/config.ts`).
-
-### OAuth scopes (code-defined, read-only verification intent)
-
-`openid profile email offline_access accounting.settings accounting.contacts accounting.invoices accounting.payments accounting.banktransactions`
+Owner: open staging web → Integrations → Xero → **Sign in with Xero**. Agent cannot perform browser OAuth.
 
 ---
 
-## 3. Code review — integration readiness
+## 3. Verification checklist (11 items)
 
-| Area | Status | Notes |
-|------|--------|-------|
-| OAuth routes | **Ready** | `GET /oauth/callback` (public), `POST /oauth/start`, `POST /test`, `DELETE /xero` |
-| Config resolver | **Ready** | Inert until `XERO_SYNC_ENABLED=true` **and** `PROVIDERS_ENABLED=true` **and** client id/secret |
-| Token encryption | **Ready** | `encryptXeroOAuthCredentials` v2; requires `INTEGRATIONS_ENCRYPTION_KEY` |
-| Refresh handling | **Ready** | 60s expiry buffer; per-company inflight dedupe |
-| Disconnect | **Ready** | Revoke best-effort + clear creds + audit `xero_disconnected` |
-| Tenant isolation | **Ready** | `integrationConnections` keyed by `companyId` |
-| Truthful states | **Verified live** | Unauthenticated → 401; disconnected when unconfigured; no fake “connected” |
-| Read-only pre-OAuth | **Verified** | Sync resolver inert; no invoice/payment/contact writes attempted |
+| # | Item | Result | Detail |
+|---|------|--------|--------|
+| 1 | Connected organisation | **PAUSE** | No connected tenant on probe account; Owner OAuth required |
+| 2 | Contacts import (read/list) | **PAUSE** | Deferred until connected |
+| 3 | Invoices import (read/list) | **PAUSE** | Deferred until connected |
+| 4 | Payments import (read/list) | **PAUSE** | Deferred until connected |
+| 5 | Bank transactions import | **PAUSE** | Deferred until connected (via full read sync) |
+| 6 | lastSyncAt | **PAUSE** | Deferred until connected |
+| 7 | Token refresh / expiry | **PASS (code)** | 60s buffer + inflight dedupe; 301 unit tests pass |
+| 8 | Tenant isolation | **PASS** | Independent disconnected state; no shared sync logs |
+| 9 | Duplicate protection / idempotency | **PAUSE** | Deferred until connected |
+| 10 | Audit evidence | **PAUSE** | Sync logs API exists; deferred until import |
+| 11 | Truthful provider status | **PASS** | `configured_unverified` / disconnected honest; sync → `NOT_CONNECTED` |
 
-Key files: `apps/api/src/services/xero-oauth.service.ts`, `apps/api/src/routes/integrations.ts`, `apps/api/src/config.ts`, `apps/api/src/services/xero-oauth.test.ts`
-
----
-
-## 4. Unit tests (local)
-
-| Command | Result |
-|---------|--------|
-| `pnpm --filter @titan/api test -- xero-oauth` | **301 pass** (includes 5 xero-oauth tests) |
+**Live probe totals:** 14 PASS, 0 FAIL, 8 PAUSE
 
 ---
 
-## 5. Live staging probe (2026-08-01, no OAuth)
+## 4. Live staging probe (2026-08-01)
 
 | Test | Result |
 |------|--------|
-| `/api/v1/health/ready` | **PASS** — ready, providers enabled |
+| `/api/v1/health/ready` | **PASS** |
 | Unauthenticated `GET /integrations/xero` | **PASS** — 401 |
-| Public OAuth callback (no code) | **PASS** — 302 redirect, honest error |
+| OAuth callback (error path) | **PASS** — 302 honest redirect |
 | Owner signup + session | **PASS** |
-| `GET /integrations/xero` (authenticated) | **PASS** — disconnected, `oauthConfigured=false` |
-| `POST /integrations/xero/oauth/start` | **PASS (expected block)** — `OAUTH_NOT_CONFIGURED` |
+| `oauthConfigured=true` | **PASS** — credential gate cleared |
+| Truthful disconnected state | **PASS** |
+| `POST /oauth/start` | **PASS** — authorize URL issued |
+| Hub provider status | **PASS** — `configured_unverified` |
+| Tenant isolation (2 tenants) | **PASS** |
+| Sync when disconnected | **PASS** — `NOT_CONNECTED` |
 | Secret leak scan | **PASS** |
 | Live financial writes | **Not performed** |
 | FRZ-015 re-run | **Not performed** |
+
+---
+
+## 5. Unit tests (local)
+
+| Command | Result |
+|---------|--------|
+| `pnpm --filter @titan/api test -- xero-oauth` | **301 pass** |
 
 ---
 
@@ -98,34 +90,28 @@ Key files: `apps/api/src/services/xero-oauth.service.ts`, `apps/api/src/routes/i
 
 | Field | Value |
 |-------|-------|
-| **Status** | **BLOCKED** |
-| **Classification** | Staging ready for OAuth after Owner credential gate |
-| **Connected** | **No** |
-| **Evidence** | This report + `171-frz018-xero-staging-readiness.json` |
+| **Status** | **PAUSE-OAUTH** |
+| **Classification** | Credential gate **passed**; read-only import verify **blocked on Owner browser OAuth** |
+| **Connected** | **No** (on probe tenant; Owner tenant unknown to agent) |
+| **Evidence** | This report + `172-frz018-xero-staging-readonly-verify.json` |
 
 ---
 
 ## 7. Owner action (one step)
 
-**Railway → titan-staging-api → Variables:** set staging-only `XERO_CLIENT_ID` and `XERO_CLIENT_SECRET` from your Xero Developer app, set `XERO_SYNC_ENABLED=true`, redeploy API.
-
-**Xero Developer portal → staging app → OAuth 2.0 redirect URIs:** add exactly:
-
-`https://young-guns-os-staging.up.railway.app/api/v1/integrations/xero/oauth/callback`
-
-After redeploy, re-run FRZ-018 Phase C: Owner opens staging web → Integrations → Xero → **Sign in with Xero** (browser OAuth required; agent will not perform OAuth).
+Open `https://comfortable-determination-staging.up.railway.app/integrations/xero` → **Sign in with Xero** → authorize staging org. After connected, re-run FRZ-018 Phase C read-only import verify (contacts, invoices, payments, bank transactions — GET/list only).
 
 ---
 
-## 8. Phase D (deferred)
+## 8. Phase C (deferred)
 
-Post-OAuth read-only verify (contacts, invoices, payments, bank transactions — GET/list only) runs **only after** staging DB shows `status=connected` with OAuth credentials. Not applicable this run.
+Post-OAuth read-only verify runs when staging DB shows `status=connected` with OAuth credentials on Owner's tenant. Agent will re-probe import endpoints and duplicate protection on next Owner signal.
 
 ---
 
 ## 9. Security compliance
 
 - No Xero secrets printed, logged, or committed
-- Only present/absent and inferred gate state reported
+- Only present/absent and connection state reported
 - Production Supabase ref not accessed
 - No live financial writes

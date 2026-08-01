@@ -549,3 +549,33 @@
 | **Approval required?** | **Yes — Owner** — Railway Xero creds + `XERO_SYNC_ENABLED=true` + Xero app redirect URI |
 | **Next phase selected** | Owner completes FRZ-018 credential gate → Phase C browser OAuth; parallel safe local FRZ-019 Configuration Studio audit |
 
+---
+
+## Sprint FRZ-018b — Xero staging read-only verify (PAUSE-OAUTH)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018b — Xero read-only staging verification (credential gate re-probe + pre-OAuth checklist) |
+| **Result** | **PAUSE-OAUTH** — `oauthConfigured=true`; OAuth start returns authorize URL; probe tenant honestly disconnected; 14 PASS / 0 FAIL / 8 PAUSE |
+| **Checkpoint** | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `diagnostic-output/172-frz018-xero-staging-readonly-verify.json` |
+| **Owner OAuth URL** | `https://comfortable-determination-staging.up.railway.app/integrations/xero` |
+| **Live financial writes** | **Not performed** |
+| **FRZ-015 re-run** | **Not performed** |
+| **Migration** | None |
+| **Approval required?** | **Yes — Owner** — browser Sign in with Xero |
+| **Next phase selected** | Owner browser OAuth → FRZ-018c read-only import verify; FRZ-019 config version schema (local) |
+
+---
+
+## Sprint FRZ-019 — Configuration Studio local audit (PARTIAL)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-019 — Owner Configuration Studio local code audit |
+| **Result** | **PARTIAL** — company/portal/team/platform settings exist; draft/preview/version/rollback missing per §20 |
+| **Checkpoint** | `TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md`, `diagnostic-output/173-frz019-config-studio-audit.json` |
+| **Staging touched** | No |
+| **Next phase selected** | `company_config_versions` draft/publish slice (local, disposable migration)
+
