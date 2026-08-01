@@ -1,6 +1,6 @@
 {
   "label": "187-xero-import-recovery-verify",
-  "generatedAt": "2026-08-01T13:06:59.715Z",
+  "generatedAt": "2026-08-01T13:35:37.121Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -48,7 +48,7 @@
     "bank_tx_logs": 0
   },
   "importJob": {
-    "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "jobId": "6a8304c4-753f-4994-a99d-8c4365c21aee",
     "jobStatus": "failed",
     "errorMessage": "Xero sync failed during payments. Failed query: select \"xero_invoice_mappings\".\"id\", \"xero_invoice_mappings\".\"company_id\", \"xero_invoice_mappings\".\"integration_connection_id\", \"xero_invoice_mappings\".\"invoice_id\", \"xero_invoice_mappings\".\"xero_invoice_id\", \"xero_invoice_mappings\".\"xero_invoice_number\", \"xero_invoice_mappings\".\"xero_reference\", \"xero_invoice_mappings\".\"sync_status\", \"xero_invoice_mappings\".\"last_synced_at\", \"xero_invoice_mappings\".\"last_successful_sync_at\", \"xero_invoice_mappings\".\"last_error\", \"xero_invoice_mappings\".\"conflict_metadata\", \"xero_invoice_mappings\".\"created_at\", \"xero_invoice_mappings\".\"updated_at\", \"invoices\".\"id\", \"invoices\".\"currency\", \"invoices\".\"amount_paid_cents\", \"invoices\".\"amount_cents\", \"invoices\".\"status\", \"invoices\".\"invoice_number\" from \"xero_invoice_mappings\" inner join \"invoices\" on \"xero_invoice_mappings\".\"invoice_id\" = \"invoices\".\"id\" where (\"xero_invoice_mappings\".\"company_id\" = $1 and \"xero_invoice_mappings\".\"sync_status\" = $2)\nparams: 095aef76-fef5-4139-af37-a42f2d7e2faf,synced Contacts 0 new / 0 updated, invoices 0 new / 0 updated, payments 0 new / 0 updated, bank transactions 0 new / 0 updated. Imported 0 new and updated 0 existing records. Last sync was not updated.",
     "checkpoint": {
@@ -58,9 +58,9 @@
       "paymentsPage": 1,
       "bankTransactionsPage": 1
     },
-    "heartbeatAt": "2026-08-01T12:48:40.984Z",
+    "heartbeatAt": "2026-08-01T13:34:43.733Z",
     "activity": "processing",
-    "resumedFromAbandoned": false,
+    "resumedFromAbandoned": true,
     "contactsPulled": 0,
     "invoicesPulled": 0,
     "completedStages": [
