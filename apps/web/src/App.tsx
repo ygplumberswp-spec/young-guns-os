@@ -290,8 +290,12 @@ export function App() {
                         />
                         <Route path="/procurement" component={OwnerPages.PurchaseOrderListPage} />
                         <Route path="/finance/quotes/new" component={OwnerPages.QuoteCreatePage} />
+                        <Route path="/finance/quotes/:id/edit" component={OwnerPages.QuoteEditPage} />
                         <Route path="/finance/quotes/:id" component={OwnerPages.QuoteDetailPage} />
                         <Route path="/finance/quotes" component={OwnerPages.QuoteListPage} />
+                        <Route path="/finance/boq/new" component={OwnerPages.BoqCreatePage} />
+                        <Route path="/finance/boq/:id" component={OwnerPages.BoqDetailPage} />
+                        <Route path="/finance/boq" component={OwnerPages.BoqListPage} />
                         <Route
                           path="/finance/invoices/new"
                           component={OwnerPages.InvoiceCreatePage}

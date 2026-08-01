@@ -2,6 +2,7 @@ import { Link, useLocation } from 'wouter';
 
 const tabs = [
   { href: '/finance/quotes', label: 'Quotes' },
+  { href: '/finance/boq', label: 'BOQs' },
   { href: '/finance/invoices', label: 'Invoices' },
   { href: '/finance/payments', label: 'Payments' },
 ];

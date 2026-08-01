@@ -258,6 +258,7 @@ import {
   quoteLineItems,
   quotes,
 } from './quotes';
+import { boqDocuments, boqLineItems } from './boq';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
@@ -561,6 +562,41 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
   lineItems: many(quoteLineItems),
   acceptances: many(quoteAcceptances),
   invoices: many(invoices),
+  boqDocument: one(boqDocuments, {
+    fields: [quotes.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+}));
+
+export const boqDocumentsRelations = relations(boqDocuments, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [boqDocuments.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [boqDocuments.customerId],
+    references: [customers.id],
+  }),
+  job: one(jobs, {
+    fields: [boqDocuments.jobId],
+    references: [jobs.id],
+  }),
+  quote: one(quotes, {
+    fields: [boqDocuments.quoteId],
+    references: [quotes.id],
+  }),
+  lineItems: many(boqLineItems),
+}));
+
+export const boqLineItemsRelations = relations(boqLineItems, ({ one }) => ({
+  document: one(boqDocuments, {
+    fields: [boqLineItems.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+  company: one(companies, {
+    fields: [boqLineItems.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const quoteLineItemsRelations = relations(quoteLineItems, ({ one }) => ({

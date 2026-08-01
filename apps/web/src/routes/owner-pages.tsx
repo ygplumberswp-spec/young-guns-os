@@ -67,6 +67,19 @@ export const QuoteDetailPage = lazyNamed(
   () => import('../pages/finance/QuoteDetailPage'),
   'QuoteDetailPage',
 );
+export const QuoteEditPage = lazyNamed(
+  () => import('../pages/finance/QuoteEditPage'),
+  'QuoteEditPage',
+);
+export const BoqListPage = lazyNamed(() => import('../pages/finance/BoqListPage'), 'BoqListPage');
+export const BoqCreatePage = lazyNamed(
+  () => import('../pages/finance/BoqCreatePage'),
+  'BoqCreatePage',
+);
+export const BoqDetailPage = lazyNamed(
+  () => import('../pages/finance/BoqDetailPage'),
+  'BoqDetailPage',
+);
 export const InvoiceListPage = lazyNamed(
   () => import('../pages/finance/InvoiceListPage'),
   'InvoiceListPage',

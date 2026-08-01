@@ -2,13 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
 import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
 import type { InvoiceStage, QuoteDetail } from '@titan/shared';
-import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS, canEditQuote, canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   createInvoiceFromQuote,
   createQuoteVersion,
   fetchQuote,
   issueQuote,
+  updateQuote,
 } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -45,6 +46,8 @@ export function QuoteDetailPage() {
   const [invoiceDueDate, setInvoiceDueDate] = useState('');
   const [invoiceNotes, setInvoiceNotes] = useState('');
   const [isConverting, setIsConverting] = useState(false);
+
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
@@ -110,10 +113,31 @@ export function QuoteDetailPage() {
   }
 
   const activeQuote = quote;
-  const canIssue = canWrite && !activeQuote.isImmutable && DRAFT_STATUSES.has(activeQuote.status);
+  const approvalAction = nextQuoteApprovalAction(activeQuote.status);
+  const showEdit = canWrite && canEditQuote(activeQuote);
+  const canIssue = canWrite && canIssueQuote(activeQuote);
   const canCreateVersion =
     canWrite && (activeQuote.isImmutable || !DRAFT_STATUSES.has(activeQuote.status));
   const canConvertToInvoice = canWrite && activeQuote.status === 'accepted';
+
+  async function handleAdvanceApproval() {
+    if (!accessToken || !approvalAction) return;
+    setIsAdvancing(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const updated = await updateQuote(accessToken, activeQuote.id, {
+        status: approvalAction.nextStatus,
+      });
+      setQuote(updated);
+      invalidateQuotes();
+      setSuccess(`${approvalAction.label} complete.`);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to advance quote approval');
+    } finally {
+      setIsAdvancing(false);
+    }
+  }
 
   async function handleIssue() {
     if (!accessToken || !canIssue) return;
@@ -179,9 +203,16 @@ export function QuoteDetailPage() {
         title={`${quote.quoteNumber} · ${quote.title}`}
         description={`Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
         actions={
-          <Link href="/finance/quotes">
-            <Button variant="ghost">Back to quotes</Button>
-          </Link>
+          <div className="finance-panel-actions">
+            {showEdit ? (
+              <Link href={`/finance/quotes/${quote.id}/edit`}>
+                <Button variant="secondary">Edit quote</Button>
+              </Link>
+            ) : null}
+            <Link href="/finance/quotes">
+              <Button variant="ghost">Back to quotes</Button>
+            </Link>
+          </div>
         }
       />
       <FinanceNav />
@@ -248,6 +279,16 @@ export function QuoteDetailPage() {
 
           {canWrite ? (
             <div className="finance-panel-actions">
+              {approvalAction ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={isAdvancing}
+                  onClick={() => void handleAdvanceApproval()}
+                >
+                  {isAdvancing ? 'Updating…' : approvalAction.label}
+                </Button>
+              ) : null}
               {canIssue ? (
                 <Button type="button" disabled={isIssuing} onClick={() => void handleIssue()}>
                   {isIssuing ? 'Issuing…' : 'Issue quote'}

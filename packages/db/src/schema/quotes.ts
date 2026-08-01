@@ -69,6 +69,7 @@ export const quotes = pgTable('quotes', {
     onDelete: 'set null',
   }),
   leadId: uuid('lead_id').references(() => leads.id, { onDelete: 'set null' }),
+  boqDocumentId: uuid('boq_document_id'),
   estimatorUserId: uuid('estimator_user_id').references(() => users.id, { onDelete: 'set null' }),
   rootQuoteId: uuid('root_quote_id'),
   supersedesQuoteId: uuid('supersedes_quote_id'),

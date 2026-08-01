@@ -15,6 +15,7 @@ export * from './job-execution-enums';
 export * from './jobs';
 export * from './job-execution';
 export * from './quotes';
+export * from './boq';
 export * from './invoices';
 export * from './payments';
 export * from './inventory-locations';

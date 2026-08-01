@@ -454,6 +454,35 @@ export function displayInvoiceNumber(input: {
   return `Pending Xero sync (${internal})`;
 }
 
+const EDITABLE_QUOTE_STATUSES = new Set<QuoteStatus>([
+  'draft',
+  'internal_review',
+  'approved_for_sending',
+]);
+
+/** Draft quotes can be edited until issued. */
+export function canEditQuote(quote: { isImmutable: boolean; status: QuoteStatus }): boolean {
+  return !quote.isImmutable && EDITABLE_QUOTE_STATUSES.has(quote.status);
+}
+
+/** Issuing requires internal approval workflow completion. */
+export function canIssueQuote(quote: { isImmutable: boolean; status: QuoteStatus }): boolean {
+  return !quote.isImmutable && quote.status === 'approved_for_sending';
+}
+
+/** Next approval step in the internal quote workflow, if any. */
+export function nextQuoteApprovalAction(
+  status: QuoteStatus,
+): { label: string; nextStatus: QuoteStatus } | null {
+  if (status === 'draft') {
+    return { label: 'Submit for internal review', nextStatus: 'internal_review' };
+  }
+  if (status === 'internal_review') {
+    return { label: 'Approve for sending', nextStatus: 'approved_for_sending' };
+  }
+  return null;
+}
+
 export { formatMoney } from './localisation.js';
 
 export function parseMoneyInput(value: string): number | null {

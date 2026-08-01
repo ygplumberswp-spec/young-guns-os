@@ -392,8 +392,25 @@ export class FinanceService {
     const computed = input.lineItems ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, input.discountCents ?? current.discountCents) : null;
     if (computed) this.assertFloor(actor, computed.profit.belowFloor, input.belowFloorOverride, input.belowFloorReason, settings.allowBelowFloorWithOverride);
     await this.db.update(quotes).set({
-      title: input.title?.trim() || current.title, status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
-      validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil), notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+      title: input.title?.trim() || current.title,
+      status: input.status ?? current.status,
+      jobId: input.jobId === undefined ? current.jobId : input.jobId,
+      currency: input.currency?.trim() || current.currency,
+      validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil),
+      notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+      scopeOfWork: input.scopeOfWork === undefined ? current.scopeOfWork : normalizeOptionalText(input.scopeOfWork),
+      exclusions: input.exclusions === undefined ? current.exclusions : normalizeOptionalText(input.exclusions),
+      assumptions: input.assumptions === undefined ? current.assumptions : normalizeOptionalText(input.assumptions),
+      internalNotes: input.internalNotes === undefined ? current.internalNotes : normalizeOptionalText(input.internalNotes),
+      paymentTerms: input.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(input.paymentTerms),
+      belowFloorOverride: input.belowFloorOverride === undefined ? current.belowFloorOverride : Boolean(input.belowFloorOverride),
+      belowFloorReason: input.belowFloorReason === undefined ? current.belowFloorReason : normalizeOptionalText(input.belowFloorReason),
+      belowFloorAuthorizedBy:
+        input.belowFloorOverride === undefined
+          ? current.belowFloorAuthorizedBy
+          : input.belowFloorOverride
+            ? actor.userId ?? null
+            : null,
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
@@ -404,6 +421,10 @@ export class FinanceService {
   async issueQuote(actorOrCompany: FinanceActor | string, quoteId: string): Promise<QuoteSummary> {
     const actor = toActor(actorOrCompany); const quote = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)) });
     if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    if (quote.isImmutable) throw new FinanceError('VALIDATION_ERROR', 'Quote is already issued');
+    if (quote.status !== 'approved_for_sending') {
+      throw new FinanceError('VALIDATION_ERROR', 'Quote must be approved for sending before issue');
+    }
     this.assertFloor(actor, quote.totalCents < quote.profitFloorCents && quote.estimatedCostCents > 0, quote.belowFloorOverride, quote.belowFloorReason, true);
     await this.db.update(quotes).set({ status: 'sent', isImmutable: true, issuedAt: new Date(), updatedAt: new Date() }).where(eq(quotes.id, quoteId));
     return (await this.getQuote(actor.companyId, quoteId))!;
