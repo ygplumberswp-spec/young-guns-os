@@ -1,20 +1,21 @@
 # TITAN Final UX Consolidation Report
 
-**Generated:** 2026-08-01T19:42:14.000Z  
+**Generated:** 2026-08-01T20:30:00.000Z  
 **Branch:** `cursor/titan-final-product-consolidation`  
-**Tip SHA:** `4c14050` (`4c14050b225511aef160a78e5accf131d81aae2e`)  
-**Code base (pre-report):** `f20524c` (CRM 224 acceptance)  
-**Prior consolidation:** `04f3999`  
+**Tip SHA:** `44b2b4d` (`44b2b4d98119af07dfad0b6ea40ad8bdbd430a4a`) — cherry-pick of `bd6da8b` (Xero UI refresh)  
+**Code base (pre-report):** `679e3b9` (225 consolidation status)  
+**Prior consolidation:** `4c14050`  
 **Production touched:** NO  
 **Migrations 0107–0110 applied:** NO  
 **Xero financial writes:** NO  
 
 | Service | URL | Deploy ID | Status |
 |---------|-----|-----------|--------|
-| Staging Web | https://comfortable-determination-staging.up.railway.app | `313001b5-00ac-4404-84d5-3902d291902a` | SUCCESS |
-| Staging API | https://young-guns-os-staging.up.railway.app | `01b48519-924e-4e22-a979-a9484cb335b2` | SUCCESS |
-| Web bundle (live) | `index-xo8UM38E.js` | CRM acceptance deploy | — |
-| Prior API deploy | — | `3653e7bd-9989-4c1f-903c-7c6b02c4a35c` | superseded |
+| Staging Web | https://comfortable-determination-staging.up.railway.app | `e145b49b-3ec4-4b4d-892c-d3e9f1d862b6` | SUCCESS |
+| Staging API | https://young-guns-os-staging.up.railway.app | `1e245c9e-e73b-4988-8260-edb46f8b3d82` | SUCCESS |
+| Web bundle (live) | `index-HQYwYP6I.js` | Xero UI refresh deploy @ `44b2b4d` | — |
+| Prior web deploy | — | `313001b5-00ac-4404-84d5-3902d291902a` | superseded |
+| Prior API deploy | — | `dc1cf1fc-5803-4fa8-b4ea-840c5caaf989` | superseded |
 
 **Health (2026-08-01):** API `/api/v1/health` → 200 · `/api/v1/health/ready` → 200 (database connected) · Web root → 200
 
@@ -31,7 +32,7 @@
 | Leads | **GO** | — | No |
 | Jobs | **GO** | — | No |
 | Scheduling | **HOLD** | CAL-001 gaps: resize, team filter, overlap layout; staging screenshot pack missing | Yes (gaps) |
-| Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 187 PASS | No |
+| Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 228 UI refresh GO (cache invalidation + CV partial bypass) | No |
 | Cartrack / Fleet Live Map | **HOLD** | mapped=2 + credentials locked (217) but GPS positionCount=0; `/mobile-platform/dispatcher` console exists (3s poll code) but no map tiles; authenticated position proof missing | Yes (GPS proof + map tiles) |
 | Communications | **HOLD** | Unified workspace not implemented; WhatsApp blocked (owner creds); email not fully verified | Yes (workspace) |
 | AURA | **GO** | Routes exist; content scoped per directive | No |
@@ -39,7 +40,7 @@
 | Back-button audit | **HOLD** | 133/134 code-verified; staging click-through not automated for all routes | No (verify only) |
 | Mobile | **GO** | CRM 375px PASS (224); `/mobile/schedule` → 200 | No |
 | Security | **GO** | RBAC ProtectedRoute on staff routes; tenant isolation PASS in CRM acceptance | No |
-| Performance | **GO** | typecheck PASS · API 369 · Web 136 · build PASS | No |
+| Performance | **GO** | typecheck PASS · API 370 · Web 136 · build PASS (post-228 cherry-pick) | No |
 
 **Overall:** **HOLD** — Owner review required before production. Top blockers: Cartrack GPS/live map proof, dashboard staging screenshots, communications workspace, CAL-001 remaining gaps.
 
@@ -49,10 +50,11 @@
 
 | Check | Result |
 |-------|--------|
-| Branch | `cursor/titan-final-product-consolidation` @ `4c14050` |
+| Branch | `cursor/titan-final-product-consolidation` @ `44b2b4d` |
 | CRM acceptance code base | YES (`f20524c` — 224 GO 57/57) |
-| Web deploy matches CRM acceptance | YES (`313001b5`) |
-| API deploy | `01b48519` (SUCCESS 2026-08-01 20:56 +02:00; supersedes `3653e7bd`) |
+| Xero UI refresh cherry-pick | YES (`bd6da8b` → `44b2b4d`; evidence `228-xero-ui-refresh-verify.json`) |
+| Web deploy | `e145b49b` (SUCCESS 2026-08-01 22:25 +02:00) |
+| API deploy | `1e245c9e` (SUCCESS 2026-08-01 22:25 +02:00; supersedes `dc1cf1fc`) |
 | Production untouched | YES |
 | Staging health 200 | YES |
 
@@ -62,7 +64,7 @@
 |---------------|--------|
 | `cursor/integration-lock-auto-sync` | Included (base) |
 | `cursor/cal-001-scheduling-calendar` | Included (migration 0117) |
-| `cursor/xero-payments-hotfix` | Included |
+| `cursor/xero-payments-hotfix` | Included (`bd6da8b` UI refresh cherry-picked as `44b2b4d`) |
 | `cursor/visual-alignment-polish` | Included |
 | `cursor/leads-customers-ui-patch` | Absorbed via integration-lock |
 | `cursor/ux-hardening-phase1` | NOT merged (obsolete) |
@@ -85,6 +87,34 @@
 | Duplicate mappings | none (187 check) |
 | Manual sync required | NO (background import completed) |
 | Financial writes | NO (read-only import) |
+
+### 2.1 Xero UI refresh consolidation (228)
+
+**Source:** `bd6da8b` on `cursor/xero-payments-hotfix` → cherry-picked to `44b2b4d` on consolidation branch  
+**Method:** Cherry-pick (1 conflict resolved — `TITAN_XERO_PAYMENTS_HOTFIX_REPORT.md` deleted on consolidation; content folded into this report)  
+**Verdict:** **GO** (staging DB + API ready probes; owner browser re-check recommended)
+
+| Root cause | Fix |
+|------------|-----|
+| Incremental bank-tx-only sync kept `xeroImportInProgress=true` after CV refresh job `93144ea8` completed | `customer-value-classification.service.ts` — bypass partial state when invoice stages done + CV refresh marker set |
+| No React Query invalidation after Xero sync settled | `use-xero-sync-cache-refresh.ts` + `cache-invalidation.ts` — invalidate CV, finance, CRM, dashboard, integrations on sync settle |
+
+**Preserved:** Phase 2 GO · 673 customer mappings · 5 invoice mappings · INV-0423/0424 totals · 3078 bank tx logs · no duplicate mappings · no new import started · no Xero writes · no migrations
+
+**Local verification (2026-08-01):**
+
+| Check | Result |
+|-------|--------|
+| `pnpm typecheck` | PASS |
+| API tests (370 incl. customer-value-classification) | PASS |
+| Web tests (136) | PASS |
+| Web build | PASS |
+
+**Staging deploy:** API `1e245c9e` · Web `e145b49b` · bundle `index-HQYwYP6I.js`
+
+**Evidence:** `diagnostic-output/228-xero-ui-refresh-verify.json`
+
+**Owner browser checks (recommended):** Xero sync timestamp updates visibly · finance pages refresh without manual reload · Customer Value leaves updating state · no duplicate requests/records
 
 ---
 
@@ -205,7 +235,7 @@ Routes: `/aura`, `/aura/agents`, `/aura/todays-plan`, `/aura/business-rules`, `/
 | Check | Result |
 |-------|--------|
 | `pnpm typecheck` | PASS |
-| API tests | 369 pass |
+| API tests | 370 pass |
 | Web tests | 136 pass |
 | Web build | PASS |
 | Staging health | 200 |
@@ -233,7 +263,7 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 
 ## 12. Tests / build (local)
 
-Run on consolidation branch @ `4c14050` (2026-08-01T19:42Z): typecheck PASS · API 369 · Web 136 · build PASS · staging health 200.
+Run on consolidation branch @ `44b2b4d` (2026-08-01T20:28Z): typecheck PASS · API 370 · Web 136 · build PASS · staging health 200 · 228 Xero UI refresh GO.
 
 ## 13. Route matrix (134 staff routes)
 

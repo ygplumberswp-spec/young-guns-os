@@ -1,8 +1,11 @@
 {
   "label": "228-xero-ui-refresh-verify",
-  "generatedAt": "2026-08-01T20:20:00.000Z",
-  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
-  "branch": "cursor/xero-payments-hotfix",
+  "generatedAt": "2026-08-01T20:28:12.144Z",
+  "worktree": "/Users/keanuventer/Downloads/Titan-Aura-Consolidation",
+  "branch": "cursor/titan-final-product-consolidation",
+  "consolidationCommitSha": "44b2b4d98119af07dfad0b6ea40ad8bdbd430a4a",
+  "sourceCommitSha": "bd6da8bd6c7842f9dc35b79327e19533aefe5bd3",
+  "cherryPickMethod": "cherry-pick with conflict resolution (TITAN_XERO_PAYMENTS_HOTFIX_REPORT.md deleted on consolidation branch)",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "webOrigin": "https://comfortable-determination-staging.up.railway.app",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -24,7 +27,7 @@
       "autoSync": {
         "lastError": null,
         "nextRetryAt": null,
-        "lastAttemptAt": "2026-08-01T19:59:09.844Z",
+        "lastAttemptAt": "2026-08-01T20:20:15.564Z",
         "lastSuccessAt": "2026-08-01T19:29:28.288Z",
         "cvMetricsRefreshAt": "2026-08-01T19:29:27.509Z",
         "consecutiveFailures": 0,
@@ -50,7 +53,7 @@
           "contactsPage": 8,
           "invoicesPage": 7,
           "paymentsPage": 7,
-          "bankTransactionsPage": 12
+          "bankTransactionsPage": 17
         }
       }
     ],
@@ -103,12 +106,16 @@
     ]
   },
   "deploy": {
-    "apiDeploymentId": "dc1cf1fc-5803-4fa8-b4ea-840c5caaf989",
-    "webDeploymentId": "2949e7a8-d2ac-4bff-b3b1-97c71c90d210",
-    "localHead": "cb13207",
-    "webBundle": "assets/index-CHiy0OEl.js",
-    "deployedAt": "2026-08-01T20:18:00.000Z",
-    "method": "railway up --detach (local source, uncommitted)"
+    "apiDeploymentId": "1e245c9e-e73b-4988-8260-edb46f8b3d82",
+    "webDeploymentId": "e145b49b-3ec4-4b4d-892c-d3e9f1d862b6",
+    "localHead": "44b2b4d",
+    "webBundle": "assets/index-HQYwYP6I.js",
+    "deployedAt": "2026-08-01T20:27:00.000Z",
+    "method": "railway up -y -d (consolidation worktree @ 44b2b4d)",
+    "productionTouched": false,
+    "xeroImportStarted": false,
+    "xeroWrites": false,
+    "migrationsApplied": false
   },
   "fix": {
     "files": [
