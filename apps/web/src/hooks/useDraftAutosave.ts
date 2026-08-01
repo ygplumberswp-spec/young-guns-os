@@ -4,9 +4,7 @@ import {
   DEFAULT_DRAFT_DEBOUNCE_MS,
   type DraftRecordType,
 } from '@titan/shared';
-import { ApiClientError } from '../lib/api-client';
 import { upsertDraft } from '../lib/drafts-api';
-import { useTitanNotify } from '../components/ux/TitanNotifications';
 
 export type DraftAutosaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
 
@@ -37,7 +35,6 @@ export function useDraftAutosave({
   getMeta,
   onDraftSaved,
 }: UseDraftAutosaveOptions) {
-  const { notify } = useTitanNotify();
   const [status, setStatus] = useState<DraftAutosaveStatus>('idle');
   const [draftId, setDraftId] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
@@ -70,28 +67,16 @@ export function useDraftAutosave({
       setDraftId(draft.id);
       setLastSavedAt(draft.lastEditedAt);
       setStatus('saved');
-      notify({
-        variant: 'draft_saved',
-        message: meta.title ? `Draft saved — ${meta.title}` : 'Draft saved',
-        dedupeKey: `draft-${draftKey}`,
-      });
       onDraftSaved?.(draft.id);
       return true;
-    } catch (err) {
+    } catch {
       setStatus('failed');
-      notify({
-        variant: 'failed',
-        message:
-          err instanceof ApiClientError ? err.message : 'Draft save failed — will retry on next edit',
-        dedupeKey: `draft-fail-${draftKey}`,
-      });
       return false;
     }
   }, [
     accessToken,
     draftKey,
     enabled,
-    notify,
     onDraftSaved,
     recordId,
     recordType,

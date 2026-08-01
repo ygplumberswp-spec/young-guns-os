@@ -13,7 +13,6 @@ import {
 } from '../../lib/intelligence-api';
 import {
   AURA_MEMORY_INPUT_PLACEHOLDER,
-  AURA_MEMORY_SAVED_MESSAGE,
   shouldExpandAuraMemoryOnEnter,
   shouldSaveAuraMemoryOnEnter,
 } from './aura-quick-memory';
@@ -21,6 +20,8 @@ import {
 type AuraQuickMemoryInputProps = {
   accessToken: string;
 };
+
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
 
 function formatMemoryTimestamp(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -35,22 +36,23 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
   const [expanded, setExpanded] = useState(false);
   const [memories, setMemories] = useState<AuraMemorySummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState('');
 
   const recentMemories = useMemo(() => memories.slice(0, 8), [memories]);
+  const isSaving = saveStatus === 'saving';
 
   const loadMemories = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
+    setLoadError(null);
     try {
       const rows = await fetchAuraMemories(accessToken);
       setMemories(rows);
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to load company memory');
+      setLoadError(err instanceof ApiClientError ? err.message : 'Unable to load company memory');
     } finally {
       setIsLoading(false);
     }
@@ -60,15 +62,26 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
     void loadMemories();
   }, [loadMemories]);
 
+  useEffect(() => {
+    if (saveStatus !== 'saved') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSaveStatus('idle');
+    }, 2500);
+
+    return () => window.clearTimeout(timer);
+  }, [saveStatus]);
+
   async function handleSave(nextDraft = draft) {
     const trimmed = nextDraft.trim();
     if (!trimmed || isSaving) {
       return;
     }
 
-    setIsSaving(true);
-    setError(null);
-    setSuccessMessage(null);
+    setSaveStatus('saving');
+    setActionError(null);
 
     try {
       const memory = await createAuraMemory(accessToken, {
@@ -79,34 +92,33 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
       setMemories((current) => [memory, ...current.filter((row) => row.id !== memory.id)]);
       setDraft('');
       setExpanded(false);
-      setSuccessMessage(AURA_MEMORY_SAVED_MESSAGE);
+      setSaveStatus('saved');
       inputRef.current?.focus();
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to save memory');
-    } finally {
-      setIsSaving(false);
+      setSaveStatus('failed');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to save memory');
     }
   }
 
   async function handleToggleEnabled(memory: AuraMemorySummary) {
-    setError(null);
+    setActionError(null);
     try {
       const updated = await updateAuraMemory(accessToken, memory.id, {
         enabled: !memory.enabled,
       });
       setMemories((current) => current.map((row) => (row.id === updated.id ? updated : row)));
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to update memory');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to update memory');
     }
   }
 
   async function handleDelete(memoryId: string) {
-    setError(null);
+    setActionError(null);
     try {
       await deleteAuraMemory(accessToken, memoryId);
       setMemories((current) => current.filter((row) => row.id !== memoryId));
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to delete memory');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to delete memory');
     }
   }
 
@@ -116,14 +128,14 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
       return;
     }
 
-    setError(null);
+    setActionError(null);
     try {
       const updated = await updateAuraMemory(accessToken, memoryId, { information: trimmed });
       setMemories((current) => current.map((row) => (row.id === updated.id ? updated : row)));
       setEditingId(null);
       setEditingDraft('');
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to update memory');
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to update memory');
     }
   }
 
@@ -150,6 +162,7 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
           rows={expanded ? 4 : 1}
           placeholder={AURA_MEMORY_INPUT_PLACEHOLDER}
           aria-label={AURA_MEMORY_INPUT_PLACEHOLDER}
+          disabled={isSaving}
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={handleInputKeyDown}
         />
@@ -157,16 +170,32 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
           type="button"
           className="aura-quick-memory__save"
           disabled={isSaving || !draft.trim()}
+          aria-label="Save"
           onClick={() => void handleSave()}
         >
           {isSaving ? 'Saving…' : 'Save'}
         </PrimaryAction>
       </div>
-      <p className="aura-quick-memory__hint page-muted">
-        Enter to save · Shift+Enter for a longer note
-      </p>
-      {successMessage ? <p className="form-success">{successMessage}</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
+      {saveStatus === 'saving' ? (
+        <p className="aura-quick-memory__status" aria-live="polite">
+          Saving…
+        </p>
+      ) : null}
+      {saveStatus === 'saved' ? (
+        <p className="aura-quick-memory__status aura-quick-memory__status--saved" aria-live="polite">
+          Saved
+        </p>
+      ) : null}
+      {saveStatus === 'failed' ? (
+        <p className="aura-quick-memory__status aura-quick-memory__status--failed" aria-live="polite">
+          Save failed —{' '}
+          <button type="button" className="aura-quick-memory__retry" onClick={() => void handleSave()}>
+            Retry
+          </button>
+        </p>
+      ) : null}
+      {loadError ? <p className="form-error">{loadError}</p> : null}
+      {actionError && saveStatus !== 'failed' ? <p className="form-error">{actionError}</p> : null}
 
       <div className="aura-quick-memory__recent">
         <h3 className="aura-quick-memory__recent-title">Recent rules</h3>

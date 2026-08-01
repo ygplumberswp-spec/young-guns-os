@@ -1243,13 +1243,44 @@ a:focus-visible {
 }
 
 .aura-quick-memory__save {
-  min-width: 5.5rem;
+  min-width: 4.25rem;
+  padding-inline: 0.875rem;
   align-self: start;
+  font-size: 0.8125rem;
 }
 
-.aura-quick-memory__hint {
+.aura-quick-memory__status {
   margin: 0;
   font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.aura-quick-memory__status--saved {
+  color: color-mix(in srgb, var(--titan-accent) 72%, var(--titan-text));
+}
+
+.aura-quick-memory__status--failed {
+  color: #b91c1c;
+}
+
+.aura-quick-memory__retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.aura-quick-memory__retry:hover {
+  color: var(--titan-accent);
+}
+
+.aura-quick-memory__input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .aura-quick-memory__recent-title {
