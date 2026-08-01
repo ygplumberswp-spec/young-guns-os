@@ -1,13 +1,66 @@
 {
   "label": "182-customer-value-classification-staging-probe",
-  "generatedAt": "2026-08-01T11:38:52.298Z",
+  "generatedAt": "2026-08-01T11:40:31.372Z",
   "stagingRef": "cpkuwtaipjxeipvbssvn",
   "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
-  "verdict": "ERROR",
-  "xeroImportInProgress": null,
-  "youngGunsCompanyId": null,
-  "metrics": null,
+  "verdict": "PASS",
+  "xeroImportInProgress": true,
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "metrics": {
+    "currency": "ZAR",
+    "dataCompleteness": "partial",
+    "buckets": [
+      {
+        "classification": "verified_invoiced_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "paying_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "fully_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "partially_paid_customer",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "unpaid_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "overdue_debtor",
+        "count": 0,
+        "valueCents": 0
+      },
+      {
+        "classification": "prospect_contact",
+        "count": 675,
+        "valueCents": 0
+      },
+      {
+        "classification": "supplier_only_contact",
+        "count": 0,
+        "valueCents": 0
+      }
+    ],
+    "totals": {
+      "customerRecords": 675,
+      "qualifyingCustomers": 0,
+      "totalInvoicedCents": 0,
+      "cashReceivedCents": 0,
+      "outstandingCents": 0,
+      "overdueOutstandingCents": 0
+    }
+  },
   "notes": [
-    "Read-only probe failed: password authentication failed for user \"postgres\""
+    "Xero background import active — metrics may be partial (read-only probe only)"
   ]
 }
