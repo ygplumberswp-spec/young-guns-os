@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { IntegrationPlatformService } from '../services/integration-platform.service.js';
 import { IntegrationPlatformError } from '../services/integration-platform.service.js';
+import type { IntegrationSyncOrchestratorService } from '../services/integration-sync-orchestrator.service.js';
+import type { AutoSyncProviderKey } from '@titan/shared';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { createApiGatewayMiddleware } from '../middleware/api-gateway.js';
@@ -51,6 +53,7 @@ type RouterDeps = {
   connectorEngineService: ConnectorEngineService;
   businessIntegrationsService: BusinessIntegrationsService;
   xeroSyncService: XeroSyncService;
+  integrationSyncOrchestratorService?: IntegrationSyncOrchestratorService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -69,6 +72,7 @@ export function createIntegrationPlatformRouter({
   connectorEngineService,
   businessIntegrationsService,
   xeroSyncService,
+  integrationSyncOrchestratorService,
   teamService,
   jwtSecret,
   authService,
@@ -129,7 +133,57 @@ export function createIntegrationPlatformRouter({
       const xeroConnection = await businessIntegrationsService.getXeroConnection(companyId);
 
       if (xeroConnection.status === 'connected') {
-        xeroSync = await xeroSyncService.syncFromXero(companyId, userId);
+        if (integrationSyncOrchestratorService) {
+          const result = await integrationSyncOrchestratorService.runProviderSync({
+            companyId,
+            provider: 'xero',
+            trigger: 'manual',
+            userId,
+          });
+          const imported = result.details?.xeroImport;
+          xeroSync =
+            imported && typeof imported === 'object'
+              ? (imported as Awaited<ReturnType<XeroSyncService['syncFromXero']>>)
+              : {
+                  success: result.success,
+                  message: result.message,
+                  syncedAt: result.success ? new Date().toISOString() : null,
+                  contacts: {
+                    createdCount: 0,
+                    updatedCount: 0,
+                    pulledCount: 0,
+                    failedCount: 0,
+                    skippedCount: 0,
+                  },
+                  invoices: {
+                    createdCount: 0,
+                    updatedCount: 0,
+                    pulledCount: 0,
+                    failedCount: 0,
+                    skippedCount: 0,
+                  },
+                  payments: {
+                    createdCount: 0,
+                    updatedCount: 0,
+                    pulledCount: 0,
+                    failedCount: 0,
+                    skippedCount: 0,
+                  },
+                  bankTransactions: {
+                    createdCount: 0,
+                    updatedCount: 0,
+                    pulledCount: 0,
+                    failedCount: 0,
+                    skippedCount: 0,
+                  },
+                  syncJobId: result.syncJobId ?? undefined,
+                };
+        } else {
+          xeroSync = await xeroSyncService.syncFromXero(companyId, userId, {
+            jobType: 'manual',
+            trigger: 'manual',
+          });
+        }
       }
     } catch (error) {
       if (error instanceof XeroSyncError || error instanceof BusinessIntegrationsError) {
@@ -148,6 +202,37 @@ export function createIntegrationPlatformRouter({
     invalidateIntegrationReadCaches(companyId);
     const connectors = await connectorEngineService.listConnectors(companyId);
     res.json({ data: { connectors, xeroSync } });
+  });
+
+  router.get('/auto-sync', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const statuses = await integrationPlatformService.getAutoSyncStatuses(companyId);
+    res.json({ data: { statuses } });
+  });
+
+  router.get('/auto-sync/:providerKey', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const providerKey = getRouteParam(req.params.providerKey) as AutoSyncProviderKey;
+
+    try {
+      const status = await integrationPlatformService.getAutoSyncStatus(companyId, providerKey);
+      res.json({ data: { status } });
+    } catch (error) {
+      handleError(res, error);
+    }
+  });
+
+  router.post('/auto-sync/:providerKey/run', requireWrite, ensureRoles, async (req, res) => {
+    const auth = getAuth(req);
+    const providerKey = getRouteParam(req.params.providerKey) as AutoSyncProviderKey;
+
+    try {
+      const result = await integrationPlatformService.runManualProviderSync(auth, providerKey);
+      invalidateIntegrationReadCaches(auth.companyId);
+      res.json({ data: { result } });
+    } catch (error) {
+      handleError(res, error);
+    }
   });
 
   router.get('/monitoring', requireRead, async (req, res) => {

@@ -57,6 +57,9 @@ type XeroConnectionInfo = {
 
 export class XeroOAuthService {
   private readonly refreshInflight = new Map<string, Promise<string>>();
+  private onConnectedHook:
+    | ((input: { companyId: string; userId: string }) => void | Promise<void>)
+    | null = null;
 
   constructor(
     private readonly db: DatabaseClient,
@@ -71,6 +74,12 @@ export class XeroOAuthService {
 
   isAppConfigured(): boolean {
     return this.oauthConfig.configured;
+  }
+
+  setOnConnectedHook(
+    hook: ((input: { companyId: string; userId: string }) => void | Promise<void>) | null,
+  ): void {
+    this.onConnectedHook = hook;
   }
 
   getRedirectUri(): string | null {
@@ -267,6 +276,17 @@ export class XeroOAuthService {
 
       invalidateIntegrationReadCaches(oauthState.companyId);
 
+      if (this.onConnectedHook) {
+        void Promise.resolve(
+          this.onConnectedHook({
+            companyId: oauthState.companyId,
+            userId: oauthState.userId,
+          }),
+        ).catch((hookError) => {
+          console.error('[xero-oauth] Auto-sync initial import hook failed', hookError);
+        });
+      }
+
       return this.buildFrontendRedirect({
         outcome: 'connected',
         returnPath: oauthState.returnPath,
@@ -413,6 +433,11 @@ export class XeroOAuthService {
 
     this.refreshInflight.set(companyId, refreshPromise);
     return refreshPromise;
+  }
+
+  /** Public hook for auto-sync orchestrator — refreshes OAuth tokens before sync attempts. */
+  async ensureFreshAccessToken(companyId: string): Promise<string> {
+    return this.getValidAccessToken(companyId);
   }
 
   private async refreshAndPersistTokens(

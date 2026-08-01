@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
-import type { IntegrationProviderStatus } from '@titan/shared';
+import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';
+import { fetchIntegrationAutoSyncStatuses } from '../../lib/integration-auto-sync-api-client';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import {
   fetchIntegrationPlatformDashboard,
@@ -36,7 +37,13 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
  * backend-computed capabilityState, never from connectionStatus alone. A
  * "not_implemented" provider must never render a working Connect button.
  */
-function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }) {
+function SimpleProviderRow({
+  provider,
+  autoSync,
+}: {
+  provider: IntegrationProviderStatus;
+  autoSync?: IntegrationProviderAutoSyncStatus;
+}) {
   const isNotImplemented = provider.capabilityState === 'not_implemented';
   const actionLabel =
     provider.capabilityState === 'connected_usable'
@@ -55,13 +62,21 @@ function SimpleProviderRow({ provider }: { provider: IntegrationProviderStatus }
             Last sync: {new Date(provider.lastSyncAt).toLocaleString()}
           </p>
         ) : null}
+        {autoSync?.nextScheduledSyncAt ? (
+          <p className="integrations-simple-row__meta">
+            Next auto-sync: {new Date(autoSync.nextScheduledSyncAt).toLocaleString()}
+          </p>
+        ) : null}
+        {autoSync?.correctiveAction ? (
+          <p className="integrations-simple-row__meta">{autoSync.correctiveAction}</p>
+        ) : null}
         {provider.lastError ? <p className="form-error">{provider.lastError}</p> : null}
       </div>
       <div className="integrations-simple-row__aside">
         <span
           className={`status-pill status-pill--${capabilityStateToPillModifier(provider.capabilityState)}`}
         >
-          {provider.capabilityLabel}
+          {autoSync?.uiStateLabel ?? provider.capabilityLabel}
         </span>
         {provider.canConnect && provider.settingsPath ? (
           <Link href={provider.settingsPath}>
@@ -99,6 +114,24 @@ export function IntegrationsDashboardPage() {
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
   const canAdvanced = canManage;
+
+  const { data: autoSyncStatuses, refetch: refetchAutoSync } = useStaffCachedQuery({
+    queryKey: 'integrations/auto-sync-statuses',
+    enabled: canView,
+    staleTimeMs: 30_000,
+    fetcher: (signal) => fetchIntegrationAutoSyncStatuses(accessToken!, { signal }),
+  });
+
+  const autoSyncByProvider = useMemo(() => {
+    const map = new Map<string, IntegrationProviderAutoSyncStatus>();
+    for (const entry of autoSyncStatuses ?? []) {
+      if (entry.integrationProvider) {
+        map.set(entry.integrationProvider, entry);
+      }
+      map.set(entry.provider, entry);
+    }
+    return map;
+  }, [autoSyncStatuses]);
 
   const {
     data: hubDashboard,
@@ -222,7 +255,7 @@ export function IntegrationsDashboardPage() {
         ]);
       }
 
-      await Promise.all([refetchHub(), refetchPlatform()]);
+      await Promise.all([refetchHub(), refetchPlatform(), refetchAutoSync()]);
     } catch (err) {
       if (
         err instanceof DOMException &&
@@ -275,7 +308,7 @@ export function IntegrationsDashboardPage() {
                 aria-busy={isSyncingConnectors}
                 onClick={() => void handleRefreshConnectors()}
               >
-                {isSyncingConnectors ? 'Syncing…' : 'Sync now'}
+                {isSyncingConnectors ? 'Syncing…' : 'Sync now (recovery)'}
               </Button>
             ) : null}
           </div>
@@ -322,7 +355,11 @@ export function IntegrationsDashboardPage() {
                 <h2 className="integrations-section__title">{group.label}</h2>
                 <div className="integrations-simple-list">
                   {group.providers.map((provider) => (
-                    <SimpleProviderRow key={provider.provider} provider={provider} />
+                    <SimpleProviderRow
+                      key={provider.provider}
+                      provider={provider}
+                      autoSync={autoSyncByProvider.get(provider.provider)}
+                    />
                   ))}
                 </div>
               </section>

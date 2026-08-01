@@ -38,6 +38,9 @@ type IntegrationsServiceDeps = {
 };
 
 export class IntegrationsService {
+  private onCartrackConnectedHook: ((input: { companyId: string }) => void | Promise<void>) | null =
+    null;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
@@ -46,6 +49,12 @@ export class IntegrationsService {
 
   static create(deps: IntegrationsServiceDeps): IntegrationsService {
     return new IntegrationsService(deps.db, deps.encryptionKey, deps.hubService);
+  }
+
+  setOnCartrackConnectedHook(
+    hook: ((input: { companyId: string }) => void | Promise<void>) | null,
+  ): void {
+    this.onCartrackConnectedHook = hook;
   }
 
   async getCartrackConnection(companyId: string): Promise<CartrackConnectionSummary> {
@@ -138,6 +147,12 @@ export class IntegrationsService {
         updatedAt: new Date(),
       })
       .where(eq(integrationConnections.id, connection.id));
+
+    if (this.onCartrackConnectedHook) {
+      void Promise.resolve(this.onCartrackConnectedHook({ companyId })).catch((hookError) => {
+        console.error('[integrations] Cartrack auto-sync hook failed', hookError);
+      });
+    }
 
     return this.getCartrackConnection(companyId);
   }

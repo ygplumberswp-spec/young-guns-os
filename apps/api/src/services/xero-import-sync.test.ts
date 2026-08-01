@@ -85,7 +85,7 @@ test('buildXeroImportSyncMessage reports failed stage without financial detail',
 
 test('timeout constants are finite and ordered for safe sync budgets', () => {
   assert.equal(XERO_REQUEST_TIMEOUT_MS, 20_000);
-  assert.equal(XERO_IMPORT_OVERALL_TIMEOUT_MS, 90_000);
-  assert.equal(XERO_IMPORT_STALE_JOB_MS, 90_000);
+  assert.equal(XERO_IMPORT_OVERALL_TIMEOUT_MS, 180_000);
+  assert.equal(XERO_IMPORT_STALE_JOB_MS, 180_000);
   assert.ok(XERO_REQUEST_TIMEOUT_MS < XERO_IMPORT_OVERALL_TIMEOUT_MS);
 });

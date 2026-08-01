@@ -170,6 +170,7 @@ import { createVoiceRouter } from './routes/voice.js';
 import { createCustomerSupportRouter } from './routes/customer-support.js';
 import { bindAutomationEventEmitter } from './lib/automation-events.js';
 import { startAutomationWorkers } from './workers/automation.worker.js';
+import { startIntegrationSyncScheduler } from './workers/integration-sync.scheduler.js';
 import { AgentsService } from './services/agents.service.js';
 import { AgentRuntimeService } from './services/agent-runtime.service.js';
 import { AgentOrchestrationService } from './services/agent-orchestration.service.js';
@@ -211,6 +212,7 @@ import { PersonalCommunicationsIntelligenceService } from './services/personal-c
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
+import { IntegrationSyncOrchestratorService } from './services/integration-sync-orchestrator.service.js';
 import { EnterpriseAnalyticsService } from './services/enterprise-analytics.service.js';
 import { createQualityRouter } from './routes/quality.js';
 import { createCommunicationsIntelligenceRouter } from './routes/communications-intelligence.js';
@@ -411,6 +413,37 @@ const integrationPlatformService = new IntegrationPlatformService({
   connectorEngine: connectorEngineService,
   hubService: integrationHubService,
   apiManagementService: integrationApiManagementService,
+});
+const integrationSyncOrchestratorService = new IntegrationSyncOrchestratorService({
+  db,
+  runtime: env.runtime,
+  connectorEngine: connectorEngineService,
+  xeroSyncService,
+  xeroOAuthService,
+  integrationsService,
+  businessIntegrationsService,
+});
+integrationPlatformService.setSyncOrchestrator(integrationSyncOrchestratorService);
+xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
+  void integrationSyncOrchestratorService
+    .onProviderConnected({
+      companyId,
+      provider: 'xero',
+      userId,
+    })
+    .catch((error) => {
+      console.error('[index] Xero auto-sync initial hook failed', error);
+    });
+});
+integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
+  void integrationSyncOrchestratorService
+    .onProviderConnected({
+      companyId,
+      provider: 'cartrack',
+    })
+    .catch((error) => {
+      console.error('[index] Cartrack auto-sync initial hook failed', error);
+    });
 });
 const communicationsService = new CommunicationsService(db);
 const documentsService = new DocumentsService(db);
@@ -1084,6 +1117,13 @@ const stopAutomationWorkers =
       })
     : () => {
         /* workers/schedulers/automations disabled by runtime flags */
+      };
+
+const stopIntegrationSyncScheduler =
+  env.runtime.schedulersEnabled && (isWorkerProcess || runtimeMode === 'scheduler' || runtimeMode === 'api')
+    ? startIntegrationSyncScheduler(integrationSyncOrchestratorService)
+    : () => {
+        /* integration sync scheduler disabled by runtime flags */
       };
 
 if (!env.runtime.startInProcessAutomationWorkers && runtimeMode === 'api') {
@@ -2081,6 +2121,7 @@ app.use(
     connectorEngineService,
     businessIntegrationsService,
     xeroSyncService,
+    integrationSyncOrchestratorService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -2177,6 +2218,7 @@ async function shutdown(signal: string) {
   shuttingDown = true;
   logger.info({ signal, runtimeMode }, 'Shutting down TITAN process');
   stopAutomationWorkers();
+  stopIntegrationSyncScheduler();
   if (server) {
     await new Promise<void>((resolve) => {
       server?.close(() => resolve());

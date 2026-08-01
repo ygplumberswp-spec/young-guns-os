@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Panel } from '@titan/ui';
-import type { XeroConnectionSummary, XeroEntitySyncResult, XeroSyncStatusResponse } from '@titan/shared';
+import type {
+  IntegrationProviderAutoSyncStatus,
+  XeroConnectionSummary,
+  XeroEntitySyncResult,
+  XeroSyncStatusResponse,
+} from '@titan/shared';
 import { XERO_SYNC_BLOCKED_REASON } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
+import { fetchIntegrationAutoSyncStatus } from '../../lib/integration-auto-sync-api-client';
 import { syncIntegrationConnectors } from '../../lib/integration-platform-api-client';
 import {
   fetchXeroSyncLogs,
@@ -11,6 +17,7 @@ import {
   syncXeroInvoices,
   syncXeroPayments,
 } from '../../lib/integrations-api';
+import { IntegrationAutoSyncStatusPanel } from './IntegrationAutoSyncStatusPanel';
 
 type XeroSyncPanelProps = {
   accessToken: string;
@@ -55,6 +62,9 @@ export function XeroSyncPanel({
   onConnectionChange,
 }: XeroSyncPanelProps) {
   const [status, setStatus] = useState<XeroSyncStatusResponse | null>(null);
+  const [autoSyncStatus, setAutoSyncStatus] = useState<IntegrationProviderAutoSyncStatus | null>(
+    null,
+  );
   const [recentLogMessage, setRecentLogMessage] = useState<string | null>(null);
   const [bankTransactionStats, setBankTransactionStats] = useState({ synced: 0, failed: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -69,11 +79,13 @@ export function XeroSyncPanel({
   }, [connection.oauthConfigured, connection.status]);
 
   const loadStatus = useCallback(async () => {
-    const [syncStatus, logs] = await Promise.all([
+    const [syncStatus, logs, autoSync] = await Promise.all([
       fetchXeroSyncStatus(accessToken),
       fetchXeroSyncLogs(accessToken),
+      fetchIntegrationAutoSyncStatus(accessToken, 'xero').catch(() => null),
     ]);
     setStatus(syncStatus);
+    setAutoSyncStatus(autoSync);
     setRecentLogMessage(logs[0]?.message ?? null);
     setBankTransactionStats(countBankTransactionLogs(logs));
   }, [accessToken]);
@@ -206,7 +218,18 @@ export function XeroSyncPanel({
   const isBusy = Boolean(busyScope);
 
   return (
-    <Panel title="Read-only import from Xero">
+    <>
+      {autoSyncStatus ? (
+        <Panel title="Auto-sync status">
+          <p className="page-muted">
+            TITAN syncs Xero automatically after you connect and on a recurring schedule. Manual
+            sync below is for recovery only.
+          </p>
+          <IntegrationAutoSyncStatusPanel status={autoSyncStatus} />
+        </Panel>
+      ) : null}
+
+      <Panel title="Recovery controls (manual sync)">
       <p className="page-muted">
         Pull contacts, invoices, payments, and bank transactions from Xero into TITAN. These actions
         are read-only — nothing is written back to your Xero ledger.
@@ -216,11 +239,12 @@ export function XeroSyncPanel({
         <div className="integrations-form__actions panel-actions">
           <Button
             type="button"
+            variant="secondary"
             disabled={isBusy || Boolean(syncBlockedReason)}
             aria-busy={busyScope === 'all'}
             onClick={() => void handleFullReadOnlySync()}
           >
-            {busyScope === 'all' ? 'Syncing from Xero…' : 'Sync now (read-only)'}
+            {busyScope === 'all' ? 'Syncing from Xero…' : 'Sync now (recovery)'}
           </Button>
         </div>
       ) : null}
@@ -297,5 +321,6 @@ export function XeroSyncPanel({
         </>
       ) : null}
     </Panel>
+    </>
   );
 }

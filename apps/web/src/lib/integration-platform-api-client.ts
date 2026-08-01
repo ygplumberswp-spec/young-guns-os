@@ -68,8 +68,8 @@ export async function syncIntegrationConnectors(accessToken: string) {
   }>('/integration-platform/connectors/sync', {
     accessToken,
     method: 'POST',
-    // Align with server overall import budget (90s) plus small network buffer.
-    timeoutMs: 100_000,
+    // Align with server overall import budget (180s) plus small network buffer.
+    timeoutMs: 190_000,
   });
   return data;
 }

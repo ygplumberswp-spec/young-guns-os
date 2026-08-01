@@ -43,6 +43,7 @@ export * from './job-document-pack.js';
 export * from './job-finance-workflow.js';
 export * from './fleet.js';
 export * from './integrations.js';
+export * from './integration-auto-sync.js';
 export * from './integration-capability.js';
 export * from './marketing-eligibility.js';
 export * from './communications.js';

@@ -8,6 +8,7 @@ import type {
   XeroSyncLogSummary,
   XeroSyncScope,
   XeroSyncStatusResponse,
+  IntegrationSyncTrigger,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -41,9 +42,9 @@ export class XeroSyncError extends Error {
 }
 
 /** Overall wall-clock budget for a full read-only Xero import. */
-export const XERO_IMPORT_OVERALL_TIMEOUT_MS = 90_000;
+export const XERO_IMPORT_OVERALL_TIMEOUT_MS = 180_000;
 /** Running import jobs older than this are marked failed as abandoned. */
-export const XERO_IMPORT_STALE_JOB_MS = 90_000;
+export const XERO_IMPORT_STALE_JOB_MS = 180_000;
 
 const activeImportCompanies = new Set<string>();
 
@@ -52,6 +53,12 @@ type XeroSyncServiceDeps = {
   encryptionKey?: string;
   hubService?: IntegrationHubService;
   xeroOAuthService?: XeroOAuthService;
+};
+
+type SyncFromXeroOptions = {
+  jobType?: 'manual' | 'scheduled';
+  trigger?: IntegrationSyncTrigger;
+  idempotencyKey?: string;
 };
 
 type SyncContext = {
@@ -251,7 +258,11 @@ export class XeroSyncService {
     return updated.length;
   }
 
-  async syncFromXero(companyId: string, userId?: string): Promise<XeroImportSyncResult> {
+  async syncFromXero(
+    companyId: string,
+    userId?: string,
+    options?: SyncFromXeroOptions,
+  ): Promise<XeroImportSyncResult> {
     await this.failStaleImportJobs(companyId);
 
     if (activeImportCompanies.has(companyId)) {
@@ -283,7 +294,7 @@ export class XeroSyncService {
     const isTimedOut = () => Date.now() >= deadlineAt;
 
     try {
-      return await this.runXeroImport(companyId, userId, isTimedOut);
+      return await this.runXeroImport(companyId, userId, isTimedOut, options);
     } catch (error) {
       // Ensure abandoned DB jobs cannot block the next Sync now after unexpected failures.
       await this.failStaleImportJobs(companyId, 0);
@@ -297,13 +308,14 @@ export class XeroSyncService {
     companyId: string,
     userId: string | undefined,
     isTimedOut: () => boolean,
+    options?: SyncFromXeroOptions,
   ): Promise<XeroImportSyncResult> {
     let syncJobId: string | undefined;
 
     try {
       return await this.executeXeroImportStages(companyId, userId, isTimedOut, (id) => {
         syncJobId = id;
-      });
+      }, options);
     } catch (error) {
       if (syncJobId) {
         await this.hubService?.completeSyncJob(syncJobId, {
@@ -324,6 +336,7 @@ export class XeroSyncService {
     userId: string | undefined,
     isTimedOut: () => boolean,
     onJobStarted: (syncJobId: string | undefined) => void,
+    options?: SyncFromXeroOptions,
   ): Promise<XeroImportSyncResult> {
     const ctx = await this.createSyncContext(companyId);
     ctx.isTimedOut = isTimedOut;
@@ -331,12 +344,24 @@ export class XeroSyncService {
       companyId,
       provider: 'xero',
       integrationConnectionId: ctx.connection.id,
-      jobType: 'manual',
+      jobType: options?.jobType ?? 'manual',
       syncScope: 'import',
     });
 
     ctx.syncJobId = syncJobId;
     onJobStarted(syncJobId);
+
+    if (syncJobId && options?.idempotencyKey) {
+      await this.db
+        .update(integrationSyncJobs)
+        .set({
+          resultSummary: {
+            idempotencyKey: options.idempotencyKey,
+            trigger: options.trigger ?? 'manual',
+          },
+        })
+        .where(eq(integrationSyncJobs.id, syncJobId));
+    }
 
     let contacts = emptyImportCounts();
     let invoices = emptyImportCounts();
