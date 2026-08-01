@@ -1,0 +1,134 @@
+{
+  "label": "212-xero-payments-hotfix",
+  "generatedAt": "2026-08-01T16:48:00.000Z",
+  "repository": "/Users/keanuventer/Downloads/Titan-Aura-Xero-Hotfix",
+  "branch": "cursor/xero-payments-hotfix",
+  "stagingTip": {
+    "branch": "cursor/titan-frozen-scope-completion",
+    "sha": "7452a8c54747d5694dd4947690175a7deb3108d3",
+    "note": "CAL branch d3252dd shares merge-base 60b4829; frozen-scope chosen as authoritative API staging tip"
+  },
+  "fixCommits": {
+    "lateralJoinFix": {
+      "short": "162cbf4",
+      "full": "162cbf4451024591c3a861b49e023a0daab5407d"
+    },
+    "narrowSelectFix": {
+      "short": "551dd77",
+      "full": "551dd77a192be500a571b3540bd014afaf9c3f0c"
+    }
+  },
+  "hotfixHeadSha": "7452a8c54747d5694dd4947690175a7deb3108d3",
+  "productionTouched": false,
+  "stagingRef": "cpkuwtaipjxeipvbssvn",
+  "forbiddenProductionRef": "rshuiaghmtrvvilhqpwm",
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "rootCause": {
+    "category": "missing_column_staging_schema_drift",
+    "summary": "Drizzle relational findMany({ with: { invoice: true } }) on xero_invoice_mappings emitted a LEFT JOIN LATERAL selecting every mapping column including conflict_metadata, which is defined in code but not present on staging (114 migrations applied).",
+    "pgErrorCode": "42703",
+    "pgErrorMessage": "column \"conflict_metadata\" does not exist",
+    "failingFunction": "loadSyncedInvoiceMappingsForPayments",
+    "failingJobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "failedStage": "payments"
+  },
+  "schemaComparison": {
+    "appliedMigrations": 114,
+    "xero_invoice_mappings": {
+      "stagingColumns": [
+        "id",
+        "company_id",
+        "integration_connection_id",
+        "invoice_id",
+        "xero_invoice_id",
+        "sync_status",
+        "last_synced_at",
+        "last_successful_sync_at",
+        "last_error",
+        "created_at",
+        "updated_at",
+        "xero_invoice_number",
+        "xero_reference"
+      ],
+      "missingOnStaging": ["conflict_metadata"]
+    },
+    "invoices": {
+      "hasTotalCents": true,
+      "columnCount": 32
+    }
+  },
+  "fix": {
+    "file": "apps/api/src/services/xero-sync.service.ts",
+    "change": "Replace Drizzle relational lateral join with explicit innerJoin + narrow select (invoiceId, xeroInvoiceId + payment-relevant invoice fields only). Avoids conflict_metadata and full-row lateral JSON assembly.",
+    "test": "apps/api/src/services/xero-import-sync.test.ts — loadSyncedInvoiceMappingsForPayments select avoids undeployed mapping columns",
+    "additionalCodeChangeRequired": false
+  },
+  "deploy": {
+    "service": "young-guns-os",
+    "environment": "staging",
+    "deployId": "e4422c91-2cd8-47d1-aea6-2939d00abb02",
+    "deployStatus": "SUCCESS",
+    "deployedAt": "2026-08-01T18:40:55+02:00",
+    "webDeployed": false,
+    "apiUrl": "https://young-guns-os-staging.up.railway.app"
+  },
+  "before": {
+    "activeJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "failedJobId": "8e6aec9b-2d99-493c-85b8-75f61d7f414b",
+    "importJobStatus": "running",
+    "checkpointStage": "payments",
+    "completedStages": ["contacts"],
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 0
+    },
+    "invoiceTotals": {
+      "INV-0423": 247250,
+      "INV-0424": 226639
+    },
+    "lastSyncAt": "2026-08-01T15:55:39.931Z"
+  },
+  "after": {
+    "importJobId": "81c5b8d8-839b-4875-b106-2ecece11a966",
+    "importJobStatus": "running",
+    "checkpointStage": "bank_transactions",
+    "completedStages": ["contacts", "invoices", "payments"],
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 3078
+    },
+    "invoiceTotals": {
+      "INV-0423": 247250,
+      "INV-0424": 226639
+    },
+    "lastSyncAt": "2026-08-01T15:55:39.931Z",
+    "duplicateCustomerMappings": 0,
+    "errorMessage": null,
+    "cvMetricsRefreshJobId": null
+  },
+  "monitoring": {
+    "probe": "187-xero-import-recovery-verify",
+    "durationMinutes": 8,
+    "polls": 5,
+    "verdict": "IN_PROGRESS",
+    "paymentsStagePassed": true,
+    "notes": [
+      "Import job resumed through payments without restart-from-zero",
+      "0 new/0 updated contacts/invoices treated as valid incremental",
+      "Bank transactions stage progressing (page 21 at last poll)",
+      "CV auto-recalc pending job completion"
+    ]
+  },
+  "constraints": {
+    "stagingOnly": true,
+    "noXeroWrites": true,
+    "noResetImport": true,
+    "noManualSync": true,
+    "migrations010701090110Applied": false
+  },
+  "verdict": "HOTFIX_VERIFIED_PAYMENTS_PASSED"
+}
