@@ -85,14 +85,14 @@ export function SchedulingPage() {
 
   if (!canView) {
     return (
-      <div className="scheduling-page">
+      <div className="scheduling-page page-shell">
         <PageHeader title="Schedule" description="You do not have permission to view scheduling." />
       </div>
     );
   }
 
   return (
-    <div className="scheduling-page">
+    <div className="scheduling-page page-shell">
       <PageHeader
         title="Schedule"
         description="Day, week, and month calendar for job scheduling and dispatch."

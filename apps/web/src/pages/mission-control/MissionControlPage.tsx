@@ -1,4 +1,4 @@
-import { PageHeader } from '../../components/ux';
+import { PageHeader, SummaryCardGrid } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
@@ -224,8 +224,8 @@ export function MissionControlPage() {
       ) : (
         <>
           {activeTab === 'dashboard' ? (
-            <>
-              <div className="stat-grid">
+            <div className="mission-control-dashboard">
+              <SummaryCardGrid columns={4} className="mission-control-stats">
                 {dashboard.businessHealthScore != null ? (
                   <StatCard label="Business Health" value={String(dashboard.businessHealthScore)} />
                 ) : null}
@@ -233,17 +233,19 @@ export function MissionControlPage() {
                 <StatCard label="Critical Alerts" value={String(dashboard.criticalAlertCount)} />
                 <StatCard label="Active Incidents" value={String(dashboard.activeIncidentCount)} />
                 <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
-              </div>
+              </SummaryCardGrid>
 
-              {accessToken ? (
-                <Panel title="Today's plan">
-                  <DayPlanningPanel accessToken={accessToken} canWrite={canWriteDayPlan} />
+              <div className="mission-control-dashboard__split">
+                {accessToken ? (
+                  <Panel title="Today's plan">
+                    <DayPlanningPanel accessToken={accessToken} canWrite={canWriteDayPlan} />
+                  </Panel>
+                ) : null}
+
+                <Panel title="Business overview">
+                  <p>{dashboard.summary}</p>
                 </Panel>
-              ) : null}
-
-              <Panel title="Business overview">
-                <p>{dashboard.summary}</p>
-              </Panel>
+              </div>
 
               <Panel title="Systems">
                 <AnalyticsTabPanel
@@ -335,7 +337,7 @@ export function MissionControlPage() {
                   ) : null}
                 </Panel>
               ) : null}
-            </>
+            </div>
           ) : null}
 
           {activeTab === 'alerts' ? (
