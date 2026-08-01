@@ -3513,6 +3513,73 @@ a:focus-visible {
   font-size: 0.9rem;
 }
 
+.finance-toolbar__sort {
+  border: none;
+  background: transparent;
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0.35rem 0.5rem;
+}
+
+.finance-nav.ux-compact-tabs {
+  margin-bottom: 1rem;
+}
+
+.finance-nav .ux-more-menu {
+  display: inline-flex;
+}
+
+.finance-nav .ux-more-menu__trigger {
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ux-compact-tabs--filters .ux-compact-tabs__tab {
+  cursor: pointer;
+  background: transparent;
+  font: inherit;
+}
+
+.ux-compact-tabs--filters .ux-compact-tabs__overflow-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  font: inherit;
+  padding: 0.45rem 0.75rem;
+}
+
+.finance-draft-badge {
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+.finance-table__row--draft td {
+  background: var(--titan-accent-soft);
+}
+
+.finance-draft-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.finance-draft-row__title {
+  font-weight: 600;
+}
+
+.finance-draft-row__meta {
+  color: var(--titan-text-secondary);
+  font-size: 0.875rem;
+}
+
 .finance-detail {
   display: flex;
   flex-direction: column;

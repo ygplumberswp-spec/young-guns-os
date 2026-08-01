@@ -6,6 +6,7 @@ export { SummaryCardGrid } from './SummaryCardGrid';
 export { PrimaryAction } from './PrimaryAction';
 export { MoreMenu, QuickActionsDropdown, type MoreMenuItem } from './MoreMenu';
 export { CompactTabs, type CompactTabItem } from './CompactTabs';
+export { CompactFilterTabs, type CompactFilterOption } from './CompactFilterTabs';
 export { StatusBadge, type StatusBadgeTone } from './StatusBadge';
 export { BulkActionBar, type BulkAction } from './BulkActionBar';
 export { EmptyState } from './EmptyState';
@@ -18,3 +19,5 @@ export {
 } from './SearchCommandPalette';
 export { ApprovalActionCard } from './ApprovalActionCard';
 export { AgentActivityCard } from './AgentActivityCard';
+export { SectionErrorBoundary } from './SectionErrorBoundary';
+export { AutosaveIndicator } from './AutosaveIndicator';

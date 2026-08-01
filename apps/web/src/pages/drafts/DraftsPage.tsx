@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Button, EmptyState, LoadingState } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
 import {
@@ -28,6 +28,9 @@ function formatWhen(value: string): string {
 export function DraftsPage() {
   const { accessToken, user } = useAuth();
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
+  const viewArchived = searchParams.get('status') === 'archived';
   const { notify } = useTitanNotify();
   const [drafts, setDrafts] = useState<DraftWorkspaceSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,14 +56,16 @@ export function DraftsPage() {
     }
     setError(null);
     try {
-      const rows = await fetchDrafts(accessToken, { status: 'active' });
+      const rows = await fetchDrafts(accessToken, {
+        status: viewArchived ? 'archived' : 'active',
+      });
       setDrafts(rows);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to load drafts');
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken]);
+  }, [accessToken, viewArchived]);
 
   useEffect(() => {
     void loadDrafts();
@@ -148,8 +153,12 @@ export function DraftsPage() {
   return (
     <div className="drafts-page">
       <PageHeader
-        title="Drafts"
-        description="Continue quotes, invoices, jobs, and other work saved automatically."
+        title={viewArchived ? 'Archived drafts' : 'Drafts'}
+        description={
+          viewArchived
+            ? 'Archived work-in-progress drafts across TITAN modules.'
+            : 'Continue quotes, invoices, jobs, and other work saved automatically.'
+        }
       />
 
       {isLoading ? <LoadingState label="Loading drafts…" /> : null}
