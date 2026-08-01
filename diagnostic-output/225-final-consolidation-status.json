@@ -1,0 +1,136 @@
+{
+  "schemaVersion": "final-consolidation-status-v1",
+  "label": "FINAL-CONSOLIDATION-225",
+  "generatedAt": "2026-08-01T19:45:00.000Z",
+  "branch": "cursor/titan-final-product-consolidation",
+  "commitSha": "f20524c76e28b5f86c34f985b98a619bd472b902",
+  "commitShort": "f20524c",
+  "priorConsolidationSha": "04f3999",
+  "productionTouched": false,
+  "migrations0107to0110Applied": false,
+  "xeroFinancialWrites": false,
+  "staging": {
+    "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+    "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+    "apiDeploymentId": "01b48519-924e-4e22-a979-a9484cb335b2",
+    "webDeploymentId": "313001b5-00ac-4404-84d5-3902d291902a",
+    "webBundleHash": "index-xo8UM38E.js",
+    "priorApiDeploymentId": "3653e7bd-9989-4c1f-903c-7c6b02c4a35c",
+    "railwayProject": "sweet-victory (staging)"
+  },
+  "healthChecks": {
+    "api_v1_health": { "url": "/api/v1/health", "status": 200 },
+    "api_v1_health_ready": { "url": "/api/v1/health/ready", "status": 200, "database": "connected" },
+    "web_root": { "status": 200 },
+    "web_scheduling": { "status": 200 },
+    "web_mobile_schedule": { "status": 200 },
+    "web_fleet": { "status": 200 },
+    "web_aura": { "status": 200 }
+  },
+  "localVerification": {
+    "runAt": "2026-08-01T19:42:00.000Z",
+    "typecheck": "PASS",
+    "apiTests": "369 pass",
+    "webTests": "136 pass",
+    "webBuild": "PASS",
+    "routeMatrix": {
+      "artifact": "diagnostic-output/212-final-ux-route-matrix.json",
+      "totalRoutes": 134,
+      "missingBack": 1,
+      "missingHeader": 1,
+      "missingBackRoute": "/ (dashboard home — by design)",
+      "missingHeaderRoute": "/settings (SettingsIndexPage — redirect-only)"
+    }
+  },
+  "evidenceReferences": {
+    "xeroPhase2": {
+      "artifact": "diagnostic-output/220-xero-phase2-final-verify.json",
+      "branch": "cursor/xero-payments-hotfix",
+      "commit": "cb13207",
+      "importJobId": "93144ea8-f159-416f-bc48-b3b7b5445f98",
+      "verdict187": "PASS",
+      "cv_auto_recalc_fired": "PASS",
+      "phase2Go": "yes"
+    },
+    "crmFinalAcceptance": {
+      "artifact": "diagnostic-output/224-crm-final-staging-acceptance.json",
+      "verdict": "GO",
+      "passed": 57,
+      "failed": 0,
+      "deployId": "313001b5-00ac-4404-84d5-3902d291902a"
+    },
+    "cartrack217": "diagnostic-output/217-cartrack-staging-verify.json",
+    "cartrack218": "diagnostic-output/218-cartrack-fleet-seed-verify.json",
+    "cartrack225Rerun": "BLOCKED — apps/api/.env.staging.local DATABASE_URL missing in this session"
+  },
+  "dashboardVisualAudit": {
+    "method": "CSS code audit + layout-grid breakpoints + staging bundle fetch",
+    "viewportsAudited": [1440, 1280, 1024, 768, 375],
+    "fourToTwoToOne": "PASS (code)",
+    "noThreePlusOne": "PASS (code — exec-dashboard-glance uses cols-4 only)",
+    "noTouchingCards": "PASS (code — 18px column-gap, 20px row-gap tokens)",
+    "pairedSections": "PASS (code — exec-dashboard-paired + exec-dashboard-grid 2-col)",
+    "customerValueSingleLoading": "PASS (code — CustomerValueMetricsPanel single Panel + skeleton grid)",
+    "stagingPlaywrightScreenshots": "NOT RUN — no authenticated dashboard screenshot pack in this session"
+  },
+  "scheduling": {
+    "migration0117": "included on branch (not applied this session)",
+    "cal001Report": "TITAN_CAL001_SCHEDULING_UX_REPORT.md",
+    "knownGaps": [
+      "Resize duration drag handle not implemented",
+      "Team filter — technician only",
+      "Duplicate-as-draft query pre-fill incomplete",
+      "Overlap layout without lane-packing",
+      "Tablet swipe nav not added",
+      "Staging screenshots not captured this session"
+    ]
+  },
+  "cartrackFleetLiveMap": {
+    "mappedCount217": 2,
+    "registrations217": ["CF172047", "CF77263"],
+    "gpsPositionCount217": 0,
+    "fleetLiveMapRoute": "NOT FOUND — /fleet exists; no dedicated Fleet Live Map route",
+    "liveMapTiles": "NOT IMPLEMENTED (FleetDispatchBoard honesty banner)",
+    "verdict": "HOLD"
+  },
+  "integrationsHonesty": {
+    "xero": "Connected (OAuth staging) — Phase 2 GO per 220",
+    "cartrack": "Connected on staging DB per 217 — GPS positions 0",
+    "openaiAura": "Connected staging per provider register",
+    "whatsapp": "Blocked — owner credentials",
+    "email": "Ready if configured — not fully verified this session",
+    "gmail": "Unsupported — honesty card",
+    "googleMaps": "Unsupported — no live SDK",
+    "yoco": "Incomplete — profile sync only"
+  },
+  "auraCompanyHealth": {
+    "auraRoutes": ["/aura", "/aura/agents", "/aura/todays-plan", "/aura/business-rules"],
+    "companyHealthRoute": "/mission-control (CompanyHealthAreasGrid)",
+    "platformHealthRoute": "/settings/advanced/platform-health"
+  },
+  "verdictTable": {
+    "Dashboard": "HOLD",
+    "Customers": "GO",
+    "Leads": "GO",
+    "Jobs": "GO",
+    "Scheduling": "HOLD",
+    "FinanceXero": "GO",
+    "CartrackFleetLiveMap": "HOLD",
+    "Communications": "HOLD",
+    "AURA": "GO",
+    "Settings": "HOLD",
+    "BackButtonAudit": "HOLD",
+    "Mobile": "GO",
+    "Security": "GO",
+    "Performance": "GO"
+  },
+  "overallVerdict": "HOLD",
+  "topBlockers": [
+    "Cartrack GPS positionCount=0 — no live map proof (217/218)",
+    "Fleet Live Map route not implemented — /fleet stored-data only",
+    "Dashboard staging Playwright screenshots not captured at 1440/1280/1024/768/375",
+    "Back-button audit: 133/134 routes code-verified; /settings missing PageHeader; staging click-through not automated",
+    "Communications unified workspace not implemented; WhatsApp blocked",
+    "CAL-001 scheduling gaps: resize, team filter, staging screenshot pack"
+  ]
+}

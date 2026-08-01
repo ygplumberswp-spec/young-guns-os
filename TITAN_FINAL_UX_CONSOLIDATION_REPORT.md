@@ -1,81 +1,211 @@
 # TITAN Final UX Consolidation Report
 
-Generated: 2026-08-01T20:52:00.000Z
-Branch: `cursor/titan-final-product-consolidation`
-Base commit: `5f585d3` (integration-lock-auto-sync tip)
-Consolidation tip: `f067c2e` (local — staging deploy pending Owner review)
-Staging API: `https://young-guns-os-staging.up.railway.app/api/v1/health` → **200**
-Staging Web: `https://comfortable-determination-staging.up.railway.app/` → **200** (pre-consolidation deploy)
+**Generated:** 2026-08-01T19:45:00.000Z  
+**Branch:** `cursor/titan-final-product-consolidation`  
+**Tip SHA:** `f20524c` (`f20524c76e28b5f86c34f985b98a619bd472b902`)  
+**Prior consolidation:** `04f3999`  
+**Production touched:** NO  
+**Migrations 0107–0110 applied:** NO  
+**Xero financial writes:** NO  
+
+| Service | URL | Deploy ID | Status |
+|---------|-----|-----------|--------|
+| Staging Web | https://comfortable-determination-staging.up.railway.app | `313001b5-00ac-4404-84d5-3902d291902a` | SUCCESS |
+| Staging API | https://young-guns-os-staging.up.railway.app | `01b48519-924e-4e22-a979-a9484cb335b2` | SUCCESS |
+| Web bundle (live) | `index-xo8UM38E.js` | CRM acceptance deploy | — |
+| Prior API deploy | — | `3653e7bd-9989-4c1f-903c-7c6b02c4a35c` | superseded |
+
+**Health (2026-08-01):** API `/api/v1/health` → 200 · `/api/v1/health/ready` → 200 (database connected) · Web root → 200
+
+**Evidence pack:** `diagnostic-output/225-final-consolidation-status.json`
 
 ---
 
-## Stage A — Branch reconciliation (COMPLETE)
+## Final verdict table
 
-| Source branch | Approved commits | Status on consolidation |
-|---------------|------------------|-------------------------|
-| `cursor/integration-lock-auto-sync` | `5f585d3` base — `4e9d67c`, `e372214`, `1881f69`, `fb2e88e` | **Included** (branch base) |
-| `cursor/cal-001-scheduling-calendar` | `d3252dd`, `00f1da0`, migration `0117` | **Included** (`ef9ca26`, `f067c2e`) |
-| `cursor/xero-payments-hotfix` | `f03dc24`, `529d27f` (CV marker + payments) | **Included** (`753c84e`, `e8b814b`) |
-| `cursor/visual-alignment-polish` | `5a4162f`, `491e397`, `6135383` (`99159f9` absorbed — identical grid rules) | **Included** (`588849a`, `0481f9b`, `f85155f`) |
-| `cursor/leads-customers-ui-patch` | `eca227f` inline badges | **Absorbed via `fb2e88e`** — StatusBadgeDropdown + RowActionsCell already present; cherry-pick skipped to preserve quick actions |
-| `cursor/ux-hardening-phase1` | — | **NOT merged** (obsolete per Owner directive) |
+| Area | Verdict | Blocker (if HOLD/NO-GO) | Code change required |
+|------|---------|---------------------------|----------------------|
+| Dashboard | **HOLD** | Staging Playwright screenshots not captured at 1440/1280/1024/768/375; CSS audit PASS only | No |
+| Customers | **GO** | — | No |
+| Leads | **GO** | — | No |
+| Jobs | **GO** | — | No |
+| Scheduling | **HOLD** | CAL-001 gaps: resize, team filter, overlap layout; staging screenshot pack missing | Yes (gaps) |
+| Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 187 PASS | No |
+| Cartrack / Fleet Live Map | **HOLD** | mapped=2 (217/218) but GPS positionCount=0; no Fleet Live Map route; live tiles NOT IMPLEMENTED | Yes (map route + GPS proof) |
+| Communications | **HOLD** | Unified workspace not implemented; WhatsApp blocked (owner creds); email not fully verified | Yes (workspace) |
+| AURA | **GO** | Routes exist; content scoped per directive | No |
+| Settings | **HOLD** | `/settings` index missing PageHeader (1 route gap) | Yes (minor) |
+| Back-button audit | **HOLD** | 133/134 code-verified; staging click-through not automated for all routes | No (verify only) |
+| Mobile | **GO** | CRM 375px PASS (224); `/mobile/schedule` → 200 | No |
+| Security | **GO** | RBAC ProtectedRoute on staff routes; tenant isolation PASS in CRM acceptance | No |
+| Performance | **GO** | typecheck PASS · API 369 · Web 136 · build PASS | No |
 
-### Prior worker absorption
-
-| Worker | Scope | Status |
-|--------|-------|--------|
-| `211b51cb` | Integration lock + Cartrack auto-map | **Absorbed** — commits on base branch |
-| `e54c0e6a` | Dashboard 4→2→1 card separation | **Absorbed** — `6135383` / `f85155f` |
-| `3e1abe53` | CAL-001 calendar-primary UX | **Absorbed** — `00f1da0` / `f067c2e` |
-| `c2db31b1` | 187 probe | Not found as separate commits — diagnostics artifacts preserved on base |
-
-### Post-reconcile fix commits (consolidation-only)
-
-- Remove duplicate `AppContentContainer` import / dead layouts copy
-- `RowActionsCell`: drop unsupported `usePortal` prop on `MoreMenu`
-- `CustomerListPage`: typed fallback via `classifyCustomerValueFromEvidence`
+**Overall:** **HOLD** — Owner review required before production. Top blockers: Cartrack GPS/live map proof, dashboard staging screenshots, communications workspace, CAL-001 remaining gaps.
 
 ---
 
-## Stage B — Shared shell (PARTIAL — gap-fill only)
-
-| Requirement | Status |
-|-------------|--------|
-| `AppContentContainer` wired in `AppLayout` | **Y** |
-| `PageHeader` / `BackButton` on staff routes | **133/134** (only `/` excluded by design) |
-| Design system spacing tokens (24px sections, 16–20px card gap) | **Y** on dashboard via `6135383` |
-| Complete route matrix | **Generated** — 134 routes, see below |
-| Sidebar restructure per directive | **NOT verified on staging** — deferred |
-| Unified Communications workspace | **NOT in this pass** — deferred |
-| WhatsApp/Email connect-once | **Code on base branch** — staging proof pending |
-
----
-
-## Technical checks (local, consolidation branch)
+## 1. Deployed state confirmation
 
 | Check | Result |
 |-------|--------|
-| `pnpm typecheck` | **PASS** |
-| `@titan/api` tests | **369 pass** |
-| `@titan/web` tests | **136 pass** |
-| `@titan/web` build | **PASS** |
-| Staging API health (`/api/v1/health`) | **200** |
-| Staging web root | **200** (current deploy = pre-consolidation SHA) |
+| Branch | `cursor/titan-final-product-consolidation` @ `f20524c` |
+| CRM tip matches expected | YES (`f20524c` — chore(diagnostics): CRM final staging acceptance pass 224) |
+| Web deploy matches CRM acceptance | YES (`313001b5`) |
+| API deploy | `01b48519` (SUCCESS 2026-08-01 20:56 +02:00; supersedes `3653e7bd`) |
+| Production untouched | YES |
+| Staging health 200 | YES |
+
+**Branch reconciliation (included on consolidation):**
+
+| Source branch | Status |
+|---------------|--------|
+| `cursor/integration-lock-auto-sync` | Included (base) |
+| `cursor/cal-001-scheduling-calendar` | Included (migration 0117) |
+| `cursor/xero-payments-hotfix` | Included |
+| `cursor/visual-alignment-polish` | Included |
+| `cursor/leads-customers-ui-patch` | Absorbed via integration-lock |
+| `cursor/ux-hardening-phase1` | NOT merged (obsolete) |
 
 ---
 
-## Remaining blockers (honest — NOT complete)
+## 2. Xero Phase 2 evidence
 
-1. **Staging deploy of consolidation branch not yet run** — Owner must approve push + `railway up` for web + API
-2. **Cartrack live proof** — CF172047/CF77263 mapped=2 needs post-deploy curl against staging API
-3. **Fleet Live Map** — all vehicles route may need additional work (not verified)
-4. **Unified Communications workspace** — not implemented in consolidation pass
-5. **Sidebar restructure** — not verified against Owner directive section 22
-6. **Customer 360 / Job file completeness / Finance Sage-like clarity** — gap-fill deferred
-7. **Settings index** (`/settings`) — redirect-only, missing PageHeader (1 route in matrix)
-8. **Acceptance gates section 22** — require Owner staging click-through after deploy
+**Reference:** `220-xero-phase2-final-verify.json` · commit `cb13207` on `cursor/xero-payments-hotfix`
+
+| Check | Result |
+|-------|--------|
+| Import job `93144ea8` | completed (contacts → invoices → payments → bank_transactions, 3078 bank tx) |
+| `187` verify | PASS |
+| `cv_auto_recalc_fired` | PASS |
+| `cvMetricsRefreshJobId` | `93144ea8-f159-416f-bc48-b3b7b5445f98` |
+| Phase 2 GO | yes |
+| Payments synced | YES (stage completed) |
+| Bank transactions | 3078 pulled |
+| Duplicate mappings | none (187 check) |
+| Manual sync required | NO (background import completed) |
+| Financial writes | NO (read-only import) |
 
 ---
+
+## 3. CRM final acceptance
+
+**Reference:** `224-crm-final-staging-acceptance.json` · deploy `313001b5` · **GO 57/57**
+
+| Requirement | Result |
+|-------------|--------|
+| Bulk actions (customers/leads/jobs) | PASS |
+| No unsafe bulk delete | PASS |
+| Custom ConfirmDialog (no native alert/confirm) | PASS |
+| Archive/delete/cancel flows | PASS |
+| Mobile 375px overflow/actions | PASS |
+| Audit logs tenant-scoped | PASS |
+| Cross-tenant leakage | 0 |
+| Row actions visible | PASS |
+| Screenshots | 15 viewports in `diagnostic-output/crm-acceptance-screenshots/` |
+
+---
+
+## 4. Dashboard visual verification
+
+**Method:** CSS/code audit + staging bundle fetch (`index-xo8UM38E.js`). Playwright screenshots **NOT RUN** this session.
+
+| Viewport | 4→2→1 grid | No 3+1 | Card gaps | Paired sections | CV single loading |
+|----------|------------|--------|-----------|-----------------|-------------------|
+| 1440px | PASS (4 col @ min-width 1440px) | PASS | 18px/20px tokens | PASS (2-col grid) | PASS |
+| 1280px | PASS (2 col @ 768–1439px) | PASS | PASS | PASS | PASS |
+| 1024px | PASS (2 col) | PASS | PASS | PASS | PASS |
+| 768px | PASS (2 col) | PASS | PASS | stacks @767px | PASS |
+| 375px | PASS (1 col) | PASS | PASS | 1 col | PASS |
+
+**Code refs:** `apps/web/src/styles/layout-grid.css`, `ExecutiveDashboard.tsx`, `CustomerValueMetricsPanel.tsx`.
+
+**Missing evidence:** Authenticated staging screenshots at all five widths.
+
+---
+
+## 5. Scheduling verification
+
+| Check | Result |
+|-------|--------|
+| `/scheduling` calendar primary | YES |
+| Week default | YES |
+| Day / week / month views | YES |
+| Drag-drop + conflicts | YES |
+| Unscheduled tray | YES |
+| Back button | YES → `/` |
+| `/mobile/schedule` | 200 · day default |
+| Migration 0117 | On branch (not applied this session) |
+
+**Known gaps (CAL-001):** resize duration · team filter · duplicate-as-draft pre-fill · overlap lane-packing · tablet swipe · staging screenshots.
+
+---
+
+## 6. Back button route audit
+
+**Generated:** `scripts/generate-route-matrix.mjs` → `diagnostic-output/212-final-ux-route-matrix.json` (134 routes)
+
+| Metric | Count |
+|--------|------:|
+| Total staff routes | 134 |
+| Back visible | 133 |
+| Missing back (by design) | 1 (`/` dashboard home) |
+| Missing PageHeader | 1 (`/settings` SettingsIndexPage) |
+
+Full matrix below. Staging click-through for all 134 routes not automated.
+
+---
+
+## 7. Cartrack and Fleet Live Map
+
+**Probes:** `217-cartrack-staging-verify.json` · `218-cartrack-fleet-seed-verify.json`
+
+| Check | Result |
+|-------|--------|
+| CF172047 / CF77263 mapped | 2 (auto_matched per 217/218) |
+| last_sync_at | 2026-08-01T18:11:01Z (217) |
+| GPS positions | **0** |
+| Fleet Live Map route | **NOT FOUND** — `/fleet` stored-data only |
+| Live map tiles | NOT IMPLEMENTED |
+
+**Verdict: HOLD** — mapping proof from 217/218; live GPS and map route proof incomplete. 225 re-run blocked (no staging DATABASE_URL).
+
+---
+
+## 8. Integrations and communications
+
+| Provider | Status |
+|----------|--------|
+| Xero | Connected — Phase 2 GO |
+| Cartrack | Connected (217) — GPS 0 |
+| OpenAI (AURA) | Connected staging |
+| WhatsApp | Blocked |
+| Email | Ready/Incomplete |
+| Gmail / Google Maps | Unsupported |
+| Yoco | Incomplete |
+
+Unified Communications workspace: NOT implemented.
+
+---
+
+## 9. AURA and Company Health
+
+Routes: `/aura`, `/aura/agents`, `/aura/todays-plan`, `/aura/business-rules`, `/mission-control`, `/settings/advanced/platform-health` — all present; staging 200 where probed.
+
+---
+
+## 10. Performance, safety, build
+
+| Check | Result |
+|-------|--------|
+| `pnpm typecheck` | PASS |
+| API tests | 369 pass |
+| Web tests | 136 pass |
+| Web build | PASS |
+| Staging health | 200 |
+
+---
+
+## 11. Back button — app-wide fix (BLOCKER RESOLVED)
 
 **Root cause:** `shouldShowBackButton()` hid back on all `MODULE_ROOT_PATHS` (list/landing pages like `/jobs`, `/crm`, `/leads`, `/settings`).
 
@@ -94,15 +224,11 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 - `apps/web/src/styles/layout-grid.css` — content max-width, summary grids, responsive breakpoints @ 99159f9 parity
 - Wide routes: scheduling, live dispatch, day timeline use `app-content-container--wide`
 
-## 4. Tests / build
+## 12. Tests / build (local)
 
-Run: `pnpm typecheck`, `pnpm test`, `pnpm build` (results appended after CI run).
+Run on consolidation branch `f20524c`: typecheck PASS · API 369 · Web 136 · build PASS.
 
-## 5. Remaining blockers
-
-See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification pending post-deploy.
-
-## Route matrix (134 staff routes)
+## 13. Route matrix (134 staff routes)
 
 | Page | URL | Sidebar | Back | Back dest | Header | Centred | Primary | Responsive | RBAC | States | Quick actions |
 |------|-----|---------|------|-----------|--------|---------|---------|------------|------|--------|---------------|
@@ -247,61 +373,14 @@ See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification
 - `/settings` → apps/web/src/pages/settings/SettingsIndexPage.tsx
 
 
-## 6. Customers, Leads and Jobs — Edit, Delete and Quick Actions Verification
+---
 
-**Branch:** `cursor/integration-lock-auto-sync` · **Commit:** `aae3327`  
-**Staging:** https://comfortable-determination-staging.up.railway.app  
-**Evidence:** `diagnostic-output/214-owner-actions-staging-verify.json` (22/22 GO)
+## 14. Owner review checklist
 
-### Implementation summary
+1. Staging click-through on dashboard at 1440/1280/1024/768/375
+2. Cartrack live GPS refresh + Fleet Live Map route decision
+3. Communications unified workspace scope
+4. CAL-001 gap-fill (resize, team filter)
+5. `/settings` PageHeader gap
 
-| Area | Status | Notes |
-|------|--------|-------|
-| Actions column (Edit ✎ + More ⋮) | **Working** | `RowActionsCell` on Customers, Leads, Jobs — always visible, not hover-only |
-| Status badges + row tint | **Working** | `StatusBadgeDropdown` + `StatusRowAccent` via `packages/shared/src/crm-list-ui.ts` |
-| Bulk actions | **Working** | Checkboxes + `BulkActionBar` on all three lists |
-| Customer Edit + Archive/Delete | **Working** | Edit opens `#edit` form; paying/invoiced → archive only (400 blocked delete) |
-| Lead Accept/Pending/Decline + Delete | **Working** | Status dropdown + row menu; delete blocked when converted/linked |
-| Job Edit + Cancel/Archive | **Working** | Full row menu; empty draft delete owner-only; linked job → cancel (400) |
-| Saving indicator | **Working** | Saving… / Saved / Failed inline via `InlineSaveIndicator` |
-| Back button | **Working** | Visible on all list + detail pages verified |
-
-### Staging verification (real records, disposable Owner tenant)
-
-| Page | Result | Screenshot |
-|------|--------|------------|
-| `/crm` (Customers) | PASS — Actions column, Edit, More, status badge | `diagnostic-output/owner-actions-screenshots/customers_list-actions.png` |
-| `/crm/:id#edit` | PASS — Edit form opens and saves | API: `customer_edit_save` |
-| `/leads` | PASS — Actions, status tint (Declined=red), bulk bar | `diagnostic-output/owner-actions-screenshots/leads_list-actions.png` |
-| `/leads/:id#edit` | PASS — Lead edit panel opens | Playwright: `lead_detail_edit_opens` |
-| `/jobs` | PASS — Actions, status dropdown, bulk assign/schedule | `diagnostic-output/owner-actions-screenshots/jobs_list-actions.png` |
-| `/jobs/:id#edit` | PASS — Job edit form opens and saves | API: `job_edit_save` |
-
-### API gates verified
-
-- `DELETE /crm/customers/:id` — blocked 400 when customer has linked jobs; owner-only
-- `DELETE /leads/:id` — eligible leads deleted; converted/linked blocked
-- `PATCH` status changes emit audit events (`customer.status_changed`, `lead.status_changed`)
-
-### Files changed (key)
-
-- `apps/web/src/components/ux/RowActionsCell.tsx`, `StatusBadgeDropdown.tsx`, `StatusRowAccent.tsx`
-- `apps/web/src/features/crm/CustomerList.tsx`, `features/leads/LeadListTable.tsx`, `features/jobs/JobList.tsx`
-- `packages/shared/src/crm-list-ui.ts`
-- `apps/api/src/routes/crm.ts`, `leads.ts`, `jobs.ts` — DELETE endpoints
-- `packages/db/scripts/staging-owner-actions-verify.mjs`
-
-## 7. WhatsApp / Email support status
-
-| Channel | Status |
-|---------|--------|
-| WhatsApp Business | Real connection lock + auto incoming sync; outgoing requires approval |
-| Personal WhatsApp | Blocked/unsupported — honest banner, never simulated |
-| Email (IMAP/SMTP) | Real connection lock + auto incoming; send/delete/forward approval |
-| Gmail/M365 OAuth | Roadmap — not faked |
-
-## 8. Cartrack evidence
-
-- Registration normalize: `packages/shared/src/vehicle-registration.ts`
-- Auto-map on connect/sync: `apps/api/src/services/integrations.service.ts`
-- Live Dispatch 3s poll when visible: `apps/web/src/features/dispatch/useCartrackLivePositions.ts`
+**Stop for Owner review.** No production deploy until HOLD items resolved or explicitly waived.
