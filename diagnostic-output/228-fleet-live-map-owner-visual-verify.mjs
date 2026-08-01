@@ -111,7 +111,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     label: '228-fleet-live-map-owner-visual-verify',
     branch: 'cursor/titan-final-product-consolidation',
-    commitSha: '45b41ca',
+    commitSha: '309a924',
     stagingApi: API,
     stagingWeb: WEB,
     companyId: YGP_COMPANY_ID,

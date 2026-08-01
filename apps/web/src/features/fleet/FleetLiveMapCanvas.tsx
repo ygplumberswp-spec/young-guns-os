@@ -137,71 +137,111 @@ export function FleetLiveMapCanvas({
   useEffect(() => {
     const host = mapHostRef.current;
     if (!host || !providerConfig.configured) {
-      reportStatus(false, mapError ?? 'Map could not load');
+      reportStatus(false, providerConfig.reason ?? 'Map could not load');
       return;
     }
 
     let cancelled = false;
+    let loadTimer: number | undefined;
+    let styleRetried = false;
+    let readyReported = false;
 
-    const map = new maplibregl.Map({
-      container: host,
-      style: providerConfig.styleUrl,
-      center: [18.7174, -33.8293],
-      zoom: 14,
-      attributionControl: { compact: true },
-    });
-
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
-    mapRef.current = map;
-
-    map.on('load', () => {
-      if (cancelled) return;
-      map.addSource(TRAILS_SOURCE, {
-        type: 'geojson',
-        data: buildTrailGeoJson(vehicles, selectedVehicleId),
-      });
-      map.addLayer({
-        id: TRAILS_LAYER,
-        type: 'line',
-        source: TRAILS_SOURCE,
-        paint: {
-          'line-color': [
-            'case',
-            ['get', 'selected'],
-            '#2563eb',
-            'rgba(37, 99, 235, 0.55)',
-          ],
-          'line-width': ['case', ['get', 'selected'], 4, 2],
-        },
-      });
-      reportStatus(true, null);
-      requestAnimationFrame(() => map.resize());
-    });
-
-    const loadTimer = window.setTimeout(() => {
-      if (!cancelled && !map.loaded()) {
-        reportStatus(false, 'Map could not load');
+    const markReady = (map: maplibregl.Map) => {
+      if (cancelled || readyReported) return;
+      readyReported = true;
+      try {
+        if (!map.getSource(TRAILS_SOURCE)) {
+          map.addSource(TRAILS_SOURCE, {
+            type: 'geojson',
+            data: buildTrailGeoJson(vehicles, selectedVehicleId),
+          });
+          map.addLayer({
+            id: TRAILS_LAYER,
+            type: 'line',
+            source: TRAILS_SOURCE,
+            paint: {
+              'line-color': [
+                'case',
+                ['get', 'selected'],
+                '#2563eb',
+                'rgba(37, 99, 235, 0.55)',
+              ],
+              'line-width': ['case', ['get', 'selected'], 4, 2],
+            },
+          });
+        }
+      } catch {
+        // Trails are optional — map + markers still qualify as live map.
       }
-    }, 20_000);
+      reportStatus(true, null);
+      if (loadTimer) window.clearTimeout(loadTimer);
+      requestAnimationFrame(() => map.resize());
+    };
+
+    const initMap = () => {
+      if (cancelled || mapRef.current) return;
+      if (host.clientWidth < 20 || host.clientHeight < 20) return;
+
+      const map = new maplibregl.Map({
+        container: host,
+        style: providerConfig.styleUrl,
+        center: [18.7174, -33.8293],
+        zoom: 14,
+        attributionControl: { compact: true },
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+      mapRef.current = map;
+
+      map.on('load', () => markReady(map));
+      map.once('idle', () => markReady(map));
+
+      map.on('error', (event) => {
+        if (cancelled) return;
+        const message = event.error?.message ?? '';
+        if (
+          !styleRetried &&
+          providerConfig.provider === 'openfreemap' &&
+          /style|sprite|glyph|fetch|403|404/i.test(message)
+        ) {
+          styleRetried = true;
+          map.setStyle('https://demotiles.maplibre.org/style.json');
+          return;
+        }
+        if (!map.isStyleLoaded() && /style|sprite|glyph/i.test(message)) {
+          reportStatus(false, 'Map could not load');
+        }
+      });
+
+      loadTimer = window.setTimeout(() => {
+        if (!cancelled && !map.isStyleLoaded()) {
+          reportStatus(false, 'Map could not load');
+        }
+      }, 45_000);
+    };
 
     const resizeObserver = new ResizeObserver(() => {
-      map.resize();
+      mapRef.current?.resize();
+      initMap();
     });
     resizeObserver.observe(host);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(initMap);
+    });
 
     return () => {
       cancelled = true;
-      window.clearTimeout(loadTimer);
+      if (loadTimer) window.clearTimeout(loadTimer);
       resizeObserver.disconnect();
       for (const marker of markersRef.current.values()) {
         marker.remove();
       }
       markersRef.current.clear();
-      map.remove();
+      mapRef.current?.remove();
       mapRef.current = null;
       fitOnceRef.current = false;
     };
-  }, [providerConfig.configured, providerConfig.styleUrl, reportStatus, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [providerConfig.configured, providerConfig.provider, providerConfig.styleUrl, reportStatus, retryKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const map = mapRef.current;
