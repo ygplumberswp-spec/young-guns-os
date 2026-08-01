@@ -50,7 +50,7 @@ export function FleetMapFallbackList({
                 ? ` · Ignition ${vehicle.ignitionOn ? 'on' : 'off'}`
                 : ''}
             </span>
-            <span>{FLEET_MOVEMENT_LABELS[vehicle.displayState]}</span>
+            <span>{FLEET_MOVEMENT_LABELS[vehicle.displayState ?? 'unknown']}</span>
           </li>
         ))}
       </ul>

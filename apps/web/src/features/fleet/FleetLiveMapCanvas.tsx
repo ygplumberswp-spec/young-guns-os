@@ -42,17 +42,21 @@ function markerLabel(vehicle: FleetLiveMapVehicle): string {
   return vehicle.registration ?? vehicle.name ?? 'VEH';
 }
 
+function movementState(vehicle: FleetLiveMapVehicle): FleetMovementDisplayState {
+  return vehicle.displayState ?? 'unknown';
+}
+
 function buildMarkerElement(vehicle: FleetLiveMapVehicle, selected: boolean): HTMLSpanElement {
   const label = markerLabel(vehicle);
   const short = label.length > 10 ? label.slice(-6) : label;
-  const color = MARKER_COLORS[vehicle.displayState];
+  const state = movementState(vehicle);
   const el = document.createElement('span');
-  el.className = `fleet-live-map-marker-pin fleet-live-map-marker--${vehicle.displayState}${
+  el.className = `fleet-live-map-marker-pin fleet-live-map-marker--${state}${
     vehicle.isStale ? ' is-stale' : ''
   }${selected ? ' is-selected' : ''}`;
-  el.style.setProperty('--marker-color', color);
+  el.style.setProperty('--marker-color', MARKER_COLORS[state]);
   el.textContent = short;
-  el.title = `${label} · ${FLEET_MOVEMENT_LABELS[vehicle.displayState]}`;
+  el.title = `${label} · ${FLEET_MOVEMENT_LABELS[state]}`;
   return el;
 }
 
@@ -174,13 +178,11 @@ export function FleetLiveMapCanvas({
       requestAnimationFrame(() => map.resize());
     });
 
-    map.on('error', (event) => {
-      if (cancelled) return;
-      const message = event.error?.message ?? '';
-      if (/tile|style|fetch|network|403|404/i.test(message)) {
+    const loadTimer = window.setTimeout(() => {
+      if (!cancelled && !map.loaded()) {
         reportStatus(false, 'Map could not load');
       }
-    });
+    }, 20_000);
 
     const resizeObserver = new ResizeObserver(() => {
       map.resize();
@@ -189,6 +191,7 @@ export function FleetLiveMapCanvas({
 
     return () => {
       cancelled = true;
+      window.clearTimeout(loadTimer);
       resizeObserver.disconnect();
       for (const marker of markersRef.current.values()) {
         marker.remove();
@@ -296,13 +299,13 @@ export function FleetLiveMapCanvas({
     );
   }
 
-  if (!providerConfig.configured || (mapError && !mapReady)) {
+  if (!providerConfig.configured) {
     return (
       <div className="fleet-live-map-shell fleet-live-map-shell--fallback">
         <FleetMapFallbackList
           vehicles={vehicles}
           onRetry={retryMap}
-          message={mapError ?? providerConfig.reason ?? 'Map could not load'}
+          message={providerConfig.reason ?? 'Map could not load'}
         />
       </div>
     );
@@ -334,7 +337,6 @@ export function FleetLiveMapCanvas({
 
       {mapError ? (
         <div className="fleet-live-map-error" role="alert">
-          <p>{mapError}</p>
           <FleetMapFallbackList vehicles={vehicles} onRetry={retryMap} message={mapError} />
         </div>
       ) : null}

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-01T19:41:27.713Z",
+  "generatedAt": "2026-08-01T20:56:31.881Z",
   "branch": "cursor/integration-lock-auto-sync",
-  "totalRoutes": 134,
+  "totalRoutes": 135,
   "backButtonFix": {
     "change": "shouldShowBackButton now true for all staff routes except /",
     "file": "apps/web/src/lib/back-navigation.ts",
@@ -1109,6 +1109,22 @@
       "states": "standard",
       "quickActions": "n/a",
       "componentFile": "apps/web/src/pages/fleet/VehicleDetailPage.tsx",
+      "notes": []
+    },
+    {
+      "pageName": "Fleet Live Map",
+      "url": "/fleet/live-map",
+      "sidebar": "—",
+      "backButton": "Y",
+      "backDestination": "/",
+      "pageHeader": "Y",
+      "centredContainer": "partial",
+      "primaryAction": "Y",
+      "responsive": "verified-css",
+      "rbac": "ProtectedRoute",
+      "states": "standard",
+      "quickActions": "n/a",
+      "componentFile": "apps/web/src/pages/fleet/FleetLiveMapPage.tsx",
       "notes": []
     },
     {

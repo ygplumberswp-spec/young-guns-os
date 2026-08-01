@@ -1,0 +1,157 @@
+{
+  "generatedAt": "2026-08-01T20:36:44.146Z",
+  "label": "229-fleet-api-deployment-reconciliation",
+  "branch": "cursor/titan-final-product-consolidation",
+  "consolidationCommitSha": "8fe0109455c1a88d5098c0568969af361e1ba077",
+  "consolidationCommitShort": "8fe0109",
+  "merge": {
+    "baseSha": "4430edd",
+    "cartrackSourceSha": "8b89ee4",
+    "xeroCherryPickPreserved": "44b2b4d",
+    "method": "git merge 8b89ee4 with conflict resolution (UX report only)"
+  },
+  "rootCause": "Staging web and API were deployed from different branch tips: web included Fleet Live Map frontend (cartrack branch) while consolidation API @ 4430edd lacked GET /api/v1/fleet/live-map, causing authenticated UI poll to receive 404 Route not found.",
+  "routeMismatch": {
+    "frontendRequest": "GET /api/v1/fleet/live-map (via fleet-api.ts fetchFleetLiveMap)",
+    "expectedBackendRoute": "GET /api/v1/fleet/live-map",
+    "mountedPrefix": "/api/v1/fleet",
+    "handlerPath": "/live-map",
+    "preFixApiStatus": 404,
+    "preFixApiError": "Route not found",
+    "postFixUnauthenticatedStatus": 401,
+    "postFixAuthenticatedExpected": 200
+  },
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "priorDeploy": {
+    "consolidationSha": "4430edd",
+    "xeroCherryPickSha": "44b2b4d",
+    "apiDeploymentId": "1e245c9e-e73b-4988-8260-edb46f8b3d82",
+    "webDeploymentId": "e145b49b-3ec4-4b4d-892c-d3e9f1d862b6",
+    "webBundle": "index-HQYwYP6I.js",
+    "cartrackBranchSha": "8b89ee4",
+    "symptom": "Web had Fleet Live Map UI; API missing GET /api/v1/fleet/live-map → 404 Route not found"
+  },
+  "deploy": {
+    "method": "railway up -y -d from consolidation worktree @ merge commit",
+    "apiDeploymentId": "0bd0083c-fe03-4520-85aa-3b44c11809d8",
+    "webDeploymentId": "97dbe327-5b91-4564-b2af-812919a906bc",
+    "productionTouched": false,
+    "migrationsApplied": false,
+    "xeroImportStarted": false,
+    "xeroWrites": false,
+    "cartrackReconnect": false,
+    "manualSync": false,
+    "webBundleAfter": "assets/index-WUOJ5w7S.js"
+  },
+  "health": {
+    "ready": {
+      "httpStatus": 200,
+      "body": {
+        "status": "ready",
+        "database": "connected",
+        "redis": "not_configured",
+        "providersEnabled": true,
+        "schedulersEnabled": true,
+        "workersEnabled": false,
+        "webhooksEnabled": false,
+        "timestamp": "2026-08-01T20:36:44.948Z"
+      }
+    }
+  },
+  "cartrack": {
+    "status": "connected",
+    "lastSyncAt": "2026-08-01T20:32:49.694Z",
+    "mappedCount": 2,
+    "positionCount": 12,
+    "hasCredentials": true
+  },
+  "gps": {
+    "trackingApi": {
+      "positionCount": 2,
+      "mappedVehicleCount": 2,
+      "lastSyncAt": "2026-08-01T20:32:49.694Z"
+    }
+  },
+  "liveMap": {
+    "apiEndpoint": "/api/v1/fleet/live-map",
+    "httpStatus": 200,
+    "vehicleCount": 2,
+    "registrations": [
+      "CF77263",
+      "CF172047"
+    ],
+    "generatedAt": "2026-08-01T20:36:55.966Z",
+    "lastFleetSyncAt": null,
+    "providerError": null
+  },
+  "checks": [
+    {
+      "name": "api_ready",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "live_map_route_exists",
+      "pass": true,
+      "detail": "status=401"
+    },
+    {
+      "name": "web_bundle_changed",
+      "pass": true,
+      "detail": "assets/index-WUOJ5w7S.js"
+    },
+    {
+      "name": "authenticated_live_map_200",
+      "pass": true,
+      "detail": "200"
+    },
+    {
+      "name": "live_map_no_route_not_found",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "name": "vehicle_CF172047",
+      "pass": true,
+      "detail": "present"
+    },
+    {
+      "name": "vehicle_CF77263",
+      "pass": true,
+      "detail": "present"
+    },
+    {
+      "name": "cartrack_connected",
+      "pass": true,
+      "detail": "connected"
+    },
+    {
+      "name": "mapped_vehicles_2",
+      "pass": true,
+      "detail": "2"
+    },
+    {
+      "name": "tracking_position_count_2",
+      "pass": true,
+      "detail": "2"
+    }
+  ],
+  "screenshots": [],
+  "mapTiles": {
+    "priority": "secondary",
+    "verdict": "HOLD",
+    "note": "API route reconciliation GO; MapLibre tile rendering not re-verified this phase (see 228/56eb55e on cartrack branch if needed)"
+  },
+  "verdict": "GO",
+  "blockers": [],
+  "dbSnapshot": {
+    "skipped": true,
+    "reason": "Command failed: railway run node /Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-db-cartrack-229.mjs\nnode:int"
+  },
+  "auth": {
+    "method": "railway_run_programmatic_session",
+    "secretsInOutput": false
+  }
+}

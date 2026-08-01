@@ -1,0 +1,8 @@
+{
+  "generatedAt": "2026-08-01T20:56:22.817Z",
+  "label": "228-fleet-live-map-owner-visual-verify",
+  "verdict": "HOLD",
+  "blockers": [
+    "locator.evaluate: Timeout 30000ms exceeded.\nCall log:\n  - waiting for locator('.fleet-live-map-maplibre-host .maplibregl-map').first()\n"
+  ]
+}

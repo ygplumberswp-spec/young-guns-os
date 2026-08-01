@@ -1,248 +1,11 @@
 # TITAN Final UX Consolidation Report
 
-**Generated:** 2026-08-01T20:30:00.000Z  
-**Branch:** `cursor/titan-final-product-consolidation`  
-**Tip SHA:** `44b2b4d` (`44b2b4d98119af07dfad0b6ea40ad8bdbd430a4a`) — cherry-pick of `bd6da8b` (Xero UI refresh)  
-**Code base (pre-report):** `679e3b9` (225 consolidation status)  
-**Prior consolidation:** `4c14050`  
-**Production touched:** NO  
-**Migrations 0107–0110 applied:** NO  
-**Xero financial writes:** NO  
+Generated: 2026-08-01T20:56:31.881Z
+Branch: `cursor/integration-lock-auto-sync`
+Staging API: `https://young-guns-os-staging.up.railway.app`
+Staging Web: `https://comfortable-determination-staging.up.railway.app`
 
-| Service | URL | Deploy ID | Status |
-|---------|-----|-----------|--------|
-| Staging Web | https://comfortable-determination-staging.up.railway.app | `e145b49b-3ec4-4b4d-892c-d3e9f1d862b6` | SUCCESS |
-| Staging API | https://young-guns-os-staging.up.railway.app | `1e245c9e-e73b-4988-8260-edb46f8b3d82` | SUCCESS |
-| Web bundle (live) | `index-HQYwYP6I.js` | Xero UI refresh deploy @ `44b2b4d` | — |
-| Prior web deploy | — | `313001b5-00ac-4404-84d5-3902d291902a` | superseded |
-| Prior API deploy | — | `dc1cf1fc-5803-4fa8-b4ea-840c5caaf989` | superseded |
-
-**Health (2026-08-01):** API `/api/v1/health` → 200 · `/api/v1/health/ready` → 200 (database connected) · Web root → 200
-
-**Evidence pack:** `diagnostic-output/225-final-consolidation-status.json`
-
----
-
-## Final verdict table
-
-| Area | Verdict | Blocker (if HOLD/NO-GO) | Code change required |
-|------|---------|---------------------------|----------------------|
-| Dashboard | **HOLD** | Staging Playwright screenshots not captured at 1440/1280/1024/768/375; CSS audit PASS only | No |
-| Customers | **GO** | — | No |
-| Leads | **GO** | — | No |
-| Jobs | **GO** | — | No |
-| Scheduling | **HOLD** | CAL-001 gaps: resize, team filter, overlap layout; staging screenshot pack missing | Yes (gaps) |
-| Finance / Xero | **GO** | Phase 2 GO per 220; import 93144ea8 completed; 228 UI refresh GO (cache invalidation + CV partial bypass) | No |
-| Cartrack / Fleet Live Map | **HOLD** | Consolidation merge of `8b89ee4` adds `/fleet/live-map` + GPS parser; staging co-deploy + authenticated proof for CF172047/CF77263 pending (229) | Yes (deploy + GPS proof) |
-| Communications | **HOLD** | Unified workspace not implemented; WhatsApp blocked (owner creds); email not fully verified | Yes (workspace) |
-| AURA | **GO** | Routes exist; content scoped per directive | No |
-| Settings | **HOLD** | `/settings` index missing PageHeader (1 route gap) | Yes (minor) |
-| Back-button audit | **HOLD** | 133/134 code-verified; staging click-through not automated for all routes | No (verify only) |
-| Mobile | **GO** | CRM 375px PASS (224); `/mobile/schedule` → 200 | No |
-| Security | **GO** | RBAC ProtectedRoute on staff routes; tenant isolation PASS in CRM acceptance | No |
-| Performance | **GO** | typecheck PASS · API 370 · Web 136 · build PASS (post-228 cherry-pick) | No |
-
-**Overall:** **HOLD** — Owner review required before production. Top blockers: Cartrack GPS/live map proof, dashboard staging screenshots, communications workspace, CAL-001 remaining gaps.
-
----
-
-## 1. Deployed state confirmation
-
-| Check | Result |
-|-------|--------|
-| Branch | `cursor/titan-final-product-consolidation` @ `44b2b4d` |
-| CRM acceptance code base | YES (`f20524c` — 224 GO 57/57) |
-| Xero UI refresh cherry-pick | YES (`bd6da8b` → `44b2b4d`; evidence `228-xero-ui-refresh-verify.json`) |
-| Web deploy | `e145b49b` (SUCCESS 2026-08-01 22:25 +02:00) |
-| API deploy | `1e245c9e` (SUCCESS 2026-08-01 22:25 +02:00; supersedes `dc1cf1fc`) |
-| Production untouched | YES |
-| Staging health 200 | YES |
-
-**Branch reconciliation (included on consolidation):**
-
-| Source branch | Status |
-|---------------|--------|
-| `cursor/integration-lock-auto-sync` | Included (base) |
-| `cursor/cal-001-scheduling-calendar` | Included (migration 0117) |
-| `cursor/xero-payments-hotfix` | Included (`bd6da8b` UI refresh cherry-picked as `44b2b4d`) |
-| `cursor/visual-alignment-polish` | Included |
-| `cursor/leads-customers-ui-patch` | Absorbed via integration-lock |
-| `cursor/ux-hardening-phase1` | NOT merged (obsolete) |
-
----
-
-## 2. Xero Phase 2 evidence
-
-**Reference:** `220-xero-phase2-final-verify.json` · commit `cb13207` on `cursor/xero-payments-hotfix`
-
-| Check | Result |
-|-------|--------|
-| Import job `93144ea8` | completed (contacts → invoices → payments → bank_transactions, 3078 bank tx) |
-| `187` verify | PASS |
-| `cv_auto_recalc_fired` | PASS |
-| `cvMetricsRefreshJobId` | `93144ea8-f159-416f-bc48-b3b7b5445f98` |
-| Phase 2 GO | yes |
-| Payments synced | YES (stage completed) |
-| Bank transactions | 3078 pulled |
-| Duplicate mappings | none (187 check) |
-| Manual sync required | NO (background import completed) |
-| Financial writes | NO (read-only import) |
-
-### 2.1 Xero UI refresh consolidation (228)
-
-**Source:** `bd6da8b` on `cursor/xero-payments-hotfix` → cherry-picked to `44b2b4d` on consolidation branch  
-**Method:** Cherry-pick (1 conflict resolved — `TITAN_XERO_PAYMENTS_HOTFIX_REPORT.md` deleted on consolidation; content folded into this report)  
-**Verdict:** **GO** (staging DB + API ready probes; owner browser re-check recommended)
-
-| Root cause | Fix |
-|------------|-----|
-| Incremental bank-tx-only sync kept `xeroImportInProgress=true` after CV refresh job `93144ea8` completed | `customer-value-classification.service.ts` — bypass partial state when invoice stages done + CV refresh marker set |
-| No React Query invalidation after Xero sync settled | `use-xero-sync-cache-refresh.ts` + `cache-invalidation.ts` — invalidate CV, finance, CRM, dashboard, integrations on sync settle |
-
-**Preserved:** Phase 2 GO · 673 customer mappings · 5 invoice mappings · INV-0423/0424 totals · 3078 bank tx logs · no duplicate mappings · no new import started · no Xero writes · no migrations
-
-**Local verification (2026-08-01):**
-
-| Check | Result |
-|-------|--------|
-| `pnpm typecheck` | PASS |
-| API tests (370 incl. customer-value-classification) | PASS |
-| Web tests (136) | PASS |
-| Web build | PASS |
-
-**Staging deploy:** API `1e245c9e` · Web `e145b49b` · bundle `index-HQYwYP6I.js`
-
-**Evidence:** `diagnostic-output/228-xero-ui-refresh-verify.json`
-
-**Owner browser checks (recommended):** Xero sync timestamp updates visibly · finance pages refresh without manual reload · Customer Value leaves updating state · no duplicate requests/records
-
----
-
-## 3. CRM final acceptance
-
-**Reference:** `224-crm-final-staging-acceptance.json` · deploy `313001b5` · **GO 57/57**
-
-| Requirement | Result |
-|-------------|--------|
-| Bulk actions (customers/leads/jobs) | PASS |
-| No unsafe bulk delete | PASS |
-| Custom ConfirmDialog (no native alert/confirm) | PASS |
-| Archive/delete/cancel flows | PASS |
-| Mobile 375px overflow/actions | PASS |
-| Audit logs tenant-scoped | PASS |
-| Cross-tenant leakage | 0 |
-| Row actions visible | PASS |
-| Screenshots | 15 viewports in `diagnostic-output/crm-acceptance-screenshots/` |
-
----
-
-## 4. Dashboard visual verification
-
-**Method:** CSS/code audit + staging bundle fetch (`index-xo8UM38E.js`). Playwright screenshots **NOT RUN** this session.
-
-| Viewport | 4→2→1 grid | No 3+1 | Card gaps | Paired sections | CV single loading |
-|----------|------------|--------|-----------|-----------------|-------------------|
-| 1440px | PASS (4 col @ min-width 1440px) | PASS | 18px/20px tokens | PASS (2-col grid) | PASS |
-| 1280px | PASS (2 col @ 768–1439px) | PASS | PASS | PASS | PASS |
-| 1024px | PASS (2 col) | PASS | PASS | PASS | PASS |
-| 768px | PASS (2 col) | PASS | PASS | stacks @767px | PASS |
-| 375px | PASS (1 col) | PASS | PASS | 1 col | PASS |
-
-**Code refs:** `apps/web/src/styles/layout-grid.css`, `ExecutiveDashboard.tsx`, `CustomerValueMetricsPanel.tsx`.
-
-**Missing evidence:** Authenticated staging screenshots at all five widths.
-
----
-
-## 5. Scheduling verification
-
-| Check | Result |
-|-------|--------|
-| `/scheduling` calendar primary | YES |
-| Week default | YES |
-| Day / week / month views | YES |
-| Drag-drop + conflicts | YES |
-| Unscheduled tray | YES |
-| Back button | YES → `/` |
-| `/mobile/schedule` | 200 · day default |
-| Migration 0117 | On branch (not applied this session) |
-
-**Known gaps (CAL-001):** resize duration · team filter · duplicate-as-draft pre-fill · overlap lane-packing · tablet swipe · staging screenshots.
-
----
-
-## 6. Back button route audit
-
-**Generated:** `scripts/generate-route-matrix.mjs` → `diagnostic-output/212-final-ux-route-matrix.json` (134 routes)
-
-| Metric | Count |
-|--------|------:|
-| Total staff routes | 134 |
-| Back visible | 133 |
-| Missing back (by design) | 1 (`/` dashboard home) |
-| Missing PageHeader | 1 (`/settings` SettingsIndexPage) |
-
-Full matrix below. Staging click-through for all 134 routes not automated.
-
----
-
-## 7. Cartrack and Fleet Live Map
-
-**Probes:** `217-cartrack-staging-verify.json` · `226-cartrack-live-map-final-verify.json` · code `cartrack.client.ts` · `useFleetLiveMap.ts`
-
-| Check | Result |
-|-------|--------|
-| CF172047 / CF77263 mapped | 2 (auto_matched per 217/218) |
-| Credentials locked | YES (`hasCredentials: true`, connection lock per 211) |
-| Root cause (GPS=0) | `/vehicles/status` vehicle_id ≠ mapping external_vehicle_id; parser missed nested/PascalCase lat/lng |
-| Fix branch | `cursor/cartrack-live-map-final` @ post-679e3b9 |
-| GPS import fix | Registration fallback mapping + `/positions` fallback + fresh-only deduped inserts |
-| `/fleet/live-map` route | **ADDED** (web + `GET /api/v1/fleet/live-map`) |
-| Live Dispatch console | `/mobile-platform/dispatcher` → shared tracking source |
-| 3s visible / 60s hidden poll | PASS (code — `LIVE_POLL_MS=3000`, `HIDDEN_POLL_MS=60000`, inflight guard) |
-| Permissions probe | `GET /integrations/cartrack/permissions` (read endpoints only) |
-| GPS positions stored (staging) | **Pending post-deploy proof** (217 baseline: 0) |
-
-**Verdict: HOLD** — code fix + live map route implemented; **GO requires staging deploy and authenticated proof that both vehicles have non-zero GPS positions with auto-updating `last_sync_at`.**
-
----
-
-## 8. Integrations and communications
-
-| Provider | Status | CONNECT ONCE → LOCK → AUTO-SYNC |
-|----------|--------|----------------------------------|
-| Xero | Connected — Phase 2 GO (220) | Verified |
-| Cartrack | Connected — mapped=2; GPS fix on branch 226 | Verified (credentials lock) |
-| WhatsApp Business | Blocked — owner credentials | Pattern ready |
-| Personal WhatsApp | Unsupported — honest banner | N/A |
-| SMTP / Email | Ready to configure | Verified (211) |
-| Gmail | Unsupported — roadmap card | N/A |
-| M365 | Unsupported — roadmap card | N/A |
-| Payments (Yoco) | Incomplete — profile sync only | Partial |
-
-Unified Communications workspace: NOT implemented.
-
----
-
-## 9. AURA and Company Health
-
-Routes: `/aura`, `/aura/agents`, `/aura/todays-plan`, `/aura/business-rules`, `/mission-control`, `/settings/advanced/platform-health` — all present; staging 200 where probed.
-
----
-
-## 10. Performance, safety, build
-
-| Check | Result |
-|-------|--------|
-| `pnpm typecheck` | PASS |
-| API tests | 370 pass |
-| Web tests | 136 pass |
-| Web build | PASS |
-| Staging health | 200 |
-
----
-
-## 11. Back button — app-wide fix (BLOCKER RESOLVED)
+## 1. Back button — app-wide fix (BLOCKER RESOLVED)
 
 **Root cause:** `shouldShowBackButton()` hid back on all `MODULE_ROOT_PATHS` (list/landing pages like `/jobs`, `/crm`, `/leads`, `/settings`).
 
@@ -261,11 +24,15 @@ See `diagnostic-output/211-integration-lock-auto-sync-verify.json` and commits `
 - `apps/web/src/styles/layout-grid.css` — content max-width, summary grids, responsive breakpoints @ 99159f9 parity
 - Wide routes: scheduling, live dispatch, day timeline use `app-content-container--wide`
 
-## 12. Tests / build (local)
+## 4. Tests / build
 
-Run on consolidation branch @ `44b2b4d` (2026-08-01T20:28Z): typecheck PASS · API 370 · Web 136 · build PASS · staging health 200 · 228 Xero UI refresh GO.
+Run: `pnpm typecheck`, `pnpm test`, `pnpm build` (results appended after CI run).
 
-## 13. Route matrix (134 staff routes)
+## 5. Remaining blockers
+
+See route matrix gaps below. Staging Cartrack CF172047/CF77263 live verification pending post-deploy.
+
+## Route matrix (135 staff routes)
 
 | Page | URL | Sidebar | Back | Back dest | Header | Centred | Primary | Responsive | RBAC | States | Quick actions |
 |------|-----|---------|------|-----------|--------|---------|---------|------------|------|--------|---------------|
@@ -335,6 +102,7 @@ Run on consolidation branch @ `44b2b4d` (2026-08-01T20:28Z): typecheck PASS · A
 | Vehicle List | `/fleet` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Fleet Intelligence | `/fleet-intelligence` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Vehicle Detail | `/fleet/:id` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
+| Fleet Live Map | `/fleet/live-map` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Vehicle Create | `/fleet/new` | — | Y | `/` | Y | partial | N | verified-css | ProtectedRoute | standard | n/a |
 | Global Search | `/global-search` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
 | Go Live | `/go-live` | — | Y | `/` | Y | partial | Y | verified-css | ProtectedRoute | standard | n/a |
@@ -410,14 +178,17 @@ Run on consolidation branch @ `44b2b4d` (2026-08-01T20:28Z): typecheck PASS · A
 - `/settings` → apps/web/src/pages/settings/SettingsIndexPage.tsx
 
 
----
+## 6. WhatsApp / Email support status
 
-## 14. Owner review checklist
+| Channel | Status |
+|---------|--------|
+| WhatsApp Business | Real connection lock + auto incoming sync; outgoing requires approval |
+| Personal WhatsApp | Blocked/unsupported — honest banner, never simulated |
+| Email (IMAP/SMTP) | Real connection lock + auto incoming; send/delete/forward approval |
+| Gmail/M365 OAuth | Roadmap — not faked |
 
-1. Staging click-through on dashboard at 1440/1280/1024/768/375
-2. Cartrack staging deploy + authenticated GPS proof for CF172047/CF77263 on `/fleet/live-map`
-3. Communications unified workspace scope
-4. CAL-001 gap-fill (resize, team filter)
-5. `/settings` PageHeader gap
+## 7. Cartrack evidence
 
-**Stop for Owner review.** No production deploy until HOLD items resolved or explicitly waived.
+- Registration normalize: `packages/shared/src/vehicle-registration.ts`
+- Auto-map on connect/sync: `apps/api/src/services/integrations.service.ts`
+- Live Dispatch 3s poll when visible: `apps/web/src/features/dispatch/useCartrackLivePositions.ts`
