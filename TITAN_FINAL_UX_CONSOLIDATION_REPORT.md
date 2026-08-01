@@ -116,4 +116,4 @@ pnpm --filter @titan/web run test
 
 **Validation:** `pnpm run typecheck`, `@titan/web` test + build — pass.
 
-**Staging:** Railway `comfortable-determination` (sweet-victory) — see commit below.
+**Staging:** Railway `comfortable-determination` (sweet-victory) — deploy triggered for `491e397`; HTTP 200 at https://comfortable-determination-staging.up.railway.app (report updated at `a3405c3`).
