@@ -46,6 +46,17 @@ function resolveCustomerValueErrorMessage(error: string | null): string {
   return error;
 }
 
+function isXeroSyncPending(error: string | null): boolean {
+  if (!error) return false;
+  const lower = error.toLowerCase();
+  return (
+    lower.includes('xero') ||
+    lower.includes('sync') ||
+    lower.includes('import') ||
+    lower.includes('updating customer value')
+  );
+}
+
 function resolvePanelViewState(input: {
   isLoading: boolean;
   error: string | null;
@@ -57,6 +68,9 @@ function resolvePanelViewState(input: {
     return 'loading';
   }
   if (error && metrics === undefined) {
+    if (isXeroSyncPending(error)) {
+      return 'updating';
+    }
     return 'error';
   }
   if (!metrics) {
@@ -136,20 +150,13 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
   const panelDescription =
     viewState === 'ready'
       ? 'Verified invoiced customers — click a metric to filter the CRM list.'
-      : undefined;
+      : viewState === 'updating'
+        ? CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE
+        : undefined;
 
   return (
     <Panel title="Customer value" description={panelDescription}>
-      {viewState === 'loading' || viewState === 'updating' ? (
-        <>
-          <p className="page-muted customer-value-status" role="status">
-            {viewState === 'loading'
-              ? 'Loading customer value metrics…'
-              : CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE}
-          </p>
-          <MetricsSkeletonGrid compact={compact} />
-        </>
-      ) : null}
+      {viewState === 'loading' ? <MetricsSkeletonGrid compact={compact} /> : null}
 
       {viewState === 'error' ? (
         <EmptyState

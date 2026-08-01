@@ -1118,7 +1118,8 @@ a:focus-visible {
 .exec-dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .exec-dashboard-header {
@@ -1127,7 +1128,7 @@ a:focus-visible {
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1rem 1.125rem;
+  padding: var(--titan-dashboard-card-padding);
   border: 1px solid var(--titan-border-subtle);
   border-radius: var(--titan-radius-lg);
   background: linear-gradient(
@@ -1136,6 +1137,11 @@ a:focus-visible {
     var(--titan-surface) 100%
   );
   box-shadow: var(--titan-shadow-sm);
+}
+
+.exec-dashboard-header__main {
+  flex: 1 1 16rem;
+  min-width: 0;
 }
 
 .exec-dashboard-header__greeting {
@@ -1155,13 +1161,12 @@ a:focus-visible {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.625rem;
 }
 
 .exec-dashboard-section {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
 .exec-dashboard-section__title {
@@ -1173,7 +1178,6 @@ a:focus-visible {
 }
 
 .exec-dashboard-glance__link {
-  display: block;
   text-decoration: none;
   color: inherit;
   border-radius: var(--titan-radius-md);
@@ -1183,12 +1187,6 @@ a:focus-visible {
 .exec-dashboard-glance__link:focus-visible .titan-stat-card {
   border-color: color-mix(in srgb, var(--titan-accent) 45%, var(--titan-border-subtle));
   box-shadow: var(--titan-shadow-glow);
-}
-
-.exec-dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.875rem;
 }
 
 .exec-dashboard-skeleton {
@@ -1297,16 +1295,9 @@ a:focus-visible {
   font-size: 0.8125rem;
 }
 
-@media (max-width: 960px) {
-  .exec-dashboard-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .exec-dashboard-header__actions {
-    width: 100%;
-  }
+.exec-dashboard .customer-value-status {
+  margin: 0;
 }
-
 
 .dashboard-panel-empty {
   border: 1px solid var(--titan-border-subtle);

@@ -14,10 +14,14 @@
   /* Responsive layout breakpoints (owner dashboard spec) */
   --titan-bp-mobile: 48rem; /* 768px */
   --titan-bp-tablet: 64rem; /* 1024px */
-  --titan-bp-desktop-sm: 75rem; /* 1200px — 2 vs 3 cols in standard desktop */
-  --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-bp-desktop: 90rem; /* 1440px — 4-col summary cards */
   --titan-summary-card-min: 16rem;
-  --titan-summary-grid-gap: var(--titan-rhythm-cards);
+  --titan-summary-grid-gap: 1.125rem; /* 18px horizontal card gap */
+  --titan-dashboard-card-row-gap: 1.25rem; /* 20px vertical card gap */
+  --titan-dashboard-section-gap: 1.5rem; /* 24px between major sections */
+  --titan-dashboard-heading-gap: 0.75rem; /* 12px below section headings */
+  --titan-dashboard-card-padding: 1.25rem; /* 20px card padding */
+  --titan-dashboard-paired-row-gap: 1.25rem; /* 20px between paired grid rows */
   --titan-touch-target-min: 2.75rem; /* 44px */
 }
 
@@ -114,10 +118,12 @@
 .ux-summary-grid,
 .stat-grid {
   display: grid;
-  gap: var(--titan-summary-grid-gap);
+  column-gap: var(--titan-summary-grid-gap);
+  row-gap: var(--titan-dashboard-card-row-gap);
   width: 100%;
   min-width: 0;
   justify-items: stretch;
+  align-items: stretch;
 }
 
 .ux-summary-grid > *,
@@ -130,24 +136,10 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* 4-card summary grids: 1 → 2 → 4 columns (never 3+1 orphan) */
 @media (min-width: 768px) {
-  .ux-summary-grid--cols-4,
-  .stat-grid {
+  .ux-summary-grid--cols-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1024px) and (max-width: 1199px) {
-  .ux-summary-grid--cols-4,
-  .stat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1200px) and (max-width: 1439px) {
-  .ux-summary-grid--cols-4,
-  .stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -155,7 +147,10 @@
   .ux-summary-grid--cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+}
 
+/* stat-grid keeps flexible auto-fit outside dashboard 4-card spec */
+@media (min-width: 768px) {
   .stat-grid {
     grid-template-columns: repeat(auto-fit, minmax(var(--titan-summary-card-min), 1fr));
   }
@@ -187,14 +182,120 @@
   }
 }
 
-.dashboard-stats.ux-summary-grid {
-  gap: 0.875rem;
+.dashboard-stats.ux-summary-grid,
+.exec-dashboard-glance.ux-summary-grid {
+  column-gap: var(--titan-summary-grid-gap);
+  row-gap: var(--titan-dashboard-card-row-gap);
 }
 
 .dashboard-stat-card,
 .exec-dashboard-glance__link,
 .stat-grid .stat-card {
   min-width: 0;
+  margin: 0;
+}
+
+/* Executive dashboard — section rhythm and card alignment */
+.exec-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-dashboard-section-gap);
+  width: 100%;
+  min-width: 0;
+}
+
+.exec-dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-dashboard-heading-gap);
+}
+
+/* Today at a glance — dashboard-scoped 4→2→1 (overrides any legacy 3-col rules) */
+.exec-dashboard .exec-dashboard-glance.ux-summary-grid--cols-4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  column-gap: var(--titan-summary-grid-gap);
+  row-gap: var(--titan-dashboard-card-row-gap);
+}
+
+@media (min-width: 768px) {
+  .exec-dashboard .exec-dashboard-glance.ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .exec-dashboard .exec-dashboard-glance.ux-summary-grid--cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.exec-dashboard-glance__link {
+  display: flex;
+  height: 100%;
+  margin: 0;
+  isolation: isolate;
+}
+
+.exec-dashboard-glance__link .titan-stat-card {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--titan-dashboard-card-padding);
+  background: var(--titan-surface);
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-lg);
+}
+
+.exec-dashboard-paired {
+  display: flex;
+  flex-direction: column;
+  gap: var(--titan-dashboard-paired-row-gap);
+  width: 100%;
+  min-width: 0;
+}
+
+.exec-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: var(--titan-summary-grid-gap);
+  row-gap: var(--titan-dashboard-card-row-gap);
+  align-items: start;
+}
+
+.exec-dashboard-grid > .titan-panel,
+.exec-dashboard-grid > [class*='Panel'] {
+  min-width: 0;
+  margin: 0;
+  isolation: isolate;
+}
+
+.exec-dashboard-customer-value {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+}
+
+.exec-dashboard-customer-value .dashboard-metrics {
+  column-gap: var(--titan-summary-grid-gap);
+  row-gap: var(--titan-dashboard-card-row-gap);
+}
+
+.exec-dashboard-customer-value .dashboard-metric-card {
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--titan-dashboard-card-padding);
+}
+
+@media (max-width: 767px) {
+  .exec-dashboard-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .exec-dashboard-header__actions {
+    width: 100%;
+  }
 }
 
 @media (max-width: 767px) {
