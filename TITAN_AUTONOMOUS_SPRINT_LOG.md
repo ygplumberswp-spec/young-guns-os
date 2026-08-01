@@ -453,3 +453,16 @@
 | **Deploy** | **BLOCKED** — `RAILWAY_TOKEN` unset, CLI unauthorized; Owner redeploy API/web required |
 | **Evidence** | `167-staging-health-ready.json`, `167-staging-deploy-verification-summary.json`, `TITAN_STAGING_VERIFICATION_SPRINT020_REPORT.md` |
 
+---
+
+## Sprint 021 — Staging redeploy prep (GitHub push)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Prepare Railway staging redeploy |
+| **Result** | Verified `58a16b7` on branch; **pushed** `cursor/titan-frozen-scope-completion` to GitHub @ `4e94ef6`; inferred Railway API on `main` @ `8d35bfd` (completion branch absent from GitHub until now) |
+| **Checkpoint** | `TITAN_STAGING_REDEPLOY_PREP_SPRINT021.md` |
+| **Approval required?** | **Yes — Owner:** Railway **Settings → Source → Branch** → `cursor/titan-frozen-scope-completion`, then Deploy |
+| **Next phase selected** | Redeploy API/web; `/health/ready`; Phase 5/6/8–12 smokes |
+
