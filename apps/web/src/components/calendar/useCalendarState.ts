@@ -2,51 +2,58 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { CalendarViewMode } from '@titan/shared';
 import { readNavState, useTitanNavigationHistory, writeNavState } from '../../hooks/useTitanNavigationHistory';
 import {
-  CALENDAR_STATE_KEY,
+  calendarStateKey,
+  defaultCalendarView,
   type CalendarPersistedState,
 } from './calendar-utils';
 
-const DEFAULT_STATE: CalendarPersistedState = {
-  view: 'week',
-  anchorDate: new Date().toISOString(),
-};
+function defaultState(pathname: string): CalendarPersistedState {
+  return {
+    view: defaultCalendarView(pathname),
+    anchorDate: new Date().toISOString(),
+  };
+}
 
 function readCalendarState(pathname: string): CalendarPersistedState {
-  if (typeof window === 'undefined') return DEFAULT_STATE;
+  if (typeof window === 'undefined') return defaultState(pathname);
   try {
     const nav = readNavState(pathname);
     if (nav?.calendarDate) {
       return {
-        view: (nav.filters?.view as CalendarViewMode) ?? DEFAULT_STATE.view,
+        view: (nav.filters?.view as CalendarViewMode) ?? defaultCalendarView(pathname),
         anchorDate: nav.calendarDate,
         filters: {
           technicianId: nav.filters?.technicianId,
+          team: nav.filters?.team,
           status: nav.filters?.status,
           suburb: nav.filters?.suburb,
           priority: nav.filters?.priority,
+          jobType: nav.filters?.jobType,
         },
       };
     }
-    const raw = sessionStorage.getItem(CALENDAR_STATE_KEY);
-    if (!raw) return DEFAULT_STATE;
-    return { ...DEFAULT_STATE, ...(JSON.parse(raw) as CalendarPersistedState) };
+    const raw = sessionStorage.getItem(calendarStateKey(pathname));
+    if (!raw) return defaultState(pathname);
+    return { ...defaultState(pathname), ...(JSON.parse(raw) as CalendarPersistedState) };
   } catch {
-    return DEFAULT_STATE;
+    return defaultState(pathname);
   }
 }
 
 function writeCalendarState(pathname: string, state: CalendarPersistedState): void {
   if (typeof window === 'undefined') return;
   try {
-    sessionStorage.setItem(CALENDAR_STATE_KEY, JSON.stringify(state));
+    sessionStorage.setItem(calendarStateKey(pathname), JSON.stringify(state));
     writeNavState(pathname, {
       calendarDate: state.anchorDate,
       filters: {
         view: state.view,
         technicianId: state.filters?.technicianId ?? '',
+        team: state.filters?.team ?? '',
         status: state.filters?.status ?? '',
         suburb: state.filters?.suburb ?? '',
         priority: state.filters?.priority ?? '',
+        jobType: state.filters?.jobType ?? '',
       },
     });
   } catch {
@@ -74,9 +81,11 @@ export function useCalendarState(pathname = '/scheduling') {
         filters: {
           view: next.view,
           technicianId: next.filters?.technicianId ?? '',
+          team: next.filters?.team ?? '',
           status: next.filters?.status ?? '',
           suburb: next.filters?.suburb ?? '',
           priority: next.filters?.priority ?? '',
+          jobType: next.filters?.jobType ?? '',
         },
       });
     },

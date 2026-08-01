@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CALENDAR_STATE_KEY, type CalendarPersistedState } from './calendar-utils';
+import {
+  CALENDAR_STATE_KEY,
+  defaultCalendarView,
+  type CalendarPersistedState,
+} from './calendar-utils';
 
 test('calendar state sessionStorage round-trip shape', () => {
   const state: CalendarPersistedState = {
@@ -15,4 +19,9 @@ test('calendar state sessionStorage round-trip shape', () => {
   assert.equal(parsed.view, 'week');
   assert.equal(parsed.filters?.suburb, 'Sandton');
   assert.equal(CALENDAR_STATE_KEY.includes('/scheduling'), true);
+});
+
+test('default calendar view is week for dispatch and day for mobile', () => {
+  assert.equal(defaultCalendarView('/scheduling'), 'week');
+  assert.equal(defaultCalendarView('/mobile/schedule'), 'day');
 });

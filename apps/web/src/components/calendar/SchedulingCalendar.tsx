@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { EmptyState, LoadingState, Panel } from '@titan/ui';
+import { EmptyState, LoadingState } from '@titan/ui';
 import type {
   JobAssignee,
   JobSummary,
@@ -7,20 +7,23 @@ import type {
   SchedulingCalendarResponse,
   SchedulingConflictCheckResponse,
 } from '@titan/shared';
-import { CalendarFilters, type CalendarFilterState } from './CalendarFilters';
-import { CalendarJobCard } from './CalendarJobCard';
+import { updateJob } from '../../lib/jobs-api';
+import { updateJobSchedule } from '../../lib/scheduling-api';
+import {
+  applyClientCalendarFilters,
+  CalendarFilters,
+  type CalendarFilterState,
+} from './CalendarFilters';
+import { CalendarMonthGrid } from './CalendarMonthGrid';
+import { CalendarTimeGrid } from './CalendarTimeGrid';
 import { CalendarToolbar } from './CalendarToolbar';
 import { ConflictWarningModal } from './ConflictWarningModal';
+import { JobPreviewDrawer } from './JobPreviewDrawer';
 import { OverrideReasonModal } from './OverrideReasonModal';
 import { ScheduleSlotModal } from './ScheduleSlotModal';
-import {
-  addDays,
-  resolveRange,
-  startOfDay,
-  startOfWeek,
-} from './calendar-utils';
+import { UnscheduledJobsTray } from './UnscheduledJobsTray';
+import { eventDurationMs, resolveRange, startOfDay } from './calendar-utils';
 import { useCalendarState } from './useCalendarState';
-import type { CalendarViewMode } from '@titan/shared';
 
 export type SchedulingCalendarActions = {
   checkConflicts: (body: {
@@ -62,11 +65,13 @@ type SchedulingCalendarProps = {
   pathname?: string;
   actions: SchedulingCalendarActions;
   onRefresh: () => void;
+  accessToken?: string | null;
+  compactHeader?: boolean;
 };
 
 type PendingMove = {
   action: 'patch' | 'schedule';
-  job: ScheduledJobEvent;
+  jobId: string;
   scheduledAt: string;
   scheduledEndAt: string | null;
   assignedUserId?: string | null;
@@ -83,158 +88,232 @@ export function SchedulingCalendar({
   pathname = '/scheduling',
   actions,
   onRefresh,
+  accessToken,
+  compactHeader = false,
 }: SchedulingCalendarProps) {
   const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
     useCalendarState(pathname);
   const [slotDate, setSlotDate] = useState<Date | null>(null);
+  const [slotTechnicianId, setSlotTechnicianId] = useState<string | null>(null);
+  const [previewEvent, setPreviewEvent] = useState<ScheduledJobEvent | null>(null);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [conflicts, setConflicts] = useState<SchedulingConflictCheckResponse | null>(null);
   const [showOverride, setShowOverride] = useState(false);
-  const [draggingJob, setDraggingJob] = useState<ScheduledJobEvent | null>(null);
+  const [draggingEvent, setDraggingEvent] = useState<ScheduledJobEvent | null>(null);
+  const [draggingJob, setDraggingJob] = useState<JobSummary | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  const events = calendar?.events ?? [];
+  const events = useMemo(
+    () => applyClientCalendarFilters(calendar?.events ?? [], filters as CalendarFilterState, assignees),
+    [calendar?.events, filters, assignees],
+  );
 
-  const grouped = useMemo(() => groupEventsForView(view, anchorDate, events), [view, anchorDate, events]);
-
-  async function handleDrop(day: Date, hour = 8) {
-    if (!canWrite || !draggingJob) return;
-    const start = new Date(day);
-    start.setHours(hour, 0, 0, 0);
-    const durationMs = draggingJob.scheduledEndAt
-      ? new Date(draggingJob.scheduledEndAt).getTime() - new Date(draggingJob.scheduledAt).getTime()
-      : 60 * 60_000;
-    const end = new Date(start.getTime() + durationMs);
-
-    const check = await actions.checkConflicts({
-      jobId: draggingJob.id,
-      scheduledAt: start.toISOString(),
-      scheduledEndAt: end.toISOString(),
-      assignedUserId: draggingJob.assignedUserId,
-    });
-
-    if (check.hasConflicts) {
-      setConflicts(check);
-      setPendingMove({
-        action: 'patch',
-        job: draggingJob,
-        scheduledAt: start.toISOString(),
-        scheduledEndAt: end.toISOString(),
-      });
-      return;
+  const jobTypes = useMemo(() => {
+    const values = new Set<string>();
+    for (const job of jobs) {
+      if (job.jobType) values.add(job.jobType);
     }
-
-    setIsSaving(true);
-    try {
-      await actions.patchEvent(draggingJob.id, {
-        scheduledAt: start.toISOString(),
-        scheduledEndAt: end.toISOString(),
-        assignedUserId: draggingJob.assignedUserId,
-      });
-      onRefresh();
-    } finally {
-      setIsSaving(false);
-      setDraggingJob(null);
+    for (const event of calendar?.events ?? []) {
+      if (event.jobType) values.add(event.jobType);
     }
-  }
+    return [...values].sort();
+  }, [jobs, calendar?.events]);
 
-  async function confirmMove(overrideReason?: string) {
-    if (!pendingMove) return;
+  async function commitMove(move: PendingMove, overrideReason?: string) {
     setIsSaving(true);
     try {
       const body = {
-        scheduledAt: pendingMove.scheduledAt,
-        scheduledEndAt: pendingMove.scheduledEndAt,
-        assignedUserId: pendingMove.assignedUserId ?? pendingMove.job.assignedUserId,
+        scheduledAt: move.scheduledAt,
+        scheduledEndAt: move.scheduledEndAt,
+        assignedUserId: move.assignedUserId ?? null,
         acknowledgeConflicts: Boolean(overrideReason),
         overrideReason: overrideReason ?? null,
       };
 
-      if (pendingMove.action === 'schedule') {
-        await actions.scheduleJob(pendingMove.job.id, body);
+      if (move.action === 'schedule') {
+        await actions.scheduleJob(move.jobId, body);
         setSlotDate(null);
       } else {
-        await actions.patchEvent(pendingMove.job.id, body);
+        await actions.patchEvent(move.jobId, body);
       }
 
       setPendingMove(null);
       setConflicts(null);
       setShowOverride(false);
+      setDraggingEvent(null);
+      setDraggingJob(null);
       onRefresh();
     } finally {
       setIsSaving(false);
     }
   }
 
-  return (
-    <div className="cal-shell">
-      <CalendarToolbar
-        view={view}
-        anchorDate={anchorDate}
-        onViewChange={setView}
-        onAnchorChange={setAnchorDate}
-      />
+  async function attemptMove(
+    jobId: string,
+    scheduledAt: string,
+    scheduledEndAt: string | null,
+    assignedUserId: string | null | undefined,
+    action: 'patch' | 'schedule',
+  ) {
+    const check = await actions.checkConflicts({
+      jobId,
+      scheduledAt,
+      scheduledEndAt,
+      assignedUserId,
+    });
 
-      <CalendarFilters
-        assignees={assignees}
-        filters={filters as CalendarFilterState}
-        onChange={(next) => setFilters(next)}
-        showTechnicianFilter={showTechnicianFilter}
-      />
+    const move: PendingMove = {
+      action,
+      jobId,
+      scheduledAt,
+      scheduledEndAt,
+      assignedUserId,
+    };
+
+    if (check.hasConflicts) {
+      setConflicts(check);
+      setPendingMove(move);
+      return;
+    }
+
+    await commitMove(move);
+  }
+
+  async function handleDrop(slot: Date, technicianId?: string | null) {
+    if (!canWrite) return;
+
+    if (draggingJob) {
+      const end = new Date(slot.getTime() + 60 * 60_000);
+      await attemptMove(
+        draggingJob.id,
+        slot.toISOString(),
+        end.toISOString(),
+        technicianId ?? draggingJob.assignedUserId,
+        'schedule',
+      );
+      return;
+    }
+
+    if (!draggingEvent) return;
+
+    const durationMs = eventDurationMs(draggingEvent);
+    const end = new Date(slot.getTime() + durationMs);
+    await attemptMove(
+      draggingEvent.id,
+      slot.toISOString(),
+      end.toISOString(),
+      technicianId ?? draggingEvent.assignedUserId,
+      'patch',
+    );
+  }
+
+  async function handleUnschedule() {
+    if (!previewEvent || !accessToken) return;
+    setIsSaving(true);
+    try {
+      await updateJobSchedule(accessToken, previewEvent.id, { clearSchedule: true });
+      setPreviewEvent(null);
+      onRefresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function handleCancelJob() {
+    if (!previewEvent || !accessToken) return;
+    setIsSaving(true);
+    try {
+      await updateJob(accessToken, previewEvent.id, { status: 'cancelled' });
+      setPreviewEvent(null);
+      onRefresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function openSlot(slot: Date, technicianId?: string | null) {
+    if (!canWrite) return;
+    setSlotDate(slot);
+    setSlotTechnicianId(technicianId ?? null);
+  }
+
+  function switchToDay(date: Date) {
+    setAnchorDate(startOfDay(date));
+    setView('day');
+  }
+
+  const showEmptyState = !isLoading && events.length === 0 && view === 'month';
+
+  return (
+    <div className={`cal-shell${compactHeader ? ' cal-shell--compact' : ''}`}>
+      <div className="cal-shell__header">
+        <CalendarToolbar
+          view={view}
+          anchorDate={anchorDate}
+          onViewChange={setView}
+          onAnchorChange={setAnchorDate}
+        />
+        <CalendarFilters
+          assignees={assignees}
+          filters={filters as CalendarFilterState}
+          jobTypes={jobTypes}
+          onChange={(next) => setFilters(next)}
+          showTechnicianFilter={showTechnicianFilter}
+        />
+      </div>
 
       {calendar?.settings ? (
         <p className="page-muted cal-shell__travel-note">
-          Travel time: {calendar.settings.defaultTravelMinutes} min default
-          {calendar.settings.cartrackConnected
-            ? ' · Cartrack connected (routing stub — not live ETA)'
-            : ' · Cartrack not connected'}
+          Working hours {calendar.settings.workDayStartHour}:00–{calendar.settings.workDayEndHour}:00
+          · Travel {calendar.settings.defaultTravelMinutes} min
+          {calendar.settings.cartrackConnected ? ' · Cartrack connected (stub ETA)' : ''}
         </p>
       ) : null}
 
       {error ? <p className="form-error">{error}</p> : null}
 
-      <Panel title="Calendar">
+      <div className="cal-shell__main">
         {isLoading ? (
           <LoadingState label="Loading calendar…" />
-        ) : events.length === 0 ? (
-          <EmptyState
-            title="No scheduled jobs"
-            description="Schedule jobs to see them on the calendar for this range."
-          />
+        ) : view === 'month' ? (
+          showEmptyState ? (
+            <EmptyState
+              title="No scheduled jobs this month"
+              description="Use week or day view to schedule jobs, or drag from the tray below."
+            />
+          ) : (
+            <CalendarMonthGrid anchorDate={anchorDate} events={events} onDayClick={switchToDay} />
+          )
         ) : (
-          <div className={`cal-grid cal-grid--${view}`}>
-            {grouped.map((column) => (
-              <section
-                key={column.key}
-                className="cal-grid__column"
-                onDragOver={(event) => canWrite && event.preventDefault()}
-                onDrop={() => void handleDrop(column.date)}
-              >
-                <header className="cal-grid__column-header">
-                  <button
-                    type="button"
-                    className="cal-grid__slot-trigger"
-                    onClick={() => canWrite && setSlotDate(column.date)}
-                  >
-                    {column.label}
-                  </button>
-                </header>
-                <div className="cal-grid__events">
-                  {column.events.map((event) => (
-                    <CalendarJobCard
-                      key={event.id}
-                      event={event}
-                      compact={view === 'month'}
-                      draggable={canWrite}
-                      onDragStart={setDraggingJob}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
+          <CalendarTimeGrid
+            mode={view}
+            anchorDate={anchorDate}
+            events={events}
+            assignees={assignees}
+            settings={calendar?.settings}
+            technicianFilter={filters.technicianId}
+            canWrite={canWrite}
+            onSlotClick={openSlot}
+            onEventClick={setPreviewEvent}
+            onEventDragStart={setDraggingEvent}
+            onDrop={(slot, technicianId) => void handleDrop(slot, technicianId)}
+          />
         )}
-      </Panel>
+      </div>
+
+      {canWrite ? (
+        <UnscheduledJobsTray
+          jobs={jobs}
+          events={events}
+          canWrite={canWrite}
+          onDragStart={setDraggingJob}
+          onJobClick={(job) => {
+            const event = events.find((item) => item.id === job.id);
+            if (event) setPreviewEvent(event);
+            else openSlot(startOfDay(anchorDate), job.assignedUserId);
+          }}
+        />
+      ) : null}
 
       {slotDate ? (
         <ScheduleSlotModal
@@ -242,26 +321,31 @@ export function SchedulingCalendar({
           jobs={jobs}
           assignees={assignees}
           canWrite={canWrite}
-          onClose={() => setSlotDate(null)}
-          onSchedule={async (jobId, body) => {
-            const check = await actions.checkConflicts({ jobId, ...body });
-            if (check.hasConflicts) {
-              setConflicts(check);
-              setPendingMove({
-                action: 'schedule',
-                job: { id: jobId } as ScheduledJobEvent,
-                scheduledAt: body.scheduledAt,
-                scheduledEndAt: body.scheduledEndAt ?? null,
-                assignedUserId: body.assignedUserId,
-              });
-              return;
-            }
-            await actions.scheduleJob(jobId, body);
+          defaultTechnicianId={slotTechnicianId}
+          onClose={() => {
             setSlotDate(null);
-            onRefresh();
+            setSlotTechnicianId(null);
+          }}
+          onSchedule={async (jobId, body) => {
+            await attemptMove(
+              jobId,
+              body.scheduledAt,
+              body.scheduledEndAt ?? null,
+              body.assignedUserId,
+              'schedule',
+            );
           }}
         />
       ) : null}
+
+      <JobPreviewDrawer
+        event={previewEvent}
+        canWrite={canWrite}
+        isSaving={isSaving}
+        onClose={() => setPreviewEvent(null)}
+        onUnschedule={() => void handleUnschedule()}
+        onCancel={() => void handleCancelJob()}
+      />
 
       <ConflictWarningModal
         open={Boolean(conflicts && pendingMove && !showOverride)}
@@ -279,60 +363,10 @@ export function SchedulingCalendar({
         open={showOverride}
         isSaving={isSaving}
         onCancel={() => setShowOverride(false)}
-        onConfirm={(reason) => void confirmMove(reason)}
+        onConfirm={(reason) => pendingMove && void commitMove(pendingMove, reason)}
       />
     </div>
   );
-}
-
-function groupEventsForView(
-  view: CalendarViewMode,
-  anchor: Date,
-  events: ScheduledJobEvent[],
-): Array<{ key: string; label: string; date: Date; events: ScheduledJobEvent[] }> {
-  if (view === 'day') {
-    const day = startOfDay(anchor);
-    return [
-      {
-        key: day.toISOString(),
-        label: day.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
-        date: day,
-        events: eventsForDay(events, day),
-      },
-    ];
-  }
-
-  if (view === 'week') {
-    const weekStart = startOfWeek(anchor);
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = addDays(weekStart, index);
-      return {
-        key: date.toISOString(),
-        label: date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }),
-        date,
-        events: eventsForDay(events, date),
-      };
-    });
-  }
-
-  const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-  const daysInMonth = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0).getDate();
-  return Array.from({ length: daysInMonth }, (_, index) => {
-    const date = addDays(monthStart, index);
-    return {
-      key: date.toISOString(),
-      label: String(date.getDate()),
-      date,
-      events: eventsForDay(events, date),
-    };
-  });
-}
-
-function eventsForDay(events: ScheduledJobEvent[], day: Date): ScheduledJobEvent[] {
-  const key = day.toDateString();
-  return events
-    .filter((event) => new Date(event.scheduledAt).toDateString() === key)
-    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
 }
 
 export { resolveRange };
