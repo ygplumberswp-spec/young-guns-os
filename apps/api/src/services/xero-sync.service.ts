@@ -884,7 +884,9 @@ export class XeroSyncService {
         state.contacts.pulledCount > 0 ||
         state.completedStages.length > 0;
 
-      if (!recoverable || state.failedStage) {
+      // Stage failures (failedStage) with a preserved checkpoint auto-resume on scheduler
+      // tick — same outcome as manual retryImportSyncJob, which clears failedStage.
+      if (!recoverable) {
         continue;
       }
 

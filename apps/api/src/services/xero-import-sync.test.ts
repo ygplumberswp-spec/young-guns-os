@@ -7,6 +7,7 @@ import { resolveImportedInvoiceNumber, buildSyncedInvoiceMappingLookup } from '.
 import {
   XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_STALE_JOB_MS,
+  parseImportJobState,
 } from './xero-import-job.processor.js';
 import { XERO_REQUEST_TIMEOUT_MS } from '../lib/xero.client.js';
 
@@ -134,6 +135,35 @@ test('buildXeroImportSyncMessage reports failed stage without financial detail',
   assert.match(message, /timed out during payments/);
   assert.match(message, /Last sync was not updated/);
   assert.doesNotMatch(message, /amount|\$|ZAR|invoice number/i);
+});
+
+test('parseImportJobState preserves failedStage and checkpoint for auto-resume eligibility', () => {
+  const restored = parseImportJobState({
+    failedStage: 'payments',
+    stageError: 'Failed query: lateral join',
+    checkpoint: {
+      stage: 'payments',
+      contactsPage: 8,
+      invoicesPage: 7,
+      paymentsPage: 1,
+      bankTransactionsPage: 1,
+    },
+    completedStages: ['contacts', 'invoices'],
+    contacts: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
+    invoices: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
+    payments: { createdCount: 0, updatedCount: 0, pulledCount: 0, failedCount: 0, skippedCount: 0 },
+    bankTransactions: {
+      createdCount: 0,
+      updatedCount: 0,
+      pulledCount: 0,
+      failedCount: 0,
+      skippedCount: 0,
+    },
+  });
+
+  assert.equal(restored.failedStage, 'payments');
+  assert.equal(restored.checkpoint.stage, 'payments');
+  assert.deepEqual(restored.completedStages, ['contacts', 'invoices']);
 });
 
 test('timeout constants are finite and ordered for safe sync budgets', () => {
