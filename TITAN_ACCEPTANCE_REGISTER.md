@@ -49,7 +49,7 @@
 | FRZ-003 | §4 | Locked visual identity (SVG wordmark, fonts, login) | All | N/A | N/A | Partial | N/A | N/A | Partial | N/A | Yes | Staging reports + Sprint 004 shell tests | — | — | Partially implemented | Brand foundation closed; responsive shell contract tests added Phase 3 | Cursor | UX reports | `TitanWordmark.test.ts`, `brand-shell.test.ts` |
 | FRZ-004 | §5 | Owner Command Centre (quick actions + panels + search) | Owner | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | UX-I partial | Cartrack/Maps | — | Partially implemented | Quick actions, attention panel, KPI deep-links, global search nav wired locally; live fleet map still open | Cursor | Sprint 005 | `entity-routes.test.ts`, dashboard |
 | FRZ-005 | §6 | Customer/property/job contract + immutable snapshots | Owner/Dispatch | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | **Staging Phase 5 E2E 10/10** | — | — | Partially implemented | Job detail finance strip quick-actions local (UX-017); CRM properties panel local | Cursor | Sprint 009 | `TITAN_PHASE5_STAGING_REPORT.md`, `JobFinanceStrip.tsx` |
-| FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Staging UX-B 35/35 | Cartrack optional | — | Implemented, not staging-verified | Staging E2E not re-run on current commit | Cursor | b9bd4b0 | `TITAN_UX_B_CLOSURE_VERIFICATION_REPORT.md` |
+| FRZ-006 | §7 | Crew/vehicle/technician mobile execution | Tech/Dispatch | Yes | Yes | Yes | Yes | Yes | Yes | Yes | Yes | **Staging Phase 6 E2E 12/12** + UX-B 35/35 | Cartrack optional | — | **Verified complete (staging)** | Crew assign + calendar labels + cross-tenant job denial on Railway staging | Cursor | Sprint 011 | `diagnostic-output/141-staging-phase6-e2e.json` |
 | FRZ-007 | §8 | Complete business-day timeline + labour events | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | — | Partially implemented | Mobile `/mobile/time` job picker + job # on entries (UX-029); full day timeline incomplete | Cursor | Sprint 009 | `MobileTimePage.tsx`, OPS-014 |
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
 | FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | — | Quote send | Partially implemented | BOQ workspace + plan quotes largely missing | Cursor | UX-E | `finance-contract.test.ts` |
@@ -77,7 +77,7 @@
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
 | Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E 10/10 GO — `diagnostic-output/140-staging-phase5-e2e.json` |
-| Crew/Vehicle assignment | **Office UI implemented (local)** | `JobCrewAssignmentPanel` + schedule calendar execution labels; staging E2E pending FRZ-006 |
+| Crew/Vehicle assignment | **Verified complete (staging)** | Phase 6 E2E 12/12 GO — crew assign, calendar crew label, site contact E.164; `diagnostic-output/141-staging-phase6-e2e.json` |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement |
 | Quote/BOQ → Approval | Partially implemented | UX-E quotes; job detail finance quick-actions local (UX-017); BOQ workspace missing |
@@ -91,7 +91,7 @@
 ## Next verification targets (ordered)
 
 1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
-2. **FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; scheduling calendar execution labels **local complete**; staging E2E proof still required  
+2. ~~**FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; scheduling calendar execution labels **local complete**; staging E2E proof still required~~ **DONE** — see `diagnostic-output/141-staging-phase6-e2e.json` (12/12 GO)  
 3. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 4. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 

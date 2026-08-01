@@ -197,3 +197,21 @@
 | **Approval required?** | Fix job-create payload or use lead→convert path like Phase 5 runner; re-run E2E for FRZ-006 **GO** |
 | **Next phase selected** | Re-run Phase 6 staging E2E after payload fix; UX-017/029 local work already at Sprint 009 checkpoint |
 
+---
+
+## Sprint 011 — Phase 6 staging E2E alignment (FRZ-006 GO)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 6 — FRZ-006 crew assignment + calendar execution labels (staging proof) |
+| **Result** | Phase 6 runner aligned with Phase 5 lead→convert job chain; cross-tenant denial accepts job 404 (crew GET returns empty 200 by tenant scope) |
+| **Checkpoint** | `4a37600` (prior); commit pending this sprint |
+| **Files changed** | `staging-phase6-public-e2e.mjs`, `diagnostic-output/141-staging-phase6-e2e.json`, evidence index + sprint log + acceptance register |
+| **Migration** | None |
+| **Tests** | E2E only — `node packages/db/scripts/staging-phase6-public-e2e.mjs` against `young-guns-os-staging.up.railway.app` (staging ref `cpkuwtaipjxeipvbssvn`; production ref not touched) |
+| **Staging E2E** | `diagnostic-output/141-staging-phase6-e2e.json` — **12/12 GO** |
+| **Deploy** | Not performed |
+| **Approval required?** | None for this sprint — FRZ-006 staging proof closed |
+| **Next phase selected** | FRZ-015 AURA provider gate or UX-017/029 follow-ups per acceptance register |
+

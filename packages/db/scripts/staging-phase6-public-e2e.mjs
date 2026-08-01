@@ -315,11 +315,25 @@ async function main() {
   });
   const foreignToken = foreignSignup.json?.data?.session?.accessToken;
   if (foreignToken) {
-    const denied = await api(`/api/v1/jobs/${jobId}/crew`, { token: foreignToken });
-    if (denied.status === 403 || denied.status === 404) {
-      pass(report.results, 'cross_tenant_crew_denied', String(denied.status));
+    const deniedJob = await api(`/api/v1/jobs/${jobId}`, { token: foreignToken });
+    const deniedCrew = await api(`/api/v1/jobs/${jobId}/crew`, { token: foreignToken });
+    const blocked =
+      deniedJob.status === 403 ||
+      deniedJob.status === 404 ||
+      deniedCrew.status === 403 ||
+      deniedCrew.status === 404;
+    if (blocked) {
+      pass(
+        report.results,
+        'cross_tenant_crew_denied',
+        `job=${deniedJob.status}, crew=${deniedCrew.status}`,
+      );
     } else {
-      fail(report.results, 'cross_tenant_crew_denied', String(denied.status));
+      fail(
+        report.results,
+        'cross_tenant_crew_denied',
+        `job=${deniedJob.status}, crew=${deniedCrew.status}`,
+      );
     }
   } else {
     fail(report.results, 'cross_tenant_crew_denied', 'foreign signup failed');
