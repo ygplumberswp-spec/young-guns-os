@@ -14,6 +14,7 @@ import {
   formatDayPlanDisplayDate,
   localPlanDateIso,
   type DayPlanCategory,
+  type DayPlanPriority,
   type DayPlanStatus,
   type DayPlanSummary,
 } from '@titan/shared';
@@ -59,6 +60,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
   const planDate = useMemo(() => localPlanDateIso(), []);
   const [draft, setDraft] = useState('');
   const [category, setCategory] = useState<DayPlanCategory | ''>('');
+  const [priority, setPriority] = useState<DayPlanPriority>('normal');
   const [plans, setPlans] = useState<DayPlanSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
@@ -117,10 +119,12 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
         content: trimmed,
         planDate,
         category: category || undefined,
+        priority,
       });
       setPlans((current) => [plan, ...current.filter((row) => row.id !== plan.id)]);
       setDraft('');
       setCategory('');
+      setPriority('normal');
       setSaveStatus('saved');
       inputRef.current?.focus();
     } catch (err) {
@@ -157,11 +161,11 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
   return (
     <section
       className={`day-planning${compact ? ' day-planning--compact' : ''}`}
-      aria-label="Today’s priorities"
+      aria-label="Today's plan"
     >
       <div className="day-planning__header">
         <div>
-          <h3 className="day-planning__title">Today’s priorities</h3>
+          <h3 className="day-planning__title">Today&apos;s plan</h3>
           <p className="day-planning__date page-muted">
             {formatDayPlanDisplayDate(planDate)}
             {activeCount > 0 ? ` · ${activeCount} active` : ''}
@@ -184,15 +188,23 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
             />
             <select
               className="titan-input day-planning__select"
+              value={priority}
+              aria-label="Priority"
+              disabled={isSaving}
+              onChange={(event) => setPriority(event.target.value as DayPlanPriority)}
+            >
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+            </select>
+            <select
+              className="titan-input day-planning__select"
               value={category}
-              aria-label="Department"
+              aria-label="Category"
               disabled={isSaving}
               onChange={(event) => setCategory(event.target.value as DayPlanCategory | '')}
             >
-              <option value="">Any department</option>
-              {DAY_PLAN_CATEGORIES.filter((entry) =>
-                ['marketing', 'communications', 'operations'].includes(entry.value),
-              ).map((option) => (
+              <option value="">Optional category</option>
+              {DAY_PLAN_CATEGORIES.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -246,10 +258,30 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
             const dept = categoryLabel(plan.category);
 
             return (
-              <li key={plan.id} className="day-planning__item">
+              <li
+                key={plan.id}
+                className={`day-planning__item${plan.priority === 'high' ? ' day-planning__item--high' : ''}${plan.status === 'completed' ? ' day-planning__item--completed' : ''}`}
+              >
+                <label className="day-planning__check">
+                  <input
+                    type="checkbox"
+                    checked={plan.status === 'completed'}
+                    disabled={!canWrite}
+                    aria-label={`Mark complete: ${plan.content}`}
+                    onChange={() =>
+                      void handleStatusChange(plan, {
+                        status: plan.status === 'completed' ? 'active' : 'completed',
+                        progressPct: plan.status === 'completed' ? 0 : 100,
+                      })
+                    }
+                  />
+                </label>
                 <div className="day-planning__item-main">
                   <p className="day-planning__item-text">{plan.content}</p>
                   <div className="day-planning__item-meta">
+                    {plan.priority === 'high' ? (
+                      <StatusBadge label="High priority" tone="warning" />
+                    ) : null}
                     <StatusBadge label={displayStatus(plan)} tone={statusTone(plan)} />
                     {dept ? <StatusBadge label={dept} tone="info" /> : null}
                     <span className="page-muted">
@@ -259,51 +291,15 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
                 </div>
                 {canWrite ? (
                   <MoreMenu
-                    label="Priority actions"
+                    label="Plan actions"
                     items={[
-                      ...(plan.status === 'active' && plan.progressPct === 0
-                        ? [
-                            {
-                              id: 'in_progress',
-                              label: 'Mark in progress',
-                              onSelect: () =>
-                                void handleStatusChange(plan, { progressPct: 50 }),
-                            },
-                          ]
-                        : []),
-                      ...(plan.status !== 'completed'
-                        ? [
-                            {
-                              id: 'done',
-                              label: 'Mark done',
-                              onSelect: () =>
-                                void handleStatusChange(plan, {
-                                  status: 'completed',
-                                  progressPct: 100,
-                                }),
-                            },
-                          ]
-                        : []),
                       ...(plan.status !== 'archived'
                         ? [
                             {
-                              id: 'deferred',
-                              label: 'Defer',
+                              id: 'archive',
+                              label: 'Archive',
                               onSelect: () =>
                                 void handleStatusChange(plan, { status: 'archived' }),
-                            },
-                          ]
-                        : []),
-                      ...(plan.status !== 'active' || plan.progressPct > 0
-                        ? [
-                            {
-                              id: 'planned',
-                              label: 'Reset to planned',
-                              onSelect: () =>
-                                void handleStatusChange(plan, {
-                                  status: 'active',
-                                  progressPct: 0,
-                                }),
                             },
                           ]
                         : []),

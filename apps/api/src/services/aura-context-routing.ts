@@ -17,6 +17,7 @@ export type AuraContextDomain =
   | 'integrations'
   | 'intelligence'
   | 'memory'
+  | 'dayPlan'
   | 'analytics'
   | 'orchestration'
   | 'sales'
@@ -67,6 +68,7 @@ const ALL_DOMAINS: AuraContextDomain[] = [
   'integrations',
   'intelligence',
   'memory',
+  'dayPlan',
   'analytics',
   'orchestration',
   'sales',
@@ -155,6 +157,10 @@ const KEYWORD_DOMAINS: Array<{ pattern: RegExp; domains: AuraContextDomain[] }> 
   { pattern: /\b(quality|inspection|compliance)\b/i, domains: ['qualityAssurance'] },
   { pattern: /\b(asset|equipment|maintenance)\b/i, domains: ['assetEquipment'] },
   { pattern: /\b(recommend|insight|intelligence|memory)\b/i, domains: ['intelligence', 'memory'] },
+  {
+    pattern: /\b(today'?s plan|day plan|daily priorit|today'?s focus|today'?s priorit)\b/i,
+    domains: ['dayPlan', 'executive'],
+  },
   { pattern: /\b(procurement|purchase order|supplier|vendor)\b/i, domains: ['procurement'] },
   {
     pattern: /\b(saas|platform|developer)\b/i,
