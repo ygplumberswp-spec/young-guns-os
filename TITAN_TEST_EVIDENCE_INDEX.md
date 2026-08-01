@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — FRZ-018f Xero staging PARTIAL (schedulers enabled; schedule seed pending); FRZ-019 local audit PARTIAL  
+**Updated (UTC):** 2026-08-01 — GLOBAL-AUTOSYNC-179 framework PARTIAL (DB 5 PASS; API owner token optional)  
 **Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -191,7 +191,8 @@
 | `TITAN_FRZ015_AURA_STAGING_REPORT.md` | **FRZ-015 staging verify — GO** (Owner configured; live synthetic 12/12) |
 | `diagnostic-output/169-frz015-aura-staging-verify.json` | FRZ-015 blocked probe (credential absent) |
 | `diagnostic-output/170-frz015-aura-staging-verify-go.json` | **FRZ-015 GO** — live synthetic AURA staging verify (12/12, no secrets) |
-| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging verify — PARTIAL** (OAuth connected; schedulers enabled; schedule seed pending) |
+| `diagnostic-output/179-global-autosync-staging-verify.json` | **GLOBAL-AUTOSYNC-179 PARTIAL** — Young Guns Xero connected; schedule=1; checkpoint contacts; no 90s timeout |
+| `TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md` | App-wide event bus + background work framework |
 | `diagnostic-output/171-frz018-xero-staging-readiness.json` | FRZ-018 blocked probe (credential absent) |
 | `diagnostic-output/172-frz018-xero-staging-readonly-verify.json` | FRZ-018b PAUSE-OAUTH — oauthConfigured=true, 14 PASS / 8 PAUSE |
 | `diagnostic-output/174-frz018c-xero-staging-readonly-verify.json` | FRZ-018c PARTIAL — Young Guns Plumbing connected; 14 PASS / 8 PARTIAL, no secrets |

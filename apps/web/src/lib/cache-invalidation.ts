@@ -58,6 +58,11 @@ const PAYMENT_MUTATION_PREFIXES = [
   'finance/jobs',
   'finance/invoices',
 ] as const;
+const INTEGRATION_MUTATION_PREFIXES = [
+  'integrations/xero',
+  'integration-platform',
+  'background-work',
+] as const;
 const TEAM_MUTATION_PREFIXES = ['team/members', 'team/invites', 'team/roles'] as const;
 
 export function invalidateAfterCustomerMutation(
@@ -93,6 +98,13 @@ export function invalidateAfterPaymentMutation(
   accessToken: string | null,
 ): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...PAYMENT_MUTATION_PREFIXES]);
+}
+
+export function invalidateAfterIntegrationMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
+  invalidateStaffQueryPrefixes(scope, accessToken, [...INTEGRATION_MUTATION_PREFIXES]);
 }
 
 export function invalidateAfterTeamMutation(

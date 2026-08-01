@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018f Xero staging PARTIAL (schedulers enabled; schedule seed pending); FRZ-019 local audit PARTIAL  
-**Verdict:** **NOT PILOT-READY** (FRZ-018 Xero reconnect for auto-sync GO + remaining chain gaps)
+**Updated (UTC):** 2026-08-01 — GLOBAL-AUTOSYNC-179 PARTIAL (Xero background import + schedule seeded)  
+**Verdict:** **NOT PILOT-READY** (await full Xero import completion + remaining chain gaps)
 
 ---
 
@@ -15,7 +15,7 @@
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
-| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **PARTIAL** — Xero OAuth connected, schedulers enabled, 49 contacts; reconnect for auto-sync GO | Owner reconnect Xero on staging |
+| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; GLOBAL-AUTOSYNC-179 **PARTIAL** — Xero OAuth connected, schedule seeded, background import running | Await full Xero import |
 
 ---
 

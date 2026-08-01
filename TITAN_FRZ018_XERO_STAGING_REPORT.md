@@ -5,7 +5,21 @@
 **Production ref blocked:** `rshuiaghmtrvvilhqpwm` — not accessed  
 **Branch:** `cursor/titan-frozen-scope-completion`  
 **Updated (UTC):** 2026-08-01  
-**Verdict:** **PARTIAL** — Background import architecture deployed (`3120483`); scheduler processing pending job past 90s without timeout; contacts 49→85+; `last_sync_at` pending full stage completion; invoices/payments/bank pending
+**Verdict:** **PARTIAL** — Global auto-sync framework deployed; background import at contacts checkpoint; schedule seeded; `last_sync_at` pending full completion
+
+---
+
+## GLOBAL-AUTOSYNC-179 verification (2026-08-01)
+
+| Check | Result |
+|-------|--------|
+| TenantDomainEventBus + BackgroundWorkOrchestrator | **PASS-CODE** — wired in API bootstrap |
+| Domain events (lead.converted, job.completed) | **PASS-CODE** — enqueue follow-up jobs + cache invalidation |
+| Staging DB — Young Guns Xero | **PASS** — connected, schedule=1 |
+| Background import checkpoint | **PASS** — contacts stage, job running |
+| No 90s timeout in recent jobs | **PASS** |
+| `GET /background-work/status` | **PARTIAL** — deploy pending owner token probe |
+| Evidence | `diagnostic-output/179-global-autosync-staging-verify.json` |
 
 ---
 

@@ -213,6 +213,11 @@ import { EnterpriseSecurityService } from './services/enterprise-security.servic
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
 import { IntegrationSyncOrchestratorService } from './services/integration-sync-orchestrator.service.js';
+import { TenantDomainEventBus } from './services/tenant-domain-event-bus.service.js';
+import { BackgroundWorkQueueService } from './services/background-work-queue.service.js';
+import { BackgroundWorkOrchestratorService } from './services/background-work-orchestrator.service.js';
+import { bindTenantDomainEventBus } from './lib/tenant-domain-event-publisher.js';
+import { createBackgroundWorkRouter } from './routes/background-work.js';
 import { EnterpriseAnalyticsService } from './services/enterprise-analytics.service.js';
 import { createQualityRouter } from './routes/quality.js';
 import { createCommunicationsIntelligenceRouter } from './routes/communications-intelligence.js';
@@ -438,6 +443,16 @@ xeroOAuthService.setOnConnectedHook(({ companyId, userId }) => {
       console.error('[index] Xero auto-sync initial hook failed', error);
     });
 });
+const tenantDomainEventBus = new TenantDomainEventBus(db);
+bindTenantDomainEventBus(tenantDomainEventBus);
+const backgroundWorkQueueService = new BackgroundWorkQueueService(db);
+const backgroundWorkOrchestratorService = new BackgroundWorkOrchestratorService({
+  integrationSyncOrchestrator: integrationSyncOrchestratorService,
+  backgroundWorkQueue: backgroundWorkQueueService,
+  domainEventBus: tenantDomainEventBus,
+  xeroSyncService,
+});
+backgroundWorkOrchestratorService.registerDomainEventHandlers();
 integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
   void integrationSyncOrchestratorService
     .onProviderConnected({
@@ -1124,7 +1139,7 @@ const stopAutomationWorkers =
 
 const stopIntegrationSyncScheduler =
   env.runtime.schedulersEnabled && (isWorkerProcess || runtimeMode === 'scheduler' || runtimeMode === 'api')
-    ? startIntegrationSyncScheduler(integrationSyncOrchestratorService)
+    ? startIntegrationSyncScheduler(backgroundWorkOrchestratorService)
     : () => {
         /* integration sync scheduler disabled by runtime flags */
       };
@@ -2125,6 +2140,15 @@ app.use(
     businessIntegrationsService,
     xeroSyncService,
     integrationSyncOrchestratorService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/background-work',
+  createBackgroundWorkRouter({
+    backgroundWorkOrchestrator: backgroundWorkOrchestratorService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

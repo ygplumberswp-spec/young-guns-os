@@ -80,6 +80,11 @@ export function invalidateIntegrationReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:integration-platform`);
 }
 
+/** Clears background work status read caches for a tenant. */
+export function invalidateBackgroundWorkReadCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:background-work`);
+}
+
 /** Clears mission control read caches for a tenant. */
 export function invalidateMissionControlReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:mission-control`);

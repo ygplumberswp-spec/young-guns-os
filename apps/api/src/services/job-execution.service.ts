@@ -41,7 +41,7 @@ import {
   users,
   vehicles,
 } from '@titan/db';
-import { emitBusinessEvent } from '../lib/automation-events.js';
+import { publishTenantDomainEvent } from '../lib/tenant-domain-event-publisher.js';
 import { StockMovementError, type StockMovementsService } from './stock-movements.service.js';
 
 export class JobExecutionError extends Error {
@@ -468,7 +468,7 @@ export class JobExecutionService {
     });
 
     if (toStatus !== job.status) {
-      emitBusinessEvent({
+      publishTenantDomainEvent({
         companyId: scope.companyId,
         eventType: 'job.status_changed',
         entityType: 'job',
@@ -556,7 +556,7 @@ export class JobExecutionService {
       metadata: { reason: trimmedReason, toPhase },
     });
 
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: actor.companyId,
       eventType: 'job.status_changed',
       entityType: 'job',
@@ -842,7 +842,7 @@ export class JobExecutionService {
       },
     });
 
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: actor.companyId,
       eventType: 'job.material_used',
       entityType: 'job_material_line',
@@ -1015,7 +1015,7 @@ export class JobExecutionService {
       },
     });
 
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: actor.companyId,
       eventType: 'job.material_used',
       entityType: 'job_material_line',
@@ -1445,7 +1445,7 @@ export class JobExecutionService {
     });
 
     // Never call Xero (or any provider) directly here — downstream automation subscribes to these events.
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: scope.companyId,
       eventType: 'job.status_changed',
       entityType: 'job',
@@ -1462,7 +1462,7 @@ export class JobExecutionService {
         executionPhase: 'completed',
       },
     });
-    emitBusinessEvent({
+    publishTenantDomainEvent({
       companyId: scope.companyId,
       eventType: 'job.completed',
       entityType: 'job',

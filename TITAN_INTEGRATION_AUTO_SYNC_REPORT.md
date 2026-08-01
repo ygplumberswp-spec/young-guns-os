@@ -9,7 +9,7 @@
 
 ## Summary
 
-Implemented a unified **IntegrationSyncOrchestrator** with scheduled polling, OAuth/connect hooks, truthful UI states, and **Xero background import jobs** (checkpointed paginated batches, 45s per-tick budget — no whole-sync 90s wall clock). Manual Sync now is recovery-only in UI copy and de-emphasized placement; sync POST returns immediately and UI polls `/integrations/xero/sync/status`.
+Implemented a unified **IntegrationSyncOrchestrator** plus app-wide **BackgroundWorkOrchestrator** / **TenantDomainEventBus** (see `TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md`). Scheduled polling, OAuth/connect hooks, truthful UI states, and **Xero background import jobs** (checkpointed paginated batches, 45s per-tick budget — no whole-sync 90s wall clock). Manual Sync now is recovery-only; sync POST returns immediately and UI polls status endpoints.
 
 ---
 

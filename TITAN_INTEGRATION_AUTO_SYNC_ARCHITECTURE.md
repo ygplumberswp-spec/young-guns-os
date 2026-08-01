@@ -3,6 +3,8 @@
 **Updated:** 2026-08-01  
 **Scope:** Staging-only verification (`cpkuwtaipjxeipvbssvn`) — never production.
 
+**See also:** `TITAN_GLOBAL_REALTIME_AUTO_SYNC_ARCHITECTURE.md` — app-wide event bus, background work queue, and internal domain events.
+
 ---
 
 ## Phase 1 — Inspection findings (before changes)

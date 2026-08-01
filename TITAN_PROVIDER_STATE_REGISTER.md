@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — Integration auto-sync orchestrator (Xero FULL, Cartrack FULL hooks)  
+**Updated (UTC):** 2026-08-01 — GLOBAL-AUTOSYNC-179: Xero background import + auto-sync schedule seeded (Young Guns)  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -24,7 +24,7 @@
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
 | **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018f PARTIAL** — OAuth connected; 49 contacts; `SCHEDULERS_ENABLED` enabled; 0 schedule rows | Auto-sync panel | **OAuth connected — schedulers enabled; schedule seed pending reconnect** | Reconnect Xero on staging to fire connect hook; verify `177-frz018f-auto-sync-schedulers-verify.json` |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 GLOBAL-AUTOSYNC-179 PARTIAL** — OAuth connected; schedule=1; background import at contacts checkpoint; no 90s timeout | Auto-sync + background work panels | **OAuth connected — background import running** | Monitor `179-global-autosync-staging-verify.json`; await full import for lastSyncAt |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

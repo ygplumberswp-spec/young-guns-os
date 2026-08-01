@@ -1,9 +1,10 @@
+import type { BackgroundWorkOrchestratorService } from '../services/background-work-orchestrator.service.js';
 import type { IntegrationSyncOrchestratorService } from '../services/integration-sync-orchestrator.service.js';
 
 const DEFAULT_INTERVAL_MS = 60_000;
 
 export function startIntegrationSyncScheduler(
-  orchestrator: IntegrationSyncOrchestratorService,
+  orchestrator: IntegrationSyncOrchestratorService | BackgroundWorkOrchestratorService,
   options?: { intervalMs?: number },
 ): () => void {
   const intervalMs = options?.intervalMs ?? DEFAULT_INTERVAL_MS;
@@ -17,7 +18,11 @@ export function startIntegrationSyncScheduler(
     tickRunning = true;
 
     try {
-      await orchestrator.runScheduledSyncs();
+      if ('processTick' in orchestrator) {
+        await orchestrator.processTick();
+      } else {
+        await orchestrator.runScheduledSyncs();
+      }
     } catch (error: unknown) {
       console.error('[integration-sync-scheduler] Tick failed', error);
     } finally {
