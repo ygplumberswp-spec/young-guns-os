@@ -277,6 +277,11 @@ export type JobExecutionSummary = {
   pendingVariations: JobVariationSummary[];
   completionGate: JobCompletionGateResult;
   evidence: JobEvidenceOfficeSummary[];
+  /** Job-linked labour captured from mobile time entries (UX-029). */
+  labour: {
+    entryCount: number;
+    totalMinutes: number;
+  };
 };
 
 /** Default checklist keys by broad job-type family. */

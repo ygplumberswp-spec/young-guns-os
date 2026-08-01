@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 009 UX-017 finance strip + UX-029 job time UX  
+**Updated (UTC):** 2026-08-01 — Sprint 011 Phase 5 **17/17** + Phase 6 **12/12** staging E2E  
 **Automated test files:** 49 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -129,7 +129,7 @@
 | `TITAN_UX_*_STAGING_REPORT.md` | UX tranches A–K |
 | `TITAN_STAGING_TEST_RESULTS.md` | Staging harness 75/0 |
 | `diagnostic-output/*.json` | Playwright diagnostics |
-| `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 10/10 GO** |
+| `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 17/17 GO** (audit history, record links, finance empty state, cross-tenant) |
 | `diagnostic-output/141-staging-phase6-e2e.json` | **Phase 6 staging E2E — 12/12 GO** (lead→convert job chain, crew assign, calendar labels, cross-tenant job denial) |
 | `packages/db/scripts/staging-phase6-public-e2e.mjs` | Phase 6 public API E2E runner (crew + calendar labels) |
 | `TITAN_PHASE5_STAGING_REPORT.md` | Phase 5 staging verification report |

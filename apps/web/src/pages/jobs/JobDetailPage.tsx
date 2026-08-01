@@ -549,6 +549,14 @@ export function JobDetailPage() {
                   </dd>
                 </div>
                 <div>
+                  <dt>Labour time</dt>
+                  <dd>
+                    {execution.labour.entryCount === 0
+                      ? 'No job-linked labour recorded yet'
+                      : `${execution.labour.entryCount} entr${execution.labour.entryCount === 1 ? 'y' : 'ies'} · ${execution.labour.totalMinutes} min total`}
+                  </dd>
+                </div>
+                <div>
                   <dt>Pending variations</dt>
                   <dd>{execution.pendingVariations.length}</dd>
                 </div>

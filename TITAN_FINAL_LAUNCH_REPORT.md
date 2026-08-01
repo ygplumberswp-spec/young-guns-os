@@ -1,7 +1,7 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
+**Updated (UTC):** 2026-08-01 — Phase 5 **17/17** + Phase 6 office **12/12** staging E2E  
 **Status:** **NOT LAUNCH-READY**
 
 ---
@@ -13,8 +13,8 @@
 | **Verified complete (116-row register)** | **31 / 116 (~27%)** |
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
-| **Highest remaining risk** | Phase 6 staging E2E (FRZ-006) + staging DB credential drift |
-| **Current gate** | Phase 6 crew assignment UI local; staging proof blocked on credentials |
+| **Highest remaining risk** | Field mobile UX-B re-run on current commit + live provider credentials |
+| **Current gate** | FRZ-015 AURA provider; FRZ-018 Xero OAuth (Owner approval) |
 
 ---
 
@@ -22,7 +22,8 @@
 
 | Phase | Scope | Outcome | Commit | Evidence |
 |------:|-------|---------|--------|----------|
-| 5 | Phase 5 staging E2E — lead → customer → property → job | **GO 10/10** | Pending Sprint 007 commit | `TITAN_PHASE5_STAGING_REPORT.md` |
+| 5 | Phase 5 staging E2E — lead → customer → property → job | **GO 17/17** | Sprint 011 | `140-staging-phase5-e2e.json` |
+| 6 | Phase 6 staging E2E — office crew + calendar labels | **GO 12/12** | Sprint 011 | `141-staging-phase6-e2e.json` |
 
 ---
 

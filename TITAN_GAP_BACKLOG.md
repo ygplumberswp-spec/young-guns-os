@@ -95,7 +95,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | Dashboard / UX-012 | ~~False zero welcome / empty upcoming~~ **CLOSED staging (UX-I)** | CLOSED | Truthful KPI strip + today scheduled panel |
 | ~~UX-008 / UX-009~~ | **CLOSED (UX-E staging)** — job finance chips + invoice stages | — | — |
 | UX-013 | Customer list no search; no address column | **CLOSED (Sprint 003)** | Search name/phone/address — **OPS-001** |
-| UX-017 | Job detail missing snapshot + finance strip | PARTIAL | Ops header with site + linked numbers — **OPS-005** |
+| UX-017 | Job detail finance strip + quick actions | **CLOSED (local + staging empty state)** | `JobFinanceStrip` + Phase 5 finance summary 0 chips — **OPS-005** |
 | UX-018 | Schedule cards show JOB#/site/contact/priority/access | **CLOSED (UX-D staging)** | Suburb + operational context on events — **OPS-006** |
 | UX-022 | Receipts + payment search **CLOSED (UX-E)**; payment links still missing | PARTIAL | Payment links — **FIN-014** |
 | UX-024 / UX-043 | ~~No Maps honesty / address deep-link~~ **CLOSED staging (UX-I)** | CLOSED | Stored-data Maps surfaces; live Directions still OUT — **FLT-008** |
@@ -114,7 +114,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | OPS-003 | `/leads` and `/sales-intelligence` overlap (+ convert gap Critical above) | PARTIAL | Single nav entry — **UX-019** |
 | OPS-004 | Standalone contacts entity missing | MISSING | Spec if needed |
 | OPS-013 / UX-044 | ~~Offline observability-only~~ | **CLOSED (staging web)** | IndexedDB queue + flush + states; optional store packaging later |
-| OPS-014 / UX-029 | Time tracking not strongly job-linked in UI | PARTIAL | Job-scoped time UX |
+| OPS-014 / UX-029 | Time tracking job-linked in office + mobile UI | **CLOSED (local)** | Office execution labour rollup + mobile job-scoped time |
 | FIN-009–010 | Outstanding surfaced on home (**UX-I**); richer cash-flow analytics still open | PARTIAL | Home outstanding ✓ — deeper cash panels later |
 | FIN-012–013 | Stripe missing; EFT manual only | MISSING / PARTIAL | Product decision |
 | FLT-004–005 | Trips/events derived heuristically | PARTIAL | Prefer provider trip/event APIs |

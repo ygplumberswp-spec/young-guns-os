@@ -1191,7 +1191,7 @@ export class JobExecutionService {
   async getExecutionSummary(scope: ExecutionScope, jobId: string): Promise<JobExecutionSummary> {
     const job = await this.requireJob(scope.companyId, jobId);
 
-    const [crew, vehicle, pendingVariations, completionGate, docs] = await Promise.all([
+    const [crew, vehicle, pendingVariations, completionGate, docs, labourRows] = await Promise.all([
       this.getCrew(scope.companyId, jobId),
       this.getActiveVehicle(scope.companyId, jobId),
       this.listVariations(scope.companyId, jobId, 'pending'),
@@ -1213,7 +1213,19 @@ export class JobExecutionService {
           createdAt: true,
         },
       }),
+      this.db.query.mobileTimeEntries.findMany({
+        where: and(
+          eq(mobileTimeEntries.companyId, scope.companyId),
+          eq(mobileTimeEntries.jobId, jobId),
+        ),
+        columns: { durationMinutes: true },
+      }),
     ]);
+
+    const labourTotalMinutes = labourRows.reduce(
+      (sum, row) => sum + (row.durationMinutes ?? 0),
+      0,
+    );
 
     return {
       jobId,
@@ -1223,6 +1235,10 @@ export class JobExecutionService {
       vehicle,
       pendingVariations,
       completionGate,
+      labour: {
+        entryCount: labourRows.length,
+        totalMinutes: labourTotalMinutes,
+      },
       evidence: docs.map((doc) => {
         const hasBinary = Boolean(doc.storageKey);
         return {

@@ -181,21 +181,22 @@
 
 ---
 
-## Sprint 010 — Phase 6 staging E2E script (public API)
+## Sprint 011 — Phase 5 re-verification + Phase 6 staging GO
 
 | Field | Value |
 |-------|--------|
 | **Timestamp (UTC)** | 2026-08-01 |
-| **Phase** | 6 — FRZ-006 crew assignment + calendar execution labels (staging proof) |
-| **Result** | Public staging E2E runner added; first run **NO-GO** at `job_create` (API validation: `customerId`, `siteContact` required — align payload with lead-convert chain or CRM pre-create) |
-| **Checkpoint** | `6b29117` (prior); commit pending this sprint |
-| **Files changed** | `staging-phase6-public-e2e.mjs`, `diagnostic-output/141-staging-phase6-e2e.json`, evidence index + sprint log |
-| **Migration** | None |
-| **Tests** | E2E only — `node packages/db/scripts/staging-phase6-public-e2e.mjs` against `young-guns-os-staging.up.railway.app` (staging ref `cpkuwtaipjxeipvbssvn`; production ref not touched) |
-| **Staging E2E** | `diagnostic-output/141-staging-phase6-e2e.json` — **4 pass / 1 fail** (`job_create`); verdict **NO-GO** |
-| **Deploy** | Not performed |
-| **Approval required?** | Fix job-create payload or use lead→convert path like Phase 5 runner; re-run E2E for FRZ-006 **GO** |
-| **Next phase selected** | Re-run Phase 6 staging E2E after payload fix; UX-017/029 local work already at Sprint 009 checkpoint |
+| **Phase** | 5 staging re-verification + Phase 6 FRZ-006 staging proof + UX-029 office labour rollup |
+| **Result** | Phase 5 **GO 17/17**; Phase 6 **GO 12/12**; UX-029 office job detail labour summary |
+| **Checkpoint** | pending commit |
+| **Files changed** | `staging-phase5-public-e2e.mjs` (audit + record links), `staging-phase6-public-e2e.mjs`, `job-execution.service.ts`, `JobDetailPage.tsx`, `job-execution.ts`, control docs |
+| **Migration** | Local staging apply **blocked** (`28P01`); live API implies **104** via prior 0104 apply + E2E behaviour |
+| **Tests** | `pnpm typecheck`, `pnpm test` (235 pass), `pnpm build` — pass |
+| **Staging E2E** | `140-staging-phase5-e2e.json` **17/17**; `141-staging-phase6-e2e.json` **12/12** |
+| **Deploy** | Railway CLI **blocked** (no token); verified against live staging API |
+| **Backup** | Local snapshot **blocked** (`28P01`); Supabase PITR + Railway rollback documented |
+| **Approval required?** | Staging DB password + Railway token for local migrate/redeploy only |
+| **Next phase selected** | Field execution UX-B re-run on current commit; FRZ-015 AURA provider gate |
 
 ---
 
