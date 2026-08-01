@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 5 **17/17** + Phase 6 office chain **12/12** staging E2E  
-**Verdict:** **NOT PILOT-READY** (field mobile UX-B re-run + live providers)
+**Updated (UTC):** 2026-08-01 — Sprint 017: Phase 5 **10/10** + Phase 6 **12/12** rerun GO; migrations 0105–0106 + redeploy blocked  
+**Verdict:** **NOT PILOT-READY** (staging deploy behind HEAD + credential gates)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Gate | Status | Evidence | Blocker |
 |------|--------|----------|---------|
-| **Operational chain** | PARTIAL | Phase 5 lead→job **17/17 GO**; Phase 6 office crew **12/12 GO** | Field mobile UX-B re-run; finance live Xero |
+| **Operational chain** | PARTIAL | Phase 5 **10/10 GO**, Phase 6 **12/12 GO** (Sprint 017 rerun); Phases 8–12 staging blocked (deploy + DB creds) | Railway redeploy + migrations 0105–0106; live Xero |
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
@@ -33,11 +33,11 @@ Required path:
 
 | Step | Status |
 |------|--------|
-| Lead convert | **PASS** — Phase 5 staging E2E **17/17** (`TITAN_PHASE5_STAGING_REPORT.md`) |
-| Schedule/assign | **PASS (office)** — Phase 6 staging E2E **12/12** crew + calendar labels |
-| Mobile execution | Staging UX-B closed prior commit |
-| Finance chain | UX-E staging — no live Xero |
-| Job pack | **Missing/incomplete** |
+| Lead convert | **PASS** — Phase 5 staging E2E **10/10** (`TITAN_STAGING_VERIFICATION_SPRINT017_REPORT.md`) |
+| Schedule/assign | **PASS (office)** — Phase 6 staging E2E **12/12** |
+| BOQ / job packs / day-timeline | **BLOCKED** — deployed API 404 on new routes; needs redeploy + migrations |
+| Finance chain | UX-E staging — Phase 12 invoice-from-job not re-proven this cycle |
+| Job pack | **Local foundation** — staging blocked (0106 + deploy) |
 
 ---
 

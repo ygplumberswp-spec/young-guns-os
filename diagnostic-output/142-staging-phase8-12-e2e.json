@@ -1,0 +1,93 @@
+{
+  "label": "STAGING-P8-12",
+  "phases": [
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "startedAt": "2026-08-01T07:48:20.333Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "forbiddenRefChecked": true,
+  "productionRefTouched": false,
+  "results": [
+    {
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database=connected"
+    },
+    {
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "6aaea890-5dfc-4943-868d-16677a479ffd"
+    },
+    {
+      "name": "p8_timeline_validation",
+      "status": "FAIL",
+      "detail": "404"
+    },
+    {
+      "name": "p8_day_timeline",
+      "status": "FAIL",
+      "detail": "{\"code\":\"NOT_FOUND\",\"message\":\"Route not found\"}"
+    },
+    {
+      "name": "p8_timeline_tenant_isolated",
+      "status": "FAIL",
+      "detail": "404"
+    },
+    {
+      "name": "fixture_job",
+      "status": "FAIL",
+      "detail": "job create failed"
+    },
+    {
+      "name": "p9_boq_route_mounted",
+      "status": "BLOCKED",
+      "detail": "404 — deploy HEAD + migration 0105 required"
+    },
+    {
+      "name": "p9_boq_list",
+      "status": "BLOCKED",
+      "detail": "blocked by missing route"
+    },
+    {
+      "name": "p9_boq_create",
+      "status": "BLOCKED",
+      "detail": "blocked by missing route"
+    },
+    {
+      "name": "p10_stock_movements_list",
+      "status": "FAIL",
+      "detail": "{\"code\":\"NOT_FOUND\",\"message\":\"Route not found\"}"
+    },
+    {
+      "name": "p10_stock_levels",
+      "status": "PASS",
+      "detail": "count=0"
+    },
+    {
+      "name": "p11_packs_route_mounted",
+      "status": "BLOCKED",
+      "detail": "404 — deploy HEAD + migration 0106 required"
+    },
+    {
+      "name": "p11_packs_list",
+      "status": "BLOCKED",
+      "detail": "blocked by missing route"
+    },
+    {
+      "name": "p11_pack_create",
+      "status": "BLOCKED",
+      "detail": "blocked by missing route"
+    }
+  ],
+  "totals": {
+    "passed": 3,
+    "failed": 5,
+    "blocked": 6
+  },
+  "verdict": "NO-GO",
+  "completedAt": "2026-08-01T07:48:35.325Z"
+}

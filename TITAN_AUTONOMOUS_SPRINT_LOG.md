@@ -271,10 +271,26 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 12 — Completion / invoice / payment / Xero finance chain remainder (local slice) |
 | **Result** | Job completion snapshot on execution summary; `JobCompletionFinancePanel` with Booked→Completed→Invoiced→Paid chain; invoice-from-job API (`POST /finance/jobs/:jobId/invoices`); payment prefill by invoice/job; Xero entity sync panel with honest OAuth blocking |
-| **Checkpoint** | pending commit |
+| **Checkpoint** | `8afeb87` |
 | **Files changed** | `job-finance-workflow.ts`, `JobCompletionFinancePanel.tsx`, `XeroSyncPanel.tsx`, `finance.service.ts`, `job-execution.service.ts`, `PaymentCreatePage.tsx`, `InvoiceDetailPage.tsx`, control docs |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (**265** pass: 91 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
 | **Approval required?** | No — local only; live Xero OAuth/sync still FRZ-018 |
 | **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth staging connect, staging migrations 0105–0106 apply |
+
+---
+
+## Sprint 017 — Staging verification (Phases 5–12, migrations 0105–0106)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Staging-only verification — migrations 0105–0106, redeploy, smoke Phases 5–12 |
+| **Result** | Phase 5 **10/10 GO**, Phase 6 **12/12 GO** on live Railway API; migrations **BLOCKED** (`28P01`); Railway redeploy **BLOCKED** (no `RAILWAY_TOKEN`); Phase 8–12 smoke **PARTIAL** (deployed API behind HEAD — BOQ/packs/day-timeline/movements 404) |
+| **Checkpoint** | `767b947` (pre-commit) |
+| **Files changed** | `staging-phase8-12-public-e2e.mjs`, control docs, diagnostic JSON |
+| **Migration** | `0105_boq_workspace`, `0106_job_document_packs` — **NOT APPLIED** (staging DB password auth) |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**242** pass), `pnpm build` — pass |
+| **Approval required?** | Staging DB password + Railway token (Owner); production untouched |
+| **Next phase selected** | Pause at staging credential gates; safe local work continues; FRZ-015 / FRZ-018 Owner gates |
 

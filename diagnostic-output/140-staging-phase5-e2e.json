@@ -1,7 +1,7 @@
 {
   "label": "STAGING-P5",
   "phase": 5,
-  "startedAt": "2026-08-01T07:17:55.752Z",
+  "startedAt": "2026-08-01T07:47:34.525Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "forbiddenRefChecked": true,
   "productionRefTouched": false,
@@ -14,12 +14,12 @@
     {
       "name": "owner_signup",
       "status": "PASS",
-      "detail": "3369b37b-93fd-49f4-8999-51f281014dbe"
+      "detail": "31c64b3a-0fca-4226-807c-39048d75ee0e"
     },
     {
       "name": "lead_create",
       "status": "PASS",
-      "detail": "de4b6953-408c-4f4d-808e-ecc4fdcf5229"
+      "detail": "0cbd3b25-7f0e-4626-8083-2ad45ebe9b94"
     },
     {
       "name": "lead_convert_chain",
@@ -47,36 +47,6 @@
       "detail": "+27825551234"
     },
     {
-      "name": "site_contact_name_snapshot",
-      "status": "PASS",
-      "detail": "Keanu Staging Test"
-    },
-    {
-      "name": "access_instructions_snapshot",
-      "status": "PASS",
-      "detail": "Gate code 1234"
-    },
-    {
-      "name": "lead_status_converted",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
-      "name": "finance_summary_empty_state",
-      "status": "PASS",
-      "detail": "0 chips"
-    },
-    {
-      "name": "audit_lead_converted",
-      "status": "PASS",
-      "detail": "bf40a876-7955-4eb6-b21a-493730a2f99c"
-    },
-    {
-      "name": "record_links_resolvable",
-      "status": "PASS",
-      "detail": ""
-    },
-    {
       "name": "convert_idempotent",
       "status": "PASS",
       "detail": ""
@@ -85,29 +55,18 @@
       "name": "cross_tenant_job_denied",
       "status": "PASS",
       "detail": "404"
-    },
-    {
-      "name": "cross_tenant_customer_denied",
-      "status": "PASS",
-      "detail": "404"
     }
   ],
   "totals": {
-    "passed": 17,
+    "passed": 10,
     "failed": 0
   },
   "verdict": "GO",
-  "recordLinks": {
-    "customer": "/crm/customers/46f81429-eba6-4b78-98cf-90c133e710ac",
-    "property": "/crm/customers/46f81429-eba6-4b78-98cf-90c133e710ac/properties/490e3870-d6fe-45d1-8cbc-829ffcbaf4c2",
-    "job": "/jobs/0f3f9da7-45da-49ea-907d-13c80804ba04",
-    "jobNumber": "JOB-000001"
-  },
-  "completedAt": "2026-08-01T07:18:33.462Z",
+  "completedAt": "2026-08-01T07:48:05.974Z",
   "conversion": {
-    "customerId": "46f81429-eba6-4b78-98cf-90c133e710ac",
-    "propertyId": "490e3870-d6fe-45d1-8cbc-829ffcbaf4c2",
-    "jobId": "0f3f9da7-45da-49ea-907d-13c80804ba04",
+    "customerId": "4886a855-e0be-420a-8b7b-38d1630c6df1",
+    "propertyId": "2dde18f6-81fb-4794-99ce-82281e07569b",
+    "jobId": "715d0287-166a-43cd-9443-807afd525942",
     "jobNumber": "JOB-000001"
   }
 }

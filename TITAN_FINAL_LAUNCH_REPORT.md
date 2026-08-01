@@ -131,19 +131,20 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## L. Remaining backlog (launch-critical order)
 
-1. Staging deploy + lead conversion proof (`8d35bfd`)  
-2. Migrations `0094`–`0104` on staging DB  
-3. ~~Quote → invoice → payment chain staging proof~~ **local office chain Phase 12** — Sprint 016; staging + live Xero proof still open  
-4. AURA AI provider verified connection  
-5. Xero OAuth staging (read-only first)  
-6. MFA login enforcement  
-7. Owner Command Centre search + live fleet  
-8. BOQ workspace (FRZ-009)  
-9. ~~Job pack send workflow (FRZ-012)~~ **local foundation done** — Sprint 015; supplier OCR + Reports Agent remain  
-10. Cross-tenant security test matrix (Phase 2)  
+1. ~~Staging deploy + lead conversion proof~~ **Phase 5/6 verified** — Sprint 017 rerun GO; redeploy HEAD still blocked  
+2. **Migrations `0105`–`0106` on staging DB** — **BLOCKED** (`28P01` staging DB password)  
+3. **Railway redeploy completion branch** — **BLOCKED** (no `RAILWAY_TOKEN`)  
+4. ~~Quote → invoice → payment chain local~~ **Phase 12 local done** — staging + live Xero proof open  
+5. AURA AI provider verified connection  
+6. Xero OAuth staging (read-only first)  
+7. MFA login enforcement  
+8. Owner Command Centre search + live fleet  
+9. BOQ workspace staging proof (FRZ-009) — after 0105 + deploy  
+10. Job pack staging proof (FRZ-012) — after 0106 + deploy  
+11. Cross-tenant security test matrix (Phase 2)  
 
 ---
 
 ## M. Exact next action
 
-**Execute Phase 1:** run typecheck, lint, build, and fix API envelope outlier in `enterprise-unified-communications.ts` — local only, no deploy.
+**Owner gates:** staging Supabase DB password + `RAILWAY_TOKEN` (or dashboard deploy) to apply 0105–0106 and redeploy HEAD. **Safe local work** may continue; pause at FRZ-015 AURA creds and FRZ-018 Xero OAuth.

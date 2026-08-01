@@ -1,7 +1,7 @@
 {
   "label": "STAGING-P6",
   "phase": 6,
-  "startedAt": "2026-08-01T07:21:35.913Z",
+  "startedAt": "2026-08-01T07:47:34.727Z",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "forbiddenRefChecked": true,
   "productionRefTouched": false,
@@ -14,22 +14,22 @@
     {
       "name": "owner_signup",
       "status": "PASS",
-      "detail": "dd60d752-d600-49b3-a3ab-a81443f8932a"
+      "detail": "93a9dcba-79ef-4007-9204-8195062e2adc"
     },
     {
       "name": "technician_role_lookup",
       "status": "PASS",
-      "detail": "13e07e31-baa9-47da-b5f2-af44f23b17a1"
+      "detail": "2655fb80-cc2b-4548-88bc-2b6596a7885c"
     },
     {
       "name": "technician_provision",
       "status": "PASS",
-      "detail": "e29cb9f8-b3e8-4500-ad09-014d803a7e76,67651d70-8763-47ee-96a4-c4ab2b419c1d"
+      "detail": "393564ab-41b4-4e0c-8234-5f0730d047ce,07102bac-1803-41ac-a471-096c1489fb4e"
     },
     {
       "name": "lead_create",
       "status": "PASS",
-      "detail": "72eb8f31-1da7-49ae-9e53-31093e7404ed"
+      "detail": "47d3ab6f-1b79-4ed2-93ca-bd89c799a1f8"
     },
     {
       "name": "job_create",
@@ -39,7 +39,7 @@
     {
       "name": "job_schedule",
       "status": "PASS",
-      "detail": "2026-08-03T07:22:02.193Z"
+      "detail": "2026-08-03T07:48:04.307Z"
     },
     {
       "name": "crew_assign",
@@ -72,9 +72,9 @@
     "failed": 0
   },
   "verdict": "GO",
-  "completedAt": "2026-08-01T07:22:15.335Z",
+  "completedAt": "2026-08-01T07:48:17.514Z",
   "job": {
-    "jobId": "5b86e4a1-139e-4f1c-a09d-de5e42050074",
+    "jobId": "fbc80694-9861-4caf-b5b0-af3340b1a753",
     "jobNumber": "JOB-000001"
   }
 }

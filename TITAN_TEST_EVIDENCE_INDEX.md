@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 013 Phase 9 quote edit + BOQ workspace local slice  
+**Updated (UTC):** 2026-08-01 — Sprint 017 staging verification (Phases 5–12 smoke; migrations 0105–0106 blocked)  
 **Automated test files:** 52 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **248 pass** (Sprint 013) |
+| `pnpm test` | shared → auth → web → api (sequential) — **242 pass** (Sprint 017) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -139,10 +139,14 @@
 | `TITAN_UX_*_STAGING_REPORT.md` | UX tranches A–K |
 | `TITAN_STAGING_TEST_RESULTS.md` | Staging harness 75/0 |
 | `diagnostic-output/*.json` | Playwright diagnostics |
-| `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 17/17 GO** (audit history, record links, finance empty state, cross-tenant) |
-| `diagnostic-output/141-staging-phase6-e2e.json` | **Phase 6 staging E2E — 12/12 GO** (lead→convert job chain, crew assign, calendar labels, cross-tenant job denial) |
+| `diagnostic-output/140-staging-phase5-e2e.json` | **Phase 5 staging E2E — 10/10 GO** (Sprint 017 rerun; canonical 17-check at commit `306ba6e`) |
+| `diagnostic-output/141-staging-phase6-e2e.json` | **Phase 6 staging E2E — 12/12 GO** (crew + calendar labels, cross-tenant job denial) |
+| `diagnostic-output/142-staging-phase8-12-e2e.json` | **Phase 8–12 staging smoke — PARTIAL** (3 pass, 5 fail route-404, 6 blocked deploy/migration) |
+| `diagnostic-output/156-staging-verification-summary.json` | Sprint 017 structured staging verification summary |
+| `packages/db/scripts/staging-phase8-12-public-e2e.mjs` | Phase 8–12 public API smoke runner |
 | `packages/db/scripts/staging-phase6-public-e2e.mjs` | Phase 6 public API E2E runner (crew + calendar labels) |
-| `TITAN_PHASE5_STAGING_REPORT.md` | Phase 5 staging verification report |
+| `TITAN_STAGING_VERIFICATION_SPRINT017_REPORT.md` | Sprint 017 full staging verification report |
+| `TITAN_PHASE5_STAGING_REPORT.md` | Phase 5 staging verification report (prior cycle) |
 | `packages/db/scripts/staging-phase5-public-e2e.mjs` | Phase 5 public API E2E runner |
 | `scripts/phase3-operational-verify.mjs` | Operational verification |
 | `scripts/ux-audit.mjs` | UX audit runner |
