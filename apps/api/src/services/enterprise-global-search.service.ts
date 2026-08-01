@@ -254,7 +254,15 @@ export class EnterpriseGlobalSearchService {
     if (canAccess(userPermissions, 'jobs:read')) {
       const jobs = await this.deps.jobsService.listJobs(scope.companyId);
       for (const job of jobs) {
-        const score = scoreMatch(query, mode, job.title, job.customerName, job.status);
+        const score = scoreMatch(
+          query,
+          mode,
+          job.jobNumber ?? '',
+          job.title,
+          job.customerName,
+          job.status,
+          job.addressDisplay ?? '',
+        );
         addResult(
           {
             entityType: 'job',
@@ -327,7 +335,13 @@ export class EnterpriseGlobalSearchService {
       }
 
       for (const payment of payments) {
-        const score = scoreMatch(query, mode, payment.invoiceNumber, payment.customerName);
+        const score = scoreMatch(
+          query,
+          mode,
+          payment.invoiceNumber,
+          payment.customerName,
+          payment.reference ?? '',
+        );
         addResult(
           {
             entityType: 'payment',

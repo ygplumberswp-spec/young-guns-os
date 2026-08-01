@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, INVOICE_STATUS_OPTIONS, type InvoiceSummary } from '@titan/shared';
 import { fetchInvoices } from '../../lib/finance-api';
@@ -14,9 +14,11 @@ function formatStatus(status: InvoiceSummary['status']): string {
 
 export function InvoiceListPage() {
   const { accessToken, user } = useAuth();
+  const search = useSearch();
+  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
   const [q, setQ] = useState('');
   const [status, setStatus] = useState('');
-  const [overdueOnly, setOverdueOnly] = useState(false);
+  const [overdueOnly, setOverdueOnly] = useState(() => searchParams.get('overdueOnly') === '1');
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);

@@ -46,7 +46,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 | POR-003 / OPS-016 | ETA in API, not shown on client jobs UI | BUILT BUT NOT VISIBLE / PARTIAL | Client promise | Render ETA on `/my` (and aliased `/portal`) — **UX-030** |
 | FIN-005 / FIN-007 | Xero connect/import live path not acceptance-proven this audit | BLOCKED | Core accounting | Staging Sync after Decision 3 classifier — **UX-006–011, UX-021** |
 | FLT-008 | ~~Honest Maps/ETA surfaces missing~~ **UX-I CLOSED staging** (live Maps SDK/Directions still OUT) | PARTIAL | Live provider ETA still open | Honest address/deep-link + capability states — **UX-024, UX-043 ✓**; live Maps deferred |
-| PLT-008 | MFA built but not enforced at login | PARTIAL | Security | Gate `/auth/login` when MFA enrolled |
+| PLT-008 | MFA built but not enforced at login | **CLOSED (Sprint 001/005)** | Security | Login MFA gate + `/auth/login/mfa` + web challenge flow |
 | ~~UX-001 / UX-002 / UX-005~~ | **CLOSED (UX-A)** — auto title, full create fields, `JOB-######` | — | — | Apply `0095` on staging; prove E2E against staging DB |
 | ~~UX-003 / UX-004~~ | **CLOSED (UX-A)** — immutable snapshot + explicit verified update checkboxes + audit | — | — | Staging acceptance |
 | ~~UX-010 (remainder)~~ | **CLOSED (UX-E staging)** — finance list search (q/status/overdue); job list already searchable | — | — | Live Xero # sync still depends on FIN-007 |
