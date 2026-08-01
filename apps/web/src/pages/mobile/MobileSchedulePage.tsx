@@ -1,5 +1,7 @@
 import { PageHeader } from '../../components/ux';
 import { useCallback, useMemo } from 'react';
+import { Link } from 'wouter';
+import { Button } from '@titan/ui';
 import {
   checkSchedulingConflicts,
   fetchAssignees,
@@ -11,6 +13,8 @@ import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessScheduling } from '../../features/scheduling/utils';
 import { SchedulingCalendar, resolveRange } from '../../components/calendar';
 import { useCalendarState } from '../../components/calendar/useCalendarState';
+import { StatusBadge } from '../../components/ux';
+import { formatTimeRange } from '../../components/calendar/calendar-utils';
 
 /** CAL-001 — technician own-calendar view (mobile route). */
 export function MobileSchedulePage() {
@@ -61,6 +65,29 @@ export function MobileSchedulePage() {
     [accessToken],
   );
 
+  const todayEvents = useMemo(() => {
+    const todayKey = new Date().toDateString();
+    return (calendar?.events ?? [])
+      .filter((event) => new Date(event.scheduledAt).toDateString() === todayKey)
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
+  }, [calendar?.events]);
+
+  const currentJob = useMemo(() => {
+    const now = Date.now();
+    return todayEvents.find((event) => {
+      const start = new Date(event.scheduledAt).getTime();
+      const end = event.scheduledEndAt
+        ? new Date(event.scheduledEndAt).getTime()
+        : start + 60 * 60_000;
+      return start <= now && now <= end;
+    });
+  }, [todayEvents]);
+
+  const nextJob = useMemo(() => {
+    const now = Date.now();
+    return todayEvents.find((event) => new Date(event.scheduledAt).getTime() > now);
+  }, [todayEvents]);
+
   if (!canView) {
     return (
       <div className="portal-page">
@@ -70,8 +97,39 @@ export function MobileSchedulePage() {
   }
 
   return (
-    <div className="portal-page">
-      <PageHeader title="My schedule" description="Your assigned jobs for the selected period." />
+    <div className="portal-page mobile-schedule-page">
+      <PageHeader title="My schedule" description="Today-first timeline and day calendar." />
+
+      <section className="mobile-schedule-page__highlights">
+        <article className="mobile-schedule-page__highlight">
+          <p className="mobile-schedule-page__label">Current job</p>
+          {currentJob ? (
+            <>
+              <h2>{currentJob.customerName}</h2>
+              <p>{formatTimeRange(currentJob.scheduledAt, currentJob.scheduledEndAt)}</p>
+              <StatusBadge tone="warning" label={currentJob.displayStatus} />
+              <Link href={`/mobile/jobs/${currentJob.id}`}>
+                <Button variant="primary">Open job</Button>
+              </Link>
+            </>
+          ) : (
+            <p className="page-muted">No job in progress right now.</p>
+          )}
+        </article>
+        <article className="mobile-schedule-page__highlight">
+          <p className="mobile-schedule-page__label">Next up</p>
+          {nextJob ? (
+            <>
+              <h2>{nextJob.customerName}</h2>
+              <p>{formatTimeRange(nextJob.scheduledAt, nextJob.scheduledEndAt)}</p>
+              <StatusBadge tone="info" label={nextJob.displayStatus} />
+            </>
+          ) : (
+            <p className="page-muted">No upcoming jobs today.</p>
+          )}
+        </article>
+      </section>
+
       <SchedulingCalendar
         calendar={calendar}
         assignees={assignees}
@@ -82,6 +140,7 @@ export function MobileSchedulePage() {
         showTechnicianFilter={false}
         pathname="/mobile/schedule"
         actions={actions}
+        compactHeader
         onRefresh={() => void reload()}
       />
     </div>

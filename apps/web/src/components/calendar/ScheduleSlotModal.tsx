@@ -9,6 +9,7 @@ type ScheduleSlotModalProps = {
   jobs: JobSummary[];
   assignees: JobAssignee[];
   canWrite: boolean;
+  defaultTechnicianId?: string | null;
   onClose: () => void;
   onSchedule: (
     jobId: string,
@@ -25,6 +26,7 @@ export function ScheduleSlotModal({
   jobs,
   assignees,
   canWrite,
+  defaultTechnicianId = null,
   onClose,
   onSchedule,
 }: ScheduleSlotModalProps) {
@@ -32,11 +34,13 @@ export function ScheduleSlotModal({
   const [jobId, setJobId] = useState(unscheduled[0]?.id ?? '');
   const [startLocal, setStartLocal] = useState(() => {
     const start = new Date(slotDate);
-    start.setHours(8, 0, 0, 0);
+    if (start.getHours() === 0 && start.getMinutes() === 0) {
+      start.setHours(8, 0, 0, 0);
+    }
     return toDatetimeLocalValue(start.toISOString());
   });
   const [endLocal, setEndLocal] = useState('');
-  const [assignedUserId, setAssignedUserId] = useState('');
+  const [assignedUserId, setAssignedUserId] = useState(defaultTechnicianId ?? '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +63,14 @@ export function ScheduleSlotModal({
   }
 
   return (
-    <div className="cal-modal-backdrop" role="dialog" aria-modal="true">
+    <div
+      className="cal-modal-backdrop"
+      role="dialog"
+      aria-modal="true"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <Panel title="Schedule in slot" className="cal-modal">
         {!canWrite ? (
           <p className="page-muted">You do not have permission to schedule jobs.</p>

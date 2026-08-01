@@ -85,24 +85,24 @@ export function SchedulingPage() {
 
   if (!canView) {
     return (
-      <div className="scheduling-page page-shell">
+      <div className="scheduling-page scheduling-page--calendar-first">
         <PageHeader title="Schedule" description="You do not have permission to view scheduling." />
       </div>
     );
   }
 
   return (
-    <div className="scheduling-page page-shell">
+    <div className="scheduling-page scheduling-page--calendar-first">
       <PageHeader
         title="Schedule"
-        description="Day, week, and month calendar for job scheduling and dispatch."
+        description="Dispatch calendar — week view opens by default."
         actions={
           <div className="scheduling-page__actions">
             <Link href="/workforce/day-timeline">
-              <Button variant="secondary">Day timeline</Button>
+              <Button variant="secondary">Live dispatch</Button>
             </Link>
             <Link href={`/aura?scheduling=1`}>
-              <Button variant="secondary">Ask {AI_NAME}</Button>
+              <Button variant="ghost">Ask {AI_NAME}</Button>
             </Link>
           </div>
         }
@@ -117,6 +117,7 @@ export function SchedulingPage() {
         canWrite={canWrite}
         showTechnicianFilter={calendar?.viewScope !== 'own'}
         actions={actions}
+        accessToken={accessToken}
         onRefresh={() => void reloadCalendar()}
       />
     </div>
