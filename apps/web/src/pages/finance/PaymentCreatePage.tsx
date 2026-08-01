@@ -16,6 +16,7 @@ export function PaymentCreatePage() {
   const [, navigate] = useLocation();
   const search = useSearch();
   const preJobId = useMemo(() => new URLSearchParams(search).get('jobId'), [search]);
+  const preInvoiceId = useMemo(() => new URLSearchParams(search).get('invoiceId'), [search]);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
   const [invoiceId, setInvoiceId] = useState('');
   const [amount, setAmount] = useState('');
@@ -52,7 +53,14 @@ export function PaymentCreatePage() {
 
         if (!cancelled) {
           setInvoices(openInvoices);
-          setInvoiceId(openInvoices[0]?.id ?? '');
+          const preferred =
+            (preInvoiceId
+              ? openInvoices.find((invoice) => invoice.id === preInvoiceId) ?? null
+              : null) ?? openInvoices[0] ?? null;
+          setInvoiceId(preferred?.id ?? '');
+          if (preferred && preferred.outstandingCents > 0) {
+            setAmount((preferred.outstandingCents / 100).toFixed(2));
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -67,7 +75,7 @@ export function PaymentCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken, preJobId]);
+  }, [accessToken, preInvoiceId, preJobId]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

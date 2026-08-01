@@ -2692,6 +2692,28 @@ a:focus-visible {
   border-color: var(--titan-border);
 }
 
+.finance-chain-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finance-chain-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--titan-border-subtle);
+}
+
+.finance-chain-step--done {
+  border-color: var(--titan-success-border, #2f855a);
+  background: color-mix(in srgb, var(--titan-success-bg, #f0fff4) 80%, transparent);
+}
+
 .finance-panel-actions {
   display: flex;
   flex-wrap: wrap;

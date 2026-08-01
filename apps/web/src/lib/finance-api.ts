@@ -107,6 +107,19 @@ export async function createInvoiceFromQuote(
   return data.invoice;
 }
 
+export async function createInvoiceFromJob(
+  accessToken: string,
+  jobId: string,
+  body: CreateInvoiceFromQuoteRequest,
+): Promise<InvoiceSummary> {
+  const data = await request<{ invoice: InvoiceSummary }>(`/finance/jobs/${jobId}/invoices`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.invoice;
+}
+
 export async function fetchInvoices(
   accessToken: string,
   query?: FinanceListQuery,

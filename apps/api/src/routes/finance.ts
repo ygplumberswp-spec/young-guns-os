@@ -283,6 +283,34 @@ export function createFinanceRouter({
       handleFinanceError(res, error);
     }
   });
+  router.post('/jobs/:jobId/invoices', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = z
+      .object({
+        clientActionId: z.string().min(1),
+        stage: z.enum(['deposit', 'progress', 'final', 'standard']),
+        dueDate: z.string().datetime().optional().nullable(),
+        notes: z.string().max(5000).optional().nullable(),
+        amountCents: z.number().int().positive().optional().nullable(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid invoice payload' } });
+      return;
+    }
+    try {
+      res.status(201).json({
+        data: {
+          invoice: await financeService.createInvoiceFromJob(
+            toFinanceActor(getAuth(req)),
+            routeParam(req.params.jobId),
+            parsed.data,
+          ),
+        },
+      });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
   router.get('/invoices/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const invoice = await financeService.getInvoiceDetail(getAuth(req).companyId, routeParam(req.params.id));
     if (!invoice) { res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Invoice not found' } }); return; }

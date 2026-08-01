@@ -10,6 +10,7 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
+import { XeroSyncPanel } from '../../features/integrations/XeroSyncPanel';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
 
@@ -270,6 +271,10 @@ export function XeroSettingsPage() {
                 ) : null}
               </div>
             </Panel>
+          ) : null}
+
+          {accessToken ? (
+            <XeroSyncPanel accessToken={accessToken} connection={connection} canManage={canManage} />
           ) : null}
         </>
       ) : null}

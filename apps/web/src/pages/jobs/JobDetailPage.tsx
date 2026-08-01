@@ -28,7 +28,7 @@ import { fetchJobFinanceSummary } from '../../lib/finance-api';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
-import { JobFinanceStrip } from '../../features/finance/JobFinanceStrip';
+import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
 import { canAccessFinance, canManageFinance, canViewFinanceProfit, canViewJobCosting } from '../../features/finance/utils';
 import { JobCostingPanel } from '../../features/jobs/JobCostingPanel';
 import { JobCompliancePanel } from '../../features/jobs/JobCompliancePanel';
@@ -423,12 +423,21 @@ export function JobDetailPage() {
           </dl>
         </Panel>
 
-        {canViewFinance ? (
-          <JobFinanceStrip
+        {canViewFinance && accessToken ? (
+          <JobCompletionFinancePanel
+            accessToken={accessToken}
             jobId={job.id}
             customerId={job.customerId}
+            jobStatus={job.status}
+            jobNumber={job.jobNumber}
             financeSummary={financeSummary}
+            execution={execution}
             canManageFinance={canWriteFinance}
+            onFinanceUpdated={async () => {
+              if (!accessToken) return;
+              const summary = await fetchJobFinanceSummary(accessToken, jobId);
+              setFinanceSummary(summary);
+            }}
           />
         ) : null}
 

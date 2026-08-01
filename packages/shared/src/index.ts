@@ -40,6 +40,7 @@ export * from './finance.js';
 export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-document-pack.js';
+export * from './job-finance-workflow.js';
 export * from './fleet.js';
 export * from './integrations.js';
 export * from './integration-capability.js';

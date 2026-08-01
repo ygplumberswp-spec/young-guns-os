@@ -1191,11 +1191,25 @@ export class JobExecutionService {
   async getExecutionSummary(scope: ExecutionScope, jobId: string): Promise<JobExecutionSummary> {
     const job = await this.requireJob(scope.companyId, jobId);
 
-    const [crew, vehicle, pendingVariations, completionGate, docs, labourRows] = await Promise.all([
+    const [crew, vehicle, pendingVariations, completionGate, completionSnapshotRow, docs, labourRows] =
+      await Promise.all([
       this.getCrew(scope.companyId, jobId),
       this.getActiveVehicle(scope.companyId, jobId),
       this.listVariations(scope.companyId, jobId, 'pending'),
       this.getCompletionGate(scope, jobId),
+      this.db.query.jobCompletionSnapshots.findFirst({
+        where: and(
+          eq(jobCompletionSnapshots.companyId, scope.companyId),
+          eq(jobCompletionSnapshots.jobId, jobId),
+        ),
+        columns: {
+          id: true,
+          jobId: true,
+          completedByUserId: true,
+          createdAt: true,
+          snapshot: true,
+        },
+      }),
       this.db.query.mobileJobDocumentation.findMany({
         where: and(
           eq(mobileJobDocumentation.companyId, scope.companyId),
@@ -1235,6 +1249,15 @@ export class JobExecutionService {
       vehicle,
       pendingVariations,
       completionGate,
+      completionSnapshot: completionSnapshotRow
+        ? {
+            id: completionSnapshotRow.id,
+            jobId: completionSnapshotRow.jobId,
+            completedByUserId: completionSnapshotRow.completedByUserId,
+            createdAt: completionSnapshotRow.createdAt.toISOString(),
+            snapshot: completionSnapshotRow.snapshot,
+          }
+        : null,
       labour: {
         entryCount: labourRows.length,
         totalMinutes: labourTotalMinutes,

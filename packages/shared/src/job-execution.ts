@@ -276,6 +276,7 @@ export type JobExecutionSummary = {
   vehicle: JobVehicleAssignmentSummary | null;
   pendingVariations: JobVariationSummary[];
   completionGate: JobCompletionGateResult;
+  completionSnapshot: JobCompletionSnapshotSummary | null;
   evidence: JobEvidenceOfficeSummary[];
   /** Job-linked labour captured from mobile time entries (UX-029). */
   labour: {

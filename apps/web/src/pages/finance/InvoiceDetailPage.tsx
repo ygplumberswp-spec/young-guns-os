@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
 import type { InvoiceDetail } from '@titan/shared';
-import { formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import { formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS, buildPaymentRecordHref } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchInvoice } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
@@ -92,7 +92,7 @@ export function InvoiceDetailPage() {
         actions={
           <div className="jobs-detail__actions">
             {canWrite ? (
-              <Link href="/finance/payments/new">
+              <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
                 <Button>Record payment</Button>
               </Link>
             ) : null}
@@ -258,7 +258,7 @@ export function InvoiceDetailPage() {
           )}
           {canWrite ? (
             <div className="finance-panel-actions">
-              <Link href="/finance/payments/new">
+              <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
                 <Button variant="secondary">Record payment</Button>
               </Link>
             </div>
