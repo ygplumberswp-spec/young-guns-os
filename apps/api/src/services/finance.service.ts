@@ -23,6 +23,8 @@ import {
   displayInvoiceNumber,
   formatInternalInvoiceNumber,
   formatMoney,
+  resolveEffectiveInvoiceOutstandingCents,
+  resolveEffectiveInvoiceTotalCents,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -37,6 +39,7 @@ import {
   quoteLineItems,
   quotes,
   securityAuditLogs,
+  xeroInvoiceMappings,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
@@ -118,7 +121,21 @@ export class FinanceService {
       orderBy: [desc(invoices.updatedAt)],
     });
 
-    return rows.map(toInvoiceSummary);
+    const mappings =
+      rows.length > 0
+        ? await this.db.query.xeroInvoiceMappings.findMany({
+            where: and(
+              eq(xeroInvoiceMappings.companyId, companyId),
+              inArray(
+                xeroInvoiceMappings.invoiceId,
+                rows.map((row) => row.id),
+              ),
+            ),
+          })
+        : [];
+    const mappingByInvoiceId = new Map(mappings.map((mapping) => [mapping.invoiceId, mapping]));
+
+    return rows.map((row) => toInvoiceSummary(row, mappingByInvoiceId.get(row.id)));
   }
 
   async listPayments(companyId: string, query: FinanceListQuery = {}): Promise<PaymentSummary[]> {
@@ -490,7 +507,7 @@ export class FinanceService {
       this.db.query.payments.findMany({ where: and(eq(payments.companyId, companyId), sql`exists (select 1 from invoices where invoices.id = ${payments.invoiceId} and invoices.job_id = ${jobId})`), with: { invoice: { with: { customer: true } } } }),
     ]);
     const quotesOut = quoteRows.map(row => toQuoteSummary(row, options.includeProfit ? profitFromQuote(row) : null));
-    const invoicesOut = invoiceRows.map(toInvoiceSummary); const paymentsOut = paymentRows.map(toPaymentSummary);
+    const invoicesOut = invoiceRows.map((row) => toInvoiceSummary(row)); const paymentsOut = paymentRows.map(toPaymentSummary);
     const currency = quotesOut[0]?.currency ?? invoicesOut[0]?.currency ?? 'ZAR';
     const quotedCents = quotesOut.reduce((sum, item) => sum + item.totalCents, 0);
     const accepted = quotesOut.find((item) => item.status === 'accepted') ?? null;
@@ -847,15 +864,36 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
   };
 }
 
-function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): InvoiceSummary {
+function toInvoiceSummary(
+  row: InvoiceWithRelations & Record<string, any>,
+  mapping?: typeof xeroInvoiceMappings.$inferSelect,
+): InvoiceSummary {
+  const xeroSyncStatus = mapping?.syncStatus ?? null;
+  const xeroInvoiceNumber =
+    row.xeroInvoiceNumber ?? mapping?.xeroInvoiceNumber ?? (xeroSyncStatus === 'synced' ? row.invoiceNumber : null);
+  const numberAuthority: InvoiceSummary['numberAuthority'] =
+    row.numberAuthority === 'xero' || xeroSyncStatus === 'synced'
+      ? 'xero'
+      : 'internal_pending_xero';
+  const totalCents = resolveEffectiveInvoiceTotalCents({
+    amountCents: row.amountCents,
+    totalCents: row.totalCents,
+  });
+  const financialDataComplete = totalCents > 0;
+
   return {
     id: row.id,
     invoiceNumber: row.invoiceNumber,
     internalNumber: row.internalNumber ?? row.invoiceNumber,
-    displayInvoiceNumber: displayInvoiceNumber(row),
-    xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
-    xeroReference: row.xeroReference ?? null,
-    numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as InvoiceSummary['numberAuthority'],
+    displayInvoiceNumber: displayInvoiceNumber({
+      xeroInvoiceNumber,
+      internalNumber: row.internalNumber,
+      invoiceNumber: row.invoiceNumber,
+      numberAuthority,
+    }),
+    xeroInvoiceNumber,
+    xeroReference: row.xeroReference ?? mapping?.xeroReference ?? null,
+    numberAuthority,
     title: row.title,
     status: row.status,
     stage: row.stage ?? 'standard',
@@ -868,12 +906,18 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     quoteNumber: row.quote?.quoteNumber ?? null,
     quoteVersionNumber: row.quoteVersionNumber ?? null,
     amountCents: row.amountCents,
-    totalCents: row.totalCents ?? row.amountCents,
+    totalCents,
     amountPaidCents: row.amountPaidCents,
-    outstandingCents: Math.max(0, (row.totalCents ?? row.amountCents) - row.amountPaidCents),
+    outstandingCents: resolveEffectiveInvoiceOutstandingCents({
+      amountCents: row.amountCents,
+      totalCents: row.totalCents,
+      amountPaidCents: row.amountPaidCents,
+    }),
     isOverdue: Boolean(row.dueDate && row.dueDate < new Date() && ['sent', 'partial', 'overdue'].includes(row.status)),
     currency: row.currency,
     dueDate: row.dueDate ? row.dueDate.toISOString() : null,
+    xeroSyncStatus,
+    financialDataComplete,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

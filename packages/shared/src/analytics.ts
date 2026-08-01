@@ -84,7 +84,9 @@ export type AnalyticsDashboard = {
     trend: AnalyticsTrendPoint[];
   };
   customerGrowth: {
+    /** Verified customers with qualifying invoice evidence — not raw Xero contact import count. */
     totalCustomers: number;
+    rawContactRecords: number;
     newInPeriod: number;
     previousPeriodNew: number;
     trend: AnalyticsTrendPoint[];
@@ -168,7 +170,9 @@ export type CustomerAnalytics = {
   range: AnalyticsDateRange;
   newCustomers: number;
   repeatCustomers: number;
+  /** Verified customers with qualifying invoice evidence. */
   totalCustomers: number;
+  rawContactRecords: number;
   activityCount: number;
   quoteConversionRatePercent: number | null;
   quotesSent: number;

@@ -37,6 +37,8 @@ export type XeroInvoiceRecord = {
   status: string | null;
   amountDue: number;
   amountPaid: number;
+  subtotal: number;
+  totalTax: number;
   total: number;
   currencyCode: string | null;
   issueDate: string | null;
@@ -642,6 +644,8 @@ function extractInvoices(payload: unknown): XeroInvoiceRecord[] {
         status: pickString(invoice, ['Status', 'status']),
         amountDue: pickNumber(invoice, ['AmountDue', 'amountDue']) ?? 0,
         amountPaid: pickNumber(invoice, ['AmountPaid', 'amountPaid']) ?? 0,
+        subtotal: pickNumber(invoice, ['SubTotal', 'subTotal', 'subtotal']) ?? 0,
+        totalTax: pickNumber(invoice, ['TotalTax', 'totalTax']) ?? 0,
         total: pickNumber(invoice, ['Total', 'total']) ?? 0,
         currencyCode: pickString(invoice, ['CurrencyCode', 'currencyCode']),
         issueDate: pickString(invoice, ['Date', 'date']),

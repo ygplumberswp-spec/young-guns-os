@@ -1989,15 +1989,18 @@ export class XeroSyncService {
           amountPaid: remote.amountPaid,
           total: remote.total,
         });
-        const amountCents = amountToCents(remote.total);
-        const amountPaidCents = amountToCents(remote.amountPaid);
+        const financials = buildImportedInvoiceFinancialFields(remote);
         const invoiceNumber = resolveImportedInvoiceNumber(remote.invoiceNumber, remote.invoiceId);
         const currency = remote.currencyCode ?? ctx.connection.config.baseCurrency ?? 'USD';
+        const importedIdentity = {
+          xeroInvoiceNumber: invoiceNumber,
+          numberAuthority: 'xero' as const,
+        };
 
         if (existingMapping) {
           const conflict = this.mappingConflictService?.detectInvoiceConflict(
-            { invoiceNumber: existingMapping.xeroInvoiceNumber, amountCents },
-            { invoiceNumber: remote.invoiceNumber, amountCents },
+            { invoiceNumber: existingMapping.xeroInvoiceNumber, amountCents: financials.amountCents },
+            { invoiceNumber: remote.invoiceNumber, amountCents: financials.amountCents },
           );
 
           if (conflict) {
@@ -2027,10 +2030,10 @@ export class XeroSyncService {
             .update(invoices)
             .set({
               status: nextStatus,
-              amountCents,
-              amountPaidCents,
+              ...financials,
               currency,
-              dueDate: remote.dueDate ? new Date(remote.dueDate) : undefined,
+              ...importedIdentity,
+              dueDate: remote.dueDate ? new Date(remote.dueDate) : null,
               issuedAt: remote.issueDate ? new Date(remote.issueDate) : undefined,
               updatedAt: new Date(),
             })
@@ -2069,10 +2072,10 @@ export class XeroSyncService {
             companyId: ctx.companyId,
             customerId,
             invoiceNumber,
+            ...importedIdentity,
             title: remote.invoiceNumber ?? `Invoice ${invoiceNumber}`,
             status: nextStatus,
-            amountCents,
-            amountPaidCents,
+            ...financials,
             currency,
             dueDate: remote.dueDate ? new Date(remote.dueDate) : null,
             issuedAt: remote.issueDate ? new Date(remote.issueDate) : new Date(),
@@ -2487,4 +2490,26 @@ export function resolveImportedInvoiceNumber(
   }
 
   return `XERO-${xeroInvoiceId.slice(0, 8).toUpperCase()}`;
+}
+
+export function buildImportedInvoiceFinancialFields(remote: {
+  total: number;
+  subtotal: number;
+  totalTax: number;
+  amountPaid: number;
+}) {
+  const totalCents = amountToCents(remote.total);
+  const subtotalCents = amountToCents(remote.subtotal);
+  const vatCents = amountToCents(remote.totalTax);
+  const amountPaidCents = amountToCents(remote.amountPaid);
+  const resolvedTotalCents =
+    totalCents > 0 ? totalCents : subtotalCents + vatCents > 0 ? subtotalCents + vatCents : 0;
+
+  return {
+    amountCents: resolvedTotalCents,
+    subtotalCents: subtotalCents > 0 ? subtotalCents : resolvedTotalCents,
+    vatCents,
+    totalCents: resolvedTotalCents,
+    amountPaidCents,
+  };
 }

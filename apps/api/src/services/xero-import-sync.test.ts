@@ -4,13 +4,37 @@ import { readFileSync } from 'node:fs';
 import {
   buildXeroImportSyncMessage,
 } from './xero-import-job.shared.js';
-import { resolveImportedInvoiceNumber, buildSyncedInvoiceMappingLookup } from './xero-sync.service.js';
+import { resolveImportedInvoiceNumber, buildImportedInvoiceFinancialFields, buildSyncedInvoiceMappingLookup } from './xero-sync.service.js';
 import {
   XERO_IMPORT_BATCH_BUDGET_MS,
   XERO_IMPORT_STALE_JOB_MS,
   parseImportJobState,
 } from './xero-import-job.processor.js';
 import { XERO_REQUEST_TIMEOUT_MS } from '../lib/xero.client.js';
+
+test('buildImportedInvoiceFinancialFields maps Xero totals to cents columns', () => {
+  const fields = buildImportedInvoiceFinancialFields({
+    total: 2472.5,
+    subtotal: 2150,
+    totalTax: 322.5,
+    amountPaid: 0,
+  });
+  assert.equal(fields.totalCents, 247250);
+  assert.equal(fields.amountCents, 247250);
+  assert.equal(fields.subtotalCents, 215000);
+  assert.equal(fields.vatCents, 32250);
+});
+
+test('buildImportedInvoiceFinancialFields falls back to subtotal plus tax when total is zero', () => {
+  const fields = buildImportedInvoiceFinancialFields({
+    total: 0,
+    subtotal: 1000,
+    totalTax: 150,
+    amountPaid: 0,
+  });
+  assert.equal(fields.totalCents, 115000);
+  assert.equal(fields.amountCents, 115000);
+});
 
 test('resolveImportedInvoiceNumber prefers Xero invoice number', () => {
   assert.equal(

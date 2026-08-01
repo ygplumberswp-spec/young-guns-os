@@ -12,7 +12,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
-import { PageHeader } from '../../components/ux';
+import { AutosaveIndicator, PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
 
@@ -215,9 +215,7 @@ export function InvoiceCreatePage() {
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
-      {draftShell.autosave.statusLabel ? (
-        <p className="finance-draft-status">{draftShell.autosave.statusLabel}</p>
-      ) : null}
+      <AutosaveIndicator status={draftShell.autosave.status} className="finance-draft-status" />
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 

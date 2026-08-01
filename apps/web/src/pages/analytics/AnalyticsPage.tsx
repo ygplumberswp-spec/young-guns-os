@@ -265,7 +265,7 @@ export function AnalyticsPage() {
                 <StatCard
                   label="New customers"
                   value={String(dashboardQuery.data.customerGrowth.newInPeriod)}
-                  hint={`${dashboardQuery.data.customerGrowth.totalCustomers} total customers`}
+                  hint={`${dashboardQuery.data.customerGrowth.totalCustomers} verified customers (${dashboardQuery.data.customerGrowth.rawContactRecords} Xero contacts imported)`}
                 />
                 <StatCard
                   label="Outstanding"
@@ -561,6 +561,8 @@ export function AnalyticsPage() {
                   <div>
                     <dt>Total customers</dt>
                     <dd>{customersQuery.data.totalCustomers}</dd>
+                    <dt>Imported Xero contacts</dt>
+                    <dd>{customersQuery.data.rawContactRecords}</dd>
                   </div>
                   <div>
                     <dt>Activity events</dt>

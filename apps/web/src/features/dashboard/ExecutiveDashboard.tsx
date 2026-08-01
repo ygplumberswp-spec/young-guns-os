@@ -2,6 +2,7 @@ import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { CustomerValueMetricsPanel } from '../crm/CustomerValueMetricsPanel';
+import { SectionErrorBoundary } from '../../components/ux';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
@@ -30,42 +31,54 @@ export function ExecutiveDashboard() {
         isLoading={isLoading}
       />
 
-      <TodayAtAGlanceGrid
-        data={summary?.todayAtAGlance ?? null}
-        isLoading={isLoading}
-        error={loadError}
-        onRetry={() => void summaryQuery.refetch()}
-      />
+      <SectionErrorBoundary sectionName="Today at a glance" onRetry={() => void summaryQuery.refetch()}>
+        <TodayAtAGlanceGrid
+          data={summary?.todayAtAGlance ?? null}
+          isLoading={isLoading}
+          error={loadError}
+          onRetry={() => void summaryQuery.refetch()}
+        />
+      </SectionErrorBoundary>
 
       <div className="exec-dashboard-grid">
-        <LiveOperationsPanel
-          jobs={summary?.liveOperations ?? []}
-          isLoading={isLoading}
-          error={loadError}
-          onRetry={() => void summaryQuery.refetch()}
-        />
-        <CompletedTodayPanel
-          jobs={summary?.completedToday ?? []}
-          isLoading={isLoading}
-          error={loadError}
-          onRetry={() => void summaryQuery.refetch()}
-        />
+        <SectionErrorBoundary sectionName="Live operations" onRetry={() => void summaryQuery.refetch()}>
+          <LiveOperationsPanel
+            jobs={summary?.liveOperations ?? []}
+            isLoading={isLoading}
+            error={loadError}
+            onRetry={() => void summaryQuery.refetch()}
+          />
+        </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Completed today" onRetry={() => void summaryQuery.refetch()}>
+          <CompletedTodayPanel
+            jobs={summary?.completedToday ?? []}
+            isLoading={isLoading}
+            error={loadError}
+            onRetry={() => void summaryQuery.refetch()}
+          />
+        </SectionErrorBoundary>
       </div>
 
       <div className="exec-dashboard-grid">
-        <PrioritiesSummaryPanel
-          priorities={summary?.priorities ?? null}
-          isLoading={isLoading}
-        />
-        <TeamTodayPanel
-          members={summary?.teamToday ?? []}
-          isLoading={isLoading}
-          error={loadError}
-          onRetry={() => void summaryQuery.refetch()}
-        />
+        <SectionErrorBoundary sectionName="Priorities">
+          <PrioritiesSummaryPanel
+            priorities={summary?.priorities ?? null}
+            isLoading={isLoading}
+          />
+        </SectionErrorBoundary>
+        <SectionErrorBoundary sectionName="Team today" onRetry={() => void summaryQuery.refetch()}>
+          <TeamTodayPanel
+            members={summary?.teamToday ?? []}
+            isLoading={isLoading}
+            error={loadError}
+            onRetry={() => void summaryQuery.refetch()}
+          />
+        </SectionErrorBoundary>
       </div>
 
-      <CustomerValueMetricsPanel compact />
+      <SectionErrorBoundary sectionName="Customer value">
+        <CustomerValueMetricsPanel compact />
+      </SectionErrorBoundary>
     </div>
   );
 }

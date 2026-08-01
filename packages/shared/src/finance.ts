@@ -205,6 +205,8 @@ export type InvoiceSummary = {
   isOverdue: boolean;
   currency: string;
   dueDate: string | null;
+  xeroSyncStatus?: 'synced' | 'pending' | 'failed' | 'out_of_sync' | null;
+  financialDataComplete?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -443,6 +445,26 @@ export function formatInternalInvoiceNumber(sequence: number): string {
   return `TITAN-INV-${String(sequence).padStart(6, '0')}`;
 }
 
+/** Prefer stored total; fall back to legacy amount_cents when total_cents was never populated (Xero import gap). */
+export function resolveEffectiveInvoiceTotalCents(input: {
+  amountCents: number;
+  totalCents?: number | null;
+}): number {
+  const total = input.totalCents ?? 0;
+  if (total > 0) return total;
+  return input.amountCents > 0 ? input.amountCents : 0;
+}
+
+export function resolveEffectiveInvoiceOutstandingCents(input: {
+  amountCents: number;
+  totalCents?: number | null;
+  amountPaidCents: number;
+}): number {
+  const total = resolveEffectiveInvoiceTotalCents(input);
+  if (total <= 0) return 0;
+  return Math.max(0, total - input.amountPaidCents);
+}
+
 export function displayInvoiceNumber(input: {
   xeroInvoiceNumber?: string | null;
   internalNumber?: string | null;
@@ -450,6 +472,7 @@ export function displayInvoiceNumber(input: {
   numberAuthority?: string | null;
 }): string {
   if (input.xeroInvoiceNumber?.trim()) return input.xeroInvoiceNumber.trim();
+  if (input.numberAuthority === 'xero') return input.invoiceNumber;
   const internal = input.internalNumber?.trim() || input.invoiceNumber;
   return `Pending Xero sync (${internal})`;
 }
