@@ -261,11 +261,8 @@ export function QuoteEditPage() {
       <PageHeader
         title="Edit quote"
         description="Update draft quote lines, scope and approval status."
-        showBack
         backFallbackHref={`/finance/quotes/${quoteId}`}
-        onBackNavigate={() =>
-          draftShell.guard.guardNavigation(() => navigate(`/finance/quotes/${quoteId}`))
-        }
+        guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
       {draftShell.autosave.statusLabel ? (

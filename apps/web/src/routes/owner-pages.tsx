@@ -14,6 +14,14 @@ export const DashboardPage = lazyNamed(
   'DashboardPage',
 );
 export const AuraPage = lazyNamed(() => import('../pages/aura/AuraPage'), 'AuraPage');
+export const TodaysPlanPage = lazyNamed(
+  () => import('../pages/aura/TodaysPlanPage'),
+  'TodaysPlanPage',
+);
+export const BusinessRulesPage = lazyNamed(
+  () => import('../pages/aura/BusinessRulesPage'),
+  'BusinessRulesPage',
+);
 export const SettingsIndexPage = lazyNamed(
   () => import('../pages/settings/SettingsIndexPage'),
   'SettingsIndexPage',

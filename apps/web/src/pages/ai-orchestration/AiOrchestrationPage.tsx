@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import type {
   AiExecutiveDashboard,
   AiProviderSummary,

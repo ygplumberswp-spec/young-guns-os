@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import { QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import {
   PortalApiClientError,

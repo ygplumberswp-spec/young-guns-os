@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { JobDocumentPackChannel, JobDocumentPackDetail } from '@titan/shared';
 import {
   JOB_DOCUMENT_PACK_CHANNEL_OPTIONS,
@@ -145,9 +146,6 @@ export function JobPackDetailPage() {
       <div className="documents-page">
         <PageHeader title="Job pack" />
         <p className="form-error">{error}</p>
-        <Link href="/documents/job-packs">
-          <Button variant="secondary">Back to job packs</Button>
-        </Link>
       </div>
     );
   }
@@ -274,9 +272,6 @@ export function JobPackDetailPage() {
       </div>
 
       <div className="jobs-form__actions">
-        <Link href="/documents/job-packs">
-          <Button variant="secondary">Back to job packs</Button>
-        </Link>
       </div>
     </div>
   );

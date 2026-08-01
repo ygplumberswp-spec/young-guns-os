@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, PageLoadState, Panel } from '@titan/ui';
 import { BOQ_STATUS_OPTIONS, type BoqDocumentSummary } from '@titan/shared';
 import { fetchBoqDocuments } from '../../lib/boq-api';
 import { useAuth } from '../../lib/auth-context';

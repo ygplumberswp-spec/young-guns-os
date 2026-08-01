@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'wouter';
-import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Input, Panel } from '@titan/ui';
 import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
 import {

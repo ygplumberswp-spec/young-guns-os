@@ -1174,6 +1174,136 @@ a:focus-visible {
   color: var(--titan-text);
 }
 
+.aura-intelligence__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.aura-intelligence__counts {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.aura-intelligence__plan-link {
+  align-self: flex-start;
+  margin-top: 0.25rem;
+}
+
+.aura-intelligence__urgent-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.aura-intelligence__urgent-card {
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 22%, var(--titan-border));
+  border-radius: 0.75rem;
+  background: var(--titan-surface-elevated);
+}
+
+.aura-intelligence__urgent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.todays-plan-page__grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.day-plan-follow-ups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.875rem;
+  background: var(--titan-surface-elevated);
+}
+
+.day-plan-follow-ups__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.day-plan-follow-ups__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.day-plan-follow-ups__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.75rem;
+  background: var(--titan-surface);
+}
+
+.day-plan-follow-ups__item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.day-plan-follow-ups__reason {
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+}
+
+.day-plan-follow-ups__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.625rem;
+  margin: 0.625rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.day-plan-follow-ups__meta dt {
+  color: var(--titan-text-muted);
+}
+
+.day-plan-follow-ups__meta dd {
+  margin: 0.125rem 0 0;
+  font-weight: 500;
+}
+
+.day-plan-follow-ups__merged {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.day-plan-follow-ups__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .todays-plan-page__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: start;
+  }
+}
+
 .aura-intelligence__list {
   list-style: none;
   padding: 0;
@@ -1243,10 +1373,12 @@ a:focus-visible {
 }
 
 .aura-quick-memory__save {
-  min-width: 4.25rem;
-  padding-inline: 0.875rem;
-  align-self: start;
-  font-size: 0.8125rem;
+  min-width: 3.5rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  align-self: center;
+  font-size: 0.75rem;
+  line-height: 1.2;
 }
 
 .aura-quick-memory__status {
@@ -1347,14 +1479,403 @@ a:focus-visible {
 
 @media (max-width: 640px) {
   .aura-quick-memory__composer {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
   }
 
   .aura-quick-memory__save {
-    width: 100%;
+    width: auto;
   }
 
   .aura-quick-memory__item {
+    flex-direction: column;
+  }
+}
+
+.day-planning {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.day-planning--compact {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 24%, transparent);
+  border-radius: 0.875rem;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--titan-surface-elevated) 92%, var(--titan-accent) 8%) 0%,
+    var(--titan-surface-elevated) 100%
+  );
+}
+
+.day-planning__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.day-planning__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.day-planning__date {
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.day-planning__composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 10rem auto;
+  gap: 0.625rem;
+  align-items: start;
+}
+
+.day-planning__input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 30%, var(--titan-border));
+  border-radius: 0.625rem;
+  background: var(--titan-surface);
+  color: var(--titan-text);
+  font: inherit;
+}
+
+.day-planning__input:focus {
+  outline: 2px solid color-mix(in srgb, var(--titan-accent) 45%, transparent);
+  outline-offset: 1px;
+  border-color: var(--titan-accent);
+}
+
+.day-planning__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.625rem;
+  align-items: end;
+}
+
+.day-planning__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+}
+
+.day-planning__select {
+  min-height: 2.75rem;
+  font-size: 0.8125rem;
+}
+
+.day-planning__save {
+  min-width: 4.25rem;
+  padding-inline: 0.875rem;
+  font-size: 0.8125rem;
+}
+
+.day-planning__status {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.day-planning__status--saved {
+  color: color-mix(in srgb, var(--titan-accent) 72%, var(--titan-text));
+}
+
+.day-planning__status--failed {
+  color: #b91c1c;
+}
+
+.day-planning__retry {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.day-planning__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.day-planning__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.625rem;
+  background: var(--titan-surface);
+}
+
+.day-planning__item--high {
+  border-color: color-mix(in srgb, var(--titan-accent) 42%, var(--titan-border));
+}
+
+.day-planning__item--completed {
+  opacity: 0.78;
+}
+
+.day-planning__check {
+  flex-shrink: 0;
+  padding-top: 0.125rem;
+}
+
+.day-planning__item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.day-planning__item-text {
+  margin: 0;
+  font-weight: 500;
+}
+
+.day-planning__item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.375rem;
+}
+
+.day-planning__completed {
+  margin-top: 0.25rem;
+}
+
+.day-planning__completed-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--titan-text-muted);
+}
+
+.day-planning__list--completed .day-planning__item-text {
+  text-decoration: line-through;
+}
+
+.aura-section-nav {
+  margin-bottom: 1rem;
+}
+
+.aura-rules-page__quick-add,
+.aura-todays-plan-page__quick-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.625rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.aura-rules-page__input,
+.aura-todays-plan-page__input {
+  width: 100%;
+  min-height: 2.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface);
+  color: var(--titan-text);
+}
+
+.aura-rules-page__save,
+.aura-todays-plan-page__save {
+  min-width: 3.5rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.aura-rules-page__status,
+.aura-todays-plan-page__status {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.aura-rules-page__status--saved,
+.aura-todays-plan-page__status--saved {
+  color: color-mix(in srgb, var(--titan-accent) 72%, var(--titan-text));
+}
+
+.aura-rules-page__status--failed {
+  color: #b91c1c;
+}
+
+.aura-rules-page__list,
+.aura-todays-plan-page__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.aura-rules-page__card,
+.aura-todays-plan-page__card {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--titan-border);
+  border-radius: var(--titan-radius-lg);
+  background: color-mix(in srgb, var(--titan-surface) 92%, var(--titan-accent) 8%);
+}
+
+.aura-rules-page__card-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.aura-rules-page__card-instruction,
+.aura-todays-plan-page__card-task {
+  margin: 0;
+  font-size: 0.9375rem;
+}
+
+.aura-rules-page__card-meta,
+.aura-todays-plan-page__card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--titan-text-muted);
+}
+
+.aura-rules-page__card-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.aura-rules-page__drawer {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 45%, transparent);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 40;
+}
+
+.aura-rules-page__drawer-panel {
+  width: min(28rem, 100%);
+  height: 100%;
+  overflow: auto;
+  padding: 1.25rem;
+  background: var(--titan-surface);
+  border-left: 1px solid var(--titan-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.aura-rules-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.aura-rules-page__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aura-rules-page__drawer-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.aura-todays-plan-page__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--titan-radius-md);
+  background: color-mix(in srgb, var(--titan-accent) 12%, var(--titan-surface));
+  font-size: 0.875rem;
+}
+
+.aura-todays-plan-page__section {
+  margin-bottom: 1.25rem;
+}
+
+.aura-todays-plan-page__section-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.aura-todays-plan-page__suggestions {
+  margin-bottom: 1.25rem;
+}
+
+.aura-todays-plan-page__suggestion-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.aura-todays-plan-page__suggestion {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem;
+  border: 1px dashed var(--titan-border);
+  border-radius: var(--titan-radius-md);
+}
+
+.aura-todays-plan-page__review {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--titan-border);
+}
+
+@media (max-width: 640px) {
+  .aura-rules-page__quick-add,
+  .aura-todays-plan-page__quick-add {
+    grid-template-columns: 1fr;
+  }
+
+  .aura-rules-page__card,
+  .aura-todays-plan-page__card {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .day-planning__composer {
+    grid-template-columns: 1fr;
+  }
+
+  .day-planning__save {
+    width: 100%;
+  }
+
+  .day-planning__item {
     flex-direction: column;
   }
 }

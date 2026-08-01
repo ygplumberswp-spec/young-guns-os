@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { InventoryLocationSummary, PurchaseOrderDetail, PurchaseOrderStatus } from '@titan/shared';
 import { formatMoney } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -152,9 +153,6 @@ export function PurchaseOrderDetailPage() {
     return (
       <div className="inventory-page">
         <PageHeader title="Purchase order not found" description="This order may have been removed." />
-        <Link href="/procurement">
-          <Button variant="secondary">Back to purchase orders</Button>
-        </Link>
       </div>
     );
   }
@@ -170,11 +168,6 @@ export function PurchaseOrderDetailPage() {
       <PageHeader
         title={purchaseOrder.referenceNumber}
         description={`${purchaseOrder.supplierName} · ${formatMoney(purchaseOrder.totalCostCents)}`}
-        actions={
-          <Link href="/procurement">
-            <Button variant="secondary">Back to purchase orders</Button>
-          </Link>
-        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}

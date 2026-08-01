@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useRoute } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import type { AgentProfileDetail, AgentProfileStatus } from '@titan/shared';
 import { AGENT_PROFILE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -184,9 +185,6 @@ export function AgentProfileDetailPage() {
           title="Profile not found"
           description="This agent profile could not be found."
         />
-        <Link href="/aura/agents" className="agents-link">
-          Back to dashboard
-        </Link>
       </div>
     );
   }
@@ -198,9 +196,6 @@ export function AgentProfileDetailPage() {
         description={`${formatAgentKey(profile.agentKey)} profile with permissions and tool grants.`}
         actions={
           <div className="agents-detail-actions">
-            <Link href="/aura/agents">
-              <Button variant="secondary">Back to dashboard</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel editing' : 'Edit profile'}

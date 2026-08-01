@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import type { CxLoyaltyReferralSummary } from '@titan/shared';
 import {
   PortalApiClientError,

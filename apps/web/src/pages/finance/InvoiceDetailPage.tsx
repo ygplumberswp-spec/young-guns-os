@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceDetail } from '@titan/shared';
 import { formatMoney, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS, buildPaymentRecordHref } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -73,9 +74,6 @@ export function InvoiceDetailPage() {
       <div className="finance-page">
         <PageHeader title="Invoice" description="Invoice detail" />
         <p className="form-error">{error}</p>
-        <Link href="/finance/invoices">
-          <Button variant="secondary">Back to invoices</Button>
-        </Link>
       </div>
     );
   }
@@ -96,9 +94,6 @@ export function InvoiceDetailPage() {
                 <Button>Record payment</Button>
               </Link>
             ) : null}
-            <Link href="/finance/invoices">
-              <Button variant="ghost">Back to invoices</Button>
-            </Link>
           </div>
         }
       />

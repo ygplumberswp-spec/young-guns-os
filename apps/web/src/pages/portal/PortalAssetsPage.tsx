@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { AlCustomerAssetSummary } from '@titan/shared';
 import { PortalApiClientError, portalRequest } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

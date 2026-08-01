@@ -1,41 +1,33 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState } from '@titan/ui';
-import type { Recommendation } from '@titan/shared';
-import {
-  fetchIntelligenceDashboard,
-  fetchRecommendations,
-} from '../../lib/intelligence-api';
+import { buildDashboardSummaryLine } from '@titan/shared';
+import { buildGreetingSalutation, fetchDashboardSummary } from '../../lib/intelligence-api';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { AuraQuickMemoryInput } from './AuraQuickMemoryInput';
+import { useAuth } from '../../lib/auth-context';
 
 type AuraBusinessDashboardProps = {
   accessToken: string;
   canWriteMemory: boolean;
 };
 
-export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusinessDashboardProps) {
-  const dashboardQuery = useCachedQuery({
-    queryKey: 'intelligence/dashboard',
+export function AuraBusinessDashboard({
+  accessToken,
+  canWriteMemory,
+}: AuraBusinessDashboardProps) {
+  const { user } = useAuth();
+
+  const summaryQuery = useCachedQuery({
+    queryKey: 'intelligence/dashboard-summary',
     accessToken,
     enabled: Boolean(accessToken),
     staleTimeMs: 60_000,
-    fetcher: async () => fetchIntelligenceDashboard(accessToken),
+    fetcher: async () => fetchDashboardSummary(accessToken),
   });
 
-  const recommendationsQuery = useCachedQuery({
-    queryKey: 'intelligence/recommendations',
-    accessToken,
-    enabled: Boolean(accessToken),
-    staleTimeMs: 60_000,
-    fetcher: async () => fetchRecommendations(accessToken),
-  });
-
-  const dashboard = dashboardQuery.data ?? null;
-  const recommendations = recommendationsQuery.data ?? [];
-  const isLoading =
-    (dashboardQuery.isLoading && !dashboard) ||
-    (recommendationsQuery.isLoading && recommendationsQuery.data === undefined);
-  const loadError = dashboardQuery.error ?? recommendationsQuery.error;
+  const summary = summaryQuery.data ?? null;
+  const isLoading = summaryQuery.isLoading && !summary;
+  const loadError = summaryQuery.error;
 
   if (isLoading) {
     return <LoadingState label="Loading business intelligence…" />;
@@ -74,38 +66,51 @@ export function AuraBusinessDashboard({ accessToken, canWriteMemory }: AuraBusin
     );
   }
 
-  if (!dashboard) {
+  if (!summary) {
     return (
       <EmptyState
         title="No business intelligence yet"
-        description="Insights will appear here once your workspace has operational data and an configured AI provider."
+        description="Insights will appear here once your workspace has operational data."
         action={
-          <Link href="/integrations">
-            <Button variant="secondary">Integration settings</Button>
+          <Link href="/aura/todays-plan">
+            <Button variant="secondary">Open Today&apos;s Plan</Button>
           </Link>
         }
       />
     );
   }
 
+  const greeting = buildGreetingSalutation(user?.firstName);
+  const summaryLine = buildDashboardSummaryLine(summary);
+
   return (
     <div className="aura-business-dashboard aura-intelligence">
-      <p className="aura-intelligence__greeting">{dashboard.greeting.message}</p>
-      {recommendations.length === 0 ? (
-        <EmptyState
-          title="No recommendations yet"
-          description="Recommendations are generated from real tenant data when sufficient evidence is available."
-        />
-      ) : (
-        <ul className="aura-intelligence__list">
-          {recommendations.slice(0, 5).map((item: Recommendation) => (
-            <li key={item.id}>
-              <strong>{item.title}</strong> — {item.description}
-              <span className="page-muted"> · Draft recommendation</span>
+      <div className="aura-intelligence__summary">
+        <p className="aura-intelligence__greeting">{greeting}</p>
+        <p className="aura-intelligence__counts page-muted">{summaryLine}</p>
+        <Link href="/aura/todays-plan">
+          <Button className="aura-intelligence__plan-link">Open Today&apos;s Plan</Button>
+        </Link>
+      </div>
+
+      {summary.urgentItems.length > 0 ? (
+        <ul className="aura-intelligence__urgent-list">
+          {summary.urgentItems.map((item) => (
+            <li key={item.id} className="aura-intelligence__urgent-card">
+              <div className="aura-intelligence__urgent-head">
+                <strong>{item.title}</strong>
+                <span
+                  className={`status-pill status-pill--${item.priority === 'blocked' ? 'critical' : 'warning'}`}
+                >
+                  {item.priority === 'blocked' ? 'Blocked' : 'Urgent'}
+                </span>
+              </div>
+              <p className="page-muted">{item.description}</p>
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
+
       {canWriteMemory ? <AuraQuickMemoryInput accessToken={accessToken} /> : null}
     </div>
   );

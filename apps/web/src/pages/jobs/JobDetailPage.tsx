@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   JobDetail,
   JobExecutionSummary,
@@ -332,9 +333,6 @@ export function JobDetailPage() {
       <div className="jobs-page">
         <PageHeader title="Job" description="Job record" />
         <p className="form-error">{error}</p>
-        <Link href="/jobs">
-          <Button variant="secondary">Back to jobs</Button>
-        </Link>
       </div>
     );
   }
@@ -355,9 +353,6 @@ export function JobDetailPage() {
           <div className="jobs-detail__actions">
             <Link href={`/aura?jobId=${job.id}`}>
               <Button variant="secondary">Ask {AI_NAME}</Button>
-            </Link>
-            <Link href="/jobs">
-              <Button variant="ghost">Back to jobs</Button>
             </Link>
           </div>
         }

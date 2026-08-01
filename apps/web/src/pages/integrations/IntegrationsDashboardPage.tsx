@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel, StatCard } from '@titan/ui';
 import type { IntegrationProviderAutoSyncStatus, IntegrationProviderStatus } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { invalidateStaffQueryPrefixes } from '../../lib/cache-invalidation';

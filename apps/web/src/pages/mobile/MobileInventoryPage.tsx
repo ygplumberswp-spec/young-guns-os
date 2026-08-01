@@ -1,4 +1,5 @@
-import { PageHeader, Panel } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { Panel } from '@titan/ui';
 import { fetchMobileInventory } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';

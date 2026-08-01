@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import {
   INVENTORY_ITEM_STATUS_OPTIONS,
   INVENTORY_UNIT_OPTIONS,
@@ -65,11 +66,6 @@ export function ProductCreatePage() {
       <PageHeader
         title="New product"
         description="Add a product to your inventory catalog."
-        actions={
-          <Link href="/inventory/products">
-            <Button variant="secondary">Back to products</Button>
-          </Link>
-        }
       />
       <InventoryNav />
       {error ? <p className="form-error">{error}</p> : null}

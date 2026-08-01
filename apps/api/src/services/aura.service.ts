@@ -63,6 +63,8 @@ import type { TeamService } from './team.service.js';
 import type { IntelligenceService } from './intelligence.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { MemoryService } from './memory.service.js';
+import type { CompanyDayPlanService } from './company-day-plan.service.js';
+import type { CompanyBusinessRulesService } from './company-business-rules.service.js';
 import type { AnalyticsService } from './analytics.service.js';
 import type { MobileService } from './mobile.service.js';
 import type { AgentOrchestrationService } from './agent-orchestration.service.js';
@@ -145,6 +147,8 @@ type AuraServiceDeps = {
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
   memoryService: MemoryService;
+  businessRulesService: CompanyBusinessRulesService;
+  dayPlanService: CompanyDayPlanService;
   analyticsService: AnalyticsService;
   mobileService: MobileService;
   orchestrationService: AgentOrchestrationService;
@@ -207,6 +211,8 @@ export class AuraService {
   private readonly intelligenceService: IntelligenceService;
   private readonly recommendationsService: RecommendationsService;
   private readonly memoryService: MemoryService;
+  private readonly businessRulesService: CompanyBusinessRulesService;
+  private readonly dayPlanService: CompanyDayPlanService;
   private readonly analyticsService: AnalyticsService;
   private readonly mobileService: MobileService;
   private readonly orchestrationService: AgentOrchestrationService;
@@ -268,6 +274,8 @@ export class AuraService {
     intelligenceService,
     recommendationsService,
     memoryService,
+    businessRulesService,
+    dayPlanService,
     analyticsService,
     mobileService,
     orchestrationService,
@@ -328,6 +336,8 @@ export class AuraService {
     this.intelligenceService = intelligenceService;
     this.recommendationsService = recommendationsService;
     this.memoryService = memoryService;
+    this.businessRulesService = businessRulesService;
+    this.dayPlanService = dayPlanService;
     this.analyticsService = analyticsService;
     this.mobileService = mobileService;
     this.orchestrationService = orchestrationService;
@@ -749,6 +759,8 @@ export class AuraService {
         intelligenceService: this.intelligenceService,
         recommendationsService: this.recommendationsService,
         memoryService: this.memoryService,
+        businessRulesService: this.businessRulesService,
+        dayPlanService: this.dayPlanService,
         analyticsService: this.analyticsService,
         orchestrationService: this.orchestrationService,
         salesService: this.salesService,

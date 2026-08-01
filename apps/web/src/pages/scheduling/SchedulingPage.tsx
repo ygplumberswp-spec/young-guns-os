@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import { AI_NAME } from '@titan/shared';
 import { fetchJobs } from '../../lib/jobs-api';
 import { fetchSchedulingCalendar } from '../../lib/scheduling-api';

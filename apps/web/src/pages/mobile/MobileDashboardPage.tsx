@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import { fetchMobileWorkforceDashboard } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';

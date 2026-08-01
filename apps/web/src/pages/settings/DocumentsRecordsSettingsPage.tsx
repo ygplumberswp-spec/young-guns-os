@@ -10,8 +10,6 @@ export function DocumentsRecordsSettingsPage() {
       <PageHeader
         title="Documents & records"
         description="Draft autosave and retention defaults for Young Guns operations."
-        showBack
-        backFallbackHref="/settings"
       />
       <SettingsNav />
       <p className="settings-scaffold-note">

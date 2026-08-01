@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { BoqLineInput, CustomerSummary, JobSummary } from '@titan/shared';
 import { parseBoqImportText } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -135,11 +136,6 @@ export function BoqCreatePage() {
       <PageHeader
         title="New BOQ"
         description="Capture tender or take-off line items. Import CSV/TSV or enter manually."
-        actions={
-          <Link href="/finance/boq">
-            <Button variant="secondary">Back to BOQs</Button>
-          </Link>
-        }
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
-import { Button, PageHeader, Panel } from '@titan/ui';
+import { Button, Panel } from '@titan/ui';
 import type { JobSummary } from '@titan/shared';
 import {
   MobileApiClientError,

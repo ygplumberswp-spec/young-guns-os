@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import type {
   CapabilityDiscoveryResponse,
   CapabilityProposal,
@@ -148,13 +149,6 @@ export function CapabilityBuilderPage() {
       <PageHeader
         title="Create capability"
         description="Describe what you need in plain language. AURA will design the technical configuration for your review."
-        actions={
-          <Link href="/aura/agents">
-            <Button variant="secondary" size="sm">
-              Back to capabilities
-            </Button>
-          </Link>
-        }
       />
       <AgentsNav />
 

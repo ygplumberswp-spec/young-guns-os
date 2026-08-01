@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import {
   fetchMySessions,

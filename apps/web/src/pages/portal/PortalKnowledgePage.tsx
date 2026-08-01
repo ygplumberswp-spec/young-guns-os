@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useState, type FormEvent } from 'react';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import type { PortalKnowledgeArticleSummary } from '@titan/shared';
 import { PortalApiClientError, searchPortalKnowledge } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
-import { Button, Input, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, LoadingState, Panel } from '@titan/ui';
 import {
   JOB_PRIORITY_OPTIONS,
   JOB_TYPE_OPTIONS,
@@ -321,9 +322,6 @@ export function LeadDetailPage() {
     return (
       <div className="page-shell">
         <PageHeader title="Lead" description={error || 'Lead not found'} />
-        <Link href="/leads">
-          <Button variant="secondary">Back to leads</Button>
-        </Link>
       </div>
     );
   }

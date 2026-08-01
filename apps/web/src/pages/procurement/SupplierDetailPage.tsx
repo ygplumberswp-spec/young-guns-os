@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useRoute } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import type { SupplierActivitySummary, SupplierStatus, SupplierSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -137,9 +138,6 @@ export function SupplierDetailPage() {
     return (
       <div className="inventory-page">
         <PageHeader title="Supplier not found" description="This supplier may have been removed." />
-        <Link href="/procurement/suppliers">
-          <Button variant="secondary">Back to suppliers</Button>
-        </Link>
       </div>
     );
   }
@@ -151,9 +149,6 @@ export function SupplierDetailPage() {
         description={`${supplier.purchaseOrderCount} purchase order(s) · ${supplier.status}`}
         actions={
           <div className="fleet-detail__actions">
-            <Link href="/procurement/suppliers">
-              <Button variant="secondary">Back to suppliers</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel edit' : 'Edit supplier'}

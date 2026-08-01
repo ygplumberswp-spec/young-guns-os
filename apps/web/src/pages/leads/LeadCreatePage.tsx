@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useMemo, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import {
   isPlaceholderEmail,
   isValidEmailAddress,
@@ -188,13 +189,6 @@ export function LeadCreatePage() {
       <PageHeader
         title="Add lead"
         description="Capture the enquiry once — conversion reuses this data."
-        actions={
-          <Link href="/leads">
-            <Button variant="ghost" size="sm">
-              Back to leads
-            </Button>
-          </Link>
-        }
       />
 
       <form className="form-stack" onSubmit={onSubmit}>

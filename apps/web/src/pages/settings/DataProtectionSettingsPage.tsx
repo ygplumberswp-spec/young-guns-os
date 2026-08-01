@@ -8,8 +8,6 @@ export function DataProtectionSettingsPage() {
       <PageHeader
         title="Data protection"
         description="Retention scaffolds for drafts and operational records."
-        showBack
-        backFallbackHref="/settings"
       />
       <SettingsNav />
       <p className="settings-scaffold-note">

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input } from '@titan/ui';
 import type { CustomerSummary, JobSummary } from '@titan/shared';
 import {
   COMMUNICATION_CHANNEL_OPTIONS,
@@ -156,11 +157,6 @@ export function MessageCreatePage() {
       <PageHeader
         title="Log communication"
         description="Record a customer interaction in your communication history."
-        actions={
-          <Link href="/communications/messages">
-            <Button variant="secondary">Back to history</Button>
-          </Link>
-        }
       />
       <CommunicationsNav />
       {error ? <p className="form-error">{error}</p> : null}

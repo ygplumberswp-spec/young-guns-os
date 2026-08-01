@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { InvoiceStage, QuoteDetail } from '@titan/shared';
 import { formatMoney, INVOICE_STAGE_OPTIONS, QUOTE_STATUS_OPTIONS, canEditQuote, canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -113,9 +114,6 @@ export function QuoteDetailPage() {
       <div className="finance-page">
         <PageHeader title="Quote" description="Quote detail" />
         <p className="form-error">{error}</p>
-        <Link href="/finance/quotes">
-          <Button variant="secondary">Back to quotes</Button>
-        </Link>
       </div>
     );
   }
@@ -221,9 +219,6 @@ export function QuoteDetailPage() {
                 <Button variant="secondary">Edit quote</Button>
               </Link>
             ) : null}
-            <Link href="/finance/quotes">
-              <Button variant="ghost">Back to quotes</Button>
-            </Link>
           </div>
         }
       />

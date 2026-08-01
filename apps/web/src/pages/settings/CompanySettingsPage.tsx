@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useRef, useState } from 'react';
-import { Button, Input, LoadingState, PageHeader } from '@titan/ui';
+import { Button, Input, LoadingState } from '@titan/ui';
 import type { AiTone, CocApplicability, CompanyProfile } from '@titan/shared';
 import {
   AI_TONE_OPTIONS,

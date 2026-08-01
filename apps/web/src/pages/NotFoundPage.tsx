@@ -1,5 +1,6 @@
+import { PageHeader } from '../components/ux';
 import { Link } from 'wouter';
-import { Button, PageHeader } from '@titan/ui';
+import { Button } from '@titan/ui';
 
 export function NotFoundPage() {
   return (

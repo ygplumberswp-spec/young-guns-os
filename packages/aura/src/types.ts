@@ -742,6 +742,38 @@ export type AuraGenerateContext = {
       importance: number;
     }>;
   };
+  dayPlanning?: {
+    planDate: string;
+    planCount: number;
+    plans: Array<{
+      content: string;
+      category: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  dayPlan?: {
+    planDate: string;
+    priorityCount: number;
+    priorities: Array<{
+      priorityText: string;
+      department: string | null;
+      status: string;
+      planDate: string;
+    }>;
+  };
+  businessRules?: {
+    ruleCount: number;
+    rules: Array<{
+      name: string;
+      instruction: string;
+      ruleType: string;
+      category: string;
+      department: string | null;
+      assignedAgentRole: string | null;
+      approvalRequired: boolean;
+    }>;
+  };
   recommendations?: {
     count: number;
     items: Array<{

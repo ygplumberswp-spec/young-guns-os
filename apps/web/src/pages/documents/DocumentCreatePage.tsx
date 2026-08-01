@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { CustomerSummary, DocumentCategorySummary, JobSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
@@ -117,11 +118,6 @@ export function DocumentCreatePage() {
       <PageHeader
         title="Add document"
         description="Register document metadata and link it to customers or jobs."
-        actions={
-          <Link href="/documents">
-            <Button variant="secondary">Back to documents</Button>
-          </Link>
-        }
       />
       <DocumentsNav />
       {error ? <p className="form-error">{error}</p> : null}

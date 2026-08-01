@@ -212,9 +212,7 @@ export function InvoiceCreatePage() {
       <PageHeader
         title="New invoice"
         description="Create an invoice linked to a customer and optional job or quote."
-        showBack
-        backFallbackHref="/finance/invoices"
-        onBackNavigate={() => draftShell.guard.guardNavigation(() => navigate('/finance/invoices'))}
+        guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
       {draftShell.autosave.statusLabel ? (

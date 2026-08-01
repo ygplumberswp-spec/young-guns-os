@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { IntegrationSyncJobSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchIntegrationSyncJobs } from '../../lib/integration-hub-api';

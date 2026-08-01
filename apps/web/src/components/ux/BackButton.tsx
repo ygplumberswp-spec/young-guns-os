@@ -4,6 +4,8 @@ type BackButtonProps = {
   fallbackHref?: string;
   label?: string;
   onNavigate?: () => void;
+  /** When provided, wraps navigation (e.g. unsaved-changes guard). */
+  guardNavigation?: (action: () => void) => void;
   className?: string;
 };
 
@@ -32,16 +34,25 @@ export function BackButton({
   fallbackHref,
   label = 'Back',
   onNavigate,
+  guardNavigation,
   className,
 }: BackButtonProps) {
   const { goBack } = useSmartBack(fallbackHref);
 
   function handleClick() {
-    if (onNavigate) {
-      onNavigate();
+    const navigate = () => {
+      if (onNavigate) {
+        onNavigate();
+        return;
+      }
+      goBack();
+    };
+
+    if (guardNavigation) {
+      guardNavigation(navigate);
       return;
     }
-    goBack();
+    navigate();
   }
 
   return (

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import { LEAD_STATUS_OPTIONS } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';

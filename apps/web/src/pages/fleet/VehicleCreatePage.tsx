@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { JobAssignee, VehicleStatus } from '@titan/shared';
 import { VEHICLE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -98,11 +99,6 @@ export function VehicleCreatePage() {
       <PageHeader
         title="Add vehicle"
         description="Register a company vehicle and optionally assign a driver or technician."
-        actions={
-          <Link href="/fleet">
-            <Button variant="secondary">Back to fleet</Button>
-          </Link>
-        }
       />
       {error ? <p className="form-error">{error}</p> : null}
 

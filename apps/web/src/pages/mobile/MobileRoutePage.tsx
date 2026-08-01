@@ -1,4 +1,5 @@
-import { PageHeader, Panel, Button } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { Panel, Button } from '@titan/ui';
 import { buildAddressMapsDeepLink } from '@titan/shared';
 import { fetchMobileRoute } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';

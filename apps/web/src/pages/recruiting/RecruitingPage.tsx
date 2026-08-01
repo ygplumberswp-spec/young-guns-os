@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   RecruitingApplicationSummary,
   RecruitingCandidateSummary,

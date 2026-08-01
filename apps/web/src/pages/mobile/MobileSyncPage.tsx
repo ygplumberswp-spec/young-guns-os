@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useEffect, useState } from 'react';
-import { Button, PageHeader, Panel } from '@titan/ui';
+import { Button, Panel } from '@titan/ui';
 import type { MobileSyncProcessResult } from '@titan/shared';
 import {
   MobileApiClientError,

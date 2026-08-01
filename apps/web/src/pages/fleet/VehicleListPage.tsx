@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { Button, PageLoadState } from '@titan/ui';
 import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';

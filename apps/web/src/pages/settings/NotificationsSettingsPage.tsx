@@ -14,8 +14,6 @@ export function NotificationsSettingsPage() {
       <PageHeader
         title="Notifications"
         description="In-app toast preferences (scaffold — defaults on)."
-        showBack
-        backFallbackHref="/settings"
       />
       <SettingsNav />
       <p className="settings-scaffold-note">

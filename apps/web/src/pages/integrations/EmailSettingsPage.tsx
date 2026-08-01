@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { EmailConnectionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {

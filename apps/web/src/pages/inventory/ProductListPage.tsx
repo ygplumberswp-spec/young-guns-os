@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, PageLoadState, Panel } from '@titan/ui';
 import { INVENTORY_ITEM_STATUS_OPTIONS, type InventoryItemSummary } from '@titan/shared';
 import { fetchInventoryItems } from '../../lib/inventory-api';
 import { useAuth } from '../../lib/auth-context';

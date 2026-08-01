@@ -499,9 +499,7 @@ export function JobCreatePage() {
       <PageHeader
         title="New job"
         description="Book Young Guns work with a full site handoff for dispatch and technicians."
-        showBack
-        backFallbackHref="/jobs"
-        onBackNavigate={() => draftShell.guard.guardNavigation(() => navigate('/jobs'))}
+        guardNavigation={draftShell.guard.guardNavigation}
       />
       {draftShell.autosave.statusLabel ? (
         <p className="jobs-draft-status">{draftShell.autosave.statusLabel}</p>

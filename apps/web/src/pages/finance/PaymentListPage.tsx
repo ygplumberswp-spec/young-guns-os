@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, PageLoadState, Panel } from '@titan/ui';
 import { formatMoney, PAYMENT_METHOD_OPTIONS, type PaymentSummary } from '@titan/shared';
 import { fetchPayments } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';

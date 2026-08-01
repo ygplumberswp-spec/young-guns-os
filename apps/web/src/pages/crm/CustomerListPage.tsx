@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
-import { Button, PageHeader, PageLoadState } from '@titan/ui';
+import { Button, PageLoadState } from '@titan/ui';
 import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
 import { fetchCustomers } from '../../lib/crm-api';
 import { fetchCustomersByClassification } from '../../lib/customer-value-api-client';

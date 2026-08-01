@@ -19,6 +19,9 @@ import {
   notifications,
 } from './mobile';
 import { auraMemory } from './aura-memory';
+import { companyDayPlans } from './company-day-plans';
+import { companyDayPlanFollowUps } from './company-day-plan-follow-ups';
+import { companyBusinessRules, businessRuleTasks } from './company-business-rules';
 import { auraMessages } from './aura-messages';
 import { companies } from './companies';
 import { customerActivities } from './customer-activities';
@@ -279,6 +282,10 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   sessions: many(sessions),
   auraConversations: many(auraConversations),
   auraMemory: many(auraMemory),
+  companyDayPlans: many(companyDayPlans),
+  companyDayPlanFollowUps: many(companyDayPlanFollowUps),
+  companyBusinessRules: many(companyBusinessRules),
+  businessRuleTasks: many(businessRuleTasks),
   reportDefinitions: many(reportDefinitions),
   reportRuns: many(reportRuns),
   analyticsSnapshots: many(analyticsSnapshots),
@@ -1218,6 +1225,14 @@ export const agentExecutionsRelations = relations(agentExecutions, ({ one }) => 
     fields: [agentExecutions.agentProfileId],
     references: [agentProfiles.id],
   }),
+  businessRule: one(companyBusinessRules, {
+    fields: [agentExecutions.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+  dayPlan: one(companyDayPlans, {
+    fields: [agentExecutions.dayPlanId],
+    references: [companyDayPlans.id],
+  }),
 }));
 
 export const portalUsersRelations = relations(portalUsers, ({ one, many }) => ({
@@ -1539,6 +1554,85 @@ export const auraMemoryRelations = relations(auraMemory, ({ one }) => ({
   createdBy: one(users, {
     fields: [auraMemory.createdByUserId],
     references: [users.id],
+  }),
+}));
+
+
+export const companyDayPlansRelations = relations(companyDayPlans, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyDayPlans.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyDayPlans.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyDayPlans.updatedByUserId],
+    references: [users.id],
+  }),
+  assignedUser: one(users, {
+    fields: [companyDayPlans.assignedUserId],
+    references: [users.id],
+  }),
+  businessRule: one(companyBusinessRules, {
+    fields: [companyDayPlans.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+}));
+
+export const companyDayPlanFollowUpsRelations = relations(companyDayPlanFollowUps, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyDayPlanFollowUps.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [companyDayPlanFollowUps.customerId],
+    references: [customers.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyDayPlanFollowUps.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyDayPlanFollowUps.updatedByUserId],
+    references: [users.id],
+  }),
+  assignedUser: one(users, {
+    fields: [companyDayPlanFollowUps.assignedUserId],
+    references: [users.id],
+  }),
+}));
+
+export const companyBusinessRulesRelations = relations(companyBusinessRules, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [companyBusinessRules.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyBusinessRules.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyBusinessRules.updatedByUserId],
+    references: [users.id],
+  }),
+  tasks: many(businessRuleTasks),
+  dayPlans: many(companyDayPlans),
+}));
+
+export const businessRuleTasksRelations = relations(businessRuleTasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [businessRuleTasks.companyId],
+    references: [companies.id],
+  }),
+  businessRule: one(companyBusinessRules, {
+    fields: [businessRuleTasks.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+  dayPlan: one(companyDayPlans, {
+    fields: [businessRuleTasks.dayPlanId],
+    references: [companyDayPlans.id],
   }),
 }));
 

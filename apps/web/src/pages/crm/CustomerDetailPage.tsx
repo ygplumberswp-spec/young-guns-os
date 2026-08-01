@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   CustomerDetail,
   CustomerStatus,
@@ -334,9 +335,6 @@ export function CustomerDetailPage() {
       <div className="crm-page">
         <PageHeader title="Customer" description="Customer record" />
         <p className="form-error">{error}</p>
-        <Link href="/crm">
-          <Button variant="secondary">Back to customers</Button>
-        </Link>
       </div>
     );
   }
@@ -354,9 +352,6 @@ export function CustomerDetailPage() {
           <div className="crm-detail__actions">
             <Link href={`/aura?customerId=${customer.id}`}>
               <Button variant="secondary">Ask {AI_NAME}</Button>
-            </Link>
-            <Link href="/crm">
-              <Button variant="ghost">Back to customers</Button>
             </Link>
           </div>
         }

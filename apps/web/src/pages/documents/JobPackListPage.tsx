@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { LoadingState, PageHeader, Panel } from '@titan/ui';
+import { LoadingState, Panel } from '@titan/ui';
 import type { JobDocumentPackSummary } from '@titan/shared';
 import {
   JOB_DOCUMENT_PACK_STATUS_OPTIONS,

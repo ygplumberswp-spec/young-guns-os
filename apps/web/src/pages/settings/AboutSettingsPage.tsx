@@ -1,4 +1,5 @@
-import { PageHeader, Panel } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { Panel } from '@titan/ui';
 import { APP_NAME } from '@titan/shared';
 
 export function AboutSettingsPage() {

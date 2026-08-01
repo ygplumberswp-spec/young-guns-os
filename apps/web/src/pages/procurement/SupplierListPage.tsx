@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, Input, PageHeader, PageLoadState, Panel } from '@titan/ui';
+import { Button, Input, PageLoadState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import { createSupplier, fetchSuppliers } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';

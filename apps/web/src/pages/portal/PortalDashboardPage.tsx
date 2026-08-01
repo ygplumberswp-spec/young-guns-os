@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { Link } from 'wouter';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import { formatMoney } from '@titan/shared';
 import { fetchPortalExperienceDashboard } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

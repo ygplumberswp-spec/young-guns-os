@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input } from '@titan/ui';
 import { hasAnyPermission, isCompanyOwnerRole, isPlatformOwnerRole } from '@titan/auth/browser';
 import { ApiClientError } from '../../lib/api-client';
 import {

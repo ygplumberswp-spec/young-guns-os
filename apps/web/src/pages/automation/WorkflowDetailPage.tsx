@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { useRoute } from 'wouter';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   WorkflowActionType,
   WorkflowConditionOperator,
@@ -297,9 +298,6 @@ export function WorkflowDetailPage() {
     return (
       <div className="automation-page">
         <PageHeader title="Workflow not found" description="This workflow could not be found." />
-        <Link href="/automation" className="automation-link">
-          Back to workflows
-        </Link>
       </div>
     );
   }
@@ -311,9 +309,6 @@ export function WorkflowDetailPage() {
         description="Visual workflow builder with triggers, conditions, ordered actions, and execution history."
         actions={
           <div className="automation-detail-actions">
-            <Link href="/automation">
-              <Button variant="secondary">Back to workflows</Button>
-            </Link>
             {canWrite ? (
               <>
                 <Button

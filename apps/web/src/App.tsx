@@ -10,6 +10,7 @@ import { PortalRouteShell } from './components/PortalRouteShell';
 import { AppLayout } from './layouts/AppLayout';
 import { PageRouteSuspense } from './components/PageRouteSuspense';
 import { TitanNotificationsProvider } from './components/ux';
+import { TitanNavigationHistoryProvider } from './hooks/useTitanNavigationHistory';
 import * as OwnerPages from './routes/owner-pages';
 import { LoginPage } from './pages/auth/LoginPage';
 import { SignupPage } from './pages/auth/SignupPage';
@@ -56,6 +57,7 @@ export function App() {
     <ErrorBoundary>
       <AuthProvider>
         <TitanNotificationsProvider>
+          <TitanNavigationHistoryProvider>
           <PreloadCoordinator />
           <Switch>
           <Route path="/auth/login" component={LoginPage} />
@@ -370,6 +372,8 @@ export function App() {
                           component={OwnerPages.AgentProfileDetailPage}
                         />
                         <Route path="/aura/agents" component={OwnerPages.AgentDashboardPage} />
+                        <Route path="/aura/business-rules" component={OwnerPages.BusinessRulesPage} />
+                        <Route path="/aura/todays-plan" component={OwnerPages.TodaysPlanPage} />
                         <Route path="/aura" component={OwnerPages.AuraPage} />
                         <Route path="/analytics" component={OwnerPages.AnalyticsPage} />
                         <Route path="/quality" component={OwnerPages.QualityPage} />
@@ -444,6 +448,7 @@ export function App() {
             </ProtectedRoute>
           </Route>
         </Switch>
+          </TitanNavigationHistoryProvider>
         </TitanNotificationsProvider>
       </AuthProvider>
     </ErrorBoundary>

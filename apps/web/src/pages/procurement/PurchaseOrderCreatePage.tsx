@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { InventoryItemSummary, InventoryLocationSummary, JobSummary, SupplierSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createPurchaseOrder, newClientActionId } from '../../lib/procurement-api';
@@ -142,11 +143,6 @@ export function PurchaseOrderCreatePage() {
       <PageHeader
         title="New purchase order"
         description="Order stock from a supplier and receive it against a location."
-        actions={
-          <Link href="/procurement">
-            <Button variant="secondary">Back to purchase orders</Button>
-          </Link>
-        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useRoute } from 'wouter';
-import { Button, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, LoadingState, Panel } from '@titan/ui';
 import type { BoqStatus } from '@titan/shared';
 import { BOQ_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -75,9 +76,6 @@ export function BoqDetailPage() {
       <div className="finance-page">
         <PageHeader title="BOQ" />
         <p className="form-error">{error}</p>
-        <Link href="/finance/boq">
-          <Button variant="secondary">Back to BOQs</Button>
-        </Link>
       </div>
     );
   }
@@ -126,11 +124,6 @@ export function BoqDetailPage() {
       <PageHeader
         title={`${document.boqNumber} · ${document.title}`}
         description={`${document.lineItems.length} lines · ${formatStatus(document.status)}`}
-        actions={
-          <Link href="/finance/boq">
-            <Button variant="ghost">Back to BOQs</Button>
-          </Link>
-        }
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}

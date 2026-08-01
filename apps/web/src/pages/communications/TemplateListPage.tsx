@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Panel } from '@titan/ui';
 import { COMMUNICATION_CHANNEL_OPTIONS, type MessageTemplateSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchMessageTemplates } from '../../lib/communications-api';

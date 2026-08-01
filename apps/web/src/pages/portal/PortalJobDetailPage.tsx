@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'wouter';
-import { EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, LoadingState, Panel } from '@titan/ui';
 import type { PortalJobTrackingDetail } from '@titan/shared';
 import { PortalApiClientError, fetchPortalJob } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

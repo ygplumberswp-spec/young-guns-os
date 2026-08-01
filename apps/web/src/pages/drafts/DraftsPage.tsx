@@ -139,7 +139,7 @@ export function DraftsPage() {
   if (!canAccess) {
     return (
       <div className="drafts-page">
-        <PageHeader title="Drafts" description="Saved work in progress across TITAN." showBack />
+        <PageHeader title="Drafts" description="Saved work in progress across TITAN." />
         <EmptyState title="Access restricted" description="You do not have permission to view drafts." />
       </div>
     );
@@ -150,7 +150,6 @@ export function DraftsPage() {
       <PageHeader
         title="Drafts"
         description="Continue quotes, invoices, jobs, and other work saved automatically."
-        showBack
       />
 
       {isLoading ? <LoadingState label="Loading drafts…" /> : null}

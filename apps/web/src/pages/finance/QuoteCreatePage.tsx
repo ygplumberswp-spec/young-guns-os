@@ -315,9 +315,7 @@ export function QuoteCreatePage() {
       <PageHeader
         title="New quote"
         description="Create a quote linked to a customer and optional job."
-        showBack
-        backFallbackHref="/finance/quotes"
-        onBackNavigate={() => draftShell.guard.guardNavigation(() => navigate('/finance/quotes'))}
+        guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
       {draftShell.autosave.statusLabel ? (

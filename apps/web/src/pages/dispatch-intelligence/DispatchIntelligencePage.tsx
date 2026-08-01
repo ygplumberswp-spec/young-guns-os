@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import type { DispatchOperationsDashboard } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import {

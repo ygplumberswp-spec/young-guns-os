@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useSearch } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { Button, Input } from '@titan/ui';
 import type { InvoiceSummary, PaymentMethod } from '@titan/shared';
 import { parseMoneyInput, PAYMENT_METHOD_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -116,11 +117,6 @@ export function PaymentCreatePage() {
       <PageHeader
         title="Record payment"
         description="Record a payment against an invoice."
-        actions={
-          <Link href="/finance/payments">
-            <Button variant="secondary">Back to payments</Button>
-          </Link>
-        }
       />
       <FinanceNav />
       {error ? <p className="form-error">{error}</p> : null}

@@ -81,6 +81,9 @@ import { AutomationService } from './services/automation.service.js';
 import { N8nOrchestrationService } from './services/n8n-orchestration.service.js';
 import { WorkflowEngineService } from './services/workflow-engine.service.js';
 import { MemoryService } from './services/memory.service.js';
+import { CompanyDayPlanService } from './services/company-day-plan.service.js';
+import { CompanyDayPlanFollowUpsService } from './services/company-day-plan-follow-ups.service.js';
+import { CompanyBusinessRulesService } from './services/company-business-rules.service.js';
 import { IntelligenceService } from './services/intelligence.service.js';
 import { RecommendationsService } from './services/recommendations.service.js';
 import { createIntelligenceRouter } from './routes/intelligence.js';
@@ -519,6 +522,8 @@ const agentsService = new AgentsService(db);
 const tenantCapabilityBuilderService = new TenantCapabilityBuilderService(db);
 const recruitingService = new RecruitingService(db);
 const memoryService = new MemoryService(db);
+const businessRulesService = new CompanyBusinessRulesService(db);
+const dayPlanService = new CompanyDayPlanService(db, businessRulesService);
 const intelligenceService = new IntelligenceService({
   db,
   financeService,
@@ -527,6 +532,12 @@ const intelligenceService = new IntelligenceService({
   automationService,
 });
 const recommendationsService = new RecommendationsService(intelligenceService);
+const dayPlanFollowUpsService = new CompanyDayPlanFollowUpsService(
+  db,
+  intelligenceService,
+  recommendationsService,
+  dayPlanService,
+);
 const analyticsService = new AnalyticsService(db, financeService, fleetService, inventoryService);
 const workforceService = new WorkforceService({
   db,
@@ -1226,6 +1237,8 @@ const auraService = new AuraService({
   intelligenceService,
   recommendationsService,
   memoryService,
+  businessRulesService,
+  dayPlanService,
   analyticsService,
   mobileService,
   orchestrationService: agentOrchestrationService,
@@ -1766,6 +1779,9 @@ app.use(
     intelligenceService,
     recommendationsService,
     memoryService,
+    businessRulesService,
+    dayPlanService,
+    dayPlanFollowUpsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

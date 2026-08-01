@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type { JobAssignee, VehicleDetail, VehicleStatus } from '@titan/shared';
 import { AI_NAME, VEHICLE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -121,9 +122,6 @@ export function VehicleDetailPage() {
     return (
       <div className="fleet-page">
         <PageHeader title="Vehicle not found" description="This vehicle may have been removed." />
-        <Link href="/fleet">
-          <Button variant="secondary">Back to fleet</Button>
-        </Link>
       </div>
     );
   }
@@ -135,9 +133,6 @@ export function VehicleDetailPage() {
         description={`${vehicle.licensePlate} · ${formatVehicleStatus(vehicle.status)}`}
         actions={
           <div className="fleet-detail__actions">
-            <Link href="/fleet">
-              <Button variant="secondary">Back to fleet</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel edit' : 'Edit vehicle'}

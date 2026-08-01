@@ -1,6 +1,8 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel, StatCard, TabNav } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
+import { NAV_LABELS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   acknowledgeMissionControlAlert,
@@ -15,6 +17,8 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
+import { DayPlanningPanel } from '../../features/aura/DayPlanningPanel';
+import { canWriteCompanyMemory } from '@titan/auth/browser';
 import {
   canAccessMissionControl,
   canManageMissionControl,
@@ -38,6 +42,16 @@ export function MissionControlPage() {
   const canView = useMemo(() => (user ? canAccessMissionControl(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManageMissionControl(user.permissions) : false),
+    [user],
+  );
+  const canWriteDayPlan = useMemo(
+    () =>
+      user
+        ? canWriteCompanyMemory({
+            roleName: user.roleName,
+            permissions: user.permissions,
+          })
+        : false,
     [user],
   );
 
@@ -103,8 +117,8 @@ export function MissionControlPage() {
     return (
       <div className="automation-page">
         <PageHeader
-          title="Mission Control"
-          description="You do not have permission to view mission control."
+          title={NAV_LABELS.companyHealth}
+          description="You do not have permission to view company health."
         />
       </div>
     );
@@ -165,8 +179,8 @@ export function MissionControlPage() {
   return (
     <div className="automation-page page-shell">
       <PageHeader
-        title="Mission Control"
-        description="Business overview, critical actions and operational priorities."
+        title={NAV_LABELS.companyHealth}
+        description="Business overview, today’s operational priorities, and critical actions."
         actions={
           canWrite ? (
             <div className="page-header-actions">
@@ -220,6 +234,12 @@ export function MissionControlPage() {
                 <StatCard label="Active Incidents" value={String(dashboard.activeIncidentCount)} />
                 <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
               </div>
+
+              {accessToken ? (
+                <Panel title="Today's plan">
+                  <DayPlanningPanel accessToken={accessToken} canWrite={canWriteDayPlan} />
+                </Panel>
+              ) : null}
 
               <Panel title="Business overview">
                 <p>{dashboard.summary}</p>

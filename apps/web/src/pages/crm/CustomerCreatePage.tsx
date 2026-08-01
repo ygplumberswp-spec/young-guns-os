@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { CustomerStatus } from '@titan/shared';
 import { CUSTOMER_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -62,11 +63,6 @@ export function CustomerCreatePage() {
       <PageHeader
         title="New customer"
         description="Create a customer record for your company."
-        actions={
-          <Link href="/crm">
-            <Button variant="secondary">Back to customers</Button>
-          </Link>
-        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}

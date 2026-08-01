@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import type { WorkflowActionType, WorkflowStatus, WorkflowTriggerType } from '@titan/shared';
 import {
   WORKFLOW_ACTION_TYPE_OPTIONS,
@@ -58,11 +59,6 @@ export function WorkflowCreatePage() {
       <PageHeader
         title="New workflow"
         description="Define a workflow with at least one trigger and one action."
-        actions={
-          <Link href="/automation">
-            <Button variant="secondary">Back to workflows</Button>
-          </Link>
-        }
       />
       <AutomationNav />
       {error ? <p className="form-error">{error}</p> : null}

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { CxDocumentCentre } from '@titan/shared';
 import { PortalApiClientError, fetchCxPortalDocuments } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

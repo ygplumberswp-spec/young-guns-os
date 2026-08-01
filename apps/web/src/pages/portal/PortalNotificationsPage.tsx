@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import type { NotificationSummary } from '@titan/shared';
 import { PortalApiClientError, fetchPortalNotifications } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useState } from 'react';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { PortalFinanceCentre } from '@titan/shared';
 import { PortalApiClientError, fetchPortalFinance } from '../../lib/portal-api-client';
 import { usePortalAuth } from '../../lib/portal-auth-context';

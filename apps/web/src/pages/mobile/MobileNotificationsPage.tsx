@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { useState } from 'react';
-import { PageHeader, Panel } from '@titan/ui';
+import { Panel } from '@titan/ui';
 import { fetchMobileNotifications, markMobileNotificationRead } from '../../lib/mobile-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';

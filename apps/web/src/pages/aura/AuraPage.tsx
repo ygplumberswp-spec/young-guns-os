@@ -21,6 +21,7 @@ import { AuraMessageList } from '../../features/aura/AuraMessageList';
 import { AuraTaskApprovalCard } from '../../features/aura/AuraTaskApprovalCard';
 import { useAuraChat } from '../../features/aura/useAuraChat';
 import { AuraMark } from '../../brand/AuraMark';
+import { AuraSectionNav } from '../../features/aura/AuraSectionNav';
 
 export function AuraPage() {
   const { user, accessToken } = useAuth();
@@ -210,6 +211,8 @@ export function AuraPage() {
           </div>
         ) : null}
       </header>
+
+      <AuraSectionNav />
 
       {canViewIntelligence && accessToken ? (
         <AuraBusinessDashboard accessToken={accessToken} canWriteMemory={canWriteMemory} />

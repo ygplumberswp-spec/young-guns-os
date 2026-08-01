@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, LoadingState, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, LoadingState, Panel, StatCard } from '@titan/ui';
 import {
   formatMoney,
   type QualityActionSummary,

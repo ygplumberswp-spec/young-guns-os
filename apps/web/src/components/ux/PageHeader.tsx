@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { useLocation } from 'wouter';
 import { PageHeader as TitanPageHeader } from '@titan/ui';
+import { shouldShowBackButton } from '../../lib/back-navigation';
 import { Breadcrumbs, type BreadcrumbItem } from './Breadcrumbs';
 import { BackButton } from './BackButton';
 
@@ -9,11 +11,13 @@ type PageHeaderProps = {
   actions?: ReactNode;
   breadcrumbs?: BreadcrumbItem[];
   className?: string;
-  /** Show smart back control top-left */
+  /** Override auto-detected back visibility. `true` forces show; `false` hides. */
   showBack?: boolean;
   backFallbackHref?: string;
   backLabel?: string;
   onBackNavigate?: () => void;
+  /** Unsaved-changes guard wrapper for back navigation. */
+  guardNavigation?: (action: () => void) => void;
 };
 
 export function PageHeader({
@@ -22,20 +26,25 @@ export function PageHeader({
   actions,
   breadcrumbs,
   className,
-  showBack = false,
+  showBack,
   backFallbackHref,
   backLabel,
   onBackNavigate,
+  guardNavigation,
 }: PageHeaderProps) {
+  const [location] = useLocation();
+  const resolvedShowBack = showBack ?? shouldShowBackButton(location);
+
   return (
     <header className={`ux-page-header ${className ?? ''}`.trim()}>
       {breadcrumbs?.length ? <Breadcrumbs items={breadcrumbs} /> : null}
       <div className="ux-page-header__row">
-        {showBack ? (
+        {resolvedShowBack ? (
           <BackButton
             fallbackHref={backFallbackHref}
             label={backLabel}
             onNavigate={onBackNavigate}
+            guardNavigation={guardNavigation}
           />
         ) : null}
         <div className="ux-page-header__main">

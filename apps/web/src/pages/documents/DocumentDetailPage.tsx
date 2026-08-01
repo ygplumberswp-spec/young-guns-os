@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
-import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, Input, Panel } from '@titan/ui';
 import type {
   CustomerSummary,
   DocumentCategorySummary,
@@ -139,9 +140,6 @@ export function DocumentDetailPage() {
     return (
       <div className="documents-page">
         <PageHeader title="Document not found" description="This document could not be found." />
-        <Link href="/documents" className="documents-link">
-          Back to documents
-        </Link>
       </div>
     );
   }
@@ -153,9 +151,6 @@ export function DocumentDetailPage() {
         description="Document metadata and linked customer or job records."
         actions={
           <div className="documents-detail-actions">
-            <Link href="/documents">
-              <Button variant="secondary">Back to documents</Button>
-            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel editing' : 'Edit document'}

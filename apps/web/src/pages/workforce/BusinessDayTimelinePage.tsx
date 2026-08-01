@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
 import type { BusinessDayTimelineCategory } from '@titan/shared';
 import { fetchAssignees } from '../../lib/scheduling-api';
 import { fetchBusinessDayTimeline } from '../../lib/workforce-api';
@@ -78,11 +79,6 @@ export function BusinessDayTimelinePage() {
       <PageHeader
         title="Business day timeline"
         description="Operational events from clock-in through job workflow — sourced from live time entries and field execution."
-        actions={
-          <Link href="/scheduling">
-            <Button variant="secondary">Back to schedule</Button>
-          </Link>
-        }
       />
 
       <Panel title="Day filter">

@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
+import { Button, EmptyState, Input, Panel } from '@titan/ui';
 import type { CustomerSummary, PortalStats, PortalUserSummary } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import { DEFAULT_PORTAL_ACCESS_PERMISSIONS, PORTAL_ACCESS_PERMISSION_OPTIONS } from '@titan/shared';

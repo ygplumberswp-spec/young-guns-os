@@ -1,24 +1,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveSmartBackFallback } from './useSmartBack.js';
+import { resolveSmartBackFallback } from '../lib/back-navigation.js';
 
-describe('resolveSmartBackFallback', () => {
-  it('maps quote create to list', () => {
-    assert.equal(resolveSmartBackFallback('/finance/quotes/new'), '/finance/quotes');
-  });
-
-  it('maps quote edit to detail', () => {
-    assert.equal(
-      resolveSmartBackFallback('/finance/quotes/abc-123/edit'),
-      '/finance/quotes/abc-123',
-    );
-  });
-
-  it('maps job create to jobs list', () => {
-    assert.equal(resolveSmartBackFallback('/jobs/new'), '/jobs');
-  });
-
-  it('defaults unknown paths to dashboard', () => {
-    assert.equal(resolveSmartBackFallback('/unknown'), '/');
+describe('useSmartBack re-exports', () => {
+  it('resolveSmartBackFallback matches back-navigation module', async () => {
+    const { resolveSmartBackFallback: fromHook } = await import('./useSmartBack.js');
+    assert.equal(fromHook('/jobs/new'), resolveSmartBackFallback('/jobs/new'));
   });
 });

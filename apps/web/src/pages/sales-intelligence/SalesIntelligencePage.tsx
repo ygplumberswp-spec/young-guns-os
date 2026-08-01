@@ -1,14 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import {
-  Button,
-  EmptyState,
-  GroupedTabNav,
-  LoadingState,
-  PageHeader,
-  Panel,
-  StatCard,
-} from '@titan/ui';
+import { Button, EmptyState, GroupedTabNav, LoadingState, Panel, StatCard } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureSalesAnalytics,

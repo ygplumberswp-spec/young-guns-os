@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
-import { EmptyState, PageHeader, Panel } from '@titan/ui';
+import { EmptyState, Panel } from '@titan/ui';
 import type { InventoryStockMovementSummary } from '@titan/shared';
 import { formatMoney } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -87,6 +88,7 @@ export function StockMovementsPage() {
             ? 'Ledger entries linked to this job.'
             : 'Audit ledger of receipts, issues, returns and adjustments.'
         }
+        backFallbackHref={jobIdFilter ? `/jobs/${jobIdFilter}` : undefined}
       />
       <InventoryNav />
 
