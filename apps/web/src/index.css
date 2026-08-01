@@ -1829,6 +1829,47 @@ a:focus-visible {
   text-decoration: underline;
 }
 
+.crm-property-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crm-property-item {
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
+  background: var(--titan-surface-muted);
+}
+
+.crm-property-item__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.crm-property-item__badge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--titan-accent);
+}
+
+.crm-property-item__address {
+  margin: 0.35rem 0 0.5rem;
+  color: var(--titan-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.crm-form--nested {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--titan-border-subtle);
+}
+
 .crm-status {
   display: inline-flex;
   padding: 0.125rem 0.5rem;

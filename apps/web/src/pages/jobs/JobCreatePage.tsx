@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'wouter';
+import { Link, useLocation, useSearch } from 'wouter';
 import { Button, Input, PageHeader } from '@titan/ui';
 import type {
   CreateJobDocumentInput,
@@ -48,6 +48,7 @@ export function JobCreatePage() {
   const { accessToken, user } = useAuth();
   const { invalidateJobs } = useStaffMutationInvalidation();
   const [, navigate] = useLocation();
+  const search = useSearch();
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [properties, setProperties] = useState<CustomerPropertySummary[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
@@ -79,6 +80,7 @@ export function JobCreatePage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [documents, setDocuments] = useState<CreateJobDocumentInput[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pendingPropertyIdRef = useRef<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -128,7 +130,15 @@ export function JobCreatePage() {
         if (!cancelled) {
           setCustomers(customerData);
           setMembers(memberData.filter((member) => member.isActive));
-          setCustomerId(customerData[0]?.id ?? '');
+          const params = new URLSearchParams(search);
+          const preCustomerId = params.get('customerId');
+          const prePropertyId = params.get('propertyId');
+          pendingPropertyIdRef.current = prePropertyId;
+          if (preCustomerId && customerData.some((customer) => customer.id === preCustomerId)) {
+            setCustomerId(preCustomerId);
+          } else {
+            setCustomerId(customerData[0]?.id ?? '');
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -145,7 +155,7 @@ export function JobCreatePage() {
     return () => {
       cancelled = true;
     };
-  }, [accessToken]);
+  }, [accessToken, search]);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,14 +171,26 @@ export function JobCreatePage() {
         const data = await fetchCustomerProperties(accessToken, customerId);
         if (!cancelled) {
           setProperties(data);
-          const primary = data.find((item) => item.isPrimary) ?? data[0];
-          if (primary && primary.street && primary.suburb && primary.city) {
+          const pendingPropertyId = pendingPropertyIdRef.current;
+          const pendingProperty =
+            pendingPropertyId != null
+              ? data.find((item) => item.id === pendingPropertyId)
+              : undefined;
+          if (pendingProperty) {
             setSiteMode('existing');
-            setPropertyId(primary.id);
-            applyProperty(primary);
+            setPropertyId(pendingProperty.id);
+            applyProperty(pendingProperty);
+            pendingPropertyIdRef.current = null;
           } else {
-            setSiteMode('new');
-            setPropertyId('');
+            const primary = data.find((item) => item.isPrimary) ?? data[0];
+            if (primary && primary.street && primary.suburb && primary.city) {
+              setSiteMode('existing');
+              setPropertyId(primary.id);
+              applyProperty(primary);
+            } else {
+              setSiteMode('new');
+              setPropertyId('');
+            }
           }
 
           const customer = customers.find((item) => item.id === customerId);

@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 004  
+**Updated (UTC):** 2026-08-01 — Sprint 006  
 **Automated test files:** 46 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---

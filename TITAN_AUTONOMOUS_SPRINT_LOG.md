@@ -112,3 +112,19 @@
 | **Tests** | `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test` — pass |
 | **Approval required?** | No |
 | **Next phase selected** | Phase 5 — Customer/property/lead/job contract (**approval gate**: staging deploy for E2E proof) |
+
+---
+
+## Sprint 006 — Phase 5 CRM properties panel (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 5 — Customer, property, lead and job contract (local slice) |
+| **Result** | Partial — CRM properties first-class in UI |
+| **Checkpoint** | (pending commit) |
+| **Files changed** | `CustomerPropertiesPanel.tsx`, `CustomerDetailPage.tsx`, `JobCreatePage.tsx` query prefill, CRM property styles |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (225 pass), `pnpm build` — pass |
+| **Approval required?** | Staging E2E for full Phase 5 sign-off — **yes (deploy gate)** |
+| **Next phase selected** | Phase 5 remainder or Phase 6 scheduling (safe local) |

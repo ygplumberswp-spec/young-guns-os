@@ -110,7 +110,7 @@ All six former REQUIREMENT CONFLICT rows are decided. UX audit confirmed handoff
 
 | ID | Gap | Type | Recommended repair |
 |----|-----|------|--------------------|
-| OPS-002 | Properties not first-class in CRM | PARTIAL | CRM property panel — **UX-015, UX-040** |
+| OPS-002 | Properties not first-class in CRM | **PARTIAL (Sprint 006)** | CRM property panel + create job at property — **UX-015** |
 | OPS-003 | `/leads` and `/sales-intelligence` overlap (+ convert gap Critical above) | PARTIAL | Single nav entry — **UX-019** |
 | OPS-004 | Standalone contacts entity missing | MISSING | Spec if needed |
 | OPS-013 / UX-044 | ~~Offline observability-only~~ | **CLOSED (staging web)** | IndexedDB queue + flush + states; optional store packaging later |

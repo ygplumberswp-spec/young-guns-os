@@ -23,6 +23,10 @@ import {
 } from '../../lib/whatsapp-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageCustomers } from '../../features/crm/CustomerList';
+import {
+  canCreateJobAtProperty,
+  CustomerPropertiesPanel,
+} from '../../features/crm/CustomerPropertiesPanel';
 import { canAccessMarketingIntelligence } from '../../features/marketing-intelligence/utils';
 
 function formatStatus(status: CustomerDetail['status']): string {
@@ -59,6 +63,11 @@ export function CustomerDetailPage() {
   const [isInvitingPortal, setIsInvitingPortal] = useState(false);
 
   const canWrite = useMemo(() => (user ? canManageCustomers(user.permissions) : false), [user]);
+
+  const canCreateJob = useMemo(
+    () => (user ? canCreateJobAtProperty(user.permissions) : false),
+    [user],
+  );
 
   const canAccessReactivation = useMemo(
     () => (user ? canAccessMarketingIntelligence(user.permissions) : false),
@@ -468,6 +477,15 @@ export function CustomerDetailPage() {
             </div>
           ) : null}
         </Panel>
+
+        {accessToken ? (
+          <CustomerPropertiesPanel
+            accessToken={accessToken}
+            customerId={customerId}
+            canWrite={canWrite}
+            canCreateJob={canCreateJob}
+          />
+        ) : null}
 
         <Panel title="Activity notes">
           {canWrite ? (
