@@ -2,8 +2,9 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE  
-**Verdict:** **NOT PILOT-READY** (binding rule not met for most modules; Xero import in progress)
+**Updated (UTC):** 2026-08-01 — GLOBAL BINDING ACCEPTANCE RULE + master completion freeze  
+**Verdict:** **NOT PILOT-READY** (binding rule not met for most modules; deferred work in next stage plan)  
+**Master completion staging:** **OWNER APPROVED / FROZEN BASELINE** @ `60b4829` — see `TITAN_STAGING_BASELINE_FREEZE.md`
 
 ---
 

@@ -8,6 +8,24 @@
 
 ---
 
+## Master completion staging — OWNER APPROVED / FROZEN BASELINE
+
+| Field | Value |
+|-------|-------|
+| **Status** | **OWNER APPROVED / FROZEN BASELINE** |
+| **Approval date** | 2026-08-01 |
+| **Frozen commit** | `60b482995b4d6298afccdc3047308ce83d1322e7` (`60b4829`) |
+| **Branch** | `cursor/titan-frozen-scope-completion` — preserve; do not merge to main/production |
+| **Included work** | Finance drafts (`934d0f3`), dashboard redesign (`03a6984`), Xero invoice totals/sync fix (`60b4829`) |
+| **Staging API** | `deadf1aa-5e88-430e-99f4-79f690503669` → `young-guns-os-staging.up.railway.app` |
+| **Staging web** | `0fedc602-42be-44b3-8308-a7ff2be5c2a6` → `comfortable-determination-staging.up.railway.app` |
+| **Freeze record** | `TITAN_STAGING_BASELINE_FREEZE.md` |
+| **Next stage** | `TITAN_NEXT_IMPLEMENTATION_STAGE_PLAN.md` |
+
+Remaining FRZ sections stay **Partially implemented** until next-stage phases complete. Pilot FRZ-022 remains **Blocked by approval** until final acceptance gate.
+
+---
+
 ## GLOBAL BINDING ACCEPTANCE RULE
 
 **Authoritative text:** `TITAN_BINDING_ACCEPTANCE_RULE.md`

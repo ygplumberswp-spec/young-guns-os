@@ -5,6 +5,25 @@
 
 ---
 
+## Sprint FREEZE-001 — Owner approval staging baseline freeze
+
+| Field | Value |
+|-------|-------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | Master completion staging freeze — Owner approval recorded |
+| **Result** | **OWNER APPROVED / FROZEN BASELINE** — docs-only; no code changes |
+| **Frozen commit** | `60b482995b4d6298afccdc3047308ce83d1322e7` (`60b4829`) |
+| **Branch** | `cursor/titan-frozen-scope-completion` (preserve — no merge to main/production) |
+| **Included** | Finance drafts (`934d0f3`), dashboard (`03a6984`), Xero invoice financial integrity fix |
+| **Staging API deploy** | `deadf1aa-5e88-430e-99f4-79f690503669` |
+| **Staging web deploy** | `0fedc602-42be-44b3-8308-a7ff2be5c2a6` |
+| **Obsolete branch** | `cursor/ux-hardening-phase1` — **SUPERSEDED** (document only; do not merge) |
+| **Hard gates** | No production deploy; no destructive migrations; no merge to main |
+| **Evidence** | `TITAN_STAGING_BASELINE_FREEZE.md`, `TITAN_NEXT_IMPLEMENTATION_STAGE_PLAN.md`, updated control docs |
+| **Next phase selected** | Phase 1 of next implementation stage — scheduling calendar (staging-only, Owner gate per phase) |
+
+---
+
 ## Sprint 195 — Cursor resume + payments SQL fix verification
 
 | Field | Value |
