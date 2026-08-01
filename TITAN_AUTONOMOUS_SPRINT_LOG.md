@@ -90,7 +90,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 3 — Locked TITAN brand, login and responsive shell |
 | **Result** | Complete (local) |
-| **Checkpoint** | (pending commit) |
+| **Checkpoint** | `043d23b` |
 | **Files changed** | `auth-shell.test.ts`, `index.css` (414px auth safe-area + wordmark) |
 | **Migration** | None |
 | **Tests** | Web tests 36 pass (includes brand shell contracts) |
