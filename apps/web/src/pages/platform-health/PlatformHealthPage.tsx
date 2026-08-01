@@ -1,5 +1,6 @@
 import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
 import { Button, EmptyState, GroupedTabNav, LoadingState, Panel, StatCard } from '@titan/ui';
 import type { EnterprisePlatformHealthDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -27,9 +28,14 @@ import {
   formatHealthStatus,
   formatSeverity,
 } from '../../features/platform-health/utils';
+import { SettingsNav } from '../../features/settings/SettingsNav';
+import { PlatformTechnicalSystemsPanel } from '../../features/platform-health/PlatformTechnicalSystemsPanel';
+import { fetchMissionControlModuleSnapshots } from '../../lib/mission-control-api-client';
+import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 
 type PlatformHealthTab =
   | 'overview'
+  | 'platform_systems'
   | 'services'
   | 'diagnostics'
   | 'performance'
@@ -44,6 +50,8 @@ type PlatformHealthTab =
 
 export function PlatformHealthPage() {
   const { accessToken, user } = useAuth();
+  const [location] = useLocation();
+  const isSettingsRoute = location.startsWith('/settings/advanced/platform-health');
   const [activeTab, setActiveTab] = useState<PlatformHealthTab>('overview');
   const [dashboard, setDashboard] = useState<EnterprisePlatformHealthDashboard | null>(null);
   const [auditLogs, setAuditLogs] = useState<
@@ -74,8 +82,21 @@ export function PlatformHealthPage() {
     [user],
   );
 
+  const {
+    data: moduleSnapshots,
+    error: modulesError,
+    isLoading: modulesLoading,
+    refetch: refetchModules,
+  } = useStaffCachedQuery({
+    queryKey: 'platform-health/mission-control-modules',
+    enabled: canView && activeTab === 'platform_systems',
+    staleTimeMs: 45_000,
+    fetcher: async () => fetchMissionControlModuleSnapshots(accessToken!),
+  });
+
   const tabs: Array<{ id: PlatformHealthTab; label: string }> = [
     { id: 'overview', label: 'Overview' },
+    { id: 'platform_systems', label: 'Platform Systems' },
     { id: 'services', label: 'Services' },
     { id: 'diagnostics', label: 'Diagnostics' },
     { id: 'performance', label: 'Performance' },
@@ -93,7 +114,7 @@ export function PlatformHealthPage() {
     {
       id: 'overview',
       label: 'Overview',
-      tabs: tabs.filter((t) => ['overview', 'services'].includes(t.id)),
+      tabs: tabs.filter((t) => ['overview', 'platform_systems', 'services'].includes(t.id)),
     },
     {
       id: 'operations',
@@ -197,7 +218,8 @@ export function PlatformHealthPage() {
 
   if (isLoading || !dashboard) {
     return (
-      <div className="p-6">
+      <div className={`page-shell settings-page ${isSettingsRoute ? '' : 'p-6'}`.trim()}>
+        {isSettingsRoute ? <SettingsNav /> : null}
         <PageHeader title="Platform Health" description="Loading platform health center..." />
       </div>
     );
@@ -206,10 +228,14 @@ export function PlatformHealthPage() {
   const health = dashboard.platformHealth;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className={`page-shell settings-page ${isSettingsRoute ? '' : 'space-y-6 p-6'}`.trim()}>
       <PageHeader
         title="Platform Health"
-        description="Unified platform health center — monitoring, diagnostics, performance intelligence, and incident management."
+        description={
+          isSettingsRoute
+            ? 'Advanced platform diagnostics, deployment health, and technical operations — for platform owners.'
+            : 'Unified platform health center — monitoring, diagnostics, performance intelligence, and incident management.'
+        }
         actions={
           canWrite ? (
             <div className="flex flex-wrap gap-2">
@@ -248,6 +274,8 @@ export function PlatformHealthPage() {
         }
       />
 
+      {isSettingsRoute ? <SettingsNav /> : null}
+
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
@@ -280,6 +308,15 @@ export function PlatformHealthPage() {
           </div>
           <Panel title="Summary">{dashboard.summary}</Panel>
         </div>
+      ) : null}
+
+      {!isLoading && activeTab === 'platform_systems' ? (
+        <PlatformTechnicalSystemsPanel
+          snapshots={moduleSnapshots ?? []}
+          isLoading={modulesLoading && moduleSnapshots === undefined}
+          error={modulesError}
+          onRetry={() => void refetchModules()}
+        />
       ) : null}
 
       {!isLoading && activeTab === 'services' ? (

@@ -1,24 +1,19 @@
 import { PageHeader, SummaryCardGrid } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
 import { NAV_LABELS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   acknowledgeMissionControlAlert,
-  captureMissionControlOperationsMap,
   fetchMissionControlModuleSnapshots,
   fetchMissionControlSummary,
   refreshMissionControlDepartmentHealth,
   syncMissionControlAlerts,
-  syncMissionControlTimeline,
 } from '../../lib/mission-control-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
-import { AnalyticsTabPanel } from '../../features/analytics/AnalyticsTabPanel';
-import { DayPlanningPanel } from '../../features/aura/DayPlanningPanel';
-import { canWriteCompanyMemory } from '@titan/auth/browser';
+import { CompanyHealthAreasGrid } from '../../features/mission-control/CompanyHealthAreasGrid';
 import {
   canAccessMissionControl,
   canManageMissionControl,
@@ -27,14 +22,12 @@ import {
   formatStatus,
 } from '../../features/mission-control/utils';
 
-type MissionControlTab =
-  'dashboard' | 'alerts' | 'incidents' | 'timeline' | 'operations-map' | 'recommendations';
+type CompanyHealthTab = 'dashboard' | 'alerts';
 
 export function MissionControlPage() {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<MissionControlTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<CompanyHealthTab>('dashboard');
   const [viewMode, setViewMode] = useState<'simple' | 'advanced'>('simple');
-  const [moreSystemsOpen, setMoreSystemsOpen] = useState(false);
   const [isWorking, setIsWorking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -42,16 +35,6 @@ export function MissionControlPage() {
   const canView = useMemo(() => (user ? canAccessMissionControl(user.permissions) : false), [user]);
   const canWrite = useMemo(
     () => (user ? canManageMissionControl(user.permissions) : false),
-    [user],
-  );
-  const canWriteDayPlan = useMemo(
-    () =>
-      user
-        ? canWriteCompanyMemory({
-            roleName: user.roleName,
-            permissions: user.permissions,
-          })
-        : false,
     [user],
   );
 
@@ -124,63 +107,36 @@ export function MissionControlPage() {
     );
   }
 
-  const tabs: Array<{ id: MissionControlTab; label: string }> = [
+  const tabs: Array<{ id: CompanyHealthTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
-    { id: 'alerts', label: 'Alert Center' },
-    { id: 'incidents', label: 'Incidents' },
-    { id: 'timeline', label: 'Operations Timeline' },
-    { id: 'operations-map', label: 'Live Operations Map' },
-    { id: 'recommendations', label: 'AI Recommendations' },
+    { id: 'alerts', label: 'Alerts' },
   ];
 
-  const priorityModules = new Set([
-    'jobs',
-    'operations',
-    'finance',
-    'customers',
-    'sales',
-    'fleet',
-    'integrations',
-    'security',
-    'aura',
-  ]);
-
-  const moreSystemModules = new Set([
-    'knowledge_graph',
-    'digital_twin',
-    'developer_platform',
-    'data_migration',
-    'release_management',
-    'production_launch',
-    'industry_packs',
-    'saas_management',
-    'business_continuity',
-    'app_builder',
-  ]);
-
-  const visibleSnapshots = dashboard?.moduleSnapshots.filter((snapshot) => {
-    if (viewMode === 'advanced') {
-      return true;
-    }
-    if (priorityModules.has(snapshot.module)) {
-      return true;
-    }
-    if (moreSystemModules.has(snapshot.module)) {
-      return (
-        moreSystemsOpen ||
-        snapshot.status === 'critical' ||
-        snapshot.status === 'warning' ||
-        snapshot.status === 'attention_required'
-      );
-    }
-    return snapshot.status === 'critical' || snapshot.status === 'attention_required';
-  });
+  const statCards = dashboard
+    ? [
+        dashboard.businessHealthScore != null
+          ? { label: 'Business Health', value: String(dashboard.businessHealthScore) }
+          : null,
+        dashboard.pendingAlertCount > 0
+          ? { label: 'Pending Alerts', value: String(dashboard.pendingAlertCount) }
+          : null,
+        dashboard.criticalAlertCount > 0
+          ? { label: 'Critical Alerts', value: String(dashboard.criticalAlertCount) }
+          : null,
+        dashboard.activeIncidentCount > 0
+          ? { label: 'Active Incidents', value: String(dashboard.activeIncidentCount) }
+          : null,
+        dashboard.pendingActionCount > 0
+          ? { label: 'Pending Actions', value: String(dashboard.pendingActionCount) }
+          : null,
+      ].filter(Boolean)
+    : [];
 
   return (
-    <div className="automation-page page-shell">
+    <div className="automation-page page-shell mission-control-page">
       <PageHeader
         title={NAV_LABELS.companyHealth}
-        description="Business overview, today’s operational priorities, and critical actions."
+        description="Business health across cash flow, jobs, customers, team, fleet, stock, compliance, and integrations."
         actions={
           canWrite ? (
             <div className="page-header-actions">
@@ -213,91 +169,43 @@ export function MissionControlPage() {
       <TabNav
         tabs={tabs}
         activeTab={activeTab}
-        onChange={(tabId) => setActiveTab(tabId as MissionControlTab)}
-        ariaLabel="Mission control sections"
+        onChange={(tabId) => setActiveTab(tabId as CompanyHealthTab)}
+        ariaLabel="Company health sections"
       />
 
       {isLoading ? (
-        <LoadingState label="Loading mission control summary…" />
+        <LoadingState label="Loading company health…" />
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Mission control dashboard is unavailable." />
+        <EmptyState title="No data" description="Company health dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'dashboard' ? (
             <div className="mission-control-dashboard">
-              <SummaryCardGrid columns={4} className="mission-control-stats">
-                {dashboard.businessHealthScore != null ? (
-                  <StatCard label="Business Health" value={String(dashboard.businessHealthScore)} />
-                ) : null}
-                <StatCard label="Pending Alerts" value={String(dashboard.pendingAlertCount)} />
-                <StatCard label="Critical Alerts" value={String(dashboard.criticalAlertCount)} />
-                <StatCard label="Active Incidents" value={String(dashboard.activeIncidentCount)} />
-                <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
-              </SummaryCardGrid>
-
-              <div className="mission-control-dashboard__split">
-                {accessToken ? (
-                  <Panel title="Today's plan">
-                    <DayPlanningPanel accessToken={accessToken} canWrite={canWriteDayPlan} />
-                  </Panel>
-                ) : null}
-
-                <Panel title="Business overview">
-                  <p>{dashboard.summary}</p>
-                </Panel>
-              </div>
-
-              <Panel title="Systems">
-                <AnalyticsTabPanel
-                  isLoading={modulesLoading && moduleSnapshots === undefined}
-                  error={modulesError}
-                  hasData={moduleSnapshots !== undefined}
-                  isEmpty={moduleSnapshots !== undefined && (visibleSnapshots?.length ?? 0) === 0}
-                  emptyTitle="No systems to show"
-                  emptyDescription="No module snapshots available."
-                  loadingLabel="Loading module systems…"
-                  onRetry={() => void refetchModules()}
-                >
-                  {visibleSnapshots && visibleSnapshots.length > 0 ? (
-                    <div className="data-list">
-                      {visibleSnapshots.map((snapshot) => {
-                        const manageHref =
-                          typeof snapshot.metrics.manageHref === 'string'
-                            ? snapshot.metrics.manageHref
-                            : null;
-
-                        return (
-                          <div key={snapshot.module} className="data-list-item">
-                            <strong>{formatModuleName(snapshot.module)}</strong>
-                            <span className={`status-pill status-pill--${snapshot.status}`}>
-                              {formatStatus(snapshot.status)}
-                            </span>
-                            <p>{snapshot.summary}</p>
-                            {manageHref ? (
-                              <Link href={manageHref}>
-                                <Button variant="secondary" size="sm">
-                                  Manage capability
-                                </Button>
-                              </Link>
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </AnalyticsTabPanel>
-                {viewMode === 'simple' ? (
-                  <div className="panel-actions">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setMoreSystemsOpen((open) => !open)}
-                    >
-                      {moreSystemsOpen ? 'Hide more systems' : 'Show more systems'}
-                    </Button>
-                  </div>
-                ) : null}
+              <Panel title="Overall status" className="company-health-overall">
+                <div className="company-health-overall__row">
+                  <span className={`status-pill status-pill--${dashboard.systemHealthStatus}`}>
+                    {formatStatus(dashboard.systemHealthStatus)}
+                  </span>
+                  <p className="company-health-overall__summary">{dashboard.summary}</p>
+                </div>
               </Panel>
+
+              {statCards.length > 0 ? (
+                <SummaryCardGrid columns={4} className="mission-control-stats">
+                  {statCards.map((card) =>
+                    card ? <StatCard key={card.label} label={card.label} value={card.value} /> : null,
+                  )}
+                </SummaryCardGrid>
+              ) : null}
+
+              {modulesLoading && moduleSnapshots === undefined ? (
+                <LoadingState label="Loading business areas…" />
+              ) : (
+                <CompanyHealthAreasGrid
+                  snapshots={dashboard.moduleSnapshots}
+                  recommendations={dashboard.recommendations}
+                />
+              )}
 
               {viewMode === 'advanced' ? (
                 <Panel title="Department Health">
@@ -341,11 +249,11 @@ export function MissionControlPage() {
           ) : null}
 
           {activeTab === 'alerts' ? (
-            <Panel title="Enterprise Alert Center">
+            <Panel title="Business Alerts">
               {dashboard.recentAlerts.length === 0 ? (
                 <EmptyState
                   title="No alerts"
-                  description="Sync alerts from executive, automation, integration, and digital twin modules."
+                  description="Alerts appear when live business modules report issues."
                 />
               ) : (
                 <div className="data-list">
@@ -370,134 +278,6 @@ export function MissionControlPage() {
                           Acknowledge
                         </Button>
                       ) : null}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          ) : null}
-
-          {activeTab === 'incidents' ? (
-            <Panel title="Incident Management">
-              {dashboard.activeIncidents.length === 0 ? (
-                <EmptyState
-                  title="No active incidents"
-                  description="Incidents are tracked when created by your team — no demo incidents are generated."
-                />
-              ) : (
-                <div className="data-list">
-                  {dashboard.activeIncidents.map((incident) => (
-                    <div key={incident.id} className="data-list-item">
-                      <strong>{incident.title}</strong>
-                      <span className={`status-pill severity-${incident.severity}`}>
-                        {formatSeverity(incident.severity)}
-                      </span>
-                      <span className="status-pill">{formatStatus(incident.status)}</span>
-                      <p>{incident.description}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          ) : null}
-
-          {activeTab === 'timeline' ? (
-            <Panel title="Operational Timeline">
-              {canWrite ? (
-                <div className="panel-actions">
-                  <Button
-                    variant="secondary"
-                    disabled={isWorking}
-                    onClick={() =>
-                      void runAction(
-                        () => syncMissionControlTimeline(accessToken!),
-                        'Timeline synced from live module events.',
-                      )
-                    }
-                  >
-                    Sync Timeline
-                  </Button>
-                </div>
-              ) : null}
-              {dashboard.timelineEvents.length === 0 ? (
-                <EmptyState
-                  title="No events"
-                  description="Sync the cross-module event stream from live data."
-                />
-              ) : (
-                <div className="data-list">
-                  {dashboard.timelineEvents.map((event) => (
-                    <div key={event.id} className="data-list-item">
-                      <strong>{event.title}</strong>
-                      <span className="status-pill">{formatStatus(event.eventType)}</span>
-                      {event.sourceModule ? <span>{event.sourceModule}</span> : null}
-                      {event.description ? <p>{event.description}</p> : null}
-                      <small>{new Date(event.eventAt).toLocaleString()}</small>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          ) : null}
-
-          {activeTab === 'operations-map' ? (
-            <Panel title="Live Operations Map">
-              {canWrite ? (
-                <div className="panel-actions">
-                  <Button
-                    variant="secondary"
-                    disabled={isWorking}
-                    onClick={() =>
-                      void runAction(
-                        () => captureMissionControlOperationsMap(accessToken!),
-                        'Operations map captured from fleet GPS and active jobs.',
-                      )
-                    }
-                  >
-                    Capture Map
-                  </Button>
-                </div>
-              ) : null}
-              {dashboard.operationsMap.length === 0 ? (
-                <EmptyState
-                  title="No map points"
-                  description="Capture fleet positions and active jobs from real GPS and job records."
-                />
-              ) : (
-                <div className="data-list">
-                  {dashboard.operationsMap.map((point) => (
-                    <div key={point.id} className="data-list-item">
-                      <strong>{point.label}</strong>
-                      <span className="status-pill">{formatModuleName(point.mapType)}</span>
-                      {point.latitude != null && point.longitude != null ? (
-                        <span>
-                          {point.latitude.toFixed(4)}, {point.longitude.toFixed(4)}
-                        </span>
-                      ) : (
-                        <span>No coordinates</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </Panel>
-          ) : null}
-
-          {activeTab === 'recommendations' ? (
-            <Panel title="AI Executive Intelligence">
-              {dashboard.recommendations.length === 0 ? (
-                <EmptyState
-                  title="No recommendations"
-                  description="Generate recommendations from real alert, incident, and health signals."
-                />
-              ) : (
-                <div className="data-list">
-                  {dashboard.recommendations.map((rec) => (
-                    <div key={rec.id} className="data-list-item">
-                      <strong>{rec.title}</strong>
-                      <span className="status-pill">{formatSeverity(rec.priority)}</span>
-                      <span className="status-pill">{formatStatus(rec.status)}</span>
-                      <p>{rec.recommendation}</p>
                     </div>
                   ))}
                 </div>
