@@ -1,5 +1,5 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
-import { useRoute } from 'wouter';
+import { useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
 import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
@@ -60,8 +60,9 @@ const ACTION_LABELS: Record<JobWorkflowAction, string> = {
 
 export function MobileJobDetailPage() {
   const { accessToken } = useAuth();
-  const [, params] = useRoute('/mobile/jobs/:jobId');
-  const jobId = params?.jobId;
+  // Nested under `<Route path="/mobile" nest>` — match nest-relative `/jobs/:jobId` via params.
+  const params = useParams<{ jobId: string }>();
+  const jobId = params.jobId;
   const [workspace, setWorkspace] = useState<MobileJobExecutionWorkspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [busy, setBusy] = useState(false);

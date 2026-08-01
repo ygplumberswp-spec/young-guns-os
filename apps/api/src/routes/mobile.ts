@@ -725,6 +725,16 @@ export function createMobileRouter({
     res.json({ data: { notifications } });
   });
 
+  technicianRouter.patch('/notifications/:id/read', requireMobileRead, async (req, res) => {
+    const auth = getAuth(req);
+    const updated = await notificationService.markReadStaff(auth, getRouteParam(req.params.id));
+    if (!updated) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Notification not found' } });
+      return;
+    }
+    res.json({ data: { success: true } });
+  });
+
   technicianRouter.get('/sync', requireMobileRead, async (req, res) => {
     const auth = getAuth(req);
     const deviceId = typeof req.query.deviceId === 'string' ? req.query.deviceId : undefined;

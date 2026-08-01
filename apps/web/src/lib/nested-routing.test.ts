@@ -15,6 +15,7 @@ describe('nested routing helpers', () => {
   it('converts absolute mobile hrefs to nest-relative paths', () => {
     assert.equal(toMobileNestedHref('/mobile'), '/');
     assert.equal(toMobileNestedHref('/mobile/jobs'), '/jobs');
+    assert.equal(toMobileNestedHref('/mobile/jobs/abc-123'), '/jobs/abc-123');
     assert.equal(mobileHrefMatchesLocation('/mobile/jobs', '/jobs'), true);
   });
 });
