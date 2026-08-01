@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "phase5-job-payment-ledger-v1",
+  "label": "232-job-payment-ledger-verify",
+  "generatedAt": "2026-08-01T22:38:09.038Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "96f4951cb584f151c109e1e6811827d33ad00ae9",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "jobsStatus": 200,
+    "jobCount": 1,
+    "sampleJobId": "ef4468a7-db62-4147-be73-301f8c5e508a",
+    "sampleHasFinanceEnrichment": true,
+    "sampleFinanceHasData": false,
+    "financeSummaryStatus": 200,
+    "ledgerPresent": true,
+    "ledgerFields": {
+      "paymentState": "no_invoice",
+      "paymentCount": 0,
+      "hasFinanceData": false,
+      "totalReceivedCents": 0
+    },
+    "xeroParity": {
+      "payments": 0,
+      "mappings": 0,
+      "xeroLinked": 0,
+      "sample": []
+    }
+  },
+  "ui": {
+    "routes": [
+      {
+        "path": "/jobs",
+        "headerChecks": {
+          "Payment": true,
+          "Balance": true,
+          "Quote": true,
+          "Invoice": true,
+          "Suburb": true
+        },
+        "jobHeaders": [
+          "",
+          "Job #",
+          "Customer",
+          "Address",
+          "Suburb",
+          "Job type",
+          "Priority",
+          "Status",
+          "Appointment",
+          "Technician",
+          "Vehicle",
+          "Duration",
+          "Payment",
+          "Balance",
+          "Quote",
+          "Invoice",
+          "Actions"
+        ]
+      }
+    ],
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "screenshot": "diagnostic-output/phase5-job-payment-staging/jobs-list-1440.png"
+      },
+      {
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "screenshot": "diagnostic-output/phase5-job-payment-staging/jobs-list-768.png"
+      }
+    ],
+    "job360": {
+      "jobId": "ef4468a7-db62-4147-be73-301f8c5e508a",
+      "tabs": [
+        "Overview",
+        "Schedule",
+        "Job Card",
+        "Checklist",
+        "Photos",
+        "Notes",
+        "Materials",
+        "Time",
+        "Quote",
+        "Invoice",
+        "Payment",
+        "Signature",
+        "COC",
+        "Documents",
+        "Communications",
+        "Activity"
+      ],
+      "paymentScreenshot": "diagnostic-output/phase5-job-payment-staging/job-360-payment.png"
+    }
+  },
+  "blockers": [],
+  "holdItems": [],
+  "verdict": "GO"
+}
