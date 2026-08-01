@@ -1,7 +1,7 @@
 # TITAN Auto Work Pipeline
 
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Coordinator updated (UTC):** 2026-08-01 (Sprint 195 resume — `195-cursor-resume-reconciliation.json`)  
+**Coordinator updated (UTC):** 2026-08-01 (Xero GO poll — `202-xero-go-verdict.json`, `205-cv-001b-post-xero-go.json`)  
 **Staging ref:** `cpkuwtaipjxeipvbssvn` only — production `rshuiaghmtrvvilhqpwm` never touched  
 
 ---
@@ -12,7 +12,7 @@
 |-------|-----|--------|--------|----------|
 | 1 | Xero recovery fix | **PASS** (code + staging deploy) | `9bec8c3` | `diagnostic-output/187-xero-import-recovery-verify.json` |
 | 1b | Xero payments SQL fix | **PASS** (code/tests) / **STAGING DEPLOY UNVERIFIED** | `162cbf4`, `4a24b89` | `diagnostic-output/194-payments-sql-fix.json` |
-| 2 | Xero import GO | **IN_PROGRESS** — job `81c5b8d8…` running, contacts **p5**, 673 mappings preserved | — | `187`, `195-cursor-resume-reconciliation.json` |
+| 2 | Xero import GO | **NO-GO** — import quiescent + `last_sync_at` set; **CV-001b** `cvMetricsRefreshJobId` still null | `60b4829` | `202-xero-go-verdict.json`, `205-cv-001b-post-xero-go.json`, `187` |
 | 3 | SPI-001 Supplier Price Intelligence | **PASS** (code/tests) / **FAIL** (staging migration) | `0b6b911` | `189-spi001-staging-verify.json` |
 | 4 | YGP-001 Young Guns Pricing | **QUEUED** | — | blocked until SPI-001 staging PASS |
 | 5 | E2E margin flow verify | **QUEUED** | — | `188-supplier-to-margin-e2e-verify.json` |
@@ -41,6 +41,8 @@
 ---
 
 ## Phase 2 — Xero GO gate
+
+**Status:** **NO-GO** (2026-08-01) — all import/mapping gates pass except **CV-001b** auto-recalc marker on connector. Next: fix CV settled/tick path, rerun `187` → **GO**, then **SPI-001** staging migration window.
 
 | Check | Target |
 |-------|--------|

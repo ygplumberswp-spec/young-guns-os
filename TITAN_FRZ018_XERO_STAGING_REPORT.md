@@ -246,3 +246,17 @@ Evidence: `diagnostic-output/187-xero-import-recovery-verify.json`
 Probe: `node diagnostic-output/frz018-xero-import-recovery-verify.mjs`
 
 **Post-deploy:** scheduler auto-resumes job `8e6aec9b…` from invoices checkpoint (~682 contacts preserved). No OAuth reconnect or Sync now required.
+
+## FRZ-018i Xero GO poll (2026-08-01, NO-GO)
+
+| Check | Result |
+|-------|--------|
+| Import completed (`6a8304c4…` + resume chain) | **PASS** |
+| `last_sync_at` | **PASS** (`2026-08-01T17:37:22.876Z`) |
+| Stages / mappings / dupes | **PASS** (673/5/0; 0 dupes; 3078 bank tx logs) |
+| CV-001b `cvMetricsRefreshJobId` | **FAIL** (null after quiescence) |
+| Staging quiescent | **PASS** (0 active import jobs at final check) |
+| Health ready | **200** |
+
+Evidence: `diagnostic-output/202-xero-go-verdict.json`, `205-cv-001b-post-xero-go.json`.
+

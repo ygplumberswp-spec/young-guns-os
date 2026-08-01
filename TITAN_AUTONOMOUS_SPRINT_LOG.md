@@ -862,3 +862,23 @@
 | **Duplicates** | none |
 | **Deploy** | Still **DEPLOY OUTDATED** — `9ce5545a` not in git (likely Railway build/deploy id); cannot verify `162cbf4` ancestry |
 | **Escalation** | **URGENT** — redeploy before job reaches **payments** stage |
+
+---
+
+## Sprint 205 — Xero GO poll + CV-001b post-import verify (NO-GO)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018 / Phase 2 Xero GO gate |
+| **Result** | **NO-GO** — import completed and staging quiescent; `cvMetricsRefreshJobId` never set |
+| **Primary GO job** | `6a8304c4…` completed; `last_sync_at` initially `2026-08-01T14:46:23.597Z` |
+| **Incremental** | `08d2da82…` completed `15:55:40Z` (scheduled post-success sync) |
+| **Resume chain** | Auto-resume processed `81c5b8d8…` → final completed `8e6aec9b…` at `17:37:22Z` |
+| **Mappings** | 673 / 5 / 0; bank tx logs 3078; duplicate customer mappings **0** |
+| **CV-001b** | `182` probe PASS (all `prospect_contact` expected — invoices draft/cancelled, 0 totals); connector markers **null** |
+| **Health** | `/api/v1/health/ready` **200** |
+| **Migrations** | Staging `__drizzle_migrations` **114** rows (not applied by this sprint); `conflict_metadata` column still absent — reconcile before next incremental |
+| **Evidence** | `diagnostic-output/202-xero-go-verdict.json`, `205-cv-001b-post-xero-go.json`, `205-quiescence-final.log` |
+| **Next pipeline phase** | **SPI-001** remains queued until Phase 2 **GO** |
+
