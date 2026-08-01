@@ -94,10 +94,14 @@ function getRouteParam(value: string | string[]): string {
 function handleError(error: unknown, res: import('express').Response) {
   if (error instanceof EnterpriseMobilePlatformError) {
     const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 500;
-    res.status(status).json({ error: error.code, message: error.message });
+    res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
   throw error;
+}
+
+function validationError(res: import('express').Response, message: string) {
+  res.status(400).json({ error: { code: 'VALIDATION_ERROR', message } });
 }
 
 export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
@@ -114,7 +118,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
         const dashboard = await deps.enterpriseMobilePlatformService.getDashboard(
           authContext.companyId,
         );
-        res.json({ dashboard });
+        res.json({ data: { dashboard } });
       } catch (error) {
         next(error);
       }
@@ -131,7 +135,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
         const workspace = await deps.enterpriseMobilePlatformService.getDispatcherWorkspace(
           authContext.companyId,
         );
-        res.json({ workspace });
+        res.json({ data: { workspace } });
       } catch (error) {
         next(error);
       }
@@ -149,7 +153,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           companyId: authContext.companyId,
           userId: authContext.userId,
         });
-        res.json({ context });
+        res.json({ data: { context } });
       } catch (error) {
         next(error);
       }
@@ -168,10 +172,10 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           body,
         );
-        res.status(201).json({ device });
+        res.status(201).json({ data: { device } });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+          validationError(res, error.message);
           return;
         }
         handleError(error, res);
@@ -190,7 +194,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           getRouteParam(req.params.deviceId),
         );
-        res.json({ device });
+        res.json({ data: { device } });
       } catch (error) {
         handleError(error, res);
       }
@@ -209,10 +213,10 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           body,
         );
-        res.status(201).json(result);
+        res.status(201).json({ data: result });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+          validationError(res, error.message);
           return;
         }
         handleError(error, res);
@@ -232,10 +236,10 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           body,
         );
-        res.status(201).json({ asset });
+        res.status(201).json({ data: { asset } });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+          validationError(res, error.message);
           return;
         }
         handleError(error, res);
@@ -255,7 +259,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           deviceId,
         );
-        res.json(result);
+        res.json({ data: result });
       } catch (error) {
         next(error);
       }
@@ -272,7 +276,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
         const snapshot = await deps.enterpriseMobilePlatformService.captureFieldIntelligence(
           authContext.companyId,
         );
-        res.json({ snapshot });
+        res.json({ data: { snapshot } });
       } catch (error) {
         next(error);
       }
@@ -291,10 +295,10 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           body,
         );
-        res.status(201).json({ provider });
+        res.status(201).json({ data: { provider } });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+          validationError(res, error.message);
           return;
         }
         handleError(error, res);
@@ -313,7 +317,7 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           getRouteParam(req.params.providerId),
         );
-        res.json({ provider });
+        res.json({ data: { provider } });
       } catch (error) {
         handleError(error, res);
       }
@@ -332,10 +336,10 @@ export function createEnterpriseMobilePlatformRouter(deps: RouterDeps): Router {
           { companyId: authContext.companyId, userId: authContext.userId },
           body,
         );
-        res.json({ config });
+        res.json({ data: { config } });
       } catch (error) {
         if (error instanceof z.ZodError) {
-          res.status(400).json({ error: 'VALIDATION_ERROR', message: error.message });
+          validationError(res, error.message);
           return;
         }
         handleError(error, res);
