@@ -118,10 +118,121 @@ export class IntegrationSyncOrchestratorService {
     });
   }
 
+  /**
+   * Connected tenants that linked before auto-sync existed may lack schedules.
+   * Backfill schedules and queue a one-time initial sync without requiring reconnect.
+   */
+  async reconcileConnectedProvidersWithoutSchedules(): Promise<{
+    backfilled: number;
+    initialQueued: number;
+  }> {
+    if (!this.isAutoSyncRuntimeEnabled()) {
+      return { backfilled: 0, initialQueued: 0 };
+    }
+
+    const connectedConnections = await this.deps.db.query.integrationConnections.findMany({
+      where: eq(integrationConnections.status, 'connected'),
+    });
+
+    let backfilled = 0;
+    let initialQueued = 0;
+
+    for (const connection of connectedConnections) {
+      const catalogEntry = AUTO_SYNC_PROVIDER_CATALOG.find(
+        (entry) =>
+          entry.integrationProvider === connection.provider && entry.implementation !== 'stub',
+      );
+
+      if (!catalogEntry) {
+        continue;
+      }
+
+      const provider = catalogEntry.key;
+
+      if (!this.isProviderSyncEnabled(provider)) {
+        continue;
+      }
+
+      await this.deps.connectorEngine.ensureConnectors(connection.companyId);
+      const connectors = await this.deps.connectorEngine.listConnectors(connection.companyId, {
+        refreshStatus: false,
+      });
+      const connector = connectors.find((row) => row.connectorKey === provider);
+
+      if (!connector) {
+        continue;
+      }
+
+      const existingSchedule = await this.deps.db.query.integrationSyncSchedules.findFirst({
+        where: and(
+          eq(integrationSyncSchedules.companyId, connection.companyId),
+          eq(integrationSyncSchedules.connectorId, connector.id),
+        ),
+      });
+
+      if (existingSchedule) {
+        continue;
+      }
+
+      await this.ensureDefaultSchedule(connection.companyId, provider);
+      backfilled += 1;
+
+      const connectorConfig = (connector.config ?? {}) as AutoSyncConnectorConfig;
+      const initialCompleted = connectorConfig.autoSync?.initialSyncCompleted === true;
+
+      if (!initialCompleted) {
+        initialQueued += 1;
+        void this.runProviderSync({
+          companyId: connection.companyId,
+          provider,
+          trigger: 'initial',
+        }).catch((error: unknown) => {
+          console.error('[integration-sync-orchestrator] Backfill initial sync failed', {
+            companyId: connection.companyId,
+            provider,
+            error,
+          });
+        });
+      } else {
+        const schedule = await this.deps.db.query.integrationSyncSchedules.findFirst({
+          where: and(
+            eq(integrationSyncSchedules.companyId, connection.companyId),
+            eq(integrationSyncSchedules.connectorId, connector.id),
+          ),
+        });
+
+        if (schedule) {
+          await this.deps.db
+            .update(integrationSyncSchedules)
+            .set({
+              nextRunAt: new Date(),
+              updatedAt: new Date(),
+            })
+            .where(eq(integrationSyncSchedules.id, schedule.id));
+        }
+      }
+
+      await this.recordAudit(
+        connection.companyId,
+        undefined,
+        'integration_auto_sync_schedule_backfilled',
+        {
+          provider,
+          reason: 'connected_without_schedule',
+          initialSyncQueued: !initialCompleted,
+        },
+      );
+    }
+
+    return { backfilled, initialQueued };
+  }
+
   async runScheduledSyncs(): Promise<{ processed: number; skipped: number; errors: number }> {
     if (!this.isAutoSyncRuntimeEnabled()) {
       return { processed: 0, skipped: 0, errors: 0 };
     }
+
+    await this.reconcileConnectedProvidersWithoutSchedules();
 
     const now = new Date();
     const dueSchedules = await this.deps.db.query.integrationSyncSchedules.findMany({
