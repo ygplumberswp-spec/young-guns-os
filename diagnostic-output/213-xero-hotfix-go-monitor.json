@@ -1,0 +1,645 @@
+{
+  "label": "213-xero-hotfix-go-monitor",
+  "startedAt": "2026-08-01T17:15:05.107Z",
+  "completedAt": "2026-08-01T17:38:22.163Z",
+  "pollIntervalMs": 150000,
+  "maxWaitMs": 1800000,
+  "hotfix": {
+    "branch": "cursor/xero-payments-hotfix",
+    "commit": "7336bf6",
+    "deployId": "e4422c91-2cd8-47d1-aea6-2939d00abb02",
+    "jobId": "81c5b8d8-839b-4875-b106-2ecece11a966"
+  },
+  "baselineMappingCounts": {
+    "customer_mappings": 673,
+    "invoice_mappings": 5,
+    "payment_mappings": 0
+  },
+  "baselineInvoiceTotals": [
+    {
+      "invoiceNumber": "INV-0423",
+      "totalCents": 247250
+    },
+    {
+      "invoiceNumber": "INV-0424",
+      "totalCents": 226639
+    }
+  ],
+  "healthUrl": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+  "timeline": [
+    {
+      "at": "2026-08-01T17:15:05.109Z",
+      "elapsedMs": 0,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:15:08.849Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 12,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:17:40.679Z",
+      "elapsedMs": 155570,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:17:44.355Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 15,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:20:15.063Z",
+      "elapsedMs": 309954,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:20:18.782Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 17,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:22:49.486Z",
+      "elapsedMs": 464377,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:22:53.415Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 19,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:25:24.250Z",
+      "elapsedMs": 619141,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:25:28.140Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 21,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:27:58.848Z",
+      "elapsedMs": 773739,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:28:02.682Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 24,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:30:33.385Z",
+      "elapsedMs": 928276,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:30:37.358Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 27,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:33:08.113Z",
+      "elapsedMs": 1083004,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:33:12.096Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 29,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:35:42.824Z",
+      "elapsedMs": 1237715,
+      "verifyExitCode": 3,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:35:46.785Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "IN_PROGRESS",
+        "jobStatus": "running",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 30,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments"
+        ],
+        "lastSyncAt": "2026-08-01T17:01:23.594Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": false,
+        "bank_stage_completed": false,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": true,
+        "cv_api_would_show_updating": true
+      }
+    },
+    {
+      "at": "2026-08-01T17:38:17.530Z",
+      "elapsedMs": 1392421,
+      "verifyExitCode": 1,
+      "health": {
+        "status": 200,
+        "pass": true,
+        "body": "{\"data\":{\"status\":\"ready\",\"database\":\"connected\",\"redis\":\"not_configured\",\"providersEnabled\":true,\"schedulersEnabled\":true,\"workersEnabled\":false,\"webhooksEnabled\":false,\"timestamp\":\"2026-08-01T17:38:21.411Z\"}}"
+      },
+      "snapshot": {
+        "verdict": "FAIL",
+        "jobStatus": "completed",
+        "stage": "bank_transactions",
+        "bankTransactionsPage": 32,
+        "completedStages": [
+          "contacts",
+          "invoices",
+          "payments",
+          "bank_transactions"
+        ],
+        "lastSyncAt": "2026-08-01T17:37:22.876Z",
+        "mappingCounts": {
+          "customer_mappings": 673,
+          "invoice_mappings": 5,
+          "payment_mappings": 0,
+          "bank_tx_logs": 3078
+        },
+        "duplicateCustomerContactIds": 0,
+        "cvMetrics": {
+          "cvMetricsRefreshJobId": null,
+          "cvMetricsRefreshAt": null
+        },
+        "invoiceTotals": [
+          {
+            "invoiceNumber": "INV-0423",
+            "amountCents": 247250,
+            "totalCents": 247250
+          },
+          {
+            "invoiceNumber": "INV-0424",
+            "amountCents": 226639,
+            "totalCents": 226639
+          }
+        ]
+      },
+      "criteria": {
+        "mapping_counts_673_5_0": true,
+        "invoice_totals_preserved": true,
+        "no_duplicate_mappings": true,
+        "job_completed": true,
+        "bank_stage_completed": true,
+        "last_sync_at_populated": true,
+        "cv_import_in_progress": false,
+        "cv_api_would_show_updating": false
+      }
+    }
+  ],
+  "go": {
+    "decision": "yes",
+    "reason": "import_completed_mappings_preserved_cv_ready"
+  },
+  "final187": {
+    "verdict": "FAIL",
+    "jobStatus": "completed",
+    "stage": "bank_transactions",
+    "bankTransactionsPage": 32,
+    "completedStages": [
+      "contacts",
+      "invoices",
+      "payments",
+      "bank_transactions"
+    ],
+    "lastSyncAt": "2026-08-01T17:37:22.876Z",
+    "mappingCounts": {
+      "customer_mappings": 673,
+      "invoice_mappings": 5,
+      "payment_mappings": 0,
+      "bank_tx_logs": 3078
+    },
+    "duplicateCustomerContactIds": 0,
+    "cvMetrics": {
+      "cvMetricsRefreshJobId": null,
+      "cvMetricsRefreshAt": null
+    },
+    "invoiceTotals": [
+      {
+        "invoiceNumber": "INV-0423",
+        "amountCents": 247250,
+        "totalCents": 247250
+      },
+      {
+        "invoiceNumber": "INV-0424",
+        "amountCents": 226639,
+        "totalCents": 226639
+      }
+    ]
+  },
+  "cvProbe": {
+    "verdict": "PASS",
+    "xeroImportInProgress": false,
+    "dataCompleteness": "complete",
+    "totals": {
+      "customerRecords": 678,
+      "qualifyingCustomers": 0,
+      "totalInvoicedCents": 0,
+      "cashReceivedCents": 0,
+      "outstandingCents": 0,
+      "overdueOutstandingCents": 0
+    }
+  },
+  "cvApiState": {
+    "importInProgress": false,
+    "wouldShowUpdating": false,
+    "cvMetricsRefreshJobId": null,
+    "cvMetricsRefreshAt": null
+  },
+  "notes": [
+    "187 verdict FAIL only due to cv_auto_recalc_fired (connector cvMetricsRefreshJobId unset); CV API no longer in Xero updating state."
+  ],
+  "final187Verdict": "FAIL_cv_auto_recalc_only"
+}
