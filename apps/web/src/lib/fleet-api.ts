@@ -1,5 +1,6 @@
 import type {
   CreateVehicleRequest,
+  FleetLiveMapSnapshot,
   FleetStats,
   JobAssignee,
   UpdateVehicleRequest,
@@ -7,6 +8,10 @@ import type {
   VehicleSummary,
 } from '@titan/shared';
 import { request } from './api-client';
+
+export async function fetchFleetLiveMap(accessToken: string): Promise<FleetLiveMapSnapshot> {
+  return request<FleetLiveMapSnapshot>('/fleet/live-map', { accessToken });
+}
 
 export async function fetchFleetStats(accessToken: string): Promise<FleetStats> {
   return request<FleetStats>('/fleet/stats', { accessToken });

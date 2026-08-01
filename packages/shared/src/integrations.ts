@@ -361,6 +361,39 @@ export type FleetTrackingContext = {
   }>;
 };
 
+export type FleetLiveMapMovementState =
+  | 'moving'
+  | 'parked'
+  | 'idling'
+  | 'off_duty'
+  | 'unknown';
+
+export type FleetLiveMapVehicle = {
+  vehicleId: string;
+  registration: string | null;
+  driverName: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  speedKmh: number | null;
+  heading: number | null;
+  ignitionOn: boolean | null;
+  movementState: FleetLiveMapMovementState;
+  recordedAt: string | null;
+  address: string | null;
+  isStale: boolean;
+  trailToday: Array<{
+    latitude: number;
+    longitude: number;
+    recordedAt: string;
+  }>;
+};
+
+export type FleetLiveMapSnapshot = {
+  tracking: FleetTrackingContext;
+  vehicles: FleetLiveMapVehicle[];
+  generatedAt: string;
+};
+
 export type XeroConnectionSummary = {
   provider: 'xero';
   status: IntegrationConnectionStatus;

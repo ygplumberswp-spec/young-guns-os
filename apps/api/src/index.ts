@@ -1526,6 +1526,7 @@ app.use(
   '/api/v1/fleet',
   createFleetRouter({
     fleetService,
+    integrationsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

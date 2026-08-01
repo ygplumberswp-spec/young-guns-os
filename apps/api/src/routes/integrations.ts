@@ -382,6 +382,21 @@ export function createIntegrationsRouter({
   });
 
   router.get(
+    '/cartrack/permissions',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+
+      try {
+        const probes = await integrationsService.probeCartrackReadPermissions(companyId);
+        res.json({ data: { probes } });
+      } catch (error) {
+        handleIntegrationsError(res, error);
+      }
+    },
+  );
+
+  router.get(
     '/xero',
     requireAnyPermission('integrations:read', 'integrations:manage'),
     async (req, res) => {

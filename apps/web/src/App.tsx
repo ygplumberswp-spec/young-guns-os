@@ -297,6 +297,7 @@ export function App() {
                           component={OwnerPages.TemplateListPage}
                         />
                         <Route path="/fleet/new" component={OwnerPages.VehicleCreatePage} />
+                        <Route path="/fleet/live-map" component={OwnerPages.FleetLiveMapPage} />
                         <Route path="/fleet/:id" component={OwnerPages.VehicleDetailPage} />
                         <Route path="/fleet" component={OwnerPages.VehicleListPage} />
                         <Route

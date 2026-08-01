@@ -38,13 +38,18 @@ export function VehicleListPage() {
     <div className="fleet-page">
       <PageHeader
         title="Fleet"
-        description="Manage company vehicles and today's dispatch board (stored data only — live Maps/Cartrack deferred)."
+        description="Manage company vehicles, live GPS map, and today's dispatch board."
         actions={
-          canWrite ? (
-            <Link href="/fleet/new">
-              <Button>Add vehicle</Button>
+          <div className="page-header-actions">
+            <Link href="/fleet/live-map">
+              <Button variant="secondary">Live Map</Button>
             </Link>
-          ) : undefined
+            {canWrite ? (
+              <Link href="/fleet/new">
+                <Button>Add vehicle</Button>
+              </Link>
+            ) : null}
+          </div>
         }
       />
 

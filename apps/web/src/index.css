@@ -4588,6 +4588,109 @@ a:focus-visible {
   color: var(--titan-text);
 }
 
+.fleet-live-map-layout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+}
+
+.fleet-live-map-list,
+.fleet-live-map-detail {
+  grid-column: 1;
+}
+
+.fleet-live-map-canvas-panel {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  min-height: 28rem;
+}
+
+.fleet-live-map-vehicle-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.fleet-live-map-vehicle-card {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--titan-border);
+  background: var(--titan-surface);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  cursor: pointer;
+}
+
+.fleet-live-map-vehicle-card.is-selected {
+  border-color: var(--titan-accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--titan-accent) 35%, transparent);
+}
+
+.fleet-live-map-vehicle-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.fleet-live-map-canvas {
+  position: relative;
+  min-height: 24rem;
+  border-radius: 0.75rem;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(59, 130, 246, 0.12), transparent 55%),
+    var(--titan-surface-elevated);
+  background-size: 24px 24px, 24px 24px, auto, auto;
+  overflow: hidden;
+}
+
+.fleet-live-map-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.fleet-live-map-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  background: var(--titan-accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.fleet-live-map-marker.is-selected {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--titan-accent) 35%, transparent);
+}
+
+@media (max-width: 960px) {
+  .fleet-live-map-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .fleet-live-map-list,
+  .fleet-live-map-detail,
+  .fleet-live-map-canvas-panel {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
 .integration-status-list {
   display: grid;
   gap: 1rem;

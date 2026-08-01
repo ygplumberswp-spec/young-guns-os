@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
   CartrackSyncResult,
@@ -53,6 +53,7 @@ type IntegrationsServiceDeps = {
 export class IntegrationsService {
   private onCartrackConnectedHook: ((input: { companyId: string }) => void | Promise<void>) | null =
     null;
+  private readonly cartrackSyncLocks = new Set<string>();
 
   constructor(
     private readonly db: DatabaseClient,
@@ -371,6 +372,26 @@ export class IntegrationsService {
   }
 
   async syncCartrack(companyId: string): Promise<CartrackSyncResult> {
+    if (this.cartrackSyncLocks.has(companyId)) {
+      throw new IntegrationsError('SYNC_IN_PROGRESS', 'Cartrack sync already in progress');
+    }
+
+    this.cartrackSyncLocks.add(companyId);
+
+    try {
+      return await this.runCartrackSync(companyId);
+    } finally {
+      this.cartrackSyncLocks.delete(companyId);
+    }
+  }
+
+  async probeCartrackReadPermissions(companyId: string) {
+    const connection = await this.requireConnectedConnection(companyId);
+    const client = this.createClient(connection);
+    return client.probeReadPermissions();
+  }
+
+  private async runCartrackSync(companyId: string): Promise<CartrackSyncResult> {
     const connection = await this.requireConnectedConnection(companyId);
     const syncJobId = await this.hubService?.startSyncJob({
       companyId,
@@ -464,6 +485,14 @@ export class IntegrationsService {
     const mappingByExternalId = new Map(
       mappings.map((mapping) => [mapping.externalVehicleId, mapping]),
     );
+    const mappingByRegistration = new Map<string, (typeof mappings)[number]>();
+
+    for (const mapping of mappings) {
+      const normalized = normalizeRegistrationKey(mapping.externalRegistration);
+      if (normalized) {
+        mappingByRegistration.set(normalized, mapping);
+      }
+    }
 
     let positionsStored = 0;
 
@@ -471,24 +500,26 @@ export class IntegrationsService {
       const statuses = await client.fetchVehicleStatuses();
 
       for (const status of statuses) {
-        const mapping = mappingByExternalId.get(status.externalVehicleId);
+        const mapping = resolveCartrackVehicleMapping(
+          status,
+          mappingByExternalId,
+          mappingByRegistration,
+        );
 
         if (!mapping || mapping.status !== 'mapped' || !mapping.vehicleId) {
           continue;
         }
 
-        await this.db.insert(gpsPositions).values({
+        const stored = await this.storeGpsPositionIfFresh({
           companyId,
+          connectionId: connection.id,
           vehicleId: mapping.vehicleId,
-          integrationConnectionId: connection.id,
-          externalVehicleId: status.externalVehicleId,
-          latitude: status.latitude,
-          longitude: status.longitude,
-          speedKmh: status.speedKmh,
-          heading: status.heading,
-          recordedAt: status.recordedAt,
-          rawPayload: status.raw,
+          status,
         });
+
+        if (!stored) {
+          continue;
+        }
 
         emitBusinessEvent({
           companyId,
@@ -567,6 +598,53 @@ export class IntegrationsService {
     return result;
   }
 
+  private async storeGpsPositionIfFresh(input: {
+    companyId: string;
+    connectionId: string;
+    vehicleId: string;
+    status: import('../lib/cartrack.client.js').CartrackVehicleStatusRecord;
+  }): Promise<boolean> {
+    const [latestExisting] = await this.db.query.gpsPositions.findMany({
+      where: and(
+        eq(gpsPositions.companyId, input.companyId),
+        eq(gpsPositions.vehicleId, input.vehicleId),
+      ),
+      orderBy: [desc(gpsPositions.recordedAt)],
+      limit: 1,
+    });
+
+    if (latestExisting) {
+      if (latestExisting.recordedAt >= input.status.recordedAt) {
+        return false;
+      }
+
+      const sameSnapshot =
+        latestExisting.latitude === input.status.latitude &&
+        latestExisting.longitude === input.status.longitude &&
+        latestExisting.speedKmh === input.status.speedKmh &&
+        Math.abs(latestExisting.recordedAt.getTime() - input.status.recordedAt.getTime()) < 30_000;
+
+      if (sameSnapshot) {
+        return false;
+      }
+    }
+
+    await this.db.insert(gpsPositions).values({
+      companyId: input.companyId,
+      vehicleId: input.vehicleId,
+      integrationConnectionId: input.connectionId,
+      externalVehicleId: input.status.externalVehicleId,
+      latitude: input.status.latitude,
+      longitude: input.status.longitude,
+      speedKmh: input.status.speedKmh,
+      heading: input.status.heading,
+      recordedAt: input.status.recordedAt,
+      rawPayload: input.status.raw,
+    });
+
+    return true;
+  }
+
   async buildFleetTrackingContext(companyId: string): Promise<FleetTrackingContext> {
     const connection = await this.db.query.integrationConnections.findFirst({
       where: and(
@@ -582,7 +660,7 @@ export class IntegrationsService {
     const counts = await this.getMappingCounts(companyId, connection.id);
 
     const [positionCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
       .from(gpsPositions)
       .where(eq(gpsPositions.companyId, companyId));
 
@@ -590,8 +668,16 @@ export class IntegrationsService {
       where: eq(gpsPositions.companyId, companyId),
       with: { vehicle: true },
       orderBy: [desc(gpsPositions.recordedAt)],
-      limit: 10,
+      limit: 50,
     });
+
+    const latestByVehicle = new Map<string, (typeof latestRows)[number]>();
+    for (const row of latestRows) {
+      if (!row.vehicleId || latestByVehicle.has(row.vehicleId)) {
+        continue;
+      }
+      latestByVehicle.set(row.vehicleId, row);
+    }
 
     return {
       cartrackStatus: connection.status,
@@ -600,7 +686,7 @@ export class IntegrationsService {
       unmappedVehicleCount: counts.unmapped,
       positionCount: positionCountRow?.count ?? 0,
       lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
-      latestPositions: latestRows.map((row) => ({
+      latestPositions: [...latestByVehicle.values()].map((row) => ({
         vehicleId: row.vehicleId,
         vehicleName: row.vehicle?.name ?? null,
         licensePlate: row.vehicle?.licensePlate ?? row.externalVehicleId,
@@ -610,6 +696,115 @@ export class IntegrationsService {
         speedKmh: row.speedKmh,
         recordedAt: row.recordedAt.toISOString(),
       })),
+    };
+  }
+
+  async buildFleetLiveMapSnapshot(companyId: string) {
+    const tracking = await this.buildFleetTrackingContext(companyId);
+    const connection = await this.db.query.integrationConnections.findFirst({
+      where: and(
+        eq(integrationConnections.companyId, companyId),
+        eq(integrationConnections.provider, 'cartrack'),
+      ),
+    });
+
+    if (!connection) {
+      return {
+        tracking,
+        vehicles: [],
+        generatedAt: new Date().toISOString(),
+      };
+    }
+
+    const mappings = await this.db.query.integrationVehicleMappings.findMany({
+      where: and(
+        eq(integrationVehicleMappings.companyId, companyId),
+        eq(integrationVehicleMappings.integrationConnectionId, connection.id),
+        eq(integrationVehicleMappings.status, 'mapped'),
+      ),
+      with: { vehicle: true },
+    });
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const vehicles = await Promise.all(
+      mappings
+        .filter((mapping) => mapping.vehicleId)
+        .map(async (mapping) => {
+          const vehicleId = mapping.vehicleId!;
+          const latest = tracking.latestPositions.find((row) => row.vehicleId === vehicleId) ?? null;
+
+          const trailRows = await this.db.query.gpsPositions.findMany({
+            where: and(
+              eq(gpsPositions.companyId, companyId),
+              eq(gpsPositions.vehicleId, vehicleId),
+              gte(gpsPositions.recordedAt, startOfDay),
+            ),
+            orderBy: [desc(gpsPositions.recordedAt)],
+            limit: 200,
+          });
+
+          const rawPayload =
+            trailRows[0]?.rawPayload && typeof trailRows[0].rawPayload === 'object'
+              ? (trailRows[0].rawPayload as Record<string, unknown>)
+              : null;
+
+          const speedKmh = latest?.speedKmh ?? null;
+          const ignitionOn =
+            rawPayload && typeof rawPayload.ignition_on === 'boolean'
+              ? rawPayload.ignition_on
+              : rawPayload && typeof rawPayload.ignitionOn === 'boolean'
+                ? rawPayload.ignitionOn
+                : null;
+
+          const movementState = deriveMovementState({
+            speedKmh,
+            ignitionOn,
+            hasPosition: Boolean(latest),
+          });
+
+          const stale =
+            !latest?.recordedAt ||
+            Date.now() - new Date(latest.recordedAt).getTime() > 120_000;
+
+          return {
+            vehicleId,
+            registration: mapping.vehicle?.licensePlate ?? mapping.externalRegistration,
+            driverName:
+              (typeof rawPayload?.driver_name === 'string' ? rawPayload.driver_name : null) ??
+              (typeof rawPayload?.driverName === 'string' ? rawPayload.driverName : null),
+            latitude: latest?.latitude ?? null,
+            longitude: latest?.longitude ?? null,
+            speedKmh,
+            heading:
+              typeof trailRows[0]?.heading === 'number' ? trailRows[0]?.heading : null,
+            ignitionOn,
+            movementState,
+            recordedAt: latest?.recordedAt ?? null,
+            address:
+              typeof rawPayload?.address === 'string'
+                ? rawPayload.address
+                : typeof rawPayload?.Address === 'string'
+                  ? rawPayload.Address
+                  : null,
+            isStale: stale,
+            trailToday: trailRows
+              .slice()
+              .reverse()
+              .map((point) => ({
+                latitude: point.latitude,
+                longitude: point.longitude,
+                recordedAt: point.recordedAt.toISOString(),
+              })),
+          };
+        }),
+    );
+
+    return {
+      tracking,
+      vehicles,
+      generatedAt: new Date().toISOString(),
     };
   }
 
@@ -890,4 +1085,55 @@ function emptyTrackingContext(): FleetTrackingContext {
     lastSyncAt: null,
     latestPositions: [],
   };
+}
+
+function normalizeRegistrationKey(registration: string | null | undefined): string | null {
+  if (!registration) {
+    return null;
+  }
+
+  const normalized = registration.trim().toLowerCase().replace(/[\s\-_/]/g, '');
+  return normalized || null;
+}
+
+function resolveCartrackVehicleMapping(
+  status: import('../lib/cartrack.client.js').CartrackVehicleStatusRecord,
+  mappingByExternalId: Map<string, { status: string; vehicleId: string | null }>,
+  mappingByRegistration: Map<string, { status: string; vehicleId: string | null }>,
+) {
+  const byId = mappingByExternalId.get(status.externalVehicleId);
+  if (byId) {
+    return byId;
+  }
+
+  const normalizedRegistration = normalizeRegistrationKey(status.externalRegistration);
+  if (normalizedRegistration) {
+    return mappingByRegistration.get(normalizedRegistration) ?? null;
+  }
+
+  return null;
+}
+
+function deriveMovementState(input: {
+  speedKmh: number | null;
+  ignitionOn: boolean | null;
+  hasPosition: boolean;
+}): 'moving' | 'parked' | 'idling' | 'off_duty' | 'unknown' {
+  if (!input.hasPosition) {
+    return 'unknown';
+  }
+
+  if (input.ignitionOn === false) {
+    return 'off_duty';
+  }
+
+  if ((input.speedKmh ?? 0) > 5) {
+    return 'moving';
+  }
+
+  if (input.ignitionOn === true) {
+    return 'idling';
+  }
+
+  return 'parked';
 }
