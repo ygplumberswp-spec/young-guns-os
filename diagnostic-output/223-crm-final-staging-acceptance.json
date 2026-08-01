@@ -1,0 +1,577 @@
+{
+  "schemaVersion": "crm-final-staging-acceptance-v1",
+  "label": "STAGING-CRM-ACCEPT-223",
+  "branch": "cursor/titan-final-product-consolidation",
+  "commitSha": "04f3999",
+  "startedAt": "2026-08-01T19:18:50.313Z",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "routesTested": [
+    "/crm",
+    "/leads",
+    "/jobs"
+  ],
+  "viewportsTested": [
+    "desktop",
+    "laptop",
+    "tablet",
+    "mobile"
+  ],
+  "actionsClicked": [
+    {
+      "route": "/crm",
+      "entity": "customers",
+      "bulkActions": [
+        "Mark active",
+        "Mark inactive",
+        "Duplicate review",
+        "Archive"
+      ]
+    },
+    {
+      "route": "/crm",
+      "entity": "customers",
+      "bulkActionClicked": "Mark inactive"
+    },
+    {
+      "route": "/leads",
+      "entity": "leads",
+      "bulkActions": [
+        "Mark qualified",
+        "Decline",
+        "Assign",
+        "Mark pending",
+        "Archive"
+      ]
+    },
+    {
+      "route": "/leads",
+      "entity": "leads",
+      "bulkActionClicked": "Decline"
+    },
+    {
+      "route": "/jobs",
+      "entity": "jobs",
+      "bulkActions": [
+        "Assign technician",
+        "Mark scheduled",
+        "Reschedule",
+        "Archive / cancel"
+      ]
+    },
+    {
+      "route": "/jobs",
+      "entity": "jobs",
+      "bulkActionClicked": "Mark scheduled"
+    },
+    {
+      "route": "/crm",
+      "entity": "customer",
+      "dialogAction": "Archive",
+      "phase": "archive_immediate"
+    },
+    {
+      "route": "/leads",
+      "entity": "lead",
+      "dialogAction": "Archive",
+      "phase": "archive_immediate"
+    },
+    {
+      "route": "/crm",
+      "entity": "customer_delete",
+      "dialogAction": "Delete permanently",
+      "phase": "cancel"
+    },
+    {
+      "route": "/crm",
+      "entity": "customer_delete",
+      "dialogAction": "Delete permanently",
+      "phase": "confirm"
+    },
+    {
+      "route": "/leads",
+      "entity": "lead_delete",
+      "dialogAction": "Delete",
+      "phase": "cancel"
+    },
+    {
+      "route": "/leads",
+      "entity": "lead_delete",
+      "dialogAction": "Delete",
+      "phase": "confirm"
+    },
+    {
+      "route": "/jobs",
+      "entity": "job_archive",
+      "dialogAction": "Cancel / Archive",
+      "phase": "cancel"
+    },
+    {
+      "route": "/jobs",
+      "entity": "job_archive",
+      "dialogAction": "Cancel / Archive",
+      "phase": "confirm"
+    }
+  ],
+  "screenshots": [
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/desktop-crm.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/desktop-leads.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/desktop-jobs.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/laptop-crm.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/laptop-leads.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/laptop-jobs.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/tablet-crm.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/tablet-leads.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/tablet-jobs.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-crm.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-leads.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-jobs.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-375-crm.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-375-leads.png",
+    "/Users/keanuventer/Downloads/Titan-Aura-Consolidation/diagnostic-output/crm-acceptance-screenshots/mobile-375-jobs.png"
+  ],
+  "codeChanges": false,
+  "redeployed": false,
+  "deployId": null,
+  "results": [
+    {
+      "section": "audit",
+      "name": "staging_api_ready",
+      "status": "PASS",
+      "detail": "database connected"
+    },
+    {
+      "section": "audit",
+      "name": "owner_signup",
+      "status": "PASS",
+      "detail": "crm.accept.223.d16ecffa@staging-crm-accept.test"
+    },
+    {
+      "section": "audit",
+      "name": "seed_customers",
+      "status": "PASS",
+      "detail": "991689b9-180f-4962-9593-4cbb3c812bab, 8adeee40-fbd9-4683-8827-9e72d36ada3f, ced947b0-38d5-47b6-aecf-1726cf56a3ae, 2cae5691-1cfd-4521-9a51-3968ddae03a5"
+    },
+    {
+      "section": "audit",
+      "name": "seed_leads",
+      "status": "PASS",
+      "detail": "3 leads"
+    },
+    {
+      "section": "audit",
+      "name": "seed_jobs",
+      "status": "PASS",
+      "detail": "2 jobs"
+    },
+    {
+      "section": "bulk",
+      "name": "customers_select_multiple",
+      "status": "PASS",
+      "detail": "2 rows selected"
+    },
+    {
+      "section": "bulk",
+      "name": "customers_selected_count",
+      "status": "PASS",
+      "detail": "2 selected"
+    },
+    {
+      "section": "bulk",
+      "name": "customers_no_unsafe_bulk_delete",
+      "status": "PASS",
+      "detail": "Mark active, Mark inactive, Duplicate review, Archive"
+    },
+    {
+      "section": "bulk",
+      "name": "customers_clear_selection_after_bulk",
+      "status": "PASS",
+      "detail": "4 items"
+    },
+    {
+      "section": "bulk",
+      "name": "leads_select_multiple",
+      "status": "PASS",
+      "detail": "2 rows selected"
+    },
+    {
+      "section": "bulk",
+      "name": "leads_selected_count",
+      "status": "PASS",
+      "detail": "2 selected"
+    },
+    {
+      "section": "bulk",
+      "name": "leads_no_unsafe_bulk_delete",
+      "status": "PASS",
+      "detail": "Mark qualified, Decline, Assign, Mark pending, Archive"
+    },
+    {
+      "section": "bulk",
+      "name": "leads_clear_selection_after_bulk",
+      "status": "PASS",
+      "detail": "3 items"
+    },
+    {
+      "section": "bulk",
+      "name": "jobs_select_multiple",
+      "status": "PASS",
+      "detail": "2 rows selected"
+    },
+    {
+      "section": "bulk",
+      "name": "jobs_selected_count",
+      "status": "PASS",
+      "detail": "2 selected"
+    },
+    {
+      "section": "bulk",
+      "name": "jobs_no_unsafe_bulk_delete",
+      "status": "PASS",
+      "detail": "Assign technician, Mark scheduled, Reschedule, Archive / cancel"
+    },
+    {
+      "section": "bulk",
+      "name": "jobs_clear_selection_after_bulk",
+      "status": "PASS",
+      "detail": "2 items"
+    },
+    {
+      "section": "dialogs",
+      "name": "customer_archive_no_native_dialog",
+      "status": "PASS",
+      "detail": "Archive"
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_archive_no_native_dialog",
+      "status": "PASS",
+      "detail": "Archive"
+    },
+    {
+      "section": "dialogs",
+      "name": "customer_delete_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Permanently delete \"STAGING-CRM-ACCEPT-223 Customer d16ecffa-1\"? This cannot be undone. Owner confirmation required."
+    },
+    {
+      "section": "dialogs",
+      "name": "customer_delete_clear_consequences",
+      "status": "PASS",
+      "detail": "Permanently delete \"STAGING-CRM-ACCEPT-223 Customer d16ecffa-1\"? This cannot be undone. Owner confirmation required."
+    },
+    {
+      "section": "dialogs",
+      "name": "customer_delete_cancel_preserves_record",
+      "status": "PASS",
+      "detail": "4 rows remain"
+    },
+    {
+      "section": "dialogs",
+      "name": "customer_delete_confirm_dialog_works",
+      "status": "PASS",
+      "detail": "Permanently delete \"STAGING-CRM-ACCEPT-223 Customer d16ecffa-1\"? This cannot be "
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_delete_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Delete lead \"STAGING-CRM-ACCEPT-223 Lead d16ecffa-2\"? This cannot be undone."
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_delete_clear_consequences",
+      "status": "PASS",
+      "detail": "Delete lead \"STAGING-CRM-ACCEPT-223 Lead d16ecffa-2\"? This cannot be undone."
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_delete_cancel_preserves_record",
+      "status": "PASS",
+      "detail": "3 rows remain"
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_delete_confirm_dialog_works",
+      "status": "PASS",
+      "detail": "Delete lead \"STAGING-CRM-ACCEPT-223 Lead d16ecffa-2\"? This cannot be undone."
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Cancel / Archive job JOB-000001? Job has linked records or is not an empty draft. Cancel or archive instead of deleting."
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_clear_consequences",
+      "status": "PASS",
+      "detail": "Cancel / Archive job JOB-000001? Job has linked records or is not an empty draft. Cancel or archive instead of deleting."
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_cancel_preserves_record",
+      "status": "PASS",
+      "detail": "2 rows remain"
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_confirm_dialog_works",
+      "status": "PASS",
+      "detail": "Cancel / Archive job JOB-000001? Job has linked records or is not an empty draft"
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_archive_not_hard_delete",
+      "status": "PASS",
+      "detail": "Cancel / Archive"
+    },
+    {
+      "section": "mobile",
+      "name": "crm_no_horizontal_overflow",
+      "status": "PASS",
+      "detail": "375/375"
+    },
+    {
+      "section": "mobile",
+      "name": "crm_edit_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "crm_status_beside_name",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "crm_bulk_bar_usable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "crm_more_menu_no_clipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "crm_touch_targets",
+      "status": "PASS",
+      "detail": "28x33"
+    },
+    {
+      "section": "mobile",
+      "name": "leads_no_horizontal_overflow",
+      "status": "PASS",
+      "detail": "375/375"
+    },
+    {
+      "section": "mobile",
+      "name": "leads_edit_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "leads_status_beside_name",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "leads_bulk_bar_usable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "leads_more_menu_no_clipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "leads_touch_targets",
+      "status": "PASS",
+      "detail": "28x33"
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_no_horizontal_overflow",
+      "status": "PASS",
+      "detail": "375/375"
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_edit_visible",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_status_beside_name",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_bulk_bar_usable",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_more_menu_no_clipping",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "section": "mobile",
+      "name": "jobs_touch_targets",
+      "status": "PASS",
+      "detail": "28x33"
+    },
+    {
+      "section": "audit",
+      "name": "audit_logs_api",
+      "status": "PASS",
+      "detail": "3 entries (tenant-scoped API)"
+    },
+    {
+      "section": "audit",
+      "name": "no_tenant_leakage_in_primary",
+      "status": "PASS",
+      "detail": "3 scoped entries"
+    },
+    {
+      "section": "audit",
+      "name": "no_cross_tenant_leakage",
+      "status": "PASS",
+      "detail": "0 other-tenant logs"
+    },
+    {
+      "section": "audit",
+      "name": "job_audit_fields",
+      "status": "PASS",
+      "detail": "job_created user=838154bd-a07e-427e-b117-66c47871e48a"
+    },
+    {
+      "section": "audit",
+      "name": "lead_status_history",
+      "status": "PASS",
+      "detail": "qualified→lost"
+    },
+    {
+      "section": "audit",
+      "name": "customer_record_persisted",
+      "status": "PASS",
+      "detail": "active"
+    },
+    {
+      "section": "audit",
+      "name": "customer_unsafe_delete_blocked_api",
+      "status": "PASS",
+      "detail": "400"
+    }
+  ],
+  "auditEvidence": {
+    "auditSample": [
+      {
+        "id": "1997496b-25fd-4c5e-b16d-eb53e0a4f8fa",
+        "category": "authentication",
+        "action": "login_success",
+        "entityType": null,
+        "entityId": null,
+        "userId": "838154bd-a07e-427e-b117-66c47871e48a",
+        "userName": "Accept Owner",
+        "ipAddress": "84.17.44.227",
+        "metadata": {},
+        "occurredAt": "2026-08-01T19:19:28.639Z"
+      },
+      {
+        "id": "8c29700b-0db6-4eab-ab07-1c527bb318db",
+        "category": "crm",
+        "action": "job_created",
+        "entityType": "job",
+        "entityId": "35462c4b-2443-4fd6-859f-5c776825c4d6",
+        "userId": "838154bd-a07e-427e-b117-66c47871e48a",
+        "userName": "Accept Owner",
+        "ipAddress": null,
+        "metadata": {
+          "jobType": "Electrical",
+          "priority": "normal",
+          "jobNumber": "JOB-000002",
+          "customerId": "991689b9-180f-4962-9593-4cbb3c812bab",
+          "propertyId": "539eb5ed-ae54-4a9b-a082-e6c60709c834",
+          "siteContactDiffers": false,
+          "updateVerifiedCustomerDetails": false,
+          "updateVerifiedPropertyDetails": false
+        },
+        "occurredAt": "2026-08-01T19:19:12.945Z"
+      },
+      {
+        "id": "55a4b8e3-22b5-466e-bebd-06281dc459a7",
+        "category": "crm",
+        "action": "job_created",
+        "entityType": "job",
+        "entityId": "bae7845f-3fa8-4bda-a050-0401cd54bddd",
+        "userId": "838154bd-a07e-427e-b117-66c47871e48a",
+        "userName": "Accept Owner",
+        "ipAddress": null,
+        "metadata": {
+          "jobType": "Electrical",
+          "priority": "normal",
+          "jobNumber": "JOB-000001",
+          "customerId": "991689b9-180f-4962-9593-4cbb3c812bab",
+          "propertyId": "140e5c23-0a6a-43a9-b7c3-ec4dd349b278",
+          "siteContactDiffers": false,
+          "updateVerifiedCustomerDetails": false,
+          "updateVerifiedPropertyDetails": false
+        },
+        "occurredAt": "2026-08-01T19:19:09.724Z"
+      }
+    ],
+    "companyId": "e74d3d80-1d8c-4213-898a-52b2ee9bd8dc",
+    "userId": "838154bd-a07e-427e-b117-66c47871e48a"
+  },
+  "findings": {
+    "nativeDialogsUsed": "Delete/archive confirm flows use window.confirm/alert in CustomerList, LeadListTable, JobList — fails no_native_alert criterion until custom modal ships.",
+    "auditCoverage": "Job create writes security_audit_logs; lead status changes write lead_status_history; customer PATCH emits business events but not always security_audit_logs.",
+    "bulkDeleteGuard": "No bulk delete buttons on customers/jobs lists; leads bulk has Archive only."
+  },
+  "sections": {
+    "bulk": "PASS",
+    "dialogs": "FAIL",
+    "audit": "PASS",
+    "mobile": "PASS"
+  },
+  "totals": {
+    "passed": 54,
+    "failed": 3
+  },
+  "verdict": "NO-GO",
+  "failures": [
+    {
+      "section": "dialogs",
+      "name": "customer_delete_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Permanently delete \"STAGING-CRM-ACCEPT-223 Customer d16ecffa-1\"? This cannot be undone. Owner confirmation required."
+    },
+    {
+      "section": "dialogs",
+      "name": "lead_delete_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Delete lead \"STAGING-CRM-ACCEPT-223 Lead d16ecffa-2\"? This cannot be undone."
+    },
+    {
+      "section": "dialogs",
+      "name": "job_archive_no_native_alert",
+      "status": "FAIL",
+      "detail": "confirm: Cancel / Archive job JOB-000001? Job has linked records or is not an empty draft. Cancel or archive instead of deleting."
+    }
+  ],
+  "finishedAt": "2026-08-01T19:22:00.256Z"
+}
