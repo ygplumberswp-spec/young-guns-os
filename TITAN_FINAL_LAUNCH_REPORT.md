@@ -139,7 +139,7 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 6. MFA login enforcement  
 7. Owner Command Centre search + live fleet  
 8. BOQ workspace (FRZ-009)  
-9. Job pack send workflow (FRZ-012)  
+9. ~~Job pack send workflow (FRZ-012)~~ **local foundation done** — Sprint 015; supplier OCR + Reports Agent remain  
 10. Cross-tenant security test matrix (Phase 2)  
 
 ---

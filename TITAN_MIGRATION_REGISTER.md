@@ -2,8 +2,8 @@
 
 **Updated (UTC):** 2026-08-01 — Phase 5 staging verification  
 **ORM:** Drizzle (PostgreSQL / Supabase)  
-**Latest file:** `packages/db/drizzle/0104_n8n_hybrid_orchestration.sql`  
-**Journal count:** 104 entries  
+**Latest file:** `packages/db/drizzle/0106_job_document_packs.sql`  
+**Journal count:** 106 entries  
 
 ---
 
@@ -22,6 +22,8 @@
 | 0102 | `comms_honesty` | Truthful comms states | Staging UX-G | Approval gate | Forward-only |
 | 0103 | `marketing_eligibility_consent` | Buyer classifier + consent | Staging UX-H | Approval gate | Forward-only |
 | 0104 | `n8n_hybrid_orchestration` | n8n signing + visibility | Staging UX-J | Approval gate | Forward-only |
+| 0105 | `boq_workspace` | BOQ documents + line items | Local only (Sprint 013) | Approval gate | Forward-only |
+| 0106 | `job_document_packs` | Job pack approval + portal share | Local only (Sprint 015) | Approval gate | Forward-only |
 
 ---
 

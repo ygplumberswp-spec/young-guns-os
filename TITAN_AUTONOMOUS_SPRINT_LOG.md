@@ -246,3 +246,19 @@
 | **Approval required?** | No — local only |
 | **Next phase selected** | Phase 11 documents/OCR remainder (safe local) or pause at FRZ-015 / FRZ-018 / staging migration 0105 |
 
+---
+
+## Sprint 015 — Phase 11 job packs + COC compliance (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 11 — Documents, scanning, OCR, reports, COC and job packs (local slice) |
+| **Result** | Job document pack API + approval workflow (draft→review→approved→portal share); job pack list/detail UI; COC compliance panel on job detail; email/WhatsApp send honestly blocked (`SEND_PATH_NOT_IMPLEMENTED`) |
+| **Checkpoint** | `6418419` |
+| **Files changed** | `job-document-packs` schema/service/routes, `JobDocumentPackPanel.tsx`, `JobCompliancePanel.tsx`, `JobPackListPage.tsx`, `JobPackDetailPage.tsx`, control docs |
+| **Migration** | `0106_job_document_packs.sql` (job_document_packs, job_document_pack_items) |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**259** pass: 85 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
+| **Approval required?** | No — local only; migrations 0105–0106 apply on staging deferred |
+| **Next phase selected** | Pause at FRZ-015 AURA provider gate, FRZ-018 Xero OAuth, or Phase 12 quote-to-cash remainder (safe local) |
+
