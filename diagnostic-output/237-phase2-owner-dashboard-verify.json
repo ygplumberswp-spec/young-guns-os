@@ -1,0 +1,97 @@
+{
+  "schemaVersion": "phase2-owner-dashboard-v1",
+  "label": "237-phase2-owner-dashboard-verify",
+  "generatedAt": "2026-08-01T21:24:26.976Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "status": 200,
+    "hasSummary": true,
+    "hasActionQueue": true,
+    "actionQueueCount": 1,
+    "hasExtendedMoney": true,
+    "hasExtendedJobs": true
+  },
+  "ui": {
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "checks": {
+          "hasGreeting": true,
+          "hasGlance": true,
+          "hasActionCentre": true,
+          "hasLiveOps": true,
+          "hasTeamToday": true,
+          "falseZeroMoneyDash": false
+        },
+        "screenshot": "diagnostic-output/phase2-owner-dashboard-staging/owner-dashboard-1440.png"
+      },
+      {
+        "id": "1280",
+        "width": 1280,
+        "height": 900,
+        "checks": {
+          "hasGreeting": true,
+          "hasGlance": true,
+          "hasActionCentre": true,
+          "hasLiveOps": true,
+          "hasTeamToday": true,
+          "falseZeroMoneyDash": false
+        },
+        "screenshot": "diagnostic-output/phase2-owner-dashboard-staging/owner-dashboard-1280.png"
+      },
+      {
+        "id": "1024",
+        "width": 1024,
+        "height": 768,
+        "checks": {
+          "hasGreeting": true,
+          "hasGlance": true,
+          "hasActionCentre": true,
+          "hasLiveOps": true,
+          "hasTeamToday": true,
+          "falseZeroMoneyDash": false
+        },
+        "screenshot": "diagnostic-output/phase2-owner-dashboard-staging/owner-dashboard-1024.png"
+      },
+      {
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "checks": {
+          "hasGreeting": true,
+          "hasGlance": true,
+          "hasActionCentre": true,
+          "hasLiveOps": true,
+          "hasTeamToday": true,
+          "falseZeroMoneyDash": false
+        },
+        "screenshot": "diagnostic-output/phase2-owner-dashboard-staging/owner-dashboard-768.png"
+      },
+      {
+        "id": "375",
+        "width": 375,
+        "height": 812,
+        "checks": {
+          "hasGreeting": true,
+          "hasGlance": true,
+          "hasActionCentre": true,
+          "hasLiveOps": true,
+          "hasTeamToday": true,
+          "falseZeroMoneyDash": false
+        },
+        "screenshot": "diagnostic-output/phase2-owner-dashboard-staging/owner-dashboard-375.png"
+      }
+    ]
+  },
+  "blockers": [],
+  "verdict": "GO"
+}

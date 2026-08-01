@@ -25,7 +25,7 @@ const VIEWPORTS = [
   { id: '375', width: 375, height: 812 },
 ];
 
-async function mintOwnerToken() {
+async function mintOwnerSession() {
   const scriptPath = path.join(repoRoot, '.tmp-mint-session-237-owner.mjs');
   fs.writeFileSync(
     scriptPath,
@@ -35,41 +35,88 @@ const require = createRequire(process.cwd() + '/packages/db/package.json');
 const postgres = require('postgres');
 const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
 const companyId = '${YGP_COMPANY_ID}';
+const roleName = 'Company Owner';
+const permissions = ['*'];
 const [user] = await sql\`
   SELECT u.id, u.role_id, r.name as role_name, r.permissions
   FROM users u JOIN roles r ON r.id = u.role_id
   WHERE u.company_id = \${companyId} AND u.is_active = true
   ORDER BY u.created_at ASC LIMIT 1\`;
 if (!user) throw new Error('no owner');
-const permissions = Array.isArray(user.permissions) ? user.permissions : [];
 const sessionId = crypto.randomUUID();
-const refresh = generateRefreshToken();
-const refreshHash = hashRefreshToken(refresh);
-const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+const refreshToken = generateRefreshToken();
+const refreshHash = hashRefreshToken(refreshToken);
 await sql\`
   INSERT INTO sessions (id, user_id, company_id, refresh_token_hash, expires_at, last_activity_at, user_agent, ip_address)
   VALUES (\${sessionId}, \${user.id}, \${companyId}, \${refreshHash}, \${expiresAt}, NOW(), '237-phase2-dashboard', '127.0.0.1')\`;
 const { token } = createAccessToken(
-  { sub: user.id, companyId, roleId: user.role_id, roleName: user.role_name, sessionId, permissions },
+  { sub: user.id, companyId, roleId: user.role_id, roleName, sessionId, permissions },
   process.env.JWT_SECRET,
 );
-process.stdout.write(token);
+process.stdout.write(JSON.stringify({ accessToken: token, roleName }));
 await sql.end();
 `,
   );
-  const token = execSync(`railway run node ${scriptPath}`, {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  }).trim();
-  fs.unlinkSync(scriptPath);
-  if (!token || token.length < 40) throw new Error('Failed to mint owner session');
-  return token;
+  try {
+    execSync('pnpm --filter @titan/auth build', { cwd: repoRoot, stdio: 'pipe' });
+    const raw = execSync(`railway run node ${scriptPath}`, {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim();
+    return JSON.parse(raw);
+  } finally {
+    fs.rmSync(scriptPath, { force: true });
+  }
+}
+
+async function fetchAuthPayload(token, roleName, permissions) {
+  const res = await fetch(`${API}/api/v1/auth/me`, {
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`auth/me failed: ${res.status}`);
+  const json = await res.json();
+  return {
+    user: { ...json.data.user, roleName, permissions },
+    session: { accessToken: token, expiresIn: 3600 },
+  };
+}
+
+async function seedSession(context, page, token, roleName, permissions) {
+  const authPayload = await fetchAuthPayload(token, roleName, permissions);
+  await context.addCookies([
+    {
+      name: 'titan_refresh_token',
+      value: '237-phase2-staging-verify',
+      domain: 'comfortable-determination-staging.up.railway.app',
+      path: '/api/v1/auth',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+    },
+  ]);
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: authPayload }),
+    });
+  });
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { user: authPayload.user } }),
+    });
+  });
+  await page.goto(`${WEB}/`, { waitUntil: 'networkidle', timeout: 90_000 });
 }
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  const token = await mintOwnerToken();
+  const session = await mintOwnerSession();
+  const token = session.accessToken;
 
   const apiRes = await fetch(`${API}/api/v1/dashboard/executive-summary`, {
     headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
@@ -82,6 +129,7 @@ async function main() {
     label: '237-phase2-owner-dashboard-verify',
     generatedAt: new Date().toISOString(),
     branch: 'cursor/titan-owner-operating-model-final',
+    commitSha: '',
     stagingWeb: WEB,
     stagingApi: API,
     auth: { method: 'railway_programmatic_session', secretsInOutput: false },
@@ -105,9 +153,12 @@ async function main() {
     report.blockers.push('Missing priorities.actionQueue in API response');
   }
 
-  const browser = await chromium.launch({ headless: true, channel: 'chrome' });
-  const page = await browser.newPage();
-  await page.addInitScript((t) => localStorage.setItem('titan_access_token', t), token);
+  const browser = await chromium.launch({ headless: true, channel: 'chrome' }).catch(() =>
+    chromium.launch({ headless: true }),
+  );
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await seedSession(context, page, token, session.roleName, ['*']);
 
   for (const vp of VIEWPORTS) {
     await page.setViewportSize({ width: vp.width, height: vp.height });

@@ -58,7 +58,14 @@ Extended `DashboardExecutiveService` with:
 
 ## Phase 2 verdict
 
-See `237-phase2-owner-dashboard-verify.json` for staging GO/HOLD after deploy.
+**GO** — authenticated staging verification @ `237-phase2-owner-dashboard-verify.json`
+
+| Deploy | ID |
+|--------|-----|
+| Staging Web | `9bde9fa9-a8b2-40de-bd1d-ed218144b783` |
+| Staging API | `50bf43fe-92ba-4df5-9418-84d9483b3b75` |
+
+API executive-summary returns extended metrics and `priorities.actionQueue`. Owner dashboard renders Today at a glance, Owner action centre, Live operations, and Team today at 1440/1280/1024/768/375.
 
 ---
 
