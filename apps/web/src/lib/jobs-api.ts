@@ -59,6 +59,13 @@ export async function updateJob(
   return data.job;
 }
 
+export async function deleteJob(accessToken: string, jobId: string): Promise<void> {
+  await request<Record<string, never>>(`/jobs/${jobId}`, {
+    method: 'DELETE',
+    accessToken,
+  });
+}
+
 export async function fetchJobExecution(
   accessToken: string,
   jobId: string,

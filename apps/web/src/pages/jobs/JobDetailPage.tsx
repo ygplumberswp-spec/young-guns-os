@@ -224,6 +224,12 @@ export function JobDetailPage() {
   }, [accessToken, jobId]);
 
   useEffect(() => {
+    if (window.location.hash === '#edit' && canWrite && job) {
+      setIsEditing(true);
+    }
+  }, [canWrite, job]);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadFinance() {
@@ -291,6 +297,12 @@ export function JobDetailPage() {
       cancelled = true;
     };
   }, [accessToken, jobId, canViewProcurement]);
+
+  useEffect(() => {
+    if (window.location.hash === '#edit' && canWrite && job) {
+      setIsEditing(true);
+    }
+  }, [canWrite, job]);
 
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

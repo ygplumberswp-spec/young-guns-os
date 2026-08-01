@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { CrmService } from '../services/crm.service.js';
 import { CrmError } from '../services/crm.service.js';
+import type { CustomerValueClassificationService } from '../services/customer-value-classification.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -52,6 +53,7 @@ const updatePropertySchema = propertyBodySchema.partial().extend({
 
 type CrmRouterDeps = {
   crmService: CrmService;
+  customerValueClassificationService: CustomerValueClassificationService;
   teamService: TeamService;
   db: import('@titan/db').DatabaseClient;
   jwtSecret: string;
@@ -68,6 +70,7 @@ function getRouteParam(value: string | string[]): string {
 
 export function createCrmRouter({
   crmService,
+  customerValueClassificationService,
   teamService,
   db,
   jwtSecret,
@@ -153,7 +156,6 @@ export function createCrmRouter({
     '/customers/:customerId',
     requireAnyPermission('customers:write'),
     async (req, res) => {
-      const { companyId } = getAuth(req);
       const parsed = updateCustomerSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -168,12 +170,47 @@ export function createCrmRouter({
       }
 
       try {
+        const auth = getAuth(req);
+        const customerId = getRouteParam(req.params.customerId);
+        const classification =
+          parsed.data.status !== undefined
+            ? await customerValueClassificationService.getCustomerClassification(
+                auth.companyId,
+                customerId,
+              )
+            : null;
         const customer = await crmService.updateCustomer(
-          companyId,
-          getRouteParam(req.params.customerId),
+          auth.companyId,
+          customerId,
           parsed.data,
+          { classification, actorUserId: auth.userId },
         );
         res.json({ data: { customer } });
+      } catch (error) {
+        handleCrmError(res, error);
+      }
+    },
+  );
+
+  router.delete(
+    '/customers/:customerId',
+    requireAnyPermission('customers:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const customerId = getRouteParam(req.params.customerId);
+        const classification = await customerValueClassificationService.getCustomerClassification(
+          auth.companyId,
+          customerId,
+        );
+        const isOwner =
+          auth.roleName === 'Company Owner' || auth.permissions.includes('*');
+        await crmService.deleteCustomer(auth.companyId, customerId, {
+          classification,
+          actorUserId: auth.userId,
+          isOwner,
+        });
+        res.status(204).send();
       } catch (error) {
         handleCrmError(res, error);
       }
@@ -296,7 +333,14 @@ export function createCrmRouter({
 
 function handleCrmError(res: import('express').Response, error: unknown) {
   if (error instanceof CrmError) {
-    const status = error.code === 'NOT_FOUND' ? 404 : error.code === 'VALIDATION_ERROR' ? 400 : 400;
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'VALIDATION_ERROR'
+            ? 400
+            : 400;
 
     res.status(status).json({
       error: {

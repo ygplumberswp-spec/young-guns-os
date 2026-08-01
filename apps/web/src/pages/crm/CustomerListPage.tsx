@@ -3,8 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
 import { Button, PageLoadState } from '@titan/ui';
 import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
-import { fetchCustomers } from '../../lib/crm-api';
-import { fetchCustomersByClassification } from '../../lib/customer-value-api-client';
+import { fetchCustomersByClassification, fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { CacheStaleNotice } from '../../components/CacheStaleNotice';
@@ -36,26 +35,42 @@ export function CustomerListPage() {
   }, [search]);
 
   const {
-    data: customers,
+    data: customerRows,
     error,
     isLoading,
     isStale,
     refetch,
   } = useStaffCachedQuery({
-    queryKey: `crm/customers:${classificationFilter ?? 'all'}:${debouncedSearch}`,
+    queryKey: `crm/customers-ui:${classificationFilter ?? 'all'}:${debouncedSearch}`,
     enabled: canView,
     fetcher: async () => {
       if (classificationFilter) {
-        const rows = await fetchCustomersByClassification(
+        return fetchCustomersByClassification(
           accessToken!,
           classificationFilter,
           debouncedSearch,
         );
-        return rows.map(({ valueClassification: _valueClassification, ...customer }) => customer);
       }
-      return fetchCustomers(accessToken!, debouncedSearch);
+      return fetchCustomersWithClassification(accessToken!, debouncedSearch);
     },
   });
+
+  const classifications = useMemo(() => {
+    const map = new Map<
+      string,
+      NonNullable<typeof customerRows>[number]['valueClassification']
+    >();
+    for (const row of customerRows ?? []) {
+      map.set(row.id, row.valueClassification);
+    }
+    return map;
+  }, [customerRows]);
+
+  const customers = useMemo(
+    () =>
+      (customerRows ?? []).map(({ valueClassification: _valueClassification, ...customer }) => customer),
+    [customerRows],
+  );
 
   if (!canView) {
     return (
@@ -101,18 +116,23 @@ export function CustomerListPage() {
       <CacheStaleNotice isStale={isStale} error={error} onRetry={() => void refetch()} />
 
       <PageLoadState
-        isLoading={isLoading && customers === undefined}
-        error={error && customers === undefined ? error : null}
+        isLoading={isLoading && customerRows === undefined}
+        error={error && customerRows === undefined ? error : null}
         isEmpty={false}
         emptyTitle="No customers yet"
         emptyDescription="Add your first customer to start building your CRM."
         loadingLabel="Loading customers…"
       >
         <CustomerList
-          customers={customers ?? []}
+          customers={customers}
+          classifications={classifications}
           canWrite={canWrite}
+          accessToken={accessToken}
           search={search}
           onSearchChange={setSearch}
+          onRefresh={async () => {
+            await refetch();
+          }}
         />
       </PageLoadState>
     </div>

@@ -295,6 +295,22 @@ export function createJobsRouter({
     }
   });
 
+  router.delete('/:jobId', requireAnyPermission('jobs:write'), async (req, res) => {
+    const auth = getAuth(req);
+    try {
+      const isOwner =
+        auth.roleName === 'Company Owner' || auth.permissions.includes('*');
+      await jobsService.deleteJob(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.jobId),
+        { isOwner },
+      );
+      res.status(204).send();
+    } catch (error) {
+      handleJobsError(res, error);
+    }
+  });
+
   router.get(
     '/:jobId/execution',
     requireAnyPermission('jobs:read', 'jobs:write'),

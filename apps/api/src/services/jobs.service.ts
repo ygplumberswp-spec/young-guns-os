@@ -21,6 +21,7 @@ import {
   customers,
   cxCustomerProperties,
   documents,
+  invoices,
   jobs,
   securityAuditLogs,
   users,
@@ -767,6 +768,58 @@ export class JobsService {
     if (!assignee) {
       throw new JobsError('ASSIGNEE_NOT_FOUND', 'Team member not found for this company');
     }
+  }
+
+  async deleteJob(
+    scope: JobActor,
+    jobId: string,
+    opts: { isOwner?: boolean } = {},
+  ): Promise<void> {
+    if (!opts.isOwner) {
+      throw new JobsError('FORBIDDEN', 'Only the company owner may permanently delete jobs');
+    }
+
+    const job = await this.getJob(scope.companyId, jobId);
+    if (!job) {
+      throw new JobsError('NOT_FOUND', 'Job not found');
+    }
+
+    if (job.status !== 'new') {
+      throw new JobsError(
+        'VALIDATION_ERROR',
+        'Only empty draft jobs can be deleted. Cancel or archive instead.',
+      );
+    }
+
+    const [invoiceCount] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(invoices)
+      .where(and(eq(invoices.jobId, jobId), eq(invoices.companyId, scope.companyId)));
+
+    if ((invoiceCount?.count ?? 0) > 0) {
+      throw new JobsError(
+        'VALIDATION_ERROR',
+        'Job has linked invoices. Cancel or archive instead.',
+      );
+    }
+
+    const deleted = await this.db
+      .delete(jobs)
+      .where(and(eq(jobs.id, jobId), eq(jobs.companyId, scope.companyId)))
+      .returning({ id: jobs.id });
+
+    if (deleted.length === 0) {
+      throw new JobsError('DELETE_FAILED', 'Unable to delete job');
+    }
+
+    emitBusinessEvent({
+      companyId: scope.companyId,
+      eventType: 'job.deleted',
+      entityType: 'job',
+      entityId: jobId,
+      payload: { job: { id: jobId, jobNumber: job.jobNumber } },
+      actorUserId: scope.userId,
+    });
   }
 }
 

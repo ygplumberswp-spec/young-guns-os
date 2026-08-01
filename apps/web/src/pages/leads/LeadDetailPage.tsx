@@ -62,6 +62,18 @@ export function LeadDetailPage() {
   const [nextActionDue, setNextActionDue] = useState('');
   const [statusError, setStatusError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditingLead, setIsEditingLead] = useState(false);
+  const [editContactName, setEditContactName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editSuburb, setEditSuburb] = useState('');
+  const [editStreet, setEditStreet] = useState('');
+  const [editService, setEditService] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editAssignedUserId, setEditAssignedUserId] = useState('');
+  const [editStatus, setEditStatus] = useState<LeadStatus>('new');
+  const [editSaveError, setEditSaveError] = useState<string | null>(null);
+  const [isSavingLead, setIsSavingLead] = useState(false);
 
   const [showConvert, setShowConvert] = useState(false);
   const [customerMode, setCustomerMode] = useState<'existing' | 'new'>('new');
@@ -96,6 +108,15 @@ export function LeadDetailPage() {
     setPriority(lead.urgency);
     setSiteMobile(lead.contactPhoneE164 || lead.contactPhone || '');
     setAssignedUserId(lead.assignedUserId ?? '');
+    setEditContactName(lead.contactName);
+    setEditPhone(lead.contactPhoneE164 || lead.contactPhone || '');
+    setEditEmail(lead.contactEmail || '');
+    setEditSuburb(lead.suburb || '');
+    setEditStreet(lead.street || '');
+    setEditService(lead.serviceType || '');
+    setEditNotes(lead.notes || '');
+    setEditAssignedUserId(lead.assignedUserId ?? '');
+    setEditStatus(lead.status);
     setAppointmentLocal(
       lead.preferredAppointmentAt
         ? new Date(lead.preferredAppointmentAt).toISOString().slice(0, 16)
@@ -107,6 +128,24 @@ export function LeadDetailPage() {
       setCustomerId(lead.customerId);
     }
   }, [canCreateJob, lead]);
+
+  useEffect(() => {
+    const hash = window.location.hash.replace('#', '');
+    if (hash === 'convert') setShowConvert(true);
+    if (hash === 'edit' && canWrite) setIsEditingLead(true);
+    if (hash === 'assign') {
+      setIsEditingLead(true);
+      document.getElementById('lead-assign')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [canWrite, leadId]);
+
+  const { data: teamMembers } = useCachedQuery({
+    queryKey: 'team/members',
+    accessToken,
+    enabled: canWrite,
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchTeamMembers(accessToken!),
+  });
 
   const { data: customers } = useCachedQuery({
     queryKey: 'crm/customers',
@@ -160,6 +199,34 @@ export function LeadDetailPage() {
     jobType,
     appointmentLocal,
   ]);
+
+  async function onSaveLeadEdit(event: FormEvent) {
+    event.preventDefault();
+    if (!accessToken || !lead || !canWrite) return;
+    setEditSaveError(null);
+    setIsSavingLead(true);
+    try {
+      await updateLead(accessToken, lead.id, {
+        contactName: editContactName.trim(),
+        contactPhone: editPhone.trim() || null,
+        contactEmail: editEmail.trim() || null,
+        suburb: editSuburb.trim() || null,
+        street: editStreet.trim() || null,
+        serviceType: editService.trim() || null,
+        notes: editNotes.trim() || null,
+        assignedUserId: editAssignedUserId || null,
+        status: editStatus,
+        nextAction: nextAction.trim() || null,
+        nextActionDueAt: nextActionDue ? new Date(nextActionDue).toISOString() : null,
+      });
+      setIsEditingLead(false);
+      await refetch();
+    } catch (err) {
+      setEditSaveError(err instanceof ApiClientError ? err.message : 'Unable to save lead');
+    } finally {
+      setIsSavingLead(false);
+    }
+  }
 
   async function onUpdateStatus(event: FormEvent) {
     event.preventDefault();
@@ -433,6 +500,75 @@ export function LeadDetailPage() {
           ) : null}
         </Panel>
       </div>
+
+      {canWrite && isEditingLead ? (
+        <Panel title="Edit lead" id="lead-edit">
+          <form className="form-stack" onSubmit={onSaveLeadEdit}>
+            <Input
+              label="Contact name"
+              value={editContactName}
+              onChange={(e) => setEditContactName(e.target.value)}
+              required
+            />
+            <Input label="Phone" value={editPhone} onChange={(e) => setEditPhone(e.target.value)} />
+            <Input label="Email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} />
+            <Input label="Street" value={editStreet} onChange={(e) => setEditStreet(e.target.value)} />
+            <Input label="Suburb" value={editSuburb} onChange={(e) => setEditSuburb(e.target.value)} />
+            <Input label="Service" value={editService} onChange={(e) => setEditService(e.target.value)} />
+            <label>
+              Status
+              <select
+                className="input"
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as LeadStatus)}
+              >
+                {LEAD_STATUS_OPTIONS.filter((o) => o.value !== 'converted').map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label id="lead-assign">
+              Assigned
+              <select
+                className="input"
+                value={editAssignedUserId}
+                onChange={(e) => setEditAssignedUserId(e.target.value)}
+              >
+                <option value="">Unassigned</option>
+                {(teamMembers ?? []).map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.firstName} {member.lastName}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Notes
+              <textarea className="input" value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={3} />
+            </label>
+            <label>
+              Follow-up date
+              <input
+                className="input"
+                type="datetime-local"
+                value={nextActionDue}
+                onChange={(e) => setNextActionDue(e.target.value)}
+              />
+            </label>
+            {editSaveError ? <p className="form-error">{editSaveError}</p> : null}
+            <div className="form-actions">
+              <Button type="submit" disabled={isSavingLead}>
+                {isSavingLead ? 'Saving…' : 'Save lead'}
+              </Button>
+              <Button type="button" variant="ghost" onClick={() => setIsEditingLead(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </Panel>
+      ) : null}
 
       {canWrite ? (
         <Panel title="Follow-up & lifecycle">

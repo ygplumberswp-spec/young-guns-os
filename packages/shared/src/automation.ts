@@ -10,9 +10,11 @@ export const WORKFLOW_STATUS_OPTIONS: Array<{ value: WorkflowStatus; label: stri
 export type BusinessEventType =
   | 'customer.created'
   | 'customer.updated'
+  | 'customer.status_changed'
   | 'job.created'
   | 'job.scheduled'
   | 'job.status_changed'
+  | 'job.updated'
   | 'job.completed'
   | 'job.material_used'
   | 'quote.created'
@@ -26,7 +28,12 @@ export type BusinessEventType =
   | 'whatsapp.message.received'
   | 'quote.accepted'
   | 'lead.created'
+  | 'lead.status_changed'
+  | 'lead.updated'
   | 'lead.converted'
+  | 'lead.deleted'
+  | 'customer.deleted'
+  | 'job.deleted'
   | 'dispatch.handoff'
   | 'procurement.purchase_order_approved'
   | 'voice.call.completed'
@@ -492,9 +499,11 @@ export type RunWorkflowRequest = {
 export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTriggerType> = {
   'customer.created': 'customer_created',
   'customer.updated': 'customer_updated',
+  'customer.status_changed': 'customer_updated',
   'job.created': 'job_created',
   'job.scheduled': 'job_scheduled',
   'job.status_changed': 'job_status_changed',
+  'job.updated': 'job_status_changed',
   'job.completed': 'job_completed',
   'job.material_used': 'job_material_used',
   'quote.created': 'quote_created',
@@ -508,7 +517,12 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'whatsapp.message.received': 'whatsapp_message_received',
   'quote.accepted': 'quote_accepted',
   'lead.created': 'lead_created',
+  'lead.status_changed': 'lead_created',
+  'lead.updated': 'lead_created',
   'lead.converted': 'lead_converted',
+  'lead.deleted': 'lead_created',
+  'customer.deleted': 'customer_updated',
+  'job.deleted': 'job_status_changed',
   'dispatch.handoff': 'job_scheduled',
   'procurement.purchase_order_approved': 'purchase_order_approved',
   'voice.call.completed': 'voice_call_completed',

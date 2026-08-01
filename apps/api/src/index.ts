@@ -1410,6 +1410,7 @@ app.use(
   '/api/v1/crm',
   createCrmRouter({
     crmService,
+    customerValueClassificationService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

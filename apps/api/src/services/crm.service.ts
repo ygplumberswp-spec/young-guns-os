@@ -7,6 +7,7 @@ import type {
   CustomerDetail,
   CustomerPropertySummary,
   CustomerSummary,
+  CustomerStatusChangeGuardInput,
   UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
@@ -16,9 +17,10 @@ import {
   isValidSaPhone,
   normalizeSaMobile,
   normalizeSaPhone,
+  validateCustomerStatusChange,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customerActivities, customers, cxCustomerProperties } from '@titan/db';
+import { customerActivities, customers, cxCustomerProperties, jobs } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
 
@@ -342,11 +344,28 @@ export class CrmService {
     companyId: string,
     customerId: string,
     input: UpdateCustomerRequest,
+    opts: {
+      classification?: CustomerStatusChangeGuardInput | null;
+      actorUserId?: string | null;
+    } = {},
   ): Promise<CustomerDetail> {
     const existing = await this.getCustomer(companyId, customerId);
 
     if (!existing) {
       throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+
+    if (input.status !== undefined && input.status !== existing.status) {
+      const targetUiStatus =
+        input.status === 'inactive'
+          ? 'archived'
+          : input.status === 'lead'
+            ? 'duplicate_review'
+            : 'active';
+      const guard = validateCustomerStatusChange(targetUiStatus, opts.classification ?? null);
+      if (!guard.allowed) {
+        throw new CrmError('VALIDATION_ERROR', guard.reason);
+      }
     }
 
     const updates: Partial<typeof customers.$inferInsert> = {
@@ -409,19 +428,78 @@ export class CrmService {
 
     emitBusinessEvent({
       companyId,
-      eventType: 'customer.updated',
+      eventType:
+        input.status !== undefined && input.status !== existing.status
+          ? 'customer.status_changed'
+          : 'customer.updated',
       entityType: 'customer',
       entityId: customerId,
       payload: {
         customer: {
           id: customerId,
           status: updated.status,
+          fromStatus: existing.status,
           name: updated.name,
         },
       },
+      actorUserId: opts.actorUserId ?? undefined,
     });
 
     return (await this.getCustomer(companyId, customerId))!;
+  }
+
+  async deleteCustomer(
+    companyId: string,
+    customerId: string,
+    opts: {
+      classification?: CustomerStatusChangeGuardInput | null;
+      actorUserId?: string;
+      isOwner?: boolean;
+    } = {},
+  ): Promise<void> {
+    if (!opts.isOwner) {
+      throw new CrmError('FORBIDDEN', 'Only the company owner may permanently delete customers');
+    }
+
+    const existing = await this.getCustomer(companyId, customerId);
+    if (!existing) {
+      throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+
+    const guard = validateCustomerStatusChange('archived', opts.classification ?? null);
+    if (!guard.allowed) {
+      throw new CrmError('VALIDATION_ERROR', guard.reason);
+    }
+
+    const [jobCount] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(jobs)
+      .where(and(eq(jobs.customerId, customerId), eq(jobs.companyId, companyId)));
+
+    if ((jobCount?.count ?? 0) > 0) {
+      throw new CrmError(
+        'VALIDATION_ERROR',
+        'Customer has linked jobs. Archive instead of deleting.',
+      );
+    }
+
+    const deleted = await this.db
+      .delete(customers)
+      .where(and(eq(customers.id, customerId), eq(customers.companyId, companyId)))
+      .returning({ id: customers.id });
+
+    if (deleted.length === 0) {
+      throw new CrmError('DELETE_FAILED', 'Unable to delete customer');
+    }
+
+    emitBusinessEvent({
+      companyId,
+      eventType: 'customer.deleted',
+      entityType: 'customer',
+      entityId: customerId,
+      payload: { customer: { id: customerId, name: existing.name } },
+      actorUserId: opts.actorUserId,
+    });
   }
 
   async addActivity(

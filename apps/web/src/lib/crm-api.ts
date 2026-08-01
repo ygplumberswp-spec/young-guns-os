@@ -65,6 +65,13 @@ export async function updateCustomer(
   return data.customer;
 }
 
+export async function deleteCustomer(accessToken: string, customerId: string): Promise<void> {
+  await request<Record<string, never>>(`/crm/customers/${customerId}`, {
+    method: 'DELETE',
+    accessToken,
+  });
+}
+
 export async function addCustomerActivity(
   accessToken: string,
   customerId: string,
