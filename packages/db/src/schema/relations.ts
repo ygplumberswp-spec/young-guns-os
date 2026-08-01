@@ -213,6 +213,12 @@ import {
   workforceRecommendations,
 } from './workforce';
 import {
+  supplierPriceCatalogueItems,
+  supplierPriceImportJobs,
+  supplierPriceImportLines,
+  supplierPriceReviewQueue,
+} from './supplier-price-intelligence';
+import {
   procurementRecommendations,
   purchaseOrderItems,
   purchaseOrders,
@@ -2316,6 +2322,53 @@ export const supplierProductsRelations = relations(supplierProducts, ({ one }) =
   inventoryItem: one(inventoryItems, {
     fields: [supplierProducts.inventoryItemId],
     references: [inventoryItems.id],
+  }),
+}));
+
+export const supplierPriceImportJobsRelations = relations(
+  supplierPriceImportJobs,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [supplierPriceImportJobs.companyId],
+      references: [companies.id],
+    }),
+    supplier: one(suppliers, {
+      fields: [supplierPriceImportJobs.supplierId],
+      references: [suppliers.id],
+    }),
+    lines: many(supplierPriceImportLines),
+  }),
+);
+
+export const supplierPriceImportLinesRelations = relations(supplierPriceImportLines, ({ one }) => ({
+  company: one(companies, {
+    fields: [supplierPriceImportLines.companyId],
+    references: [companies.id],
+  }),
+  importJob: one(supplierPriceImportJobs, {
+    fields: [supplierPriceImportLines.importJobId],
+    references: [supplierPriceImportJobs.id],
+  }),
+}));
+
+export const supplierPriceCatalogueItemsRelations = relations(
+  supplierPriceCatalogueItems,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [supplierPriceCatalogueItems.companyId],
+      references: [companies.id],
+    }),
+  }),
+);
+
+export const supplierPriceReviewQueueRelations = relations(supplierPriceReviewQueue, ({ one }) => ({
+  company: one(companies, {
+    fields: [supplierPriceReviewQueue.companyId],
+    references: [companies.id],
+  }),
+  importLine: one(supplierPriceImportLines, {
+    fields: [supplierPriceReviewQueue.importLineId],
+    references: [supplierPriceImportLines.id],
   }),
 }));
 

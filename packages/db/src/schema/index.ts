@@ -80,6 +80,7 @@ export * from './voice';
 export * from './customer-support';
 export * from './workforce';
 export * from './procurement';
+export * from './supplier-price-intelligence';
 export * from './executive';
 export * from './finance-intelligence';
 export * from './knowledge-learning';
