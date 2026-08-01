@@ -28,6 +28,7 @@ import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
 import { canAccessFinance } from '../../features/finance/utils';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
+import { JobCrewAssignmentPanel } from '../../features/jobs/JobCrewAssignmentPanel';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
 
@@ -517,6 +518,16 @@ export function JobDetailPage() {
             </div>
           ) : null}
         </Panel>
+
+        {canWrite && accessToken ? (
+          <JobCrewAssignmentPanel
+            accessToken={accessToken}
+            jobId={job.id}
+            assignedUserId={job.assignedUserId}
+            execution={execution}
+            onUpdated={() => void loadJob()}
+          />
+        ) : null}
 
         <Panel title="Field execution">
           {execution ? (

@@ -77,7 +77,7 @@
 | Chain link | Classification | Evidence |
 |------------|----------------|----------|
 | Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E 10/10 GO — `diagnostic-output/140-staging-phase5-e2e.json` |
-| Crew/Vehicle assignment | Partially implemented | UX-D scheduling cards; crew model in DB |
+| Crew/Vehicle assignment | **Office UI implemented (local)** | `JobCrewAssignmentPanel` + `PUT /jobs/:id/crew`; staging E2E pending FRZ-006 |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
 | Materials/Variation | Partially implemented | UX-F procurement |
 | Quote/BOQ → Approval | Partially implemented | UX-E quotes; BOQ workspace missing |
@@ -91,7 +91,7 @@
 ## Next verification targets (ordered)
 
 1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
-2. **FRZ-006 / Phase 6** — Scheduling/dispatcher crew assignment staging proof  
+2. **FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; staging E2E proof still required  
 3. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
 4. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 

@@ -138,7 +138,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 5 staging sign-off + Phase 6 scheduling/dispatcher start |
 | **Result** | Phase 5 **GO** (public E2E 10/10); Phase 6 UX-036 local closure |
-| **Checkpoint** | Pending commit |
+| **Checkpoint** | `306ba6e` |
 | **Files changed** | `staging-phase5-public-e2e.mjs`, `TITAN_PHASE5_STAGING_REPORT.md`, dispatch intel → job create links, control doc updates |
 | **Migration** | Local staging apply **blocked** (`28P01`); live API implies `0099+` |
 | **Tests** | `pnpm typecheck`, `pnpm test` (228 pass), `pnpm build` — pass |
@@ -146,3 +146,19 @@
 | **Deploy** | Railway CLI/token **blocked** — staging API already live |
 | **Approval required?** | Staging DB password + Railway token for local migrate/redeploy |
 | **Next phase selected** | Phase 6 remainder — crew/vehicle assignment staging proof |
+
+---
+
+## Sprint 008 — Phase 6 crew assignment UI (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 6 — Scheduling/dispatcher crew & vehicle assignment (local) |
+| **Result** | Office crew assignment panel wired to existing `PUT /jobs/:id/crew`; schedule→crew sync |
+| **Checkpoint** | Pending commit |
+| **Files changed** | `JobCrewAssignmentPanel.tsx`, `crew-assignment-utils.ts`, `JobDetailPage.tsx`, `scheduling.service.ts`, `scheduling.ts` route, control doc updates |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (233 pass), `pnpm build` — pass |
+| **Approval required?** | Staging E2E for FRZ-006 crew/vehicle chain — staging DB password + deploy |
+| **Next phase selected** | Phase 6 staging proof (FRZ-006) when credentials available; UX-017 finance strip / UX-029 job time UX locally |

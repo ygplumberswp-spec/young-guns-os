@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — Phase 5 staging partial gate  
-**Verdict:** **NOT PILOT-READY** (crew/vehicle chain open)
+**Updated (UTC):** 2026-08-01 — Phase 6 crew assignment UI (local)  
+**Verdict:** **NOT PILOT-READY** (FRZ-006 staging E2E open)
 
 ---
 
@@ -11,7 +11,7 @@
 
 | Gate | Status | Evidence | Blocker |
 |------|--------|----------|---------|
-| **Operational chain** | PARTIAL | Phase 5 lead→job **10/10 GO** on staging API | Phase 6 schedule/assign proof |
+| **Operational chain** | PARTIAL | Phase 5 lead→job **10/10 GO**; Phase 6 crew UI local | FRZ-006 staging E2E |
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |

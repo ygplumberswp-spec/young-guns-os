@@ -13,8 +13,8 @@
 | **Verified complete (116-row register)** | **31 / 116 (~27%)** |
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
-| **Highest remaining risk** | Phase 6 crew/vehicle assignment + local staging DB credential drift |
-| **Current gate** | Phase 5 staging E2E **GO** → Phase 6 scheduling/dispatcher |
+| **Highest remaining risk** | Phase 6 staging E2E (FRZ-006) + staging DB credential drift |
+| **Current gate** | Phase 6 crew assignment UI local; staging proof blocked on credentials |
 
 ---
 

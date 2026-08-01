@@ -11,6 +11,7 @@ import { buildJobAddressDisplay } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { jobs, users } from '@titan/db';
 import { JobsError } from './jobs.service.js';
+import { upsertPrimaryCrewMember } from './job-execution.service.js';
 
 export class SchedulingError extends Error {
   constructor(
@@ -95,6 +96,7 @@ export class SchedulingService {
     companyId: string,
     jobId: string,
     input: ScheduleJobRequest,
+    assignedByUserId: string | null = null,
   ): Promise<ScheduledJobEvent> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
@@ -129,6 +131,15 @@ export class SchedulingService {
       throw new SchedulingError('SCHEDULE_FAILED', 'Unable to schedule job');
     }
 
+    if (input.assignedUserId) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId,
+        userId: input.assignedUserId,
+        assignedByUserId,
+      });
+    }
+
     return (await this.getScheduledJobEvent(companyId, jobId))!;
   }
 
@@ -136,6 +147,7 @@ export class SchedulingService {
     companyId: string,
     jobId: string,
     input: UpdateScheduleRequest,
+    assignedByUserId: string | null = null,
   ): Promise<ScheduledJobEvent | null> {
     const job = await this.db.query.jobs.findFirst({
       where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
@@ -201,6 +213,17 @@ export class SchedulingService {
 
     if (!updated) {
       throw new SchedulingError('SCHEDULE_FAILED', 'Unable to update schedule');
+    }
+
+    const nextAssignee =
+      input.assignedUserId === undefined ? job.assignedUserId : (input.assignedUserId ?? null);
+    if (nextAssignee) {
+      await upsertPrimaryCrewMember(this.db, {
+        companyId,
+        jobId,
+        userId: nextAssignee,
+        assignedByUserId,
+      });
     }
 
     return (await this.getScheduledJobEvent(companyId, jobId))!;

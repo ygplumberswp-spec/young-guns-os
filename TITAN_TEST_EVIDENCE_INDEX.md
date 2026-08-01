@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 007 (Phase 5 staging + Phase 6 start)  
+**Updated (UTC):** 2026-08-01 — Sprint 008 Phase 6 crew assignment UI (local)  
 **Automated test files:** 47 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -96,6 +96,7 @@
 | File | Domain |
 |------|--------|
 | `apps/web/src/features/dispatch/build-job-create-href.test.ts` | Dispatch intel → job create deep-link |
+| `apps/web/src/features/jobs/crew-assignment-utils.test.ts` | Crew assignment draft validation (2–4 members, primary, uniqueness) |
 
 ### Brand / UI
 

@@ -115,7 +115,7 @@ export function createSchedulingRouter({
   );
 
   router.post('/jobs/:jobId/schedule', requireAnyPermission('dispatch:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const auth = getAuth(req);
     const parsed = scheduleJobSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -131,9 +131,10 @@ export function createSchedulingRouter({
 
     try {
       const event = await schedulingService.scheduleJob(
-        companyId,
+        auth.companyId,
         getRouteParam(req.params.jobId),
         parsed.data,
+        auth.userId,
       );
       res.status(201).json({ data: { event } });
     } catch (error) {
@@ -145,7 +146,7 @@ export function createSchedulingRouter({
     '/jobs/:jobId/schedule',
     requireAnyPermission('dispatch:write'),
     async (req, res) => {
-      const { companyId } = getAuth(req);
+      const auth = getAuth(req);
       const parsed = updateScheduleSchema.safeParse(req.body);
 
       if (!parsed.success) {
@@ -161,9 +162,10 @@ export function createSchedulingRouter({
 
       try {
         const event = await schedulingService.updateSchedule(
-          companyId,
+          auth.companyId,
           getRouteParam(req.params.jobId),
           parsed.data,
+          auth.userId,
         );
         res.json({ data: { event } });
       } catch (error) {
