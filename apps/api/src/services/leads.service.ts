@@ -756,6 +756,21 @@ export class LeadsService {
           `Changed from ${existingRow.status} to ${nextStatus}`,
         authorUserId: scope.userId,
       });
+
+      emitBusinessEvent({
+        companyId: scope.companyId,
+        eventType: 'lead.status_changed',
+        entityType: 'lead',
+        entityId: leadId,
+        payload: {
+          lead: {
+            id: leadId,
+            fromStatus: existingRow.status,
+            toStatus: nextStatus,
+          },
+        },
+        actorUserId: scope.userId,
+      });
     }
 
     return (await this.getLead(scope.companyId, leadId))!;

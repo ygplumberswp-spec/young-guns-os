@@ -7,6 +7,7 @@ import type {
   CustomerDetail,
   CustomerPropertySummary,
   CustomerSummary,
+  CustomerStatusChangeGuardInput,
   UpdateCustomerPropertyRequest,
   UpdateCustomerRequest,
 } from '@titan/shared';
@@ -16,6 +17,7 @@ import {
   isValidSaPhone,
   normalizeSaMobile,
   normalizeSaPhone,
+  validateCustomerStatusChange,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { customerActivities, customers, cxCustomerProperties } from '@titan/db';
@@ -342,11 +344,28 @@ export class CrmService {
     companyId: string,
     customerId: string,
     input: UpdateCustomerRequest,
+    opts: {
+      classification?: CustomerStatusChangeGuardInput | null;
+      actorUserId?: string | null;
+    } = {},
   ): Promise<CustomerDetail> {
     const existing = await this.getCustomer(companyId, customerId);
 
     if (!existing) {
       throw new CrmError('NOT_FOUND', 'Customer not found');
+    }
+
+    if (input.status !== undefined && input.status !== existing.status) {
+      const targetUiStatus =
+        input.status === 'inactive'
+          ? 'archived'
+          : input.status === 'lead'
+            ? 'duplicate_review'
+            : 'active';
+      const guard = validateCustomerStatusChange(targetUiStatus, opts.classification ?? null);
+      if (!guard.allowed) {
+        throw new CrmError('VALIDATION_ERROR', guard.reason);
+      }
     }
 
     const updates: Partial<typeof customers.$inferInsert> = {
@@ -409,16 +428,21 @@ export class CrmService {
 
     emitBusinessEvent({
       companyId,
-      eventType: 'customer.updated',
+      eventType:
+        input.status !== undefined && input.status !== existing.status
+          ? 'customer.status_changed'
+          : 'customer.updated',
       entityType: 'customer',
       entityId: customerId,
       payload: {
         customer: {
           id: customerId,
           status: updated.status,
+          fromStatus: existing.status,
           name: updated.name,
         },
       },
+      actorUserId: opts.actorUserId ?? undefined,
     });
 
     return (await this.getCustomer(companyId, customerId))!;
