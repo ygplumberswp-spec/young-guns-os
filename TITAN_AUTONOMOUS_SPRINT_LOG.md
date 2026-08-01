@@ -156,7 +156,7 @@
 | **Timestamp (UTC)** | 2026-08-01 |
 | **Phase** | 6 — Scheduling/dispatcher crew & vehicle assignment (local) |
 | **Result** | Office crew assignment panel wired to existing `PUT /jobs/:id/crew`; schedule→crew sync |
-| **Checkpoint** | Pending commit |
+| **Checkpoint** | `cc0f5c5` |
 | **Files changed** | `JobCrewAssignmentPanel.tsx`, `crew-assignment-utils.ts`, `JobDetailPage.tsx`, `scheduling.service.ts`, `scheduling.ts` route, control doc updates |
 | **Migration** | None |
 | **Tests** | `pnpm typecheck`, `pnpm test` (233 pass), `pnpm build` — pass |
