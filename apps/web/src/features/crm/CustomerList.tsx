@@ -24,6 +24,7 @@ import {
   StatusRowAccent,
   type InlineSaveState,
   type MoreMenuItem,
+  useConfirmDialog,
 } from '../../components/ux';
 
 type CustomerListProps = {
@@ -57,6 +58,7 @@ export function CustomerList({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [rowSaveState, setRowSaveState] = useState<RowSaveState>({});
   const [bulkSaving, setBulkSaving] = useState(false);
+  const { confirm, alert, dialog: confirmDialog } = useConfirmDialog();
 
   const rows = useMemo(
     () =>
@@ -122,14 +124,19 @@ export function CustomerList({
   ) {
     const eligibility = getCustomerDeleteEligibility(classification);
     if (!eligibility.canDelete) {
-      window.alert(eligibility.blockReason ?? 'This customer cannot be deleted. Use Archive instead.');
+      await alert(
+        eligibility.blockReason ?? 'This customer cannot be deleted. Use Archive instead.',
+        'Cannot delete customer',
+      );
       return;
     }
-    if (
-      !window.confirm(
-        `Permanently delete "${customer.name}"? This cannot be undone. Owner confirmation required.`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title: 'Delete customer',
+      message: `Permanently delete "${customer.name}"? This cannot be undone. Owner confirmation required.`,
+      confirmLabel: 'Delete permanently',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
     if (!accessToken) return;
@@ -276,6 +283,7 @@ export function CustomerList({
     : [];
 
   return (
+    <>
     <Panel title="All customers">
       <div className="jobs-list-toolbar">
         <label className="titan-input-group jobs-search">
@@ -413,6 +421,8 @@ export function CustomerList({
         </div>
       )}
     </Panel>
+    {confirmDialog}
+    </>
   );
 }
 

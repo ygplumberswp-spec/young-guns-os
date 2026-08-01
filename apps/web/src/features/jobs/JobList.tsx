@@ -20,6 +20,7 @@ import {
   StatusRowAccent,
   type InlineSaveState,
   type MoreMenuItem,
+  useConfirmDialog,
 } from '../../components/ux';
 
 type JobListProps = {
@@ -58,6 +59,7 @@ export function JobList({
   const [statusFilters, setStatusFilters] = useState<JobStatus[]>([]);
   const [rowSaveState, setRowSaveState] = useState<RowSaveState>({});
   const [bulkSaving, setBulkSaving] = useState(false);
+  const { confirm, alert, dialog: confirmDialog } = useConfirmDialog();
 
   const selectionEnabled = Boolean(selectedIds && onSelectedIdsChange);
 
@@ -95,7 +97,7 @@ export function JobList({
     } catch (err) {
       setRowState(job.id, 'failed');
       if (err instanceof ApiClientError) {
-        window.alert(err.message);
+        await alert(err.message, 'Unable to update job');
       }
     }
   }
@@ -103,21 +105,25 @@ export function JobList({
   async function handleArchiveOrCancel(job: JobSummary) {
     const eligibility = getJobDeleteEligibility({ status: job.status });
     if (eligibility.canDelete) {
-      if (
-        !window.confirm(
-          `Permanently delete job ${job.jobNumber ?? job.title}? Owner confirmation required.`,
-        )
-      ) {
+      const confirmed = await confirm({
+        title: 'Delete job',
+        message: `Permanently delete job ${job.jobNumber ?? job.title}? Owner confirmation required.`,
+        confirmLabel: 'Delete permanently',
+        variant: 'destructive',
+      });
+      if (!confirmed) {
         return;
       }
       await changeJobStatus(job, 'cancelled');
       return;
     }
-    if (
-      !window.confirm(
-        `${eligibility.archiveLabel} job ${job.jobNumber ?? job.title}? ${eligibility.blockReason ?? ''}`,
-      )
-    ) {
+    const confirmed = await confirm({
+      title: eligibility.archiveLabel,
+      message: `${eligibility.archiveLabel} job ${job.jobNumber ?? job.title}? ${eligibility.blockReason ?? ''}`,
+      confirmLabel: eligibility.archiveLabel,
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
     await changeJobStatus(job, 'cancelled');
@@ -268,6 +274,7 @@ export function JobList({
     : [];
 
   return (
+    <>
     <Panel title="All jobs">
       <div className="jobs-list-toolbar">
         <InputSearch
@@ -395,6 +402,8 @@ export function JobList({
         </div>
       )}
     </Panel>
+    {confirmDialog}
+    </>
   );
 }
 

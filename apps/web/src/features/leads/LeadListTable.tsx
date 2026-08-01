@@ -19,6 +19,7 @@ import {
   StatusRowAccent,
   type InlineSaveState,
   type MoreMenuItem,
+  useConfirmDialog,
 } from '../../components/ux';
 
 type LeadListTableProps = {
@@ -55,6 +56,7 @@ export function LeadListTable({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [rowSaveState, setRowSaveState] = useState<RowSaveState>({});
   const [bulkSaving, setBulkSaving] = useState(false);
+  const { confirm, alert, dialog: confirmDialog } = useConfirmDialog();
 
   const filteredLeads = useMemo(() => {
     if (statusFilters.length === 0) return leads;
@@ -111,10 +113,19 @@ export function LeadListTable({
   async function handleDeleteLead(lead: LeadSummary) {
     const eligibility = getLeadDeleteEligibility(lead);
     if (!eligibility.canDelete) {
-      window.alert(eligibility.blockReason ?? 'This lead cannot be deleted. Use Archive instead.');
+      await alert(
+        eligibility.blockReason ?? 'This lead cannot be deleted. Use Archive instead.',
+        'Cannot delete lead',
+      );
       return;
     }
-    if (!window.confirm(`Delete lead "${lead.companyName || lead.contactName}"? This cannot be undone.`)) {
+    const confirmed = await confirm({
+      title: 'Delete lead',
+      message: `Delete lead "${lead.companyName || lead.contactName}"? This cannot be undone.`,
+      confirmLabel: 'Delete',
+      variant: 'destructive',
+    });
+    if (!confirmed) {
       return;
     }
     if (!accessToken) return;
@@ -260,6 +271,7 @@ export function LeadListTable({
     : [];
 
   return (
+    <>
     <Panel title="Lead registry">
       <div className="leads-toolbar">
         <input
@@ -392,5 +404,7 @@ export function LeadListTable({
         </div>
       ) : null}
     </Panel>
+    {confirmDialog}
+    </>
   );
 }

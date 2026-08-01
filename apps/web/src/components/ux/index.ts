@@ -27,3 +27,5 @@ export { ApprovalActionCard } from './ApprovalActionCard';
 export { AgentActivityCard } from './AgentActivityCard';
 export { SectionErrorBoundary } from './SectionErrorBoundary';
 export { AutosaveIndicator } from './AutosaveIndicator';
+export { ConfirmDialog, type ConfirmDialogProps } from './ConfirmDialog';
+export { useConfirmDialog } from './useConfirmDialog';

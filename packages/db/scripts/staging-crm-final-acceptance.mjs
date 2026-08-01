@@ -12,10 +12,10 @@ import { chromium } from '@playwright/test';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '../../..');
-const outPath = path.resolve(repoRoot, 'diagnostic-output/223-crm-final-staging-acceptance.json');
+const outPath = path.resolve(repoRoot, 'diagnostic-output/224-crm-final-staging-acceptance.json');
 const screenshotDir = path.resolve(repoRoot, 'diagnostic-output/crm-acceptance-screenshots');
 const FORBIDDEN = 'rshuiaghmtrvvilhqpwm';
-const LABEL = 'STAGING-CRM-ACCEPT-223';
+const LABEL = 'STAGING-CRM-ACCEPT-224';
 const API_ORIGIN = (process.env.STAGING_API_BASE || 'https://young-guns-os-staging.up.railway.app').replace(
   /\/$/,
   '',
@@ -203,12 +203,14 @@ async function testConfirmDialog(page, route, entityLabel, menuPattern, results,
   await page.goto(`${WEB_ORIGIN}${route}`, { waitUntil: 'networkidle', timeout: 60_000 });
   await page.waitForSelector('tbody tr', { timeout: 30_000 });
 
-  const dialogEvents = [];
-  const onDialog = async (dialog) => {
-    dialogEvents.push({ type: dialog.type(), message: dialog.message() });
+  const nativeDialogEvents = [];
+  const onNativeDialog = async (dialog) => {
+    nativeDialogEvents.push({ type: dialog.type(), message: dialog.message() });
     await dialog.dismiss();
   };
-  page.on('dialog', onDialog);
+  page.on('dialog', onNativeDialog);
+
+  const customModal = page.locator('.ux-confirm-dialog');
 
   try {
     const moreBtn = page.locator('.ux-more-menu__trigger').first();
@@ -234,24 +236,35 @@ async function testConfirmDialog(page, route, entityLabel, menuPattern, results,
     const itemLabel = (await menuItems.nth(targetIdx).textContent())?.trim() ?? '';
     actionsClicked.push({ route, entity: entityLabel, dialogAction: itemLabel, phase: 'cancel' });
     await menuItems.nth(targetIdx).click();
-    await page.waitForTimeout(500);
+    await customModal.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
+    await page.waitForTimeout(300);
 
-    if (dialogEvents.length === 0) {
-      results.push(fail(section, `${entityLabel}_dialog_appears`, 'No dialog on first click'));
+    if (nativeDialogEvents.length > 0) {
+      const firstNative = nativeDialogEvents[0];
+      results.push(
+        fail(section, `${entityLabel}_no_native_alert`, `${firstNative.type}: ${firstNative.message.slice(0, 120)}`),
+      );
+    } else if (!(await customModal.isVisible())) {
+      results.push(fail(section, `${entityLabel}_dialog_appears`, 'No custom confirm dialog on first click'));
       return;
+    } else {
+      results.push(pass(section, `${entityLabel}_no_native_alert`, 'custom modal'));
     }
 
-    const first = dialogEvents[0];
+    const message = (await customModal.locator('.ux-confirm-dialog__body').textContent())?.trim() ?? '';
     results.push(
-      usesNativeDialog(first.type)
-        ? fail(section, `${entityLabel}_no_native_alert`, `${first.type}: ${first.message.slice(0, 120)}`)
-        : pass(section, `${entityLabel}_no_native_alert`, first.type),
+      message.length > 10
+        ? pass(section, `${entityLabel}_clear_consequences`, message.slice(0, 120))
+        : fail(section, `${entityLabel}_clear_consequences`, message),
     );
-    results.push(
-      first.message.length > 10
-        ? pass(section, `${entityLabel}_clear_consequences`, first.message.slice(0, 120))
-        : fail(section, `${entityLabel}_clear_consequences`, first.message),
-    );
+
+    const cancelBtn = customModal.locator('.ux-confirm-dialog__cancel');
+    if (await cancelBtn.isVisible()) {
+      await cancelBtn.click();
+    } else {
+      await page.keyboard.press('Escape');
+    }
+    await customModal.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => null);
 
     const rowsAfterCancel = await page.locator('tbody tr').count();
     results.push(
@@ -260,15 +273,10 @@ async function testConfirmDialog(page, route, entityLabel, menuPattern, results,
         : fail(section, `${entityLabel}_cancel_preserves_record`, 'No rows after cancel'),
     );
   } finally {
-    page.off('dialog', onDialog);
+    page.off('dialog', onNativeDialog);
   }
 
-  const confirmEvents = [];
-  const onConfirm = async (dialog) => {
-    confirmEvents.push({ type: dialog.type(), message: dialog.message() });
-    await dialog.accept();
-  };
-  page.on('dialog', onConfirm);
+  page.on('dialog', onNativeDialog);
 
   try {
     const moreBtn = page.locator('.ux-more-menu__trigger').first();
@@ -281,11 +289,25 @@ async function testConfirmDialog(page, route, entityLabel, menuPattern, results,
         actionsClicked.push({ route, entity: entityLabel, dialogAction: text, phase: 'confirm' });
         const rowsBefore = await page.locator('tbody tr').count();
         await menuItems2.nth(i).click();
-        await page.waitForTimeout(2000);
-        const rowsAfter = await page.locator('tbody tr').count();
-        if (confirmEvents.length > 0) {
-          results.push(pass(section, `${entityLabel}_confirm_dialog_works`, confirmEvents[0].message.slice(0, 80)));
+        await customModal.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null);
+
+        const confirmMessage =
+          (await customModal.locator('.ux-confirm-dialog__body').textContent())?.trim() ?? '';
+        if (confirmMessage.length > 0) {
+          results.push(pass(section, `${entityLabel}_confirm_dialog_works`, confirmMessage.slice(0, 80)));
+        } else if (nativeDialogEvents.length > 0) {
+          results.push(
+            pass(section, `${entityLabel}_confirm_dialog_works`, nativeDialogEvents.at(-1)?.message.slice(0, 80) ?? ''),
+          );
         }
+
+        const confirmBtn = customModal.locator('.ux-confirm-dialog__confirm');
+        if (await confirmBtn.isVisible()) {
+          await confirmBtn.click();
+        }
+        await page.waitForTimeout(2000);
+
+        const rowsAfter = await page.locator('tbody tr').count();
         if (/archive|cancel/i.test(text)) {
           results.push(pass(section, `${entityLabel}_archive_not_hard_delete`, text));
         } else if (/delete/i.test(text) && rowsAfter < rowsBefore) {
@@ -295,7 +317,7 @@ async function testConfirmDialog(page, route, entityLabel, menuPattern, results,
       }
     }
   } finally {
-    page.off('dialog', onConfirm);
+    page.off('dialog', onNativeDialog);
   }
 }
 
@@ -521,8 +543,8 @@ async function main() {
   report.results.push(pass('audit', 'staging_api_ready', 'database connected'));
 
   const suffix = randomBytes(4).toString('hex');
-  const password = 'CrmAccept223Pass!';
-  const email = `crm.accept.223.${suffix}@staging-crm-accept.test`;
+  const password = 'CrmAccept224Pass!';
+  const email = `crm.accept.224.${suffix}@staging-crm-accept.test`;
 
   const signup = await api('/api/v1/auth/signup', {
     method: 'POST',
@@ -591,7 +613,7 @@ async function main() {
         province: 'Western Cape',
         postalCode: '7925',
         serviceType: 'Electrical',
-        duplicateOverrideReason: 'CRM acceptance 223 seed',
+        duplicateOverrideReason: 'CRM acceptance 224 seed',
       },
     });
     if (res.status === 201 && res.json?.data?.lead?.id) {
@@ -694,7 +716,7 @@ async function main() {
   report.auditEvidence = auditEvidence;
   report.findings = {
     nativeDialogsUsed:
-      'Delete/archive confirm flows use window.confirm/alert in CustomerList, LeadListTable, JobList — fails no_native_alert criterion until custom modal ships.',
+      'Delete/archive confirm flows use custom ConfirmDialog in CustomerList, LeadListTable, JobList.',
     auditCoverage:
       'Job create writes security_audit_logs; lead status changes write lead_status_history; customer PATCH emits business events but not always security_audit_logs.',
     bulkDeleteGuard: 'No bulk delete buttons on customers/jobs lists; leads bulk has Archive only.',
