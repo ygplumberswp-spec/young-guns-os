@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Phase:** 3 — partial (3A–3D subset)  
 **Starting SHA:** `52f6524`  
-**Final SHA:** `e522d27` (+ verify commit pending)  
+**Final SHA:** `0308c47`  
 **Production touched:** NO  
 
 ---
@@ -76,6 +76,7 @@ Authenticated staging evidence confirms receivables workspace, partial payables/
 |-----|---------|
 | `3063cc1` | feat(phase-3): partial finance receivables, cashflow and Xero parity verify |
 | `e522d27` | fix(phase-3): narrow xero invoice mapping select for staging schema drift |
+| `0308c47` | chore(phase-3): staging finance parity verification GO @ 230 |
 
 ---
 
