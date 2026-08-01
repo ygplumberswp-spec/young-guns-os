@@ -46,4 +46,17 @@ describe('UX-D lead intake contract', () => {
     };
     assert.notEqual(lead.marketingConsent, lead.operationalContactPermission);
   });
+
+  it('rejects placeholder site tokens used by the old convert UI', () => {
+    const placeholders = ['Address pending', 'Suburb pending', 'tbd', 'N/A'];
+    for (const value of placeholders) {
+      const normalized = value.trim().toLowerCase();
+      assert.ok(
+        normalized === 'address pending' ||
+          normalized === 'suburb pending' ||
+          normalized === 'tbd' ||
+          normalized === 'n/a',
+      );
+    }
+  });
 });

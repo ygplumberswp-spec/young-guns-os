@@ -23,8 +23,11 @@ import {
 import { fetchTeamMembers } from '../../lib/team-api';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import {
+  buildLeadConversionProperty,
   canConvertLeads,
+  canCreateJobFromLead,
   canManageLeads,
+  leadHasConvertibleSiteAddress,
   newClientActionId,
 } from '../../features/leads/utils';
 
@@ -36,6 +39,7 @@ export function LeadDetailPage() {
 
   const canWrite = user ? canManageLeads(user.permissions) : false;
   const canConvert = user ? canConvertLeads(user.permissions) : false;
+  const canCreateJob = user ? canCreateJobFromLead(user.permissions) : false;
 
   const {
     data: lead,
@@ -63,7 +67,7 @@ export function LeadDetailPage() {
   const [customerId, setCustomerId] = useState('');
   const [propertyMode, setPropertyMode] = useState<'existing' | 'new' | 'none'>('new');
   const [propertyId, setPropertyId] = useState('');
-  const [createJob, setCreateJob] = useState(true);
+  const [createJob, setCreateJob] = useState(false);
   const [jobType, setJobType] = useState<string>(JOB_TYPE_OPTIONS[0]);
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<LeadUrgency>('normal');
@@ -96,11 +100,12 @@ export function LeadDetailPage() {
         ? new Date(lead.preferredAppointmentAt).toISOString().slice(0, 16)
         : '',
     );
+    setCreateJob(canCreateJob && leadHasConvertibleSiteAddress(lead));
     if (lead.customerId) {
       setCustomerMode('existing');
       setCustomerId(lead.customerId);
     }
-  }, [lead]);
+  }, [canCreateJob, lead]);
 
   const { data: customers } = useCachedQuery({
     queryKey: 'crm/customers',
@@ -181,8 +186,31 @@ export function LeadDetailPage() {
     if (!accessToken || !lead || !canConvert) return;
     setConvertError(null);
 
-    if (createJob && siteMobile.trim() && !isValidSaMobile(siteMobile)) {
+    if (createJob && !canCreateJob) {
+      setConvertError('Job write permission is required to create a job during conversion');
+      return;
+    }
+    if (createJob && !siteMobile.trim()) {
+      setConvertError('Site contact mobile is required to create a job');
+      return;
+    }
+    if (createJob && !isValidSaMobile(siteMobile)) {
       setConvertError('Site contact mobile must be a valid SA mobile number');
+      return;
+    }
+    if (
+      (propertyMode === 'new' || createJob) &&
+      propertyMode !== 'existing' &&
+      propertyMode !== 'none' &&
+      !leadHasConvertibleSiteAddress(lead)
+    ) {
+      setConvertError(
+        'Add a site street and suburb on the lead before creating a property or job. Data must carry from the lead — placeholder addresses are not allowed.',
+      );
+      return;
+    }
+    if (createJob && propertyMode === 'none') {
+      setConvertError('Select or create a property before creating a job');
       return;
     }
     if (!confirmReady) {
@@ -210,6 +238,16 @@ export function LeadDetailPage() {
         return;
       }
 
+      const newProperty =
+        propertyMode === 'new' ? buildLeadConversionProperty(lead) : null;
+      if (propertyMode === 'new' && !newProperty) {
+        setConvertError(
+          'Add a site street and suburb on the lead before creating a property or job.',
+        );
+        setIsConverting(false);
+        return;
+      }
+
       const payload: ConvertLeadRequest = {
         clientActionId,
         customerMode,
@@ -225,19 +263,9 @@ export function LeadDetailPage() {
             : null,
         propertyMode,
         propertyId: propertyMode === 'existing' ? propertyId : null,
-        newProperty:
-          propertyMode === 'new'
-            ? {
-                street: lead.street || 'Address pending',
-                suburb: lead.suburb || 'Suburb pending',
-                city: lead.city || 'Cape Town',
-                province: lead.province || 'Western Cape',
-                postalCode: lead.postalCode || '0000',
-                unit: lead.unit,
-              }
-            : null,
-        createJob,
-        job: createJob
+        newProperty,
+        createJob: createJob && canCreateJob,
+        job: createJob && canCreateJob
           ? {
               jobType,
               description: description.trim() || lead.notes || `${jobType} from lead`,
@@ -547,9 +575,18 @@ export function LeadDetailPage() {
                 type="checkbox"
                 checked={createJob}
                 onChange={(e) => setCreateJob(e.target.checked)}
-                disabled={propertyMode === 'none'}
+                disabled={
+                  propertyMode === 'none' ||
+                  !canCreateJob ||
+                  (propertyMode === 'new' && !leadHasConvertibleSiteAddress(lead))
+                }
               />
               Create operational job now
+              {!canCreateJob
+                ? ' (requires jobs:write)'
+                : propertyMode === 'new' && !leadHasConvertibleSiteAddress(lead)
+                  ? ' (lead needs street + suburb)'
+                  : ''}
             </label>
 
             {createJob ? (

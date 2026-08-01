@@ -39,6 +39,16 @@ type TenantScope = {
 
 type Tx = Parameters<Parameters<DatabaseClient['transaction']>[0]>[0];
 
+function isPlaceholderSiteToken(value: string): boolean {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized === 'address pending' ||
+    normalized === 'suburb pending' ||
+    normalized === 'tbd' ||
+    normalized === 'n/a'
+  );
+}
+
 export class LeadConversionService {
   constructor(
     private readonly db: DatabaseClient,
@@ -452,9 +462,18 @@ export class LeadConversionService {
       throw new LeadsError('VALIDATION_ERROR', 'Property street and suburb are required');
     }
 
+    const street = addressSource.street.trim();
+    const suburb = addressSource.suburb.trim();
+    if (isPlaceholderSiteToken(street) || isPlaceholderSiteToken(suburb)) {
+      throw new LeadsError(
+        'VALIDATION_ERROR',
+        'Property street and suburb must be real site values, not placeholders',
+      );
+    }
+
     const address = requireJobAddress({
-      street: addressSource.street,
-      suburb: addressSource.suburb,
+      street,
+      suburb,
       city: addressSource.city || lead.city || 'Cape Town',
       province: addressSource.province || lead.province || 'Western Cape',
       postalCode: addressSource.postalCode || lead.postalCode || '0000',
