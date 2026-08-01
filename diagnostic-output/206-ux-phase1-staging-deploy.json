@@ -1,8 +1,55 @@
 {
   "label": "206-ux-phase1-staging-deploy",
-  "purpose": "Railway staging redeploy trigger for Owner UX Phase 1 review (ux branch only)",
+  "purpose": "Staging deploy attempt for Owner UX Phase 1 review (cursor/ux-hardening-phase1 only; no merge)",
   "branch": "cursor/ux-hardening-phase1",
-  "targetSha": "7347a59a2412bcf1b6ae6ec37bc4fece271577a3",
-  "mergeToCompletionBlocked": true,
-  "generatedAt": "2026-08-01T15:40:00.000Z"
+  "targetSha": "06121a5dcd43b1c547f455213e2056f51dd83d04f",
+  "uxFeatureSha": "7347a59a2412bcf1b6ae6ec37bc4fece271577a3",
+  "deployAttempted": true,
+  "deployMethod": [
+    "Railway CLI npx @railway/cli (ygplumberswp@gmail.com)",
+    "GitHub branch push redeploy triggers on cursor/ux-hardening-phase1"
+  ],
+  "railway": {
+    "project": "sweet-victory",
+    "environment": "staging",
+    "services": {
+      "api": "young-guns-os",
+      "web": "comfortable-determination"
+    }
+  },
+  "stagingUrls": {
+    "api": "https://young-guns-os-staging.up.railway.app",
+    "web": "https://comfortable-determination-staging.up.railway.app"
+  },
+  "postDeployVerification": {
+    "apiHealthReady": {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+      "status": 200
+    },
+    "webRoot": {
+      "url": "https://comfortable-determination-staging.up.railway.app/",
+      "status": 200
+    }
+  },
+  "liveStagingAfterAttempt": {
+    "note": "GitHub autodeploy for staging is dominated by cursor/titan-frozen-scope-completion; ux-branch builds succeeded transiently then were REMOVED/superseded.",
+    "apiLiveSha": "2b6851dcd43b1c547f455213e2056f51dd83d04f",
+    "apiLiveBranch": "cursor/titan-frozen-scope-completion",
+    "webLiveSha": "2b6851dcd43b1c547f455213e2056f51dd83d04f",
+    "webLiveBranch": "cursor/titan-frozen-scope-completion",
+    "uxBranchDeployEvidence": {
+      "api7347a59DeploymentId": "3444a186-35dd-4a76-9960-75b32ae18fa6",
+      "web06121a5DeploymentId": "e9b6b705-fb28-439e-9236-662b2388e395"
+    }
+  },
+  "ownerApprovalRequiredForMerge": true,
+  "ownerNextSteps": [
+    "Railway dashboard → sweet-victory → staging → set deploy branch to cursor/ux-hardening-phase1 (or redeploy latest commit 06121a5 on both young-guns-os and comfortable-determination), OR",
+    "Approve merge of cursor/ux-hardening-phase1 into cursor/titan-frozen-scope-completion and redeploy staging from completion"
+  ],
+  "constraintsHonored": {
+    "noMergeToCompletion": true,
+    "noProduction": true
+  },
+  "finishedAt": "2026-08-01T15:48:00.000Z"
 }
