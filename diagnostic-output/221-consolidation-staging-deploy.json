@@ -1,0 +1,88 @@
+{
+  "label": "CONSOLIDATION-221-staging-deploy",
+  "generatedAt": "2026-08-01T18:57:00.000Z",
+  "environment": "staging",
+  "productionTouched": false,
+  "migrationsApplied": false,
+  "parentSession": "0ba440ec",
+  "branch": "cursor/titan-final-product-consolidation",
+  "commitSha": "dfb7189a90aa735610e5b1bcb985ad5b08545d95",
+  "commitShort": "dfb7189",
+  "railwayProject": {
+    "id": "58663be4-c72d-4dc8-b19b-5c7bf808f9a3",
+    "name": "sweet-victory",
+    "environment": "staging"
+  },
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "deploy": {
+    "method": "railway up -y -d (CLI upload from worktree)",
+    "railwayAccount": "ygplumberswp@gmail.com",
+    "services": [
+      {
+        "name": "young-guns-os",
+        "role": "api",
+        "configFile": "/apps/api/railway.toml",
+        "deploymentId": "3653e7bd-9989-4c1f-903c-7c6b02c4a35c",
+        "status": "SUCCESS",
+        "cliMessage": "consolidation dfb7189 staging",
+        "deployFrom": "apps/api",
+        "notes": "Active staging API deployment after CLI upload"
+      },
+      {
+        "name": "comfortable-determination",
+        "role": "web",
+        "configFile": "/apps/web/railway.toml (via monorepo root upload)",
+        "deploymentId": "7389d330-e605-49e5-a940-7ceeaa71ee78",
+        "status": "SUCCESS",
+        "cliMessage": "consolidation dfb7189 staging web-final",
+        "deployFrom": "repo root (second attempt; apps/web-only upload failed)",
+        "supersedes": "f69a0878-e762-40bf-bea2-967427efab54",
+        "notes": "Initial apps/web deploy without -s mis-targeted linked API service (121d60a0 SKIPPED); apps/web-only c4116f89 FAILED; successful deploy required monorepo-root upload with -s comfortable-determination"
+      }
+    ],
+    "discardedOrSkipped": [
+      {
+        "deploymentId": "121d60a0-9cf9-4278-aeec-52dd95fb6ebe",
+        "service": "young-guns-os",
+        "status": "SKIPPED",
+        "reason": "Accidental upload from apps/web while API service still linked"
+      },
+      {
+        "deploymentId": "c4116f89-59c6-4e41-bf37-e133986ee7f7",
+        "service": "comfortable-determination",
+        "status": "FAILED",
+        "reason": "CLI upload from apps/web subdirectory"
+      }
+    ]
+  },
+  "verify": {
+    "api_health_ready": {
+      "url": "https://young-guns-os-staging.up.railway.app/api/v1/health/ready",
+      "status": 200,
+      "database": "connected"
+    },
+    "web_root": {
+      "url": "https://comfortable-determination-staging.up.railway.app/",
+      "status": 200
+    },
+    "web_dashboard": {
+      "url": "https://comfortable-determination-staging.up.railway.app/dashboard",
+      "status": 200
+    },
+    "web_scheduling": {
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling",
+      "status": 200
+    }
+  },
+  "smoke": {
+    "healthCommitField": "not_exposed",
+    "apiVersion": "0.2.0",
+    "webBundleBeforeDeploy": "index-T2yGhtEM.js",
+    "webBundleAfterDeploy": "index-_bJdcbzt.js",
+    "worktreeShaAtUpload": "dfb7189a90aa735610e5b1bcb985ad5b08545d95",
+    "interpretation": "CLI upload sourced from consolidation worktree at dfb7189; new web asset hash confirms fresh image (no git SHA in /health/ready)"
+  },
+  "stagingReadyForOwnerReview": true,
+  "overall": "PASS"
+}
