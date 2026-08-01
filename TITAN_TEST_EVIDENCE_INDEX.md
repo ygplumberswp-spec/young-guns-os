@@ -1,7 +1,7 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — Sprint 022: MFA login gate e2e (17 automated tests, risk #5)  
-**Automated test files:** 54 (`*.test.ts`, excluding `.tmp-origin-build`)
+**Updated (UTC):** 2026-08-01 — Sprint 025: role-forbidden direct URL browser tests (14 automated tests, FRZ-002)  
+**Automated test files:** 55 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
 
@@ -11,7 +11,7 @@
 |---------|--------|
 | `pnpm typecheck` | Full monorepo TypeScript |
 | `pnpm lint` | Workspace lint where configured |
-| `pnpm test` | shared → auth → web → api (sequential) — **379 pass** (Sprint 022) |
+| `pnpm test` | shared → auth → web → api (sequential) — **427 pass** (Sprint 025) |
 | `pnpm build` | typecheck + all package builds |
 
 ---
@@ -35,6 +35,7 @@
 | `packages/auth/src/rbac-matrix.test.ts` | Role matrix |
 | `packages/auth/src/role-experience.test.ts` | Experience mapping |
 | `packages/shared/src/role-experience-routes.test.ts` | Blocked route prefixes |
+| `apps/web/src/lib/role-forbidden-direct-url.test.ts` | **Sprint 025 — forbidden direct URL redirect contract (FRZ-002)** |
 | `apps/web/src/lib/role-experience-nav-honesty.test.ts` | Nav honesty |
 | `apps/web/src/lib/nested-routing.test.ts` | Mobile nested routes |
 | `apps/web/src/lib/portal-routing.test.ts` | Portal `/my` routing |
@@ -180,12 +181,12 @@
 | `apps/web/src/lib/mobile-offline-completion.test.ts` | Sprint 024 — mobile completion submit gate + offline flush tally contract |
 | `apps/api/src/services/job-execution-completion-idempotency.test.ts` | Sprint 024 — gated completion clientActionId replay + snapshot duplicate guards |
 | `apps/api/src/routes/mobile-offline-completion.test.ts` | Sprint 024 — `/offline/flush` duplicate replay + `/complete-gated` idempotency API contract |
+| `apps/web/src/lib/role-forbidden-direct-url.test.ts` | Sprint 025 — OwnerStaffRoute + TechnicianRoute forbidden direct URL redirect contract |
 
 ## Coverage gaps (Phase 2+ targets)
 
 - Live Xero sync integration (staging, read-only)  
 - AURA provider connection e2e  
-- Role-forbidden direct URL browser tests  
 
 ---
 

@@ -410,3 +410,20 @@
 | **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
 | **Approval required?** | No — local only |
 | **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes; role-forbidden direct URL browser tests |
+
+---
+
+## Sprint 025 — Role-forbidden direct URL browser tests (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | RBAC — forbidden direct URL access by role (OwnerStaffRoute + TechnicianRoute contract) |
+| **Result** | `role-forbidden-direct-url.ts` — pure path-prefix + redirect evaluators extracted from `StaffExperienceRoute`; `role-forbidden-direct-url.test.ts` — 14 web checks (technician owner-module URL guesses, accountant scheduling block, dispatcher AI/platform admin block, company owner allow-list, mobile URL guess for accountant) |
+| **Checkpoint** | (post-commit) |
+| **Files changed** | `role-forbidden-direct-url.ts`, `role-forbidden-direct-url.test.ts`, `StaffExperienceRoute.tsx`, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**427 pass**, +14 role-forbidden direct URL), `pnpm build` — pass |
+| **Staging** | `/health/ready` **503/28P01** — public smokes skipped |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Owner Railway `DATABASE_URL` sync + redeploy; rerun Phase 5/6/8–12 public smokes |
