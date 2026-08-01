@@ -16,6 +16,7 @@ export * from './customer-activities';
 export * from './marketing-eligibility';
 export * from './job-execution-enums';
 export * from './jobs';
+export * from './scheduling';
 export * from './job-execution';
 export * from './quotes';
 export * from './boq';

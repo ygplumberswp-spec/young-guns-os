@@ -1,11 +1,10 @@
 import { Link } from 'wouter';
-import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
-import type { CustomerValueMetricBucket } from '@titan/shared';
+import { Button, EmptyState, Panel } from '@titan/ui';
+import type { CustomerValueMetricBucket, CustomerValueMetrics } from '@titan/shared';
 import {
   CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE,
   CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE,
   CUSTOMER_VALUE_VERIFIED_FILTER_KEYS,
-  CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE,
 } from '@titan/shared';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { fetchCustomerValueMetrics } from '../../lib/customer-value-api-client';
@@ -16,24 +15,91 @@ type CustomerValueMetricsPanelProps = {
   compact?: boolean;
 };
 
+type PanelViewState = 'loading' | 'updating' | 'ready' | 'empty' | 'error';
+
 function resolveCustomerValueErrorMessage(error: string | null): string {
-  if (!error) return CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE;
+  if (!error) {
+    return 'Customer value metrics could not be loaded. Try again in a moment.';
+  }
+
   const lower = error.toLowerCase();
+  if (lower.includes('forbidden') || lower.includes('permission')) {
+    return 'You do not have permission to view customer value metrics.';
+  }
+  if (
+    lower.includes('xero') ||
+    lower.includes('sync') ||
+    lower.includes('import') ||
+    lower.includes('customer_value_unavailable')
+  ) {
+    return error;
+  }
   if (
     lower.includes('unexpected error') ||
     lower.includes('internal_error') ||
     lower.includes('request failed') ||
     lower.includes('unable to load')
   ) {
-    return CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE;
+    return 'Customer value metrics are temporarily unavailable. Try again shortly.';
   }
-  if (lower.includes('forbidden') || lower.includes('permission')) {
-    return 'You do not have permission to view customer value metrics.';
-  }
-  return CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE;
+
+  return error;
 }
 
-function MetricCard({ bucket, formatMoney }: { bucket: CustomerValueMetricBucket; formatMoney: (cents: number) => string }) {
+function resolvePanelViewState(input: {
+  isLoading: boolean;
+  error: string | null;
+  metrics: CustomerValueMetrics | undefined;
+}): PanelViewState {
+  const { isLoading, error, metrics } = input;
+
+  if (isLoading && metrics === undefined) {
+    return 'loading';
+  }
+  if (error && metrics === undefined) {
+    return 'error';
+  }
+  if (!metrics) {
+    return 'empty';
+  }
+  if (metrics.xeroImportInProgress || metrics.dataCompleteness === 'partial') {
+    return 'updating';
+  }
+  if ((metrics.totals.qualifyingCustomers ?? 0) === 0) {
+    return 'empty';
+  }
+  return 'ready';
+}
+
+function MetricCardSkeleton() {
+  return (
+    <article className="dashboard-metric-card dashboard-metric-card--skeleton" aria-hidden="true">
+      <span className="dashboard-metric-skeleton dashboard-metric-skeleton--label" />
+      <span className="dashboard-metric-skeleton dashboard-metric-skeleton--value" />
+      <span className="dashboard-metric-skeleton dashboard-metric-skeleton--hint" />
+    </article>
+  );
+}
+
+function MetricsSkeletonGrid({ compact }: { compact: boolean }) {
+  const skeletonCount = compact ? 3 : CUSTOMER_VALUE_VERIFIED_FILTER_KEYS.length;
+
+  return (
+    <div className={compact ? 'dashboard-metrics dashboard-metrics--compact' : 'dashboard-metrics'}>
+      {Array.from({ length: skeletonCount }, (_, index) => (
+        <MetricCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
+function MetricCard({
+  bucket,
+  formatMoney,
+}: {
+  bucket: CustomerValueMetricBucket;
+  formatMoney: (cents: number) => string;
+}) {
   return (
     <Link href={`/crm?classification=${encodeURIComponent(bucket.filterKey)}`} className="dashboard-metric-link">
       <article className="dashboard-metric-card">
@@ -56,34 +122,38 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
   });
 
   const metrics = metricsQuery.data;
-  const isUpdating =
-    metrics?.xeroImportInProgress ||
-    metrics?.dataCompleteness === 'partial' ||
-    (metricsQuery.error !== null && metrics === undefined);
+  const viewState = resolvePanelViewState({
+    isLoading: metricsQuery.isLoading,
+    error: metricsQuery.error,
+    metrics,
+  });
 
   const verifiedBuckets =
     metrics?.buckets.filter((bucket) =>
       (CUSTOMER_VALUE_VERIFIED_FILTER_KEYS as readonly string[]).includes(bucket.filterKey),
     ) ?? [];
 
-  const hasVerifiedData = (metrics?.totals.qualifyingCustomers ?? 0) > 0;
+  const panelDescription =
+    viewState === 'ready'
+      ? 'Verified invoiced customers — click a metric to filter the CRM list.'
+      : undefined;
 
   return (
-    <Panel
-      title="Customer value"
-      description={
-        isUpdating
-          ? CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE
-          : hasVerifiedData
-            ? 'Verified invoiced customers — click a metric to filter the CRM list.'
-            : CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE
-      }
-    >
-      {metricsQuery.isLoading && metrics === undefined ? (
-        <LoadingState label="Loading customer value metrics…" />
-      ) : metricsQuery.error && metrics === undefined ? (
+    <Panel title="Customer value" description={panelDescription}>
+      {viewState === 'loading' || viewState === 'updating' ? (
+        <>
+          <p className="page-muted customer-value-status" role="status">
+            {viewState === 'loading'
+              ? 'Loading customer value metrics…'
+              : CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE}
+          </p>
+          <MetricsSkeletonGrid compact={compact} />
+        </>
+      ) : null}
+
+      {viewState === 'error' ? (
         <EmptyState
-          title={CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE}
+          title="Customer value unavailable"
           description={resolveCustomerValueErrorMessage(metricsQuery.error)}
           action={
             <Button size="sm" variant="secondary" onClick={() => void metricsQuery.refetch()}>
@@ -91,34 +161,22 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
             </Button>
           }
         />
-      ) : !metrics ? (
+      ) : null}
+
+      {viewState === 'empty' ? (
         <EmptyState
           title={CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE}
           description="Customer value metrics appear once verified invoice evidence exists in TITAN."
         />
-      ) : !hasVerifiedData ? (
-        <EmptyState
-          title={CUSTOMER_VALUE_NO_VERIFIED_DATA_MESSAGE}
-          description={
-            isUpdating
-              ? CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE
-              : 'Xero contacts without invoice evidence are not counted as customers.'
-          }
-        />
-      ) : (
-        <>
-          {isUpdating ? (
-            <p className="page-muted" role="status">
-              {CUSTOMER_VALUE_UPDATING_FROM_XERO_MESSAGE}
-            </p>
-          ) : null}
-          <div className={compact ? 'dashboard-metrics dashboard-metrics--compact' : 'dashboard-metrics'}>
-            {verifiedBuckets.map((bucket) => (
-              <MetricCard key={bucket.filterKey} bucket={bucket} formatMoney={formatMoney} />
-            ))}
-          </div>
-        </>
-      )}
+      ) : null}
+
+      {viewState === 'ready' ? (
+        <div className={compact ? 'dashboard-metrics dashboard-metrics--compact' : 'dashboard-metrics'}>
+          {verifiedBuckets.map((bucket) => (
+            <MetricCard key={bucket.filterKey} bucket={bucket} formatMoney={formatMoney} />
+          ))}
+        </div>
+      ) : null}
     </Panel>
   );
 }

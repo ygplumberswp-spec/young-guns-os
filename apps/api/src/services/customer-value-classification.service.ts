@@ -50,8 +50,13 @@ export class CustomerValueClassificationService {
         const summaries = await this.loadClassificationSummaries(companyId);
         const xeroState = await this.resolveXeroImportState(companyId);
         const notes: string[] = [];
+        // Only mark partial while an import job is actively running. A connected Xero
+        // tenant with invoice evidence but a stale lastSyncAt should still show verified metrics.
         const partial =
-          xeroState.importInProgress || (xeroState.xeroConnected && !xeroState.lastSyncAt);
+          xeroState.importInProgress ||
+          (xeroState.xeroConnected &&
+            !xeroState.lastSyncAt &&
+            !xeroState.hasInvoiceEvidence);
         if (partial) {
           notes.push(CUSTOMER_VALUE_XERO_IMPORT_PARTIAL_MESSAGE);
         }

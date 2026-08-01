@@ -10,11 +10,15 @@ import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
+import { canReadSchedulingCalendar } from '../services/scheduling-access.js';
+import type { SchedulingAuthContext } from '../services/scheduling-access.js';
 
 const scheduleJobSchema = z.object({
   scheduledAt: z.string().datetime(),
   scheduledEndAt: z.string().datetime().optional().nullable(),
   assignedUserId: z.string().uuid().optional().nullable(),
+  overrideReason: z.string().optional().nullable(),
+  acknowledgeConflicts: z.boolean().optional(),
 });
 
 const updateScheduleSchema = z.object({
@@ -22,6 +26,24 @@ const updateScheduleSchema = z.object({
   scheduledEndAt: z.string().datetime().optional().nullable(),
   assignedUserId: z.string().uuid().optional().nullable(),
   clearSchedule: z.boolean().optional(),
+  overrideReason: z.string().optional().nullable(),
+  acknowledgeConflicts: z.boolean().optional(),
+});
+
+const conflictCheckSchema = z.object({
+  jobId: z.string().uuid().optional().nullable(),
+  scheduledAt: z.string().datetime(),
+  scheduledEndAt: z.string().datetime().optional().nullable(),
+  assignedUserId: z.string().uuid().optional().nullable(),
+  durationMinutes: z.number().int().positive().optional().nullable(),
+});
+
+const calendarPatchSchema = z.object({
+  scheduledAt: z.string().datetime(),
+  scheduledEndAt: z.string().datetime().optional().nullable(),
+  assignedUserId: z.string().uuid().optional().nullable(),
+  overrideReason: z.string().optional().nullable(),
+  acknowledgeConflicts: z.boolean().optional(),
 });
 
 type SchedulingRouterDeps = {
@@ -36,8 +58,30 @@ function getAuth(req: import('express').Request) {
   return (req as AuthenticatedRequest).auth;
 }
 
+function toSchedulingAuth(auth: AuthenticatedRequest['auth']): SchedulingAuthContext {
+  return {
+    userId: auth.userId,
+    roleName: auth.roleName,
+    permissions: auth.permissions,
+  };
+}
+
 function getRouteParam(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function requireCalendarRead(req: import('express').Request, res: import('express').Response) {
+  const auth = getAuth(req);
+  if (!canReadSchedulingCalendar(auth.permissions)) {
+    res.status(403).json({
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Scheduling calendar access denied',
+      },
+    });
+    return null;
+  }
+  return auth;
 }
 
 export function createSchedulingRouter({
@@ -58,15 +102,11 @@ export function createSchedulingRouter({
     next();
   });
 
-  router.get(
-    '/stats',
-    requireAnyPermission('dispatch:read', 'dispatch:write'),
-    async (req, res) => {
-      const { companyId } = getAuth(req);
-      const stats = await schedulingService.getStats(companyId);
-      res.json({ data: stats });
-    },
-  );
+  router.get('/stats', requireAnyPermission('dispatch:read', 'dispatch:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const stats = await schedulingService.getStats(companyId);
+    res.json({ data: stats });
+  });
 
   router.get(
     '/assignees',
@@ -78,45 +118,110 @@ export function createSchedulingRouter({
     },
   );
 
-  router.get(
-    '/calendar',
-    requireAnyPermission('dispatch:read', 'dispatch:write'),
-    async (req, res) => {
-      const { companyId } = getAuth(req);
-      const fromParam = typeof req.query.from === 'string' ? req.query.from : null;
-      const toParam = typeof req.query.to === 'string' ? req.query.to : null;
+  router.get('/calendar', async (req, res) => {
+    const auth = requireCalendarRead(req, res);
+    if (!auth) return;
 
-      if (!fromParam || !toParam) {
-        res.status(400).json({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Calendar requires from and to query parameters',
-          },
-        });
-        return;
-      }
+    const fromParam = typeof req.query.from === 'string' ? req.query.from : null;
+    const toParam = typeof req.query.to === 'string' ? req.query.to : null;
 
-      const from = new Date(fromParam);
-      const to = new Date(toParam);
+    if (!fromParam || !toParam) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Calendar requires from and to query parameters',
+        },
+      });
+      return;
+    }
 
-      if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
-        res.status(400).json({
-          error: {
-            code: 'VALIDATION_ERROR',
-            message: 'Invalid calendar date range',
-          },
-        });
-        return;
-      }
+    const from = new Date(fromParam);
+    const to = new Date(toParam);
 
-      try {
-        const calendar = await schedulingService.getCalendar(companyId, from, to);
-        res.json({ data: calendar });
-      } catch (error) {
-        handleSchedulingError(res, error);
-      }
-    },
-  );
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid calendar date range',
+        },
+      });
+      return;
+    }
+
+    const filters = {
+      technicianId: typeof req.query.technicianId === 'string' ? req.query.technicianId : null,
+      status: typeof req.query.status === 'string' ? req.query.status : null,
+      suburb: typeof req.query.suburb === 'string' ? req.query.suburb : null,
+      priority: typeof req.query.priority === 'string' ? req.query.priority : null,
+    };
+
+    try {
+      const calendar = await schedulingService.getCalendar(
+        auth.companyId,
+        from,
+        to,
+        toSchedulingAuth(auth),
+        filters,
+      );
+      res.json({ data: calendar });
+    } catch (error) {
+      handleSchedulingError(res, error);
+    }
+  });
+
+  router.post('/calendar/conflicts', async (req, res) => {
+    const auth = requireCalendarRead(req, res);
+    if (!auth) return;
+
+    const parsed = conflictCheckSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid conflict check payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const result = await schedulingService
+        .getConflictService()
+        .checkConflicts(auth.companyId, toSchedulingAuth(auth), parsed.data);
+      res.json({ data: result });
+    } catch (error) {
+      handleSchedulingError(res, error);
+    }
+  });
+
+  router.patch('/calendar/:jobId', requireAnyPermission('dispatch:write'), async (req, res) => {
+    const auth = getAuth(req);
+    const parsed = calendarPatchSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid calendar patch payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const event = await schedulingService.updateSchedule(
+        auth.companyId,
+        getRouteParam(req.params.jobId),
+        parsed.data,
+        toSchedulingAuth(auth),
+      );
+      res.json({ data: { event } });
+    } catch (error) {
+      handleSchedulingError(res, error);
+    }
+  });
 
   router.get(
     '/day-timeline',
@@ -167,7 +272,7 @@ export function createSchedulingRouter({
         auth.companyId,
         getRouteParam(req.params.jobId),
         parsed.data,
-        auth.userId,
+        toSchedulingAuth(auth),
       );
       res.status(201).json({ data: { event } });
     } catch (error) {
@@ -198,7 +303,7 @@ export function createSchedulingRouter({
           auth.companyId,
           getRouteParam(req.params.jobId),
           parsed.data,
-          auth.userId,
+          toSchedulingAuth(auth),
         );
         res.json({ data: { event } });
       } catch (error) {
@@ -229,9 +334,11 @@ function handleSchedulingError(res: import('express').Response, error: unknown) 
     const status =
       error.code === 'NOT_FOUND' || error.code === 'ASSIGNEE_NOT_FOUND'
         ? 404
-        : error.code === 'VALIDATION_ERROR'
-          ? 400
-          : 400;
+        : error.code === 'SCHEDULING_CONFLICT' || error.code === 'OVERRIDE_REASON_REQUIRED'
+          ? 409
+          : error.code === 'VALIDATION_ERROR'
+            ? 400
+            : 400;
 
     res.status(status).json({
       error: {

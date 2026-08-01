@@ -2,7 +2,11 @@ import type {
   JobAssignee,
   ScheduleJobRequest,
   ScheduledJobEvent,
+  SchedulingCalendarFilters,
+  SchedulingCalendarPatchRequest,
   SchedulingCalendarResponse,
+  SchedulingConflictCheckRequest,
+  SchedulingConflictCheckResponse,
   SchedulingStats,
   UpdateScheduleRequest,
 } from '@titan/shared';
@@ -24,11 +28,44 @@ export async function fetchSchedulingCalendar(
   accessToken: string,
   from: string,
   to: string,
+  filters: SchedulingCalendarFilters = {},
 ): Promise<SchedulingCalendarResponse> {
   const params = new URLSearchParams({ from, to });
+  if (filters.technicianId) params.set('technicianId', filters.technicianId);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.suburb) params.set('suburb', filters.suburb);
+  if (filters.priority) params.set('priority', filters.priority);
+
   return request<SchedulingCalendarResponse>(`/scheduling/calendar?${params.toString()}`, {
     accessToken,
   });
+}
+
+export async function checkSchedulingConflicts(
+  accessToken: string,
+  body: SchedulingConflictCheckRequest,
+): Promise<SchedulingConflictCheckResponse> {
+  return request<SchedulingConflictCheckResponse>('/scheduling/calendar/conflicts', {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+}
+
+export async function patchCalendarEvent(
+  accessToken: string,
+  jobId: string,
+  body: SchedulingCalendarPatchRequest,
+): Promise<ScheduledJobEvent | null> {
+  const data = await request<{ event: ScheduledJobEvent | null }>(
+    `/scheduling/calendar/${jobId}`,
+    {
+      method: 'PATCH',
+      accessToken,
+      body,
+    },
+  );
+  return data.event;
 }
 
 export async function scheduleJob(
