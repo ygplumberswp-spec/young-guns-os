@@ -5,6 +5,21 @@
 
 ---
 
+## Sprint PRINT-001 — Printing and document output (QUEUED)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | PRINT-001 — Preview / Print / Save PDF / Email-WhatsApp; native device print; YG A4 templates |
+| **Result** | **QUEUED** — pipeline Phase 7 entry added; binding stub only; no implementation |
+| **Pipeline** | `TITAN_AUTO_WORK_PIPELINE.md` Phase 7 (after JOB-DEL-001; independent of PHSL/GSL) |
+| **Hard gates** | No production; no printer IP config; no interrupt Xero import or 7443e5b5 lifecycle work |
+| **Evidence (when executed)** | `diagnostic-output/191-print-document-output-verify.json` per core document type |
+| **Deliverables** | `TITAN_PRINTING_AND_DOCUMENT_OUTPUT.md`, shared print components, PDF scaffold, per-doc templates |
+| **Next phase selected** | Implement after JOB-DEL-001 PASS or in parallel once staging migration window clear |
+
+---
+
 ## Sprint JOB-DEL-001 — Job cancel, archive & safe test-job delete (QUEUED)
 
 | Field | Value |

@@ -16,6 +16,7 @@
 | 4 | YGP-001 Young Guns Pricing | **QUEUED** | — | blocked until SPI-001 staging PASS |
 | 5 | E2E margin flow verify | **QUEUED** | — | `188-supplier-to-margin-e2e-verify.json` |
 | 6 | JOB-DEL-001 Job cancel, archive & safe test delete | **QUEUED** | — | `diagnostic-output/190-job-delete-blocker-audit.json` |
+| 7 | PRINT-001 Printing and document output | **QUEUED** | — | `diagnostic-output/191-print-document-output-verify.json` |
 
 ---
 
@@ -131,3 +132,58 @@ Probe script: `diagnostic-output/190-job-delete-blocker-audit.mjs` (read-only)
 ### Sequencing relative to other queued work
 
 Runs **after Phase 5 (E2E margin)** or **in parallel** once Xero GO + SPI-001 staging PASS — **before** any PHSL/GSL pricing-hygiene phases when those are added to this pipeline. Does not block Xero import recovery (Phases 1–2).
+
+---
+
+## Phase 7 — PRINT-001 Printing and document output
+
+**Binding:** `TITAN_PRINTING_AND_DOCUMENT_OUTPUT.md` (stub queued)  
+**Status:** **QUEUED** — independent of PHSL/GSL; runs after financial/pricing phases (SPI, YGP, margin E2E) and after JOB-DEL-001.
+
+### Hard gates
+
+| Gate | Rule |
+|------|------|
+| Production | **Never** touch `rshuiaghmtrvvilhqpwm` |
+| Xero import | **Do not interrupt** active import batches — read-only staging probes only |
+| Staging migrations | **Do not apply** print-related migrations while Xero import or JOB-DEL-001 lifecycle migrations are in flight |
+| Subagent `7443e5b5` | **Do not duplicate** or conflict with in-flight JOB-DEL-001 lifecycle code |
+| Printer config | **No printer IP/host setup in TITAN** for normal use — native device print only |
+
+### Scope (when phase executes)
+
+| Capability | Behaviour |
+|------------|-----------|
+| **Preview / Print / Save PDF** | Per-document actions from job, quote, invoice, COC, etc. |
+| **Email / WhatsApp** | Approved comms workflow only — no silent outbound |
+| **Native device print** | AirPrint, Android print, browser `window.print()` — device confirms print |
+| **Print CSS** | `@media print` layouts; Young Guns A4 templates; VAT, totals, signatures |
+| **PDF generation** | Server/client PDF scaffold with version integrity (immutable snapshot ref) |
+| **Bulk print** | Owner/office only; permission-gated batch |
+| **Tenant isolation** | All print/PDF actions scoped to tenant; audit for sensitive docs |
+| **Failure UX** | Truthful states — TITAN opens print UI; device/OS confirms actual print |
+
+### Dependencies
+
+| Depends on | Reason |
+|------------|--------|
+| Phase 2 Xero GO (soft) | Invoice/quote PDFs need synced finance data for staging evidence |
+| Phase 4 YGP-001 (soft) | Quote/invoice templates use YG pricing + VAT presentation |
+| Phase 6 JOB-DEL-001 (sequencing) | Job card print should respect cancelled/archived filters |
+
+Does **not** block Xero recovery, SPI-001, or JOB-DEL-001 implementation.
+
+### Deliverables (implementation checklist)
+
+- [ ] `TITAN_PRINTING_AND_DOCUMENT_OUTPUT.md` — full binding spec
+- [ ] Shared print components + `@media print` styles
+- [ ] PDF service scaffold (server + client fallback)
+- [ ] Per-document templates: job card, quote, invoice, COC, delivery note, PO
+- [ ] Bulk print API + Owner permission gate
+- [ ] Audit log entries for sensitive document print/PDF/export
+- [ ] Tests: permissions, page breaks, multi-page, bulk, duplicate-click guard
+- [ ] Staging evidence per core document type: `diagnostic-output/191-print-document-output-verify.json`
+
+### Sequencing
+
+Runs **after Phase 6 (JOB-DEL-001)**. May run **in parallel** with PHSL/GSL when those phases are added — printing is independent of supplier-list hygiene work.
