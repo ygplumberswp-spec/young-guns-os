@@ -1,6 +1,6 @@
 # TITAN Test Evidence Index
 
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH; FRZ-019 local audit PARTIAL  
+**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL; FRZ-019 local audit PARTIAL  
 **Automated test files:** 56 (`*.test.ts`, excluding `.tmp-origin-build`)
 
 ---
@@ -191,15 +191,17 @@
 | `TITAN_FRZ015_AURA_STAGING_REPORT.md` | **FRZ-015 staging verify — GO** (Owner configured; live synthetic 12/12) |
 | `diagnostic-output/169-frz015-aura-staging-verify.json` | FRZ-015 blocked probe (credential absent) |
 | `diagnostic-output/170-frz015-aura-staging-verify-go.json` | **FRZ-015 GO** — live synthetic AURA staging verify (12/12, no secrets) |
-| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging verify — PAUSE-OAUTH** (credential gate passed; import deferred) |
+| `TITAN_FRZ018_XERO_STAGING_REPORT.md` | **FRZ-018 staging verify — PARTIAL** (OAuth connected; import deferred) |
 | `diagnostic-output/171-frz018-xero-staging-readiness.json` | FRZ-018 blocked probe (credential absent) |
-| `diagnostic-output/172-frz018-xero-staging-readonly-verify.json` | **FRZ-018b PAUSE-OAUTH** — oauthConfigured=true, 14 PASS / 8 PAUSE, no secrets |
+| `diagnostic-output/172-frz018-xero-staging-readonly-verify.json` | FRZ-018b PAUSE-OAUTH — oauthConfigured=true, 14 PASS / 8 PAUSE |
+| `diagnostic-output/174-frz018c-xero-staging-readonly-verify.json` | **FRZ-018c PARTIAL** — Young Guns Plumbing connected; 14 PASS / 8 PARTIAL, no secrets |
+| `diagnostic-output/frz018c-xero-staging-readonly-verify.mjs` | FRZ-018c probe script (DB + API; optional OWNER_ACCESS_TOKEN) |
 | `TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md` | **FRZ-019 local audit — PARTIAL** (settings exist; version/rollback missing) |
 | `diagnostic-output/173-frz019-config-studio-audit.json` | FRZ-019 structured local audit |
 
 ## Coverage gaps (Phase 2+ targets)
 
-- Live Xero sync integration (staging, read-only) — **PAUSE-OAUTH** (FRZ-018b: cred gate passed; Owner browser OAuth pending)  
+- Live Xero sync integration (staging, read-only) — **PARTIAL** (FRZ-018c: OAuth connected; live import deferred)  
 - AURA provider connection e2e — **GO** (FRZ-015b staging synthetic verify)  
 
 ---

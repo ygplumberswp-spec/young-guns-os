@@ -1,6 +1,6 @@
 # TITAN Provider State Register
 
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH (credential gate passed)  
+**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL (OAuth connected; import verify deferred)  
 **Rule:** No provider marked **Connected** without verified credential + successful server-side test.
 
 ---
@@ -9,13 +9,13 @@
 
 | State | Count |
 |-------|------:|
-| Connected (verified this cycle) | 1 (OpenAI AURA — staging) |
+| Connected (verified this cycle) | 2 (OpenAI AURA — staging; Xero OAuth — staging DB) |
 | Configured locally (dev only), not staging-verified | 0 |
-| Staging verified | 1 |
+| Staging verified | 2 |
 | Disconnected / not configured | Most |
 | Honesty-only (no backend) | 2 (gmail, n8n UI cards) |
 | Planned registry entry | 5 |
-| Blocked — credential required | 4+ |
+| Blocked — credential required | 3+ |
 
 ---
 
@@ -24,7 +24,7 @@
 | Provider | Surface | Config path | Credential storage | Last verified | UI state | True state | Next action |
 |----------|---------|-------------|-------------------|---------------|----------|------------|-------------|
 | **OpenAI (AURA)** | AURA Chat, AI orchestration | `AURA_OPENAI_API_KEY` + `PROVIDERS_ENABLED` | Server env only | **2026-08-01 FRZ-015 GO** — synthetic live 12/12 | Connected (staging) | **Connected — staging verified** | Monitor usage; optional key scope restriction |
-| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018b PAUSE-OAUTH** — `oauthConfigured=true`; probe tenant disconnected | Honest `configured_unverified` | **Configured — awaiting Owner browser OAuth** | Owner: Sign in with Xero at staging web `/integrations/xero`; then re-run read-only import verify |
+| **Xero** | `/integrations/xero` | OAuth + encrypted DB | `INTEGRATIONS_ENCRYPTION_KEY` | **2026-08-01 FRZ-018c PARTIAL** — Young Guns Plumbing connected; `xero_connected` audit; 0 sync logs | Connected (Owner UI) | **OAuth connected — import not staging-verified** | Optional: Owner session token re-run or staging UI Sync for read-only import verify |
 | **Cartrack** | `/integrations/cartrack`, fleet | Integration settings | Encrypted DB | Not verified | Disconnected expected | **Blocked** | Owner credentials |
 | **WhatsApp** | `/integrations/whatsapp` | Meta Business API | Encrypted DB | Not verified | **Blocked** | Owner Meta credentials |
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |

@@ -2,8 +2,8 @@
 
 **Organisation:** Young Guns Plumbing  
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH (credential gate passed)  
-**Verdict:** **NOT PILOT-READY** (FRZ-018 Owner browser OAuth + remaining chain gaps)
+**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL (OAuth connected); FRZ-019 local audit PARTIAL  
+**Verdict:** **NOT PILOT-READY** (FRZ-018 live import verify + remaining chain gaps)
 
 ---
 
@@ -15,7 +15,7 @@
 | **Security** | FAIL | Code-level RBAC; cross-tenant E2E incomplete | Phase 2 matrix |
 | **Reliability** | PARTIAL | Offline/retry UX-B; backup dry-run documented | Restore proof on clone |
 | **Financial** | PARTIAL | UX-E staging without live Xero | Xero OAuth + read sync |
-| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **PAUSE-OAUTH** — Xero cred gate passed | FRZ-018 Owner browser OAuth |
+| **Provider truth** | PARTIAL | FRZ-015 **GO** — OpenAI AURA connected; FRZ-018 **PARTIAL** — Xero OAuth connected (Young Guns Plumbing); live import verify deferred | Optional Owner session token or UI Sync |
 
 ---
 
@@ -122,4 +122,4 @@ Minimum for pilot:
 
 ## Exact blocker for pilot sign-off
 
-**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **PAUSE-OAUTH** — credential gate passed (`oauthConfigured=true`); Owner browser OAuth at staging `/integrations/xero` before read-only import verify.
+**FRZ-015:** **GO** — Owner configured Railway; live synthetic AURA verify 12/12 on staging. **FRZ-018:** **PARTIAL** — Owner OAuth connected (Young Guns Plumbing, DB corroborated); live read-only import verify deferred (Owner session token or staging UI Sync).

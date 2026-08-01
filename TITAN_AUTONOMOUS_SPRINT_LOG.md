@@ -568,6 +568,23 @@
 
 ---
 
+## Sprint FRZ-018c — Xero staging read-only verify (PARTIAL)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | FRZ-018c — Post-Owner OAuth read-only staging verification |
+| **Result** | **PARTIAL** — Owner signal corroborated: Young Guns Plumbing connected (`connectedAt=2026-08-01T10:20:52Z`); `xero_connected` audit; 14 PASS / 0 FAIL / 8 PARTIAL; live import deferred (no Owner Bearer token) |
+| **Checkpoint** | `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `diagnostic-output/174-frz018c-xero-staging-readonly-verify.json` |
+| **Owner signal** | "xero connected" — staging UI Connected |
+| **Live financial writes** | **Not performed** |
+| **FRZ-015 re-run** | **Not performed** |
+| **Migration** | None |
+| **Approval required?** | Optional — Owner session token or UI Sync for import GO |
+| **Next phase selected** | FRZ-019 config version schema (local) or FRZ-018d with OWNER_ACCESS_TOKEN |
+
+---
+
 ## Sprint FRZ-019 — Configuration Studio local audit (PARTIAL)
 
 | Field | Value |

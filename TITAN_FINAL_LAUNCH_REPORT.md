@@ -1,7 +1,7 @@
 # TITAN Final Launch Report
 
 **Product:** TITAN Business OS, powered by AURA  
-**Updated (UTC):** 2026-08-01 — FRZ-018 Xero staging PAUSE-OAUTH (credential gate passed)  
+**Updated (UTC):** 2026-08-01 — FRZ-018c Xero staging PARTIAL (OAuth connected)  
 **Status:** **NOT LAUNCH-READY**
 
 ---
@@ -14,7 +14,7 @@
 | **Internal pilot readiness** | **NOT READY** — chain not re-proven on current checkpoint |
 | **Complete launch readiness** | **NOT READY** |
 | **Highest remaining risk** | Field mobile UX-B re-run on current commit + live provider credentials |
-| **Current gate** | FRZ-018 Xero OAuth — **PAUSE-OAUTH** (credential gate passed; Owner browser OAuth; FRZ-015 AURA **GO**) |
+| **Current gate** | FRZ-018 Xero — **PARTIAL** (OAuth connected; live import verify deferred; FRZ-015 AURA **GO**) |
 
 ---
 
@@ -147,4 +147,4 @@ See **`TITAN_PROVIDER_STATE_REGISTER.md`**. No provider marked connected without
 
 ## M. Exact next action
 
-**FRZ-015 (GO):** Owner configured Railway; live synthetic AURA verify **12/12 PASS** on staging (`170-frz015-aura-staging-verify-go.json`). **FRZ-018 (PAUSE-OAUTH):** Credential gate passed (`oauthConfigured=true`); Owner completes browser OAuth at staging web `/integrations/xero` before read-only import verify — no live financial writes. Evidence: `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `172-frz018-xero-staging-readonly-verify.json`. **FRZ-019 (PARTIAL):** Local Configuration Studio audit — direct-save settings; draft/version/rollback TBD (`TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md`).
+**FRZ-015 (GO):** Owner configured Railway; live synthetic AURA verify **12/12 PASS** on staging (`170-frz015-aura-staging-verify-go.json`). **FRZ-018 (PARTIAL):** Owner OAuth connected — Young Guns Plumbing on staging (DB corroborated `2026-08-01`); live read-only import verify deferred — no Owner Bearer token; no live financial writes. Evidence: `TITAN_FRZ018_XERO_STAGING_REPORT.md`, `174-frz018c-xero-staging-readonly-verify.json`. **FRZ-019 (PARTIAL):** Local Configuration Studio audit — direct-save settings; draft/version/rollback TBD (`TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md`).
