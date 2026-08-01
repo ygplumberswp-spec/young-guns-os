@@ -3,8 +3,8 @@
 **Source of truth:** `TITAN_FINAL_SCOPE_FREEZE (2).md` (31 July 2026)  
 **Repository:** `/Users/keanuventer/Downloads/Titan Aura V1`  
 **Branch:** `cursor/titan-frozen-scope-completion`  
-**Checkpoint:** `eb5edc8` (pre Sprint 012 commit)  
-**Updated (UTC):** 2026-08-01 — Phase 8 business-day timeline local slice (Sprint 012)  
+**Checkpoint:** `25bee8f` (post Phase 9)  
+**Updated (UTC):** 2026-08-01 — Phase 10 materials/job costing local slice (Sprint 014)  
 
 ---
 
@@ -54,7 +54,7 @@
 | FRZ-008 | §9 | Owner daily target + financial control | Owner | Partial | Partial | Partial | Owner-only | Yes | Partial | Partial | Partial | None | — | Config approval | Partially implemented | Target engine not fully on dashboard | Cursor | — | FIN/dashboard gaps |
 | FRZ-009 | §10 | Quotes, BOQs, tenders, approval workflow | Owner/Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | — | Quote send | Partially implemented | BOQ workspace local foundation + quote edit/approval workflow; plan quotes + Excel/PDF import remain | Cursor | Sprint 013 | `boq.test.ts`, `quote-workflow.test.ts` |
 | FRZ-010 | §11 | Job numbering + Xero finance chain | Finance | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-E staging | **Xero** | Live write | Partially implemented | TITAN-INV works; live Xero # authority open | Cursor | UX-E | FIN-002, FIN-007 |
-| FRZ-011 | §12 | Materials, PO, job costing chain | Owner/Procurement | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-F staging | Xero bills | — | Partially implemented | Procurement UI closed staging; live bill match open | Cursor | UX-F | `stock-movements.contract.test.ts` |
+| FRZ-011 | §12 | Materials, PO, job costing chain | Owner/Procurement | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-F staging | Xero bills | — | Partially implemented | Job costing panel + stock movement ledger UI local (Sprint 014); supplier OCR/Xero bill match still open | Cursor | Sprint 014 `4a31e46` | `job-costing.test.ts`, `StockMovementsPage.tsx` |
 | FRZ-012 | §13 | Documents, OCR, reports, COC, job packs | All roles | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Partial | UX-B docs | AI provider | Send approval | Partially implemented | Job pack send workflow incomplete | Cursor | — | DOC/COM gaps |
 | FRZ-013 | §14 | Workforce/HR/labour-law AURA team | Owner/HR | Partial | Partial | Partial | Partial | Yes | Partial | Partial | Partial | None | — | HR legal | Partially implemented | Draft-only discipline; no auto-dismiss | Cursor | — | HR modules |
 | FRZ-014 | §15 | Xero data quality + marketing consent | Owner/Marketing | Yes | Yes | Partial | Yes | Yes | Partial | Yes | Yes | UX-H staging | Xero | Send approval | Partially implemented | Classifier closed; live send blocked | Cursor | UX-H | `marketing-eligibility.test.ts` |
@@ -79,10 +79,10 @@
 | Lead → Customer → Property → Job | **Verified complete (staging)** | Phase 5 E2E **17/17 GO** — audit, record links, cross-tenant — `diagnostic-output/140-staging-phase5-e2e.json` |
 | Crew/Vehicle assignment | **Verified complete (staging)** | Phase 6 E2E 12/12 GO — crew assign, calendar crew label, site contact E.164; `diagnostic-output/141-staging-phase6-e2e.json` |
 | Field execution | Implemented, not staging-verified | UX-B staging closure |
-| Materials/Variation | Partially implemented | UX-F procurement |
-| Quote/BOQ → Approval | Partially implemented | UX-E quotes; quote edit + internal approval workflow local (Sprint 013); BOQ workspace local foundation; job detail finance strip (UX-017) |
+| Materials/Variation | Partially implemented | UX-F procurement + Phase 10 job costing panel + stock movement ledger |
+| Quote/BOQ → Approval | Partially implemented | UX-E quotes; quote edit + internal approval workflow local (Sprint 013); BOQ workspace local foundation |
 | Invoice → Payment | Partially implemented | UX-E; live Xero blocked |
-| Profit | Partially implemented | Margin on quotes; job actuals partial |
+| Profit | Partially implemented | Quote margin + job gross-profit estimate on job detail (authorized roles) |
 | Follow-up/Marketing | Partially implemented | UX-H gates; no live send |
 | Reporting | Partially implemented | Analytics partial |
 
@@ -93,9 +93,10 @@
 1. ~~**FRZ-005** — Staging lead conversion with real SA address/phone after deploy of `8d35bfd`~~ **DONE** — see `TITAN_PHASE5_STAGING_REPORT.md`  
 2. ~~**FRZ-006 / Phase 6** — Crew assignment office UI **local complete**; scheduling calendar execution labels **local complete**; staging E2E proof still required~~ **DONE** — see `diagnostic-output/141-staging-phase6-e2e.json` (12/12 GO)  
 3. ~~**FRZ-007 / Phase 8** — Office business-day timeline local slice **DONE**; AURA opening/closing brief + full event taxonomy remain~~ **DONE** — Sprint 012 `ec79a82`  
-4. **FRZ-009 / Phase 9** — Quote edit + approval workflow + BOQ workspace local foundation **DONE**; plan quotes + supplier PDF match remain  
-5. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
-6. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
+4. ~~**FRZ-009 / Phase 9** — Quote edit + approval workflow + BOQ workspace local foundation **DONE**; plan quotes + supplier PDF match remain~~ **DONE** — Sprint 013 `85c97d6`  
+5. ~~**FRZ-011 / Phase 10 (local slice)** — Job costing summary API + panel; stock movement ledger route + UI **DONE**; supplier OCR/Xero bill match remain~~ **DONE (local)** — Sprint 014  
+6. **FRZ-015** — AURA provider verified connection (Owner credential gate)  
+7. **FRZ-018** — Xero OAuth staging connect (Owner approval)  
 
 ---
 

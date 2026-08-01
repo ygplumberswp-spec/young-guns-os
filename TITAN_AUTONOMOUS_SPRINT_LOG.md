@@ -230,3 +230,19 @@
 | **Approval required?** | No — local only; migration apply on staging deferred |
 | **Next phase selected** | Phase 10 materials/procurement remainder or FRZ-015 AURA provider gate (Owner credentials) |
 
+---
+
+## Sprint 014 — Phase 10 job costing + stock movements (local)
+
+| Field | Value |
+|-------|--------|
+| **Timestamp (UTC)** | 2026-08-01 |
+| **Phase** | 10 — Materials, stock, procurement and job costing (local slice) |
+| **Result** | Job costing summary API + `JobCostingPanel` on job detail; stock movement ledger list API + `/inventory/movements` UI; enriched movement rows with item/location names |
+| **Checkpoint** | `4a31e46` |
+| **Files changed** | `job-costing.ts`/service, `StockMovementsPage.tsx`, `JobCostingPanel.tsx`, inventory/jobs routes, control docs |
+| **Migration** | None |
+| **Tests** | `pnpm typecheck`, `pnpm test` (**254** pass: 80 shared + 23 auth + 46 web + 105 api), `pnpm build` — pass |
+| **Approval required?** | No — local only |
+| **Next phase selected** | Phase 11 documents/OCR remainder (safe local) or pause at FRZ-015 / FRZ-018 / staging migration 0105 |
+
