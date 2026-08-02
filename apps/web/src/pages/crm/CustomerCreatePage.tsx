@@ -120,7 +120,7 @@ export function CustomerCreatePage() {
   return (
     <div className="crm-page">
       <PageHeader
-        title="New customer"
+        title="New Customer"
         description="Create a customer record for your company. Drafts autosave — create still requires an explicit submit."
         actions={
           <Button

@@ -45,11 +45,27 @@ export type IntegrationConnectionConfig = {
     geocoding?: boolean;
     directions?: boolean;
     distanceMatrix?: boolean;
+    routes?: boolean;
     mapsJavascript?: boolean;
   };
   defaultRegion?: string;
   defaultLanguage?: string;
   lastValidatedAt?: string | null;
+  /** Most recent Google Maps connection probe (stored JSON; shape matches shared GoogleMapsTestResult). */
+  lastTest?: {
+    ok: boolean;
+    message: string;
+    testedAt: string;
+    servicesChecked: string[];
+    serviceResults: Array<{
+      service: string;
+      status: string;
+      message: string;
+      keyStatus: string | null;
+    }>;
+    serverKeyStatus: string;
+    browserKeyStatus: string;
+  } | null;
 };
 
 export const integrationConnections = pgTable('integration_connections', {

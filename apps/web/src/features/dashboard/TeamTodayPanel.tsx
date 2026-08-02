@@ -33,12 +33,12 @@ export function TeamTodayPanel({
   onRetry,
 }: TeamTodayPanelProps) {
   return (
-    <Panel title="Team today" description="Field team status — no payroll or HR data">
+    <Panel title="Team Today" description="Field team status — no payroll or HR data">
       {isLoading ? (
         <DashboardSectionSkeleton rows={4} />
       ) : error ? (
         <EmptyState
-          title="Unable to load team status"
+          title="Unable To Load Team Status"
           description={error}
           action={
             onRetry ? (
@@ -50,7 +50,7 @@ export function TeamTodayPanel({
         />
       ) : members.length === 0 ? (
         <EmptyState
-          title="No team members on the roster"
+          title="No Team Members On The Roster"
           description="Active team members will appear here when assigned to today's jobs."
         />
       ) : (

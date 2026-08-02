@@ -79,7 +79,7 @@ export function CalendarTimeGrid({
       return [
         {
           key: day.toISOString(),
-          label: 'All technicians',
+          label: 'All Technicians',
           date: day,
         },
       ];

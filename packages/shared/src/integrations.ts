@@ -122,8 +122,9 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
   },
   {
     provider: 'whatsapp',
-    name: 'WhatsApp Business',
-    description: 'WhatsApp Business API for customer messaging and notifications.',
+    name: 'Business WhatsApp',
+    description:
+      'Connect your Meta WhatsApp Business account for customer messaging, notifications and AI communications.',
     category: 'communications',
     availability: 'available',
     settingsPath: '/integrations/whatsapp',
@@ -155,7 +156,7 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
     provider: 'gmail',
     name: 'Business Gmail',
     description:
-      'Young Guns Business Gmail via official Google OAuth — Inbox, Sent, Drafts, Labels, sync, and approved sends.',
+      'Business Gmail via official Google OAuth — Inbox, Sent, Drafts, Labels, sync, and approved sends.',
     category: 'communications',
     availability: 'available',
     settingsPath: '/communications-hub',

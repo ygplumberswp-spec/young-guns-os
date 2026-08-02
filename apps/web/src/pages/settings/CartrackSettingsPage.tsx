@@ -209,7 +209,7 @@ export function CartrackSettingsPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Connection status">
+      <Panel title="Connection Status">
         <dl className="integration-status-list">
           <div>
             <dt>Provider status</dt>
@@ -273,7 +273,7 @@ export function CartrackSettingsPage() {
         <Panel title="Connect Cartrack">
           <form className="settings-form" onSubmit={(event) => void handleConnect(event)}>
             <Input
-              label="API base URL"
+              label="API Base URL"
               value={baseUrl}
               onChange={(e) => setBaseUrl(e.target.value)}
               placeholder="https://fleetapi-za.cartrack.com/rest"
@@ -331,7 +331,7 @@ export function CartrackSettingsPage() {
         </Panel>
       ) : null}
 
-      <Panel title="Vehicle sync mappings">
+      <Panel title="Vehicle Sync Mappings">
         {mappings.length === 0 ? (
           <p className="page-muted">
             No Cartrack vehicles synced yet. Connect Cartrack and run a sync to import external

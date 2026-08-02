@@ -150,7 +150,7 @@ export function PartsRequestsPage() {
     return (
       <div className="inventory-page">
         <PageHeader
-          title="Parts requests"
+          title="Parts Requests"
           description="You do not have permission to authorize material requests."
         />
       </div>
@@ -172,11 +172,11 @@ export function PartsRequestsPage() {
         isLoading={isLoading}
         error={loadError}
         isEmpty={(materialLines?.length ?? 0) === 0}
-        emptyTitle="No pending parts requests"
+        emptyTitle="No Pending Parts Requests"
         emptyDescription="Technician material requests awaiting office approval will appear here."
         loadingLabel="Loading parts requests…"
       >
-        <Panel title="Pending requests">
+        <Panel title="Pending Requests">
           <div className="inventory-table-wrap">
             <table className="inventory-table">
               <thead>
@@ -270,7 +270,7 @@ export function PartsRequestsPage() {
                             Approve
                           </Button>
                           <Input
-                            label="Reject reason"
+                            label="Reject Reason"
                             value={rejectReasons[line.id] ?? ''}
                             onChange={(e) =>
                               setRejectReasons((prev) => ({ ...prev, [line.id]: e.target.value }))

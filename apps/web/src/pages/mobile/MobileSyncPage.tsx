@@ -93,7 +93,7 @@ export function MobileSyncPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Offline synchronization"
+        title="Offline Synchronization"
         description={
           isOnline
             ? bundle?.syncState.lastSyncedAt
@@ -103,7 +103,7 @@ export function MobileSyncPage() {
         }
       />
 
-      <Panel title="Technician offline queue" description={`${pendingCount} unsynced action(s)`}>
+      <Panel title="Technician Offline Queue" description={`${pendingCount} unsynced action(s)`}>
         <p className="page-muted">
           States: Offline, Pending sync, Synced, Failed. Automatic flush runs on reconnect; use
           manual retry for failures. Idempotent via clientActionId.
@@ -147,14 +147,14 @@ export function MobileSyncPage() {
         error={bundleQuery.error}
         hasData={bundle !== undefined}
         isEmpty={false}
-        emptyTitle="No sync data"
+        emptyTitle="No Sync Data"
         emptyDescription="Offline sync is unavailable."
         loadingLabel="Loading offline sync…"
         onRetry={() => void bundleQuery.refetch()}
       >
         {bundle ? (
           <>
-            <Panel title="Offline jobs" description={`${bundle.jobs.length} active job(s) cached`}>
+            <Panel title="Offline Jobs" description={`${bundle.jobs.length} active job(s) cached`}>
               {bundle.jobs.length === 0 ? (
                 <p className="page-muted">No offline jobs cached.</p>
               ) : (
@@ -171,7 +171,7 @@ export function MobileSyncPage() {
               )}
             </Panel>
 
-            <Panel title="Server sync queue" description={`${bundle.queue.length} pending item(s)`}>
+            <Panel title="Server Sync Queue" description={`${bundle.queue.length} pending item(s)`}>
               {bundle.queue.length === 0 ? (
                 <p className="page-muted">Server sync queue is empty.</p>
               ) : (

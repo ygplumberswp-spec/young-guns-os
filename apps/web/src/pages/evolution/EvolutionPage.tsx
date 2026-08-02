@@ -161,7 +161,7 @@ export function EvolutionPage() {
       {isLoading ? (
         <Panel title="Loading">Loading evolution dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Evolution dashboard is unavailable." />
+        <EmptyState title="No Data" description="Evolution dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'dashboard' ? (
@@ -198,7 +198,7 @@ export function EvolutionPage() {
               <Panel title="Model Versions">
                 {dashboard.modelVersions.length === 0 ? (
                   <EmptyState
-                    title="No versions"
+                    title="No Versions"
                     description="Model versions are created when learning events are approved."
                   />
                 ) : (
@@ -223,7 +223,7 @@ export function EvolutionPage() {
             <Panel title="Continuous Learning Engine">
               {dashboard.recentLearningEvents.length === 0 ? (
                 <EmptyState
-                  title="No learning events"
+                  title="No Learning Events"
                   description="Sync learning from approvals, jobs, workflows, and AI quality data."
                 />
               ) : (
@@ -274,7 +274,7 @@ export function EvolutionPage() {
               ) : null}
               {dashboard.patterns.length === 0 ? (
                 <EmptyState
-                  title="No patterns"
+                  title="No Patterns"
                   description="Run pattern detection from live operational data."
                 />
               ) : (
@@ -298,7 +298,7 @@ export function EvolutionPage() {
             <Panel title="Optimization Recommendations">
               {dashboard.recommendations.length === 0 ? (
                 <EmptyState
-                  title="No recommendations"
+                  title="No Recommendations"
                   description="Generate recommendations from detected patterns and cross-module signals."
                 />
               ) : (
@@ -321,7 +321,7 @@ export function EvolutionPage() {
             <Panel title="Optimization Studio">
               {dashboard.optimizations.length === 0 ? (
                 <EmptyState
-                  title="No optimizations"
+                  title="No Optimizations"
                   description="Optimization proposals follow Draft → Approval → Execution. None are auto-deployed."
                 />
               ) : (
@@ -360,7 +360,7 @@ export function EvolutionPage() {
               ) : null}
               {dashboard.timelineEvents.length === 0 ? (
                 <EmptyState
-                  title="No timeline events"
+                  title="No Timeline Events"
                   description="Sync the business evolution timeline from real data."
                 />
               ) : (

@@ -4,11 +4,11 @@ import { canEditQuote, canIssueQuote, nextQuoteApprovalAction } from './finance.
 
 test('quote approval workflow transitions', () => {
   assert.deepEqual(nextQuoteApprovalAction('draft'), {
-    label: 'Submit for internal review',
+    label: 'Submit For Internal Review',
     nextStatus: 'internal_review',
   });
   assert.deepEqual(nextQuoteApprovalAction('internal_review'), {
-    label: 'Approve for sending',
+    label: 'Approve For Sending',
     nextStatus: 'approved_for_sending',
   });
   assert.equal(nextQuoteApprovalAction('approved_for_sending'), null);

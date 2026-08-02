@@ -133,11 +133,11 @@ export function MobileTimePage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Time & attendance"
+        title="Time & Attendance"
         description="Pick a job for on-site labour, or clock in/out for shift time."
       />
 
-      <Panel title="Job-scoped labour">
+      <Panel title="Job-Scoped Labour">
         {jobsQuery.isLoading ? (
           <p className="page-muted">Loading assigned jobs…</p>
         ) : jobs.length === 0 ? (
@@ -176,7 +176,7 @@ export function MobileTimePage() {
               </Button>
               {selectedJobId ? (
                 <Link href={`/mobile/jobs/${selectedJobId}`}>
-                  <Button variant="secondary">Open job</Button>
+                  <Button variant="secondary">Open Job</Button>
                 </Link>
               ) : null}
             </div>
@@ -184,7 +184,7 @@ export function MobileTimePage() {
         )}
       </Panel>
 
-      <Panel title="Shift clock">
+      <Panel title="Shift Clock">
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <Button disabled={isSubmitting} onClick={() => void handleShiftClock('clock_in')}>
             Clock in
@@ -227,13 +227,13 @@ export function MobileTimePage() {
         error={entriesQuery.error}
         hasData={entriesQuery.data !== undefined}
         isEmpty={entriesQuery.data !== undefined && entries.length === 0}
-        emptyTitle="No time entries"
+        emptyTitle="No Time Entries"
         emptyDescription="Log on-site time against a job or clock in to start recording shift time."
         loadingLabel="Loading time entries…"
         onRetry={() => void entriesQuery.refetch()}
       >
         {entries.length > 0 ? (
-          <Panel title="Time entries">
+          <Panel title="Time Entries">
             <ul className="portal-list">
               {entries.map((entry) => {
                 const jobLabel = formatEntryJobLabel(entry);

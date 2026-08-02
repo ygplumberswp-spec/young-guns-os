@@ -22,8 +22,8 @@ export const JOB_DOCUMENT_PACK_STATUS_OPTIONS: Array<{
   label: string;
 }> = [
   { value: 'draft', label: 'Draft' },
-  { value: 'internal_review', label: 'Internal review' },
-  { value: 'approved_for_sending', label: 'Approved for sending' },
+  { value: 'internal_review', label: 'Internal Review' },
+  { value: 'approved_for_sending', label: 'Approved For Sending' },
   { value: 'sent', label: 'Sent' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -32,18 +32,18 @@ export const JOB_DOCUMENT_PACK_CHANNEL_OPTIONS: Array<{
   value: JobDocumentPackChannel;
   label: string;
 }> = [
-  { value: 'portal', label: 'Customer portal' },
-  { value: 'email', label: 'Email (requires provider)' },
-  { value: 'whatsapp', label: 'WhatsApp (requires provider)' },
+  { value: 'portal', label: 'Customer Portal' },
+  { value: 'email', label: 'Email (Requires Provider)' },
+  { value: 'whatsapp', label: 'WhatsApp (Requires Provider)' },
 ];
 
 export const JOB_DOCUMENT_PACK_DELIVERY_STATE_OPTIONS: Array<{
   value: JobDocumentPackDeliveryState;
   label: string;
 }> = [
-  { value: 'not_sent', label: 'Not sent' },
-  { value: 'portal_shared', label: 'Shared on portal' },
-  { value: 'send_blocked', label: 'Send path not available' },
+  { value: 'not_sent', label: 'Not Sent' },
+  { value: 'portal_shared', label: 'Shared On Portal' },
+  { value: 'send_blocked', label: 'Send Path Not Available' },
 ];
 
 export type JobDocumentPackItemInput = {
@@ -123,10 +123,10 @@ export function nextJobDocumentPackApprovalAction(
   status: JobDocumentPackStatus,
 ): { label: string; nextStatus: JobDocumentPackStatus } | null {
   if (status === 'draft') {
-    return { label: 'Submit for internal review', nextStatus: 'internal_review' };
+    return { label: 'Submit For Internal Review', nextStatus: 'internal_review' };
   }
   if (status === 'internal_review') {
-    return { label: 'Approve for sending', nextStatus: 'approved_for_sending' };
+    return { label: 'Approve For Sending', nextStatus: 'approved_for_sending' };
   }
   return null;
 }

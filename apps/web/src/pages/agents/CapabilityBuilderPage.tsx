@@ -24,9 +24,9 @@ import { canAccessAgents, canManageAgents } from '../../features/agents/utils';
 type BuilderStep = 'describe' | 'proposal' | 'approvals' | 'test' | 'activate';
 
 const STEPS: Array<{ id: BuilderStep; label: string }> = [
-  { id: 'describe', label: 'Describe capability' },
-  { id: 'proposal', label: 'Review proposal' },
-  { id: 'approvals', label: 'Permissions & approvals' },
+  { id: 'describe', label: 'Describe Capability' },
+  { id: 'proposal', label: 'Review Proposal' },
+  { id: 'approvals', label: 'Permissions & Approvals' },
   { id: 'test', label: 'Test' },
   { id: 'activate', label: 'Activate' },
 ];
@@ -137,7 +137,7 @@ export function CapabilityBuilderPage() {
     return (
       <div className="agents-page page-shell">
         <PageHeader
-          title="Create capability"
+          title="Create Capability"
           description="You do not have permission to create capabilities."
         />
       </div>
@@ -147,12 +147,12 @@ export function CapabilityBuilderPage() {
   return (
     <div className="agents-page page-shell capability-builder">
       <PageHeader
-        title="Create capability"
+        title="Create Capability"
         description="Describe what you need in plain language. AURA will design the technical configuration for your review."
       />
       <AgentsNav />
 
-      <nav className="capability-builder__steps" aria-label="Builder progress">
+      <nav className="capability-builder__steps" aria-label="Builder Progress">
         {STEPS.map((item) => (
           <span
             key={item.id}
@@ -166,7 +166,7 @@ export function CapabilityBuilderPage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       {step === 'describe' ? (
-        <Panel title="Describe the capability you need">
+        <Panel title="Describe The Capability You Need">
           <p className="page-muted">
             Example: Add an agent that follows up unpaid invoices, or monitors tenders for my
             business.
@@ -225,7 +225,7 @@ export function CapabilityBuilderPage() {
       ) : null}
 
       {step === 'approvals' && capability ? (
-        <Panel title="Permissions and approvals">
+        <Panel title="Permissions And Approvals">
           <ProposalSummary proposal={capability.proposal} />
           <ul className="simple-list">
             <li>Approval mode: Ask before external actions</li>
@@ -247,7 +247,7 @@ export function CapabilityBuilderPage() {
       ) : null}
 
       {step === 'test' && capability ? (
-        <Panel title="Test capability">
+        <Panel title="Test Capability">
           <p className="page-muted">
             AURA runs safe tenant-scoped checks. No real customer messages, financial writes or
             external actions are performed.
@@ -276,7 +276,7 @@ export function CapabilityBuilderPage() {
       ) : null}
 
       {step === 'activate' && capability ? (
-        <Panel title="Activate capability">
+        <Panel title="Activate Capability">
           <p className="page-muted">
             Once activated, {capability.name} will appear in AURA Capabilities and become available
             to AURA routing for matching requests.
@@ -284,7 +284,7 @@ export function CapabilityBuilderPage() {
           {testResult ? <p className="page-muted">Last test: {testResult.summary}</p> : null}
           {capability.capabilityType === 'code_backed' ? (
             <EmptyState
-              title="App Builder required"
+              title="App Builder Required"
               description="This capability needs controlled code development through AURA App Builder before it can go live."
               action={
                 <Link href="/app-builder">
@@ -303,7 +303,7 @@ export function CapabilityBuilderPage() {
       ) : null}
 
       {isWorking && step === 'describe' ? (
-        <LoadingState label="AURA is analysing your request…" />
+        <LoadingState label="AURA Is Analysing Your Request…" />
       ) : null}
     </div>
   );
@@ -327,7 +327,7 @@ function ProposalPanel({
   onBack: () => void;
 }) {
   return (
-    <Panel title="Review AURA proposal">
+    <Panel title="Review AURA Proposal">
       <p className="page-muted">{discovery.recommendationSummary}</p>
       <ProposalSummary proposal={proposal} />
 
@@ -371,7 +371,7 @@ function ProposalPanel({
           </>
         ) : discovery.recommendation === 'code_backed' ? (
           <Link href="/app-builder">
-            <Button variant="secondary">Continue in App Builder</Button>
+            <Button variant="secondary">Continue In App Builder</Button>
           </Link>
         ) : (
           <Button disabled={!canManage || isWorking} onClick={onCreateSeparate}>

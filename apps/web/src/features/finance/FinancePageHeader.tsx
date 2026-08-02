@@ -30,7 +30,7 @@ export function FinancePageHeader({ canWrite = false, usePrimaryAction = false }
         </Link>
       ) : (
         <Link href="/finance/quotes/new">
-          <Button>New quote</Button>
+          <Button>New Quote</Button>
         </Link>
       )
     ) : canWrite && section === 'boq' ? (
@@ -43,7 +43,7 @@ export function FinancePageHeader({ canWrite = false, usePrimaryAction = false }
       </Link>
     ) : canWrite && section === 'payments' ? (
       <Link href="/finance/payments/new">
-        <Button>Record payment</Button>
+        <Button>Record Payment</Button>
       </Link>
     ) : undefined;
 

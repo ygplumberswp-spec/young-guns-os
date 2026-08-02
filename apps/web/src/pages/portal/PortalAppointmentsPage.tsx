@@ -76,7 +76,7 @@ export function PortalAppointmentsPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Book an appointment">
+      <Panel title="Book An Appointment">
         <div className="form-stack">
           <input
             type="text"
@@ -101,11 +101,11 @@ export function PortalAppointmentsPage() {
             onChange={(e) => setJobNotes(e.target.value)}
             rows={3}
           />
-          <Button onClick={() => void submitBooking()}>Submit booking request</Button>
+          <Button onClick={() => void submitBooking()}>Submit Booking Request</Button>
         </div>
       </Panel>
 
-      <Panel title="Booking requests">
+      <Panel title="Booking Requests">
         <ul className="portal-list">
           {bookings.map((booking) => (
             <li key={booking.id}>
@@ -117,7 +117,7 @@ export function PortalAppointmentsPage() {
         </ul>
       </Panel>
 
-      <Panel title="Scheduled appointments">
+      <Panel title="Scheduled Appointments">
         <ul className="portal-list">
           {appointments.map((appointment) => (
             <li key={appointment.jobId}>

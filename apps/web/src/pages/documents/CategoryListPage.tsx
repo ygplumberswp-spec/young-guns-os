@@ -64,7 +64,7 @@ export function CategoryListPage() {
         actions={
           canWrite ? (
             <Link href="/documents/categories/new">
-              <Button>New category</Button>
+              <Button>New Category</Button>
             </Link>
           ) : undefined
         }
@@ -77,18 +77,18 @@ export function CategoryListPage() {
       {!isLoading && !error ? (
         categories.length === 0 ? (
           <EmptyState
-            title="No categories yet"
+            title="No Categories Yet"
             description="Create categories to organise contracts, certificates, and other business documents."
             action={
               canWrite ? (
                 <Link href="/documents/categories/new">
-                  <Button>New category</Button>
+                  <Button>New Category</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Document categories">
+          <Panel title="Document Categories">
             <div className="documents-table-wrap">
               <table className="documents-table">
                 <thead>

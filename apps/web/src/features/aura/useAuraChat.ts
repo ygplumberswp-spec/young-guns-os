@@ -176,7 +176,7 @@ export function useAuraChat(pageContext?: {
             id: 'pending',
             companyId: '',
             userId: '',
-            title: 'New conversation',
+            title: 'New Conversation',
             createdAt: optimisticUserMessage.createdAt,
             updatedAt: optimisticUserMessage.createdAt,
             messages: [optimisticUserMessage],

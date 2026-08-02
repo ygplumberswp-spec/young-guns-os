@@ -89,7 +89,7 @@ export function SecuritySettingsPage() {
   return (
     <div className="page-stack">
       <PageHeader
-        title="Security & sessions"
+        title="Security & Sessions"
         description="Manage active sign-ins on your account. Tab inactivity alone does not sign you out."
       />
 
@@ -104,11 +104,11 @@ export function SecuritySettingsPage() {
         </p>
       ) : null}
 
-      <Panel title="This device">
+      <Panel title="This Device">
         {sessionsQuery.isLoading ? (
-          <LoadingState label="Loading sessions…" />
+          <LoadingState label="Loading Sessions…" />
         ) : sessions.length === 0 ? (
-          <EmptyState title="No active sessions" description="Sign in again to start a new session." />
+          <EmptyState title="No Active Sessions" description="Sign in again to start a new session." />
         ) : (
           <div className="table-scroll">
             <table className="data-table">
@@ -157,7 +157,7 @@ export function SecuritySettingsPage() {
       </Panel>
 
       {canViewSecurityCenter ? (
-        <Panel title="Company security center">
+        <Panel title="Company Security Center">
           <p>
             Owners and security admins can review tenant-wide sessions, MFA, and audit logs in the
             enterprise security workspace.

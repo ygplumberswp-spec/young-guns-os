@@ -467,7 +467,7 @@ export function BusinessEvolutionPage() {
         >
           {dashboard.recentObservations.length === 0 ? (
             <EmptyState
-              title="No observations"
+              title="No Observations"
               description="Sync observations from real platform activity."
             />
           ) : (
@@ -493,7 +493,7 @@ export function BusinessEvolutionPage() {
         <Panel title="Patterns" description="Detected trends from aggregated observations">
           {dashboard.recentPatterns.length === 0 ? (
             <EmptyState
-              title="No patterns"
+              title="No Patterns"
               description="Run pattern detection after syncing observations."
             />
           ) : (
@@ -517,7 +517,7 @@ export function BusinessEvolutionPage() {
         <Panel title="Hypotheses" description="Proposed changes derived from detected patterns">
           {dashboard.recentHypotheses.length === 0 ? (
             <EmptyState
-              title="No hypotheses"
+              title="No Hypotheses"
               description="Hypotheses are created from validated patterns."
             />
           ) : (
@@ -543,7 +543,7 @@ export function BusinessEvolutionPage() {
         >
           {dashboard.recentRecommendations.length === 0 ? (
             <EmptyState
-              title="No recommendations"
+              title="No Recommendations"
               description="Recommendations appear after hypothesis review."
             />
           ) : (
@@ -572,7 +572,7 @@ export function BusinessEvolutionPage() {
         >
           {dashboard.recentExperiments.length === 0 ? (
             <EmptyState
-              title="No experiments"
+              title="No Experiments"
               description="Experiments are scheduled from approved recommendations."
             />
           ) : (
@@ -601,7 +601,7 @@ export function BusinessEvolutionPage() {
         >
           {dashboard.recentOutcomes.length === 0 ? (
             <EmptyState
-              title="No outcomes"
+              title="No Outcomes"
               description="Outcomes are recorded after experiment completion."
             />
           ) : (
@@ -630,7 +630,7 @@ export function BusinessEvolutionPage() {
         >
           {dashboard.recentImprovementItems.length === 0 ? (
             <EmptyState
-              title="No improvement items"
+              title="No Improvement Items"
               description="Improvement items are created from validated outcomes."
             />
           ) : (
@@ -657,7 +657,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading process mining results...</p> : null}
           {supplementary.processMiningResults.length === 0 ? (
             <EmptyState
-              title="No process mining results"
+              title="No Process Mining Results"
               description="Sync process mining to discover workflow patterns."
             />
           ) : (
@@ -692,7 +692,7 @@ export function BusinessEvolutionPage() {
             </div>
           ) : (
             <EmptyState
-              title="No workflow optimizations"
+              title="No Workflow Optimizations"
               description="Optimizations appear from the legacy evolution platform."
             />
           )}
@@ -710,7 +710,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading agent performance...</p> : null}
           {supplementary.agentPerformanceSnapshots.length === 0 ? (
             <EmptyState
-              title="No agent performance snapshots"
+              title="No Agent Performance Snapshots"
               description="Capture agent performance from live agent runs."
             />
           ) : (
@@ -739,7 +739,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading agent improvements...</p> : null}
           {supplementary.agentImprovements.length === 0 ? (
             <EmptyState
-              title="No agent improvements"
+              title="No Agent Improvements"
               description="Agent improvements are proposed from performance analysis."
             />
           ) : (
@@ -769,7 +769,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading evaluations...</p> : null}
           {supplementary.aiEvaluations.length === 0 ? (
             <EmptyState
-              title="No AI evaluations"
+              title="No AI Evaluations"
               description="Evaluations are scheduled from the evaluation templates."
             />
           ) : (
@@ -799,7 +799,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading knowledge reinforcements...</p> : null}
           {supplementary.knowledgeReinforcements.length === 0 ? (
             <EmptyState
-              title="No knowledge reinforcements"
+              title="No Knowledge Reinforcements"
               description="Validated outcomes reinforce the knowledge graph."
             />
           ) : (
@@ -836,7 +836,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading financial impact data...</p> : null}
           {financialOutcomes.length === 0 ? (
             <EmptyState
-              title="No financial impact data"
+              title="No Financial Impact Data"
               description="Financial impact is recorded when outcomes are measured."
             />
           ) : (
@@ -865,7 +865,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading customer impact data...</p> : null}
           {customerOutcomes.length === 0 ? (
             <EmptyState
-              title="No customer impact data"
+              title="No Customer Impact Data"
               description="Customer impact is recorded in outcome measurements."
             />
           ) : (
@@ -889,7 +889,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading workforce impact data...</p> : null}
           {workforceOutcomes.length === 0 ? (
             <EmptyState
-              title="No workforce impact data"
+              title="No Workforce Impact Data"
               description="Workforce impact is recorded in outcome measurements."
             />
           ) : (
@@ -912,7 +912,7 @@ export function BusinessEvolutionPage() {
         >
           {itObservations.length === 0 ? (
             <EmptyState
-              title="No IT operations learning data"
+              title="No IT Operations Learning Data"
               description="IT learning signals appear when IT operations modules emit observations."
             />
           ) : (
@@ -942,7 +942,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading strategic roadmap...</p> : null}
           {supplementary.strategicRoadmapItems.length === 0 ? (
             <EmptyState
-              title="No roadmap items"
+              title="No Roadmap Items"
               description="Strategic roadmap items are created from validated recommendations."
             />
           ) : (
@@ -972,7 +972,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading maturity assessments...</p> : null}
           {supplementary.maturityAssessments.length === 0 ? (
             <EmptyState
-              title="No maturity assessments"
+              title="No Maturity Assessments"
               description="Maturity assessments track learning capability by domain."
             />
           ) : (
@@ -1002,7 +1002,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading feedback...</p> : null}
           {supplementary.userFeedback.length === 0 ? (
             <EmptyState
-              title="No user feedback"
+              title="No User Feedback"
               description="Feedback is collected on evolution artifacts."
             />
           ) : (
@@ -1032,7 +1032,7 @@ export function BusinessEvolutionPage() {
             : dashboard.recentAlerts
           ).length === 0 ? (
             <EmptyState
-              title="No evolution alerts"
+              title="No Evolution Alerts"
               description="Sync alerts from platform learning signals."
             />
           ) : (
@@ -1063,7 +1063,7 @@ export function BusinessEvolutionPage() {
           {isSupplementaryLoading ? <p>Loading audit logs...</p> : null}
           {supplementary.auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit logs"
+              title="No Audit Logs"
               description="Audit entries are recorded for every business evolution action."
             />
           ) : (

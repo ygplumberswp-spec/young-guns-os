@@ -261,7 +261,7 @@ export function FinancialPlanningPage() {
         <Panel title="Budgets" description="Draft → Review → Approval → Active">
           {dashboard.recentBudgets.length === 0 ? (
             <EmptyState
-              title="No budgets"
+              title="No Budgets"
               description="Budgets appear when created in the financial planning workspace."
             />
           ) : (
@@ -314,7 +314,7 @@ export function FinancialPlanningPage() {
         >
           {dashboard.recentForecasts.length === 0 ? (
             <EmptyState
-              title="No forecasts"
+              title="No Forecasts"
               description="Forecasts are generated from real revenue, pipeline, and operational data."
             />
           ) : (
@@ -337,7 +337,7 @@ export function FinancialPlanningPage() {
         >
           {dashboard.recentCashFlowProjections.length === 0 ? (
             <EmptyState
-              title="No projections"
+              title="No Projections"
               description="Generate cash-flow projections from real tenant records."
             />
           ) : (
@@ -400,7 +400,7 @@ export function FinancialPlanningPage() {
           <p>{dashboard.treasuryAccountCount} treasury account(s) configured.</p>
           {dashboard.treasuryAccountCount === 0 ? (
             <EmptyState
-              title="No treasury accounts"
+              title="No Treasury Accounts"
               description="Connect banking providers and register treasury accounts."
             />
           ) : null}
@@ -433,7 +433,7 @@ export function FinancialPlanningPage() {
         >
           {dashboard.recentProfitabilitySnapshots.length === 0 ? (
             <EmptyState
-              title="No profitability snapshots"
+              title="No Profitability Snapshots"
               description="Capture profitability from real job and customer data."
             />
           ) : (
@@ -453,7 +453,7 @@ export function FinancialPlanningPage() {
         <Panel title="Job Profitability">
           {jobSnapshots.length === 0 ? (
             <EmptyState
-              title="No job profitability data"
+              title="No Job Profitability Data"
               description="Job margins appear when jobs have invoiced revenue and cost data."
             />
           ) : (
@@ -473,7 +473,7 @@ export function FinancialPlanningPage() {
         <Panel title="Customer Profitability">
           {customerSnapshots.length === 0 ? (
             <EmptyState
-              title="No customer profitability data"
+              title="No Customer Profitability Data"
               description="Customer margins appear from real revenue and cost-to-serve data."
             />
           ) : (
@@ -493,7 +493,7 @@ export function FinancialPlanningPage() {
         <Panel title="Supplier Cost Intelligence">
           {supplierSnapshots.length === 0 ? (
             <EmptyState
-              title="No supplier cost snapshots"
+              title="No Supplier Cost Snapshots"
               description="Supplier cost analysis uses procurement and finance records."
             />
           ) : (
@@ -531,7 +531,7 @@ export function FinancialPlanningPage() {
         <Panel title="Scenario Planning" description="All scenarios are marked as simulations">
           {dashboard.recentScenarios.length === 0 ? (
             <EmptyState
-              title="No scenarios"
+              title="No Scenarios"
               description="Create scenarios with explicit assumptions for simulation."
             />
           ) : (
@@ -556,7 +556,7 @@ export function FinancialPlanningPage() {
         <Panel title="Financial Alerts">
           {dashboard.recentAlerts.length === 0 ? (
             <EmptyState
-              title="No alerts"
+              title="No Alerts"
               description="Alerts are generated from real financial monitoring only."
             />
           ) : (

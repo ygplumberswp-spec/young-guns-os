@@ -10,7 +10,7 @@ export function InventoryNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="inventory-nav" aria-label="Inventory sections">
+    <nav className="inventory-nav" aria-label="Inventory Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

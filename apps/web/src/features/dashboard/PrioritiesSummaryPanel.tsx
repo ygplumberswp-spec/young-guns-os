@@ -18,14 +18,14 @@ export function PrioritiesSummaryPanel({
   isLoading = false,
 }: PrioritiesSummaryPanelProps) {
   return (
-    <Panel title="Today&apos;s priorities" description="From Today&apos;s Plan — real M8 items only">
+    <Panel title="Today&apos;s Priorities" description="From Today&apos;s Plan — real M8 items only">
       <div className="exec-priorities">
         {isLoading || !priorities ? (
           <DashboardSectionSkeleton rows={3} />
         ) : (priorities.items?.length ?? 0) === 0 &&
           priorities.criticalIssues.length === 0 ? (
           <EmptyState
-            title="All clear for today"
+            title="All Clear For Today"
             description={priorities.summaryLine}
             action={
               <Link href="/aura/todays-plan">

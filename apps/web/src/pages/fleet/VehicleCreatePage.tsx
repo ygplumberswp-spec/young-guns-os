@@ -97,7 +97,7 @@ export function VehicleCreatePage() {
   return (
     <div className="fleet-page">
       <PageHeader
-        title="Add vehicle"
+        title="Add Vehicle"
         description="Register a company vehicle and optionally assign a driver or technician."
       />
       {error ? <p className="form-error">{error}</p> : null}
@@ -105,7 +105,7 @@ export function VehicleCreatePage() {
       <form className="fleet-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
         <Input
-          label="License plate"
+          label="License Plate"
           value={licensePlate}
           onChange={(e) => setLicensePlate(e.target.value)}
           required

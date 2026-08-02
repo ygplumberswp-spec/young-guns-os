@@ -17,7 +17,7 @@ export const LEAD_QUICK_STATUS_ACTIONS: LeadQuickStatusAction[] = [
   { id: 'qualify', label: 'Accept / Qualify', targetStatus: 'qualified' },
   { id: 'pending', label: 'Pending', targetStatus: 'awaiting_information' },
   { id: 'decline', label: 'Decline', targetStatus: 'lost', requiresReason: true },
-  { id: 'new', label: 'Return to New', targetStatus: 'new' },
+  { id: 'new', label: 'Return To New', targetStatus: 'new' },
   { id: 'archive', label: 'Archive', targetStatus: 'duplicate', requiresReason: true },
 ];
 
@@ -91,8 +91,8 @@ export type CustomerUiStatus =
 export const CUSTOMER_UI_STATUS_OPTIONS: Array<{ value: CustomerUiStatus; label: string }> = [
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
-  { value: 'payment_attention', label: 'Payment attention' },
-  { value: 'duplicate_review', label: 'Duplicate review' },
+  { value: 'payment_attention', label: 'Payment Attention' },
+  { value: 'duplicate_review', label: 'Duplicate Review' },
   { value: 'archived', label: 'Archived' },
 ];
 
@@ -103,8 +103,8 @@ export const CUSTOMER_STATUS_FILTER_GROUPS: Array<{
 }> = [
   { id: 'active', label: 'Active', tone: 'success' },
   { id: 'inactive', label: 'Inactive', tone: 'muted' },
-  { id: 'payment_attention', label: 'Payment attention', tone: 'warning' },
-  { id: 'duplicate_review', label: 'Duplicate review', tone: 'info' },
+  { id: 'payment_attention', label: 'Payment Attention', tone: 'warning' },
+  { id: 'duplicate_review', label: 'Duplicate Review', tone: 'info' },
   { id: 'archived', label: 'Archived', tone: 'muted' },
 ];
 
@@ -294,7 +294,7 @@ export const JOB_QUICK_STATUS_ACTIONS: Array<{
   targetStatus: import('./jobs.js').JobStatus;
 }> = [
   { id: 'schedule', label: 'Scheduled', targetStatus: 'scheduled' },
-  { id: 'progress', label: 'In progress', targetStatus: 'in_progress' },
+  { id: 'progress', label: 'In Progress', targetStatus: 'in_progress' },
   { id: 'complete', label: 'Complete', targetStatus: 'completed' },
   { id: 'cancel', label: 'Cancel', targetStatus: 'cancelled' },
 ];

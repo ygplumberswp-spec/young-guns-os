@@ -102,16 +102,16 @@ export type MapsEtaCapabilityState =
 export function formatMapsEtaCapabilityLabel(state: MapsEtaCapabilityState): string {
   switch (state) {
     case 'connected':
-      return 'GOOGLE MAPS CONNECTED';
+      return 'Google Maps Connected';
     case 'schedule_only':
-      return 'SCHEDULE ONLY — live Maps/routing not connected';
+      return 'Schedule Only — Live Maps/Routing Not Connected';
     case 'not_configured':
-      return 'MAPS NOT CONFIGURED';
+      return 'Maps Not Configured';
     case 'provider_unavailable':
-      return 'MAPS PROVIDER UNAVAILABLE';
+      return 'Maps Provider Unavailable';
     case 'not_implemented':
     default:
-      return 'LIVE MAPS/ROUTING NOT IMPLEMENTED';
+      return 'Live Maps/Routing Not Implemented';
   }
 }
 

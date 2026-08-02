@@ -27,16 +27,16 @@ export function PortalJobsPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Job tracking"
+        title="Job Tracking"
         description="Open a job for live status, scheduled time, and technician ETA."
       />
       {error ? <p className="form-error">{error}</p> : null}
-      <Panel title="Your jobs">
+      <Panel title="Your Jobs">
         {loading ? <p className="page-muted">Loading jobs…</p> : null}
         {!loading && jobs.length === 0 ? (
           <EmptyState
             className="titan-empty-state--compact"
-            title="No jobs yet"
+            title="No Jobs Yet"
             description="Jobs linked to your account will appear here."
           />
         ) : null}

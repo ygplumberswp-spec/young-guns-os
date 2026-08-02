@@ -304,7 +304,7 @@ export function WorkflowDetailPage() {
   if (!workflow) {
     return (
       <div className="automation-page">
-        <PageHeader title="Workflow not found" description="This workflow could not be found." />
+        <PageHeader title="Workflow Not Found" description="This workflow could not be found." />
       </div>
     );
   }
@@ -368,7 +368,7 @@ export function WorkflowDetailPage() {
           </Button>
         </form>
       ) : (
-        <Panel title="Workflow details">
+        <Panel title="Workflow Details">
           <dl className="automation-detail-grid">
             <div>
               <dt>Status</dt>
@@ -483,7 +483,7 @@ export function WorkflowDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="THEN — Actions (ordered)">
+      <Panel title="THEN — Actions (Ordered)">
         {workflow.actions.length === 0 ? (
           <p className="page-muted">No actions configured yet.</p>
         ) : (
@@ -535,7 +535,7 @@ export function WorkflowDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Workflow runs">
+      <Panel title="Workflow Runs">
         {runs.length === 0 ? (
           <p className="page-muted">
             No runs recorded yet. Activate the workflow and wait for matching events.
@@ -612,7 +612,7 @@ export function WorkflowDetailPage() {
         </Panel>
       ) : null}
 
-      <Panel title="Execution history">
+      <Panel title="Execution History">
         {executions.length === 0 ? (
           <p className="page-muted">No executions recorded yet.</p>
         ) : (

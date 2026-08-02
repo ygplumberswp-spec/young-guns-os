@@ -36,15 +36,15 @@ export type InvoiceNumberAuthority = 'internal_pending_xero' | 'xero';
 
 export const QUOTE_STATUS_OPTIONS: Array<{ value: QuoteStatus; label: string }> = [
   { value: 'draft', label: 'Draft' },
-  { value: 'internal_review', label: 'Internal review' },
-  { value: 'approved_for_sending', label: 'Approved for sending' },
-  { value: 'sent', label: 'Sent / issued' },
+  { value: 'internal_review', label: 'Internal Review' },
+  { value: 'approved_for_sending', label: 'Approved For Sending' },
+  { value: 'sent', label: 'Sent / Issued' },
   { value: 'viewed', label: 'Viewed' },
   { value: 'accepted', label: 'Accepted' },
   { value: 'declined', label: 'Declined' },
   { value: 'expired', label: 'Expired' },
   { value: 'superseded', label: 'Superseded' },
-  { value: 'converted', label: 'Converted / invoiced' },
+  { value: 'converted', label: 'Converted / Invoiced' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -67,20 +67,20 @@ export const INVOICE_STAGE_OPTIONS: Array<{ value: InvoiceStage; label: string }
 export const PAYMENT_METHOD_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
   { value: 'cash', label: 'Cash' },
   { value: 'card', label: 'Card' },
-  { value: 'bank_transfer', label: 'Bank transfer' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
   { value: 'other', label: 'Other' },
 ];
 
 export const QUOTE_LINE_CATEGORY_OPTIONS: Array<{ value: QuoteLineCategory; label: string }> = [
-  { value: 'scope', label: 'Scope of work' },
+  { value: 'scope', label: 'Scope Of Work' },
   { value: 'labour', label: 'Labour' },
   { value: 'materials', label: 'Materials' },
-  { value: 'travel', label: 'Travel / call-out' },
+  { value: 'travel', label: 'Travel / Call-Out' },
   { value: 'equipment', label: 'Equipment' },
   { value: 'subcontractor', label: 'Subcontractor' },
   { value: 'overhead', label: 'Overhead' },
-  { value: 'contingency', label: 'Contingency / risk' },
-  { value: 'warranty', label: 'Warranty / compliance' },
+  { value: 'contingency', label: 'Contingency / Risk' },
+  { value: 'warranty', label: 'Warranty / Compliance' },
   { value: 'discount', label: 'Discount' },
   { value: 'other', label: 'Other' },
 ];
@@ -503,10 +503,10 @@ export function nextQuoteApprovalAction(
   status: QuoteStatus,
 ): { label: string; nextStatus: QuoteStatus } | null {
   if (status === 'draft') {
-    return { label: 'Submit for internal review', nextStatus: 'internal_review' };
+    return { label: 'Submit For Internal Review', nextStatus: 'internal_review' };
   }
   if (status === 'internal_review') {
-    return { label: 'Approve for sending', nextStatus: 'approved_for_sending' };
+    return { label: 'Approve For Sending', nextStatus: 'approved_for_sending' };
   }
   return null;
 }

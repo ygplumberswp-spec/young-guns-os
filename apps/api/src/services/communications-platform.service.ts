@@ -36,6 +36,7 @@ import {
   commPlatformImportDecisions,
   commPlatformInboxIndex,
   commPlatformPersonalThreads,
+  companies,
   customers,
   invoices,
   jobs,
@@ -105,12 +106,12 @@ const EMPTY_GMAIL: CommPlatformConnectionHealth = {
   lastSyncAt: null,
   lastSyncStatus: null,
   emptyStateMessage:
-    'Business Gmail is not configured. Set Google OAuth credentials, then connect Young Guns Gmail — no messages are invented.',
+    'Business Gmail is not configured. Set Google OAuth credentials, then connect Business Gmail — no messages are invented.',
 };
 
 const EMPTY_BUSINESS_WA: CommPlatformConnectionHealth = {
   accountKind: 'business_whatsapp',
-  label: 'Business WhatsApp (Young Guns)',
+  label: 'Business WhatsApp',
   status: 'not_configured',
   connected: false,
   hasCredentials: false,
@@ -122,7 +123,7 @@ const EMPTY_BUSINESS_WA: CommPlatformConnectionHealth = {
   syncEnabled: false,
   retentionDays: null,
   emptyStateMessage:
-    'Business WhatsApp is not connected. Configure the official Young Guns Meta Cloud API channel — inbox stays empty until real messages arrive.',
+    'Business WhatsApp is not connected. Configure the official Meta Cloud API channel — inbox stays empty until real messages arrive.',
 };
 
 const EMPTY_PERSONAL_WA: CommPlatformConnectionHealth = {
@@ -260,7 +261,7 @@ export class CommunicationsPlatformService {
     const businessWaAccount =
       accounts.find((a) => a.accountKind === 'business_whatsapp') ?? null;
 
-    // Reflect existing Young Guns WhatsApp connection when platform row missing
+    // Reflect existing WhatsApp connection when platform row missing
     const [legacyWa] = await this.db
       .select()
       .from(whatsappConnections)
@@ -724,6 +725,13 @@ export class CommunicationsPlatformService {
       };
     }
 
+    const [company] = await this.db
+      .select({ name: companies.name })
+      .from(companies)
+      .where(eq(companies.id, actor.companyId))
+      .limit(1);
+    const signOff = company?.name?.trim() ? `— ${company.name.trim()}` : '—';
+
     const replyBody = [
       'Hi,',
       '',
@@ -731,7 +739,7 @@ export class CommunicationsPlatformService {
       '',
       `Re: ${subject}`,
       '',
-      '— Young Guns Plumbing',
+      signOff,
       '',
       '[AURA draft — review before approve → execute. Never auto-sent.]',
     ].join('\n');

@@ -94,7 +94,7 @@ export function SaasManagementPage() {
     { id: 'licenses', label: 'Licenses' },
     { id: 'billing', label: 'Billing' },
     { id: 'usage', label: 'Usage' },
-    { id: 'add-ons', label: 'Add-ons' },
+    { id: 'add-ons', label: 'Add-Ons' },
     { id: 'partners', label: 'Partners' },
     { id: 'notifications', label: 'Notifications' },
     { id: 'audit', label: 'Audit' },
@@ -263,9 +263,9 @@ export function SaasManagementPage() {
       />
 
       {isLoading ? (
-        <LoadingState label="Loading SaaS management" />
+        <LoadingState label="Loading SaaS Management" />
       ) : !dashboard ? (
-        <EmptyState title="No data" description="SaaS management dashboard is unavailable." />
+        <EmptyState title="No Data" description="SaaS management dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -292,7 +292,7 @@ export function SaasManagementPage() {
                   value={dashboard.isPlatformOwner ? 'Yes' : 'No'}
                 />
               </div>
-              <Panel title="Platform owner status">
+              <Panel title="Platform Owner Status">
                 <p>
                   {dashboard.isPlatformOwner
                     ? 'This tenant is registered as the TITAN platform owner with full platform visibility.'
@@ -316,7 +316,7 @@ export function SaasManagementPage() {
             <Panel title="Subscription Plans">
               {dashboard.plans.length === 0 ? (
                 <EmptyState
-                  title="No plans"
+                  title="No Plans"
                   description="Create configurable subscription plans from the platform owner tenant."
                 />
               ) : (
@@ -395,7 +395,7 @@ export function SaasManagementPage() {
                 </div>
               ) : (
                 <EmptyState
-                  title="No subscription"
+                  title="No Subscription"
                   description="No active subscription on record."
                 />
               )}
@@ -406,7 +406,7 @@ export function SaasManagementPage() {
             <Panel title="Tenants">
               {dashboard.tenants.length === 0 ? (
                 <EmptyState
-                  title="No tenants"
+                  title="No Tenants"
                   description={
                     dashboard.isPlatformOwner
                       ? 'Provision tenants from the platform API.'
@@ -433,7 +433,7 @@ export function SaasManagementPage() {
               {isSupplementaryLoading ? <p>Loading licenses…</p> : null}
               {licenses.length === 0 ? (
                 <EmptyState
-                  title="No licenses"
+                  title="No Licenses"
                   description="License records appear when licenses are created for tenants."
                 />
               ) : (
@@ -468,7 +468,7 @@ export function SaasManagementPage() {
               <Panel title="Billing Records">
                 {(ownerBilling?.billingRecords ?? dashboard.billingRecords).length === 0 ? (
                   <EmptyState
-                    title="No billing records"
+                    title="No Billing Records"
                     description="Billing records are created through the existing SaaS billing abstraction."
                   />
                 ) : (
@@ -486,7 +486,7 @@ export function SaasManagementPage() {
               <Panel title="Payment Providers">
                 {paymentProviders.length === 0 ? (
                   <EmptyState
-                    title="No payment providers"
+                    title="No Payment Providers"
                     description="Configure payment providers through the billing abstraction. No provider is hardcoded."
                   />
                 ) : (
@@ -504,7 +504,7 @@ export function SaasManagementPage() {
               <Panel title="Billing Policies">
                 {billingPolicies.length === 0 ? (
                   <EmptyState
-                    title="No billing policies"
+                    title="No Billing Policies"
                     description="Configure retry, proration, tax, and currency policies."
                   />
                 ) : (
@@ -521,7 +521,7 @@ export function SaasManagementPage() {
               <Panel title="Coupons">
                 {coupons.length === 0 ? (
                   <EmptyState
-                    title="No coupons"
+                    title="No Coupons"
                     description="Promotional codes and coupons can be configured by platform owners."
                   />
                 ) : (
@@ -587,10 +587,10 @@ export function SaasManagementPage() {
           ) : null}
 
           {activeTab === 'add-ons' ? (
-            <Panel title="Add-ons">
+            <Panel title="Add-Ons">
               {dashboard.addOns.length === 0 ? (
                 <EmptyState
-                  title="No add-ons"
+                  title="No Add-Ons"
                   description="Configure add-on catalog entries for tenant purchases."
                 />
               ) : (
@@ -614,7 +614,7 @@ export function SaasManagementPage() {
               {isSupplementaryLoading ? <p>Loading partners…</p> : null}
               {partners.length === 0 ? (
                 <EmptyState
-                  title="No partners"
+                  title="No Partners"
                   description="Register reseller and white-label partner accounts."
                 />
               ) : (
@@ -636,7 +636,7 @@ export function SaasManagementPage() {
             <Panel title="Notifications">
               {dashboard.recentNotifications.length === 0 ? (
                 <EmptyState
-                  title="No notifications"
+                  title="No Notifications"
                   description="Billing and subscription notifications appear when events occur."
                 />
               ) : (
@@ -672,7 +672,7 @@ export function SaasManagementPage() {
               {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
               {auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit logs"
+                  title="No Audit Logs"
                   description="SaaS management actions are recorded for complete auditability."
                 />
               ) : (

@@ -539,8 +539,8 @@ export function JobCreatePage() {
   return (
     <div className="jobs-page">
       <PageHeader
-        title="New job"
-        description="Book Young Guns work with a full site handoff for dispatch and technicians."
+        title="New Job"
+        description="Book work with a full site handoff for dispatch and technicians."
         guardNavigation={draftShell.guard.guardNavigation}
       />
       {draftShell.autosave.statusLabel ? (
@@ -558,7 +558,7 @@ export function JobCreatePage() {
         <div className="jobs-empty-customers">
           <p className="page-muted">You need at least one customer before creating a job.</p>
           <Link href="/crm/new">
-            <Button>Add customer</Button>
+            <Button>Add Customer</Button>
           </Link>
         </div>
       ) : (
@@ -646,7 +646,7 @@ export function JobCreatePage() {
                 </label>
               ) : (
                 <Input
-                  label="Property name (optional)"
+                  label="Property Name (Optional)"
                   value={propertyName}
                   onChange={(event) => setPropertyName(event.target.value)}
                   placeholder="e.g. Main house / Flat 3"
@@ -656,7 +656,7 @@ export function JobCreatePage() {
               <div className="jobs-form__grid">
                 <div style={{ gridColumn: '1 / -1' }}>
                   <AddressAutocomplete
-                    label="Street / search address"
+                    label="Street / Search Address"
                     value={street}
                     onChange={(value) => {
                       setStreet(value);
@@ -687,7 +687,7 @@ export function JobCreatePage() {
                   )}
                 </div>
                 <Input
-                  label="Unit / apartment"
+                  label="Unit / Apartment"
                   value={unit}
                   onChange={(event) => setUnit(event.target.value)}
                   placeholder="Optional"
@@ -725,7 +725,7 @@ export function JobCreatePage() {
                   ) : null}
                 </label>
                 <Input
-                  label="Postal code"
+                  label="Postal Code"
                   value={postalCode}
                   onChange={(event) => setPostalCode(event.target.value)}
                   required
@@ -747,7 +747,7 @@ export function JobCreatePage() {
             </label>
             <div className="jobs-form__grid">
               <Input
-                label="Contact name"
+                label="Contact Name"
                 value={siteContactName}
                 onChange={(event) => setSiteContactName(event.target.value)}
                 required
@@ -830,7 +830,7 @@ export function JobCreatePage() {
                 </select>
               </label>
               <Input
-                label="Preferred appointment"
+                label="Preferred Appointment"
                 type="datetime-local"
                 value={appointmentLocal}
                 onChange={(event) => setAppointmentLocal(event.target.value)}
@@ -895,7 +895,7 @@ export function JobCreatePage() {
             </p>
             <div className="jobs-form__grid">
               <Input
-                label="Document title"
+                label="Document Title"
                 value={docTitle}
                 onChange={(event) => setDocTitle(event.target.value)}
                 placeholder="Blocked drain"

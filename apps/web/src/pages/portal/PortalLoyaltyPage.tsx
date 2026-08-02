@@ -40,13 +40,13 @@ export function PortalLoyaltyPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Loyalty & referrals"
+        title="Loyalty & Referrals"
         description="Invite friends and track referral rewards."
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Invite someone">
+      <Panel title="Invite Someone">
         <div className="form-row">
           <input
             type="email"
@@ -54,14 +54,14 @@ export function PortalLoyaltyPage() {
             value={referredEmail}
             onChange={(event) => setReferredEmail(event.target.value)}
           />
-          <Button onClick={() => void inviteReferral()}>Send invitation</Button>
+          <Button onClick={() => void inviteReferral()}>Send Invitation</Button>
         </div>
       </Panel>
 
-      <Panel title="Your referrals">
+      <Panel title="Your Referrals">
         {referrals.length === 0 ? (
           <EmptyState
-            title="No referrals yet"
+            title="No Referrals Yet"
             description="Referral invitations you send will appear here."
           />
         ) : (

@@ -155,7 +155,7 @@ export function MessageCreatePage() {
   return (
     <div className="communications-page">
       <PageHeader
-        title="Log communication"
+        title="Log Communication"
         description="Record a customer interaction in your communication history."
       />
       <CommunicationsNav />
@@ -266,7 +266,7 @@ export function MessageCreatePage() {
             />
           </label>
           <Input
-            label="Occurred at"
+            label="Occurred At"
             type="datetime-local"
             value={occurredAt}
             onChange={(e) => setOccurredAt(e.target.value)}

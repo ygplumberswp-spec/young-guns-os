@@ -45,7 +45,7 @@ export function CategoryCreatePage() {
   return (
     <div className="documents-page">
       <PageHeader
-        title="New category"
+        title="New Category"
         description="Create a category for organising document records."
       />
       <DocumentsNav />

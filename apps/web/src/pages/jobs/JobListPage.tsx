@@ -59,7 +59,7 @@ export function JobListPage() {
         isLoading={isLoading && jobs === undefined}
         error={error && jobs === undefined ? error : null}
         isEmpty={false}
-        emptyTitle="No jobs yet"
+        emptyTitle="No Jobs Yet"
         emptyDescription="Create a job to track work for your customers."
         loadingLabel="Loading jobs…"
       >

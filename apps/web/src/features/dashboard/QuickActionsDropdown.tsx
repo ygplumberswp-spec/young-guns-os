@@ -12,15 +12,15 @@ type QuickActionDef = {
 };
 
 const QUICK_ACTIONS: QuickActionDef[] = [
-  { id: 'new-lead', label: 'New lead', href: '/leads/new', group: 'Customers', permissions: ['leads:write', '*'] },
-  { id: 'new-customer', label: 'New customer', href: '/crm/new', group: 'Customers', permissions: ['customers:write', '*'] },
-  { id: 'new-job', label: 'New job', href: '/jobs/new', group: 'Jobs', permissions: ['jobs:write', '*'] },
-  { id: 'schedule-job', label: 'Schedule job', href: '/scheduling', group: 'Jobs', permissions: ['dispatch:read', 'jobs:read', '*'] },
-  { id: 'new-quote', label: 'New quote', href: '/finance/quotes/new', group: 'Finance', permissions: ['finance:write', '*'] },
-  { id: 'new-invoice', label: 'New invoice', href: '/finance/invoices/new', group: 'Finance', permissions: ['finance:write', '*'] },
-  { id: 'record-payment', label: 'Record payment', href: '/finance/payments/new', group: 'Finance', permissions: ['finance:write', '*'] },
-  { id: 'upload-document', label: 'Upload document', href: '/documents/new', group: 'Documents', permissions: ['documents:write', '*'] },
-  { id: 'new-message', label: 'New message', href: '/communications/messages/new', group: 'Communication', permissions: ['communications:write', '*'] },
+  { id: 'new-lead', label: 'New Lead', href: '/leads/new', group: 'Customers', permissions: ['leads:write', '*'] },
+  { id: 'new-customer', label: 'New Customer', href: '/crm/new', group: 'Customers', permissions: ['customers:write', '*'] },
+  { id: 'new-job', label: 'New Job', href: '/jobs/new', group: 'Jobs', permissions: ['jobs:write', '*'] },
+  { id: 'schedule-job', label: 'Schedule Job', href: '/scheduling', group: 'Jobs', permissions: ['dispatch:read', 'jobs:read', '*'] },
+  { id: 'new-quote', label: 'New Quote', href: '/finance/quotes/new', group: 'Finance', permissions: ['finance:write', '*'] },
+  { id: 'new-invoice', label: 'New Invoice', href: '/finance/invoices/new', group: 'Finance', permissions: ['finance:write', '*'] },
+  { id: 'record-payment', label: 'Record Payment', href: '/finance/payments/new', group: 'Finance', permissions: ['finance:write', '*'] },
+  { id: 'upload-document', label: 'Upload Document', href: '/documents/new', group: 'Documents', permissions: ['documents:write', '*'] },
+  { id: 'new-message', label: 'New Message', href: '/communications/messages/new', group: 'Communication', permissions: ['communications:write', '*'] },
   { id: 'ask-aura', label: 'Ask AURA', href: '/aura', group: 'Communication', permissions: ['agents:read', 'aura:read', '*'] },
   {
     id: 'new-po',

@@ -1,7 +1,12 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Input, LoadingState, Panel } from '@titan/ui';
-import type { CustomerPropertySummary, GoogleGeocodedAddress } from '@titan/shared';
+import {
+  buildGoogleMapsPlaceUrl,
+  formatLatLngCoordinates,
+  type CustomerPropertySummary,
+  type GoogleGeocodedAddress,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createCustomerProperty, fetchCustomerProperties } from '../../lib/crm-api';
 import { canManageJobs } from '../jobs/JobList';
@@ -107,10 +112,10 @@ export function CustomerPropertiesPanel({
       {error ? <p className="form-error">{error}</p> : null}
 
       {isLoading ? (
-        <LoadingState label="Loading properties…" />
+        <LoadingState label="Loading Properties…" />
       ) : properties.length === 0 ? (
         <EmptyState
-          title="No properties yet"
+          title="No Properties Yet"
           description="Add a property with a verified address before creating operational jobs at this customer."
           action={
             canWrite ? (
@@ -138,12 +143,25 @@ export function CustomerPropertiesPanel({
               </p>
               {property.latitude != null && property.longitude != null ? (
                 <p className="page-muted">
-                  {property.latitude.toFixed(5)}, {property.longitude.toFixed(5)}
+                  {formatLatLngCoordinates(property.latitude, property.longitude, 5)}
                   {property.placeId ? ` · Place ID stored` : ''}
                 </p>
               ) : (
                 <p className="page-muted">Coordinates not verified</p>
               )}
+              {(() => {
+                const mapsUrl = buildGoogleMapsPlaceUrl({
+                  latitude: property.latitude,
+                  longitude: property.longitude,
+                  placeId: property.placeId,
+                  address: property.formattedAddress ?? property.addressDisplay,
+                });
+                return mapsUrl ? (
+                  <a href={mapsUrl} target="_blank" rel="noreferrer" className="crm-link">
+                    Open in Google Maps
+                  </a>
+                ) : null;
+              })()}
               {canCreateJob ? (
                 <Link
                   href={`/jobs/new?customerId=${encodeURIComponent(customerId)}&propertyId=${encodeURIComponent(property.id)}`}
@@ -168,14 +186,14 @@ export function CustomerPropertiesPanel({
       {canWrite && showForm ? (
         <form className="crm-form crm-form--nested" onSubmit={(event) => void handleCreateProperty(event)}>
           <Input
-            label="Property name"
+            label="Property Name"
             value={propertyName}
             onChange={(event) => setPropertyName(event.target.value)}
             placeholder="e.g. Main residence, Block A unit 4"
             required
           />
           <AddressAutocomplete
-            label="Search address (Google Places)"
+            label="Search Address (Google Places)"
             value={street}
             onChange={(value) => {
               setStreet(value);
@@ -199,7 +217,7 @@ export function CustomerPropertiesPanel({
             onChange={(event) => setProvince(event.target.value)}
           />
           <Input
-            label="Postal code"
+            label="Postal Code"
             value={postalCode}
             onChange={(event) => setPostalCode(event.target.value)}
           />

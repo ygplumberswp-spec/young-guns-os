@@ -81,7 +81,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/security', label: 'Security', permissions: ['security:read', '*'] },
   {
     href: '/enterprise-modules',
-    label: 'Enterprise modules',
+    label: 'Enterprise Modules',
     permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
     experiences: ['platform_owner'],
   },
@@ -197,7 +197,7 @@ export const CLIENT_PORTAL_NAV_ITEMS: NavItemConfig[] = [
   { href: '/my/quotes', label: 'Quotes', portalPermission: 'portal.quotes:read' },
   {
     href: '/my/finance',
-    label: 'Invoices & payments',
+    label: 'Invoices & Payments',
     portalPermissions: ['portal.invoices:read', 'portal.payments:read'],
   },
   {

@@ -249,7 +249,7 @@ export function DataMigrationPage() {
       {isLoading ? (
         <Panel title="Loading">Loading data migration dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Data migration dashboard is unavailable." />
+        <EmptyState title="No Data" description="Data migration dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -389,7 +389,7 @@ export function DataMigrationPage() {
             <Panel title="Field Mappings">
               {!selectedImportJob || selectedImportJob.fieldMappingDetails.length === 0 ? (
                 <EmptyState
-                  title="No mappings"
+                  title="No Mappings"
                   description="Run the import wizard to generate AI-suggested field mappings."
                 />
               ) : (
@@ -416,7 +416,7 @@ export function DataMigrationPage() {
             <Panel title="Validation Results">
               {!selectedImportJob || selectedImportJob.validationResults.length === 0 ? (
                 <EmptyState
-                  title="No validation issues"
+                  title="No Validation Issues"
                   description="Validation runs after mapping and before import approval."
                 />
               ) : (
@@ -440,7 +440,7 @@ export function DataMigrationPage() {
             <Panel title="Duplicate Review">
               {!selectedImportJob || selectedImportJob.duplicateReviews.length === 0 ? (
                 <EmptyState
-                  title="No duplicates"
+                  title="No Duplicates"
                   description="Duplicate detection runs during validation using configurable rules."
                 />
               ) : (
@@ -467,7 +467,7 @@ export function DataMigrationPage() {
             <Panel title="Export Jobs">
               {dashboard.exportJobs.length === 0 ? (
                 <EmptyState
-                  title="No export jobs"
+                  title="No Export Jobs"
                   description="Create an export job to export real module records."
                 />
               ) : (
@@ -490,7 +490,7 @@ export function DataMigrationPage() {
                   onClick={() =>
                     void runAction(async () => {
                       const job = await createExportJob(accessToken!, {
-                        title: 'Customer export',
+                        title: 'Customer Export',
                         entityType: 'customer',
                         sourceFormat: 'csv',
                       });
@@ -508,7 +508,7 @@ export function DataMigrationPage() {
             <Panel title="Migration History">
               {dashboard.migrationHistory.length === 0 ? (
                 <EmptyState
-                  title="No history"
+                  title="No History"
                   description="Import and export history appears after approved migration actions."
                 />
               ) : (
@@ -532,7 +532,7 @@ export function DataMigrationPage() {
             <Panel title="Rollback Requests">
               {dashboard.rollbackRequests.length === 0 ? (
                 <EmptyState
-                  title="No rollback requests"
+                  title="No Rollback Requests"
                   description="Rollback is available for supported imports and requires explicit approval. Production records are never silently deleted."
                 />
               ) : (
@@ -558,7 +558,7 @@ export function DataMigrationPage() {
                 <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
               ) : (
                 <EmptyState
-                  title="No analytics"
+                  title="No Analytics"
                   description="Capture analytics to record migration metrics."
                 />
               )}
@@ -571,7 +571,7 @@ export function DataMigrationPage() {
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit entries"
+                  title="No Audit Entries"
                   description="All migration actions are fully auditable."
                 />
               ) : (

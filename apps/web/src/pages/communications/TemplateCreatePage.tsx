@@ -50,7 +50,7 @@ export function TemplateCreatePage() {
   return (
     <div className="communications-page">
       <PageHeader
-        title="New template"
+        title="New Template"
         description="Create a reusable message template for customer communications."
       />
       <CommunicationsNav />
@@ -58,7 +58,7 @@ export function TemplateCreatePage() {
 
       <form className="communications-form" onSubmit={(event) => void handleSubmit(event)}>
         <Input
-          label="Template name"
+          label="Template Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required

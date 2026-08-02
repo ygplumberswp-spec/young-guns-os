@@ -142,7 +142,7 @@ export function MarketingIntelligencePage() {
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {isLoading ? <LoadingState label="Loading marketing intelligence…" /> : null}
+      {isLoading ? <LoadingState label="Loading Marketing Intelligence…" /> : null}
 
       {dashboard && activeTab === 'overview' ? (
         <>
@@ -232,7 +232,7 @@ export function MarketingIntelligencePage() {
         <Panel title="Marketing Strategy" description="Draft → Review → Approval → Active">
           {dashboard.recentStrategies.length === 0 ? (
             <EmptyState
-              title="No strategies"
+              title="No Strategies"
               description="Marketing strategies appear when created in the workspace."
             />
           ) : (
@@ -258,7 +258,7 @@ export function MarketingIntelligencePage() {
         >
           {dashboard.recentCampaignPlans.length === 0 ? (
             <EmptyState
-              title="No campaign plans"
+              title="No Campaign Plans"
               description="Campaign plans appear when created from real marketing objectives."
             />
           ) : (
@@ -314,7 +314,7 @@ export function MarketingIntelligencePage() {
         >
           {dashboard.recentContentItems.length === 0 ? (
             <EmptyState
-              title="No content items"
+              title="No Content Items"
               description="Content items appear when created in the content operations workspace."
             />
           ) : (
@@ -337,7 +337,7 @@ export function MarketingIntelligencePage() {
         >
           {dashboard.recentSocialPosts.length === 0 ? (
             <EmptyState
-              title="No social posts"
+              title="No Social Posts"
               description="Social posts appear when drafted and scheduled."
             />
           ) : (
@@ -369,7 +369,7 @@ export function MarketingIntelligencePage() {
         <Panel title="Email Marketing" description="Consent checks required before every send">
           {dashboard.recentEmailCampaigns.length === 0 ? (
             <EmptyState
-              title="No email campaigns"
+              title="No Email Campaigns"
               description="Email campaigns appear when created with consent validation."
             />
           ) : (
@@ -389,7 +389,7 @@ export function MarketingIntelligencePage() {
         <Panel title="ROI & Profitability" description="Real spend and revenue — no fabricated ROI">
           {dashboard.recentRoiSnapshots.length === 0 ? (
             <EmptyState
-              title="No ROI snapshots"
+              title="No ROI Snapshots"
               description="ROI snapshots appear when calculated from real financial data."
             />
           ) : (
@@ -415,7 +415,7 @@ export function MarketingIntelligencePage() {
         >
           {dashboard.recentMarketIntelligence.length === 0 ? (
             <EmptyState
-              title="No market intelligence records"
+              title="No Market Intelligence Records"
               description="Market intelligence appears from research and connected sources."
             />
           ) : (
@@ -438,7 +438,7 @@ export function MarketingIntelligencePage() {
         >
           {dashboard.recentAlerts.length === 0 ? (
             <EmptyState
-              title="No open alerts"
+              title="No Open Alerts"
               description="Alerts are generated from real tenant activity."
             />
           ) : (

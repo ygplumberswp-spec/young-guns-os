@@ -110,7 +110,7 @@ export function MfaChallengePage() {
           ) : (
             <form className="auth-form" onSubmit={handleSubmit}>
               <Input
-                label="Authentication code"
+                label="Authentication Code"
                 name="mfaCode"
                 inputMode="numeric"
                 autoComplete="one-time-code"
@@ -156,7 +156,7 @@ export function SessionExpiredPage() {
           </p>
           <div className="auth-card__actions">
             <Link href={SESSION_EXPIRED_LOGIN_PATH}>
-              <Button type="button">Sign in again</Button>
+              <Button type="button">Sign In Again</Button>
             </Link>
           </div>
         </div>

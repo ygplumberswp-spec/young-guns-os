@@ -2,6 +2,7 @@ import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
+import { isPlatformOwnerRole } from '@titan/auth/browser';
 import type { EnterpriseUnifiedCommunicationsDashboard } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -11,6 +12,7 @@ import {
   fetchUnifiedCommunicationsDashboard,
   syncCommunicationTimeline,
 } from '../../lib/enterprise-communications-api-client';
+import { startGmailOAuth } from '../../lib/communications-platform-api';
 import { useAuth } from '../../lib/auth-context';
 import { AuraComposer } from '../../features/aura/AuraComposer';
 import { AuraMessageList } from '../../features/aura/AuraMessageList';
@@ -61,6 +63,13 @@ export function CommunicationsHubPage() {
     () => (user ? canManageCommunicationsHub(user.permissions) : false),
     [user],
   );
+  const isPlatformOwner = useMemo(
+    () =>
+      user
+        ? isPlatformOwnerRole({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
 
   async function loadDashboard() {
     if (!accessToken) return;
@@ -109,6 +118,24 @@ export function CommunicationsHubPage() {
     }
   }
 
+  async function connectBusinessGmailFromProviders() {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const url = await startGmailOAuth(accessToken, '/communications-hub');
+      window.location.assign(url);
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Unable to start Google OAuth for Business Gmail',
+      );
+      setIsWorking(false);
+    }
+  }
+
   if (!canView) {
     return (
       <div className="automation-page">
@@ -136,14 +163,14 @@ export function CommunicationsHubPage() {
     <div className="automation-page">
       <PageHeader
         title="Communications Hub"
-        description="Business Gmail, Business WhatsApp, and optional Personal Assistant — real data only; send requires approval."
+        description="Business Gmail, Business WhatsApp, and optional Personal WhatsApp (Owner only) — real data only; send requires approval."
         actions={
           <div className="page-header-actions">
             <Link href="/communications-intelligence">
               <Button variant="secondary">Comms Intelligence</Button>
             </Link>
             <Link href="/integrations/whatsapp">
-              <Button variant="secondary">WhatsApp</Button>
+              <Button variant="secondary">Business WhatsApp</Button>
             </Link>
             <Link href="/portal/communications">
               <Button variant="secondary">Customer Center</Button>
@@ -215,8 +242,8 @@ export function CommunicationsHubPage() {
                 value={String(dashboard.intelligence.pendingDrafts.length)}
               />
               <StatCard
-                label="WhatsApp"
-                value={dashboard.whatsappConnected ? 'Connected' : 'Not connected'}
+                label="Business WhatsApp"
+                value={dashboard.whatsappConnected ? 'Connected' : 'Not Connected'}
               />
               <StatCard
                 label="Voice Sessions"
@@ -262,16 +289,52 @@ export function CommunicationsHubPage() {
                 />
               ) : (
                 <div className="data-list">
-                  {dashboard.providerAdapters.map((provider) => (
-                    <div key={provider.id} className="data-list-item">
-                      <strong>{provider.name}</strong>
-                      <span className="status-pill">{formatProviderStatus(provider.status)}</span>
-                      <p>
-                        {formatProviderChannel(provider.channel)} · {provider.providerKey} ·{' '}
-                        {provider.lastTestStatus ?? 'not tested'}
-                      </p>
-                    </div>
-                  ))}
+                  {dashboard.providerAdapters.map((provider) => {
+                    const isGmail = provider.providerKey === 'gmail';
+                    const gmailConnected = isGmail && provider.status === 'active';
+                    const gmailOauthReady = !isGmail || provider.oauthConfigured !== false;
+                    return (
+                      <div key={provider.id} className="data-list-item">
+                        <strong>{provider.name}</strong>
+                        <span className="status-pill">
+                          {formatProviderStatus(provider.status)}
+                        </span>
+                        <p>
+                          {formatProviderChannel(provider.channel)} · {provider.providerKey}
+                          {provider.emailAddress ? ` · ${provider.emailAddress}` : ''}
+                          {provider.lastTestMessage ? ` · ${provider.lastTestMessage}` : ''}
+                        </p>
+                        {isGmail && isPlatformOwner ? (
+                          <div className="page-header-actions" style={{ marginTop: '0.5rem' }}>
+                            {gmailConnected ? (
+                              <Button
+                                onClick={() => {
+                                  const url = new URL(window.location.href);
+                                  url.searchParams.set('channelSettings', '1');
+                                  window.history.replaceState({}, '', url.toString());
+                                  setActiveTab('platform');
+                                }}
+                              >
+                                Manage
+                              </Button>
+                            ) : (
+                              <Button
+                                disabled={isWorking || !gmailOauthReady}
+                                onClick={() => void connectBusinessGmailFromProviders()}
+                                title={
+                                  !gmailOauthReady
+                                    ? 'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.'
+                                    : undefined
+                                }
+                              >
+                                Connect
+                              </Button>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </Panel>

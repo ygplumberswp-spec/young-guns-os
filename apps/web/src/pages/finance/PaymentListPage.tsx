@@ -70,7 +70,7 @@ export function PaymentListPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search reference or notes…"
-            aria-label="Search payments"
+            aria-label="Search Payments"
           />
         </div>
 

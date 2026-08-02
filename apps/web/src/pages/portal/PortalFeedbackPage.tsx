@@ -48,13 +48,13 @@ export function PortalFeedbackPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Reviews & feedback"
+        title="Reviews & Feedback"
         description="Rate your experience and submit feedback."
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Submit feedback">
+      <Panel title="Submit Feedback">
         <div className="form-stack">
           <input
             type="text"
@@ -78,14 +78,14 @@ export function PortalFeedbackPage() {
               onChange={(e) => setRating(Number(e.target.value))}
             />
           </label>
-          <Button onClick={() => void submitReview()}>Submit feedback</Button>
+          <Button onClick={() => void submitReview()}>Submit Feedback</Button>
         </div>
       </Panel>
 
-      <Panel title="Your submissions">
+      <Panel title="Your Submissions">
         {reviews.length === 0 ? (
           <EmptyState
-            title="No feedback yet"
+            title="No Feedback Yet"
             description="Your submitted reviews and feedback will appear here."
           />
         ) : (

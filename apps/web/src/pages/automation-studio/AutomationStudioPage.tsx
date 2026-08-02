@@ -108,13 +108,13 @@ export function AutomationStudioPage() {
         actions={
           canWrite ? (
             <Link href="/automation/new">
-              <Button>New workflow</Button>
+              <Button>New Workflow</Button>
             </Link>
           ) : undefined
         }
       />
 
-      <nav className="automation-nav" aria-label="Automation studio sections">
+      <nav className="automation-nav" aria-label="Automation Studio Sections">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -141,22 +141,22 @@ export function AutomationStudioPage() {
       {dashboard && activeTab === 'dashboard' ? (
         <>
           <section className="stat-grid">
-            <StatCard label="Total workflows" value={String(dashboard.stats.workflowCount)} />
+            <StatCard label="Total Workflows" value={String(dashboard.stats.workflowCount)} />
             <StatCard label="Active" value={String(dashboard.stats.activeWorkflowCount)} />
             <StatCard label="Running" value={String(monitoring?.runningCount ?? 0)} />
             <StatCard label="Failed" value={String(monitoring?.failedCount ?? 0)} />
             <StatCard
-              label="Success rate"
+              label="Success Rate"
               value={
                 monitoring?.successRatePercent != null ? `${monitoring.successRatePercent}%` : '—'
               }
             />
-            <StatCard label="Queue depth" value={String(monitoring?.queueDepth ?? 0)} />
+            <StatCard label="Queue Depth" value={String(monitoring?.queueDepth ?? 0)} />
             <StatCard label="Templates" value={String(dashboard.stats.templateCount)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </section>
           <p className="page-muted">{dashboard.summary}</p>
-          <Panel title="Studio overview">
+          <Panel title="Studio Overview">
             <dl className="integrations-stats__grid">
               <div>
                 <dt>Schedules</dt>
@@ -185,7 +185,7 @@ export function AutomationStudioPage() {
         <Panel title="Workflows">
           {dashboard.workflows.length === 0 ? (
             <EmptyState
-              title="No workflows yet"
+              title="No Workflows Yet"
               description="Create a workflow to define triggers, actions, and approval gates."
             />
           ) : (
@@ -209,7 +209,7 @@ export function AutomationStudioPage() {
 
       {dashboard && activeTab === 'monitoring' && monitoring ? (
         <div className="analytics-page__grid">
-          <Panel title="Execution status">
+          <Panel title="Execution Status">
             <dl className="analytics-page__metrics">
               <div>
                 <dt>Running</dt>
@@ -229,7 +229,7 @@ export function AutomationStudioPage() {
               </div>
             </dl>
           </Panel>
-          <Panel title="Recent runs">
+          <Panel title="Recent Runs">
             {dashboard.recentRuns.length === 0 ? (
               <p className="page-muted">No workflow runs recorded yet.</p>
             ) : (
@@ -266,10 +266,10 @@ export function AutomationStudioPage() {
               </Button>
             </div>
           ) : null}
-          <Panel title="AI workflow recommendations">
+          <Panel title="AI Workflow Recommendations">
             {dashboard.recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations yet"
+                title="No Recommendations Yet"
                 description="Generate recommendations when workflow execution data is available."
               />
             ) : (
@@ -289,7 +289,7 @@ export function AutomationStudioPage() {
       ) : null}
 
       {dashboard && activeTab === 'executions' ? (
-        <Panel title="Execution history">
+        <Panel title="Execution History">
           <p className="page-muted">
             View detailed execution history in the{' '}
             <Link href="/automation/executions">classic automation executions</Link> view.

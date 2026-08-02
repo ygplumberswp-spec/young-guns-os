@@ -6,7 +6,7 @@ const tabs = [
   { href: '/settings/security', label: 'Security' },
   { href: '/settings/documents-records', label: 'Documents' },
   { href: '/settings/notifications', label: 'Notifications' },
-  { href: '/settings/advanced/data-protection', label: 'Data protection' },
+  { href: '/settings/advanced/data-protection', label: 'Data Protection' },
   { href: '/settings/portal', label: 'Portal' },
   { href: '/settings/billing', label: 'Billing' },
   { href: '/settings/about', label: 'About' },

@@ -162,7 +162,7 @@ export function CalendarFilters({
           </label>
 
           <Input
-            label="Suburb / zone"
+            label="Suburb / Zone"
             value={filters.suburb ?? ''}
             onChange={(event) => onChange({ ...filters, suburb: event.target.value || undefined })}
             placeholder="Filter by suburb"

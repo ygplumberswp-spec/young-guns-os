@@ -31,7 +31,7 @@ export function CustomerDuplicateMergePage() {
   if (!accessToken || !canReview) {
     return (
       <div className="page">
-        <PageHeader title="Duplicate customer merge" />
+        <PageHeader title="Duplicate Customer Merge" />
         <p>You do not have access to the duplicate customer review queue.</p>
       </div>
     );
@@ -40,7 +40,7 @@ export function CustomerDuplicateMergePage() {
   return (
     <div className="page">
       <PageHeader
-        title="Duplicate customer merge"
+        title="Duplicate Customer Merge"
         description="Owner-controlled review queue. Evidence-based candidates only — never auto-merged."
       />
       <CustomerDuplicateMergePanel

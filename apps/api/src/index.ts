@@ -427,6 +427,7 @@ const gmailOAuthService = GmailOAuthService.create({
   appUrl: env.APP_URL,
   oauthConfig: gmailOAuthConfig,
 });
+integrationHubService.setGmailOAuthConfiguredProvider(() => gmailOAuthService.isAppConfigured());
 const businessIntegrationsService = BusinessIntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -803,6 +804,11 @@ const enterpriseMobilePlatformService = new EnterpriseMobilePlatformService({
   integrationsService,
   dispatchIntelligenceService,
 });
+const communicationsPlatformService = CommunicationsPlatformService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  gmailOAuthService,
+});
 const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicationsService({
   db,
   enterpriseSaasPlatformService,
@@ -811,10 +817,6 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
   whatsappService,
   integrationsService,
   integrationHubService,
-});
-const communicationsPlatformService = CommunicationsPlatformService.create({
-  db,
-  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   gmailOAuthService,
 });
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({

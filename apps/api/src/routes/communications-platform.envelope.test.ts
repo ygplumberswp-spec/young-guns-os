@@ -70,4 +70,9 @@ describe('communications platform API envelope & safety', () => {
     assert.ok(routeSource.includes('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET'));
     assert.ok(serviceSource.includes('AURA never auto-sends'));
   });
+
+  it('restricts Business Gmail Connect to Platform Owner', () => {
+    assert.ok(routeSource.includes('Only Platform Owner can connect Business Gmail'));
+    assert.ok(routeSource.includes('isPlatformOwnerRole(actor)'));
+  });
 });

@@ -241,7 +241,7 @@ export function PurchaseOrderCreatePage() {
   return (
     <div className="inventory-page">
       <PageHeader
-        title="New purchase order"
+        title="New Purchase Order"
         description="Order stock from a supplier and receive it against a location."
         actions={
           <Button
@@ -343,7 +343,7 @@ export function PurchaseOrderCreatePage() {
           </label>
 
           <Input
-            label="Job reference (optional)"
+            label="Job Reference (Optional)"
             value={jobReference}
             onChange={(e) => {
               setJobReference(e.target.value);
@@ -364,7 +364,7 @@ export function PurchaseOrderCreatePage() {
             />
           </label>
 
-          <Panel title="Line items">
+          <Panel title="Line Items">
             <div className="inventory-table-wrap">
               <table className="inventory-table">
                 <thead>

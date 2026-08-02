@@ -26,7 +26,7 @@ export function AutomationNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="automation-nav" aria-label="Automation sections">
+    <nav className="automation-nav" aria-label="Automation Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

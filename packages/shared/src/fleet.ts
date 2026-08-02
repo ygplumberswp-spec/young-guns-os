@@ -2,9 +2,9 @@ export type VehicleStatus = 'available' | 'in_use' | 'maintenance' | 'out_of_ser
 
 export const VEHICLE_STATUS_OPTIONS: Array<{ value: VehicleStatus; label: string }> = [
   { value: 'available', label: 'Available' },
-  { value: 'in_use', label: 'In use' },
+  { value: 'in_use', label: 'In Use' },
   { value: 'maintenance', label: 'Maintenance' },
-  { value: 'out_of_service', label: 'Out of service' },
+  { value: 'out_of_service', label: 'Out Of Service' },
 ];
 
 export type VehicleSummary = {

@@ -52,7 +52,7 @@ export function JobPackListPage() {
   if (!canView) {
     return (
       <div className="documents-page">
-        <PageHeader title="Job packs" description="You do not have permission to view documents." />
+        <PageHeader title="Job Packs" description="You do not have permission to view documents." />
       </div>
     );
   }
@@ -60,16 +60,16 @@ export function JobPackListPage() {
   return (
     <div className="documents-page">
       <PageHeader
-        title="Job document packs"
+        title="Job Document Packs"
         description="Approved document bundles for customer portal sharing — internal review required before send."
       />
       <DocumentsNav />
 
-      {isLoading ? <LoadingState label="Loading job packs…" /> : null}
+      {isLoading ? <LoadingState label="Loading Job Packs…" /> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
       {!isLoading && !error ? (
-        <Panel title="All job packs">
+        <Panel title="All Job Packs">
           {packs.length === 0 ? (
             <p className="page-muted">
               No job packs yet. Open a job, link documents, then create a pack from the job detail

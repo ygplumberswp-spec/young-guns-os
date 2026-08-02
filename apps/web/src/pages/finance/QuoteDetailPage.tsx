@@ -109,7 +109,7 @@ export function QuoteDetailPage() {
     return (
       <div className="page-shell">
         <PageHeader title="Quote" description="Quote detail" />
-        <LoadingState label="Loading quote…" />
+        <LoadingState label="Loading Quote…" />
       </div>
     );
   }
@@ -221,7 +221,7 @@ export function QuoteDetailPage() {
           <div className="finance-panel-actions">
             {showEdit ? (
               <Link href={`/finance/quotes/${quote.id}/edit`}>
-                <Button variant="secondary">Edit quote</Button>
+                <Button variant="secondary">Edit Quote</Button>
               </Link>
             ) : null}
           </div>
@@ -314,7 +314,7 @@ export function QuoteDetailPage() {
         </Panel>
 
         {(quote.scopeOfWork || quote.exclusions || quote.paymentTerms) ? (
-          <Panel title="Scope & terms">
+          <Panel title="Scope & Terms">
             <dl className="finance-detail-list">
               {quote.scopeOfWork ? (
                 <div>
@@ -338,7 +338,7 @@ export function QuoteDetailPage() {
           </Panel>
         ) : null}
 
-        <Panel title="Line items">
+        <Panel title="Line Items">
           <div className="finance-table-wrap">
             <table className="finance-table">
               <thead>
@@ -384,7 +384,7 @@ export function QuoteDetailPage() {
 
         {quote.profit ? (
           <Panel
-            title="Internal profit (not visible to customer)"
+            title="Internal Profit (Not Visible To Customer)"
             description={quote.profit.missingCostWarning ? 'Cost data is incomplete for this quote.' : undefined}
           >
             <dl className="finance-detail-list">
@@ -423,7 +423,7 @@ export function QuoteDetailPage() {
         ) : null}
 
         {quote.acceptance ? (
-          <Panel title="Acceptance evidence">
+          <Panel title="Acceptance Evidence">
             <dl className="finance-detail-list">
               <div>
                 <dt>Decision</dt>
@@ -459,7 +459,7 @@ export function QuoteDetailPage() {
 
         {canWrite && canCreateVersion ? (
           <Panel
-            title="Create new version"
+            title="Create New Version"
             description="Issued quotes are immutable. Create a new version to make changes."
           >
             <label className="titan-input-group">
@@ -485,7 +485,7 @@ export function QuoteDetailPage() {
         ) : null}
 
         {canConvertToInvoice ? (
-          <Panel title="Convert to invoice" description="Create an invoice from this accepted quote.">
+          <Panel title="Convert To Invoice" description="Create an invoice from this accepted quote.">
             <label className="titan-input-group">
               <span className="titan-input-label">Invoice stage</span>
               <select

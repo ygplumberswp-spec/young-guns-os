@@ -67,7 +67,7 @@ export function BusinessDayTimelinePage() {
     return (
       <div className="scheduling-page">
         <PageHeader
-          title="Business day timeline"
+          title="Business Day Timeline"
           description="You do not have permission to view workforce timelines."
         />
       </div>
@@ -77,11 +77,11 @@ export function BusinessDayTimelinePage() {
   return (
     <div className="scheduling-page">
       <PageHeader
-        title="Business day timeline"
+        title="Business Day Timeline"
         description="Operational events from clock-in through job workflow — sourced from live time entries and field execution."
       />
 
-      <Panel title="Day filter">
+      <Panel title="Day Filter">
         <div className="scheduling-page__actions" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
           <Button variant="secondary" onClick={() => setSelectedDate(shiftDateIso(selectedDate, -1))}>
             Previous day
@@ -91,7 +91,7 @@ export function BusinessDayTimelinePage() {
             type="date"
             value={selectedDate}
             onChange={(event) => setSelectedDate(event.target.value)}
-            aria-label="Timeline date"
+            aria-label="Timeline Date"
           />
           <Button variant="secondary" onClick={() => setSelectedDate(shiftDateIso(selectedDate, 1))}>
             Next day
@@ -122,7 +122,7 @@ export function BusinessDayTimelinePage() {
         </p>
       </Panel>
 
-      {timelineQuery.isLoading ? <LoadingState label="Loading timeline…" /> : null}
+      {timelineQuery.isLoading ? <LoadingState label="Loading Timeline…" /> : null}
       {timelineQuery.error ? (
         <p className="form-error">
           {timelineQuery.error}
@@ -135,7 +135,7 @@ export function BusinessDayTimelinePage() {
 
       {timeline ? (
         <>
-          <Panel title="Day summary">
+          <Panel title="Day Summary">
             <dl className="jobs-meta-list">
               <div>
                 <dt>Events</dt>
@@ -162,7 +162,7 @@ export function BusinessDayTimelinePage() {
 
           {timeline.events.length === 0 ? (
             <EmptyState
-              title="No events recorded"
+              title="No Events Recorded"
               description="Time entries and job workflow actions for this day will appear here as technicians clock in and execute jobs."
             />
           ) : (

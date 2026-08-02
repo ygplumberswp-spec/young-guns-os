@@ -185,7 +185,7 @@ export function CustomerDuplicateMergePanel({
   return (
     <div className="customer-duplicate-merge">
       <Panel
-        title="Duplicate review queue"
+        title="Duplicate Review Queue"
         description="Candidates are evidence-based only. Merges never run automatically — Owner approval is required."
       >
         <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -251,7 +251,7 @@ export function CustomerDuplicateMergePanel({
 
       {preview ? (
         <Panel
-          title="Side-by-side merge review"
+          title="Side-By-Side Merge Review"
           description="Choose the surviving record. Linked jobs, quotes, invoices, payments, properties, documents, and communications are repointed — never deleted."
         >
           <div

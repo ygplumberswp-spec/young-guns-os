@@ -78,14 +78,14 @@ export function ScheduleSlotModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <Panel title="Schedule in slot" className="cal-modal">
+      <Panel title="Schedule In Slot" className="cal-modal">
         {!canWrite ? (
           <p className="page-muted">You do not have permission to schedule jobs.</p>
         ) : unscheduled.length === 0 ? (
           <>
             <p className="page-muted">No unscheduled jobs available.</p>
             <Link href="/jobs/new">
-              <Button variant="secondary">Create job draft</Button>
+              <Button variant="secondary">Create Job Draft</Button>
             </Link>
           </>
         ) : (
@@ -115,7 +115,7 @@ export function ScheduleSlotModal({
               required
             />
             <Input
-              label="End (optional)"
+              label="End (Optional)"
               type="datetime-local"
               value={endLocal}
               onChange={(event) => setEndLocal(event.target.value)}

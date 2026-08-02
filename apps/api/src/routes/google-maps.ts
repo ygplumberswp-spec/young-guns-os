@@ -44,6 +44,11 @@ const latLngSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 
+const reverseGeocodeSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+
 const routeSchema = z.object({
   origin: latLngSchema,
   destination: latLngSchema,
@@ -204,6 +209,28 @@ export function createGoogleMapsRouter(deps: GoogleMapsRouterDeps): Router {
       }
       try {
         const result = await deps.googleMapsService.geocode(companyId, parsed.data.address);
+        res.json({ data: { result } });
+      } catch (error) {
+        const mapped = mapGoogleMapsError(error);
+        res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+      }
+    },
+  );
+
+  router.post(
+    '/google-maps/geocode/reverse',
+    requireAnyPermission('customers:write', 'jobs:write', 'integrations:manage', '*'),
+    async (req, res) => {
+      const { companyId } = getAuth(req as AuthenticatedRequest);
+      const parsed = reverseGeocodeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid reverse geocode payload' },
+        });
+        return;
+      }
+      try {
+        const result = await deps.googleMapsService.reverseGeocode(companyId, parsed.data);
         res.json({ data: { result } });
       } catch (error) {
         const mapped = mapGoogleMapsError(error);

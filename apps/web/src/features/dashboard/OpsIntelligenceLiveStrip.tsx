@@ -30,7 +30,7 @@ export function OpsIntelligenceLiveStrip({
   if (error && !strip) {
     return (
       <EmptyState
-        title="Ops intelligence unavailable"
+        title="Ops Intelligence Unavailable"
         description={error}
       />
     );
@@ -50,18 +50,18 @@ export function OpsIntelligenceLiveStrip({
       </div>
       <div className="ops-intel-strip__grid">
         <StripCell label="Driving" value={String(counts.techniciansDriving)} />
-        <StripCell label="Late arrivals" value={String(counts.lateArrivals)} />
-        <StripCell label="Upcoming departures" value={String(counts.upcomingDepartures)} />
+        <StripCell label="Late Arrivals" value={String(counts.lateArrivals)} />
+        <StripCell label="Upcoming Departures" value={String(counts.upcomingDepartures)} />
         <StripCell
-          label="Longest travel"
+          label="Longest Travel"
           value={
             counts.longestTravelMinutes != null ? `${counts.longestTravelMinutes} min` : '—'
           }
           hint={counts.longestTravelLabel}
         />
-        <StripCell label="Jobs waiting" value={String(counts.jobsWaiting)} />
+        <StripCell label="Jobs Waiting" value={String(counts.jobsWaiting)} />
         <StripCell label="Completed" value={String(counts.completedJobs)} />
-        <StripCell label="Emergency queue" value={String(counts.emergencyQueue)} />
+        <StripCell label="Emergency Queue" value={String(counts.emergencyQueue)} />
       </div>
       {strip.honestyNotes[0] ? (
         <p className="page-muted ops-intel-strip__note">{strip.honestyNotes[0]}</p>

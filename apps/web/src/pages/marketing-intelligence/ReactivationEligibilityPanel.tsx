@@ -42,24 +42,24 @@ import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 
 const CONTACT_FIELD_OPTIONS: Array<{ value: ContactFieldKey; label: string }> = [
   { value: 'name', label: 'Name' },
-  { value: 'contact_person', label: 'Contact person' },
+  { value: 'contact_person', label: 'Contact Person' },
   { value: 'email', label: 'Email' },
   { value: 'phone', label: 'Phone' },
 ];
 
 const CONSENT_CHANNEL_OPTIONS: Array<{ value: MarketingConsentChannel; label: string }> = [
   { value: 'email', label: 'Email' },
-  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'whatsapp', label: 'Business WhatsApp' },
   { value: 'sms', label: 'SMS' },
   { value: 'phone', label: 'Phone' },
 ];
 
 const CONSENT_STATUS_OPTIONS: Array<{ value: MarketingConsentStatus; label: string }> = [
-  { value: 'unknown', label: 'Unknown (not consent)' },
+  { value: 'unknown', label: 'Unknown (Not Consent)' },
   { value: 'granted', label: 'Granted' },
   { value: 'denied', label: 'Denied' },
   { value: 'withdrawn', label: 'Withdrawn' },
-  { value: 'do_not_contact', label: 'Do not contact' },
+  { value: 'do_not_contact', label: 'Do Not Contact' },
 ];
 
 type HumanQualityStandard = {
@@ -384,7 +384,7 @@ export function ReactivationEligibilityPanel() {
       {success ? <p className="form-success">{success}</p> : null}
 
       <Panel
-        title="ACCREC Buyer Classification & Reactivation Eligibility"
+        title="Accrec Buyer Classification & Reactivation Eligibility"
         description="Real paid-invoice evidence only — contact existence is never treated as buyer proof (Decision 3 / FIN-006, UX-H)."
       >
         {canRecompute ? (
@@ -403,14 +403,14 @@ export function ReactivationEligibilityPanel() {
         ) : null}
 
         {isLoading ? (
-          <LoadingState label="Loading reactivation eligibility…" />
+          <LoadingState label="Loading Reactivation Eligibility…" />
         ) : (
           <>
             {counts ? (
               <div className="stat-grid">
                 <StatCard label="Eligible" value={String(counts.eligible)} />
                 <StatCard
-                  label="Awaiting verification"
+                  label="Awaiting Verification"
                   value={String(counts.awaitingVerification)}
                 />
                 <StatCard label="Blocked" value={String(counts.blocked)} />
@@ -420,7 +420,7 @@ export function ReactivationEligibilityPanel() {
 
             {eligibility.length === 0 ? (
               <EmptyState
-                title="No eligibility data yet"
+                title="No Eligibility Data Yet"
                 description="Run classification and eligibility recompute to evaluate customers for reactivation marketing."
               />
             ) : (
@@ -708,7 +708,7 @@ export function ReactivationEligibilityPanel() {
       ) : null}
 
       <Panel
-        title="Audience requests (never sent)"
+        title="Audience Requests (Never Sent)"
         description='Draft → submit → approve. Delivery state always stays "not sent" in this release — no live provider send exists yet.'
       >
         {canCreateAudience ? (
@@ -762,7 +762,7 @@ export function ReactivationEligibilityPanel() {
 
         {audienceRequests.length === 0 ? (
           <EmptyState
-            title="No audience requests"
+            title="No Audience Requests"
             description="Create a request from currently eligible members to start the approval flow."
           />
         ) : (
@@ -814,7 +814,7 @@ export function ReactivationEligibilityPanel() {
 
       {classifications.length > 0 ? (
         <Panel
-          title="Classification evidence"
+          title="Classification Evidence"
           description="Every classification is backed by real invoice evidence, never contact existence alone."
         >
           <ul className="simple-list">

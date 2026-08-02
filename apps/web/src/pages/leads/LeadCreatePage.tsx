@@ -179,7 +179,7 @@ export function LeadCreatePage() {
   if (!canWrite) {
     return (
       <div className="page-shell">
-        <PageHeader title="Add lead" description="You do not have permission to create leads." />
+        <PageHeader title="Add Lead" description="You do not have permission to create leads." />
       </div>
     );
   }
@@ -187,7 +187,7 @@ export function LeadCreatePage() {
   return (
     <div className="page-shell leads-create-page">
       <PageHeader
-        title="Add lead"
+        title="Add Lead"
         description="Capture the enquiry once — conversion reuses this data."
       />
 
@@ -281,7 +281,7 @@ export function LeadCreatePage() {
           </label>
         </Panel>
 
-        <Panel title="Property / site (optional)">
+        <Panel title="Property / Site (Optional)">
           <label>
             Street
             <Input value={street} onChange={(e) => setStreet(e.target.value)} />
@@ -335,7 +335,7 @@ export function LeadCreatePage() {
           </label>
         </Panel>
 
-        <Panel title="Follow-up & consent">
+        <Panel title="Follow-Up & Consent">
           <label>
             Assigned user
             <select
@@ -391,7 +391,7 @@ export function LeadCreatePage() {
         </Panel>
 
         {matches.length > 0 ? (
-          <Panel title="Possible matches">
+          <Panel title="Possible Matches">
             <ul className="leads-dupe-list">
               {matches.map((match, index) => (
                 <li key={`${match.kind}-${match.leadId ?? match.customerId ?? index}`}>

@@ -218,9 +218,9 @@ export function MissionControlPage() {
       />
 
       {isLoading ? (
-        <LoadingState label="Loading mission control summary…" />
+        <LoadingState label="Loading Mission Control Summary…" />
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Mission control dashboard is unavailable." />
+        <EmptyState title="No Data" description="Mission control dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'dashboard' ? (
@@ -241,7 +241,7 @@ export function MissionControlPage() {
                 </Panel>
               ) : null}
 
-              <Panel title="Business overview">
+              <Panel title="Business Overview">
                 <p>{dashboard.summary}</p>
               </Panel>
 
@@ -251,7 +251,7 @@ export function MissionControlPage() {
                   error={modulesError}
                   hasData={moduleSnapshots !== undefined}
                   isEmpty={moduleSnapshots !== undefined && (visibleSnapshots?.length ?? 0) === 0}
-                  emptyTitle="No systems to show"
+                  emptyTitle="No Systems To Show"
                   emptyDescription="No module snapshots available."
                   loadingLabel="Loading module systems…"
                   onRetry={() => void refetchModules()}
@@ -301,7 +301,7 @@ export function MissionControlPage() {
                 <Panel title="Department Health">
                   {dashboard.departmentHealth.length === 0 ? (
                     <EmptyState
-                      title="No department health"
+                      title="No Department Health"
                       description="Refresh department health from module data."
                     />
                   ) : (
@@ -342,7 +342,7 @@ export function MissionControlPage() {
             <Panel title="Enterprise Alert Center">
               {dashboard.recentAlerts.length === 0 ? (
                 <EmptyState
-                  title="No alerts"
+                  title="No Alerts"
                   description="Sync alerts from executive, automation, integration, and digital twin modules."
                 />
               ) : (
@@ -379,7 +379,7 @@ export function MissionControlPage() {
             <Panel title="Incident Management">
               {dashboard.activeIncidents.length === 0 ? (
                 <EmptyState
-                  title="No active incidents"
+                  title="No Active Incidents"
                   description="Incidents are tracked when created by your team — no demo incidents are generated."
                 />
               ) : (
@@ -419,7 +419,7 @@ export function MissionControlPage() {
               ) : null}
               {dashboard.timelineEvents.length === 0 ? (
                 <EmptyState
-                  title="No events"
+                  title="No Events"
                   description="Sync the cross-module event stream from live data."
                 />
               ) : (
@@ -458,7 +458,7 @@ export function MissionControlPage() {
               ) : null}
               {dashboard.operationsMap.length === 0 ? (
                 <EmptyState
-                  title="No map points"
+                  title="No Map Points"
                   description="Capture fleet positions and active jobs from real GPS and job records."
                 />
               ) : (
@@ -485,7 +485,7 @@ export function MissionControlPage() {
             <Panel title="AI Executive Intelligence">
               {dashboard.recommendations.length === 0 ? (
                 <EmptyState
-                  title="No recommendations"
+                  title="No Recommendations"
                   description="Generate recommendations from real alert, incident, and health signals."
                 />
               ) : (

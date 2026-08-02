@@ -144,7 +144,7 @@ export function SalesIntelligencePage() {
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {isLoading ? <LoadingState label="Loading sales intelligence…" /> : null}
+      {isLoading ? <LoadingState label="Loading Sales Intelligence…" /> : null}
 
       {dashboard && activeTab === 'overview' ? (
         <>
@@ -279,7 +279,7 @@ export function SalesIntelligencePage() {
         <Panel title="Sales Pipelines" description="Configurable pipelines — no hard-coded stages">
           {dashboard.recentPipelines.length === 0 ? (
             <EmptyState
-              title="No pipelines"
+              title="No Pipelines"
               description="Create pipelines in revenue operations settings."
             />
           ) : (
@@ -333,7 +333,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentForecasts.length === 0 ? (
             <EmptyState
-              title="No forecasts"
+              title="No Forecasts"
               description="Forecasts appear when created from pipeline and historical data."
             />
           ) : (
@@ -372,7 +372,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentRenewals.length === 0 ? (
             <EmptyState
-              title="No renewals"
+              title="No Renewals"
               description="Renewals appear when tracked from real contracts and agreements."
             />
           ) : (
@@ -401,7 +401,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentGrowthSnapshots.length === 0 ? (
             <EmptyState
-              title="No growth opportunities"
+              title="No Growth Opportunities"
               description="Growth snapshots appear when analyzed from real customer records."
             />
           ) : (
@@ -426,7 +426,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentRetentionSnapshots.length === 0 ? (
             <EmptyState
-              title="No retention signals"
+              title="No Retention Signals"
               description="Retention analysis appears when real customer behaviour is available."
             />
           ) : (
@@ -472,7 +472,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentTargets.length === 0 ? (
             <EmptyState
-              title="No targets"
+              title="No Targets"
               description="Targets appear when configured for your sales teams."
             />
           ) : (
@@ -497,7 +497,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentLeakageFindings.length === 0 ? (
             <EmptyState
-              title="No leakage findings"
+              title="No Leakage Findings"
               description="Leakage detection runs against real jobs, quotes, and invoices."
             />
           ) : (
@@ -563,7 +563,7 @@ export function SalesIntelligencePage() {
         >
           {dashboard.recentAlerts.length === 0 ? (
             <EmptyState
-              title="No open alerts"
+              title="No Open Alerts"
               description="Alerts are generated from real tenant activity."
             />
           ) : (

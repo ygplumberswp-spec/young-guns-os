@@ -28,7 +28,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
 
   if (!tracking) {
     return (
-      <Panel title="Vehicle positions">
+      <Panel title="Vehicle Positions">
         <p className="page-muted">
           {error ? error : 'Loading Cartrack connection state…'}
         </p>
@@ -42,7 +42,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
 
   if (!tracking.cartrackConnected && tracking.latestPositions.length === 0) {
     return (
-      <Panel title="Vehicle positions" description="Honest Cartrack connection state — no fake live GPS.">
+      <Panel title="Vehicle Positions" description="Honest Cartrack connection state — no fake live GPS.">
         <dl className="integration-status-list">
           <div>
             <dt>Connection</dt>
@@ -78,7 +78,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
 
   return (
     <Panel
-      title="Vehicle positions"
+      title="Vehicle Positions"
       description={
         canShowLivePoll
           ? 'Real Cartrack GPS from the last successful sync. Polling uses the existing tracking endpoint while this board is open.'

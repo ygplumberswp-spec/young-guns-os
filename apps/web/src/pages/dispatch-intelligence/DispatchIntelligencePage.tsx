@@ -209,7 +209,7 @@ export function DispatchIntelligencePage() {
   if (!canView) {
     return (
       <EmptyState
-        title="Dispatch intelligence unavailable"
+        title="Dispatch Intelligence Unavailable"
         description="You do not have permission to view the dispatch command centre."
       />
     );
@@ -244,7 +244,7 @@ export function DispatchIntelligencePage() {
   const tabs: Array<{ id: DispatchTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'receptionist', label: 'Receptionist' },
-    { id: 'queue', label: 'Call queue' },
+    { id: 'queue', label: 'Call Queue' },
     { id: 'matching', label: 'Matching' },
     { id: 'emergency', label: 'Emergency' },
     { id: 'callbacks', label: 'Callbacks' },
@@ -258,7 +258,7 @@ export function DispatchIntelligencePage() {
         description="AI receptionist intelligence, call queue analytics, technician matching, and dispatch recommendations."
         actions={
           <Link href={buildJobCreateHref({ from: 'dispatch-intelligence' })}>
-            <Button variant="primary">Create job</Button>
+            <Button variant="primary">Create Job</Button>
           </Link>
         }
       />
@@ -292,11 +292,11 @@ export function DispatchIntelligencePage() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard label="Technicians" value={String(dashboard.liveTechnicianCount)} />
-            <StatCard label="Scheduled jobs" value={String(dashboard.scheduledJobCount)} />
-            <StatCard label="Live queue" value={String(dashboard.callQueue.liveQueueCount)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Scheduled Jobs" value={String(dashboard.scheduledJobCount)} />
+            <StatCard label="Live Queue" value={String(dashboard.callQueue.liveQueueCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </div>
-          <Panel title="Operations summary">
+          <Panel title="Operations Summary">
             <p className="text-sm text-slate-600">{dashboard.summary}</p>
           </Panel>
         </div>
@@ -305,7 +305,7 @@ export function DispatchIntelligencePage() {
       {!isLoading && activeTab === 'receptionist' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Record receptionist summary">
+            <Panel title="Record Receptionist Summary">
               <form className="space-y-3" onSubmit={handleCreateSummary}>
                 <label className="block text-sm">
                   Summary
@@ -315,14 +315,14 @@ export function DispatchIntelligencePage() {
                     onChange={(event) => setSummaryText(event.target.value)}
                   />
                 </label>
-                <Button type="submit">Save summary</Button>
+                <Button type="submit">Save Summary</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Receptionist summaries">
+          <Panel title="Receptionist Summaries">
             {summaries.length === 0 ? (
               <EmptyState
-                title="No summaries"
+                title="No Summaries"
                 description="Receptionist summaries appear from real call handling records."
               />
             ) : (
@@ -348,19 +348,19 @@ export function DispatchIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'queue' && dashboard ? (
-        <Panel title="Call queue intelligence">
+        <Panel title="Call Queue Intelligence">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Live queue" value={String(dashboard.callQueue.liveQueueCount)} />
+            <StatCard label="Live Queue" value={String(dashboard.callQueue.liveQueueCount)} />
             <StatCard
-              label="Callback queue"
+              label="Callback Queue"
               value={String(dashboard.callQueue.callbackQueueCount)}
             />
             <StatCard
-              label="Abandoned calls"
+              label="Abandoned Calls"
               value={String(dashboard.callQueue.abandonedCallCount)}
             />
             <StatCard
-              label="Receptionist workload"
+              label="Receptionist Workload"
               value={String(dashboard.callQueue.receptionistWorkloadCount)}
             />
           </div>
@@ -368,10 +368,10 @@ export function DispatchIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'matching' ? (
-        <Panel title="Technician matching">
+        <Panel title="Technician Matching">
           {matches.length === 0 ? (
             <EmptyState
-              title="No technicians"
+              title="No Technicians"
               description="Assignees appear from your active team roster."
             />
           ) : (
@@ -388,10 +388,10 @@ export function DispatchIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'emergency' ? (
-        <Panel title="Emergency dispatch assessments">
+        <Panel title="Emergency Dispatch Assessments">
           {assessments.length === 0 ? (
             <EmptyState
-              title="No emergency assessments"
+              title="No Emergency Assessments"
               description="Emergency assessments are recorded from real incidents — never auto-dispatched."
             />
           ) : (
@@ -415,21 +415,21 @@ export function DispatchIntelligencePage() {
       {!isLoading && activeTab === 'callbacks' ? (
         <div className="space-y-4">
           {canManage ? (
-            <Panel title="Request callback">
+            <Panel title="Request Callback">
               <form className="space-y-3" onSubmit={handleCreateCallback}>
                 <Input
-                  label="Phone number"
+                  label="Phone Number"
                   value={callbackPhone}
                   onChange={(event) => setCallbackPhone(event.target.value)}
                 />
-                <Button type="submit">Submit for approval</Button>
+                <Button type="submit">Submit For Approval</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Callback queue">
+          <Panel title="Callback Queue">
             {callbacks.length === 0 ? (
               <EmptyState
-                title="No callbacks"
+                title="No Callbacks"
                 description="Callback requests require staff approval before execution."
               />
             ) : (
@@ -460,12 +460,12 @@ export function DispatchIntelligencePage() {
         <div className="space-y-4">
           {canManage ? (
             <>
-              <Panel title="Generate recommendations">
+              <Panel title="Generate Recommendations">
                 <Button onClick={() => void handleGenerateRecommendations()}>
                   Generate dispatch recommendations
                 </Button>
               </Panel>
-              <Panel title="Draft dispatch action">
+              <Panel title="Draft Dispatch Action">
                 <form className="space-y-3" onSubmit={handleCreateAction}>
                   <Input
                     label="Subject"
@@ -480,7 +480,7 @@ export function DispatchIntelligencePage() {
                       onChange={(event) => setActionRecommendation(event.target.value)}
                     />
                   </label>
-                  <Button type="submit">Submit for approval</Button>
+                  <Button type="submit">Submit For Approval</Button>
                 </form>
               </Panel>
             </>
@@ -488,7 +488,7 @@ export function DispatchIntelligencePage() {
           <Panel title="Recommendations">
             {recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations"
+                title="No Recommendations"
                 description="Generate recommendations from real scheduling and quality data."
               />
             ) : (
@@ -507,10 +507,10 @@ export function DispatchIntelligencePage() {
               </ul>
             )}
           </Panel>
-          <Panel title="Pending and recent actions">
+          <Panel title="Pending And Recent Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No actions"
+                title="No Actions"
                 description="Dispatch actions follow Draft → Approval → Execution."
               />
             ) : (

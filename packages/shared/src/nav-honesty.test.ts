@@ -29,7 +29,7 @@ describe('nav honesty (UX-K)', () => {
   it('UX-048 — enterprise modules index is platform-owner only', () => {
     const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/enterprise-modules');
     assert.ok(item);
-    assert.equal(item?.label, 'Enterprise modules');
+    assert.equal(item?.label, 'Enterprise Modules');
     assert.deepEqual(item?.experiences, ['platform_owner']);
     assert.ok(ENTERPRISE_MODULE_LINKS.length >= 10);
     assert.ok(ENTERPRISE_MODULE_LINKS.every((link) => link.href.startsWith('/')));
@@ -56,7 +56,7 @@ describe('nav honesty (UX-K)', () => {
   it('Phase 4 — client portal nav does not duplicate finance or jobs hrefs', () => {
     const financeItems = CLIENT_PORTAL_NAV_ITEMS.filter((item) => item.href === '/my/finance');
     assert.equal(financeItems.length, 1);
-    assert.equal(financeItems[0]?.label, 'Invoices & payments');
+    assert.equal(financeItems[0]?.label, 'Invoices & Payments');
 
     const jobsItems = CLIENT_PORTAL_NAV_ITEMS.filter((item) => item.href === '/my/jobs');
     assert.equal(jobsItems.length, 1);

@@ -93,10 +93,10 @@ export function ScheduleOverviewPanel() {
   const views: CalendarViewMode[] = ['day', 'week', 'month'];
 
   return (
-    <Panel title="Schedule overview" description="Live calendar preview — real appointments only">
+    <Panel title="Schedule Overview" description="Live calendar preview — real appointments only">
       <div className="exec-schedule-overview">
         <div className="exec-schedule-overview__toolbar">
-          <div className="exec-schedule-overview__tabs" role="tablist" aria-label="Schedule view">
+          <div className="exec-schedule-overview__tabs" role="tablist" aria-label="Schedule View">
             {views.map((mode) => (
               <button
                 key={mode}
@@ -119,7 +119,7 @@ export function ScheduleOverviewPanel() {
           <DashboardSectionSkeleton rows={4} />
         ) : error ? (
           <EmptyState
-            title="Unable to load schedule"
+            title="Unable To Load Schedule"
             description={error}
             action={
               <Button

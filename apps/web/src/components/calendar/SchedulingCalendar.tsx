@@ -419,7 +419,7 @@ export function SchedulingCalendar({
 
       <div className="cal-shell__main">
         {isLoading ? (
-          <LoadingState label="Loading calendar…" />
+          <LoadingState label="Loading Calendar…" />
         ) : view === 'month' ? (
           <CalendarMonthGrid
             anchorDate={anchorDate}

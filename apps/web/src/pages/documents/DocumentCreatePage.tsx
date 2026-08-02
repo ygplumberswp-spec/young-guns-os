@@ -181,7 +181,7 @@ export function DocumentCreatePage() {
   return (
     <div className="documents-page">
       <PageHeader
-        title="Add document"
+        title="Add Document"
         description="Register document metadata and link it to customers or jobs."
         actions={
           <Button
@@ -234,7 +234,7 @@ export function DocumentCreatePage() {
           />
         </label>
         <Input
-          label="File name"
+          label="File Name"
           value={fileName}
           onChange={(e) => {
             setFileName(e.target.value);
@@ -243,7 +243,7 @@ export function DocumentCreatePage() {
           required
         />
         <Input
-          label="File type"
+          label="File Type"
           value={fileType}
           onChange={(e) => {
             setFileType(e.target.value);
@@ -252,7 +252,7 @@ export function DocumentCreatePage() {
           placeholder="e.g. application/pdf"
         />
         <Input
-          label="File size (bytes)"
+          label="File Size (Bytes)"
           type="number"
           min={0}
           value={fileSizeBytes}

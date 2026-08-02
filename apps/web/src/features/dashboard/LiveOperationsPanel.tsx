@@ -97,7 +97,7 @@ export function LiveOperationsPanel({
         linked?.nextJobTitle ? `Next: ${linked.nextJobTitle}` : null,
       ].filter(Boolean);
       markers.push({
-        id: `vehicle-${position.externalVehicleId}-${position.recordedAt}`,
+        id: `vehicle-${position.externalVehicleId}`,
         latitude: position.latitude,
         longitude: position.longitude,
         label: parts.join(' · '),
@@ -131,7 +131,7 @@ export function LiveOperationsPanel({
   const showMapSurface = hasStoredPositions || mapMarkers.length > 0;
 
   return (
-    <Panel title="Live operations" description="Cartrack GPS and verified job sites — no invented positions">
+    <Panel title="Live Operations" description="Cartrack GPS and verified job sites — no invented positions">
       <div className="exec-live-ops-panel">
         <OpsIntelligenceLiveStrip
           strip={opsStrip}
@@ -144,8 +144,9 @@ export function LiveOperationsPanel({
             <div className="exec-live-ops-map">
               <GoogleMapView
                 markers={mapMarkers}
+                cameraContextKey="live-ops"
                 height={320}
-                emptyTitle="Google Maps unavailable"
+                emptyTitle="Google Maps Unavailable"
                 emptyDescription="Cartrack positions or verified job coordinates exist, but Google Maps browser key is not configured. TITAN will not invent a map."
               />
             </div>
@@ -156,7 +157,7 @@ export function LiveOperationsPanel({
           {!tracking ? (
             fleetError ? (
               <EmptyState
-                title="Live GPS unavailable"
+                title="Live GPS Unavailable"
                 description={fleetError}
                 action={
                   <Link href="/integrations/cartrack">
@@ -171,7 +172,7 @@ export function LiveOperationsPanel({
             )
           ) : !tracking.cartrackConnected && tracking.latestPositions.length === 0 ? (
             <EmptyState
-              title="Live map unavailable"
+              title="Live Map Unavailable"
               description="Google Maps is not connected in TITAN yet. Cartrack is not connected or has no stored GPS, so TITAN will not invent a live map or vehicle positions."
               action={
                 <Link href="/integrations/cartrack">

@@ -30,7 +30,7 @@ export function AuraBusinessDashboard({
   const loadError = summaryQuery.error;
 
   if (isLoading) {
-    return <LoadingState label="Loading business intelligence…" />;
+    return <LoadingState label="Loading Business Intelligence…" />;
   }
 
   if (loadError) {
@@ -42,7 +42,7 @@ export function AuraBusinessDashboard({
     if (providerMissing) {
       return (
         <EmptyState
-          title="AI provider not configured"
+          title="AI Provider Not Configured"
           description="Connect an AI provider in Integration Settings before using AURA business intelligence."
           action={
             <Link href="/integrations">
@@ -55,11 +55,11 @@ export function AuraBusinessDashboard({
 
     return (
       <EmptyState
-        title="Business intelligence unavailable"
+        title="Business Intelligence Unavailable"
         description={loadError}
         action={
           <Link href="/integrations">
-            <Button variant="secondary">Review integrations</Button>
+            <Button variant="secondary">Review Integrations</Button>
           </Link>
         }
       />
@@ -69,7 +69,7 @@ export function AuraBusinessDashboard({
   if (!summary) {
     return (
       <EmptyState
-        title="No business intelligence yet"
+        title="No Business Intelligence Yet"
         description="Insights will appear here once your workspace has operational data."
         action={
           <Link href="/aura/todays-plan">

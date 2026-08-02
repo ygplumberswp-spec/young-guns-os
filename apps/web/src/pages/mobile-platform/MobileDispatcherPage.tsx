@@ -82,7 +82,7 @@ export function MobileDispatcherPage() {
       {isLoading ? (
         <Panel title="Loading">Loading dispatcher workspace…</Panel>
       ) : !workspace ? (
-        <EmptyState title="No data" description="Dispatcher workspace is unavailable." />
+        <EmptyState title="No Data" description="Dispatcher workspace is unavailable." />
       ) : (
         <>
           <Panel title="Dispatch Summary">
@@ -104,7 +104,7 @@ export function MobileDispatcherPage() {
           <Panel title="Technician Status">
             {workspace.technicianStatuses.length === 0 ? (
               <EmptyState
-                title="No technicians"
+                title="No Technicians"
                 description="Technician status appears when team members are registered."
               />
             ) : (

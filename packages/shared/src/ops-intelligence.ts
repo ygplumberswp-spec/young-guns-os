@@ -46,6 +46,7 @@ export type OpsSuggestedActionType =
   | 'notify_customer'
   | 'move_booking'
   | 'reassign'
+  | 'suggest_route_order'
   | 'dismiss'
   | 'open_aura';
 
@@ -378,7 +379,7 @@ export function buildRunningLateSuggestedActions(input: {
     },
     {
       type: 'contact_technician',
-      label: 'Contact technician',
+      label: 'Contact Technician',
       href: input.technicianId ? `/team` : '/team',
       requiresOwnerApproval: false,
       wouldChangeSchedule: false,
@@ -386,7 +387,7 @@ export function buildRunningLateSuggestedActions(input: {
     },
     {
       type: 'notify_customer',
-      label: 'Notify customer',
+      label: 'Notify Customer',
       href: `/jobs/${input.jobId}`,
       requiresOwnerApproval: true,
       wouldChangeSchedule: false,
@@ -395,7 +396,7 @@ export function buildRunningLateSuggestedActions(input: {
     },
     {
       type: 'move_booking',
-      label: 'Move next booking',
+      label: 'Move Next Booking',
       href: '/scheduling',
       requiresOwnerApproval: true,
       wouldChangeSchedule: true,
@@ -424,6 +425,8 @@ export function buildStandardEventActions(input: {
   jobId: string | null;
   navigateHref: string | null;
   technicianId: string | null;
+  /** When true, include advisory route-order suggestion (never auto-applies). */
+  includeRouteOptimisation?: boolean;
 }): OpsSuggestedAction[] {
   const actions: OpsSuggestedAction[] = [];
   if (input.jobId) {
@@ -446,10 +449,13 @@ export function buildStandardEventActions(input: {
       ? null
       : 'No verified address or coordinates — Navigate unavailable.',
   });
+  if (input.includeRouteOptimisation) {
+    actions.push(buildRouteOptimisationSuggestedAction());
+  }
   if (input.technicianId || input.jobId) {
     actions.push({
       type: 'contact_technician',
-      label: 'Contact technician',
+      label: 'Contact Technician',
       href: '/team',
       requiresOwnerApproval: false,
       wouldChangeSchedule: false,
@@ -465,6 +471,22 @@ export function buildStandardEventActions(input: {
     honestyNote: null,
   });
   return actions;
+}
+
+/**
+ * Advisory route optimisation suggestion — Owner reporting / Scheduling review only.
+ * Never auto-reorders bookings.
+ */
+export function buildRouteOptimisationSuggestedAction(): OpsSuggestedAction {
+  return {
+    type: 'suggest_route_order',
+    label: 'Review Route Order',
+    href: '/scheduling',
+    requiresOwnerApproval: true,
+    wouldChangeSchedule: true,
+    honestyNote:
+      'Advisory only — TITAN suggests reviewing stop order in Scheduling. No automatic booking changes.',
+  };
 }
 
 /** Explicit guarantee constant for API responses and tests. */

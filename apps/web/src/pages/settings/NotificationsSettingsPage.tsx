@@ -2,10 +2,10 @@ import { PageHeader } from '../../components/ux';
 import { SettingsNav } from '../../features/settings/SettingsNav';
 
 const NOTIFICATION_TOGGLES = [
-  { id: 'draft_saved', label: 'Draft saved', defaultOn: true },
-  { id: 'approval_required', label: 'Approval required', defaultOn: true },
-  { id: 'sync_completed', label: 'Sync completed', defaultOn: true },
-  { id: 'sync_pending', label: 'Sync pending', defaultOn: false },
+  { id: 'draft_saved', label: 'Draft Saved', defaultOn: true },
+  { id: 'approval_required', label: 'Approval Required', defaultOn: true },
+  { id: 'sync_completed', label: 'Sync Completed', defaultOn: true },
+  { id: 'sync_pending', label: 'Sync Pending', defaultOn: false },
 ] as const;
 
 export function NotificationsSettingsPage() {
@@ -17,7 +17,7 @@ export function NotificationsSettingsPage() {
       />
       <SettingsNav />
       <p className="settings-scaffold-note">
-        Toggle scaffolds only — all listed notifications are enabled by default for Young Guns staff.
+        Toggle scaffolds only — all listed notifications are enabled by default for staff.
       </p>
       <ul className="settings-toggle-list">
         {NOTIFICATION_TOGGLES.map((toggle) => (

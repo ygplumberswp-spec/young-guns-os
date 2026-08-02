@@ -69,7 +69,7 @@ export function InvoiceDetailPage() {
     return (
       <div className="page-shell">
         <PageHeader title="Invoice" description="Invoice detail" />
-        <LoadingState label="Loading invoice…" />
+        <LoadingState label="Loading Invoice…" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export function InvoiceDetailPage() {
           <div className="jobs-detail__actions">
             {canWrite ? (
               <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
-                <Button>Record payment</Button>
+                <Button>Record Payment</Button>
               </Link>
             ) : null}
           </div>
@@ -198,7 +198,7 @@ export function InvoiceDetailPage() {
           </dl>
         </Panel>
 
-        <Panel title="Line items">
+        <Panel title="Line Items">
           <div className="finance-table-wrap">
             <table className="finance-table">
               <thead>
@@ -259,7 +259,7 @@ export function InvoiceDetailPage() {
           {canWrite ? (
             <div className="finance-panel-actions">
               <Link href={buildPaymentRecordHref({ invoiceId: invoice.id, jobId: invoice.jobId })}>
-                <Button variant="secondary">Record payment</Button>
+                <Button variant="secondary">Record Payment</Button>
               </Link>
             </div>
           ) : null}

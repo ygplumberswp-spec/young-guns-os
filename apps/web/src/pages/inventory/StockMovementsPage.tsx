@@ -74,7 +74,7 @@ export function StockMovementsPage() {
   if (!canView) {
     return (
       <div className="inventory-page">
-        <PageHeader title="Stock movements" description="You do not have permission to view inventory." />
+        <PageHeader title="Stock Movements" description="You do not have permission to view inventory." />
       </div>
     );
   }
@@ -82,7 +82,7 @@ export function StockMovementsPage() {
   return (
     <div className="inventory-page">
       <PageHeader
-        title="Stock movements"
+        title="Stock Movements"
         description={
           jobIdFilter
             ? 'Ledger entries linked to this job.'
@@ -110,13 +110,13 @@ export function StockMovementsPage() {
 
       {!isLoading && !error && movements.length === 0 ? (
         <EmptyState
-          title="No stock movements yet"
+          title="No Stock Movements Yet"
           description="Movements appear when purchase orders are received or materials are approved on jobs."
         />
       ) : null}
 
       {!isLoading && !error && movements.length > 0 ? (
-        <Panel title="Movement ledger">
+        <Panel title="Movement Ledger">
           <div className="inventory-table-wrap">
             <table className="inventory-table">
               <thead>

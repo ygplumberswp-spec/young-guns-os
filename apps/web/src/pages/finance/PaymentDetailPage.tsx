@@ -64,7 +64,7 @@ export function PaymentDetailPage() {
     return (
       <div className="page-shell">
         <PageHeader title="Payment" description="Payment detail" />
-        <LoadingState label="Loading payment…" />
+        <LoadingState label="Loading Payment…" />
       </div>
     );
   }

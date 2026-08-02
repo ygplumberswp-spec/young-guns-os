@@ -189,7 +189,7 @@ export function AgentProfileDetailPage() {
     return (
       <div className="agents-page">
         <PageHeader
-          title="Profile not found"
+          title="Profile Not Found"
           description="This agent profile could not be found."
         />
       </div>
@@ -225,7 +225,7 @@ export function AgentProfileDetailPage() {
       {isEditing && canWrite ? (
         <form className="agents-form" onSubmit={(event) => void handleSubmit(event)}>
           <Input
-            label="Profile name"
+            label="Profile Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -258,7 +258,7 @@ export function AgentProfileDetailPage() {
           </Button>
         </form>
       ) : (
-        <Panel title="Profile details">
+        <Panel title="Profile Details">
           <dl className="agents-detail-grid">
             <div>
               <dt>Agent type</dt>
@@ -292,7 +292,7 @@ export function AgentProfileDetailPage() {
         </Panel>
       )}
 
-      <Panel title="Agent permissions">
+      <Panel title="Agent Permissions">
         <div className="agents-permission-grid">
           {PERMISSION_OPTIONS.map((permission) => (
             <label key={permission} className="agents-permission-option">
@@ -313,7 +313,7 @@ export function AgentProfileDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Tool framework grants">
+      <Panel title="Tool Framework Grants">
         <p className="page-muted">
           Tools are registered for future execution. No tool runs automatically in this foundation
           milestone.
@@ -347,7 +347,7 @@ export function AgentProfileDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Execution history">
+      <Panel title="Execution History">
         {executions.length === 0 ? (
           <p className="page-muted">
             No executions recorded yet. Agents do not run autonomously in this foundation milestone.

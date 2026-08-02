@@ -116,13 +116,13 @@ describe('deriveIntegrationCapabilityState', () => {
 
 describe('formatCapabilityStateLabel', () => {
   it('maps every capability state to its Decision 4 label', () => {
-    assert.equal(formatCapabilityStateLabel('connected_usable'), 'CONNECTED');
-    assert.equal(formatCapabilityStateLabel('configured_unverified'), 'SETUP REQUIRED');
-    assert.equal(formatCapabilityStateLabel('disconnected'), 'DISCONNECTED');
-    assert.equal(formatCapabilityStateLabel('not_configured'), 'IMPLEMENTED NOT CONNECTED');
-    assert.equal(formatCapabilityStateLabel('not_implemented'), 'NOT IMPLEMENTED');
-    assert.equal(formatCapabilityStateLabel('temporarily_unavailable'), 'TEMPORARILY UNAVAILABLE');
-    assert.equal(formatCapabilityStateLabel('failed_degraded'), 'DEGRADED');
+    assert.equal(formatCapabilityStateLabel('connected_usable'), 'Connected');
+    assert.equal(formatCapabilityStateLabel('configured_unverified'), 'Setup Required');
+    assert.equal(formatCapabilityStateLabel('disconnected'), 'Disconnected');
+    assert.equal(formatCapabilityStateLabel('not_configured'), 'Implemented Not Connected');
+    assert.equal(formatCapabilityStateLabel('not_implemented'), 'Not Implemented');
+    assert.equal(formatCapabilityStateLabel('temporarily_unavailable'), 'Temporarily Unavailable');
+    assert.equal(formatCapabilityStateLabel('failed_degraded'), 'Degraded');
   });
 });
 

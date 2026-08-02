@@ -165,7 +165,7 @@ export function BoqCreatePage() {
           </select>
         </label>
         <Input
-          label="Source filename (optional)"
+          label="Source Filename (Optional)"
           value={sourceFilename}
           onChange={(e) => setSourceFilename(e.target.value)}
           placeholder="client-boq.xlsx"

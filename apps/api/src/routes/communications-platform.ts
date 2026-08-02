@@ -276,9 +276,12 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
   router.post('/gmail/oauth/start', requireWrite, async (req, res) => {
     try {
       const actor = getActor(req as AuthenticatedRequest);
-      if (actor.roleName === 'Technician') {
+      if (!isPlatformOwnerRole(actor)) {
         res.status(403).json({
-          error: { code: 'FORBIDDEN', message: 'Technicians cannot connect Gmail' },
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only Platform Owner can connect Business Gmail',
+          },
         });
         return;
       }
@@ -455,6 +458,16 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
 
   router.put('/connections/gmail', requireWrite, async (req, res) => {
     try {
+      const actor = getActor(req as AuthenticatedRequest);
+      if (!isPlatformOwnerRole(actor)) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only Platform Owner can connect Business Gmail',
+          },
+        });
+        return;
+      }
       const parsed = gmailSaveSchema.safeParse(req.body);
       if (!parsed.success) {
         res.status(400).json({
@@ -467,7 +480,7 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
         return;
       }
       const connection = await deps.communicationsPlatformService.saveGmailConnection(
-        getActor(req as AuthenticatedRequest),
+        actor,
         parsed.data,
       );
       res.json({ data: { connection } });
@@ -479,9 +492,17 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
 
   router.delete('/connections/gmail', requireWrite, async (req, res) => {
     try {
-      const connection = await deps.communicationsPlatformService.disconnectGmail(
-        getActor(req as AuthenticatedRequest),
-      );
+      const actor = getActor(req as AuthenticatedRequest);
+      if (!isPlatformOwnerRole(actor)) {
+        res.status(403).json({
+          error: {
+            code: 'FORBIDDEN',
+            message: 'Only Platform Owner can disconnect Business Gmail',
+          },
+        });
+        return;
+      }
+      const connection = await deps.communicationsPlatformService.disconnectGmail(actor);
       res.json({ data: { connection } });
     } catch (error) {
       const mapped = mapCommunicationsPlatformError(error);

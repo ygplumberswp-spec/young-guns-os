@@ -7,11 +7,11 @@ export type CrewMemberDraft = {
 };
 
 export const CREW_ROLE_OPTIONS: { value: JobCrewRole; label: string }[] = [
-  { value: 'crew_leader', label: 'Crew leader' },
+  { value: 'crew_leader', label: 'Crew Leader' },
   { value: 'driver', label: 'Driver' },
-  { value: 'qualified', label: 'Qualified plumber' },
-  { value: 'semi_skilled', label: 'Semi-skilled' },
-  { value: 'assistant', label: 'Assistant / apprentice' },
+  { value: 'qualified', label: 'Qualified Plumber' },
+  { value: 'semi_skilled', label: 'Semi-Skilled' },
+  { value: 'assistant', label: 'Assistant / Apprentice' },
 ];
 
 export function createEmptyMemberDraft(isPrimary = false): CrewMemberDraft {
@@ -43,7 +43,7 @@ export function membersFromExecution(
 
 export function validateCrewAssignmentDraft(members: CrewMemberDraft[]): string | null {
   if (members.length < 2 || members.length > 4) {
-    return 'Assign between 2 and 4 crew members (Young Guns runs 2–4 workers per vehicle).';
+    return 'Assign between 2 and 4 crew members (crews typically run 2–4 workers per vehicle).';
   }
 
   const filled = members.filter((member) => member.userId);

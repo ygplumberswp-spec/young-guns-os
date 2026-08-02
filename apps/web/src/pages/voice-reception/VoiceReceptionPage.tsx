@@ -217,7 +217,7 @@ export function VoiceReceptionPage() {
       {isLoading ? (
         <Panel title="Loading">Loading voice reception dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Voice reception dashboard is unavailable." />
+        <EmptyState title="No Data" description="Voice reception dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -264,7 +264,7 @@ export function VoiceReceptionPage() {
             <Panel title="Live Calls">
               {dashboard.liveCalls.length === 0 ? (
                 <EmptyState
-                  title="No live calls"
+                  title="No Live Calls"
                   description="Active voice sessions appear here from real call activity."
                 />
               ) : (
@@ -287,7 +287,7 @@ export function VoiceReceptionPage() {
             <Panel title="Call Queues">
               {dashboard.callQueues.length === 0 ? (
                 <EmptyState
-                  title="No call queues configured"
+                  title="No Call Queues Configured"
                   description="Configure call queues in Routing settings."
                 />
               ) : (
@@ -310,7 +310,7 @@ export function VoiceReceptionPage() {
             <Panel title="Call History">
               {dashboard.callHistory.length === 0 ? (
                 <EmptyState
-                  title="No call history"
+                  title="No Call History"
                   description="Completed voice sessions appear here from real call activity."
                 />
               ) : (
@@ -333,7 +333,7 @@ export function VoiceReceptionPage() {
             <Panel title="Recordings">
               {dashboard.recordings.length === 0 ? (
                 <EmptyState
-                  title="No recordings"
+                  title="No Recordings"
                   description="Call recordings appear here when captured with proper consent."
                 />
               ) : (
@@ -358,7 +358,7 @@ export function VoiceReceptionPage() {
               {dashboard.recordings.filter((r) => r.transcriptReference || r.aiSummary).length ===
               0 ? (
                 <EmptyState
-                  title="No transcripts"
+                  title="No Transcripts"
                   description="Transcripts appear here when generated from real recordings."
                 />
               ) : (
@@ -457,7 +457,7 @@ export function VoiceReceptionPage() {
             <Panel title="Business Hours">
               {dashboard.businessHours.length === 0 ? (
                 <EmptyState
-                  title="No business hours configured"
+                  title="No Business Hours Configured"
                   description="Configure schedules for routing and AI receptionist."
                 />
               ) : (
@@ -488,7 +488,7 @@ export function VoiceReceptionPage() {
                   value={String(dashboard.voiceStats.completedSessionCount)}
                 />
                 <StatCard
-                  label="Follow-ups Required"
+                  label="Follow-Ups Required"
                   value={String(dashboard.voiceStats.followUpRequiredCount)}
                 />
                 <StatCard
@@ -564,7 +564,7 @@ export function VoiceReceptionPage() {
                 {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
                 {auditLogs.length === 0 ? (
                   <EmptyState
-                    title="No audit logs"
+                    title="No Audit Logs"
                     description="Voice reception actions are recorded for complete auditability."
                   />
                 ) : (

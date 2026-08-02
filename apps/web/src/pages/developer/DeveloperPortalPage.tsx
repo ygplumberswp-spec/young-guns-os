@@ -290,7 +290,7 @@ export function DeveloperPortalPage() {
       {isLoading ? (
         <Panel title="Loading">Loading developer portal…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Developer portal dashboard is unavailable." />
+        <EmptyState title="No Data" description="Developer portal dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -378,7 +378,7 @@ export function DeveloperPortalPage() {
           ) : null}
 
           {activeTab === 'documentation' ? (
-            <Panel title="OpenAPI Documentation">
+            <Panel title="Openapi Documentation">
               {dashboard.openapiSpec ? (
                 <>
                   <p>
@@ -391,7 +391,7 @@ export function DeveloperPortalPage() {
                 </>
               ) : (
                 <EmptyState
-                  title="No OpenAPI spec"
+                  title="No Openapi Spec"
                   description={
                     canWrite
                       ? 'Generate an OpenAPI specification from the real API surface.'
@@ -423,7 +423,7 @@ export function DeveloperPortalPage() {
               {isSupplementaryLoading ? <p>Loading API keys…</p> : null}
               {apiKeys.length === 0 ? (
                 <EmptyState
-                  title="No API keys"
+                  title="No API Keys"
                   description="API keys are managed through the integration API management layer. Create keys from Integrations or the legacy Developers page."
                   action={
                     <Link href="/integrations">
@@ -450,7 +450,7 @@ export function DeveloperPortalPage() {
               {isSupplementaryLoading ? <p>Loading OAuth apps…</p> : null}
               {oauthApps.length === 0 ? (
                 <EmptyState
-                  title="No OAuth applications"
+                  title="No OAuth Applications"
                   description="OAuth applications are registered through the enterprise developer platform."
                   action={
                     <Link href="/developers">
@@ -477,7 +477,7 @@ export function DeveloperPortalPage() {
               <Panel title="Webhook Subscriptions">
                 {dashboard.webhookSubscriptions.length === 0 ? (
                   <EmptyState
-                    title="No subscriptions"
+                    title="No Subscriptions"
                     description="No webhook subscriptions configured yet."
                   />
                 ) : (
@@ -508,7 +508,7 @@ export function DeveloperPortalPage() {
               <Panel title="Delivery History">
                 {webhookDeliveries.length === 0 ? (
                   <EmptyState
-                    title="No deliveries"
+                    title="No Deliveries"
                     description="Webhook delivery history appears when events are dispatched."
                   />
                 ) : (
@@ -575,7 +575,7 @@ export function DeveloperPortalPage() {
               ) : null}
               {dashboard.sdkPackages.length === 0 && dashboard.recentSdkGenerations.length === 0 ? (
                 <EmptyState
-                  title="No SDK packages"
+                  title="No SDK Packages"
                   description="Generate official TypeScript, JavaScript, or Python client libraries from the OpenAPI specification."
                 />
               ) : (
@@ -620,7 +620,7 @@ export function DeveloperPortalPage() {
                 </div>
               ) : (
                 <EmptyState
-                  title="No usage data"
+                  title="No Usage Data"
                   description="Capture a usage analytics snapshot from real API activity."
                   action={
                     canWrite ? (
@@ -648,7 +648,7 @@ export function DeveloperPortalPage() {
               {isSupplementaryLoading ? <p>Loading audit logs…</p> : null}
               {auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit logs"
+                  title="No Audit Logs"
                   description="Platform actions are recorded for complete auditability."
                 />
               ) : (
@@ -670,7 +670,7 @@ export function DeveloperPortalPage() {
               {isSupplementaryLoading ? <p>Loading rate limits…</p> : null}
               {rateLimitPolicies.length === 0 ? (
                 <EmptyState
-                  title="No rate limit policies"
+                  title="No Rate Limit Policies"
                   description="Configure tenant, application, and burst limits for abuse protection."
                 />
               ) : (

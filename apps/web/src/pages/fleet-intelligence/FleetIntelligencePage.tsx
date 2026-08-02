@@ -253,7 +253,7 @@ export function FleetIntelligencePage() {
           description="GPS analytics and fleet performance intelligence."
         />
         <EmptyState
-          title="Access restricted"
+          title="Access Restricted"
           description="You do not have permission to view fleet intelligence."
         />
       </div>
@@ -299,19 +299,19 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'dashboard' && dashboard ? (
         <div className="stack">
           <div className="stat-grid">
-            <StatCard label="Total vehicles" value={String(dashboard.totalVehicles)} />
-            <StatCard label="Active vehicles" value={String(dashboard.activeVehicles)} />
-            <StatCard label="In service" value={String(dashboard.inServiceVehicles)} />
-            <StatCard label="Fleet km" value={String(dashboard.totalKilometres)} />
-            <StatCard label="Health score" value={dashboard.fleetHealthScore?.toString() ?? '—'} />
-            <StatCard label="GPS positions" value={String(dashboard.gpsPositionCount)} />
+            <StatCard label="Total Vehicles" value={String(dashboard.totalVehicles)} />
+            <StatCard label="Active Vehicles" value={String(dashboard.activeVehicles)} />
+            <StatCard label="In Service" value={String(dashboard.inServiceVehicles)} />
+            <StatCard label="Fleet Km" value={String(dashboard.totalKilometres)} />
+            <StatCard label="Health Score" value={dashboard.fleetHealthScore?.toString() ?? '—'} />
+            <StatCard label="GPS Positions" value={String(dashboard.gpsPositionCount)} />
             <StatCard
               label="Cartrack"
               value={dashboard.cartrackConnected ? 'Connected' : 'Disconnected'}
             />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </div>
-          <Panel title="Fleet overview">
+          <Panel title="Fleet Overview">
             <p>{dashboard.summary}</p>
             <p>
               Maintenance due: {dashboard.maintenanceDueCount} · Inspections due:{' '}
@@ -330,10 +330,10 @@ export function FleetIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'trips' ? (
-        <Panel title="GPS trip history">
+        <Panel title="GPS Trip History">
           {trips.length === 0 ? (
             <EmptyState
-              title="No trips available"
+              title="No Trips Available"
               description="Trip history is derived from real Cartrack GPS positions. Sync Cartrack to populate data."
             />
           ) : (
@@ -353,7 +353,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'reports' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Generate monthly report">
+            <Panel title="Generate Monthly Report">
               <form className="form-row" onSubmit={handleGenerateReport}>
                 <Input
                   label="Year"
@@ -365,14 +365,14 @@ export function FleetIntelligencePage() {
                   value={reportMonth}
                   onChange={(event) => setReportMonth(event.target.value)}
                 />
-                <Button type="submit">Generate report</Button>
+                <Button type="submit">Generate Report</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Monthly trip reports">
+          <Panel title="Monthly Trip Reports">
             {reports.length === 0 ? (
               <EmptyState
-                title="No reports yet"
+                title="No Reports Yet"
                 description="Generate a monthly report from real GPS data."
               />
             ) : (
@@ -393,18 +393,18 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'behaviour' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Analyze driver behaviour">
+            <Panel title="Analyze Driver Behaviour">
               <p>
                 Analyze speeding, harsh braking, acceleration, and idling from existing GPS
                 telemetry.
               </p>
-              <Button onClick={() => void handleAnalyzeBehaviour()}>Run analysis</Button>
+              <Button onClick={() => void handleAnalyzeBehaviour()}>Run Analysis</Button>
             </Panel>
           ) : null}
-          <Panel title="Behaviour events">
+          <Panel title="Behaviour Events">
             {behaviourEvents.length === 0 ? (
               <EmptyState
-                title="No behaviour events"
+                title="No Behaviour Events"
                 description="Run analysis after GPS data is available."
               />
             ) : (
@@ -422,10 +422,10 @@ export function FleetIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'utilization' ? (
-        <Panel title="Vehicle utilization">
+        <Panel title="Vehicle Utilization">
           {utilization.length === 0 ? (
             <EmptyState
-              title="No vehicles"
+              title="No Vehicles"
               description="Add vehicles to the fleet register to track utilization."
             />
           ) : (
@@ -445,7 +445,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'costs' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Record operating cost">
+            <Panel title="Record Operating Cost">
               <form className="form-row" onSubmit={handleCreateCost}>
                 <Input
                   label="Amount"
@@ -463,14 +463,14 @@ export function FleetIntelligencePage() {
                     <option value="repair">Repair</option>
                   </select>
                 </label>
-                <Button type="submit">Record cost</Button>
+                <Button type="submit">Record Cost</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Operating costs">
+          <Panel title="Operating Costs">
             {costs && costs.costs.length === 0 ? (
               <EmptyState
-                title="No costs recorded"
+                title="No Costs Recorded"
                 description="Record real operating costs — values are never fabricated."
               />
             ) : (
@@ -496,7 +496,7 @@ export function FleetIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'performance' && performance ? (
-        <Panel title="Fleet performance">
+        <Panel title="Fleet Performance">
           <ul className="list">
             <li>Best performing vehicle: {performance.bestPerformingVehicle ?? '—'}</li>
             <li>Lowest utilization: {performance.lowestUtilizationVehicle ?? '—'}</li>
@@ -511,16 +511,16 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'recommendations' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Generate recommendations">
+            <Panel title="Generate Recommendations">
               <Button onClick={() => void handleGenerateRecommendations()}>
                 Generate fleet recommendations
               </Button>
             </Panel>
           ) : null}
-          <Panel title="Fleet recommendations">
+          <Panel title="Fleet Recommendations">
             {recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations"
+                title="No Recommendations"
                 description="Generate recommendations via explicit API action."
               />
             ) : (
@@ -539,7 +539,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'actions' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Draft fleet action">
+            <Panel title="Draft Fleet Action">
               <form className="stack" onSubmit={handleCreateAction}>
                 <Input
                   label="Subject"
@@ -551,14 +551,14 @@ export function FleetIntelligencePage() {
                   value={actionRecommendation}
                   onChange={(event) => setActionRecommendation(event.target.value)}
                 />
-                <Button type="submit">Draft for approval</Button>
+                <Button type="submit">Draft For Approval</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Pending fleet actions">
+          <Panel title="Pending Fleet Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No fleet actions"
+                title="No Fleet Actions"
                 description="Draft fleet actions require approval before execution."
               />
             ) : (

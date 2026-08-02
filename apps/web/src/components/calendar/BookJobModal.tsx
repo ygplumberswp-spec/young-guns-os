@@ -396,7 +396,7 @@ export function BookJobModal({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <Panel title="Book job" className="cal-modal cal-modal--book">
+      <Panel title="Book Job" className="cal-modal cal-modal--book">
         {!canWrite ? (
           <p className="page-muted">You do not have permission to create jobs.</p>
         ) : (
@@ -463,7 +463,7 @@ export function BookJobModal({
               {showCreateCustomer ? (
                 <div className="book-job-form__new-customer">
                   <Input
-                    label="New customer name"
+                    label="New Customer Name"
                     value={newCustomerName}
                     onChange={(event) => {
                       setNewCustomerName(event.target.value);
@@ -481,7 +481,7 @@ export function BookJobModal({
                     required
                   />
                   <Input
-                    label="Email (optional)"
+                    label="Email (Optional)"
                     value={newCustomerEmail}
                     onChange={(event) => {
                       setNewCustomerEmail(event.target.value);
@@ -580,7 +580,7 @@ export function BookJobModal({
                   required
                 />
                 <Input
-                  label="Postal code"
+                  label="Postal Code"
                   value={postalCode}
                   onChange={(event) => {
                     setPostalCode(event.target.value);
@@ -590,7 +590,7 @@ export function BookJobModal({
                 />
               </div>
               <Input
-                label="Unit / complex (optional)"
+                label="Unit / Complex (Optional)"
                 value={unit}
                 onChange={(event) => {
                   setUnit(event.target.value);
@@ -708,7 +708,7 @@ export function BookJobModal({
                   required={timeConfirmed}
                 />
                 <Input
-                  label="End (optional)"
+                  label="End (Optional)"
                   type="datetime-local"
                   value={endLocal}
                   onChange={(event) => {
@@ -766,7 +766,7 @@ export function BookJobModal({
             <section className="book-job-form__section">
               <h3>Contact confirmation</h3>
               <Input
-                label="Contact name"
+                label="Contact Name"
                 value={contactName}
                 onChange={(event) => {
                   setContactName(event.target.value);

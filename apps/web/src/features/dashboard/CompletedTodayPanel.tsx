@@ -22,13 +22,13 @@ export function CompletedTodayPanel({
   onRetry,
 }: CompletedTodayPanelProps) {
   return (
-    <Panel title="Completed today" description="Jobs finished today with invoice status">
+    <Panel title="Completed Today" description="Jobs finished today with invoice status">
       <div className="exec-completed">
         {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
         ) : error ? (
           <EmptyState
-            title="Unable to load completed jobs"
+            title="Unable To Load Completed Jobs"
             description={error}
             action={
               onRetry ? (
@@ -40,7 +40,7 @@ export function CompletedTodayPanel({
           />
         ) : jobs.length === 0 ? (
           <EmptyState
-            title="No jobs completed yet today"
+            title="No Jobs Completed Yet Today"
             description="Completed jobs will appear here as technicians finish work."
             action={
               <Link href="/jobs?status=completed">
@@ -72,10 +72,10 @@ export function CompletedTodayPanel({
                     {job.invoiceStatus ? (
                       <StatusBadge tone="neutral" label={`Invoice: ${job.invoiceStatus}`} />
                     ) : (
-                      <StatusBadge tone="warning" label="No invoice" />
+                      <StatusBadge tone="warning" label="No Invoice" />
                     )}
-                    {job.docsRequired ? <StatusBadge tone="warning" label="Docs required" /> : null}
-                    {job.cocRequired ? <StatusBadge tone="warning" label="COC required" /> : null}
+                    {job.docsRequired ? <StatusBadge tone="warning" label="Docs Required" /> : null}
+                    {job.cocRequired ? <StatusBadge tone="warning" label="COC Required" /> : null}
                   </div>
                 </div>
               </li>

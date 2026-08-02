@@ -69,6 +69,12 @@ export type UcProviderAdapterSummary = {
   lastTestAt: string | null;
   lastTestStatus: string | null;
   lastTestMessage: string | null;
+  /** Communications Platform–backed adapters (e.g. gmail) — Google OAuth app secrets present. */
+  oauthConfigured?: boolean;
+  /** Connected mailbox address when known. */
+  emailAddress?: string | null;
+  /** In-app path for Connect / Channel Settings (no fake deep links). */
+  connectPath?: string | null;
 };
 
 export type UcTimelineEntrySummary = {

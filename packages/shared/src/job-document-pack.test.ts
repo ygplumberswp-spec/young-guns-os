@@ -10,11 +10,11 @@ import {
 
 test('job document pack approval workflow transitions', () => {
   assert.deepEqual(nextJobDocumentPackApprovalAction('draft'), {
-    label: 'Submit for internal review',
+    label: 'Submit For Internal Review',
     nextStatus: 'internal_review',
   });
   assert.deepEqual(nextJobDocumentPackApprovalAction('internal_review'), {
-    label: 'Approve for sending',
+    label: 'Approve For Sending',
     nextStatus: 'approved_for_sending',
   });
   assert.equal(nextJobDocumentPackApprovalAction('approved_for_sending'), null);

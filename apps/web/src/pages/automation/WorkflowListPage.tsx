@@ -68,14 +68,14 @@ export function WorkflowListPage() {
         actions={
           canWrite ? (
             <Link href="/automation/new">
-              <Button>New workflow</Button>
+              <Button>New Workflow</Button>
             </Link>
           ) : undefined
         }
       />
       <AutomationNav />
 
-      <Panel title="External orchestration (n8n)">
+      <Panel title="External Orchestration (n8n)">
         <p className="page-muted">
           Hybrid n8n orchestration is managed under{' '}
           <Link href="/automation/n8n">Automations → n8n</Link>. Integrations shows capability
@@ -90,12 +90,12 @@ export function WorkflowListPage() {
       {!isLoading && !error ? (
         workflows.length === 0 ? (
           <EmptyState
-            title="No workflows yet"
+            title="No Workflows Yet"
             description="Create your first workflow to define triggers and actions for future automation."
             action={
               canWrite ? (
                 <Link href="/automation/new">
-                  <Button>New workflow</Button>
+                  <Button>New Workflow</Button>
                 </Link>
               ) : undefined
             }

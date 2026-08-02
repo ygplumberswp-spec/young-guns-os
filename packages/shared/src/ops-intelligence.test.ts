@@ -5,7 +5,9 @@ import {
   OPS_INTELLIGENCE_GUARANTEES,
   buildNavigateHref,
   buildOpsReminderDedupeKey,
+  buildRouteOptimisationSuggestedAction,
   buildRunningLateSuggestedActions,
+  buildStandardEventActions,
   computeLeaveByMs,
   detectJobScheduleReminder,
   isLeaveNow,
@@ -218,5 +220,21 @@ describe('ops-intelligence dedupe + advisory guarantees', () => {
       }),
       'provider_unavailable',
     );
+  });
+
+  it('route optimisation suggestion is advisory-only', () => {
+    const action = buildRouteOptimisationSuggestedAction();
+    assert.equal(action.type, 'suggest_route_order');
+    assert.equal(action.requiresOwnerApproval, true);
+    assert.equal(action.wouldChangeSchedule, true);
+    assert.match(action.honestyNote ?? '', /No automatic booking changes/i);
+
+    const standard = buildStandardEventActions({
+      jobId: 'job-1',
+      navigateHref: null,
+      technicianId: 'tech-1',
+      includeRouteOptimisation: true,
+    });
+    assert.ok(standard.some((a) => a.type === 'suggest_route_order'));
   });
 });

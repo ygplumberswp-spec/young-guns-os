@@ -171,7 +171,7 @@ export function MobilePlatformPage() {
       {isLoading ? (
         <Panel title="Loading">Loading mobile platform…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Mobile platform dashboard is unavailable." />
+        <EmptyState title="No Data" description="Mobile platform dashboard is unavailable." />
       ) : (
         <>
           <Panel title="Platform Summary">
@@ -212,7 +212,7 @@ export function MobilePlatformPage() {
             <Panel title="Registered Devices">
               {dashboard.devices.length === 0 ? (
                 <EmptyState
-                  title="No devices"
+                  title="No Devices"
                   description="Register a device when a technician or dispatcher signs in from mobile."
                 />
               ) : (
@@ -265,7 +265,7 @@ export function MobilePlatformPage() {
               <Panel title="Sync History">
                 {dashboard.syncHistory.length === 0 ? (
                   <EmptyState
-                    title="No sync history"
+                    title="No Sync History"
                     description="Sync history appears after manual or background sync runs."
                   />
                 ) : (
@@ -293,7 +293,7 @@ export function MobilePlatformPage() {
               </p>
               {dashboard.fleetProviders.length === 0 ? (
                 <EmptyState
-                  title="No providers configured"
+                  title="No Providers Configured"
                   description="Configure a fleet tracking provider for your tenant."
                 />
               ) : (
@@ -333,7 +333,7 @@ export function MobilePlatformPage() {
               ) : null}
               {!dashboard.fieldIntelligence ? (
                 <EmptyState
-                  title="No snapshot"
+                  title="No Snapshot"
                   description="Capture field intelligence from real job, sync, and device data."
                 />
               ) : (

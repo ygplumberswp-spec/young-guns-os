@@ -163,7 +163,7 @@ export function TitanNotificationsProvider({ children }: { children: ReactNode }
               <button
                 type="button"
                 className="ux-toast__dismiss"
-                aria-label="Dismiss notification"
+                aria-label="Dismiss Notification"
                 onClick={() => dismiss(toast.id)}
               >
                 ×

@@ -8,12 +8,12 @@ export function DocumentsRecordsSettingsPage() {
   return (
     <div className="settings-page">
       <PageHeader
-        title="Documents & records"
-        description="Draft autosave and retention defaults for Young Guns operations."
+        title="Documents & Records"
+        description="Draft autosave and retention defaults for TITAN operations."
       />
       <SettingsNav />
       <p className="settings-scaffold-note">
-        Owner configuration UI is scaffolded — these Young Guns defaults apply without setup.
+        Owner configuration UI is scaffolded — these product defaults apply without setup.
       </p>
       <dl className="settings-dl">
         <div>

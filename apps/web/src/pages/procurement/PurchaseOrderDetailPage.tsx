@@ -150,7 +150,7 @@ export function PurchaseOrderDetailPage() {
   if (isLoading) {
     return (
       <div className="page-shell">
-        <PageHeader title="Purchase order" description="Purchase order detail" />
+        <PageHeader title="Purchase Order" description="Purchase order detail" />
         <p className="page-muted">Loading purchase order…</p>
       </div>
     );
@@ -159,7 +159,7 @@ export function PurchaseOrderDetailPage() {
   if (!purchaseOrder) {
     return (
       <div className="inventory-page">
-        <PageHeader title="Purchase order not found" description="This order may have been removed." />
+        <PageHeader title="Purchase Order Not Found" description="This order may have been removed." />
       </div>
     );
   }
@@ -180,7 +180,7 @@ export function PurchaseOrderDetailPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Order details">
+      <Panel title="Order Details">
         <dl className="fleet-detail-list">
           <div>
             <dt>Supplier</dt>
@@ -239,7 +239,7 @@ export function PurchaseOrderDetailPage() {
         </dl>
       </Panel>
 
-      <Panel title="Line items">
+      <Panel title="Line Items">
         <div className="inventory-table-wrap">
           <table className="inventory-table">
             <thead>
@@ -296,7 +296,7 @@ export function PurchaseOrderDetailPage() {
           {nextStatuses.includes('cancelled') ? (
             <div className="jobs-form__actions" style={{ marginBottom: '0.75rem' }}>
               <Input
-                label="Cancellation reason"
+                label="Cancellation Reason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
               />

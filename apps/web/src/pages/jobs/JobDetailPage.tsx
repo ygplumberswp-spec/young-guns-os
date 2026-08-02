@@ -364,7 +364,7 @@ export function JobDetailPage() {
         <PageHeader title="Job" description="Job record" />
         <p className="form-error">{error}</p>
         <Link href="/jobs">
-          <Button variant="secondary">Back to jobs</Button>
+          <Button variant="secondary">Back To Jobs</Button>
         </Link>
       </div>
     );
@@ -389,7 +389,7 @@ export function JobDetailPage() {
               <Button variant="secondary">Ask {AI_NAME}</Button>
             </Link>
             <Link href="/jobs">
-              <Button variant="ghost">Back to jobs</Button>
+              <Button variant="ghost">Back To Jobs</Button>
             </Link>
           </div>
         }
@@ -408,7 +408,7 @@ export function JobDetailPage() {
         canViewFinance={canViewFinance}
         canViewInternalNotes={canWrite}
         overviewPanel={
-          <Panel title="Operational snapshot">
+          <Panel title="Operational Snapshot">
             <dl className="jobs-detail-list">
               <div>
                 <dt>Job number</dt>
@@ -543,7 +543,7 @@ export function JobDetailPage() {
         }
         jobCardPanel={
           <>
-            <Panel title="Job details">
+            <Panel title="Job Details">
               {isEditing && canWrite ? (
                 <form className="jobs-form" onSubmit={(event) => void handleSave(event)}>
                   {!isCompletedJob ? (
@@ -681,7 +681,7 @@ export function JobDetailPage() {
               ) : null}
             </Panel>
 
-            <Panel title="Field execution">
+            <Panel title="Field Execution">
               {execution ? (
                 <>
                   <dl className="jobs-meta-list">
@@ -787,7 +787,7 @@ export function JobDetailPage() {
                   {canWrite && isCompletedJob ? (
                     <div className="jobs-form__actions" style={{ marginTop: '0.75rem' }}>
                       <Input
-                        label="Reopen reason"
+                        label="Reopen Reason"
                         value={reopenReason}
                         onChange={(e) => setReopenReason(e.target.value)}
                       />
@@ -942,7 +942,7 @@ export function JobDetailPage() {
                                       Approve
                                     </Button>
                                     <Input
-                                      label="Reject reason"
+                                      label="Reject Reason"
                                       value={rejectReasons[line.id] ?? ''}
                                       onChange={(e) =>
                                         setRejectReasons((prev) => ({
@@ -990,7 +990,7 @@ export function JobDetailPage() {
             </Panel>
 
             {canViewProcurement && purchaseOrders.length > 0 ? (
-              <Panel title="Purchase orders" description="Supplier orders linked to this job.">
+              <Panel title="Purchase Orders" description="Supplier orders linked to this job.">
                 <ul className="portal-list">
                   {purchaseOrders.map((po) => (
                     <li key={po.id}>
@@ -1054,14 +1054,14 @@ export function JobDetailPage() {
             {canWrite ? (
               <div className="jobs-form__actions">
                 <Link href={`/documents/new?jobId=${job.id}`}>
-                  <Button variant="secondary">Add document</Button>
+                  <Button variant="secondary">Add Document</Button>
                 </Link>
               </div>
             ) : null}
           </Panel>
         }
         compliancePanel={
-          <Panel title="COC & compliance">
+          <Panel title="COC & Compliance">
             <p className="page-muted">
               COC-related and warranty records appear when captured as job documents or field
               evidence. Use Documents and Photos tabs for before/after packages.

@@ -33,7 +33,7 @@ export function JobCompliancePanel({ job, execution }: JobCompliancePanelProps) 
 
   return (
     <Panel
-      title="COC / compliance"
+      title="COC / Compliance"
       description="Classification guidance from company defaults — TITAN does not auto-issue a Certificate of Compliance."
     >
       <dl className="jobs-detail-list">
@@ -84,7 +84,7 @@ export function JobCompliancePanel({ job, execution }: JobCompliancePanelProps) 
       )}
       <div className="jobs-form__actions">
         <Link href={`/documents/new?jobId=${job.id}`}>
-          <Button variant="secondary">Upload compliance document</Button>
+          <Button variant="secondary">Upload Compliance Document</Button>
         </Link>
       </div>
     </Panel>

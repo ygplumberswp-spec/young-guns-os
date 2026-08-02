@@ -60,11 +60,11 @@ export function PortalQuotesPage() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      <Panel title="Quote history">
+      <Panel title="Quote History">
         {quotes.length === 0 ? (
           <EmptyState
             className="titan-empty-state--compact"
-            title="No quotes"
+            title="No Quotes"
             description="Quotes shared with your account will appear here."
           />
         ) : (

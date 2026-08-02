@@ -19,37 +19,37 @@ export const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; desc
   [
     {
       value: 'revenue',
-      label: 'Revenue report',
+      label: 'Revenue Report',
       description: 'Payment and revenue totals for the selected period',
     },
     {
       value: 'customer',
-      label: 'Customer report',
+      label: 'Customer Report',
       description: 'Customer growth, repeat business, and activity',
     },
     {
       value: 'job_performance',
-      label: 'Job performance report',
+      label: 'Job Performance Report',
       description: 'Job volume, completion rates, and status breakdown',
     },
     {
       value: 'technician_performance',
-      label: 'Technician performance report',
+      label: 'Technician Performance Report',
       description: 'Workload and completion metrics by assigned technician',
     },
     {
       value: 'finance',
-      label: 'Finance report',
+      label: 'Finance Report',
       description: 'Invoices, payments, cash flow, and outstanding balances',
     },
     {
       value: 'fleet',
-      label: 'Fleet report',
+      label: 'Fleet Report',
       description: 'Vehicle status and utilisation overview',
     },
     {
       value: 'inventory',
-      label: 'Inventory report',
+      label: 'Inventory Report',
       description: 'Stock levels and low-stock items',
     },
   ];

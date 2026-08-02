@@ -222,7 +222,7 @@ export function AuraPage() {
 
       {aiProviderConfigured === false ? (
         <EmptyState
-          title="AI provider not configured"
+          title="AI Provider Not Configured"
           description="Configure an AI provider with valid credentials before sending messages to AURA."
           action={
             <Link href="/integrations">
@@ -254,7 +254,7 @@ export function AuraPage() {
           {error ? <p className="aura-chat__error">{error}</p> : null}
 
           {isLoading ? (
-            <LoadingState label="Loading conversations…" />
+            <LoadingState label="Loading Conversations…" />
           ) : conversationMode === 'agent' && canManageAgents ? (
             <>
               <AuraMessageList

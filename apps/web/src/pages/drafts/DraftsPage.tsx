@@ -134,7 +134,7 @@ export function DraftsPage() {
     return (
       <div className="drafts-page">
         <PageHeader title="Drafts" description="Saved work in progress across TITAN." />
-        <EmptyState title="Access restricted" description="You do not have permission to view drafts." />
+        <EmptyState title="Access Restricted" description="You do not have permission to view drafts." />
       </div>
     );
   }
@@ -151,13 +151,13 @@ export function DraftsPage() {
         }
       />
 
-      {isLoading ? <LoadingState label="Loading drafts…" /> : null}
+      {isLoading ? <LoadingState label="Loading Drafts…" /> : null}
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
       {!isLoading && drafts.length === 0 ? (
         <EmptyState
-          title="No drafts yet"
+          title="No Drafts Yet"
           description="Start a customer, purchase order, document, or marketing audience form — TITAN saves draft fields in the background without submitting."
         />
       ) : null}

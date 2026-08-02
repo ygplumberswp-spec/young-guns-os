@@ -385,7 +385,7 @@ export function LeadDetailPage() {
     return (
       <div className="page-shell">
         <PageHeader title="Lead" description="Lead record" />
-        <LoadingState label="Loading lead…" />
+        <LoadingState label="Loading Lead…" />
       </div>
     );
   }
@@ -420,7 +420,7 @@ export function LeadDetailPage() {
       />
 
       <div className="leads-detail-grid">
-        <Panel title="Contact & property">
+        <Panel title="Contact & Property">
           <dl className="detail-list">
             <div>
               <dt>Contact</dt>
@@ -455,7 +455,7 @@ export function LeadDetailPage() {
           </dl>
         </Panel>
 
-        <Panel title="Enquiry & qualification">
+        <Panel title="Enquiry & Qualification">
           <dl className="detail-list">
             <div>
               <dt>Service</dt>
@@ -507,10 +507,10 @@ export function LeadDetailPage() {
       </div>
 
       {canWrite && isEditingLead ? (
-        <Panel title="Edit lead" id="lead-edit">
+        <Panel title="Edit Lead" id="lead-edit">
           <form className="form-stack" onSubmit={onSaveLeadEdit}>
             <Input
-              label="Contact name"
+              label="Contact Name"
               value={editContactName}
               onChange={(e) => setEditContactName(e.target.value)}
               required
@@ -576,7 +576,7 @@ export function LeadDetailPage() {
       ) : null}
 
       {canWrite ? (
-        <Panel title="Follow-up & lifecycle">
+        <Panel title="Follow-Up & Lifecycle">
           <form className="form-stack" onSubmit={onUpdateStatus}>
             <label>
               Status
@@ -626,7 +626,7 @@ export function LeadDetailPage() {
       ) : null}
 
       {showConvert && canConvert ? (
-        <Panel title="Conversion wizard">
+        <Panel title="Conversion Wizard">
           <form className="form-stack" onSubmit={onConvert}>
             <fieldset>
               <legend>Customer</legend>

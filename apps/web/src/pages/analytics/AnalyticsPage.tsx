@@ -217,7 +217,7 @@ export function AnalyticsPage() {
             </Button>
           ))}
         </div>
-        <nav className="analytics-page__tabs" aria-label="Analytics sections">
+        <nav className="analytics-page__tabs" aria-label="Analytics Sections">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -263,7 +263,7 @@ export function AnalyticsPage() {
                   hint={`${dashboardQuery.data.jobVolume.completed} completed · ${dashboardQuery.data.jobVolume.active} active`}
                 />
                 <StatCard
-                  label="New customers"
+                  label="New Customers"
                   value={String(dashboardQuery.data.customerGrowth.newInPeriod)}
                   hint={`${dashboardQuery.data.customerGrowth.totalCustomers} verified customers (${dashboardQuery.data.customerGrowth.rawContactRecords} Xero contacts imported)`}
                 />
@@ -278,7 +278,7 @@ export function AnalyticsPage() {
               </section>
 
               <div className="analytics-page__grid">
-                <Panel title="Invoice & payment performance">
+                <Panel title="Invoice & Payment Performance">
                   <dl className="analytics-page__metrics">
                     <div>
                       <dt>Invoices created</dt>
@@ -361,7 +361,7 @@ export function AnalyticsPage() {
         >
           {reportsQuery.data ? (
             <div className="analytics-page__grid">
-              <Panel title="Available reports">
+              <Panel title="Available Reports">
                 <ul className="analytics-page__report-list">
                   {reportsQuery.data.definitions.map((definition) => (
                     <li key={`${definition.reportType}-${definition.id ?? 'builtin'}`}>
@@ -383,10 +383,10 @@ export function AnalyticsPage() {
                 </ul>
               </Panel>
 
-              <Panel title="Recent report runs">
+              <Panel title="Recent Report Runs">
                 {reportsQuery.data.runs.length === 0 ? (
                   <EmptyState
-                    title="No reports generated yet"
+                    title="No Reports Generated Yet"
                     description="Generate a report to create an export-ready snapshot from your live data."
                   />
                 ) : (
@@ -424,7 +424,7 @@ export function AnalyticsPage() {
           onRetry={() => void profitabilityQuery.refetch()}
         >
           {profitabilityQuery.data ? (
-            <Panel title="Job profitability">
+            <Panel title="Job Profitability">
               <p className="page-muted">
                 Revenue is derived from linked invoices. Material and labour costs are not tracked
                 in TITAN yet, so estimated profit reflects revenue only.
@@ -450,7 +450,7 @@ export function AnalyticsPage() {
               </dl>
               {profitabilityQuery.data.jobs.length === 0 ? (
                 <EmptyState
-                  title="No analytics data yet"
+                  title="No Analytics Data Yet"
                   description="Create jobs and invoices to analyze profitability."
                 />
               ) : (
@@ -497,14 +497,14 @@ export function AnalyticsPage() {
           onRetry={() => void techniciansQuery.refetch()}
         >
           {techniciansQuery.data ? (
-            <Panel title="Technician performance">
+            <Panel title="Technician Performance">
               <p className="page-muted">
                 Workload is based on assigned jobs in the selected period. Customer ratings are not
                 available yet.
               </p>
               {techniciansQuery.data.technicians.length === 0 ? (
                 <EmptyState
-                  title="No analytics data yet"
+                  title="No Analytics Data Yet"
                   description="Assign jobs to technicians to track workload."
                 />
               ) : (
@@ -548,7 +548,7 @@ export function AnalyticsPage() {
         >
           {customersQuery.data ? (
             <div className="analytics-page__grid">
-              <Panel title="Customer insights">
+              <Panel title="Customer Insights">
                 <dl className="analytics-page__metrics">
                   <div>
                     <dt>New customers</dt>
@@ -583,10 +583,10 @@ export function AnalyticsPage() {
                 </dl>
               </Panel>
 
-              <Panel title="Top customers by revenue">
+              <Panel title="Top Customers By Revenue">
                 {customersQuery.data.topCustomersByRevenue.length === 0 ? (
                   <EmptyState
-                    title="No analytics data yet"
+                    title="No Analytics Data Yet"
                     description="Record payments to rank customer value."
                   />
                 ) : (
@@ -620,7 +620,7 @@ export function AnalyticsPage() {
         >
           {financeQuery.data ? (
             <div className="analytics-page__grid">
-              <Panel title="Cash flow">
+              <Panel title="Cash Flow">
                 <dl className="analytics-page__metrics">
                   <div>
                     <dt>Payment inflow</dt>
@@ -658,10 +658,10 @@ export function AnalyticsPage() {
                 </dl>
               </Panel>
 
-              <Panel title="Outstanding invoices">
+              <Panel title="Outstanding Invoices">
                 {financeQuery.data.outstandingInvoices.length === 0 ? (
                   <EmptyState
-                    title="No analytics data yet"
+                    title="No Analytics Data Yet"
                     description="All synced invoices are paid or settled."
                   />
                 ) : (
@@ -707,11 +707,11 @@ export function AnalyticsPage() {
                   value={String(enterpriseQuery.data.stats.dashboardCount)}
                 />
                 <StatCard
-                  label="Pending insights"
+                  label="Pending Insights"
                   value={String(enterpriseQuery.data.stats.pendingInsightCount)}
                 />
                 <StatCard
-                  label="Scheduled reports"
+                  label="Scheduled Reports"
                   value={String(enterpriseQuery.data.stats.scheduledReportCount)}
                 />
                 <StatCard
@@ -719,15 +719,15 @@ export function AnalyticsPage() {
                   value={String(enterpriseQuery.data.stats.latestForecastCount)}
                 />
                 <StatCard
-                  label="Pending actions"
+                  label="Pending Actions"
                   value={String(enterpriseQuery.data.pendingActionCount)}
                 />
               </section>
               <p className="page-muted">{enterpriseQuery.data.summary}</p>
-              <Panel title="Data lake modules">
+              <Panel title="Data Lake Modules">
                 {enterpriseQuery.data.warehouse.modules.length === 0 ? (
                   <EmptyState
-                    title="No analytics data yet"
+                    title="No Analytics Data Yet"
                     description="Module activity will appear after operational records are created."
                   />
                 ) : (
@@ -758,7 +758,7 @@ export function AnalyticsPage() {
           error={kpisQuery.error}
           hasData={kpisQuery.data !== undefined}
           isEmpty={(kpisQuery.data?.length ?? 0) === 0}
-          emptyTitle="No analytics data yet"
+          emptyTitle="No Analytics Data Yet"
           emptyDescription="Configure KPIs via the Business Intelligence API to track revenue, utilization, and conversion metrics."
           loadingLabel="Loading KPIs…"
           onRetry={() => void kpisQuery.refetch()}
@@ -819,7 +819,7 @@ export function AnalyticsPage() {
               </div>
             ) : null}
             {(insightsQuery.data?.length ?? 0) > 0 ? (
-              <Panel title="AI business insights">
+              <Panel title="AI Business Insights">
                 <ul className="analytics-page__run-list">
                   {insightsQuery.data!.map((insight) => (
                     <li key={insight.id}>
@@ -832,9 +832,9 @@ export function AnalyticsPage() {
                 </ul>
               </Panel>
             ) : (
-              <Panel title="AI business insights">
+              <Panel title="AI Business Insights">
                 <EmptyState
-                  title="No analytics data yet"
+                  title="No Analytics Data Yet"
                   description="Generate insights from real operational data when patterns or anomalies are detected."
                 />
               </Panel>
@@ -849,13 +849,13 @@ export function AnalyticsPage() {
           error={forecastsQuery.error}
           hasData={forecastsQuery.data !== undefined}
           isEmpty={(forecastsQuery.data?.length ?? 0) === 0}
-          emptyTitle="No analytics data yet"
+          emptyTitle="No Analytics Data Yet"
           emptyDescription="Forecasts are created from historical tenant data via the Business Intelligence engine."
           loadingLabel="Loading forecasts…"
           onRetry={() => void forecastsQuery.refetch()}
         >
           {(forecastsQuery.data?.length ?? 0) > 0 ? (
-            <Panel title="Predictive forecasts">
+            <Panel title="Predictive Forecasts">
               <ul className="analytics-page__run-list">
                 {forecastsQuery.data!.map((forecast) => (
                   <li key={forecast.id}>
@@ -903,10 +903,10 @@ export function AnalyticsPage() {
                 ) : null}
               </div>
               <div className="analytics-page__grid">
-                <Panel title="Historical snapshots">
+                <Panel title="Historical Snapshots">
                   {enterpriseQuery.data.warehouse.snapshots.length === 0 ? (
                     <EmptyState
-                      title="No analytics data yet"
+                      title="No Analytics Data Yet"
                       description="Run aggregation to capture cross-module metrics."
                     />
                   ) : (
@@ -923,10 +923,10 @@ export function AnalyticsPage() {
                     </ul>
                   )}
                 </Panel>
-                <Panel title="Data lineage">
+                <Panel title="Data Lineage">
                   {enterpriseQuery.data.warehouse.lineage.length === 0 ? (
                     <EmptyState
-                      title="No analytics data yet"
+                      title="No Analytics Data Yet"
                       description="Lineage records appear when aggregation runs."
                     />
                   ) : (

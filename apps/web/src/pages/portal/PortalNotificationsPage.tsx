@@ -28,7 +28,7 @@ export function PortalNotificationsPage() {
         description="Job, quote, invoice, appointment, and support updates."
       />
       {error ? <p className="form-error">{error}</p> : null}
-      <Panel title="Notification centre">
+      <Panel title="Notification Centre">
         <ul className="portal-list">
           {notifications.map((item) => (
             <li key={item.id}>

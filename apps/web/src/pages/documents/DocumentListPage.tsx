@@ -65,7 +65,7 @@ export function DocumentListPage() {
         actions={
           canWrite ? (
             <Link href="/documents/new">
-              <Button>Add document</Button>
+              <Button>Add Document</Button>
             </Link>
           ) : undefined
         }
@@ -78,18 +78,18 @@ export function DocumentListPage() {
       {!isLoading && !error ? (
         documents.length === 0 ? (
           <EmptyState
-            title="No documents yet"
+            title="No Documents Yet"
             description="Register your first document record to start building your document library."
             action={
               canWrite ? (
                 <Link href="/documents/new">
-                  <Button>Add document</Button>
+                  <Button>Add Document</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Document library">
+          <Panel title="Document Library">
             <div className="documents-table-wrap">
               <table className="documents-table">
                 <thead>

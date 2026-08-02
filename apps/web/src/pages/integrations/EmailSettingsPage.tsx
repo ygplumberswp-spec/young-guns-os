@@ -187,17 +187,17 @@ export function EmailSettingsPage() {
             { label: 'Host', value: connection.host ?? 'Not configured' },
             { label: 'Port', value: connection.port != null ? String(connection.port) : '—' },
             { label: 'TLS', value: connection.secure ? 'Yes' : 'No' },
-            { label: 'From email', value: connection.fromEmail ?? 'Not configured' },
+            { label: 'From Email', value: connection.fromEmail ?? 'Not configured' },
             {
-              label: 'Last sync',
+              label: 'Last Sync',
               value: connection.lastSyncAt
                 ? new Date(connection.lastSyncAt).toLocaleString()
                 : 'Never',
             },
           ]}
           connectFields={[
-            { key: 'host', label: 'SMTP host', autoComplete: 'off' },
-            { key: 'port', label: 'SMTP port', autoComplete: 'off' },
+            { key: 'host', label: 'SMTP Host', autoComplete: 'off' },
+            { key: 'port', label: 'SMTP Port', autoComplete: 'off' },
             { key: 'username', label: 'Username', autoComplete: 'off' },
             {
               key: 'password',
@@ -205,8 +205,8 @@ export function EmailSettingsPage() {
               type: 'password',
               autoComplete: 'new-password',
             },
-            { key: 'fromEmail', label: 'From email', type: 'email', autoComplete: 'off' },
-            { key: 'fromName', label: 'From name', required: false, autoComplete: 'off' },
+            { key: 'fromEmail', label: 'From Email', type: 'email', autoComplete: 'off' },
+            { key: 'fromName', label: 'From Name', required: false, autoComplete: 'off' },
           ]}
           connectValues={formValues}
           onConnectValueChange={(key, value) =>
@@ -226,9 +226,9 @@ export function EmailSettingsPage() {
         />
       ) : null}
 
-      <Panel title="Provider support">
+      <Panel title="Provider Support">
         <p className="page-muted">
-          Business Gmail OAuth lives in Communications Hub (Connect Google Gmail). SMTP remains
+          Business Gmail OAuth lives in Communications Hub (Connect Business Gmail). SMTP remains
           available here with the same connect-once lock pattern. Microsoft 365 OAuth is still on
           the roadmap. AURA may classify incoming mail and draft replies — sending requires
           approval (draft → approve → execute).

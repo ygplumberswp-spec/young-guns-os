@@ -243,7 +243,7 @@ export function IntegrationConnectionLock({
       ) : null}
 
       {recoveryContent ? (
-        <Panel title="Recovery controls">
+        <Panel title="Recovery Controls">
           <p className="page-muted">
             Manual sync and diagnostics are recovery-only. Background sync runs automatically when
             connected.

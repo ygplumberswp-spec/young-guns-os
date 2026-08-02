@@ -144,7 +144,7 @@ export function CommunicationsIntelligencePage() {
   if (!canView) {
     return (
       <EmptyState
-        title="Communications access required"
+        title="Communications Access Required"
         description="You need communications intelligence permissions to view this centre."
       />
     );
@@ -170,7 +170,7 @@ export function CommunicationsIntelligencePage() {
     <div className="portal-page">
       <PageHeader
         title="Unified Communications"
-        description="WhatsApp Business, email, SMS, calls, portal, and support messages in one workspace — linked to customers, jobs, and invoices where available."
+        description="Business WhatsApp, email, SMS, calls, portal, and support messages in one workspace — linked to customers, jobs, and invoices where available."
       />
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -192,14 +192,14 @@ export function CommunicationsIntelligencePage() {
       {activeTab === 'dashboard' && analytics ? (
         <>
           <div className="stat-grid">
-            <StatCard label="Total communications" value={String(analytics.totalCommunications)} />
-            <StatCard label="Missed calls" value={String(analytics.missedCallCount)} />
-            <StatCard label="Pending drafts" value={String(analytics.pendingDraftCount)} />
+            <StatCard label="Total Communications" value={String(analytics.totalCommunications)} />
+            <StatCard label="Missed Calls" value={String(analytics.missedCallCount)} />
+            <StatCard label="Pending Drafts" value={String(analytics.pendingDraftCount)} />
             <StatCard
-              label="Open support"
+              label="Open Support"
               value={String(analytics.supportResponsePerformance.openConversationCount)}
             />
-            <StatCard label="WhatsApp unread" value={String(analytics.whatsappUnreadCount)} />
+            <StatCard label="WhatsApp Unread" value={String(analytics.whatsappUnreadCount)} />
             <StatCard
               label="Escalations"
               value={String(analytics.supportResponsePerformance.escalatedCount)}
@@ -207,7 +207,7 @@ export function CommunicationsIntelligencePage() {
           </div>
 
           <div className="portal-grid">
-            <Panel title="Channel usage">
+            <Panel title="Channel Usage">
               {analytics.channelUsage.length === 0 ? (
                 <p className="page-muted">No communication activity recorded yet.</p>
               ) : (
@@ -222,10 +222,10 @@ export function CommunicationsIntelligencePage() {
               )}
             </Panel>
 
-            <Panel title="Recent timeline">
+            <Panel title="Recent Timeline">
               {dashboard.recentTimeline.length === 0 ? (
                 <EmptyState
-                  title="No communications"
+                  title="No Communications"
                   description="Timeline populates from real channel data."
                 />
               ) : (
@@ -247,11 +247,11 @@ export function CommunicationsIntelligencePage() {
       ) : null}
 
       {activeTab === 'timeline' ? (
-        <Panel title="Customer communication timeline">
+        <Panel title="Customer Communication Timeline">
           <UnifiedCommunicationsChannelFilter value={channelFilter} onChange={setChannelFilter} />
           {filteredTimeline.length === 0 ? (
             <EmptyState
-              title="No timeline events"
+              title="No Timeline Events"
               description="Events appear from calls, messages, and support records."
             />
           ) : (
@@ -275,10 +275,10 @@ export function CommunicationsIntelligencePage() {
       ) : null}
 
       {activeTab === 'calls' ? (
-        <Panel title="AI call intelligence">
+        <Panel title="AI Call Intelligence">
           {calls.length === 0 ? (
             <EmptyState
-              title="No calls"
+              title="No Calls"
               description="Call history comes from real voice sessions."
             />
           ) : (
@@ -299,10 +299,10 @@ export function CommunicationsIntelligencePage() {
       ) : null}
 
       {activeTab === 'email' ? (
-        <Panel title="Email threads">
+        <Panel title="Email Threads">
           {emailThreads.length === 0 ? (
             <EmptyState
-              title="No email threads"
+              title="No Email Threads"
               description="Threads are grouped from CRM email communications."
             />
           ) : (
@@ -323,10 +323,10 @@ export function CommunicationsIntelligencePage() {
       ) : null}
 
       {activeTab === 'sms' ? (
-        <Panel title="SMS intelligence">
+        <Panel title="SMS Intelligence">
           {smsRecords.length === 0 ? (
             <EmptyState
-              title="No SMS records"
+              title="No SMS Records"
               description="SMS records appear when logged against real communications."
             />
           ) : (
@@ -350,7 +350,7 @@ export function CommunicationsIntelligencePage() {
         <>
           {canManage ? (
             <Panel
-              title="Draft customer reply"
+              title="Draft Customer Reply"
               description="Draft → Approval → Execution. No automatic sending."
             >
               <form className="form-grid" onSubmit={(event) => void handleCreateDraft(event)}>
@@ -360,20 +360,20 @@ export function CommunicationsIntelligencePage() {
                   onChange={(event) => setDraftSubject(event.target.value)}
                 />
                 <Input
-                  label="Reply body"
+                  label="Reply Body"
                   value={draftBody}
                   onChange={(event) => setDraftBody(event.target.value)}
                   required
                 />
-                <Button type="submit">Draft reply</Button>
+                <Button type="submit">Draft Reply</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Pending and historical drafts">
+          <Panel title="Pending And Historical Drafts">
             {drafts.length === 0 ? (
               <EmptyState
-                title="No drafts"
+                title="No Drafts"
                 description="Communication drafts require manager approval."
               />
             ) : (

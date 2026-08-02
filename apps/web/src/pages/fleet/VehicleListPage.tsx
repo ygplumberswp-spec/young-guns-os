@@ -42,7 +42,7 @@ export function VehicleListPage() {
         actions={
           canWrite ? (
             <Link href="/fleet/new">
-              <Button>Add vehicle</Button>
+              <Button>Add Vehicle</Button>
             </Link>
           ) : undefined
         }
@@ -54,7 +54,7 @@ export function VehicleListPage() {
         isLoading={isLoading}
         error={error}
         isEmpty={(vehicles?.length ?? 0) === 0}
-        emptyTitle="No vehicles yet"
+        emptyTitle="No Vehicles Yet"
         emptyDescription="Add a vehicle to start tracking your fleet."
         loadingLabel="Loading vehicles…"
       >

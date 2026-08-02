@@ -20,7 +20,7 @@ export const INVENTORY_LOCATION_TYPE_OPTIONS: Array<{
   label: string;
 }> = [
   { value: 'warehouse', label: 'Warehouse' },
-  { value: 'van', label: 'Van / vehicle' },
+  { value: 'van', label: 'Van / Vehicle' },
   { value: 'other', label: 'Other' },
 ];
 

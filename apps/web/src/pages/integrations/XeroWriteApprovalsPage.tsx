@@ -38,7 +38,7 @@ export function XeroWriteApprovalsPage() {
   if (!accessToken || !canView) {
     return (
       <div className="page">
-        <PageHeader title="Xero write approvals" />
+        <PageHeader title="Xero Write Approvals" />
         <p>You do not have access to Xero write approvals.</p>
       </div>
     );
@@ -47,7 +47,7 @@ export function XeroWriteApprovalsPage() {
   return (
     <div className="page">
       <PageHeader
-        title="Xero write approvals"
+        title="Xero Write Approvals"
         description="Owner-approved TITAN → Xero writes. Read/import sync is unchanged."
       />
       <p>

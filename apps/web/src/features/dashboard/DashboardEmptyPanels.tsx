@@ -108,16 +108,16 @@ export function DashboardEmptyPanels() {
       >
         {!canViewJobs ? (
           <EmptyState
-            title="Jobs not available"
+            title="Jobs Not Available"
             description="You do not have permission to view today's schedule."
             icon={<DashboardPanelEmptyIcon panelId="upcoming-work" />}
             className="dashboard-panel-empty titan-empty-state--compact"
           />
         ) : todayJobs.isLoading && !todayJobs.data ? (
-          <LoadingState label="Loading today's jobs…" />
+          <LoadingState label="Loading Today's Jobs…" />
         ) : todayJobs.error ? (
           <EmptyState
-            title="Unable to load today's jobs"
+            title="Unable To Load Today's Jobs"
             description={todayJobs.error}
             icon={<DashboardPanelEmptyIcon panelId="upcoming-work" />}
             className="dashboard-panel-empty titan-empty-state--compact"
@@ -129,7 +129,7 @@ export function DashboardEmptyPanels() {
           />
         ) : jobs.length === 0 ? (
           <EmptyState
-            title="Nothing scheduled today"
+            title="Nothing Scheduled Today"
             description="Scheduled jobs for today will appear here once assigned."
             icon={<DashboardPanelEmptyIcon panelId="upcoming-work" />}
             className="dashboard-panel-empty titan-empty-state--compact"
@@ -171,16 +171,16 @@ export function DashboardEmptyPanels() {
       <Panel title="Attention" description="Operational signals that need a look">
         {!canViewFinance && !canViewInventory && !canViewLeads ? (
           <EmptyState
-            title="No attention signals available"
+            title="No Attention Signals Available"
             description="You do not have permission to view finance, inventory, or lead signals."
             icon={<DashboardPanelEmptyIcon panelId="recent-activity" />}
             className="dashboard-panel-empty titan-empty-state--compact"
           />
         ) : attentionLoading ? (
-          <LoadingState label="Loading attention signals…" />
+          <LoadingState label="Loading Attention Signals…" />
         ) : attentionItems.length === 0 ? (
           <EmptyState
-            title="Nothing needs attention"
+            title="Nothing Needs Attention"
             description="Overdue invoices, stock alerts, and active leads will appear here when they need action."
             icon={<DashboardPanelEmptyIcon panelId="recent-activity" />}
             className="dashboard-panel-empty titan-empty-state--compact"

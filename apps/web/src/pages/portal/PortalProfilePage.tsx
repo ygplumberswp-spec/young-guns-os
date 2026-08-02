@@ -109,17 +109,17 @@ export function PortalProfilePage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Profile & properties"
+        title="Profile & Properties"
         description="Manage your properties, sites, and notification preferences."
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Properties & sites">
+      <Panel title="Properties & Sites">
         {properties.length === 0 ? (
           <EmptyState
             className="titan-empty-state--compact"
-            title="No properties yet"
+            title="No Properties Yet"
             description="Add a site with an address so bookings and jobs can use the correct location."
           />
         ) : (
@@ -136,7 +136,7 @@ export function PortalProfilePage() {
         <form className="auth-form" onSubmit={(event) => void addProperty(event)}>
           <Input
             name="propertyName"
-            label="Property name"
+            label="Property Name"
             value={propertyName}
             onChange={(e) => setPropertyName(e.target.value)}
             required
@@ -144,14 +144,14 @@ export function PortalProfilePage() {
           />
           <Input
             name="addressLine1"
-            label="Street address"
+            label="Street Address"
             value={addressLine1}
             onChange={(e) => setAddressLine1(e.target.value)}
             placeholder="Street number and name"
           />
           <Input
             name="addressLine2"
-            label="Address line 2"
+            label="Address Line 2"
             value={addressLine2}
             onChange={(e) => setAddressLine2(e.target.value)}
             placeholder="Complex / estate (optional)"
@@ -159,7 +159,7 @@ export function PortalProfilePage() {
           <div className="auth-form__row">
             <Input
               name="unitNumber"
-              label="Unit / suite"
+              label="Unit / Suite"
               value={unitNumber}
               onChange={(e) => setUnitNumber(e.target.value)}
             />
@@ -181,7 +181,7 @@ export function PortalProfilePage() {
           </div>
           <Input
             name="postalCode"
-            label="Postal code"
+            label="Postal Code"
             value={postalCode}
             onChange={(e) => setPostalCode(e.target.value)}
           />
@@ -192,7 +192,7 @@ export function PortalProfilePage() {
       </Panel>
 
       {preferences ? (
-        <Panel title="Engagement & consent">
+        <Panel title="Engagement & Consent">
           <ul className="portal-list">
             {(
               [

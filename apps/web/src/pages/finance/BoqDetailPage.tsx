@@ -181,7 +181,7 @@ export function BoqDetailPage() {
           ) : null}
         </Panel>
 
-        <Panel title="BOQ lines" description="Original sequence preserved for side-by-side review.">
+        <Panel title="BOQ Lines" description="Original sequence preserved for side-by-side review.">
           <div className="finance-table-wrap">
             <table className="finance-table">
               <thead>
@@ -211,7 +211,7 @@ export function BoqDetailPage() {
         </Panel>
 
         {canConvert ? (
-          <Panel title="Convert to quote" description="Creates a draft quote from BOQ material lines.">
+          <Panel title="Convert To Quote" description="Creates a draft quote from BOQ material lines.">
             {!document.customerId ? (
               <label className="titan-input-group">
                 <span className="titan-input-label">Customer ID for quote</span>

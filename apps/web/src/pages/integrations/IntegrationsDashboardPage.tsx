@@ -324,11 +324,11 @@ export function IntegrationsDashboardPage() {
         <section className="integrations-section">
           <div className="stat-grid">
             <StatCard label="Connected" value={String(monitoring.connectedServiceCount)} />
-            <StatCard label="Needs attention" value={String(monitoring.errorServiceCount)} />
-            <StatCard label="Active sync jobs" value={String(monitoring.activeSyncJobCount)} />
+            <StatCard label="Needs Attention" value={String(monitoring.errorServiceCount)} />
+            <StatCard label="Active Sync Jobs" value={String(monitoring.activeSyncJobCount)} />
             {platformDashboard ? (
               <StatCard
-                label="Pending approvals"
+                label="Pending Approvals"
                 value={String(platformDashboard.pendingActionCount)}
               />
             ) : null}
@@ -336,18 +336,18 @@ export function IntegrationsDashboardPage() {
           {platformDashboard ? (
             <p className="page-muted">{platformDashboard.summary}</p>
           ) : platformLoading ? (
-            <LoadingState label="Loading connection summary…" />
+            <LoadingState label="Loading Connection Summary…" />
           ) : null}
         </section>
       ) : null}
 
       {hubLoading && !hubDashboard ? (
-        <LoadingState label="Loading providers…" />
+        <LoadingState label="Loading Providers…" />
       ) : hubDashboard ? (
         <>
           {groupedProviders.length === 0 ? (
             <EmptyState
-              title="No integrations configured yet"
+              title="No Integrations Configured Yet"
               description="Connect accounting, communications, fleet or payment providers to sync data with TITAN."
             />
           ) : (
@@ -368,14 +368,14 @@ export function IntegrationsDashboardPage() {
           )}
 
           {viewMode === 'simple' && hubDashboard.stats.connectedCount === 0 ? (
-            <Panel title="Get started">
+            <Panel title="Get Started">
               <p className="page-muted">
-                Connect Xero for accounting, WhatsApp for customer messaging, or Cartrack for fleet
+                Connect Xero for accounting, Business WhatsApp for customer messaging, or Cartrack for fleet
                 tracking. AURA can guide you through each setup.
               </p>
               <div className="panel-actions">
                 <Link href="/aura">
-                  <Button variant="secondary">Ask AURA for help</Button>
+                  <Button variant="secondary">Ask AURA For Help</Button>
                 </Link>
               </div>
             </Panel>
@@ -396,10 +396,10 @@ export function IntegrationsDashboardPage() {
 
           {advancedOpen ? (
             <div className="integrations-advanced__content">
-              <Panel title="Recent sync jobs">
+              <Panel title="Recent Sync Jobs">
                 {hubDashboard?.recentSyncJobs.length === 0 ? (
                   <EmptyState
-                    title="No sync jobs yet"
+                    title="No Sync Jobs Yet"
                     description="Sync jobs appear when a provider sync runs."
                   />
                 ) : (
@@ -420,10 +420,10 @@ export function IntegrationsDashboardPage() {
                 </div>
               </Panel>
 
-              <Panel title="Recent webhook events">
+              <Panel title="Recent Webhook Events">
                 {hubDashboard?.recentWebhookEvents.length === 0 ? (
                   <EmptyState
-                    title="No webhook events yet"
+                    title="No Webhook Events Yet"
                     description="Events appear when inbound webhooks are received."
                   />
                 ) : (
@@ -448,9 +448,9 @@ export function IntegrationsDashboardPage() {
               </Panel>
 
               {tracesLoading ? (
-                <LoadingState label="Loading API gateway traces…" />
+                <LoadingState label="Loading API Gateway Traces…" />
               ) : traces && traces.length > 0 ? (
-                <Panel title="Recent API gateway traces">
+                <Panel title="Recent API Gateway Traces">
                   <ul className="integrations-list">
                     {traces.slice(0, 10).map((trace) => (
                       <li key={trace.id}>
@@ -466,9 +466,9 @@ export function IntegrationsDashboardPage() {
               ) : null}
 
               {vaultLoading ? (
-                <LoadingState label="Loading credential metadata…" />
+                <LoadingState label="Loading Credential Metadata…" />
               ) : vaultEntries && vaultEntries.length > 0 ? (
-                <Panel title="Credential metadata">
+                <Panel title="Credential Metadata">
                   <ul className="integrations-list">
                     {vaultEntries.map((entry) => (
                       <li key={entry.id}>
@@ -485,7 +485,7 @@ export function IntegrationsDashboardPage() {
               ) : null}
 
               {platformDashboard && platformDashboard.connectors.length > 0 ? (
-                <Panel title="Universal connectors">
+                <Panel title="Universal Connectors">
                   <ul className="integrations-list">
                     {platformDashboard.connectors.map((connector) => (
                       <li key={connector.id}>

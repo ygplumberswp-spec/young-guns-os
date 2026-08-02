@@ -94,14 +94,14 @@ export function MobileSchedulePage() {
   if (!canView) {
     return (
       <div className="portal-page">
-        <PageHeader title="My schedule" description="Schedule access is not enabled for this account." />
+        <PageHeader title="My Schedule" description="Schedule access is not enabled for this account." />
       </div>
     );
   }
 
   return (
     <div className="portal-page mobile-schedule-page">
-      <PageHeader title="My schedule" description="Today-first timeline and day calendar." />
+      <PageHeader title="My Schedule" description="Today-first timeline and day calendar." />
 
       <section className="mobile-schedule-page__highlights">
         <article className="mobile-schedule-page__highlight">
@@ -112,7 +112,7 @@ export function MobileSchedulePage() {
               <p>{formatTimeRange(currentJob.scheduledAt, currentJob.scheduledEndAt)}</p>
               <StatusBadge tone="warning" label={currentJob.displayStatus} />
               <Link href={`/mobile/jobs/${currentJob.id}`}>
-                <Button variant="primary">Open job</Button>
+                <Button variant="primary">Open Job</Button>
               </Link>
             </>
           ) : (

@@ -73,7 +73,7 @@ export function XeroWriteApprovalQueuePanel({ accessToken, isOwner, canRequest }
   return (
     <Panel
       className="xero-write-approval-queue"
-      title="Xero write approvals"
+      title="Xero Write Approvals"
       description={`Draft → Owner approve → Owner execute. No silent invoice, payment, or contact writes.${
         canRequest ? '' : ' Request permission required to enqueue writes.'
       }`}

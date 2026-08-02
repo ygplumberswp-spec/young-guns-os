@@ -112,7 +112,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Link
                   href="/settings/company"
                   className="app-header__identity"
-                  title={`${user.firstName} ${user.lastName} — ${displayCompanyName} · ${user.roleName}`}
+                  title={`${user.firstName} ${user.lastName} — ${displayCompanyName} — ${user.roleName}`}
                 >
                   <span className="app-header__identity-mark" aria-hidden="true">
                     {accessToken && logoFileId ? (
@@ -131,9 +131,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                     <span className="app-header__name">
                       {user.firstName} {user.lastName}
                     </span>
-                    <span className="app-header__tenant">
-                      {displayCompanyName} · {user.roleName}
-                    </span>
+                    <span className="app-header__tenant">{displayCompanyName}</span>
+                    <span className="app-header__role">{user.roleName}</span>
                   </span>
                 </Link>
                 {isTechnician ? (
@@ -142,7 +141,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </Link>
                 ) : null}
                 <Button variant="ghost" size="sm" onClick={() => void logout()}>
-                  Sign out
+                  Sign Out
                 </Button>
               </>
             ) : null}
@@ -162,7 +161,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               <span aria-hidden="true">{sidebarCollapsed ? '›' : '‹'}</span>
             </button>
           </div>
-          <nav className="app-nav" aria-label="Main navigation">
+          <nav className="app-nav" aria-label="Main Navigation">
             {groupedNavItems.map(({ group, items }) => {
               const groupHasActive = items.some(
                 (entry) =>
@@ -214,7 +213,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <button
           type="button"
           className="owner-shell__backdrop"
-          aria-label="Close navigation"
+          aria-label="Close Navigation"
           onClick={() => setMobileNavOpen(false)}
         />
       ) : null}

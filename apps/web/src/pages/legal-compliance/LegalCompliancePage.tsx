@@ -222,7 +222,7 @@ export function LegalCompliancePage() {
         <Panel title="Contracts" description="Draft → Review → Approval → Execution">
           {dashboard.recentContracts.length === 0 ? (
             <EmptyState
-              title="No contracts"
+              title="No Contracts"
               description="Contracts appear when created in the legal workspace."
             />
           ) : (
@@ -257,7 +257,7 @@ export function LegalCompliancePage() {
         <Panel title="Obligations Register">
           {dashboard.recentObligations.length === 0 ? (
             <EmptyState
-              title="No obligations"
+              title="No Obligations"
               description="Obligations are created from contracts, policies, and regulations."
             />
           ) : (
@@ -307,7 +307,7 @@ export function LegalCompliancePage() {
         <Panel title="Risk Register" description="Scores show inputs, formula, and methodology">
           {dashboard.recentRisks.length === 0 ? (
             <EmptyState
-              title="No risks"
+              title="No Risks"
               description="Risks are registered when identified by authorized users."
             />
           ) : (
@@ -347,7 +347,7 @@ export function LegalCompliancePage() {
           </p>
           {dashboard.insurancePolicyCount === 0 && dashboard.openClaimCount === 0 ? (
             <EmptyState
-              title="No insurance records"
+              title="No Insurance Records"
               description="Policies and claims appear when logged in the legal workspace."
             />
           ) : null}
@@ -366,7 +366,7 @@ export function LegalCompliancePage() {
         <Panel title="Legal Matters">
           {dashboard.recentLegalMatters.length === 0 ? (
             <EmptyState
-              title="No legal matters"
+              title="No Legal Matters"
               description="Disputes, claims, and complaints appear when logged."
             />
           ) : (
@@ -385,7 +385,7 @@ export function LegalCompliancePage() {
         <Panel title="Privacy Requests">
           {dashboard.pendingPrivacyRequests.length === 0 ? (
             <EmptyState
-              title="No pending privacy requests"
+              title="No Pending Privacy Requests"
               description="Data subject requests appear when submitted."
             />
           ) : (
@@ -409,7 +409,7 @@ export function LegalCompliancePage() {
           <p>{dashboard.activeLegalHoldCount} active legal hold(s).</p>
           {dashboard.activeLegalHoldCount === 0 ? (
             <EmptyState
-              title="No active legal holds"
+              title="No Active Legal Holds"
               description="Legal holds appear when placed on tenant records."
             />
           ) : null}
@@ -427,7 +427,7 @@ export function LegalCompliancePage() {
             </p>
           ) : (
             <EmptyState
-              title="No evidence records"
+              title="No Evidence Records"
               description="Evidence is registered when uploaded or linked to legal workflows."
             />
           )}
@@ -454,7 +454,7 @@ export function LegalCompliancePage() {
             </ul>
           ) : (
             <EmptyState
-              title="No analytics captured"
+              title="No Analytics Captured"
               description="Capture analytics from real legal activity."
             />
           )}

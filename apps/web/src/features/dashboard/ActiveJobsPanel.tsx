@@ -34,13 +34,13 @@ export function ActiveJobsPanel({
   const activeJobs = jobs.filter((job) => job.status === 'in_progress');
 
   return (
-    <Panel title="Active jobs" description="In-progress jobs only — no invented activity">
+    <Panel title="Active Jobs" description="In-progress jobs only — no invented activity">
       <div className="exec-active-jobs">
         {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
         ) : error ? (
           <EmptyState
-            title="Unable to load active jobs"
+            title="Unable To Load Active Jobs"
             description={error}
             action={
               onRetry ? (
@@ -52,7 +52,7 @@ export function ActiveJobsPanel({
           />
         ) : activeJobs.length === 0 ? (
           <EmptyState
-            title="No active jobs right now"
+            title="No Active Jobs Right Now"
             description="Jobs move here when technicians start work. TITAN will not invent active jobs."
             action={
               <Link href="/scheduling">

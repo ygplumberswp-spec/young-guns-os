@@ -540,7 +540,7 @@ export function MobileJobDetailPage() {
   if (isLoading) return <p className="page-muted">Loading job workspace…</p>;
   if (error && !workspace) return <p className="form-error">{error}</p>;
   if (!workspace) {
-    return <EmptyState title="Job not found" description="This job is not assigned to you." />;
+    return <EmptyState title="Job Not Found" description="This job is not assigned to you." />;
   }
 
   const primaryActions = workspace.availableActions.filter((a) =>
@@ -641,7 +641,7 @@ export function MobileJobDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Work description">
+      <Panel title="Work Description">
         <p>{workspace.workInstructions ?? '—'}</p>
         {workspace.customerVisibleNotes ? (
           <p className="page-muted">Customer-visible: {workspace.customerVisibleNotes}</p>
@@ -649,7 +649,7 @@ export function MobileJobDetailPage() {
         {workspace.internalNotes ? <p className="page-muted">Internal: {workspace.internalNotes}</p> : null}
       </Panel>
 
-      <Panel title="Crew & vehicle">
+      <Panel title="Crew & Vehicle">
         <ul className="portal-list">
           {workspace.crew.map((member) => (
             <li key={member.id}>
@@ -859,7 +859,7 @@ export function MobileJobDetailPage() {
         </ul>
       </Panel>
 
-      <Panel title="Variation (pending approval)">
+      <Panel title="Variation (Pending Approval)">
         <form className="jobs-form" onSubmit={(e) => void handleVariation(e)}>
           <Input
             label="Title"
@@ -868,7 +868,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={variationCondition}
             onChange={(e) => setVariationCondition(e.target.value)}
             required
@@ -897,7 +897,7 @@ export function MobileJobDetailPage() {
         </ul>
       </Panel>
 
-      <Panel title="Completion gate">
+      <Panel title="Completion Gate">
         <p className="page-muted">
           {workspace.completionGate.canComplete
             ? 'Evidence looks ready — fill declaration to complete.'
@@ -927,13 +927,13 @@ export function MobileJobDetailPage() {
             />
           </label>
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={completeForm.siteCondition}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, siteCondition: e.target.value }))}
             required
           />
           <Input
-            label="Customer / site representative"
+            label="Customer / Site Representative"
             value={completeForm.customerRepName}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, customerRepName: e.target.value }))
@@ -941,7 +941,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Signer role / relationship"
+            label="Signer Role / Relationship"
             value={completeForm.signerRole}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, signerRole: e.target.value }))}
           />
@@ -964,7 +964,7 @@ export function MobileJobDetailPage() {
             {signatureDocId ? 'Signature stored' : 'Save signature evidence'}
           </Button>
           <Input
-            label="Signature unavailable reason (mandatory if no signature)"
+            label="Signature Unavailable Reason (Mandatory If No Signature)"
             value={completeForm.signatureUnavailableReason}
             onChange={(e) =>
               setCompleteForm((prev) => ({
@@ -1002,7 +1002,7 @@ export function MobileJobDetailPage() {
             </p>
           </label>
           <Input
-            label="Outstanding defect / follow-up"
+            label="Outstanding Defect / Follow-Up"
             value={completeForm.outstandingDefects}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, outstandingDefects: e.target.value }))
@@ -1037,7 +1037,7 @@ export function MobileJobDetailPage() {
       </Panel>
 
       {workspace.propertyHistory.length > 0 ? (
-        <Panel title="Property history">
+        <Panel title="Property History">
           <ul className="portal-list">
             {workspace.propertyHistory.map((item) => (
               <li key={item.id}>

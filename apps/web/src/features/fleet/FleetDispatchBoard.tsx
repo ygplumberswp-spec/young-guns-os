@@ -54,20 +54,43 @@ export function FleetDispatchBoard() {
   const loading =
     (jobsQuery.isLoading && !jobsQuery.data) || (vehiclesQuery.isLoading && !vehiclesQuery.data);
 
-  const mapMarkers = useMemo(
-    () =>
-      (tracking?.latestPositions ?? [])
-        .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
-        .slice(0, 16)
-        .map((position) => ({
-          id: `${position.externalVehicleId}-${position.recordedAt}`,
-          latitude: position.latitude,
-          longitude: position.longitude,
-          label: position.vehicleName ?? position.licensePlate ?? 'Vehicle',
-          tone: 'vehicle' as const,
-        })),
-    [tracking?.latestPositions],
-  );
+  const mapMarkers = useMemo(() => {
+    const vehicleMarkers = (tracking?.latestPositions ?? [])
+      .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
+      .slice(0, 16)
+      .map((position) => ({
+        id: `vehicle-${position.externalVehicleId}`,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        label: position.vehicleName ?? position.licensePlate ?? 'Vehicle',
+        tone: 'vehicle' as const,
+      }));
+
+    const jobMarkers = jobs
+      .filter(
+        (job) =>
+          job.latitude != null &&
+          job.longitude != null &&
+          Number.isFinite(job.latitude) &&
+          Number.isFinite(job.longitude),
+      )
+      .slice(0, 24)
+      .map((job) => ({
+        id: `job-${job.id}`,
+        latitude: job.latitude!,
+        longitude: job.longitude!,
+        label: [
+          job.customerName,
+          job.jobNumber ?? job.title,
+          job.assignedUserName ? `Tech: ${job.assignedUserName}` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        tone: 'customer' as const,
+      }));
+
+    return [...vehicleMarkers, ...jobMarkers];
+  }, [jobs, tracking?.latestPositions]);
 
   return (
     <div className="customer-360__stack">
@@ -90,18 +113,24 @@ export function FleetDispatchBoard() {
           <div style={{ marginTop: '0.75rem' }}>
             <GoogleMapView
               markers={mapMarkers}
+              cameraContextKey="fleet-dispatch"
               height={260}
-              emptyTitle="Live map unavailable"
-              emptyDescription="Cartrack positions exist, but Google Maps browser key is not configured."
+              emptyTitle="Live Map Unavailable"
+              emptyDescription="Verified vehicle GPS or job coordinates exist, but Google Maps browser key is not configured."
             />
           </div>
-        ) : null}
+        ) : (
+          <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+            No verified technician GPS or customer job coordinates to plot yet. TITAN will not invent
+            markers.
+          </p>
+        )}
 
         {loading ? <LoadingState label="Loading today's dispatch…" /> : null}
 
         {jobsQuery.error || vehiclesQuery.error ? (
           <EmptyState
-            title="Unable to load dispatch board"
+            title="Unable To Load Dispatch Board"
             description={jobsQuery.error || vehiclesQuery.error || 'Retry to reload.'}
             action={
               <Button
@@ -150,7 +179,7 @@ export function FleetDispatchBoard() {
             </h3>
             {jobs.length === 0 ? (
               <EmptyState
-                title="No jobs scheduled today"
+                title="No Jobs Scheduled Today"
                 description="When jobs are scheduled for today with site addresses, they appear here for dispatch."
                 action={
                   <Link href="/jobs/new">
@@ -164,8 +193,16 @@ export function FleetDispatchBoard() {
               <ul className="portal-list">
                 {jobs.map((job) => {
                   const navigateUrl = buildGoogleMapsNavigateUrl({
+                    latitude: job.latitude,
+                    longitude: job.longitude,
+                    placeId: job.placeId,
                     address: job.addressDisplay,
                   });
+                  const hasVerifiedCoords =
+                    job.latitude != null &&
+                    job.longitude != null &&
+                    Number.isFinite(job.latitude) &&
+                    Number.isFinite(job.longitude);
                   return (
                     <li key={job.id}>
                       <Link href={`/jobs/${job.id}`}>
@@ -188,11 +225,12 @@ export function FleetDispatchBoard() {
                         {job.addressDisplay
                           ? `Site: ${job.addressDisplay}`
                           : 'Site address missing on job snapshot'}
+                        {hasVerifiedCoords ? ' · verified coordinates' : ' · coordinates not verified'}
                       </span>
                       {navigateUrl ? (
                         <a href={navigateUrl} target="_blank" rel="noreferrer">
                           {mapsConnected
-                            ? 'Navigate in Google Maps'
+                            ? 'Suggested route in Google Maps'
                             : 'Open address in Maps (deep-link)'}
                         </a>
                       ) : null}

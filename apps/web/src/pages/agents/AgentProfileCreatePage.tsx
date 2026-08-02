@@ -114,7 +114,7 @@ export function AgentProfileCreatePage() {
   return (
     <div className="agents-page">
       <PageHeader
-        title="Configure agent profile"
+        title="Configure Agent Profile"
         description="Create a tenant-scoped profile with suggested permissions and tool grants."
       />
       <AgentsNav />
@@ -143,7 +143,7 @@ export function AgentProfileCreatePage() {
           </select>
         </label>
         <Input
-          label="Profile name"
+          label="Profile Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           required

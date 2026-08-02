@@ -26,13 +26,13 @@ export function OverrideReasonModal({
 
   return (
     <div className="cal-modal-backdrop" role="dialog" aria-modal="true">
-      <Panel title="Override scheduling conflict" className="cal-modal">
+      <Panel title="Override Scheduling Conflict" className="cal-modal">
         <p className="page-muted">
           Owner/Admin override requires a reason. This is recorded in the scheduling audit log.
         </p>
         <form onSubmit={handleSubmit}>
           <Input
-            label="Override reason"
+            label="Override Reason"
             value={reason}
             onChange={(event) => setReason(event.target.value)}
             required

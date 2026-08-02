@@ -57,7 +57,7 @@ export function WorkflowCreatePage() {
   return (
     <div className="automation-page">
       <PageHeader
-        title="New workflow"
+        title="New Workflow"
         description="Define a workflow with at least one trigger and one action."
       />
       <AutomationNav />

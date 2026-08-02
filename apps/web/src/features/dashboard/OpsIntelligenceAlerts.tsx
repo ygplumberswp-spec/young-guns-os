@@ -84,13 +84,13 @@ export function OpsIntelligenceAlerts({
 
   return (
     <Panel
-      title="Operations intelligence"
+      title="Operations Intelligence"
       description="Advisory only — never auto-messages customers or changes bookings"
     >
       {isLoading && events.length === 0 ? <DashboardSectionSkeleton rows={3} /> : null}
       {error && events.length === 0 ? (
         <EmptyState
-          title="Unable to load ops alerts"
+          title="Unable To Load Ops Alerts"
           description={error}
           action={
             onRetry ? (
@@ -103,7 +103,7 @@ export function OpsIntelligenceAlerts({
       ) : null}
       {!isLoading && !error && events.length === 0 ? (
         <EmptyState
-          title="No active ops alerts"
+          title="No Active Ops Alerts"
           description="Leave-now, late, arrival, and morning brief cards appear here from live schedule and GPS only."
         />
       ) : null}

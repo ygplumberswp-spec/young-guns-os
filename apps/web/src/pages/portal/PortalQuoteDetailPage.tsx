@@ -185,9 +185,9 @@ export function PortalQuoteDetailPage() {
       />
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
-      {loading ? <LoadingState label="Loading quote…" /> : null}
+      {loading ? <LoadingState label="Loading Quote…" /> : null}
       {!loading && !quote ? (
-        <EmptyState title="Quote not found" description="This quote is not available on your account." />
+        <EmptyState title="Quote Not Found" description="This quote is not available on your account." />
       ) : null}
 
       {quote ? (
@@ -237,7 +237,7 @@ export function PortalQuoteDetailPage() {
 
           {quote.canAccept ? (
             <Panel
-              title="Accept this quote"
+              title="Accept This Quote"
               description="Confirm you have reviewed the scope, exclusions, price, VAT, and payment terms."
             >
               <form className="finance-form" onSubmit={(event) => void handleAccept(event)}>
@@ -328,7 +328,7 @@ export function PortalQuoteDetailPage() {
           ) : null}
 
           {quote.canDecline ? (
-            <Panel title="Decline or request a change">
+            <Panel title="Decline Or Request A Change">
               <form className="finance-form" onSubmit={(event) => void handleDecline(event)}>
                 <ul className="finance-radio-list">
                   <li>

@@ -259,7 +259,7 @@ export function QuoteEditPage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="Edit quote"
+        title="Edit Quote"
         description="Update draft quote lines, scope and approval status."
         backFallbackHref={`/finance/quotes/${quoteId}`}
         guardNavigation={draftShell.guard.guardNavigation}
@@ -301,7 +301,7 @@ export function QuoteEditPage() {
           </select>
         </label>
         <Input
-          label="Valid until"
+          label="Valid Until"
           type="datetime-local"
           value={validUntil}
           onChange={(e) => setValidUntil(e.target.value)}

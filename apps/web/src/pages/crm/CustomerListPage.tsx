@@ -131,11 +131,11 @@ export function CustomerListPage() {
         actions={
           <>
             <Link href="/crm/duplicates">
-              <Button variant="secondary">Duplicate merge</Button>
+              <Button variant="secondary">Duplicate Merge</Button>
             </Link>
             {canWrite ? (
               <Link href="/crm/new">
-                <Button>Add customer</Button>
+                <Button>Add Customer</Button>
               </Link>
             ) : null}
           </>
@@ -159,7 +159,7 @@ export function CustomerListPage() {
         isLoading={isLoading && customerRows === undefined}
         error={null}
         isEmpty={false}
-        emptyTitle="No customers yet"
+        emptyTitle="No Customers Yet"
         emptyDescription="Add your first customer to start building your CRM."
         loadingLabel="Loading customers…"
       >

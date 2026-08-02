@@ -100,7 +100,7 @@ export function QuoteListPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search number or title…"
-            aria-label="Search quotes"
+            aria-label="Search Quotes"
           />
         </div>
 

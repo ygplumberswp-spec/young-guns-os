@@ -26,7 +26,7 @@ export function PortalKnowledgePage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Help & self-service"
+        title="Help & Self-Service"
         description="Search customer-visible articles, FAQs, and guides."
       />
       <form onSubmit={handleSearch}>

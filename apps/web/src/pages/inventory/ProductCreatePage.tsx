@@ -64,7 +64,7 @@ export function ProductCreatePage() {
   return (
     <div className="inventory-page">
       <PageHeader
-        title="New product"
+        title="New Product"
         description="Add a product to your inventory catalog."
       />
       <InventoryNav />
@@ -93,7 +93,7 @@ export function ProductCreatePage() {
           </select>
         </label>
         <Input
-          label="Reorder level"
+          label="Reorder Level"
           type="number"
           min="0"
           value={reorderLevel}

@@ -12,7 +12,7 @@ const tabs = [
   },
   {
     href: '/documents/job-packs',
-    label: 'Job packs',
+    label: 'Job Packs',
     match: (location: string) => location.startsWith('/documents/job-packs'),
   },
   {
@@ -26,7 +26,7 @@ export function DocumentsNav() {
   const [location] = useLocation();
 
   return (
-    <nav className="documents-nav" aria-label="Documents sections">
+    <nav className="documents-nav" aria-label="Documents Sections">
       {tabs.map((tab) => (
         <Link
           key={tab.href}

@@ -22,21 +22,21 @@ export function PortalFinancePage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title="Invoices & payments"
+        title="Invoices & Payments"
         description="Invoice history, balances, and payment records."
       />
       {error ? <p className="form-error">{error}</p> : null}
       {finance ? (
         <>
-          <Panel title="Outstanding balance">
+          <Panel title="Outstanding Balance">
             <p className="tabular-nums">
               {(finance.outstandingBalanceCents / 100).toFixed(2)} {finance.currency}
             </p>
           </Panel>
-          <Panel title="Pay an invoice">
+          <Panel title="Pay An Invoice">
             <EmptyState
               className="titan-empty-state--compact"
-              title="Online payment not available"
+              title="Online Payment Not Available"
               description="Secure customer checkout / payment links are not enabled in this workspace yet. Contact the office to arrange payment — no payment was attempted."
             />
           </Panel>
@@ -44,7 +44,7 @@ export function PortalFinancePage() {
             {finance.invoices.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No invoices"
+                title="No Invoices"
                 description="Invoices for your account will appear here."
               />
             ) : (
@@ -64,7 +64,7 @@ export function PortalFinancePage() {
             {finance.payments.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No payments recorded"
+                title="No Payments Recorded"
                 description="Payments recorded against your invoices will appear here."
               />
             ) : (

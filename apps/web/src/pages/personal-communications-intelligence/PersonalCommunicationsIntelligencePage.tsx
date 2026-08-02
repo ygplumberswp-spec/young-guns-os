@@ -184,7 +184,7 @@ export function PersonalCommunicationsIntelligencePage() {
           description="WhatsApp business assistant and communication intelligence."
         />
         <EmptyState
-          title="Access restricted"
+          title="Access Restricted"
           description="You do not have permission to view personal communications intelligence."
         />
       </div>
@@ -194,7 +194,7 @@ export function PersonalCommunicationsIntelligencePage() {
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'conversations', label: 'Conversations' },
-    { id: 'followups', label: 'Follow-ups' },
+    { id: 'followups', label: 'Follow-Ups' },
     { id: 'leads', label: 'Lead Signals' },
     { id: 'actions', label: 'Actions' },
   ];
@@ -203,14 +203,15 @@ export function PersonalCommunicationsIntelligencePage() {
     <div className="page">
       <PageHeader
         title="Personal Communications Intelligence"
-        description="Separate from WhatsApp Business — intelligence and approval-gated actions only. Direct personal WhatsApp session pairing is not supported."
+        description="Separate from Business WhatsApp — Personal WhatsApp (Owner only). Intelligence and approval-gated actions only. Direct Personal WhatsApp session pairing is not supported."
       />
-      <Panel title="Personal WhatsApp account status">
+      <Panel title="Personal WhatsApp (Owner only)">
         <p className="page-muted">
           <strong>Status: Blocked / unsupported for direct connection.</strong> TITAN does not store
-          personal WhatsApp session keys or simulate a personal account connection. Incoming
-          business-context analysis may use authorised WhatsApp Business data only. Outgoing messages,
-          deletes, and consequential actions require Owner approval with audit evidence.
+          Personal WhatsApp session keys or simulate a personal account connection. This channel is
+          never mixed with Business WhatsApp and is never available to Clients or Technicians.
+          Outgoing messages, deletes, and consequential actions require Owner approval with audit
+          evidence.
         </p>
       </Panel>
       {error ? <p className="form-error">{error}</p> : null}
@@ -230,43 +231,43 @@ export function PersonalCommunicationsIntelligencePage() {
       {!isLoading && activeTab === 'dashboard' && dashboard ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Sync WhatsApp conversations">
+            <Panel title="Sync WhatsApp Conversations">
               <p>
                 Index real WhatsApp messages into business conversations. No messages are sent
                 automatically.
               </p>
-              <Button onClick={() => void handleSync()}>Sync conversations</Button>
+              <Button onClick={() => void handleSync()}>Sync Conversations</Button>
             </Panel>
           ) : null}
           <div className="stat-grid">
             <StatCard
-              label="Business conversations"
+              label="Business Conversations"
               value={String(dashboard.totalBusinessConversations)}
             />
             <StatCard
-              label="Personal conversations"
+              label="Personal Conversations"
               value={String(dashboard.totalPersonalConversations)}
             />
-            <StatCard label="New leads" value={String(dashboard.newLeadsDetected)} />
-            <StatCard label="Follow-ups" value={String(dashboard.pendingFollowUpCount)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
-            <StatCard label="Voice notes processed" value={String(dashboard.voiceNotesProcessed)} />
-            <StatCard label="Documents analysed" value={String(dashboard.documentsAnalysed)} />
+            <StatCard label="New Leads" value={String(dashboard.newLeadsDetected)} />
+            <StatCard label="Follow-Ups" value={String(dashboard.pendingFollowUpCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Voice Notes Processed" value={String(dashboard.voiceNotesProcessed)} />
+            <StatCard label="Documents Analysed" value={String(dashboard.documentsAnalysed)} />
             <StatCard
               label="WhatsApp"
               value={dashboard.whatsappConnected ? 'Connected' : 'Disconnected'}
             />
           </div>
-          <Panel title="Executive summary">
+          <Panel title="Executive Summary">
             <p>{dashboard.summary}</p>
           </Panel>
         </div>
       ) : null}
       {!isLoading && activeTab === 'conversations' ? (
-        <Panel title="Business conversations">
+        <Panel title="Business Conversations">
           {conversations.length === 0 ? (
             <EmptyState
-              title="No conversations indexed"
+              title="No Conversations Indexed"
               description="Sync WhatsApp messages to index conversations."
             />
           ) : (
@@ -284,14 +285,14 @@ export function PersonalCommunicationsIntelligencePage() {
       {!isLoading && activeTab === 'followups' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Generate follow-up queue">
-              <Button onClick={() => void handleGenerateFollowUps()}>Generate follow-ups</Button>
+            <Panel title="Generate Follow-Up Queue">
+              <Button onClick={() => void handleGenerateFollowUps()}>Generate Follow-Ups</Button>
             </Panel>
           ) : null}
-          <Panel title="Follow-up queue">
+          <Panel title="Follow-Up Queue">
             {followUps.length === 0 ? (
               <EmptyState
-                title="No follow-ups"
+                title="No Follow-Ups"
                 description="Generate follow-ups from real communication data."
               />
             ) : (
@@ -309,14 +310,14 @@ export function PersonalCommunicationsIntelligencePage() {
       {!isLoading && activeTab === 'leads' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Detect lead signals">
-              <Button onClick={() => void handleDetectLeads()}>Detect lead signals</Button>
+            <Panel title="Detect Lead Signals">
+              <Button onClick={() => void handleDetectLeads()}>Detect Lead Signals</Button>
             </Panel>
           ) : null}
-          <Panel title="Lead & customer intelligence">
+          <Panel title="Lead & Customer Intelligence">
             {signals.length === 0 ? (
               <EmptyState
-                title="No lead signals"
+                title="No Lead Signals"
                 description="Run detection after conversations are indexed."
               />
             ) : (
@@ -334,7 +335,7 @@ export function PersonalCommunicationsIntelligencePage() {
       {!isLoading && activeTab === 'actions' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Draft business action">
+            <Panel title="Draft Business Action">
               <form className="stack" onSubmit={handleCreateAction}>
                 <Input
                   label="Subject"
@@ -346,14 +347,14 @@ export function PersonalCommunicationsIntelligencePage() {
                   value={actionRecommendation}
                   onChange={(e) => setActionRecommendation(e.target.value)}
                 />
-                <Button type="submit">Draft for approval</Button>
+                <Button type="submit">Draft For Approval</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Pending actions">
+          <Panel title="Pending Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No actions"
+                title="No Actions"
                 description="Draft replies and business actions require approval before execution."
               />
             ) : (

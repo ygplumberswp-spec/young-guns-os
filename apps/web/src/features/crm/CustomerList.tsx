@@ -156,12 +156,12 @@ export function CustomerList({
       { id: 'edit', label: 'Edit', onSelect: () => navigate(`/crm/${customer.id}#edit`) },
       {
         id: 'add-job',
-        label: 'Add job',
+        label: 'Add Job',
         onSelect: () => navigate(`/jobs/new?customerId=${customer.id}`),
       },
       {
         id: 'create-quote',
-        label: 'Create quote',
+        label: 'Create Quote',
         onSelect: () => navigate(`/finance/quotes/new?customerId=${customer.id}`),
       },
       {
@@ -171,25 +171,25 @@ export function CustomerList({
       },
       {
         id: 'mark-active',
-        label: 'Mark active',
+        label: 'Mark Active',
         hidden: uiStatus === 'active',
         onSelect: () => void changeCustomerStatus(customer, 'active', classification),
       },
       {
         id: 'mark-inactive',
-        label: 'Mark inactive',
+        label: 'Mark Inactive',
         hidden: uiStatus === 'inactive' || uiStatus === 'archived',
         disabled: !validateCustomerStatusChange('inactive', classification).allowed,
         onSelect: () => void changeCustomerStatus(customer, 'inactive', classification),
       },
       {
         id: 'duplicate-review',
-        label: 'Review duplicates',
+        label: 'Review Duplicates',
         onSelect: () => navigate('/crm/duplicates'),
       },
       {
         id: 'merge-duplicate',
-        label: 'Merge duplicate',
+        label: 'Merge Duplicate',
         onSelect: () => navigate(`/crm/duplicates?left=${customer.id}`),
       },
       {
@@ -249,19 +249,19 @@ export function CustomerList({
     ? [
         {
           id: 'active',
-          label: 'Mark active',
+          label: 'Mark Active',
           onClick: () => void bulkSetStatus('active'),
           disabled: bulkSaving,
         },
         {
           id: 'inactive',
-          label: 'Mark inactive',
+          label: 'Mark Inactive',
           onClick: () => void bulkSetStatus('inactive'),
           disabled: bulkSaving,
         },
         {
           id: 'duplicate',
-          label: 'Duplicate review',
+          label: 'Duplicate Review',
           onClick: () => void bulkSetStatus('duplicate_review'),
           disabled: bulkSaving,
         },
@@ -276,7 +276,7 @@ export function CustomerList({
     : [];
 
   return (
-    <Panel title="All customers">
+    <Panel title="All Customers">
       <div className="jobs-list-toolbar">
         <label className="titan-input-group jobs-search">
           <span className="titan-input-label">Search</span>
@@ -316,7 +316,7 @@ export function CustomerList({
           action={
             canWrite && !trimmedSearch && statusFilters.length === 0 ? (
               <Link href="/crm/new">
-                <Button>Add customer</Button>
+                <Button>Add Customer</Button>
               </Link>
             ) : undefined
           }

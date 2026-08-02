@@ -124,7 +124,7 @@ export function Job360Tabs({
         </p>
       ) : null}
 
-      <nav className="customer-360__tabs" aria-label="Job 360 sections">
+      <nav className="customer-360__tabs" aria-label="Job 360 Sections">
         {JOB_360_TABS.map((tab) => (
           <button
             key={tab.id}
@@ -140,7 +140,7 @@ export function Job360Tabs({
       {activeTab === 'overview' ? (
         <div className="customer-360__stack">
           {overviewPanel}
-          <Panel title="Lifecycle & payment">
+          <Panel title="Lifecycle & Payment">
             <dl className="crm-detail-list job-finance-ledger">
               <div>
                 <dt>Lifecycle</dt>
@@ -190,7 +190,7 @@ export function Job360Tabs({
             </dl>
           </Panel>
           {execution?.completionSnapshot ? (
-            <Panel title="Completion snapshot">
+            <Panel title="Completion Snapshot">
               <dl className="jobs-detail-list">
                 <div>
                   <dt>Snapshot id</dt>
@@ -222,6 +222,7 @@ export function Job360Tabs({
           placeId={job.address.placeId}
           formattedAddress={job.address.formattedAddress}
           assignedUserName={job.assignedUserName}
+          cameraContextKey={job.id}
         />
       ) : null}
 
@@ -244,7 +245,7 @@ export function Job360Tabs({
             </ul>
           ) : (
             <EmptyState
-              title="Checklist unavailable"
+              title="Checklist Unavailable"
               description="Field execution summary is not available for this job yet."
             />
           )}
@@ -252,9 +253,9 @@ export function Job360Tabs({
       ) : null}
 
       {activeTab === 'photos' ? (
-        <Panel title="Photos & evidence">
+        <Panel title="Photos & Evidence">
           {photoEvidence.length === 0 ? (
-            <EmptyState title="No photos" description="No field photo evidence uploaded yet." />
+            <EmptyState title="No Photos" description="No field photo evidence uploaded yet." />
           ) : (
             <ul className="crm-activity-list">
               {photoEvidence.map((doc) => (
@@ -314,7 +315,7 @@ export function Job360Tabs({
             </dl>
           ) : (
             <EmptyState
-              title="No time recorded"
+              title="No Time Recorded"
               description="Job-linked labour time will appear here once technicians log time on site."
             />
           )}
@@ -326,14 +327,14 @@ export function Job360Tabs({
           <div className="customer-360__stack">
             {financePanel}
             {activeTab === 'payment' && ledger ? (
-              <Panel title="Payment ledger">
+              <Panel title="Payment Ledger">
                 <FinanceLedgerGrid ledger={ledger} payments={financeSummary?.payments ?? []} />
               </Panel>
             ) : null}
           </div>
         ) : (
           <EmptyState
-            title="Finance permission required"
+            title="Finance Permission Required"
             description="You do not have permission to view quote, invoice or payment details."
           />
         )
@@ -354,7 +355,7 @@ export function Job360Tabs({
             </ul>
           ) : execution?.completionGate.missing.includes('signature_or_reason') ? (
             <EmptyState
-              title="No signature"
+              title="No Signature"
               description="Customer signature not captured yet (or unavailable reason not recorded)."
             />
           ) : (
@@ -370,7 +371,7 @@ export function Job360Tabs({
         <div className="customer-360__stack">
           {compliancePanel}
           {cocEvidence.length > 0 ? (
-            <Panel title="COC / compliance evidence">
+            <Panel title="COC / Compliance Evidence">
               <ul className="crm-activity-list">
                 {cocEvidence.map((doc) => (
                   <li key={doc.id} className="crm-activity-item">
@@ -399,7 +400,7 @@ export function Job360Tabs({
       ) : null}
 
       {activeTab === 'activity' ? (
-        <Panel title="Operational timeline">
+        <Panel title="Operational Timeline">
           <dl className="crm-detail-list" style={{ marginBottom: '1rem' }}>
             <div>
               <dt>Created</dt>
@@ -426,7 +427,7 @@ export function Job360Tabs({
           </dl>
           {timeline.length === 0 ? (
             <EmptyState
-              title="No workflow events yet"
+              title="No Workflow Events Yet"
               description="Booking, assignment, arrival, materials, and completion events appear here as they are recorded."
             />
           ) : (

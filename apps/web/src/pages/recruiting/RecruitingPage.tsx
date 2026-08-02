@@ -193,7 +193,7 @@ export function RecruitingPage() {
       </Panel>
 
       {canWrite ? (
-        <Panel title="Add candidate">
+        <Panel title="Add Candidate">
           <form className="crm-form" onSubmit={(event) => void handleCreateCandidate(event)}>
             <Input
               label="Name"
@@ -209,7 +209,7 @@ export function RecruitingPage() {
             />
             <Input label="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
             <Input
-              label="Role title"
+              label="Role Title"
               value={roleTitle}
               onChange={(event) => setRoleTitle(event.target.value)}
             />

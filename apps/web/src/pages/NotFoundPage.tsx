@@ -6,7 +6,7 @@ export function NotFoundPage() {
   return (
     <div className="not-found-page">
       <PageHeader
-        title="Page not found"
+        title="Page Not Found"
         description="The page you requested does not exist or may have been moved."
       />
       <div className="not-found-page__panel">
@@ -15,7 +15,7 @@ export function NotFoundPage() {
           Check the address or use the navigation to find what you need.
         </p>
         <Link href="/">
-          <Button>Return to dashboard</Button>
+          <Button>Return To Dashboard</Button>
         </Link>
       </div>
     </div>

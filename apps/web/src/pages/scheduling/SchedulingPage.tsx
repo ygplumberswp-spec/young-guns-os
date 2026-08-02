@@ -117,7 +117,7 @@ export function SchedulingPage() {
         actions={
           <div className="scheduling-page__actions">
             <Link href="/workforce/day-timeline">
-              <Button variant="secondary">Live dispatch</Button>
+              <Button variant="secondary">Live Dispatch</Button>
             </Link>
             <Link href={`/aura?scheduling=1`}>
               <Button variant="ghost">Ask {AI_NAME}</Button>

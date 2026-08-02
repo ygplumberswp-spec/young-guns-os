@@ -69,7 +69,7 @@ export function CalendarToolbar({
           type="button"
           className="cal-toolbar__range"
           onClick={openDatePicker}
-          aria-label="Choose date"
+          aria-label="Choose Date"
         >
           {formatCalendarRange(view, anchorDate)}
         </button>

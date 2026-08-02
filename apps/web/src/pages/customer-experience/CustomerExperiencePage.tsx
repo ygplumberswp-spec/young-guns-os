@@ -172,20 +172,20 @@ export function CustomerExperiencePage() {
       {isLoading ? (
         <Panel title="Loading">Loading customer experience dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Customer experience dashboard is unavailable." />
+        <EmptyState title="No Data" description="Customer experience dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
             <div className="stat-grid">
-              <StatCard label="Portal users" value={String(dashboard.portalUserCount)} />
-              <StatCard label="Active bookings" value={String(dashboard.activeBookingCount)} />
+              <StatCard label="Portal Users" value={String(dashboard.portalUserCount)} />
+              <StatCard label="Active Bookings" value={String(dashboard.activeBookingCount)} />
               <StatCard
-                label="Pending approval"
+                label="Pending Approval"
                 value={String(dashboard.pendingApprovalBookingCount)}
               />
-              <StatCard label="Open reviews" value={String(dashboard.openReviewCount)} />
+              <StatCard label="Open Reviews" value={String(dashboard.openReviewCount)} />
               <StatCard label="Referrals" value={String(dashboard.referralCount)} />
-              <StatCard label="Loyalty programs" value={String(dashboard.loyaltyProgramCount)} />
+              <StatCard label="Loyalty Programs" value={String(dashboard.loyaltyProgramCount)} />
               <StatCard
                 label="Tracking"
                 value={dashboard.trackingEnabled ? 'Enabled' : 'Disabled'}
@@ -196,12 +196,12 @@ export function CustomerExperiencePage() {
 
           {activeTab === 'bookings' ? (
             <Panel
-              title="Appointment bookings"
+              title="Appointment Bookings"
               description="Draft → Approval → Confirmation workflow"
             >
               {dashboard.recentBookings.length === 0 ? (
                 <EmptyState
-                  title="No bookings"
+                  title="No Bookings"
                   description="Bookings appear when customers submit requests through the portal."
                 />
               ) : (
@@ -256,12 +256,12 @@ export function CustomerExperiencePage() {
 
           {activeTab === 'reviews' ? (
             <Panel
-              title="Reviews & feedback"
+              title="Reviews & Feedback"
               description="Customer-submitted ratings and feedback only"
             >
               {dashboard.recentReviews.length === 0 ? (
                 <EmptyState
-                  title="No reviews"
+                  title="No Reviews"
                   description="Reviews appear when customers submit feedback through the portal."
                 />
               ) : (
@@ -302,13 +302,13 @@ export function CustomerExperiencePage() {
 
           {activeTab === 'loyalty' ? (
             <Panel
-              title="Loyalty & referrals"
+              title="Loyalty & Referrals"
               description="Business-configurable loyalty tiers and referral tracking"
             >
               <p className="page-muted">{dashboard.referralCount} referral(s) tracked.</p>
               {dashboard.recentReferrals.length === 0 ? (
                 <EmptyState
-                  title="No referrals"
+                  title="No Referrals"
                   description="Referrals appear when customers invite others through the portal."
                 />
               ) : (
@@ -326,20 +326,20 @@ export function CustomerExperiencePage() {
 
           {activeTab === 'analytics' ? (
             <Panel
-              title="Customer analytics"
+              title="Customer Analytics"
               description="Metrics from real portal and mobile activity only"
             >
               <div className="stat-grid">
                 <StatCard
-                  label="Portal usage"
+                  label="Portal Usage"
                   value={String(dashboard.analytics.portalUsageCount)}
                 />
                 <StatCard
-                  label="Mobile usage"
+                  label="Mobile Usage"
                   value={String(dashboard.analytics.mobileUsageCount)}
                 />
                 <StatCard
-                  label="Booking conversion"
+                  label="Booking Conversion"
                   value={
                     dashboard.analytics.bookingConversionRate != null
                       ? `${dashboard.analytics.bookingConversionRate.toFixed(1)}%`
@@ -359,7 +359,7 @@ export function CustomerExperiencePage() {
           ) : null}
 
           {activeTab === 'settings' ? (
-            <Panel title="Platform configuration" description="Tenant customer experience policies">
+            <Panel title="Platform Configuration" description="Tenant customer experience policies">
               <p className="page-muted">
                 Tracking: {dashboard.trackingEnabled ? 'enabled' : 'disabled'} · PWA:{' '}
                 {dashboard.pwaEnabled ? 'enabled' : 'disabled'} · Fleet:{' '}

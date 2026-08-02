@@ -396,13 +396,13 @@ export function buildDefaultEnrichmentMetricBuckets(): WhatsAppEnrichmentMetricB
     })),
     {
       key: 'missing_mobile_paid',
-      label: 'Paid / fully paid — missing mobile',
+      label: 'Paid / Fully Paid — Missing Mobile',
       count: 0,
       filterParams: { missingMobile: 'true', valueClassification: 'paying_customer,fully_paid_customer' },
     },
     {
       key: 'review_pending',
-      label: 'Review queue — pending',
+      label: 'Review Queue — Pending',
       count: 0,
       filterParams: { reviewStatus: 'pending' },
     },

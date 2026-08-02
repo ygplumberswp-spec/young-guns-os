@@ -131,7 +131,7 @@ export function JobList({
       { id: 'edit', label: 'Edit', onSelect: () => navigate(`/jobs/${job.id}#edit`) },
       {
         id: 'assign',
-        label: 'Assign technician',
+        label: 'Assign Technician',
         onSelect: () => navigate(`/jobs/${job.id}#crew`),
       },
       {
@@ -152,13 +152,13 @@ export function JobList({
       },
       {
         id: 'travelling',
-        label: 'Mark travelling',
+        label: 'Mark Travelling',
         disabled: job.status === 'completed' || job.status === 'cancelled',
         onSelect: () => void changeJobStatus(job, 'in_progress'),
       },
       {
         id: 'on-site',
-        label: 'Mark on site',
+        label: 'Mark On Site',
         disabled: job.status === 'completed' || job.status === 'cancelled',
         onSelect: () => void changeJobStatus(job, 'in_progress'),
       },
@@ -176,7 +176,7 @@ export function JobList({
       },
       {
         id: 'duplicate',
-        label: 'Duplicate draft',
+        label: 'Duplicate Draft',
         onSelect: () => navigate(`/jobs/new?duplicateFrom=${job.id}`),
       },
       {
@@ -235,7 +235,7 @@ export function JobList({
     ? [
         {
           id: 'assign',
-          label: 'Assign technician',
+          label: 'Assign Technician',
           disabled: bulkSaving || !selectionEnabled || selectedIds!.size === 0,
           onClick: () => {
             const first = filteredJobs.find((job) => selectedIds!.has(job.id));
@@ -244,7 +244,7 @@ export function JobList({
         },
         {
           id: 'status',
-          label: 'Mark scheduled',
+          label: 'Mark Scheduled',
           disabled: bulkSaving || !selectionEnabled || selectedIds!.size === 0,
           onClick: () => void bulkSetStatus('scheduled'),
         },
@@ -259,7 +259,7 @@ export function JobList({
         },
         {
           id: 'archive',
-          label: 'Archive / cancel',
+          label: 'Archive / Cancel',
           disabled: bulkSaving || !selectionEnabled || selectedIds!.size === 0,
           onClick: () => void bulkSetStatus('cancelled'),
           variant: 'destructive' as const,
@@ -268,7 +268,7 @@ export function JobList({
     : [];
 
   return (
-    <Panel title="All jobs">
+    <Panel title="All Jobs">
       <div className="jobs-list-toolbar">
         <InputSearch
           value={search}
@@ -305,7 +305,7 @@ export function JobList({
           action={
             canWrite && !trimmedSearch && statusFilters.length === 0 ? (
               <Link href="/jobs/new">
-                <Button>Create job</Button>
+                <Button>Create Job</Button>
               </Link>
             ) : undefined
           }

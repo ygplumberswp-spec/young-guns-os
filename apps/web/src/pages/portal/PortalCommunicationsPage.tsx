@@ -74,7 +74,7 @@ export function PortalCommunicationsPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <Panel title="Compose message">
+      <Panel title="Compose Message">
         <form className="auth-form" onSubmit={(event) => void handleCompose(event)}>
           <Input
             label="Subject"
@@ -106,7 +106,7 @@ export function PortalCommunicationsPage() {
             {centre.communications.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No messages yet"
+                title="No Messages Yet"
                 description="Outbound and inbound account messages will appear here."
               />
             ) : (
@@ -120,11 +120,11 @@ export function PortalCommunicationsPage() {
               </ul>
             )}
           </Panel>
-          <Panel title="Support conversations">
+          <Panel title="Support Conversations">
             {centre.supportConversations.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No support conversations"
+                title="No Support Conversations"
                 description="Support threads linked to your account will appear here."
               />
             ) : (
@@ -137,11 +137,11 @@ export function PortalCommunicationsPage() {
               </ul>
             )}
           </Panel>
-          <Panel title="Voice call summaries">
+          <Panel title="Voice Call Summaries">
             {centre.voiceCallSummaries.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No call summaries"
+                title="No Call Summaries"
                 description="Call summaries shared with your account will appear here."
               />
             ) : (

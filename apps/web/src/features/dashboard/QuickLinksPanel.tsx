@@ -147,7 +147,7 @@ export function QuickLinksPanel() {
   if (links.length === 0) return null;
 
   return (
-    <Panel title="Quick links" description="Premium shortcuts into daily operations">
+    <Panel title="Quick Links" description="Premium shortcuts into daily operations">
       <div className="exec-quick-links">
         {links.map((link) => (
           <Link

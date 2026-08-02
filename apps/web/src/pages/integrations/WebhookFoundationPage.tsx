@@ -163,7 +163,7 @@ export function WebhookFoundationPage() {
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
       {createdSecret ? (
-        <Panel title="Endpoint secret">
+        <Panel title="Endpoint Secret">
           <p className="page-muted">Store this secret securely. It cannot be retrieved again.</p>
           <code className="integrations-secret">{createdSecret}</code>
         </Panel>
@@ -172,7 +172,7 @@ export function WebhookFoundationPage() {
       {!isLoading ? (
         <>
           {canManage ? (
-            <Panel title="Create webhook endpoint">
+            <Panel title="Create Webhook Endpoint">
               <form
                 className="integrations-form"
                 onSubmit={(event) => void handleCreateEndpoint(event)}
@@ -197,10 +197,10 @@ export function WebhookFoundationPage() {
           ) : null}
 
           <section className="integrations-section integrations-section--split">
-            <Panel title="Webhook endpoints">
+            <Panel title="Webhook Endpoints">
               {endpoints.length === 0 ? (
                 <EmptyState
-                  title="No webhook endpoints"
+                  title="No Webhook Endpoints"
                   description="Create an endpoint to prepare for inbound webhook delivery."
                 />
               ) : (
@@ -239,10 +239,10 @@ export function WebhookFoundationPage() {
               )}
             </Panel>
 
-            <Panel title="Webhook event log">
+            <Panel title="Webhook Event Log">
               {events.length === 0 ? (
                 <EmptyState
-                  title="No webhook events"
+                  title="No Webhook Events"
                   description="Inbound webhook events will appear here once received."
                 />
               ) : (

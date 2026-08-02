@@ -27,6 +27,7 @@ import {
   OPS_INTELLIGENCE_GUARANTEES,
   buildNavigateHref,
   buildOpsReminderDedupeKey,
+  buildRouteOptimisationSuggestedAction,
   buildRunningLateSuggestedActions,
   buildStandardEventActions,
   detectJobScheduleReminder,
@@ -798,15 +799,19 @@ export class OpsIntelligenceService {
 
     const suggestedActions =
       reminderType === 'running_late'
-        ? buildRunningLateSuggestedActions({
-            jobId: job.id,
-            navigateHref,
-            technicianId: job.assignedUserId,
-          })
+        ? [
+            ...buildRunningLateSuggestedActions({
+              jobId: job.id,
+              navigateHref,
+              technicianId: job.assignedUserId,
+            }),
+            ...(travel.source === 'google_maps' ? [buildRouteOptimisationSuggestedAction()] : []),
+          ]
         : buildStandardEventActions({
             jobId: job.id,
             navigateHref,
             technicianId: job.assignedUserId,
+            includeRouteOptimisation: travel.source === 'google_maps',
           });
 
     return {
@@ -914,6 +919,8 @@ export class OpsIntelligenceService {
         priority: true,
         assignedUserId: true,
         scheduledAt: true,
+        snapshotLatitude: true,
+        snapshotLongitude: true,
       },
     });
 
@@ -1075,6 +1082,31 @@ export class OpsIntelligenceService {
         count: busyPeriods.length,
         href: '/scheduling',
       },
+      (() => {
+        // Advisory only — never auto-reorders. Requires verified coords on 2+ jobs per tech.
+        const byTech = new Map<string, typeof todayJobRows>();
+        for (const job of todayJobRows) {
+          if (!job.assignedUserId) continue;
+          if (!isValidLatLng(job.snapshotLatitude, job.snapshotLongitude)) continue;
+          const list = byTech.get(job.assignedUserId) ?? [];
+          list.push(job);
+          byTech.set(job.assignedUserId, list);
+        }
+        const multiStopTechs = [...byTech.entries()].filter(([, list]) => list.length >= 2);
+        return {
+          key: 'route_optimisation',
+          title: 'Route optimisation suggestions',
+          items: multiStopTechs.slice(0, 5).map(([, list]) => {
+            const labels = list
+              .slice(0, 4)
+              .map((j) => j.jobNumber ?? j.title)
+              .join(' → ');
+            return `${list.length} verified stops — review order in Scheduling (${labels}). Advisory only; no auto booking changes.`;
+          }),
+          count: multiStopTechs.length,
+          href: '/scheduling',
+        };
+      })(),
     ].filter((s) => s.count > 0 || ['jobs_today', 'emergencies'].includes(s.key));
 
     const highestPriorities = dayPlanPriorities

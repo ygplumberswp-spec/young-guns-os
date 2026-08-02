@@ -159,7 +159,7 @@ export function BusinessRulesPage() {
             type="text"
             value={draft}
             placeholder="Add a company rule…"
-            aria-label="Add a company rule"
+            aria-label="Add A Company Rule"
             disabled={saveStatus === 'saving'}
             onChange={(event) => setDraft(event.target.value)}
           />
@@ -193,7 +193,7 @@ export function BusinessRulesPage() {
       {actionError && saveStatus !== 'failed' ? <p className="form-error">{actionError}</p> : null}
 
       {isLoading ? (
-        <LoadingState label="Loading business rules…" />
+        <LoadingState label="Loading Business Rules…" />
       ) : rules.length === 0 ? (
         <p className="page-muted">No business rules yet.{canWrite ? ' Add one above.' : ''}</p>
       ) : (
@@ -223,11 +223,11 @@ export function BusinessRulesPage() {
                   tone={rule.status === 'paused' ? 'warning' : 'success'}
                 />
                 {rule.approvalRequired ? (
-                  <StatusBadge label="Approval required" tone="warning" />
+                  <StatusBadge label="Approval Required" tone="warning" />
                 ) : null}
                 {canWrite ? (
                   <MoreMenu
-                    label="Rule actions"
+                    label="Rule Actions"
                     items={[
                       {
                         id: 'edit',
@@ -254,7 +254,7 @@ export function BusinessRulesPage() {
       )}
 
       {editingRule ? (
-        <div className="aura-rules-page__drawer" role="dialog" aria-label="Edit business rule">
+        <div className="aura-rules-page__drawer" role="dialog" aria-label="Edit Business Rule">
           <div className="aura-rules-page__drawer-panel">
             <h2>Edit rule</h2>
             <label className="aura-rules-page__field">

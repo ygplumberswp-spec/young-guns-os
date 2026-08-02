@@ -336,7 +336,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
               <select
                 className="titan-input day-planning__select"
                 value={priority}
-                aria-label="Priority for quick save"
+                aria-label="Priority For Quick Save"
                 disabled={isSaving}
                 onChange={(event) => setPriority(event.target.value as DayPlanPriority)}
               >
@@ -346,7 +346,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
               <select
                 className="titan-input day-planning__select"
                 value={category}
-                aria-label="Category for quick save"
+                aria-label="Category For Quick Save"
                 disabled={isSaving}
                 onChange={(event) => setCategory(event.target.value as DayPlanCategory | '')}
               >
@@ -361,7 +361,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
                 type="button"
                 className="day-planning__save"
                 disabled={isSaving || !draft.trim() || suggestions.length > 0}
-                aria-label="Quick save single priority"
+                aria-label="Quick Save Single Priority"
                 onClick={() => void handleSave()}
               >
                 {isSaving ? 'Saving…' : 'Quick save'}
@@ -484,12 +484,12 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
                   <p className="day-planning__item-text">{plan.content}</p>
                   <div className="day-planning__item-meta">
                     {plan.priority === 'high' ? (
-                      <StatusBadge label="High priority" tone="warning" />
+                      <StatusBadge label="High Priority" tone="warning" />
                     ) : null}
                     <StatusBadge label={displayStatus(plan)} tone={statusTone(plan)} />
                     {dept ? <StatusBadge label={dept} tone="info" /> : null}
                     {plan.source === 'aura_suggested' ? (
-                      <StatusBadge label="Approved suggestion" tone="info" />
+                      <StatusBadge label="Approved Suggestion" tone="info" />
                     ) : null}
                     <span className="page-muted">
                       Set {formatPriorityTimestamp(plan.createdAt)}
@@ -498,7 +498,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
                 </div>
                 {canWrite ? (
                   <MoreMenu
-                    label="Plan actions"
+                    label="Plan Actions"
                     items={[
                       ...(plan.status !== 'archived'
                         ? [

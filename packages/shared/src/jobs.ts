@@ -44,6 +44,10 @@ export type JobSummary = {
   priority: JobPriority;
   status: JobStatus;
   addressDisplay: string | null;
+  /** Verified snapshot coordinates when geocoded — never invented. */
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
   siteContactMobile: string | null;
   scheduledAt: string | null;
   scheduledEndAt: string | null;

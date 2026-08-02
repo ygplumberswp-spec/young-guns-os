@@ -139,7 +139,7 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
       : undefined;
 
   return (
-    <Panel title="Customer value" description={panelDescription}>
+    <Panel title="Customer Value" description={panelDescription}>
       {viewState === 'loading' || viewState === 'updating' ? (
         <>
           <p className="page-muted customer-value-status" role="status">
@@ -153,7 +153,7 @@ export function CustomerValueMetricsPanel({ compact = false }: CustomerValueMetr
 
       {viewState === 'error' ? (
         <EmptyState
-          title="Customer value unavailable"
+          title="Customer Value Unavailable"
           description={resolveCustomerValueErrorMessage(metricsQuery.error)}
           action={
             <Button size="sm" variant="secondary" onClick={() => void metricsQuery.refetch()}>

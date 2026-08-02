@@ -128,7 +128,7 @@ export function VehicleDetailPage() {
   if (!vehicle) {
     return (
       <div className="fleet-page">
-        <PageHeader title="Vehicle not found" description="This vehicle may have been removed." />
+        <PageHeader title="Vehicle Not Found" description="This vehicle may have been removed." />
       </div>
     );
   }
@@ -153,11 +153,11 @@ export function VehicleDetailPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       {isEditing && canWrite ? (
-        <Panel title="Edit vehicle">
+        <Panel title="Edit Vehicle">
           <form className="fleet-form" onSubmit={(event) => void handleSubmit(event)}>
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Input
-              label="License plate"
+              label="License Plate"
               value={licensePlate}
               onChange={(e) => setLicensePlate(e.target.value)}
               required
@@ -216,7 +216,7 @@ export function VehicleDetailPage() {
           </form>
         </Panel>
       ) : (
-        <Panel title="Vehicle details">
+        <Panel title="Vehicle Details">
           <dl className="fleet-detail-list">
             <div>
               <dt>License plate</dt>

@@ -53,9 +53,9 @@ export function UnscheduledJobsTray({
 
   const sectionItems: Array<{ id: TraySection; label: string; count: number }> = [
     { id: 'unassigned', label: 'Unassigned', count: sections.unassigned.length },
-    { id: 'needsScheduling', label: 'Needs scheduling', count: sections.needsScheduling.length },
+    { id: 'needsScheduling', label: 'Needs Scheduling', count: sections.needsScheduling.length },
     { id: 'delayed', label: 'Delayed', count: sections.delayed.length },
-    { id: 'conflicts', label: 'Conflict review', count: sections.conflicts.length },
+    { id: 'conflicts', label: 'Conflict Review', count: sections.conflicts.length },
   ].filter((section) => section.count > 0) as Array<{
     id: TraySection;
     label: string;

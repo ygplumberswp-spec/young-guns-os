@@ -101,7 +101,7 @@ export function JobCompletionFinancePanel({
 
   return (
     <Panel
-      title="Completion & billing"
+      title="Completion & Billing"
       description="Booked → Completed → Invoiced → Paid. Internal invoice numbers stay pending until Xero sync."
     >
       <ol className="finance-chain-list">

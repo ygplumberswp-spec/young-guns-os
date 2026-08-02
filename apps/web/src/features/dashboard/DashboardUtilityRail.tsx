@@ -94,7 +94,7 @@ function TodayAtAGlanceRailPanel({
         : null;
 
   return (
-    <Panel title="Today at a glance" description="Executive snapshot — live values only">
+    <Panel title="Today At A Glance" description="Executive snapshot — live values only">
       {isLoading && !glance ? (
         <DashboardSectionSkeleton rows={5} />
       ) : error && !glance ? (
@@ -227,7 +227,7 @@ function SystemStatusRailPanel() {
     hubQuery.error || needsAttention || integrationSummary !== 'Connected' ? 'is-warn' : 'is-ok';
 
   return (
-    <Panel title="System status" description="Live API, database, and integration health">
+    <Panel title="System Status" description="Live API, database, and integration health">
       <ul className="exec-utility-status">
         <li>
           <span className={`exec-utility-status__dot${apiHealthy ? ' is-ok' : ' is-warn'}`} />
@@ -271,7 +271,7 @@ export function DashboardUtilityRail({
   onRetry,
 }: DashboardUtilityRailProps) {
   return (
-    <aside className="exec-dashboard-rail" aria-label="Dashboard utilities">
+    <aside className="exec-dashboard-rail" aria-label="Dashboard Utilities">
       <AskAuraRailPanel />
       <TodayAtAGlanceRailPanel
         summary={summary}

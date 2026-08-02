@@ -6,7 +6,7 @@ export function DataProtectionSettingsPage() {
   return (
     <div className="settings-page">
       <PageHeader
-        title="Data protection"
+        title="Data Protection"
         description="Retention scaffolds for drafts and operational records."
       />
       <SettingsNav />

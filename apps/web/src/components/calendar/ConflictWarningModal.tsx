@@ -22,7 +22,7 @@ export function ConflictWarningModal({
 
   return (
     <div className="cal-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="cal-conflict-title">
-      <Panel title="Scheduling conflicts detected" className="cal-modal">
+      <Panel title="Scheduling Conflicts Detected" className="cal-modal">
         <h3 id="cal-conflict-title" className="visually-hidden">
           Scheduling conflicts
         </h3>

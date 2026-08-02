@@ -70,11 +70,11 @@ export function ExecutionListPage() {
       {!isLoading && !error ? (
         executions.length === 0 ? (
           <EmptyState
-            title="No executions yet"
+            title="No Executions Yet"
             description="Execution records will appear here once workflows run. The automation engine is not connected in this foundation milestone."
           />
         ) : (
-          <Panel title="Execution history">
+          <Panel title="Execution History">
             <div className="automation-table-wrap">
               <table className="automation-table">
                 <thead>

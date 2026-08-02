@@ -163,7 +163,7 @@ export function LeadListTable({
       },
       {
         id: 'convert',
-        label: 'Convert to customer',
+        label: 'Convert To Customer',
         hidden: !canConvert || lead.status === 'converted',
         onSelect: () => navigate(`/leads/${lead.id}#convert`),
       },
@@ -226,7 +226,7 @@ export function LeadListTable({
     ? [
         {
           id: 'qualify',
-          label: 'Mark qualified',
+          label: 'Mark Qualified',
           onClick: () => void bulkSetStatus('qualified'),
           disabled: bulkSaving,
         },
@@ -245,7 +245,7 @@ export function LeadListTable({
         },
         {
           id: 'pending',
-          label: 'Mark pending',
+          label: 'Mark Pending',
           onClick: () => void bulkSetStatus('awaiting_information'),
           disabled: bulkSaving,
         },
@@ -260,14 +260,14 @@ export function LeadListTable({
     : [];
 
   return (
-    <Panel title="Lead registry">
+    <Panel title="Lead Registry">
       <div className="leads-toolbar">
         <input
           className="input"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search name, mobile, email, suburb…"
-          aria-label="Search leads"
+          aria-label="Search Leads"
         />
         <label className="leads-toolbar__check">
           <input
@@ -295,7 +295,7 @@ export function LeadListTable({
       />
 
       {error ? <p className="form-error">{error}</p> : null}
-      {isLoading ? <LoadingState label="Loading leads…" /> : null}
+      {isLoading ? <LoadingState label="Loading Leads…" /> : null}
 
       {!isLoading && filteredLeads.length === 0 ? (
         <EmptyState

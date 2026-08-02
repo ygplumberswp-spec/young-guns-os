@@ -247,7 +247,7 @@ export function PlatformPage() {
       {isLoading ? (
         <Panel title="Loading">Loading platform dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Platform dashboard is unavailable." />
+        <EmptyState title="No Data" description="Platform dashboard is unavailable." />
       ) : (
         <>
           <Panel title="Platform Summary">
@@ -286,7 +286,7 @@ export function PlatformPage() {
               {dashboard.isPlatformOwner ? (
                 dashboard.tenants.length === 0 ? (
                   <EmptyState
-                    title="No customer tenants"
+                    title="No Customer Tenants"
                     description="Provision tenants from real company data. No demo tenants are seeded."
                   />
                 ) : (
@@ -381,7 +381,7 @@ export function PlatformPage() {
 
               {dashboard.plans.length === 0 ? (
                 <EmptyState
-                  title="No plans"
+                  title="No Plans"
                   description="Platform owner creates subscription plans for customer tenants."
                 />
               ) : (
@@ -448,7 +448,7 @@ export function PlatformPage() {
                   </>
                 ) : (
                   <EmptyState
-                    title="No subscription"
+                    title="No Subscription"
                     description="Subscription records are created during tenant provisioning."
                   />
                 )}
@@ -457,7 +457,7 @@ export function PlatformPage() {
               <Panel title="Billing History">
                 {dashboard.billingRecords.length === 0 ? (
                   <EmptyState
-                    title="No billing records"
+                    title="No Billing Records"
                     description="Billing framework records invoices, payments, renewals, credits, and taxes."
                   />
                 ) : (
@@ -529,7 +529,7 @@ export function PlatformPage() {
                 </div>
               ) : (
                 <EmptyState
-                  title="No branding profile"
+                  title="No Branding Profile"
                   description="Branding is provisioned automatically for each tenant."
                 />
               )}
@@ -556,7 +556,7 @@ export function PlatformPage() {
               <Panel title="Feature Entitlements">
                 {dashboard.entitlements.length === 0 ? (
                   <EmptyState
-                    title="No custom entitlements"
+                    title="No Custom Entitlements"
                     description="Entitlements derive from subscription plans and custom overrides."
                   />
                 ) : (
@@ -618,7 +618,7 @@ export function PlatformPage() {
 
               {dashboard.featureFlags.length === 0 ? (
                 <EmptyState
-                  title="No feature flags"
+                  title="No Feature Flags"
                   description="Platform owner defines feature flags for tenant rollout."
                 />
               ) : (
@@ -674,7 +674,7 @@ export function PlatformPage() {
                 <Panel title="Platform Audits">
                   {dashboard.recentAudits.length === 0 ? (
                     <EmptyState
-                      title="No audit events"
+                      title="No Audit Events"
                       description="Platform actions are recorded in the audit log."
                     />
                   ) : (
@@ -692,7 +692,7 @@ export function PlatformPage() {
               </>
             ) : (
               <EmptyState
-                title="Platform analytics unavailable"
+                title="Platform Analytics Unavailable"
                 description="Platform analytics are visible to the platform owner tenant only."
               />
             )
@@ -702,7 +702,7 @@ export function PlatformPage() {
             isAiOpsLoading ? (
               <Panel title="Loading">Loading AI operations…</Panel>
             ) : !aiOperations ? (
-              <EmptyState title="No data" description="AI operations dashboard is unavailable." />
+              <EmptyState title="No Data" description="AI operations dashboard is unavailable." />
             ) : (
               <>
                 <Panel title="AI Allowance">
@@ -760,7 +760,7 @@ export function PlatformPage() {
 
                   {aiOperations.resilience.providers.length === 0 ? (
                     <EmptyState
-                      title="No configured providers"
+                      title="No Configured Providers"
                       description="Configure AI providers in AI Orchestration. Environment OpenAI is used when configured."
                     />
                   ) : (

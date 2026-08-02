@@ -29,12 +29,12 @@ export function OutstandingInvoicesPanel({
   const { formatMoney } = useCompanyLocale();
 
   return (
-    <Panel title="Outstanding invoices" description="Open AR from live finance records">
+    <Panel title="Outstanding Invoices" description="Open AR from live finance records">
       {isLoading && !data ? (
         <DashboardSectionSkeleton rows={3} />
       ) : error && !data ? (
         <EmptyState
-          title="Unable to load invoices"
+          title="Unable To Load Invoices"
           description={error}
           action={
             onRetry ? (
@@ -46,7 +46,7 @@ export function OutstandingInvoicesPanel({
         />
       ) : !data || data.invoiceCount === 0 || data.outstandingCents <= 0 ? (
         <EmptyState
-          title="No outstanding invoices"
+          title="No Outstanding Invoices"
           description="Open balances will appear here when invoices are sent and unpaid."
           action={
             <Link href="/finance/invoices">

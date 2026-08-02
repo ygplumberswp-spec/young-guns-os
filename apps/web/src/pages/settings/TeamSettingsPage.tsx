@@ -347,7 +347,7 @@ export function TeamSettingsPage() {
           error={invitesQuery.error}
           hasData={invitesQuery.data !== undefined}
           isEmpty={invites.length === 0}
-          emptyTitle="No pending invites"
+          emptyTitle="No Pending Invites"
           emptyDescription="Create an invite link to add managers, dispatchers, accountants or technicians."
           loadingLabel="Loading invites…"
           onRetry={() => void invitesQuery.refetch()}

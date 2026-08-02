@@ -64,7 +64,7 @@ export function JobPreviewDrawer({
   }
 
   return (
-    <div className="cal-drawer" role="dialog" aria-modal="true" aria-label="Job preview">
+    <div className="cal-drawer" role="dialog" aria-modal="true" aria-label="Job Preview">
       <button type="button" className="cal-drawer__backdrop" onClick={onClose} aria-label="Close" />
       <aside className={`cal-drawer__panel cal-job-card ${displayStatusClass(event.displayStatus)}`}>
         <header className="cal-drawer__header">
@@ -74,7 +74,7 @@ export function JobPreviewDrawer({
             </p>
             <h2 className="cal-drawer__title">{event.customerName}</h2>
           </div>
-          <Button variant="ghost" onClick={onClose} aria-label="Close drawer">
+          <Button variant="ghost" onClick={onClose} aria-label="Close Drawer">
             ✕
           </Button>
         </header>
@@ -169,7 +169,7 @@ export function JobPreviewDrawer({
 
         <div className="cal-drawer__actions">
           <Link href={`/jobs/${event.id}`}>
-            <Button variant="primary">Open full job</Button>
+            <Button variant="primary">Open Full Job</Button>
           </Link>
           {canWrite ? (
             <>
@@ -180,7 +180,7 @@ export function JobPreviewDrawer({
                 Cancel job
               </Button>
               <Link href={`/jobs/new?duplicateFrom=${event.id}`}>
-                <Button variant="ghost">Duplicate as draft</Button>
+                <Button variant="ghost">Duplicate As Draft</Button>
               </Link>
             </>
           ) : null}

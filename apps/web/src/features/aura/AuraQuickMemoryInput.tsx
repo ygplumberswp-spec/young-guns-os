@@ -153,7 +153,7 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
   }
 
   return (
-    <section className="aura-quick-memory" aria-label="Company memory rules">
+    <section className="aura-quick-memory" aria-label="Company Memory Rules">
       <div className={`aura-quick-memory__composer${expanded ? ' aura-quick-memory__composer--expanded' : ''}`}>
         <textarea
           ref={inputRef}
@@ -250,7 +250,7 @@ export function AuraQuickMemoryInput({ accessToken }: AuraQuickMemoryInputProps)
                           <StatusBadge label="Disabled" tone="warning" />
                         ) : null}
                         <MoreMenu
-                          label="Rule actions"
+                          label="Rule Actions"
                           items={[
                             {
                               id: 'edit',

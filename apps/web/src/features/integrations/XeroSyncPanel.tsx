@@ -5,7 +5,6 @@ import type {
   XeroConnectionSummary,
   XeroEntitySyncResult,
   XeroImportJobProgress,
-  XeroImportStage,
   XeroSyncStatusResponse,
 } from '@titan/shared';
 import { XERO_SYNC_BLOCKED_REASON } from '@titan/shared';
@@ -20,12 +19,19 @@ import {
   syncXeroPayments,
 } from '../../lib/integrations-api';
 import { IntegrationAutoSyncStatusPanel } from './IntegrationAutoSyncStatusPanel';
+import { XeroConnectionStatusCard } from './XeroConnectionStatusCard';
 
 type XeroSyncPanelProps = {
   accessToken: string;
   connection: XeroConnectionSummary;
   canManage: boolean;
   onConnectionChange?: () => void | Promise<void>;
+  onTestConnection?: () => void | Promise<void>;
+  onDisconnect?: () => void | Promise<void>;
+  onCancelDisconnect?: () => void;
+  confirmDisconnect?: boolean;
+  connectionBusy?: boolean;
+  testBusy?: boolean;
 };
 
 type EntitySyncAction = {
@@ -44,12 +50,12 @@ function formatEntityStats(stats: {
   return `${stats.syncedCount} synced · ${stats.pendingCount} pending · ${stats.failedCount} failed`;
 }
 
-const IMPORT_STAGE_LABELS: Record<XeroImportStage, string> = {
+const IMPORT_STAGE_LABELS = {
   contacts: 'Contacts',
   invoices: 'Invoices',
   payments: 'Payments',
   bank_transactions: 'Bank transactions',
-};
+} as const;
 
 function formatImportJobProgress(job: XeroImportJobProgress): string {
   const stageLabel = job.currentStage ? IMPORT_STAGE_LABELS[job.currentStage] : 'Starting';
@@ -94,11 +100,79 @@ function countBankTransactionLogs(
   return { synced, failed };
 }
 
+function buildHonestStatusMessage(args: {
+  connection: XeroConnectionSummary;
+  autoSync: IntegrationProviderAutoSyncStatus | null;
+  status: XeroSyncStatusResponse | null;
+  importProgress: XeroImportJobProgress | null;
+  bankFailed: number;
+}): string {
+  const { connection, autoSync, status, importProgress, bankFailed } = args;
+
+  if (connection.lastError) return connection.lastError;
+  if (autoSync?.lastError) return autoSync.lastError;
+
+  const importActive =
+    importProgress &&
+    (importProgress.status === 'queued' ||
+      importProgress.status === 'running' ||
+      importProgress.status === 'pending' ||
+      importProgress.uiStatus === 'resuming' ||
+      importProgress.uiStatus === 'retrying' ||
+      importProgress.uiStatus === 'partial' ||
+      importProgress.uiStatus === 'waiting');
+
+  if (importActive) {
+    return (
+      importProgress.message ??
+      `Import in progress (${importProgress.uiStatusLabel ?? importProgress.status})`
+    );
+  }
+
+  if (importProgress?.status === 'failed') {
+    return importProgress.message ?? 'Last import failed';
+  }
+
+  if (autoSync?.syncInProgress || autoSync?.uiState === 'initial_sync_running') {
+    return autoSync.uiStateLabel;
+  }
+
+  const failedTotal =
+    (status?.customers.failedCount ?? 0) +
+    (status?.invoices.failedCount ?? 0) +
+    (status?.payments.failedCount ?? 0) +
+    bankFailed;
+
+  if (failedTotal > 0) {
+    return `Synced with ${failedTotal} failed entit${failedTotal === 1 ? 'y' : 'ies'}`;
+  }
+
+  if (autoSync?.uiState === 'synced') {
+    return 'Synced successfully';
+  }
+
+  if (autoSync?.uiStateLabel) {
+    return autoSync.uiStateLabel;
+  }
+
+  if (!connection.lastSyncAt && !autoSync?.lastSuccessfulSyncAt) {
+    return 'Connected — waiting for first sync';
+  }
+
+  return 'Connected';
+}
+
 export function XeroSyncPanel({
   accessToken,
   connection,
   canManage,
   onConnectionChange,
+  onTestConnection,
+  onDisconnect,
+  onCancelDisconnect,
+  confirmDisconnect = false,
+  connectionBusy = false,
+  testBusy = false,
 }: XeroSyncPanelProps) {
   const [status, setStatus] = useState<XeroSyncStatusResponse | null>(null);
   const [autoSyncStatus, setAutoSyncStatus] = useState<IntegrationProviderAutoSyncStatus | null>(
@@ -111,6 +185,9 @@ export function XeroSyncPanel({
   const [busyScope, setBusyScope] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  const isConnected = connection.status === 'connected';
 
   const syncBlockedReason = useMemo(() => {
     if (!connection.oauthConfigured) return XERO_SYNC_BLOCKED_REASON.notConfigured;
@@ -274,12 +351,33 @@ export function XeroSyncPanel({
       ]
     : [];
 
-  const isBusy = Boolean(busyScope);
+  const isBusy = Boolean(busyScope) || connectionBusy;
+  const syncBusy = busyScope === 'all';
 
-  return (
+  const lastSyncAt =
+    connection.lastSyncAt ??
+    autoSyncStatus?.lastSuccessfulSyncAt ??
+    status?.customers.lastSuccessfulSyncAt ??
+    status?.invoices.lastSuccessfulSyncAt ??
+    null;
+
+  const bankCount = Math.max(
+    importProgress?.bankTransactions.pulledCount ?? 0,
+    bankTransactionStats.synced,
+  );
+
+  const statusMessage = buildHonestStatusMessage({
+    connection,
+    autoSync: autoSyncStatus,
+    status,
+    importProgress,
+    bankFailed: bankTransactionStats.failed,
+  });
+
+  const advancedBody = (
     <>
       {autoSyncStatus ? (
-        <Panel title="Auto-sync status">
+        <Panel title="Auto-Sync Status">
           <p className="page-muted">
             TITAN syncs Xero automatically after you connect and on a recurring schedule. Manual
             sync below is for recovery only.
@@ -291,108 +389,154 @@ export function XeroSyncPanel({
         </Panel>
       ) : null}
 
-      <Panel title="Recovery controls (manual sync)">
-      <p className="page-muted">
-        Pull contacts, invoices, payments, and bank transactions from Xero into TITAN. These actions
-        are read-only — nothing is written back to your Xero ledger.
-      </p>
-
-      {canManage ? (
-        <div className="integrations-form__actions panel-actions">
-          <Button
-            type="button"
-            variant="secondary"
-            disabled={isBusy || Boolean(syncBlockedReason)}
-            aria-busy={busyScope === 'all'}
-            onClick={() => void handleFullReadOnlySync()}
-          >
-            {busyScope === 'all' ? 'Syncing from Xero…' : 'Sync now (recovery)'}
-          </Button>
-        </div>
-      ) : null}
-
-      {importProgress ? (
+      <Panel title="Recovery Controls (Manual Sync)">
         <p className="page-muted">
-          Background import ({importProgress.uiStatusLabel ?? importProgress.status}):{' '}
-          {formatImportJobProgress(importProgress)}
-          {importProgress.nextRetryAt
-            ? ` · next retry ${new Date(importProgress.nextRetryAt).toLocaleString()}`
-            : ''}
+          Pull contacts, invoices, payments, and bank transactions from Xero into TITAN. These actions
+          are read-only — nothing is written back to your Xero ledger.
         </p>
-      ) : null}
 
-      {isLoading ? <p className="page-muted">Loading sync counters…</p> : null}
-      {syncBlockedReason ? <p className="form-error">{syncBlockedReason}</p> : null}
-      {error ? <p className="form-error">{error}</p> : null}
-      {success ? <p className="form-success">{success}</p> : null}
+        {canManage && !isConnected ? (
+          <div className="integrations-form__actions panel-actions">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isBusy || Boolean(syncBlockedReason)}
+              aria-busy={busyScope === 'all'}
+              onClick={() => void handleFullReadOnlySync()}
+            >
+              {busyScope === 'all' ? 'Syncing from Xero…' : 'Sync now (recovery)'}
+            </Button>
+          </div>
+        ) : null}
 
-      {status ? (
-        <>
-          <dl className="integration-status-list">
-            <div>
-              <dt>Outstanding invoices</dt>
-              <dd>{status.unpaidInvoiceCount}</dd>
-            </div>
-            <div>
-              <dt>Outstanding amount</dt>
-              <dd>
-                {(status.outstandingAmountCents / 100).toLocaleString(undefined, {
-                  style: 'currency',
-                  currency: status.currency,
-                })}
-              </dd>
-            </div>
-          </dl>
+        {importProgress ? (
+          <p className="page-muted">
+            Background import ({importProgress.uiStatusLabel ?? importProgress.status}):{' '}
+            {formatImportJobProgress(importProgress)}
+            {importProgress.nextRetryAt
+              ? ` · next retry ${new Date(importProgress.nextRetryAt).toLocaleString()}`
+              : ''}
+          </p>
+        ) : null}
 
-          <ul className="integrations-list">
-            {entityActions.map((entity) => (
-              <li key={entity.label}>
-                <strong>{entity.label}</strong>
+        {isLoading ? <p className="page-muted">Loading sync counters…</p> : null}
+        {syncBlockedReason ? <p className="form-error">{syncBlockedReason}</p> : null}
+        {error ? <p className="form-error">{error}</p> : null}
+        {success ? <p className="form-success">{success}</p> : null}
+
+        {status ? (
+          <>
+            <dl className="integration-status-list">
+              <div>
+                <dt>Outstanding invoices</dt>
+                <dd>{status.unpaidInvoiceCount}</dd>
+              </div>
+              <div>
+                <dt>Outstanding amount</dt>
+                <dd>
+                  {(status.outstandingAmountCents / 100).toLocaleString(undefined, {
+                    style: 'currency',
+                    currency: status.currency,
+                  })}
+                </dd>
+              </div>
+            </dl>
+
+            <ul className="integrations-list">
+              {entityActions.map((entity) => (
+                <li key={entity.label}>
+                  <strong>{entity.label}</strong>
+                  <span className="page-muted">
+                    {' '}
+                    ·{' '}
+                    {formatEntityStats({
+                      pendingCount: entity.pending,
+                      syncedCount: entity.synced,
+                      failedCount: entity.failed,
+                    })}
+                  </span>
+                  {canManage ? (
+                    <div className="panel-actions">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        disabled={isBusy || Boolean(syncBlockedReason)}
+                        onClick={() =>
+                          void runScopedSync(entity.label.toLowerCase(), entity.run)
+                        }
+                      >
+                        {busyScope === entity.label.toLowerCase()
+                          ? 'Syncing…'
+                          : `Sync ${entity.label.toLowerCase()}`}
+                      </Button>
+                    </div>
+                  ) : null}
+                </li>
+              ))}
+              <li>
+                <strong>Bank transactions</strong>
                 <span className="page-muted">
                   {' '}
-                  ·{' '}
-                  {formatEntityStats({
-                    pendingCount: entity.pending,
-                    syncedCount: entity.synced,
-                    failedCount: entity.failed,
-                  })}
+                  · {bankTransactionStats.synced} synced · {bankTransactionStats.failed} failed
                 </span>
-                {canManage ? (
-                  <div className="panel-actions">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      disabled={isBusy || Boolean(syncBlockedReason)}
-                      onClick={() =>
-                        void runScopedSync(entity.label.toLowerCase(), entity.run)
-                      }
-                    >
-                      {busyScope === entity.label.toLowerCase()
-                        ? 'Syncing…'
-                        : `Sync ${entity.label.toLowerCase()}`}
-                    </Button>
-                  </div>
-                ) : null}
+                <p className="page-muted">
+                  Bank transactions import with the full Sync now (read-only) action above.
+                </p>
               </li>
-            ))}
-            <li>
-              <strong>Bank transactions</strong>
-              <span className="page-muted">
-                {' '}
-                · {bankTransactionStats.synced} synced · {bankTransactionStats.failed} failed
-              </span>
-              <p className="page-muted">
-                Bank transactions import with the full Sync now (read-only) action above.
-              </p>
-            </li>
-          </ul>
+            </ul>
 
-          {recentLogMessage ? (
-            <p className="page-muted">Latest sync log: {recentLogMessage}</p>
-          ) : null}
-        </>
-      ) : null}
-    </Panel>
+            {recentLogMessage ? (
+              <p className="page-muted">Latest sync log: {recentLogMessage}</p>
+            ) : null}
+          </>
+        ) : null}
+      </Panel>
     </>
   );
+
+  if (isConnected) {
+    return (
+      <>
+        <XeroConnectionStatusCard
+          organisationName={connection.organisationName ?? status?.organisationName ?? null}
+          lastSyncAt={lastSyncAt}
+          statusMessage={statusMessage}
+          counts={{
+            contacts: status?.customers.syncedCount ?? 0,
+            invoices: status?.invoices.syncedCount ?? 0,
+            payments: status?.payments.syncedCount ?? 0,
+            bankTransactions: bankCount,
+          }}
+          nextSyncAt={autoSyncStatus?.nextScheduledSyncAt ?? null}
+          canManage={canManage}
+          isBusy={isBusy}
+          syncBusy={syncBusy}
+          testBusy={testBusy}
+          syncDisabled={Boolean(syncBlockedReason)}
+          confirmDisconnect={confirmDisconnect}
+          onTestConnection={onTestConnection ? () => void onTestConnection() : undefined}
+          onSyncNow={() => void handleFullReadOnlySync()}
+          onDisconnect={onDisconnect ? () => void onDisconnect() : undefined}
+          onCancelDisconnect={onCancelDisconnect}
+        />
+
+        {error ? <p className="form-error">{error}</p> : null}
+        {success ? <p className="form-success">{success}</p> : null}
+
+        <div className="xero-advanced-disclosure">
+          <button
+            type="button"
+            className="xero-advanced-disclosure__toggle"
+            aria-expanded={advancedOpen}
+            onClick={() => setAdvancedOpen((open) => !open)}
+          >
+            Advanced {advancedOpen ? '▲' : '▼'}
+          </button>
+          {advancedOpen ? <div className="xero-advanced-disclosure__body">{advancedBody}</div> : null}
+        </div>
+      </>
+    );
+  }
+
+  return <>{advancedBody}</>;
 }

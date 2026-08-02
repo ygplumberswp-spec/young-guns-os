@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel } from '@titan/ui';
-import { buildGoogleMapsNavigateUrl, isValidLatLng, type GoogleRouteEstimate } from '@titan/shared';
+import {
+  buildGoogleMapsNavigateUrl,
+  buildGoogleMapsPlaceUrl,
+  buildGoogleStreetViewUrl,
+  formatLatLngCoordinates,
+  isValidLatLng,
+  type GoogleRouteEstimate,
+} from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { estimateGoogleRoute } from '../../lib/google-maps-api';
 import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
@@ -15,6 +22,8 @@ export type PropertyMapPanelProps = {
   placeId?: string | null;
   formattedAddress?: string | null;
   assignedUserName?: string | null;
+  /** Job / property identity — camera recenters only when this changes. */
+  cameraContextKey?: string | null;
 };
 
 /**
@@ -28,16 +37,25 @@ export function PropertyMapPanel({
   placeId = null,
   formattedAddress = null,
   assignedUserName = null,
+  cameraContextKey = null,
 }: PropertyMapPanelProps) {
   const { accessToken } = useAuth();
   const hasCoords = isValidLatLng(latitude, longitude);
   const displayAddress = formattedAddress || streetAddress;
+  const coordsLabel = formatLatLngCoordinates(latitude, longitude);
   const navigateUrl = buildGoogleMapsNavigateUrl({
     latitude,
     longitude,
     placeId,
     address: displayAddress,
   });
+  const openMapsUrl = buildGoogleMapsPlaceUrl({
+    latitude,
+    longitude,
+    placeId,
+    address: displayAddress,
+  });
+  const streetViewUrl = buildGoogleStreetViewUrl({ latitude, longitude });
 
   const { tracking } = useCartrackLivePositions({
     accessToken,
@@ -47,6 +65,7 @@ export function PropertyMapPanel({
   const [route, setRoute] = useState<GoogleRouteEstimate | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [copyNote, setCopyNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken || !hasCoords || latitude == null || longitude == null) {
@@ -118,6 +137,16 @@ export function PropertyMapPanel({
     tracking?.latestPositions,
   ]);
 
+  async function copyCoordinates() {
+    if (!coordsLabel) return;
+    try {
+      await navigator.clipboard.writeText(coordsLabel);
+      setCopyNote('Coordinates copied.');
+    } catch {
+      setCopyNote('Unable to copy coordinates in this browser.');
+    }
+  }
+
   const mapMarkers = [
     ...(hasCoords
       ? [
@@ -125,7 +154,7 @@ export function PropertyMapPanel({
             id: 'property',
             latitude: latitude!,
             longitude: longitude!,
-            label: displayAddress ?? 'Job location',
+            label: `Customer / arrival · ${displayAddress ?? 'Job location'}`,
             tone: 'customer' as const,
           },
         ]
@@ -134,7 +163,7 @@ export function PropertyMapPanel({
       .filter((p) => isValidLatLng(p.latitude, p.longitude))
       .slice(0, 4)
       .map((p) => ({
-        id: `vehicle-${p.externalVehicleId}-${p.recordedAt}`,
+        id: `vehicle-${p.externalVehicleId}`,
         latitude: p.latitude,
         longitude: p.longitude,
         label: p.vehicleName ?? p.licensePlate ?? 'Vehicle',
@@ -142,30 +171,37 @@ export function PropertyMapPanel({
       })) ?? []),
   ];
 
+  const resolvedCameraContextKey =
+    cameraContextKey ??
+    placeId ??
+    (hasCoords ? `${latitude},${longitude}` : displayAddress);
+
   return (
     <Panel
-      title="Property map"
+      title="Property Map"
       description="Verified job location — extension point for future Property Intelligence"
     >
       {!displayAddress && !hasCoords ? (
         <EmptyState
-          title="No property address"
+          title="No Property Address"
           description="Add a verified job address to show this map. TITAN will not invent a location."
         />
       ) : (
         <>
           <p className="exec-outstanding__count" style={{ marginBottom: '0.75rem' }}>
             {displayAddress ?? 'Coordinates on file'}
-            {hasCoords ? ' · Verified coordinates' : ' · Coordinates not verified'}
+            {hasCoords ? ' · Arrival point verified' : ' · Coordinates not verified'}
           </p>
           {hasCoords ? (
             <GoogleMapView
               markers={mapMarkers}
+              routePolyline={route?.polyline ?? null}
+              cameraContextKey={resolvedCameraContextKey}
               height={320}
             />
           ) : (
             <EmptyState
-              title="Map pin unavailable"
+              title="Map Pin Unavailable"
               description="Address text is present, but latitude/longitude are not verified. Use Google Maps address verification on the customer property."
               action={
                 <Link href="/integrations/google-maps">
@@ -178,6 +214,14 @@ export function PropertyMapPanel({
           )}
 
           <dl className="jobs-detail-list" style={{ marginTop: '0.75rem' }}>
+            <div>
+              <dt>Customer location</dt>
+              <dd>{displayAddress ?? '—'}</dd>
+            </div>
+            <div>
+              <dt>Arrival point</dt>
+              <dd>{coordsLabel ?? 'Not verified'}</dd>
+            </div>
             <div>
               <dt>Distance</dt>
               <dd>
@@ -192,24 +236,51 @@ export function PropertyMapPanel({
                 {routeLoading
                   ? 'Estimating…'
                   : route
-                    ? `${Math.max(1, Math.round((route.durationInTrafficSeconds ?? route.durationSeconds) / 60))} min (Google Maps)`
+                    ? `${Math.max(1, Math.round((route.durationInTrafficSeconds ?? route.durationSeconds) / 60))} min (Google Maps${route.durationInTrafficSeconds != null ? ', traffic-aware' : ''})`
                     : '—'}
               </dd>
             </div>
           </dl>
           {routeError ? <p className="page-muted">{routeError}</p> : null}
+          {copyNote ? <p className="page-muted">{copyNote}</p> : null}
 
-          {navigateUrl ? (
-            <a
-              href={navigateUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="titan-btn titan-btn--secondary titan-btn--sm"
-              style={{ marginTop: '0.75rem', display: 'inline-flex' }}
-            >
-              Navigate
-            </a>
-          ) : null}
+          <div className="ux-page-header__actions" style={{ marginTop: '0.75rem', flexWrap: 'wrap' }}>
+            {navigateUrl ? (
+              <a
+                href={navigateUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="titan-btn titan-btn--secondary titan-btn--sm"
+              >
+                Suggested route
+              </a>
+            ) : null}
+            {openMapsUrl ? (
+              <a
+                href={openMapsUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="titan-btn titan-btn--secondary titan-btn--sm"
+              >
+                Open in Google Maps
+              </a>
+            ) : null}
+            {streetViewUrl ? (
+              <a
+                href={streetViewUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="titan-btn titan-btn--secondary titan-btn--sm"
+              >
+                Street View
+              </a>
+            ) : null}
+            {coordsLabel ? (
+              <Button type="button" size="sm" variant="secondary" onClick={() => void copyCoordinates()}>
+                Copy coordinates
+              </Button>
+            ) : null}
+          </div>
           {/* Property Intelligence extension slot — do not remove */}
           <div data-titan-extension="property-intelligence" hidden aria-hidden="true" />
         </>

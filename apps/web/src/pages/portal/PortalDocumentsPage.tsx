@@ -30,11 +30,11 @@ export function PortalDocumentsPage() {
         <p className="page-muted">Loading documents…</p>
       ) : documentCentre.documents.length === 0 ? (
         <EmptyState
-          title="No documents shared yet"
+          title="No Documents Shared Yet"
           description="When the office shares invoices, quotations, certificates, or job documents with your account, they will appear here. This list is empty because none are linked yet — not because the page failed to load."
         />
       ) : (
-        <Panel title="Your documents">
+        <Panel title="Your Documents">
           <ul className="portal-list">
             {documentCentre.documents.map((doc) => (
               <li key={doc.id}>

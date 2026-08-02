@@ -249,7 +249,7 @@ export function GlobalSearchPage() {
       {isLoading ? (
         <Panel title="Loading">Loading global search dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Global search dashboard is unavailable." />
+        <EmptyState title="No Data" description="Global search dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'search' ? (
@@ -322,7 +322,7 @@ export function GlobalSearchPage() {
                 </Panel>
               ) : (
                 <EmptyState
-                  title="No results yet"
+                  title="No Results Yet"
                   description="Run a search to query real records across CRM, Jobs, Finance, Inventory, Fleet, Documents, OCR, and Knowledge Graph."
                 />
               )}
@@ -333,7 +333,7 @@ export function GlobalSearchPage() {
             <Panel title="Universal Timeline Preview">
               {dashboard.timelinePreview.length === 0 ? (
                 <EmptyState
-                  title="No timeline events"
+                  title="No Timeline Events"
                   description="Timeline events are derived from real CRM activities, jobs, communications, and stored timeline entries."
                 />
               ) : (
@@ -357,7 +357,7 @@ export function GlobalSearchPage() {
             <Panel title="Activity Feed">
               {dashboard.activityFeedPreview.length === 0 ? (
                 <EmptyState
-                  title="No activity feed items"
+                  title="No Activity Feed Items"
                   description="Activity feed items appear when modules emit real cross-module activity events."
                 />
               ) : (
@@ -382,7 +382,7 @@ export function GlobalSearchPage() {
             <Panel title="Saved Searches">
               {dashboard.savedSearches.length === 0 ? (
                 <EmptyState
-                  title="No saved searches"
+                  title="No Saved Searches"
                   description="Save frequently used queries from the Search tab."
                 />
               ) : (
@@ -420,7 +420,7 @@ export function GlobalSearchPage() {
             <Panel title="Relationship Intelligence">
               {dashboard.relationshipPreview.length === 0 ? (
                 <EmptyState
-                  title="No relationship links"
+                  title="No Relationship Links"
                   description="Relationships are derived from real customer-to-job, quote, invoice, and document links."
                 />
               ) : (
@@ -446,7 +446,7 @@ export function GlobalSearchPage() {
               <Panel title="AI-Assisted Search Suggestions">
                 {dashboard.searchSuggestions.length === 0 ? (
                   <EmptyState
-                    title="No suggestions"
+                    title="No Suggestions"
                     description="AI-assisted search suggestions appear when the Search Intelligence agent recommends queries."
                   />
                 ) : (
@@ -507,7 +507,7 @@ export function GlobalSearchPage() {
                   <pre>{JSON.stringify(dashboard.analytics.metrics, null, 2)}</pre>
                 ) : (
                   <EmptyState
-                    title="No analytics captured"
+                    title="No Analytics Captured"
                     description="Capture analytics to record search metrics."
                   />
                 )}
@@ -556,7 +556,7 @@ export function GlobalSearchPage() {
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit entries"
+                  title="No Audit Entries"
                   description="Global search actions are fully auditable."
                 />
               ) : (

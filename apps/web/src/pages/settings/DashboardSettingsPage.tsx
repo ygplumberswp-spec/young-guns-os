@@ -7,7 +7,7 @@ export function DashboardSettingsPage() {
   return (
     <div className="page-shell owner-page-content">
       <PageHeader
-        title="Dashboard settings"
+        title="Dashboard Settings"
         description="Configure section visibility, order, date view, and quick actions."
         breadcrumbs={[
           { label: 'Settings', href: '/settings/company' },
@@ -15,9 +15,9 @@ export function DashboardSettingsPage() {
         ]}
       />
 
-      <Panel title="Section visibility" description="Choose which panels appear on your executive dashboard.">
+      <Panel title="Section Visibility" description="Choose which panels appear on your executive dashboard.">
         <p className="page-muted">
-          Young Guns defaults are active. Custom layout preferences will be saved here in a future
+          Default layout is active. Custom layout preferences will be saved here in a future
           release.
         </p>
         <ul className="portal-list">
@@ -30,7 +30,7 @@ export function DashboardSettingsPage() {
         </ul>
       </Panel>
 
-      <Panel title="Quick actions" description="Grouped shortcuts in the dashboard header dropdown.">
+      <Panel title="Quick Actions" description="Grouped shortcuts in the dashboard header dropdown.">
         <p className="page-muted">
           Default groups: Customers, Jobs, Finance, Documents, Communication. Advanced actions appear
           when modules are enabled.

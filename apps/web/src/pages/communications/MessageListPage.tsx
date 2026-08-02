@@ -116,7 +116,7 @@ export function MessageListPage() {
         actions={
           canWrite ? (
             <Link href="/communications/messages/new">
-              <Button>Log communication</Button>
+              <Button>Log Communication</Button>
             </Link>
           ) : undefined
         }
@@ -129,18 +129,18 @@ export function MessageListPage() {
       {!isLoading && !error ? (
         messages.length === 0 ? (
           <EmptyState
-            title="No communications yet"
+            title="No Communications Yet"
             description="Log your first customer interaction to start building communication history."
             action={
               canWrite ? (
                 <Link href="/communications/messages/new">
-                  <Button>Log communication</Button>
+                  <Button>Log Communication</Button>
                 </Link>
               ) : undefined
             }
           />
         ) : (
-          <Panel title="Communication history">
+          <Panel title="Communication History">
             <div className="communications-table-wrap">
               <table className="communications-table">
                 <thead>

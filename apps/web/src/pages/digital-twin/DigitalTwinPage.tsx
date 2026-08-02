@@ -166,7 +166,7 @@ export function DigitalTwinPage() {
         }
       />
 
-      <nav className="automation-nav" aria-label="Digital twin sections">
+      <nav className="automation-nav" aria-label="Digital Twin Sections">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -191,26 +191,26 @@ export function DigitalTwinPage() {
         <>
           <section className="stat-grid">
             <StatCard
-              label="Health score"
+              label="Health Score"
               value={
                 dashboard.executiveStats.healthScore != null
                   ? String(dashboard.executiveStats.healthScore)
                   : '—'
               }
             />
-            <StatCard label="Active scenarios" value={String(dashboard.activeScenarios.length)} />
+            <StatCard label="Active Scenarios" value={String(dashboard.activeScenarios.length)} />
             <StatCard
-              label="Completed simulations"
+              label="Completed Simulations"
               value={String(
                 dashboard.recentSimulations.filter((s) => s.status === 'completed').length,
               )}
             />
             <StatCard
-              label="Operational risk"
+              label="Operational Risk"
               value={formatRiskLevel(risk?.operationalRiskLevel ?? 'low')}
             />
             <StatCard
-              label="Technician utilization"
+              label="Technician Utilization"
               value={
                 capacity?.technicianUtilizationPercent != null
                   ? `${capacity.technicianUtilizationPercent}%`
@@ -218,7 +218,7 @@ export function DigitalTwinPage() {
               }
             />
             <StatCard
-              label="Fleet utilization"
+              label="Fleet Utilization"
               value={
                 capacity?.fleetUtilizationPercent != null
                   ? `${capacity.fleetUtilizationPercent}%`
@@ -226,10 +226,10 @@ export function DigitalTwinPage() {
               }
             />
             <StatCard label="Bottlenecks" value={String(risk?.bottleneckCount ?? 0)} />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </section>
           <p className="page-muted">{dashboard.summary}</p>
-          <Panel title="Capacity utilization">
+          <Panel title="Capacity Utilization">
             <dl className="integrations-stats__grid">
               <div>
                 <dt>Inventory pressure</dt>
@@ -259,10 +259,10 @@ export function DigitalTwinPage() {
       ) : null}
 
       {dashboard && activeTab === 'scenarios' ? (
-        <Panel title="Saved scenarios">
+        <Panel title="Saved Scenarios">
           {dashboard.activeScenarios.length === 0 ? (
             <EmptyState
-              title="No scenarios yet"
+              title="No Scenarios Yet"
               description="Create scenarios via the API to run what-if analysis against live operational state."
             />
           ) : (
@@ -292,10 +292,10 @@ export function DigitalTwinPage() {
       ) : null}
 
       {dashboard && activeTab === 'simulations' ? (
-        <Panel title="Simulation history">
+        <Panel title="Simulation History">
           {dashboard.recentSimulations.length === 0 ? (
             <EmptyState
-              title="No simulations yet"
+              title="No Simulations Yet"
               description="Run a scenario simulation to see projected outcomes."
             />
           ) : (
@@ -328,10 +328,10 @@ export function DigitalTwinPage() {
               </Button>
             </div>
           ) : null}
-          <Panel title="Operational heat maps">
+          <Panel title="Operational Heat Maps">
             {dashboard.heatMaps.length === 0 ? (
               <EmptyState
-                title="No heat maps yet"
+                title="No Heat Maps Yet"
                 description="Capture heat maps when operational data is available."
               />
             ) : (
@@ -366,10 +366,10 @@ export function DigitalTwinPage() {
               </Button>
             </div>
           ) : null}
-          <Panel title="AI decision support">
+          <Panel title="AI Decision Support">
             {dashboard.recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations yet"
+                title="No Recommendations Yet"
                 description="Generate recommendations when operational data exists."
               />
             ) : (
@@ -389,10 +389,10 @@ export function DigitalTwinPage() {
       ) : null}
 
       {dashboard && activeTab === 'replay' ? (
-        <Panel title="Operational replay">
+        <Panel title="Operational Replay">
           {dashboard.recentReplayEvents.length === 0 ? (
             <EmptyState
-              title="No replay events yet"
+              title="No Replay Events Yet"
               description="Replay events are synced from real job and operational activity."
             />
           ) : (

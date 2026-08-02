@@ -206,9 +206,9 @@ export function SupplierDetailPage() {
   if (!supplier) {
     return (
       <div className="inventory-page">
-        <PageHeader title="Supplier not found" description="This supplier may have been removed." />
+        <PageHeader title="Supplier Not Found" description="This supplier may have been removed." />
         <Link href="/procurement/suppliers">
-          <Button variant="secondary">Back to suppliers</Button>
+          <Button variant="secondary">Back To Suppliers</Button>
         </Link>
       </div>
     );
@@ -222,7 +222,7 @@ export function SupplierDetailPage() {
         actions={
           <div className="fleet-detail__actions">
             <Link href="/procurement/suppliers">
-              <Button variant="secondary">Back to suppliers</Button>
+              <Button variant="secondary">Back To Suppliers</Button>
             </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
@@ -237,11 +237,11 @@ export function SupplierDetailPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       {isEditing && canWrite ? (
-        <Panel title="Edit supplier">
+        <Panel title="Edit Supplier">
           <form className="inventory-form" onSubmit={(event) => void handleSubmit(event)}>
             <Input label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
             <Input
-              label="Contact name"
+              label="Contact Name"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
             />
@@ -274,7 +274,7 @@ export function SupplierDetailPage() {
           </form>
         </Panel>
       ) : (
-        <Panel title="Supplier details">
+        <Panel title="Supplier Details">
           <dl className="fleet-detail-list">
             <div>
               <dt>Contact</dt>
@@ -304,11 +304,11 @@ export function SupplierDetailPage() {
         </Panel>
       )}
 
-      <Panel title="Supplier products" description="Catalog links used when raising purchase orders.">
+      <Panel title="Supplier Products" description="Catalog links used when raising purchase orders.">
         {canWrite ? (
           <form className="inventory-form" onSubmit={(event) => void handleAddProduct(event)}>
             <Input
-              label="Product name"
+              label="Product Name"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
               required
@@ -319,13 +319,13 @@ export function SupplierDetailPage() {
               onChange={(e) => setSupplierSku(e.target.value)}
             />
             <Input
-              label="Unit cost (R)"
+              label="Unit Cost (R)"
               value={unitCostRands}
               onChange={(e) => setUnitCostRands(e.target.value)}
               required
             />
             <Input
-              label="Lead time (days)"
+              label="Lead Time (Days)"
               value={leadTimeDays}
               onChange={(e) => setLeadTimeDays(e.target.value)}
             />
@@ -381,7 +381,7 @@ export function SupplierDetailPage() {
         )}
       </Panel>
 
-      <Panel title="Activity log" description="Notes, communications and performance history.">
+      <Panel title="Activity Log" description="Notes, communications and performance history.">
         {canWrite ? (
           <form className="inventory-form" onSubmit={(event) => void handleAddActivity(event)}>
             <label className="titan-input-group">

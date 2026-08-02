@@ -37,7 +37,7 @@ export type CompactFilterOption<T extends string = string> = {
 export const QUOTE_LIST_FILTERS: CompactFilterOption<QuoteListFilter>[] = [
   { id: 'all', label: 'All' },
   { id: 'drafts', label: 'Drafts' },
-  { id: 'awaiting_approval', label: 'Awaiting approval' },
+  { id: 'awaiting_approval', label: 'Awaiting Approval' },
   { id: 'sent', label: 'Sent' },
   { id: 'accepted', label: 'Accepted' },
   { id: 'declined', label: 'Declined' },
@@ -47,8 +47,8 @@ export const QUOTE_LIST_FILTERS: CompactFilterOption<QuoteListFilter>[] = [
 export const INVOICE_LIST_FILTERS: CompactFilterOption<InvoiceListFilter>[] = [
   { id: 'all', label: 'All' },
   { id: 'drafts', label: 'Drafts' },
-  { id: 'awaiting_payment', label: 'Awaiting payment' },
-  { id: 'partially_paid', label: 'Partially paid' },
+  { id: 'awaiting_payment', label: 'Awaiting Payment' },
+  { id: 'partially_paid', label: 'Partially Paid' },
   { id: 'paid', label: 'Paid' },
   { id: 'overdue', label: 'Overdue' },
   { id: 'cancelled', label: 'Cancelled' },
@@ -66,7 +66,7 @@ export const PAYMENT_LIST_FILTERS: CompactFilterOption<PaymentListFilter>[] = [
   { id: 'all', label: 'All' },
   { id: 'allocated', label: 'Allocated' },
   { id: 'unallocated', label: 'Unallocated' },
-  { id: 'reversed', label: 'Reversed/refunded' },
+  { id: 'reversed', label: 'Reversed/Refunded' },
 ];
 
 /** Draft badge — never treat issued, approved, paid, or Xero-synced records as drafts. */

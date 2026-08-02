@@ -1,21 +1,21 @@
 export const BUSINESS_RULE_TYPES = [
-  { value: 'always_follow', label: 'Always follow' },
+  { value: 'always_follow', label: 'Always Follow' },
   { value: 'scheduled', label: 'Scheduled' },
-  { value: 'approval', label: 'Requires approval' },
+  { value: 'approval', label: 'Requires Approval' },
 ] as const;
 
 export type BusinessRuleType = (typeof BUSINESS_RULE_TYPES)[number]['value'];
 
 export const BUSINESS_RULE_CATEGORIES = [
-  { value: 'company_wide', label: 'Company-wide' },
+  { value: 'company_wide', label: 'Company-Wide' },
   { value: 'finance', label: 'Finance' },
   { value: 'sales', label: 'Sales' },
   { value: 'marketing', label: 'Marketing' },
   { value: 'operations', label: 'Operations' },
   { value: 'customers', label: 'Customers' },
-  { value: 'workforce_payroll', label: 'Workforce & payroll' },
+  { value: 'workforce_payroll', label: 'Workforce & Payroll' },
   { value: 'fleet', label: 'Fleet' },
-  { value: 'stock_suppliers', label: 'Stock & suppliers' },
+  { value: 'stock_suppliers', label: 'Stock & Suppliers' },
   { value: 'compliance', label: 'Compliance' },
 ] as const;
 

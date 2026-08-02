@@ -140,8 +140,8 @@ export function JobCrewAssignmentPanel({
 
   return (
     <Panel
-      title="Crew & vehicle assignment"
-      description="Young Guns crews run 2–4 workers per vehicle. Assign roles and an active vehicle for dispatch and field execution."
+      title="Crew & Vehicle Assignment"
+      description="Crews typically run 2–4 workers per vehicle. Assign roles and an active vehicle for dispatch and field execution."
     >
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}

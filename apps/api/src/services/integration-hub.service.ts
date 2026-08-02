@@ -74,12 +74,18 @@ type N8nStatusProvider = {
 
 export class IntegrationHubService {
   private n8nStatusProvider: N8nStatusProvider | null = null;
+  private gmailOAuthConfigured: (() => boolean) | null = null;
 
   constructor(private readonly db: DatabaseClient) {}
 
   /** UX-J — bind Automation-owned n8n status without duplicating connector storage. */
   setN8nStatusProvider(provider: N8nStatusProvider | null) {
     this.n8nStatusProvider = provider;
+  }
+
+  /** Bind Google OAuth app configuration so Gmail never fakes Connected when secrets are missing. */
+  setGmailOAuthConfiguredProvider(provider: (() => boolean) | null) {
+    this.gmailOAuthConfigured = provider;
   }
 
   async getDashboard(
@@ -217,37 +223,55 @@ export class IntegrationHubService {
       connections.map((connection) => [connection.provider, connection]),
     );
 
+    const gmailAppConfigured = this.gmailOAuthConfigured?.() ?? true;
+
     const registryStatuses: IntegrationProviderStatus[] = INTEGRATION_PROVIDER_REGISTRY.map(
       (entry) => {
         const isWhatsapp = entry.provider === 'whatsapp';
+        const isGmail = entry.provider === 'gmail';
         const connection = isWhatsapp ? undefined : connectionByProvider.get(entry.provider);
 
-        const connectionStatus = isWhatsapp
+        let connectionStatus = isWhatsapp
           ? (whatsappConnection?.status ?? 'disconnected')
           : (connection?.status ?? 'disconnected');
-        const isConfigured = isWhatsapp
+        // Gmail tokens live on Communications Platform — hub row is status-only.
+        // Treat Connected only when status is connected; disconnected rows are not "configured".
+        let isConfigured = isWhatsapp
           ? Boolean(whatsappConnection?.credentialsEncrypted)
-          : Boolean(connection);
+          : isGmail
+            ? connection?.status === 'connected'
+            : Boolean(connection);
         const lastError = isWhatsapp
           ? (whatsappConnection?.lastError ?? null)
           : (connection?.lastError ?? null);
 
+        if (isGmail && !gmailAppConfigured) {
+          connectionStatus = 'disconnected';
+          isConfigured = false;
+        }
+
         const backendImplemented = entry.availability === 'available';
-        const capabilityState = deriveIntegrationCapabilityState({
-          availability: entry.availability,
-          connectionStatus,
-          isConfigured,
-          backendImplemented,
-          lastError,
-        });
+        const capabilityState =
+          isGmail && !gmailAppConfigured
+            ? 'not_configured'
+            : deriveIntegrationCapabilityState({
+                availability: entry.availability,
+                connectionStatus,
+                isConfigured,
+                backendImplemented,
+                lastError,
+              });
         const capabilityLabel = formatCapabilityStateLabel(capabilityState);
         const canConnect =
           capabilityState !== 'not_implemented' &&
           entry.availability === 'available' &&
-          Boolean(entry.settingsPath);
+          Boolean(entry.settingsPath) &&
+          !(isGmail && !gmailAppConfigured);
         const canSend =
           capabilityState === 'connected_usable' &&
-          (entry.provider === 'whatsapp' || entry.provider === 'email');
+          (entry.provider === 'whatsapp' ||
+            entry.provider === 'email' ||
+            entry.provider === 'gmail');
 
         return {
           ...entry,
@@ -255,7 +279,10 @@ export class IntegrationHubService {
           connectionStatus,
           isConfigured,
           lastSyncAt: isWhatsapp ? null : (connection?.lastSyncAt?.toISOString() ?? null),
-          lastError,
+          lastError:
+            isGmail && !gmailAppConfigured
+              ? 'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.'
+              : lastError,
           connectedAt: isWhatsapp
             ? (whatsappConnection?.connectedAt?.toISOString() ?? null)
             : (connection?.connectedAt?.toISOString() ?? null),

@@ -427,7 +427,7 @@ export function CustomerDetailPage() {
         <PageHeader title="Customer" description="Customer record" />
         <p className="form-error">{error}</p>
         <Link href="/crm">
-          <Button variant="secondary">Back to customers</Button>
+          <Button variant="secondary">Back To Customers</Button>
         </Link>
       </div>
     );
@@ -448,7 +448,7 @@ export function CustomerDetailPage() {
               <Button variant="secondary">Ask {AI_NAME}</Button>
             </Link>
             <Link href="/crm">
-              <Button variant="ghost">Back to customers</Button>
+              <Button variant="ghost">Back To Customers</Button>
             </Link>
           </div>
         }
@@ -620,7 +620,7 @@ export function CustomerDetailPage() {
           ) : null}
         </Panel>
 
-        <Panel title="Activity notes">
+        <Panel title="Activity Notes">
           {canWrite ? (
             <form className="crm-activity-form" onSubmit={(event) => void handleAddActivity(event)}>
               <label className="titan-input-group">
@@ -657,7 +657,7 @@ export function CustomerDetailPage() {
         </Panel>
 
         {canManagePortal ? (
-          <Panel title="Customer portal access">
+          <Panel title="Customer Portal Access">
             {isPortalLoading ? <p className="page-muted">Loading portal access…</p> : null}
             {portalAccess?.portalUser ? (
               <div className="stack-form">
@@ -696,7 +696,7 @@ export function CustomerDetailPage() {
                   grant login access.
                 </p>
                 <Input
-                  label="Invitation email"
+                  label="Invitation Email"
                   type="email"
                   value={inviteEmail}
                   onChange={(event) => setInviteEmail(event.target.value)}

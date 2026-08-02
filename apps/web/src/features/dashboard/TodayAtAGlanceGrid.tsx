@@ -22,7 +22,7 @@ export function TodayAtAGlanceGrid({
 
   if (isLoading && !data) {
     return (
-      <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key metrics">
+      <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key Metrics">
         <DashboardSectionSkeleton rows={4} />
       </section>
     );
@@ -30,7 +30,7 @@ export function TodayAtAGlanceGrid({
 
   if (error && !data) {
     return (
-      <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key metrics">
+      <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key Metrics">
         <div className="exec-dashboard-section__error">
           <p>{error}</p>
           {onRetry ? (
@@ -77,7 +77,7 @@ export function TodayAtAGlanceGrid({
   ];
 
   return (
-    <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key metrics">
+    <section className="exec-dashboard-section exec-dashboard-kpi" aria-label="Key Metrics">
       <SummaryCardGrid columns={4} className="exec-dashboard-glance">
         {cards.map((card) => (
           <Link key={card.id} href={card.href} className="exec-dashboard-glance__link">

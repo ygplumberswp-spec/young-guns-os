@@ -10,9 +10,9 @@ export const UNIFIED_COMMUNICATION_CHANNEL_OPTIONS: Array<{
   id: UnifiedCommunicationChannelFilter;
   label: string;
 }> = [
-  { id: 'all', label: 'All channels' },
-  { id: 'whatsapp', label: 'WhatsApp Business' },
-  { id: 'personal_whatsapp', label: 'Personal WhatsApp' },
+  { id: 'all', label: 'All Channels' },
+  { id: 'whatsapp', label: 'Business WhatsApp' },
+  { id: 'personal_whatsapp', label: 'Personal WhatsApp (Owner only)' },
   { id: 'email', label: 'Email' },
   { id: 'sms', label: 'SMS' },
   { id: 'phone', label: 'Calls' },
@@ -31,7 +31,7 @@ export function UnifiedCommunicationsChannelFilter({
   onChange,
 }: UnifiedCommunicationsChannelFilterProps) {
   return (
-    <div className="ux-multi-status-filter" role="group" aria-label="Communication channel filter">
+    <div className="ux-multi-status-filter" role="group" aria-label="Communication Channel Filter">
       {UNIFIED_COMMUNICATION_CHANNEL_OPTIONS.map((option) => (
         <button
           key={option.id}

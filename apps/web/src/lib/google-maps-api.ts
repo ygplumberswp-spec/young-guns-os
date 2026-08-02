@@ -107,6 +107,17 @@ export async function geocodeGoogleAddress(
   return data.result;
 }
 
+export async function reverseGeocodeGoogleLatLng(
+  accessToken: string,
+  location: GoogleLatLng,
+): Promise<GoogleGeocodedAddress | null> {
+  const data = await request<{ result: GoogleGeocodedAddress | null }>(
+    '/integrations/google-maps/geocode/reverse',
+    { accessToken, method: 'POST', body: location },
+  );
+  return data.result;
+}
+
 export async function fetchGooglePlaceDetails(
   accessToken: string,
   placeId: string,

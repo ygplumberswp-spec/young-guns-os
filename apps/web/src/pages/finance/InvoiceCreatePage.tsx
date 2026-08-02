@@ -210,7 +210,7 @@ export function InvoiceCreatePage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="New invoice"
+        title="New Invoice"
         description="Create an invoice linked to a customer and optional job or quote."
         guardNavigation={draftShell.guard.guardNavigation}
       />
@@ -309,7 +309,7 @@ export function InvoiceCreatePage() {
             </select>
           </label>
           <Input
-            label="Due date"
+            label="Due Date"
             type="datetime-local"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}

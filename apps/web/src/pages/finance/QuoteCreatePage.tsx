@@ -313,7 +313,7 @@ export function QuoteCreatePage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="New quote"
+        title="New Quote"
         description="Create a quote linked to a customer and optional job."
         guardNavigation={draftShell.guard.guardNavigation}
       />
@@ -377,7 +377,7 @@ export function QuoteCreatePage() {
             </select>
           </label>
           <Input
-            label="Valid until"
+            label="Valid Until"
             type="datetime-local"
             value={validUntil}
             onChange={(e) => setValidUntil(e.target.value)}

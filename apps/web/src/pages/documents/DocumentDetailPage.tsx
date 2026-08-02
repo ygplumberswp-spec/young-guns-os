@@ -213,7 +213,7 @@ export function DocumentDetailPage() {
   if (!document) {
     return (
       <div className="documents-page">
-        <PageHeader title="Document not found" description="This document could not be found." />
+        <PageHeader title="Document Not Found" description="This document could not be found." />
         <Link href="/documents" className="documents-link">
           Back to documents
         </Link>
@@ -288,7 +288,7 @@ export function DocumentDetailPage() {
             />
           </label>
           <Input
-            label="File name"
+            label="File Name"
             value={fileName}
             onChange={(e) => {
               setFileName(e.target.value);
@@ -297,7 +297,7 @@ export function DocumentDetailPage() {
             required
           />
           <Input
-            label="File type"
+            label="File Type"
             value={fileType}
             onChange={(e) => {
               setFileType(e.target.value);
@@ -305,7 +305,7 @@ export function DocumentDetailPage() {
             }}
           />
           <Input
-            label="File size (bytes)"
+            label="File Size (Bytes)"
             type="number"
             min={0}
             value={fileSizeBytes}
@@ -373,7 +373,7 @@ export function DocumentDetailPage() {
           </Button>
         </form>
       ) : (
-        <Panel title="Document details">
+        <Panel title="Document Details">
           <dl className="documents-detail-grid">
             <div>
               <dt>File name</dt>

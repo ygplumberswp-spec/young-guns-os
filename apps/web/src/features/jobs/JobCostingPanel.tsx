@@ -18,7 +18,7 @@ function formatVariance(cents: number | null, currency: string): string {
 export function JobCostingPanel({ jobId, costing, showProfit }: JobCostingPanelProps) {
   if (!costing) {
     return (
-      <Panel title="Job costing" description="Materials, procurement and margin for this job.">
+      <Panel title="Job Costing" description="Materials, procurement and margin for this job.">
         <p className="page-muted">Costing summary unavailable.</p>
       </Panel>
     );
@@ -32,7 +32,7 @@ export function JobCostingPanel({ jobId, costing, showProfit }: JobCostingPanelP
 
   return (
     <Panel
-      title="Job costing"
+      title="Job Costing"
       description="Quoted vs used materials, purchase orders and revenue on this job."
     >
       {!hasData ? (

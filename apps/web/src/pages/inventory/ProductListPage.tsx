@@ -47,7 +47,7 @@ export function ProductListPage() {
         actions={
           canWrite ? (
             <Link href="/inventory/products/new">
-              <Button>New product</Button>
+              <Button>New Product</Button>
             </Link>
           ) : undefined
         }
@@ -58,12 +58,12 @@ export function ProductListPage() {
         isLoading={isLoading}
         error={error}
         isEmpty={(items?.length ?? 0) === 0}
-        emptyTitle="No products yet"
+        emptyTitle="No Products Yet"
         emptyDescription="Create your first product to start tracking inventory."
         emptyAction={
           canWrite ? (
             <Link href="/inventory/products/new">
-              <Button>New product</Button>
+              <Button>New Product</Button>
             </Link>
           ) : undefined
         }

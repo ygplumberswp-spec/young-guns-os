@@ -225,7 +225,7 @@ export function BusinessContinuityPage() {
       {isLoading ? (
         <Panel title="Loading">Loading business continuity dashboard…</Panel>
       ) : !dashboard ? (
-        <EmptyState title="No data" description="Business continuity dashboard is unavailable." />
+        <EmptyState title="No Data" description="Business continuity dashboard is unavailable." />
       ) : (
         <>
           {activeTab === 'overview' ? (
@@ -275,7 +275,7 @@ export function BusinessContinuityPage() {
             <Panel title="Backup Policies">
               {dashboard.backupPolicies.length === 0 ? (
                 <EmptyState
-                  title="No policies"
+                  title="No Policies"
                   description="Configure backup policies with hourly, daily, weekly, monthly, or manual schedules."
                 />
               ) : (
@@ -299,7 +299,7 @@ export function BusinessContinuityPage() {
             <Panel title="Backup Jobs">
               {dashboard.backupJobs.length === 0 ? (
                 <EmptyState
-                  title="No backup jobs"
+                  title="No Backup Jobs"
                   description="Backup jobs appear when policies run or manual backups are initiated."
                 />
               ) : (
@@ -323,7 +323,7 @@ export function BusinessContinuityPage() {
             <Panel title="Restore Center">
               {dashboard.restoreRequests.length === 0 ? (
                 <EmptyState
-                  title="No restore requests"
+                  title="No Restore Requests"
                   description="Restore requests require explicit owner approval before modifying production data."
                 />
               ) : (
@@ -347,7 +347,7 @@ export function BusinessContinuityPage() {
             <Panel title="Recovery Plans">
               {dashboard.recoveryPlans.length === 0 ? (
                 <EmptyState
-                  title="No recovery plans"
+                  title="No Recovery Plans"
                   description="Disaster recovery plans are seeded for standard failure scenarios."
                 />
               ) : (
@@ -371,7 +371,7 @@ export function BusinessContinuityPage() {
             <Panel title="Recovery Tests">
               {dashboard.recoveryTests.length === 0 ? (
                 <EmptyState
-                  title="No recovery tests"
+                  title="No Recovery Tests"
                   description="Schedule recovery drills that never affect production data."
                 />
               ) : (
@@ -395,7 +395,7 @@ export function BusinessContinuityPage() {
             <Panel title="Storage Health">
               {dashboard.storageHealth.length === 0 ? (
                 <EmptyState
-                  title="No storage snapshots"
+                  title="No Storage Snapshots"
                   description="Capture storage health snapshots to monitor redundancy and capacity."
                 />
               ) : (
@@ -421,7 +421,7 @@ export function BusinessContinuityPage() {
             <Panel title="Backup Verification">
               {dashboard.verificationRecords.length === 0 ? (
                 <EmptyState
-                  title="No verifications"
+                  title="No Verifications"
                   description="Verification records track backup integrity, encryption, and restore capability."
                 />
               ) : (
@@ -448,7 +448,7 @@ export function BusinessContinuityPage() {
             <Panel title="Recovery Compliance">
               {dashboard.complianceRecords.length === 0 ? (
                 <EmptyState
-                  title="No compliance records"
+                  title="No Compliance Records"
                   description="Track RPO/RTO compliance and recovery readiness."
                 />
               ) : (
@@ -481,7 +481,7 @@ export function BusinessContinuityPage() {
                 </div>
               ) : (
                 <EmptyState
-                  title="No analytics"
+                  title="No Analytics"
                   description="Capture analytics to track backup success rate and recovery readiness."
                 />
               )}
@@ -494,7 +494,7 @@ export function BusinessContinuityPage() {
                 <p>Loading audit logs…</p>
               ) : auditLogs.length === 0 ? (
                 <EmptyState
-                  title="No audit entries"
+                  title="No Audit Entries"
                   description="Business continuity actions are fully audited."
                 />
               ) : (

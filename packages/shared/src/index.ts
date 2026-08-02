@@ -49,6 +49,7 @@ export * from './fleet.js';
 export * from './fleet-tracking.js';
 export * from './integrations.js';
 export * from './google-maps.js';
+export * from './supplier-maps-intelligence.js';
 export * from './integration-auto-sync.js';
 export * from './background-work.js';
 export * from './integration-capability.js';

@@ -115,7 +115,7 @@ export function PaymentCreatePage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title="Record payment"
+        title="Record Payment"
         description="Record a payment against an invoice."
       />
       <FinanceNav />
@@ -125,7 +125,7 @@ export function PaymentCreatePage() {
         <div>
           <p className="page-muted">Create an open invoice before recording a payment.</p>
           <Link href="/finance/invoices/new">
-            <Button>New invoice</Button>
+            <Button>New Invoice</Button>
           </Link>
         </div>
       ) : (
@@ -172,7 +172,7 @@ export function PaymentCreatePage() {
             onChange={(e) => setReference(e.target.value)}
           />
           <Input
-            label="Paid at"
+            label="Paid At"
             type="datetime-local"
             value={paidAt}
             onChange={(e) => setPaidAt(e.target.value)}

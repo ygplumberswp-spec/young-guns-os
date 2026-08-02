@@ -9,7 +9,7 @@ import {
 test('validateCrewAssignmentDraft rejects fewer than two members', () => {
   assert.equal(
     validateCrewAssignmentDraft([createEmptyMemberDraft(true)]),
-    'Assign between 2 and 4 crew members (Young Guns runs 2–4 workers per vehicle).',
+    'Assign between 2 and 4 crew members (crews typically run 2–4 workers per vehicle).',
   );
 });
 

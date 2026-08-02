@@ -67,7 +67,7 @@ export function SyncJobListPage() {
       {!isLoading && !error ? (
         syncJobs.length === 0 ? (
           <EmptyState
-            title="No sync jobs yet"
+            title="No Sync Jobs Yet"
             description="Sync jobs are recorded when a provider sync is triggered. Connect a provider and run a sync to see history here."
             action={
               <Link href="/integrations/cartrack" className="button-link">
@@ -76,7 +76,7 @@ export function SyncJobListPage() {
             }
           />
         ) : (
-          <Panel title="Sync job history">
+          <Panel title="Sync Job History">
             <div className="integrations-table-wrap">
               <table className="integrations-table">
                 <thead>

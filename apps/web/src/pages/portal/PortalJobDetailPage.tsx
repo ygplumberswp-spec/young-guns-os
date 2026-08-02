@@ -54,9 +54,9 @@ export function PortalJobDetailPage() {
         }
       />
       {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <LoadingState label="Loading job…" /> : null}
+      {loading ? <LoadingState label="Loading Job…" /> : null}
       {!loading && !error && !detail ? (
-        <EmptyState title="Job not found" description="This job is not available on your account." />
+        <EmptyState title="Job Not Found" description="This job is not available on your account." />
       ) : null}
 
       {detail ? (
@@ -112,14 +112,14 @@ export function PortalJobDetailPage() {
             ) : (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="ETA not available yet"
+                title="ETA Not Available Yet"
                 description="An ETA appears when your job is scheduled or your technician is en route."
               />
             )}
           </Panel>
 
           {detail.job.description ? (
-            <Panel title="Job notes">
+            <Panel title="Job Notes">
               <p className="page-muted">{detail.job.description}</p>
             </Panel>
           ) : null}
@@ -128,7 +128,7 @@ export function PortalJobDetailPage() {
             {detail.timeline.length === 0 ? (
               <EmptyState
                 className="titan-empty-state--compact"
-                title="No timeline events"
+                title="No Timeline Events"
                 description="Status updates for this job will appear here."
               />
             ) : (

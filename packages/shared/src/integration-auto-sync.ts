@@ -116,7 +116,7 @@ export const AUTO_SYNC_PROVIDER_CATALOG: Array<{
   },
   {
     key: 'whatsapp',
-    displayName: 'WhatsApp Business',
+    displayName: 'Business WhatsApp',
     integrationProvider: 'whatsapp',
     implementation: 'partial',
   },

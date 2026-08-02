@@ -89,7 +89,7 @@ export function CustomerFollowUpsSection({
   }
 
   return (
-    <section className="day-plan-follow-ups" aria-label="Customer follow-ups">
+    <section className="day-plan-follow-ups" aria-label="Customer Follow-Ups">
       <div className="day-plan-follow-ups__header">
         <h3 className="day-planning__title">Customer follow-ups</h3>
         <p className="day-planning__date page-muted">{formatDayPlanDisplayDate(planDate)}</p>
@@ -171,7 +171,7 @@ export function CustomerFollowUpsSection({
                     ))}
                     {actions.length > 3 ? (
                       <MoreMenu
-                        label="More follow-up actions"
+                        label="More Follow-Up Actions"
                         items={actions.slice(3).map((action) => ({
                           id: action,
                           label: ACTION_LABELS[action],

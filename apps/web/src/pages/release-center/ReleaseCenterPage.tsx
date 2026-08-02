@@ -170,7 +170,7 @@ export function ReleaseCenterPage() {
     return (
       <div className="p-6">
         <EmptyState
-          title="Access denied"
+          title="Access Denied"
           description="You do not have permission to view the release center."
         />
       </div>
@@ -231,7 +231,7 @@ export function ReleaseCenterPage() {
         ariaLabel="Release center sections"
       />
 
-      {isLoading ? <LoadingState label="Loading release center" /> : null}
+      {isLoading ? <LoadingState label="Loading Release Center" /> : null}
 
       {!isLoading && activeTab === 'overview' ? (
         <div className="space-y-4">
@@ -259,7 +259,7 @@ export function ReleaseCenterPage() {
           </div>
           <Panel title="Summary">{dashboard.summary}</Panel>
           {readiness.overallStatus === 'blocked' || readiness.overallStatus === 'not_ready' ? (
-            <Panel title="Release blockers">
+            <Panel title="Release Blockers">
               <p className="text-sm text-red-700">
                 Release candidate status is {formatReleaseStatus(readiness.overallStatus)} — resolve
                 failed validations and configuration issues before production release.
@@ -295,7 +295,7 @@ export function ReleaseCenterPage() {
               </p>
             ) : (
               <EmptyState
-                title="No integration validation runs"
+                title="No Integration Validation Runs"
                 description="Run cross-platform integration validation against real tenant data."
               />
             )}
@@ -303,7 +303,7 @@ export function ReleaseCenterPage() {
           <Panel title="Check Results">
             {dashboard.latestIntegrationResults.length === 0 ? (
               <EmptyState
-                title="No check results"
+                title="No Check Results"
                 description="Run integration validation to verify authentication, RBAC, CRM, integrations, and platform modules."
               />
             ) : (
@@ -350,7 +350,7 @@ export function ReleaseCenterPage() {
               </p>
             ) : (
               <EmptyState
-                title="No workflow validation runs"
+                title="No Workflow Validation Runs"
                 description="Run end-to-end workflow validation for lead-to-payment flows."
               />
             )}
@@ -358,7 +358,7 @@ export function ReleaseCenterPage() {
           <Panel title="Step Results">
             {dashboard.latestWorkflowResults.length === 0 ? (
               <EmptyState
-                title="No step results"
+                title="No Step Results"
                 description="Run workflow validation to verify lead, quote, job, dispatch, invoice, and payment flows."
               />
             ) : (
@@ -402,7 +402,7 @@ export function ReleaseCenterPage() {
               </ul>
             ) : (
               <EmptyState
-                title="No performance snapshot"
+                title="No Performance Snapshot"
                 description="Capture a read-only performance analysis from production readiness and platform health data."
               />
             )}
@@ -410,7 +410,7 @@ export function ReleaseCenterPage() {
           <Panel title="Optimization Opportunities">
             {(dashboard.latestPerformanceSnapshot?.optimizationOpportunities ?? []).length === 0 ? (
               <EmptyState
-                title="No optimization opportunities"
+                title="No Optimization Opportunities"
                 description="Run a performance snapshot to identify optimization targets."
               />
             ) : (
@@ -457,7 +457,7 @@ export function ReleaseCenterPage() {
               </ul>
             ) : (
               <EmptyState
-                title="No security verification"
+                title="No Security Verification"
                 description="Run security verification to review auth, RBAC, audit logging, and encryption status."
               />
             )}
@@ -493,7 +493,7 @@ export function ReleaseCenterPage() {
               </ul>
             ) : (
               <EmptyState
-                title="No configuration review"
+                title="No Configuration Review"
                 description="Review environment variables, provider adapters, and integration configuration."
               />
             )}
@@ -505,7 +505,7 @@ export function ReleaseCenterPage() {
         <Panel title="Release Checklist">
           {dashboard.releaseChecklist.length === 0 ? (
             <EmptyState
-              title="No checklist items"
+              title="No Checklist Items"
               description="Checklist items are seeded automatically on first access."
             />
           ) : (
@@ -559,7 +559,7 @@ export function ReleaseCenterPage() {
               </ul>
             ) : (
               <EmptyState
-                title="No release report"
+                title="No Release Report"
                 description="Generate a release candidate report aggregating all validation runs."
               />
             )}
@@ -573,7 +573,7 @@ export function ReleaseCenterPage() {
             <p className="text-sm text-slate-500">Loading audit logs...</p>
           ) : auditLogs.length === 0 ? (
             <EmptyState
-              title="No audit entries"
+              title="No Audit Entries"
               description="Release center actions are logged for complete auditability."
             />
           ) : (

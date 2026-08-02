@@ -3,10 +3,14 @@ import type { DatabaseClient } from '@titan/db';
 import { integrationConnections } from '@titan/db';
 import {
   DEFAULT_GOOGLE_MAPS_SERVICES,
+  summarizeGoogleMapsServiceProbes,
   type GoogleGeocodedAddress,
   type GoogleLatLng,
   type GoogleMapsBrowserConfig,
   type GoogleMapsConnectionSummary,
+  type GoogleMapsKeyStatus,
+  type GoogleMapsServiceFlag,
+  type GoogleMapsServiceProbe,
   type GoogleMapsServicesConfig,
   type GoogleMapsTestResult,
   type GooglePlacePrediction,
@@ -41,6 +45,7 @@ type GoogleMapsConfig = {
   defaultRegion: string;
   defaultLanguage: string;
   lastValidatedAt?: string | null;
+  lastTest?: GoogleMapsTestResult | null;
 };
 
 function mergeServices(partial?: Partial<GoogleMapsServicesConfig>): GoogleMapsServicesConfig {
@@ -52,6 +57,51 @@ function healthLabel(status: GoogleMapsConnectionSummary['status'], lastError: s
   if (status === 'error') return lastError ? `Error — ${lastError}` : 'Error';
   if (status === 'pending') return 'Pending validation';
   return 'Not connected';
+}
+
+function deriveServerKeyStatus(
+  hasApiKey: boolean,
+  probes: GoogleMapsServiceProbe[],
+): GoogleMapsKeyStatus {
+  if (!hasApiKey) return 'missing';
+  const serverProbes = probes.filter((p) => p.service !== 'mapsJavascript');
+  const available = serverProbes.find((p) => p.status === 'available');
+  if (available) return 'configured';
+  const denied = serverProbes.find(
+    (p) =>
+      p.keyStatus === 'restricted' ||
+      p.keyStatus === 'expired' ||
+      p.keyStatus === 'invalid' ||
+      p.keyStatus === 'billing_disabled',
+  );
+  return denied?.keyStatus ?? 'unknown';
+}
+
+function browserKeyProbe(hasBrowserKey: boolean, mapsJsEnabled: boolean): GoogleMapsServiceProbe {
+  if (!mapsJsEnabled) {
+    return {
+      service: 'mapsJavascript',
+      status: 'disabled',
+      message: 'Disabled in TITAN settings — map tiles will not load.',
+      keyStatus: null,
+    };
+  }
+  if (!hasBrowserKey) {
+    return {
+      service: 'mapsJavascript',
+      status: 'not_configured',
+      message:
+        'No browser Maps JS key stored. Interactive map tiles stay disabled until a referrer-restricted key is saved.',
+      keyStatus: 'missing',
+    };
+  }
+  return {
+    service: 'mapsJavascript',
+    status: 'configured_unverified',
+    message:
+      'Browser key stored (encrypted). Full validation happens in the browser with HTTP-referrer restrictions — expected.',
+    keyStatus: 'configured',
+  };
 }
 
 export class GoogleMapsService {
@@ -88,6 +138,7 @@ export class GoogleMapsService {
       lastValidatedAt: config.lastValidatedAt ?? null,
       lastError: connection.lastError,
       healthLabel: healthLabel(connection.status, connection.lastError),
+      lastTest: config.lastTest ?? null,
     };
   }
 
@@ -115,7 +166,7 @@ export class GoogleMapsService {
     }
 
     const creds = decryptGoogleMapsCredentials(connection.credentialsEncrypted, this.encryptionKey);
-    // Prefer referrer-restricted browser key; never invent a key.
+    // Prefer referrer-restricted browser key; never invent a key. Never return server key.
     const browserApiKey = creds.browserApiKey?.trim() || null;
 
     return {
@@ -129,22 +180,44 @@ export class GoogleMapsService {
 
   async validateCredentials(input: SaveGoogleMapsConnectionInput): Promise<GoogleMapsTestResult> {
     const apiKey = input.apiKey?.trim();
+    const services = mergeServices(input.services);
+    const testedAt = new Date().toISOString();
+
     if (!apiKey) {
       return {
         ok: false,
-        message: 'Google Maps API key is required.',
-        testedAt: new Date().toISOString(),
-        servicesChecked: ['geocoding'],
+        message: 'Google Maps server API key is required.',
+        testedAt,
+        servicesChecked: [],
+        serviceResults: [],
+        serverKeyStatus: 'missing',
+        browserKeyStatus: input.browserApiKey?.trim() ? 'configured' : 'missing',
       };
     }
 
     const client = new GoogleMapsClient({ apiKey });
-    const result = await client.testConnection();
+    const serverProbes = await client.probeServices({
+      ...services,
+      // Validate path only probes server APIs; browser key handled separately.
+      mapsJavascript: false,
+    });
+    const browserProbe = browserKeyProbe(Boolean(input.browserApiKey?.trim()), services.mapsJavascript);
+    const serviceResults = [
+      ...serverProbes.filter((p) => p.service !== 'mapsJavascript'),
+      browserProbe,
+    ];
+    const summary = summarizeGoogleMapsServiceProbes(serviceResults);
+
     return {
-      ok: result.ok,
-      message: result.message,
-      testedAt: new Date().toISOString(),
-      servicesChecked: ['geocoding'],
+      ok: summary.ok,
+      message: summary.message,
+      testedAt,
+      servicesChecked: serviceResults
+        .filter((p) => p.status !== 'disabled' && p.status !== 'skipped')
+        .map((p) => p.service),
+      serviceResults,
+      serverKeyStatus: deriveServerKeyStatus(true, serviceResults),
+      browserKeyStatus: browserProbe.keyStatus ?? 'missing',
     };
   }
 
@@ -177,17 +250,21 @@ export class GoogleMapsService {
       ? input.browserApiKey?.trim() || undefined
       : existingCreds?.browserApiKey;
 
+    const services = mergeServices({
+      ...this.readConfig(connection.config).services,
+      ...(input.services ?? {}),
+    });
+
+    let lastTest: GoogleMapsTestResult | null = this.readConfig(connection.config).lastTest ?? null;
     if (incomingKey) {
-      const test = await this.validateCredentials({ apiKey, browserApiKey });
+      const test = await this.validateCredentials({ apiKey, browserApiKey, services });
+      lastTest = test;
+      // Require at least one server API — do not fail solely because one API is disabled in GCP.
       if (!test.ok) {
         throw new GoogleMapsError('CONNECTION_FAILED', test.message);
       }
     }
 
-    const services = mergeServices({
-      ...this.readConfig(connection.config).services,
-      ...(input.services ?? {}),
-    });
     const credentials: GoogleMapsStoredCredentials = { apiKey, browserApiKey };
     const now = new Date();
 
@@ -202,6 +279,7 @@ export class GoogleMapsService {
           lastValidatedAt: incomingKey
             ? now.toISOString()
             : (this.readConfig(connection.config).lastValidatedAt ?? now.toISOString()),
+          lastTest,
         } satisfies GoogleMapsConfig,
         lastError: null,
         connectedAt: connection.connectedAt ?? now,
@@ -213,31 +291,64 @@ export class GoogleMapsService {
   }
 
   async testStoredConnection(companyId: string): Promise<GoogleMapsTestResult> {
-    const client = await this.requireClient(companyId, 'geocoding');
-    const result = await client.testConnection();
+    this.ensureEncryptionKey();
     const connection = await this.getOrCreateConnection(companyId);
+    if (connection.status !== 'connected' || !connection.credentialsEncrypted) {
+      throw new GoogleMapsError('NOT_CONNECTED', 'Google Maps is not connected for this company.');
+    }
+
+    let creds: GoogleMapsStoredCredentials;
+    try {
+      creds = decryptGoogleMapsCredentials(connection.credentialsEncrypted, this.encryptionKey!);
+    } catch (error) {
+      throw new GoogleMapsError(
+        'CREDENTIALS_INVALID',
+        error instanceof Error ? error.message : 'Unable to decrypt Google Maps credentials',
+      );
+    }
+
     const config = this.readConfig(connection.config);
+    const client = new GoogleMapsClient({ apiKey: creds.apiKey });
+    const serverProbes = await client.probeServices({
+      ...config.services,
+      mapsJavascript: false,
+    });
+    const browserProbe = browserKeyProbe(Boolean(creds.browserApiKey), config.services.mapsJavascript);
+    // Replace the client's skipped mapsJavascript with our browser-key-aware probe.
+    const serviceResults = [
+      ...serverProbes.filter((p) => p.service !== 'mapsJavascript'),
+      browserProbe,
+    ];
+    const summary = summarizeGoogleMapsServiceProbes(serviceResults);
     const now = new Date();
+    const result: GoogleMapsTestResult = {
+      ok: summary.ok,
+      message: summary.message,
+      testedAt: now.toISOString(),
+      servicesChecked: serviceResults
+        .filter((p) => p.status !== 'disabled' && p.status !== 'skipped')
+        .map((p) => p.service as GoogleMapsServiceFlag),
+      serviceResults,
+      serverKeyStatus: deriveServerKeyStatus(true, serviceResults),
+      browserKeyStatus: browserProbe.keyStatus ?? 'missing',
+    };
 
     await this.db
       .update(integrationConnections)
       .set({
+        // Stay connected when at least one server API works; surface partial failures in lastTest.
         status: result.ok ? 'connected' : 'error',
         lastError: result.ok ? null : result.message,
         config: {
           ...config,
           lastValidatedAt: now.toISOString(),
+          lastTest: result,
         },
         updatedAt: now,
       })
       .where(eq(integrationConnections.id, connection.id));
 
-    return {
-      ok: result.ok,
-      message: result.message,
-      testedAt: now.toISOString(),
-      servicesChecked: ['geocoding'],
-    };
+    return result;
   }
 
   async disconnect(companyId: string): Promise<GoogleMapsConnectionSummary> {
@@ -249,6 +360,11 @@ export class GoogleMapsService {
         credentialsEncrypted: null,
         lastError: null,
         connectedAt: null,
+        config: {
+          ...this.readConfig(connection.config),
+          lastTest: null,
+          lastValidatedAt: null,
+        } satisfies GoogleMapsConfig,
         updatedAt: new Date(),
       })
       .where(eq(integrationConnections.id, connection.id));
@@ -275,6 +391,11 @@ export class GoogleMapsService {
     return client.geocodeAddress(address);
   }
 
+  async reverseGeocode(companyId: string, location: GoogleLatLng): Promise<GoogleGeocodedAddress | null> {
+    const client = await this.requireClient(companyId, 'geocoding');
+    return client.reverseGeocode(location);
+  }
+
   async placeDetails(companyId: string, placeId: string): Promise<GoogleGeocodedAddress | null> {
     const client = await this.requireClient(companyId, 'places');
     return client.placeDetails(placeId);
@@ -287,6 +408,17 @@ export class GoogleMapsService {
   ): Promise<GoogleRouteEstimate | null> {
     const connection = await this.getOrCreateConnection(companyId);
     const config = this.readConfig(connection.config);
+
+    // Prefer Routes API (computeRoutes) when enabled — matches current GCP setup.
+    if (config.services.routes) {
+      try {
+        const client = await this.requireClient(companyId, 'routes');
+        const route = await client.computeRoutes({ origin, destination });
+        if (route) return route;
+      } catch {
+        // Fall through to legacy Directions / Distance Matrix when available.
+      }
+    }
 
     if (config.services.directions) {
       try {
@@ -305,7 +437,7 @@ export class GoogleMapsService {
 
     throw new GoogleMapsError(
       'SERVICE_DISABLED',
-      'Directions and Distance Matrix are disabled for this company.',
+      'Routes, Directions, and Distance Matrix are disabled for this company.',
     );
   }
 
@@ -357,6 +489,7 @@ export class GoogleMapsService {
           services: DEFAULT_GOOGLE_MAPS_SERVICES,
           defaultRegion: 'za',
           defaultLanguage: 'en',
+          lastTest: null,
         } satisfies GoogleMapsConfig,
       })
       .returning();
@@ -371,6 +504,7 @@ export class GoogleMapsService {
       defaultRegion: config.defaultRegion ?? 'za',
       defaultLanguage: config.defaultLanguage ?? 'en',
       lastValidatedAt: config.lastValidatedAt ?? null,
+      lastTest: config.lastTest ?? null,
     };
   }
 

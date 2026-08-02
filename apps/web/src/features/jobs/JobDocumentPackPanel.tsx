@@ -82,7 +82,7 @@ export function JobDocumentPackPanel({
 
   return (
     <Panel
-      title="Job document packs"
+      title="Job Document Packs"
       description="Curate linked documents, run internal approval, then share to the customer portal."
     >
       {error ? <p className="form-error">{error}</p> : null}

@@ -163,7 +163,7 @@ export function QualityPage() {
   if (!canView) {
     return (
       <EmptyState
-        title="Quality access required"
+        title="Quality Access Required"
         description="You need quality or executive permissions to view this department."
       />
     );
@@ -201,31 +201,31 @@ export function QualityPage() {
         ))}
       </div>
 
-      {isLoading && !dashboard ? <LoadingState label="Loading quality intelligence…" /> : null}
+      {isLoading && !dashboard ? <LoadingState label="Loading Quality Intelligence…" /> : null}
 
       {activeTab === 'dashboard' && dashboard ? (
         <>
           <div className="stat-grid">
             <StatCard
-              label="Comeback cost"
+              label="Comeback Cost"
               value={formatMoney(dashboard.comebackCostCents, dashboard.currency)}
             />
             <StatCard
-              label="Warranty cost"
+              label="Warranty Cost"
               value={formatMoney(dashboard.warrantyCostCents, dashboard.currency)}
             />
             <StatCard
-              label="First-time fix rate"
+              label="First-Time Fix Rate"
               value={
                 dashboard.firstTimeFixRatePercent != null
                   ? `${dashboard.firstTimeFixRatePercent}%`
                   : 'N/A'
               }
             />
-            <StatCard label="Open comebacks" value={String(dashboard.openComebackCount)} />
-            <StatCard label="Open warranty claims" value={String(dashboard.openWarrantyCount)} />
+            <StatCard label="Open Comebacks" value={String(dashboard.openComebackCount)} />
+            <StatCard label="Open Warranty Claims" value={String(dashboard.openWarrantyCount)} />
             <StatCard
-              label="Monthly quality score"
+              label="Monthly Quality Score"
               value={
                 dashboard.monthlyQualityScore != null
                   ? String(dashboard.monthlyQualityScore)
@@ -235,7 +235,7 @@ export function QualityPage() {
           </div>
 
           <div className="portal-grid">
-            <Panel title="Technician rankings">
+            <Panel title="Technician Rankings">
               {dashboard.technicianRankings.length === 0 ? (
                 <p className="page-muted">No technician quality scores yet.</p>
               ) : (
@@ -250,7 +250,7 @@ export function QualityPage() {
               )}
             </Panel>
 
-            <Panel title="Common failure reasons">
+            <Panel title="Common Failure Reasons">
               {dashboard.commonFailureReasons.length === 0 ? (
                 <p className="page-muted">No root cause classifications recorded.</p>
               ) : (
@@ -265,7 +265,7 @@ export function QualityPage() {
               )}
             </Panel>
 
-            <Panel title="Branch rankings">
+            <Panel title="Branch Rankings">
               {dashboard.branchRankings.length === 0 ? (
                 <p className="page-muted">No branch comeback data yet.</p>
               ) : (
@@ -283,7 +283,7 @@ export function QualityPage() {
               )}
             </Panel>
 
-            <Panel title="Supplier rankings">
+            <Panel title="Supplier Rankings">
               {dashboard.supplierRankings.length === 0 ? (
                 <p className="page-muted">No supplier defect data yet.</p>
               ) : (
@@ -305,12 +305,12 @@ export function QualityPage() {
         <>
           {canWrite ? (
             <Panel
-              title="Record comeback"
+              title="Record Comeback"
               description="Links to a real job — no demo records are created."
             >
               <form className="form-grid" onSubmit={(event) => void handleCreateComeback(event)}>
                 <Input
-                  label="Original job ID"
+                  label="Original Job ID"
                   value={originalJobId}
                   onChange={(event) => setOriginalJobId(event.target.value)}
                   required
@@ -321,15 +321,15 @@ export function QualityPage() {
                   onChange={(event) => setComebackReason(event.target.value)}
                   required
                 />
-                <Button type="submit">Record comeback</Button>
+                <Button type="submit">Record Comeback</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Comeback history">
+          <Panel title="Comeback History">
             {comebacks.length === 0 ? (
               <EmptyState
-                title="No comebacks"
+                title="No Comebacks"
                 description="Comebacks appear when recorded against real jobs."
               />
             ) : (
@@ -350,10 +350,10 @@ export function QualityPage() {
       ) : null}
 
       {activeTab === 'warranty' ? (
-        <Panel title="Warranty claims">
+        <Panel title="Warranty Claims">
           {warrantyClaims.length === 0 ? (
             <EmptyState
-              title="No warranty claims"
+              title="No Warranty Claims"
               description="Warranty claims appear when recorded against real jobs."
             />
           ) : (
@@ -373,10 +373,10 @@ export function QualityPage() {
       ) : null}
 
       {activeTab === 'technicians' && technicianIntel ? (
-        <Panel title="Technician quality intelligence">
+        <Panel title="Technician Quality Intelligence">
           {technicianIntel.technicians.length === 0 ? (
             <EmptyState
-              title="No technician scores"
+              title="No Technician Scores"
               description="Scores are calculated from real job and comeback data."
             />
           ) : (
@@ -401,10 +401,10 @@ export function QualityPage() {
       ) : null}
 
       {activeTab === 'suppliers' && supplierIntel ? (
-        <Panel title="Supplier quality intelligence">
+        <Panel title="Supplier Quality Intelligence">
           {supplierIntel.defects.length === 0 ? (
             <EmptyState
-              title="No supplier defects"
+              title="No Supplier Defects"
               description="Defect records appear when logged against real inventory."
             />
           ) : (
@@ -428,7 +428,7 @@ export function QualityPage() {
         <>
           {canWrite ? (
             <Panel
-              title="Draft quality action"
+              title="Draft Quality Action"
               description="Draft → Approval → Execution. No automatic penalties."
             >
               <form className="form-grid" onSubmit={(event) => void handleCreateAction(event)}>
@@ -444,15 +444,15 @@ export function QualityPage() {
                   onChange={(event) => setActionRecommendation(event.target.value)}
                   required
                 />
-                <Button type="submit">Draft action</Button>
+                <Button type="submit">Draft Action</Button>
               </form>
             </Panel>
           ) : null}
 
-          <Panel title="Pending and historical actions">
+          <Panel title="Pending And Historical Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No quality actions"
+                title="No Quality Actions"
                 description="Actions are drafted for manager approval."
               />
             ) : (

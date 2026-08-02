@@ -9,12 +9,12 @@ const sectionTabs = [
 ];
 
 const secondaryItems = [
-  { id: 'finance-settings', label: 'Finance settings', href: '/settings/company' },
-  { id: 'numbering-rules', label: 'Numbering rules', href: '/settings/company' },
-  { id: 'archived-records', label: 'Archived records', href: '/drafts?status=archived' },
-  { id: 'xero-sync', label: 'Xero sync status', href: '/integrations/xero' },
-  { id: 'xero-writes', label: 'Xero write approvals', href: '/integrations/xero/write-approvals' },
-  { id: 'advanced-reports', label: 'Advanced reports', href: '/analytics' },
+  { id: 'finance-settings', label: 'Finance Settings', href: '/settings/company' },
+  { id: 'numbering-rules', label: 'Numbering Rules', href: '/settings/company' },
+  { id: 'archived-records', label: 'Archived Records', href: '/drafts?status=archived' },
+  { id: 'xero-sync', label: 'Xero Sync Status', href: '/integrations/xero' },
+  { id: 'xero-writes', label: 'Xero Write Approvals', href: '/integrations/xero/write-approvals' },
+  { id: 'advanced-reports', label: 'Advanced Reports', href: '/analytics' },
 ];
 
 export function FinanceNav() {
@@ -25,7 +25,7 @@ export function FinanceNav() {
   });
 
   return (
-    <nav className="ux-compact-tabs finance-nav" aria-label="Finance sections">
+    <nav className="ux-compact-tabs finance-nav" aria-label="Finance Sections">
       <div className="ux-compact-tabs__row">
         {sectionTabs.map((tab) => {
           const isActive = location === tab.href || location.startsWith(`${tab.href}/`);

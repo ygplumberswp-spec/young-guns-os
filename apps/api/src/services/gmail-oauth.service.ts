@@ -2,7 +2,12 @@ import { createHash, randomBytes } from 'node:crypto';
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import type { CommPlatformCapabilityState, CommPlatformGmailOAuthStatus } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { commPlatformAccounts, integrationOauthStates, securityAuditLogs } from '@titan/db';
+import {
+  commPlatformAccounts,
+  integrationConnections,
+  integrationOauthStates,
+  securityAuditLogs,
+} from '@titan/db';
 import type { GmailOAuthEnvConfig } from '../config.js';
 import {
   decryptGmailCredentials,
@@ -89,7 +94,7 @@ export class GmailOAuthService {
         redirectUri: null,
         scopes: this.getScopes(),
         emptyStateMessage:
-          'Business Gmail is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API, then connect Young Guns Gmail via Google OAuth.',
+          'Business Gmail is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API, then connect Business Gmail via Google OAuth.',
       };
     }
 
@@ -105,7 +110,7 @@ export class GmailOAuthService {
       scopes: this.getScopes(),
       emptyStateMessage: connected
         ? `Business Gmail connected (${account?.externalAddress ?? 'account'}). Sync pulls real messages only.`
-        : 'Google OAuth is configured. Connect Young Guns Plumbing Gmail to index Inbox, Sent, Drafts, and Labels.',
+        : 'Google OAuth is configured. Connect Business Gmail to index Inbox, Sent, Drafts, and Labels.',
     };
   }
 
@@ -277,6 +282,12 @@ export class GmailOAuthService {
         entityId: oauthState.companyId,
         userId: oauthState.userId,
         metadata: { emailAddress: profile.emailAddress, autoSend: false },
+      });
+
+      await this.syncIntegrationHubConnection(oauthState.companyId, {
+        status: 'connected',
+        emailAddress: profile.emailAddress,
+        connectedAt: now,
       });
 
       return this.buildFrontendRedirect({
@@ -477,6 +488,12 @@ export class GmailOAuthService {
         ),
       );
 
+    await this.syncIntegrationHubConnection(companyId, {
+      status: 'disconnected',
+      emailAddress: null,
+      connectedAt: null,
+    });
+
     await this.db.insert(securityAuditLogs).values({
       companyId,
       category: 'communications',
@@ -638,16 +655,73 @@ export class GmailOAuthService {
         .update(commPlatformAccounts)
         .set({ status: 'pending', lastError: null, updatedAt: new Date() })
         .where(eq(commPlatformAccounts.id, existing.id));
+    } else {
+      await this.db.insert(commPlatformAccounts).values({
+        companyId,
+        accountKind: 'business_gmail',
+        label: 'Business Gmail',
+        status: 'pending',
+        privateByDefault: false,
+        syncEnabled: false,
+      });
+    }
+
+    await this.syncIntegrationHubConnection(companyId, {
+      status: 'pending',
+      emailAddress: existing?.externalAddress ?? null,
+      connectedAt: null,
+    });
+  }
+
+  /**
+   * Mirror Business Gmail OAuth into Integration Hub so Connected/Disconnected
+   * status is honest without duplicating token storage (tokens stay on
+   * comm_platform_accounts; hub row is status + config only).
+   */
+  private async syncIntegrationHubConnection(
+    companyId: string,
+    input: {
+      status: 'pending' | 'connected' | 'disconnected' | 'error';
+      emailAddress: string | null;
+      connectedAt: Date | null;
+    },
+  ): Promise<void> {
+    const existing = await this.db.query.integrationConnections.findFirst({
+      where: and(
+        eq(integrationConnections.companyId, companyId),
+        eq(integrationConnections.provider, 'gmail'),
+      ),
+    });
+
+    const config = {
+      ...(existing?.config ?? {}),
+      authMethod: 'oauth' as const,
+      fromEmail: input.emailAddress ?? undefined,
+      source: 'communications_platform',
+    };
+
+    if (existing) {
+      await this.db
+        .update(integrationConnections)
+        .set({
+          status: input.status,
+          credentialsEncrypted: null,
+          config,
+          connectedAt: input.connectedAt,
+          lastError: input.status === 'error' ? existing.lastError : null,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationConnections.id, existing.id));
       return;
     }
 
-    await this.db.insert(commPlatformAccounts).values({
+    await this.db.insert(integrationConnections).values({
       companyId,
-      accountKind: 'business_gmail',
-      label: 'Business Gmail',
-      status: 'pending',
-      privateByDefault: false,
-      syncEnabled: false,
+      provider: 'gmail',
+      status: input.status,
+      credentialsEncrypted: null,
+      config,
+      connectedAt: input.connectedAt,
     });
   }
 

@@ -134,7 +134,7 @@ export function JobPackDetailPage() {
   if (!canView) {
     return (
       <div className="documents-page">
-        <PageHeader title="Job pack" description="You do not have permission to view documents." />
+        <PageHeader title="Job Pack" description="You do not have permission to view documents." />
       </div>
     );
   }
@@ -142,8 +142,8 @@ export function JobPackDetailPage() {
   if (isLoading) {
     return (
       <div className="page-shell">
-        <PageHeader title="Job pack" />
-        <LoadingState label="Loading job pack…" />
+        <PageHeader title="Job Pack" />
+        <LoadingState label="Loading Job Pack…" />
       </div>
     );
   }
@@ -151,7 +151,7 @@ export function JobPackDetailPage() {
   if (error && !pack) {
     return (
       <div className="documents-page">
-        <PageHeader title="Job pack" />
+        <PageHeader title="Job Pack" />
         <p className="form-error">{error}</p>
       </div>
     );
@@ -171,7 +171,7 @@ export function JobPackDetailPage() {
       {success ? <p className="form-success">{success}</p> : null}
 
       <div className="documents-page__grid">
-        <Panel title="Pack details">
+        <Panel title="Pack Details">
           <dl className="jobs-detail-list">
             <div>
               <dt>Job</dt>
@@ -202,7 +202,7 @@ export function JobPackDetailPage() {
           </dl>
         </Panel>
 
-        <Panel title="Documents in pack">
+        <Panel title="Documents In Pack">
           {pack.items.length === 0 ? (
             <p className="page-muted">No documents in this pack.</p>
           ) : (
@@ -226,7 +226,7 @@ export function JobPackDetailPage() {
         </Panel>
 
         {canWrite ? (
-          <Panel title="Approval and send">
+          <Panel title="Approval And Send">
             {approvalAction ? (
               <div className="jobs-form__actions">
                 <Button disabled={isSaving} onClick={() => void handleApproveStep()}>

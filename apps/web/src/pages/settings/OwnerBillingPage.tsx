@@ -104,7 +104,7 @@ export function OwnerBillingPage() {
       {isLoading ? (
         <Panel title="Loading">Loading billing…</Panel>
       ) : !billing ? (
-        <EmptyState title="No billing data" description="Billing information is unavailable." />
+        <EmptyState title="No Billing Data" description="Billing information is unavailable." />
       ) : (
         <>
           <div className="stat-grid">
@@ -162,7 +162,7 @@ export function OwnerBillingPage() {
               </>
             ) : (
               <EmptyState
-                title="No subscription"
+                title="No Subscription"
                 description="Contact your platform administrator to activate a subscription."
               />
             )}
@@ -171,7 +171,7 @@ export function OwnerBillingPage() {
           <Panel title="Invoices & Billing Records">
             {billing.billingRecords.length === 0 ? (
               <EmptyState
-                title="No invoices"
+                title="No Invoices"
                 description="Billing records appear when invoices are generated."
               />
             ) : (
@@ -199,14 +199,14 @@ export function OwnerBillingPage() {
             </div>
           </Panel>
 
-          <Panel title="Add-ons">
+          <Panel title="Add-Ons">
             {billing.addOns.length === 0 ? (
               <EmptyState
-                title="No add-ons"
+                title="No Add-Ons"
                 description="Purchase add-ons from SaaS Management."
                 action={
                   <Link href="/saas-management">
-                    <Button variant="secondary">View Add-ons</Button>
+                    <Button variant="secondary">View Add-Ons</Button>
                   </Link>
                 }
               />

@@ -121,7 +121,7 @@ export function InvoiceListPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search number or title…"
-            aria-label="Search invoices"
+            aria-label="Search Invoices"
           />
           <button
             type="button"
@@ -181,7 +181,7 @@ export function InvoiceListPage() {
                         {invoice.displayInvoiceNumber}
                       </Link>
                       {isSyncPending(invoice) ? (
-                        <StatusBadge label="Sync pending" tone="sync" className="finance-sync-badge" />
+                        <StatusBadge label="Sync Pending" tone="sync" className="finance-sync-badge" />
                       ) : null}
                     </td>
                     <td>

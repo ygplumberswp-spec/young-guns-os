@@ -32,14 +32,14 @@ export function MobileRoutePage() {
         error={routeQuery.error}
         hasData={route !== undefined}
         isEmpty={route !== undefined && route.route.stopCount === 0}
-        emptyTitle="No route stops"
+        emptyTitle="No Route Stops"
         emptyDescription="Assigned jobs that are not completed will appear here with site addresses when available."
         loadingLabel="Loading route…"
         onRetry={() => void routeQuery.refetch()}
       >
         {route ? (
           <>
-            <Panel title="Maps / ETA capability">
+            <Panel title="Maps / ETA Capability">
               <p>
                 <span className="status-pill status-pill--disabled">
                   {route.mapsCapabilityLabel}
@@ -60,7 +60,7 @@ export function MobileRoutePage() {
             </Panel>
 
             {route.route.nextDestination ? (
-              <Panel title="Next destination">
+              <Panel title="Next Destination">
                 <p>
                   <strong>{route.route.nextDestination.title}</strong> —{' '}
                   {route.route.nextDestination.customerName}
@@ -94,7 +94,7 @@ export function MobileRoutePage() {
               </Panel>
             ) : null}
 
-            <Panel title="Route stops">
+            <Panel title="Route Stops">
               {route.route.stops.length === 0 ? (
                 <p className="page-muted">No active stops on your route.</p>
               ) : (
@@ -127,7 +127,7 @@ export function MobileRoutePage() {
               )}
             </Panel>
 
-            <Panel title="Fleet provider status">
+            <Panel title="Fleet Provider Status">
               <p>
                 Cartrack connection record:{' '}
                 {route.cartrackConnected ? 'configured in integrations' : 'not connected'}

@@ -3,6 +3,11 @@ import { EmptyState } from '@titan/ui';
 import { Link } from 'wouter';
 import { useAuth } from '../../lib/auth-context';
 import { fetchGoogleMapsBrowserConfig } from '../../lib/google-maps-api';
+import {
+  decideMapCameraAction,
+  resolveContextKey,
+  resolveFollowId,
+} from './map-camera-policy';
 
 export type MapMarker = {
   id: string;
@@ -19,21 +24,72 @@ export type GoogleMapViewProps = {
   className?: string;
   emptyTitle?: string;
   emptyDescription?: string;
+  /**
+   * When this value changes, the camera recenters to the current markers once.
+   * Use for job/context switches — not for live GPS polling.
+   */
+  contextKey?: string | null;
+  /** Alias for contextKey (existing call sites). */
+  cameraContextKey?: string | null;
+  /**
+   * When set, the camera follows this marker on position updates (Follow Vehicle).
+   * Off by default — manual pan/zoom is preserved.
+   */
+  followVehicleId?: string | null;
+  /** Alias for followVehicleId. */
+  followMarkerId?: string | null;
+  /** Parent increments to trigger a one-shot locate/fitBounds. */
+  locateToken?: number | null;
+};
+
+type GoogleMapTypeId = 'roadmap' | 'satellite' | 'hybrid' | 'terrain';
+
+type GoogleMapInstance = {
+  fitBounds: (b: unknown) => void;
+  setCenter: (c: { lat: number; lng: number }) => void;
+  setZoom: (z: number) => void;
+  getZoom: () => number | undefined;
+  setMapTypeId: (id: GoogleMapTypeId) => void;
+  getMapTypeId: () => string;
+};
+
+type GoogleMarkerInstance = {
+  setMap: (map: GoogleMapInstance | null) => void;
+  setPosition: (c: { lat: number; lng: number }) => void;
+  setTitle: (title: string) => void;
+};
+
+type GooglePolylineInstance = {
+  setMap: (map: GoogleMapInstance | null) => void;
+  setPath: (path: unknown) => void;
 };
 
 declare global {
   interface Window {
     google?: {
       maps: {
-        Map: new (el: HTMLElement, opts: Record<string, unknown>) => {
-          fitBounds: (b: unknown) => void;
-          setCenter: (c: { lat: number; lng: number }) => void;
-          setZoom: (z: number) => void;
+        Map: new (el: HTMLElement, opts: Record<string, unknown>) => GoogleMapInstance;
+        Marker: new (opts: Record<string, unknown>) => GoogleMarkerInstance;
+        event: {
+          addListener: (instance: unknown, eventName: string, handler: () => void) => unknown;
         };
-        Marker: new (opts: Record<string, unknown>) => unknown;
         LatLngBounds: new () => { extend: (c: { lat: number; lng: number }) => void };
         geometry?: { encoding?: { decodePath: (path: string) => unknown } };
-        Polyline: new (opts: Record<string, unknown>) => unknown;
+        Polyline: new (opts: Record<string, unknown>) => GooglePolylineInstance;
+        ControlPosition: {
+          TOP_RIGHT: unknown;
+          LEFT_BOTTOM: unknown;
+        };
+        MapTypeControlStyle: {
+          HORIZONTAL_BAR: unknown;
+          DROPDOWN_MENU: unknown;
+        };
+        MapTypeId: {
+          ROADMAP: GoogleMapTypeId;
+          SATELLITE: GoogleMapTypeId;
+          HYBRID: GoogleMapTypeId;
+          TERRAIN: GoogleMapTypeId;
+        };
       };
     };
     __titanGoogleMapsLoader?: Promise<void>;
@@ -56,6 +112,20 @@ function loadGoogleMapsScript(apiKey: string): Promise<void> {
   return window.__titanGoogleMapsLoader;
 }
 
+function applyCameraToMarkers(map: GoogleMapInstance, markers: MapMarker[]) {
+  if (markers.length === 0 || !window.google?.maps) return;
+  if (markers.length === 1) {
+    map.setCenter({ lat: markers[0]!.latitude, lng: markers[0]!.longitude });
+    map.setZoom(14);
+    return;
+  }
+  const bounds = new window.google.maps.LatLngBounds();
+  for (const marker of markers) {
+    bounds.extend({ lat: marker.latitude, lng: marker.longitude });
+  }
+  map.fitBounds(bounds);
+}
+
 export function GoogleMapView({
   markers = [],
   routePolyline = null,
@@ -63,64 +133,91 @@ export function GoogleMapView({
   className = '',
   emptyTitle = 'Map unavailable',
   emptyDescription = 'Google Maps is not connected or no verified coordinates are available. TITAN will not invent markers.',
+  contextKey = null,
+  cameraContextKey = null,
+  followVehicleId = null,
+  followMarkerId = null,
+  locateToken = null,
 }: GoogleMapViewProps) {
   const { accessToken } = useAuth();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<GoogleMapInstance | null>(null);
+  const overlayMarkersRef = useRef<Map<string, GoogleMarkerInstance>>(new Map());
+  const polylineRef = useRef<GooglePolylineInstance | null>(null);
+  const didInitialCameraRef = useRef(false);
+  const lastCameraContextKeyRef = useRef<string | null | undefined>(undefined);
+  const lastLocateTokenRef = useRef<number | null>(null);
+  /** Persists map type across marker/GPS refreshes; never reset on overlay updates. */
+  const mapTypeRef = useRef<GoogleMapTypeId>('roadmap');
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [browserKeyMissing, setBrowserKeyMissing] = useState(false);
 
+  const hasContent = markers.length > 0 || Boolean(routePolyline);
+
+  // Create the map once — never tear down on marker/GPS polling updates.
   useEffect(() => {
     let cancelled = false;
 
-    async function mount() {
-      if (!accessToken || !containerRef.current) return;
+    async function ensureMap() {
+      if (!accessToken || !containerRef.current || !hasContent) return;
+      if (mapRef.current) return;
+
       try {
         const config = await fetchGoogleMapsBrowserConfig(accessToken);
         if (cancelled) return;
         if (!config.enabled || !config.browserApiKey) {
+          setBrowserKeyMissing(true);
           setError('browser_key_missing');
           setReady(false);
           return;
         }
-        if (markers.length === 0 && !routePolyline) {
-          setError('no_markers');
-          setReady(false);
-          return;
-        }
+        setBrowserKeyMissing(false);
 
         await loadGoogleMapsScript(config.browserApiKey);
-        if (cancelled || !containerRef.current || !window.google?.maps) return;
+        if (cancelled || !containerRef.current || !window.google?.maps || mapRef.current) return;
 
-        const map = new window.google.maps.Map(containerRef.current, {
-          mapTypeControl: false,
+        const gmaps = window.google.maps;
+        const map = new gmaps.Map(containerRef.current, {
+          mapTypeId: mapTypeRef.current,
+          mapTypeControl: true,
+          mapTypeControlOptions: {
+            style: gmaps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: gmaps.ControlPosition.TOP_RIGHT,
+            mapTypeIds: [
+              gmaps.MapTypeId.ROADMAP,
+              gmaps.MapTypeId.SATELLITE,
+              gmaps.MapTypeId.HYBRID,
+            ],
+          },
+          zoomControl: true,
+          zoomControlOptions: {
+            position: gmaps.ControlPosition.LEFT_BOTTOM,
+          },
           streetViewControl: false,
           fullscreenControl: false,
+          scaleControl: true,
           zoom: 12,
-          center: { lat: markers[0]?.latitude ?? -33.9249, lng: markers[0]?.longitude ?? 18.4241 },
+          center: {
+            lat: markers[0]?.latitude ?? -33.9249,
+            lng: markers[0]?.longitude ?? 18.4241,
+          },
+          gestureHandling: 'greedy',
         });
 
-        const bounds = new window.google.maps.LatLngBounds();
-        for (const marker of markers) {
-          new window.google.maps.Marker({
-            map,
-            position: { lat: marker.latitude, lng: marker.longitude },
-            title: marker.label,
-          });
-          bounds.extend({ lat: marker.latitude, lng: marker.longitude });
-        }
+        gmaps.event.addListener(map, 'maptypeid_changed', () => {
+          const next = String(map.getMapTypeId()).toLowerCase() as GoogleMapTypeId;
+          if (
+            next === 'roadmap' ||
+            next === 'satellite' ||
+            next === 'hybrid' ||
+            next === 'terrain'
+          ) {
+            mapTypeRef.current = next;
+          }
+        });
 
-        if (routePolyline && window.google.maps.geometry?.encoding) {
-          const path = window.google.maps.geometry.encoding.decodePath(routePolyline);
-          new window.google.maps.Polyline({
-            map,
-            path,
-            strokeColor: '#22d3ee',
-            strokeOpacity: 0.9,
-            strokeWeight: 4,
-          });
-        }
-
-        if (markers.length > 1) map.fitBounds(bounds);
+        mapRef.current = map;
         setReady(true);
         setError(null);
       } catch (err) {
@@ -131,13 +228,117 @@ export function GoogleMapView({
       }
     }
 
-    void mount();
+    void ensureMap();
     return () => {
       cancelled = true;
     };
-  }, [accessToken, markers, routePolyline]);
+    // Intentionally omit markers — map instance must survive live updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken, hasContent]);
 
-  if (error === 'browser_key_missing') {
+  // Sync overlays; camera moves only on initial load, context change, or follow mode.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !window.google?.maps || !ready) return;
+    if (!hasContent) return;
+
+    const gmaps = window.google.maps;
+    const nextIds = new Set(markers.map((marker) => marker.id));
+
+    for (const [id, marker] of overlayMarkersRef.current) {
+      if (!nextIds.has(id)) {
+        marker.setMap(null);
+        overlayMarkersRef.current.delete(id);
+      }
+    }
+
+    for (const marker of markers) {
+      const existing = overlayMarkersRef.current.get(marker.id);
+      if (existing) {
+        existing.setPosition({ lat: marker.latitude, lng: marker.longitude });
+        if (marker.label) existing.setTitle(marker.label);
+      } else {
+        const created = new gmaps.Marker({
+          map,
+          position: { lat: marker.latitude, lng: marker.longitude },
+          title: marker.label,
+        });
+        overlayMarkersRef.current.set(marker.id, created);
+      }
+    }
+
+    if (routePolyline && gmaps.geometry?.encoding) {
+      const path = gmaps.geometry.encoding.decodePath(routePolyline);
+      if (polylineRef.current) {
+        polylineRef.current.setPath(path);
+        polylineRef.current.setMap(map);
+      } else {
+        polylineRef.current = new gmaps.Polyline({
+          map,
+          path,
+          strokeColor: '#22d3ee',
+          strokeOpacity: 0.9,
+          strokeWeight: 4,
+        });
+      }
+    } else if (polylineRef.current) {
+      polylineRef.current.setMap(null);
+      polylineRef.current = null;
+    }
+
+    const resolvedContextKey = resolveContextKey({ contextKey, cameraContextKey });
+    const resolvedFollowId = resolveFollowId({ followVehicleId, followMarkerId });
+    const cameraAction = decideMapCameraAction({
+      didInitialCamera: didInitialCameraRef.current,
+      previousContextKey: lastCameraContextKeyRef.current,
+      contextKey: resolvedContextKey,
+      followVehicleId: resolvedFollowId,
+      locateToken,
+      previousLocateToken: lastLocateTokenRef.current,
+    });
+
+    if (cameraAction === 'initial' || cameraAction === 'context_change' || cameraAction === 'locate') {
+      applyCameraToMarkers(map, markers);
+      didInitialCameraRef.current = true;
+      lastCameraContextKeyRef.current = resolvedContextKey;
+      if (locateToken != null) lastLocateTokenRef.current = locateToken;
+      return;
+    }
+
+    if (cameraAction === 'follow_vehicle' && resolvedFollowId) {
+      const target = markers.find((marker) => marker.id === resolvedFollowId);
+      if (target) {
+        map.setCenter({ lat: target.latitude, lng: target.longitude });
+      }
+    }
+  }, [
+    markers,
+    routePolyline,
+    contextKey,
+    cameraContextKey,
+    followVehicleId,
+    followMarkerId,
+    locateToken,
+    ready,
+    hasContent,
+  ]);
+
+  // Full unmount cleanup only.
+  useEffect(() => {
+    return () => {
+      for (const marker of overlayMarkersRef.current.values()) {
+        marker.setMap(null);
+      }
+      overlayMarkersRef.current.clear();
+      polylineRef.current?.setMap(null);
+      polylineRef.current = null;
+      mapRef.current = null;
+      didInitialCameraRef.current = false;
+      lastCameraContextKeyRef.current = undefined;
+    };
+  }, []);
+
+  if (browserKeyMissing || error === 'browser_key_missing') {
     return (
       <EmptyState
         title={emptyTitle}
@@ -151,12 +352,12 @@ export function GoogleMapView({
     );
   }
 
-  if (error === 'no_markers') {
+  if (!hasContent) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
 
-  if (error && error !== 'browser_key_missing' && error !== 'no_markers') {
-    return <EmptyState title="Map error" description={error} />;
+  if (error && error !== 'browser_key_missing') {
+    return <EmptyState title="Map Error" description={error} />;
   }
 
   return (
@@ -164,8 +365,12 @@ export function GoogleMapView({
       className={`titan-google-map ${className}`.trim()}
       style={{ height, width: '100%', borderRadius: '0.75rem', overflow: 'hidden' }}
     >
-      <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-      {!ready ? <p className="page-muted" style={{ padding: '0.75rem' }}>Loading map…</p> : null}
+      <div
+        ref={containerRef}
+        className="titan-google-map__canvas"
+        style={{ width: '100%', height: '100%' }}
+      />
+      {!ready ? <p className="page-muted titan-google-map__loading">Loading map…</p> : null}
     </div>
   );
 }

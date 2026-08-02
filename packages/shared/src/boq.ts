@@ -2,9 +2,9 @@ export type BoqStatus = 'draft' | 'in_review' | 'approved' | 'converted' | 'canc
 
 export const BOQ_STATUS_OPTIONS: Array<{ value: BoqStatus; label: string }> = [
   { value: 'draft', label: 'Draft' },
-  { value: 'in_review', label: 'In review' },
+  { value: 'in_review', label: 'In Review' },
   { value: 'approved', label: 'Approved' },
-  { value: 'converted', label: 'Converted to quote' },
+  { value: 'converted', label: 'Converted To Quote' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 

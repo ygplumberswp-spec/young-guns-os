@@ -2,7 +2,7 @@ import { Link, useLocation } from 'wouter';
 
 const providerLinks = [
   { href: '/integrations/xero', label: 'Xero' },
-  { href: '/integrations/whatsapp', label: 'WhatsApp' },
+  { href: '/integrations/whatsapp', label: 'Business WhatsApp' },
   { href: '/integrations/email', label: 'Email (SMTP)' },
   { href: '/integrations/cartrack', label: 'Cartrack' },
   { href: '/integrations/google-maps', label: 'Google Maps' },
@@ -18,7 +18,7 @@ export function IntegrationsNav() {
   }
 
   return (
-    <nav className="integrations-nav integrations-nav--compact" aria-label="Quick provider links">
+    <nav className="integrations-nav integrations-nav--compact" aria-label="Quick Provider Links">
       {providerLinks.map((link) => (
         <Link key={link.href} href={link.href} className="integrations-nav__link">
           {link.label}

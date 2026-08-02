@@ -482,9 +482,9 @@ export function isMarketingSuppressed(status: MarketingConsentStatus | null | un
 /** Human-Quality Content Standard — recorded for future marketing implementation (not UX-H engine). */
 export const HUMAN_QUALITY_CONTENT_STANDARD = {
   id: 'titan-human-quality-content-standard-v1',
-  title: 'Owner-approved Human-Quality Content Standard',
+  title: 'Owner-Approved Human-Quality Content Standard',
   requirements: [
-    'Real Young Guns work and local Cape Town context only',
+    'Real company work and local Cape Town context only',
     'No generic AI content',
     'No fake staff, customers, testimonials or results',
     'Brand, fact, plumbing, visual and consent review required',
