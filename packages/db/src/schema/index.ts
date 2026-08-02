@@ -30,6 +30,7 @@ export * from './message-templates';
 export * from './communications';
 export * from './document-categories';
 export * from './documents';
+export * from './draft-workspace';
 export * from './workflows';
 export * from './workflow-triggers';
 export * from './workflow-actions';

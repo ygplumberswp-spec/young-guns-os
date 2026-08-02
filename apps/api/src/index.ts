@@ -42,6 +42,8 @@ import { JobsService } from './services/jobs.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
+import { createDraftsRouter } from './routes/drafts.js';
+import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
 import { StockMovementsService } from './services/stock-movements.service.js';
 import { createInventoryRouter } from './routes/inventory.js';
@@ -355,6 +357,7 @@ const marketingEligibilityService = new MarketingEligibilityService(db);
 const jobsService = new JobsService(db);
 const schedulingService = new SchedulingService(db);
 const financeService = new FinanceService(db);
+const draftAutosaveService = new DraftAutosaveService(db);
 const inventoryService = new InventoryService(db);
 const stockMovementsService = new StockMovementsService(db);
 const fleetService = new FleetService(db);
@@ -1336,6 +1339,16 @@ app.use(
   '/api/v1/finance',
   createFinanceRouter({
     financeService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/drafts',
+  createDraftsRouter({
+    draftAutosaveService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

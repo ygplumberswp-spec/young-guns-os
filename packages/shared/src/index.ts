@@ -47,6 +47,7 @@ export * from './integration-capability.js';
 export * from './marketing-eligibility.js';
 export * from './communications.js';
 export * from './documents.js';
+export * from './drafts.js';
 export * from './automation.js';
 export * from './n8n-orchestration.js';
 export * from './enterprise-modules.js';

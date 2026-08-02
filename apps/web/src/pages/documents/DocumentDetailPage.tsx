@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
+import { Link, useLocation, useRoute, useSearch } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   CustomerSummary,
@@ -11,14 +11,20 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { fetchDocument, fetchDocumentCategories, updateDocument } from '../../lib/documents-api';
+import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { DocumentsNav } from '../../features/documents/DocumentsNav';
 import { canManageDocuments, formatFileSize } from '../../features/documents/utils';
+import { AutosaveIndicator } from '../../components/ux/AutosaveIndicator';
+import { DraftRestoreBanner } from '../../components/ux/DraftRestoreBanner';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 
 export function DocumentDetailPage() {
   const [, params] = useRoute('/documents/:id');
   const documentId = params?.id ?? '';
   const { accessToken, user } = useAuth();
+  const [, navigate] = useLocation();
+  const search = useSearch();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [jobs, setJobs] = useState<JobSummary[]>([]);
@@ -37,8 +43,32 @@ export function DocumentDetailPage() {
   const [categoryId, setCategoryId] = useState('');
   const [customerId, setCustomerId] = useState('');
   const [jobId, setJobId] = useState('');
+  const [pendingDraft, setPendingDraft] = useState<{
+    id: string;
+    title: string | null;
+    lastEditedAt: string;
+    payload: Record<string, unknown>;
+  } | null>(null);
 
   const canWrite = useMemo(() => (user ? canManageDocuments(user.permissions) : false), [user]);
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'document',
+    recordId: document?.id ?? null,
+    enabled: isEditing && canWrite,
+    getPayload: () => ({
+      title,
+      description,
+      fileName,
+      fileType,
+      fileSizeBytes,
+      categoryId,
+      customerId,
+      jobId,
+    }),
+    getMeta: () => ({ title: title.trim() || document?.title || 'Document' }),
+  });
 
   const filteredJobs = customerId ? jobs.filter((job) => job.customerId === customerId) : jobs;
 
@@ -93,6 +123,43 @@ export function DocumentDetailPage() {
   }, [accessToken, documentId]);
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadDraft() {
+      if (!accessToken || !isEditing) return;
+      const draftId = new URLSearchParams(search).get('draftId');
+      if (!draftId) return;
+      try {
+        const draft = await fetchDraft(accessToken, draftId);
+        if (cancelled || draft.recordType !== 'document' || draft.recordId !== documentId) return;
+        setPendingDraft({
+          id: draft.id,
+          title: draft.title,
+          lastEditedAt: draft.lastEditedAt,
+          payload: draft.payload,
+        });
+      } catch {
+        /* Ignore unavailable drafts. */
+      }
+    }
+    void loadDraft();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, documentId, isEditing, search]);
+
+  function applyDraftPayload(payload: Record<string, unknown>) {
+    if (typeof payload.title === 'string') setTitle(payload.title);
+    if (typeof payload.description === 'string') setDescription(payload.description);
+    if (typeof payload.fileName === 'string') setFileName(payload.fileName);
+    if (typeof payload.fileType === 'string') setFileType(payload.fileType);
+    if (typeof payload.fileSizeBytes === 'string') setFileSizeBytes(payload.fileSizeBytes);
+    if (typeof payload.categoryId === 'string') setCategoryId(payload.categoryId);
+    if (typeof payload.customerId === 'string') setCustomerId(payload.customerId);
+    if (typeof payload.jobId === 'string') setJobId(payload.jobId);
+    draftShell.touchField();
+  }
+
+  useEffect(() => {
     if (jobId && customerId && !filteredJobs.some((job) => job.id === jobId)) {
       setJobId('');
     }
@@ -123,6 +190,7 @@ export function DocumentDetailPage() {
         customerId: customerId || null,
         jobId: jobId || null,
       });
+      draftShell.markSubmitted();
       await loadDocument();
       setIsEditing(false);
       setSuccess('Document updated.');
@@ -153,9 +221,12 @@ export function DocumentDetailPage() {
         description="Document metadata and linked customer or job records."
         actions={
           <div className="documents-detail-actions">
-            <Link href="/documents">
-              <Button variant="secondary">Back to documents</Button>
-            </Link>
+            <Button
+              variant="secondary"
+              onClick={() => draftShell.guard.guardNavigation(() => navigate('/documents'))}
+            >
+              Back to documents
+            </Button>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel editing' : 'Edit document'}
@@ -165,41 +236,86 @@ export function DocumentDetailPage() {
         }
       />
       <DocumentsNav />
+      {isEditing ? (
+        <AutosaveIndicator
+          status={draftShell.autosave.status}
+          lastSavedAt={draftShell.autosave.lastSavedAt}
+        />
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
+      {pendingDraft ? (
+        <DraftRestoreBanner
+          title={pendingDraft.title}
+          lastEditedAt={pendingDraft.lastEditedAt}
+          onRestore={() => {
+            applyDraftPayload(pendingDraft.payload);
+            setPendingDraft(null);
+          }}
+          onDismiss={() => setPendingDraft(null)}
+        />
+      ) : null}
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
       {isEditing && canWrite ? (
         <form className="documents-form" onSubmit={(event) => void handleSubmit(event)}>
-          <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <Input
+            label="Title"
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              draftShell.touchField();
+            }}
+            required
+          />
           <label className="titan-input-group">
             <span className="titan-input-label">Description</span>
             <textarea
               className="titan-input documents-textarea"
               rows={3}
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                draftShell.touchField();
+              }}
             />
           </label>
           <Input
             label="File name"
             value={fileName}
-            onChange={(e) => setFileName(e.target.value)}
+            onChange={(e) => {
+              setFileName(e.target.value);
+              draftShell.touchField();
+            }}
             required
           />
-          <Input label="File type" value={fileType} onChange={(e) => setFileType(e.target.value)} />
+          <Input
+            label="File type"
+            value={fileType}
+            onChange={(e) => {
+              setFileType(e.target.value);
+              draftShell.touchField();
+            }}
+          />
           <Input
             label="File size (bytes)"
             type="number"
             min={0}
             value={fileSizeBytes}
-            onChange={(e) => setFileSizeBytes(e.target.value)}
+            onChange={(e) => {
+              setFileSizeBytes(e.target.value);
+              draftShell.touchField();
+            }}
           />
           <label className="titan-input-group">
             <span className="titan-input-label">Category</span>
             <select
               className="titan-input"
               value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
+              onChange={(e) => {
+                setCategoryId(e.target.value);
+                draftShell.touchField();
+              }}
             >
               <option value="">No category</option>
               {categories.map((category) => (
@@ -214,7 +330,10 @@ export function DocumentDetailPage() {
             <select
               className="titan-input"
               value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                draftShell.touchField();
+              }}
             >
               <option value="">No customer</option>
               {customers.map((customer) => (
@@ -229,7 +348,10 @@ export function DocumentDetailPage() {
             <select
               className="titan-input"
               value={jobId}
-              onChange={(e) => setJobId(e.target.value)}
+              onChange={(e) => {
+                setJobId(e.target.value);
+                draftShell.touchField();
+              }}
             >
               <option value="">No job</option>
               {filteredJobs.map((job) => (

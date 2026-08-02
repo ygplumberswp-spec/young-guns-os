@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useRoute } from 'wouter';
+import { Link, useRoute, useSearch } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import type {
   CustomerDetail,
@@ -7,9 +7,18 @@ import type {
   CustomerPortalAccessSummary,
   WhatsappMessageSummary,
 } from '@titan/shared';
-import { AI_NAME, CUSTOMER_STATUS_OPTIONS, isPlaceholderEmail } from '@titan/shared';
+import {
+  AI_NAME,
+  CUSTOMER_STATUS_OPTIONS,
+  isPlaceholderEmail,
+  selectSafeCustomerDraftRestore,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { addCustomerActivity, fetchCustomer, updateCustomer } from '../../lib/crm-api';
+import { fetchDraft } from '../../lib/drafts-api';
+import { AutosaveIndicator } from '../../components/ux/AutosaveIndicator';
+import { DraftRestoreBanner } from '../../components/ux/DraftRestoreBanner';
+import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import {
   createCustomerPortalInvite,
   fetchCustomerPortalAccess,
@@ -32,6 +41,7 @@ function formatStatus(status: CustomerDetail['status']): string {
 export function CustomerDetailPage() {
   const [, params] = useRoute('/crm/:id');
   const customerId = params?.id ?? '';
+  const search = useSearch();
   const { accessToken, user } = useAuth();
   const [customer, setCustomer] = useState<CustomerDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -40,6 +50,14 @@ export function CustomerDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<{
+    id: string;
+    title: string | null;
+    lastEditedAt: string;
+    payload: Record<string, unknown>;
+    warning: string | null;
+  } | null>(null);
+  const [restoreWarning, setRestoreWarning] = useState<string | null>(null);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -83,6 +101,20 @@ export function CustomerDetailPage() {
         : false,
     [user],
   );
+
+  const draftShell = useFormDraftShell({
+    accessToken,
+    userId: user?.id,
+    recordType: 'customer',
+    recordId: customerId || null,
+    enabled: canWrite && isEditing && Boolean(customerId),
+    getPayload: () => ({ name, email, phone, status, notes }),
+    getMeta: () => ({
+      title: name.trim() || 'Customer edit',
+      customerLabel: name.trim() || null,
+      completionPct: name.trim() ? 70 : 20,
+    }),
+  });
 
   async function loadPortalAccess() {
     if (!accessToken || !customerId || !canManagePortal) {
@@ -158,6 +190,33 @@ export function CustomerDetailPage() {
       cancelled = true;
     };
   }, [accessToken, customerId, canCommunicate, canManagePortal]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadDraftOffer() {
+      if (!accessToken || !customerId || !canWrite) return;
+      const draftId = new URLSearchParams(search).get('draftId');
+      if (!draftId) return;
+      try {
+        const draft = await fetchDraft(accessToken, draftId);
+        if (cancelled || draft.recordType !== 'customer') return;
+        setIsEditing(true);
+        setPendingDraft({
+          id: draft.id,
+          title: draft.title,
+          lastEditedAt: draft.lastEditedAt,
+          payload: draft.payload,
+          warning: null,
+        });
+      } catch {
+        /* ignore */
+      }
+    }
+    void loadDraftOffer();
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, canWrite, customerId, search]);
 
   async function handleInvitePortal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -260,6 +319,36 @@ export function CustomerDetailPage() {
     }
   }
 
+  function applyCustomerDraft(payload: Record<string, unknown>) {
+    if (!customer) return;
+    // Treat non-placeholder stored email/phone as verified contact channels for overwrite protection.
+    const verifiedEmail = Boolean(customer.email && !isPlaceholderEmail(customer.email));
+    const verifiedPhone = Boolean(customer.phone && customer.phone.trim().length >= 7);
+    const safe = selectSafeCustomerDraftRestore({
+      draft: payload,
+      current: {
+        name: customer.name,
+        email: customer.email,
+        phone: customer.phone,
+        status: customer.status,
+        notes: customer.notes,
+      },
+      verifiedEmail,
+      verifiedPhone,
+    });
+    if (safe.name != null) setName(safe.name);
+    if (safe.email != null) setEmail(safe.email);
+    if (safe.phone != null) setPhone(safe.phone);
+    if (safe.status != null) setStatus(safe.status as CustomerStatus);
+    if (safe.notes != null) setNotes(safe.notes);
+    setRestoreWarning(
+      safe.skippedVerified.length
+        ? `Skipped verified ${safe.skippedVerified.join(' and ')} — not silently overwritten.`
+        : null,
+    );
+    draftShell.touchField();
+  }
+
   async function handleSave(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -281,6 +370,7 @@ export function CustomerDetailPage() {
       });
 
       setCustomer(updated);
+      draftShell.markSubmitted();
       setIsEditing(false);
       setSuccess('Customer updated.');
     } catch (err) {
@@ -355,6 +445,26 @@ export function CustomerDetailPage() {
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
+      {restoreWarning ? <p className="form-error">{restoreWarning}</p> : null}
+      {isEditing && canWrite ? (
+        <AutosaveIndicator
+          status={draftShell.autosave.status}
+          lastSavedAt={draftShell.autosave.lastSavedAt}
+        />
+      ) : null}
+      {draftShell.guard.unsavedChangesModal}
+      {pendingDraft ? (
+        <DraftRestoreBanner
+          title={pendingDraft.title}
+          lastEditedAt={pendingDraft.lastEditedAt}
+          warning={pendingDraft.warning}
+          onRestore={() => {
+            applyCustomerDraft(pendingDraft.payload);
+            setPendingDraft(null);
+          }}
+          onDismiss={() => setPendingDraft(null)}
+        />
+      ) : null}
 
       {customer.email && isPlaceholderEmail(customer.email) ? (
         <p className="form-error">
@@ -376,7 +486,10 @@ export function CustomerDetailPage() {
               <Input
                 label="Name"
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => {
+                  setName(event.target.value);
+                  draftShell.touchField();
+                }}
                 required
               />
 
@@ -384,13 +497,19 @@ export function CustomerDetailPage() {
                 label="Email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  draftShell.touchField();
+                }}
               />
 
               <Input
                 label="Phone"
                 value={phone}
-                onChange={(event) => setPhone(event.target.value)}
+                onChange={(event) => {
+                  setPhone(event.target.value);
+                  draftShell.touchField();
+                }}
               />
 
               <label className="titan-input-group">
@@ -398,7 +517,10 @@ export function CustomerDetailPage() {
                 <select
                   className="titan-input"
                   value={status}
-                  onChange={(event) => setStatus(event.target.value as CustomerStatus)}
+                  onChange={(event) => {
+                    setStatus(event.target.value as CustomerStatus);
+                    draftShell.touchField();
+                  }}
                 >
                   {CUSTOMER_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -414,7 +536,10 @@ export function CustomerDetailPage() {
                   className="titan-input crm-textarea"
                   rows={4}
                   value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
+                  onChange={(event) => {
+                    setNotes(event.target.value);
+                    draftShell.touchField();
+                  }}
                 />
               </label>
 
@@ -422,7 +547,22 @@ export function CustomerDetailPage() {
                 <Button type="submit" disabled={isSaving || !name.trim()}>
                   {isSaving ? 'Saving…' : 'Save changes'}
                 </Button>
-                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() =>
+                    draftShell.guard.guardNavigation(() => {
+                      setIsEditing(false);
+                      if (customer) {
+                        setName(customer.name);
+                        setEmail(customer.email ?? '');
+                        setPhone(customer.phone ?? '');
+                        setStatus(customer.status);
+                        setNotes(customer.notes ?? '');
+                      }
+                    })
+                  }
+                >
                   Cancel
                 </Button>
               </div>

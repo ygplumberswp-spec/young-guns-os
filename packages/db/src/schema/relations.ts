@@ -262,6 +262,7 @@ import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
 import { userInvites } from './user-invites';
+import { draftWorkspace } from './draft-workspace';
 import { users } from './users';
 
 export const companiesRelations = relations(companies, ({ many }) => ({
@@ -282,6 +283,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   agentOrchestrations: many(agentOrchestrations),
   agentOrchestrationRuns: many(agentOrchestrationRuns),
   userInvites: many(userInvites),
+  draftWorkspace: many(draftWorkspace),
   customers: many(customers),
   customerActivities: many(customerActivities),
   jobs: many(jobs),
@@ -468,6 +470,7 @@ export const rolesRelations = relations(roles, ({ one, many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
+  draftWorkspaceOwned: many(draftWorkspace, { relationName: 'draftWorkspaceOwner' }),
   company: one(companies, {
     fields: [users.companyId],
     references: [companies.id],
@@ -1666,6 +1669,24 @@ export const agentOrchestrationLogsRelations = relations(agentOrchestrationLogs,
   runStep: one(agentOrchestrationRunSteps, {
     fields: [agentOrchestrationLogs.runStepId],
     references: [agentOrchestrationRunSteps.id],
+  }),
+}));
+
+
+export const draftWorkspaceRelations = relations(draftWorkspace, ({ one }) => ({
+  company: one(companies, {
+    fields: [draftWorkspace.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [draftWorkspace.userId],
+    references: [users.id],
+    relationName: 'draftWorkspaceOwner',
+  }),
+  lastEditedBy: one(users, {
+    fields: [draftWorkspace.lastEditedByUserId],
+    references: [users.id],
+    relationName: 'draftWorkspaceLastEditor',
   }),
 }));
 

@@ -729,6 +729,13 @@
       "when": 1754146800000,
       "tag": "0104_n8n_hybrid_orchestration",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1754182800000,
+      "tag": "0112_draft_workspace",
+      "breakpoints": true
     }
   ]
 }
