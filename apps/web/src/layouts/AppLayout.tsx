@@ -21,6 +21,9 @@ import {
   useSearchCommandPaletteShortcut,
   AppContentContainer,
 } from '../components/ux';
+import { ContextualAuraProvider } from '../features/aura/contextual-aura-context';
+import { ContextualAuraDrawer } from '../features/aura/ContextualAuraDrawer';
+import { AskAuraButton } from '../features/aura/AskAuraButton';
 import { useXeroSyncCacheRefresh } from '../hooks/use-xero-sync-cache-refresh';
 
 function companyInitials(name: string): string {
@@ -108,6 +111,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="app-header__user">
             {user ? (
               <>
+                <AskAuraButton className="app-header__aura" />
                 <Link
                   href="/settings/company"
                   className="app-header__identity"
@@ -219,7 +223,10 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setCommandPaletteOpen(false)}
         canAccessSearch={canSearch}
       />
-      <AppContentContainer>{children}</AppContentContainer>
+      <ContextualAuraProvider>
+        <AppContentContainer>{children}</AppContentContainer>
+        <ContextualAuraDrawer />
+      </ContextualAuraProvider>
     </AppShell>
   );
 }
