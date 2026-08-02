@@ -67,7 +67,7 @@ await sql.end();
 
   try {
     execSync('pnpm --filter @titan/auth build', { cwd: repoRoot, stdio: 'pipe' });
-    const raw = execSync(`railway run node ${scriptPath}`, {
+    const raw = execSync(`railway run --service young-guns-os node ${scriptPath}`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -110,7 +110,7 @@ await sql.end();
 
   try {
     execSync('pnpm --filter @titan/auth build', { cwd: repoRoot, stdio: 'pipe' });
-    const raw = execSync(`railway run node ${scriptPath}`, {
+    const raw = execSync(`railway run --service young-guns-os node ${scriptPath}`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],

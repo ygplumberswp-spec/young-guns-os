@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-08-02T07:42:28.381Z",
+  "label": "244-hr-workforce-verify",
+  "phase": 12,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "aa3218f",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "ownerWorkforce": {
+      "status": 200,
+      "hasView": true,
+      "hasPayrollRules": true,
+      "hasSummary": true,
+      "hasMembers": true,
+      "memberCount": 1,
+      "hasDisclaimer": true
+    }
+  },
+  "rbac": {
+    "technicianSessionError": "Command failed: railway run --service young-guns-os node /Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-mint-session-244-tech.mjs\nfile:///Users/keanuventer/Downloads/Titan-Aura-Consolidati"
+  },
+  "workforceRoutes": [
+    {
+      "href": "/workforce/owner",
+      "label": "Owner workforce",
+      "rulesVisible": true,
+      "emptyHonest": true,
+      "titleVisible": true
+    },
+    {
+      "href": "/workforce-intelligence",
+      "label": "Workforce intelligence",
+      "rulesVisible": null,
+      "emptyHonest": null,
+      "titleVisible": true
+    },
+    {
+      "href": "/workforce/manager",
+      "label": "Manager workspace",
+      "rulesVisible": null,
+      "emptyHonest": null,
+      "titleVisible": true
+    },
+    {
+      "href": "/workforce/day-timeline",
+      "label": "Day timeline",
+      "rulesVisible": null,
+      "emptyHonest": null,
+      "titleVisible": true
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "diagnostic-output/phase12-hr-workforce-staging/owner-workforce-1440.png",
+      "href": "/workforce/owner"
+    },
+    {
+      "path": "diagnostic-output/phase12-hr-workforce-staging/workforce-intelligence-1440.png",
+      "href": "/workforce-intelligence"
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": [],
+  "holdItems": [
+    "Technician RBAC session mint failed — manual RBAC check required"
+  ]
+}
