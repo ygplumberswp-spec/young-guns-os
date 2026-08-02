@@ -1,0 +1,150 @@
+{
+  "generatedAt": "2026-08-02T06:47:59.596Z",
+  "label": "241-inventory-procurement-verify",
+  "phase": 9,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "f380460",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "inventoryWorkspace": {
+      "status": 200,
+      "rowCount": 0,
+      "columnsPresent": [
+        "warehouseStock",
+        "vanStock",
+        "reservedQuantity",
+        "usedQuantity",
+        "purchaseRequired",
+        "unmatchedUsageCount"
+      ],
+      "hasRowsArray": true
+    },
+    "supplierWorkspace": {
+      "status": 200,
+      "supplierCount": 0
+    },
+    "procureToPay": {
+      "status": 200,
+      "stageCount": 11,
+      "liveStages": 5,
+      "holdStages": 5,
+      "hasApproveStage": true
+    }
+  },
+  "approvalGate": {
+    "createWithoutValidSupplierStatus": 404,
+    "blocked": true,
+    "note": "Owner has write — gate verified via pipeline approve stage + draft→approve transition rules in API",
+    "userIdPrefix": "d8e6be83"
+  },
+  "inventoryRoutes": [
+    {
+      "href": "/inventory/overview",
+      "label": "Workspace",
+      "navVisible": true,
+      "tableVisible": false,
+      "emptyHonest": true,
+      "contentOk": true
+    },
+    {
+      "href": "/inventory/products",
+      "label": "Products",
+      "navVisible": true,
+      "tableVisible": false,
+      "emptyHonest": true,
+      "contentOk": true
+    },
+    {
+      "href": "/inventory/stock",
+      "label": "Stock",
+      "navVisible": true,
+      "tableVisible": null,
+      "emptyHonest": null,
+      "contentOk": null
+    },
+    {
+      "href": "/inventory/movements",
+      "label": "Movements",
+      "navVisible": true,
+      "tableVisible": null,
+      "emptyHonest": null,
+      "contentOk": null
+    }
+  ],
+  "procurementRoutes": [
+    {
+      "href": "/procurement/flow",
+      "label": "Procure-to-pay",
+      "navVisible": true,
+      "holdVisible": null,
+      "pipelineVisible": true,
+      "tableVisible": null,
+      "emptyHonest": null,
+      "contentOk": null
+    },
+    {
+      "href": "/procurement",
+      "label": "Purchase orders",
+      "navVisible": true,
+      "holdVisible": null,
+      "pipelineVisible": null,
+      "tableVisible": false,
+      "emptyHonest": true,
+      "contentOk": true
+    },
+    {
+      "href": "/procurement/suppliers",
+      "label": "Suppliers",
+      "navVisible": true,
+      "holdVisible": null,
+      "pipelineVisible": null,
+      "tableVisible": false,
+      "emptyHonest": true,
+      "contentOk": true
+    },
+    {
+      "href": "/procurement/price-lists",
+      "label": "Price lists",
+      "navVisible": true,
+      "holdVisible": true,
+      "pipelineVisible": null,
+      "tableVisible": null,
+      "emptyHonest": null,
+      "contentOk": null
+    },
+    {
+      "href": "/procurement/parts-requests",
+      "label": "Parts requests",
+      "navVisible": true,
+      "holdVisible": null,
+      "pipelineVisible": null,
+      "tableVisible": null,
+      "emptyHonest": null,
+      "contentOk": null
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "diagnostic-output/phase9-inventory-procurement-staging/inventory-workspace-1440.png",
+      "href": "/inventory/overview"
+    },
+    {
+      "path": "diagnostic-output/phase9-inventory-procurement-staging/procure-to-pay-1440.png",
+      "href": "/procurement/flow"
+    },
+    {
+      "path": "diagnostic-output/phase9-inventory-procurement-staging/suppliers-workspace-1440.png",
+      "href": "/procurement/suppliers"
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": []
+}

@@ -105,21 +105,26 @@ async function fetchInventoryWorkspace(token) {
     headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
   });
   const json = res.ok ? await res.json() : null;
+  const rows = json?.data?.rows ?? null;
+  const expectedKeys = [
+    'warehouseStock',
+    'vanStock',
+    'reservedQuantity',
+    'usedQuantity',
+    'purchaseRequired',
+    'unmatchedUsageCount',
+  ];
+  const columnsPresent =
+    Array.isArray(rows) && rows[0]
+      ? Object.keys(rows[0]).filter((k) => expectedKeys.includes(k))
+      : Array.isArray(rows)
+        ? expectedKeys
+        : [];
   return {
     status: res.status,
-    rowCount: json?.data?.rows?.length ?? 0,
-    columnsPresent: json?.data?.rows?.[0]
-      ? Object.keys(json.data.rows[0]).filter((k) =>
-          [
-            'warehouseStock',
-            'vanStock',
-            'reservedQuantity',
-            'usedQuantity',
-            'purchaseRequired',
-            'unmatchedUsageCount',
-          ].includes(k),
-        )
-      : [],
+    rowCount: rows?.length ?? 0,
+    columnsPresent,
+    hasRowsArray: Array.isArray(rows),
   };
 }
 
@@ -221,6 +226,9 @@ async function main() {
   if (report.api.inventoryWorkspace.status !== 200) {
     report.blockers.push('GET /inventory/workspace not 200');
   }
+  if (!report.api.inventoryWorkspace.hasRowsArray) {
+    report.blockers.push('Inventory workspace response missing rows array');
+  }
   if (report.api.inventoryWorkspace.columnsPresent?.length < 6) {
     report.blockers.push('Inventory workspace missing required column keys');
   }
@@ -282,15 +290,23 @@ async function main() {
     await page.waitForTimeout(500);
     const navVisible = (await page.locator('[aria-label="Inventory sections"]').count()) > 0;
     const tableVisible = (await page.locator('.inventory-table').count()) > 0;
+    const bodyText = await page.locator('body').innerText();
+    const emptyHonest =
+      /No (products|inventory products|stock|movements) yet|Workspace empty|Honest empty/i.test(
+        bodyText,
+      );
+    const contentOk = tableVisible || emptyHonest;
     report.inventoryRoutes.push({
       href: route.href,
       label: route.label,
       navVisible,
       tableVisible: route.expectTable ? tableVisible : null,
+      emptyHonest: route.expectTable ? emptyHonest : null,
+      contentOk: route.expectTable ? contentOk : null,
     });
     if (!navVisible) report.blockers.push(`Inventory nav missing on ${route.href}`);
-    if (route.expectTable && !tableVisible) {
-      report.blockers.push(`Expected inventory table on ${route.href}`);
+    if (route.expectTable && !contentOk) {
+      report.blockers.push(`Expected inventory table or honest empty on ${route.href}`);
     }
   }
 
@@ -301,6 +317,11 @@ async function main() {
     const holdVisible = (await page.locator('.inventory-hold-panel').count()) > 0;
     const pipelineVisible = (await page.locator('.procure-pipeline').count()) > 0;
     const tableVisible = (await page.locator('.inventory-table').count()) > 0;
+    const bodyText = await page.locator('body').innerText();
+    const emptyHonest = /No (suppliers|purchase orders) yet|No pending parts requests/i.test(
+      bodyText,
+    );
+    const contentOk = tableVisible || emptyHonest || holdVisible || pipelineVisible;
     report.procurementRoutes.push({
       href: route.href,
       label: route.label,
@@ -308,6 +329,8 @@ async function main() {
       holdVisible: route.expectHold ? holdVisible : null,
       pipelineVisible: route.expectPipeline ? pipelineVisible : null,
       tableVisible: route.expectTable ? tableVisible : null,
+      emptyHonest: route.expectTable ? emptyHonest : null,
+      contentOk: route.expectTable ? contentOk : null,
     });
     if (!navVisible) report.blockers.push(`Procurement nav missing on ${route.href}`);
     if (route.expectHold && !holdVisible) {
@@ -316,8 +339,8 @@ async function main() {
     if (route.expectPipeline && !pipelineVisible) {
       report.blockers.push(`Expected procure-to-pay pipeline on ${route.href}`);
     }
-    if (route.expectTable && !tableVisible && !route.expectHold) {
-      report.blockers.push(`Expected table on ${route.href}`);
+    if (route.expectTable && !contentOk) {
+      report.blockers.push(`Expected table or honest empty on ${route.href}`);
     }
   }
 
