@@ -14,6 +14,9 @@ import type {
   QuoteDetail,
   QuoteSummary,
   UpdateQuoteRequest,
+  UpdateBillingRecipientRequest,
+  CreditNoteSummary,
+  CreateCreditNoteDraftRequest,
 } from '@titan/shared';
 import { request } from './api-client';
 
@@ -187,4 +190,60 @@ export async function fetchJobFinanceSummary(
     { accessToken },
   );
   return data.summary;
+}
+
+export async function updateQuoteBillingRecipient(
+  accessToken: string,
+  quoteId: string,
+  body: UpdateBillingRecipientRequest,
+): Promise<QuoteSummary> {
+  const data = await request<{ quote: QuoteSummary }>(`/finance/quotes/${quoteId}/billing-recipient`, {
+    method: 'PATCH',
+    accessToken,
+    body,
+  });
+  return data.quote;
+}
+
+export async function updateInvoiceBillingRecipient(
+  accessToken: string,
+  invoiceId: string,
+  body: UpdateBillingRecipientRequest,
+): Promise<InvoiceSummary> {
+  const data = await request<{ invoice: InvoiceSummary }>(
+    `/finance/invoices/${invoiceId}/billing-recipient`,
+    {
+      method: 'PATCH',
+      accessToken,
+      body,
+    },
+  );
+  return data.invoice;
+}
+
+export async function fetchInvoiceCreditNotes(
+  accessToken: string,
+  invoiceId: string,
+): Promise<CreditNoteSummary[]> {
+  const data = await request<{ creditNotes: CreditNoteSummary[] }>(
+    `/finance/invoices/${invoiceId}/credit-notes`,
+    { accessToken },
+  );
+  return data.creditNotes;
+}
+
+export async function createCreditNoteDraft(
+  accessToken: string,
+  invoiceId: string,
+  body: CreateCreditNoteDraftRequest,
+): Promise<CreditNoteSummary> {
+  const data = await request<{ creditNote: CreditNoteSummary }>(
+    `/finance/invoices/${invoiceId}/credit-notes`,
+    {
+      method: 'POST',
+      accessToken,
+      body,
+    },
+  );
+  return data.creditNote;
 }

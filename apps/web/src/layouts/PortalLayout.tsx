@@ -9,6 +9,9 @@ import { prefetchNavIntent } from '../lib/route-prefetch-registry';
 import { usePortalPreloadContext } from '../lib/preload-coordinator';
 import { TitanWordmark } from '../brand/TitanWordmark';
 import { StagingBadge } from '../components/StagingBadge';
+import { AskAuraButton } from '../features/aura/AskAuraButton';
+import { ContextualAuraProvider } from '../features/aura/contextual-aura-context';
+import { PortalContextualAuraDrawer } from '../features/aura/PortalContextualAuraDrawer';
 
 type PortalLayoutProps = {
   children: ReactNode;
@@ -43,6 +46,7 @@ export function PortalLayout({ children }: PortalLayoutProps) {
         <div className="portal-header__user">
           {user ? (
             <>
+              <AskAuraButton className="portal-header__aura" size="sm" />
               <div className="portal-header__meta">
                 <span className="portal-header__name">
                   {user.firstName} {user.lastName}
@@ -71,7 +75,12 @@ export function PortalLayout({ children }: PortalLayoutProps) {
             </Link>
           ))}
         </nav>
-        <main className="portal-main">{children}</main>
+        <main className="portal-main">
+          <ContextualAuraProvider>
+            {children}
+            <PortalContextualAuraDrawer />
+          </ContextualAuraProvider>
+        </main>
       </div>
     </div>
   );
