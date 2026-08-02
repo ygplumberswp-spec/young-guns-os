@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "phase7-scheduling-dispatch-v1",
+  "label": "239-scheduling-dispatch-verify",
+  "generatedAt": "2026-08-02T06:30:30.431Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "f7231460aa1368d79a53073433a92b5ec0b3a14d",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "schedulingCalendar": {
+      "status": 200,
+      "eventCount": 0
+    },
+    "fleetLiveMap": {
+      "status": 200,
+      "vehicleCount": 2,
+      "positionedCount": 2,
+      "registrations": [
+        "CF172047",
+        "CF77263"
+      ],
+      "cartrackConnected": true
+    },
+    "dispatchDashboard": {
+      "status": 200,
+      "delayedJobCount": null,
+      "emergencyCount": null
+    },
+    "customerFleetDenied": {
+      "skipped": true,
+      "reason": "no customer user"
+    }
+  },
+  "scheduling": {
+    "views": [
+      {
+        "view": "week",
+        "checks": {
+          "pageLoaded": true,
+          "hasFilters": true,
+          "hasToolbar": true,
+          "hasTrayOrGrid": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/scheduling-week-1440.png"
+      },
+      {
+        "view": "day",
+        "checks": {
+          "pageLoaded": true,
+          "hasFilters": true,
+          "hasToolbar": true,
+          "hasTrayOrGrid": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/scheduling-day-1440.png"
+      },
+      {
+        "view": "month",
+        "checks": {
+          "pageLoaded": true,
+          "hasFilters": true,
+          "hasToolbar": true,
+          "hasTrayOrGrid": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/scheduling-month-1440.png"
+      }
+    ]
+  },
+  "liveDispatch": {
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "checks": {
+          "hasMapPanel": true,
+          "hasQueues": true,
+          "hasFallbackOrMap": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/live-dispatch-1440.png"
+      },
+      {
+        "id": "1024",
+        "width": 1024,
+        "height": 768,
+        "checks": {
+          "hasMapPanel": true,
+          "hasQueues": true,
+          "hasFallbackOrMap": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/live-dispatch-1024.png"
+      },
+      {
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "checks": {
+          "hasMapPanel": true,
+          "hasQueues": true,
+          "hasFallbackOrMap": true
+        },
+        "screenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/live-dispatch-768.png"
+      }
+    ],
+    "fleetMapScreenshot": "diagnostic-output/phase7-scheduling-dispatch-staging/fleet-live-map-1440.png",
+    "mapEvidence": {
+      "mapCanvas": true,
+      "fallbackList": false,
+      "vehicleCards": true,
+      "apiPositionedCount": 2,
+      "targetRegsPresent": [
+        "CF172047",
+        "CF77263"
+      ]
+    }
+  },
+  "rbac": {
+    "customerSessionSkipped": true,
+    "customerFleetApi403": false
+  },
+  "blockers": [],
+  "schedulingVerdict": "GO",
+  "liveDispatchVerdict": "GO",
+  "verdict": "GO",
+  "consoleErrors": []
+}
