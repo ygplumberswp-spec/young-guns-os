@@ -5,12 +5,15 @@ import {
   canAccessPersonalWhatsappAssistant,
   technicianJobScopedOnly,
   type CommPlatformAccountKind,
+  type CommPlatformAuraDraftAssistResult,
   type CommPlatformAuraHookSummary,
   type CommPlatformCapabilityState,
   type CommPlatformConnectionHealth,
+  type CommPlatformGmailAttachmentMeta,
   type CommPlatformGmailDraftRequest,
   type CommPlatformGmailDraftSummary,
   type CommPlatformGmailMailboxView,
+  type CommPlatformGmailSyncResult,
   type CommPlatformHubDashboard,
   type CommPlatformImportDecisionRequest,
   type CommPlatformImportDecisionSummary,
@@ -33,7 +36,11 @@ import {
   commPlatformImportDecisions,
   commPlatformInboxIndex,
   commPlatformPersonalThreads,
+  customers,
+  invoices,
   jobs,
+  leads,
+  quotes,
   securityAuditLogs,
   whatsappConnections,
   whatsappMessages,
@@ -44,6 +51,22 @@ import {
   encryptWhatsappCredentials,
   type GmailOAuthStoredCredentials,
 } from '../lib/crypto.js';
+import {
+  collectAttachments,
+  encodeRawMime,
+  extractTextBody,
+  folderQuery,
+  getHeader,
+  type GmailMessage,
+} from '../lib/gmail.client.js';
+import {
+  extractEmailsFromHeader,
+  normalizeEmail,
+  resolveConfidentGmailEntityLink,
+  type GmailEntityLinkLookups,
+} from './gmail-entity-link.js';
+import { GmailClientError } from '../lib/gmail.client.js';
+import { GmailOAuthError, type GmailOAuthService } from './gmail-oauth.service.js';
 
 export class CommunicationsPlatformError extends Error {
   constructor(
@@ -77,8 +100,12 @@ const EMPTY_GMAIL: CommPlatformConnectionHealth = {
   privacyDefault: 'business',
   syncEnabled: false,
   retentionDays: null,
+  oauthConfigured: false,
+  emailAddress: null,
+  lastSyncAt: null,
+  lastSyncStatus: null,
   emptyStateMessage:
-    'Business Gmail is not connected. Connect a Google Workspace account in Settings — no messages are invented.',
+    'Business Gmail is not configured. Set Google OAuth credentials, then connect Young Guns Gmail — no messages are invented.',
 };
 
 const EMPTY_BUSINESS_WA: CommPlatformConnectionHealth = {
@@ -119,13 +146,19 @@ export class CommunicationsPlatformService {
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
+    private readonly gmailOAuthService?: GmailOAuthService,
   ) {}
 
   static create(deps: {
     db: DatabaseClient;
     encryptionKey?: string;
+    gmailOAuthService?: GmailOAuthService;
   }): CommunicationsPlatformService {
-    return new CommunicationsPlatformService(deps.db, deps.encryptionKey);
+    return new CommunicationsPlatformService(
+      deps.db,
+      deps.encryptionKey,
+      deps.gmailOAuthService,
+    );
   }
 
   assertBusinessAccess(actor: CommPlatformActor): void {
@@ -175,16 +208,16 @@ export class CommunicationsPlatformService {
         available: true,
         ownerOnly: false,
         exposesPersonalData: false,
-        status: 'stub',
-        note: 'Business-only summarize stub — personal threads never included.',
+        status: 'ready',
+        note: 'Business-only summarize over indexed Gmail — personal threads never included. Never auto-sends.',
       },
       {
         capability: 'business_draft',
         available: true,
         ownerOnly: false,
         exposesPersonalData: false,
-        status: 'stub',
-        note: 'Drafts only; send requires explicit Owner/staff approval.',
+        status: 'ready',
+        note: 'AURA may draft replies only; send requires explicit Owner/staff approval (draft → approve → execute).',
       },
       {
         capability: 'business_emergency',
@@ -234,7 +267,11 @@ export class CommunicationsPlatformService {
       .where(eq(whatsappConnections.companyId, actor.companyId))
       .limit(1);
 
-    const businessGmail = this.toHealth(gmail, EMPTY_GMAIL);
+    const oauthConfigured = this.gmailOAuthService?.isAppConfigured() ?? false;
+    const businessGmail = this.toHealth(gmail, EMPTY_GMAIL, {
+      oauthConfigured,
+      preferNotConfiguredWhenOAuthMissing: true,
+    });
     let businessWhatsapp = this.toHealth(businessWaAccount, EMPTY_BUSINESS_WA);
     if (!businessWaAccount && legacyWa) {
       const connected = legacyWa.status === 'connected';
@@ -455,15 +492,271 @@ export class CommunicationsPlatformService {
       limit: 50,
     });
 
+    let labels = ['INBOX', 'SENT', 'DRAFT', 'IMPORTANT'];
+    if (state === 'connected' && this.gmailOAuthService?.isAppConfigured()) {
+      try {
+        const client = await this.gmailOAuthService.createClient(actor.companyId);
+        const remote = await client.listLabels();
+        if (remote.length > 0) {
+          labels = remote.map((l) => l.name || l.id).filter(Boolean);
+        }
+      } catch {
+        // Keep static fallback labels — do not invent mailbox rows.
+      }
+    }
+
+    const oauthConfigured = settings.businessGmail.oauthConfigured === true;
     return {
       folder,
-      capabilityState: state,
+      capabilityState: !oauthConfigured ? 'not_configured' : state,
       items: inbox.items,
-      labels: ['INBOX', 'SENT', 'DRAFT', 'IMPORTANT'],
-      note:
-        state === 'connected'
-          ? 'Showing indexed business Gmail items only. Provider sync is additive when OAuth is configured.'
-          : 'Gmail not configured — mailbox is empty. Connect Business Gmail in Settings (OAuth). Drafts can still be created locally; send requires approval.',
+      labels,
+      note: !oauthConfigured
+        ? 'Not configured — Google OAuth client credentials are missing on the API. No fake connection.'
+        : state === 'connected'
+          ? 'Showing indexed business Gmail items. Run Sync to pull Inbox/Sent/Drafts/Labels from Google. AURA never auto-sends.'
+          : 'Gmail OAuth is available but not connected. Use Connect Gmail in Channel Settings.',
+    };
+  }
+
+  async syncGmailMailbox(
+    actor: CommPlatformActor,
+    options: { folder?: CommPlatformGmailMailboxView['folder']; maxMessages?: number } = {},
+  ): Promise<CommPlatformGmailSyncResult> {
+    this.assertBusinessAccess(actor);
+    if (isTechnicianRole(actor)) {
+      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot sync Gmail');
+    }
+    if (!this.gmailOAuthService?.isAppConfigured()) {
+      throw new CommunicationsPlatformError(
+        'NOT_CONFIGURED',
+        'Business Gmail is not configured — missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET',
+      );
+    }
+
+    const folder = options.folder ?? 'inbox';
+    const maxMessages = Math.min(Math.max(options.maxMessages ?? 40, 1), 100);
+    const client = await this.gmailOAuthService.createClient(actor.companyId);
+    const labels = await client.listLabels();
+    const query = folderQuery(folder);
+    const listed = await client.listMessages({
+      ...query,
+      maxResults: maxMessages,
+    });
+
+    const [account] = await this.db
+      .select()
+      .from(commPlatformAccounts)
+      .where(
+        and(
+          eq(commPlatformAccounts.companyId, actor.companyId),
+          eq(commPlatformAccounts.accountKind, 'business_gmail'),
+        ),
+      )
+      .limit(1);
+
+    const lookups = await this.buildEntityLinkLookups(actor.companyId);
+    let synced = 0;
+    let skipped = 0;
+
+    for (const item of listed.messages) {
+      const existing = await this.db
+        .select({ id: commPlatformInboxIndex.id })
+        .from(commPlatformInboxIndex)
+        .where(
+          and(
+            eq(commPlatformInboxIndex.companyId, actor.companyId),
+            eq(commPlatformInboxIndex.externalMessageId, item.id),
+          ),
+        )
+        .limit(1);
+      if (existing[0]) {
+        skipped += 1;
+        continue;
+      }
+
+      const message = await client.getMessage(item.id, 'full');
+      await this.indexGmailMessage(actor.companyId, account?.id ?? null, message, lookups, folder);
+      synced += 1;
+    }
+
+    const labelNames = labels.map((l) => l.name || l.id).filter(Boolean);
+    const now = new Date();
+    if (account) {
+      await this.db
+        .update(commPlatformAccounts)
+        .set({
+          metadata: {
+            ...(account.metadata ?? {}),
+            lastSyncAt: now.toISOString(),
+            lastSyncStatus: 'ok',
+            lastSyncFolder: folder,
+            lastSyncCounts: { synced, skipped },
+          },
+          updatedAt: now,
+        })
+        .where(eq(commPlatformAccounts.id, account.id));
+    }
+
+    await this.recordAudit(
+      { companyId: actor.companyId, userId: actor.userId },
+      'comm_platform_gmail_sync',
+      actor.companyId,
+      { folder, synced, skipped, autoSend: false },
+    );
+
+    return {
+      synced,
+      skipped,
+      labels: labelNames,
+      capabilityState: 'connected',
+      note: `Synced ${synced} new message(s) from Gmail (${skipped} already indexed). Real provider data only.`,
+    };
+  }
+
+  async getGmailAttachment(
+    actor: CommPlatformActor,
+    inboxItemId: string,
+    attachmentId: string,
+  ): Promise<{ meta: CommPlatformGmailAttachmentMeta; dataBase64: string }> {
+    this.assertBusinessAccess(actor);
+    if (!this.gmailOAuthService?.isAppConfigured()) {
+      throw new CommunicationsPlatformError('NOT_CONFIGURED', 'Business Gmail is not configured');
+    }
+
+    const [row] = await this.db
+      .select()
+      .from(commPlatformInboxIndex)
+      .where(
+        and(
+          eq(commPlatformInboxIndex.id, inboxItemId),
+          eq(commPlatformInboxIndex.companyId, actor.companyId),
+          eq(commPlatformInboxIndex.accountKind, 'business_gmail'),
+        ),
+      )
+      .limit(1);
+
+    if (!row?.externalMessageId) {
+      throw new CommunicationsPlatformError('NOT_FOUND', 'Gmail message not found in index');
+    }
+
+    const attachments =
+      (row.metadata?.attachments as CommPlatformGmailAttachmentMeta[] | undefined) ?? [];
+    const meta = attachments.find((a) => a.attachmentId === attachmentId);
+    if (!meta) {
+      throw new CommunicationsPlatformError('NOT_FOUND', 'Attachment metadata not found');
+    }
+
+    const client = await this.gmailOAuthService.createClient(actor.companyId);
+    const payload = await client.getAttachment(row.externalMessageId, attachmentId);
+    return {
+      meta: { ...meta, messageId: row.externalMessageId },
+      dataBase64: payload.data,
+    };
+  }
+
+  /**
+   * AURA summarize / draft-reply assist. Never sends. Drafts still require approve → execute.
+   */
+  async auraAssistGmail(
+    actor: CommPlatformActor,
+    inboxItemId: string,
+    mode: 'summarize' | 'draft_reply',
+  ): Promise<CommPlatformAuraDraftAssistResult> {
+    this.assertBusinessAccess(actor);
+    if (isTechnicianRole(actor)) {
+      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot use AURA mail assist');
+    }
+
+    const [row] = await this.db
+      .select()
+      .from(commPlatformInboxIndex)
+      .where(
+        and(
+          eq(commPlatformInboxIndex.id, inboxItemId),
+          eq(commPlatformInboxIndex.companyId, actor.companyId),
+          eq(commPlatformInboxIndex.accountKind, 'business_gmail'),
+        ),
+      )
+      .limit(1);
+
+    if (!row) {
+      throw new CommunicationsPlatformError('NOT_FOUND', 'Inbox item not found');
+    }
+
+    const subject = row.subject ?? '(no subject)';
+    const preview = row.preview ?? '';
+    const summary = [
+      `Subject: ${subject}`,
+      row.participantLabel ? `From/participant: ${row.participantLabel}` : null,
+      preview ? `Preview: ${preview}` : 'No preview indexed yet — sync Gmail for fuller context.',
+      row.linkTargetType
+        ? `Linked: ${row.linkTargetType} ${row.linkTargetId ?? ''}`.trim()
+        : 'No confident CRM link yet.',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    if (mode === 'summarize') {
+      await this.recordAudit(
+        { companyId: actor.companyId, userId: actor.userId },
+        'comm_platform_gmail_aura_summarize',
+        inboxItemId,
+        { autoSend: false },
+      );
+      return {
+        mode,
+        status: 'ready',
+        summary,
+        note: 'Business-only summary from indexed Gmail. AURA did not send anything.',
+        autoSend: false,
+      };
+    }
+
+    const to = extractEmailsFromHeader(row.participantLabel);
+    if (to.length === 0) {
+      return {
+        mode,
+        status: 'not_configured',
+        summary,
+        note: 'Cannot draft reply — no confident participant email on the indexed message. Sync full headers or set To manually. Nothing was sent.',
+        autoSend: false,
+      };
+    }
+
+    const replyBody = [
+      'Hi,',
+      '',
+      'Thanks for your email — we have received it and will follow up shortly.',
+      '',
+      `Re: ${subject}`,
+      '',
+      '— Young Guns Plumbing',
+      '',
+      '[AURA draft — review before approve → execute. Never auto-sent.]',
+    ].join('\n');
+
+    const draft = await this.createGmailDraft(actor, {
+      to,
+      subject: subject.toLowerCase().startsWith('re:') ? subject : `Re: ${subject}`,
+      bodyText: replyBody,
+      replyToMessageId: row.externalMessageId ?? undefined,
+    });
+
+    await this.recordAudit(
+      { companyId: actor.companyId, userId: actor.userId },
+      'comm_platform_gmail_aura_draft',
+      draft.id,
+      { autoSend: false, replyTo: row.externalMessageId },
+    );
+
+    return {
+      mode,
+      status: 'ready',
+      summary,
+      draft,
+      note: 'Reply draft created. Send still requires Owner/staff approve → execute. AURA never auto-sends.',
+      autoSend: false,
     };
   }
 
@@ -583,8 +876,8 @@ export class CommunicationsPlatformService {
   }
 
   /**
-   * Execute an approved draft. Still does NOT call Gmail send unless credentials + provider
-   * path are configured; records intent honestly and never bypasses approval.
+   * Execute an approved draft via Gmail API. Never auto-sends — requires prior approve step.
+   * Owner/staff must explicitly call execute. AURA has no path here.
    */
   async executeGmailDraft(
     actor: CommPlatformActor,
@@ -617,15 +910,32 @@ export class CommunicationsPlatformService {
     }
 
     const settings = await this.getSettings(actor);
-    if (!settings.businessGmail.connected) {
+    if (!settings.businessGmail.oauthConfigured) {
+      throw new CommunicationsPlatformError(
+        'NOT_CONFIGURED',
+        'Business Gmail OAuth is not configured — cannot execute send',
+      );
+    }
+    if (!settings.businessGmail.connected || !this.gmailOAuthService) {
       throw new CommunicationsPlatformError(
         'NOT_CONFIGURED',
         'Business Gmail is not connected — cannot execute send',
       );
     }
 
-    // V1 foundation: mark executed only after approval; provider send is gated behind config.
-    // We intentionally do not call an external send API here without an explicit provider client.
+    const raw = encodeRawMime({
+      to: existing.toAddresses,
+      cc: existing.ccAddresses,
+      bcc: existing.bccAddresses,
+      subject: existing.subject,
+      bodyText: existing.bodyText,
+      inReplyTo: existing.replyToMessageId ?? undefined,
+      references: existing.replyToMessageId ?? undefined,
+    });
+
+    const client = await this.gmailOAuthService.createClient(actor.companyId);
+    const sent = await client.sendRaw(raw);
+
     const [updated] = await this.db
       .update(commPlatformGmailDrafts)
       .set({
@@ -634,8 +944,10 @@ export class CommunicationsPlatformService {
         updatedAt: new Date(),
         metadata: {
           ...(existing.metadata ?? {}),
-          providerSend: 'not_configured_stub',
-          note: 'Approval recorded; live Gmail API send requires completed OAuth client wiring.',
+          providerSend: 'gmail_api',
+          gmailMessageId: sent.id,
+          gmailThreadId: sent.threadId ?? null,
+          note: 'Sent via Gmail API after explicit Owner/staff approve → execute. Not auto-sent.',
         },
       })
       .where(eq(commPlatformGmailDrafts.id, draftId))
@@ -643,9 +955,9 @@ export class CommunicationsPlatformService {
 
     await this.recordAudit(
       { companyId: actor.companyId, userId: actor.userId },
-      'comm_platform_gmail_draft_execute_requested',
+      'comm_platform_gmail_draft_executed',
       draftId,
-      { autoSend: false, providerSend: 'not_configured_stub' },
+      { autoSend: false, providerSend: 'gmail_api', gmailMessageId: sent.id },
     );
 
     return {
@@ -655,7 +967,7 @@ export class CommunicationsPlatformService {
       to: updated!.toAddresses,
       createdAt: updated!.createdAt.toISOString(),
       requiresApproval: true,
-      note: 'Execute recorded after approval. Live provider send remains not_configured until Gmail OAuth client is fully wired — nothing was auto-sent.',
+      note: 'Sent via Gmail after explicit approval. AURA never auto-sends.',
     };
   }
 
@@ -973,29 +1285,36 @@ export class CommunicationsPlatformService {
 
   async disconnectGmail(actor: CommPlatformActor): Promise<CommPlatformConnectionHealth> {
     this.assertBusinessAccess(actor);
-    await this.db
-      .update(commPlatformAccounts)
-      .set({
-        credentialsEncrypted: null,
-        status: 'disconnected',
-        syncEnabled: false,
-        connectedAt: null,
-        lastError: null,
-        updatedAt: new Date(),
-      })
-      .where(
-        and(
-          eq(commPlatformAccounts.companyId, actor.companyId),
-          eq(commPlatformAccounts.accountKind, 'business_gmail'),
-        ),
-      );
+    if (isTechnicianRole(actor)) {
+      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot disconnect Gmail');
+    }
 
-    await this.recordAudit(
-      { companyId: actor.companyId, userId: actor.userId },
-      'comm_platform_gmail_disconnect',
-      actor.companyId,
-      {},
-    );
+    if (this.gmailOAuthService) {
+      await this.gmailOAuthService.revokeAndDisconnect(actor.companyId, actor.userId);
+    } else {
+      await this.db
+        .update(commPlatformAccounts)
+        .set({
+          credentialsEncrypted: null,
+          status: 'disconnected',
+          syncEnabled: false,
+          connectedAt: null,
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          and(
+            eq(commPlatformAccounts.companyId, actor.companyId),
+            eq(commPlatformAccounts.accountKind, 'business_gmail'),
+          ),
+        );
+      await this.recordAudit(
+        { companyId: actor.companyId, userId: actor.userId },
+        'comm_platform_gmail_disconnect',
+        actor.companyId,
+        {},
+      );
+    }
 
     return (await this.getSettings(actor)).businessGmail;
   }
@@ -1118,19 +1437,33 @@ export class CommunicationsPlatformService {
           ? settings.businessWhatsapp
           : settings.personalWhatsapp ?? EMPTY_PERSONAL_WA;
 
+    if (accountKind === 'business_gmail' && this.gmailOAuthService) {
+      const live = await this.gmailOAuthService.testConnection(actor.companyId);
+      return {
+        ok: live.ok,
+        accountKind,
+        status: live.status,
+        message: live.message,
+        testedAt: live.testedAt,
+      };
+    }
+
     const testedAt = new Date().toISOString();
     let ok = false;
     let message: string;
     let status = health.status;
 
-    if (!health.hasCredentials && !health.connected) {
+    if (accountKind === 'business_gmail' && health.oauthConfigured === false) {
+      message =
+        'Business Gmail is not_configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET before testing.';
+      status = 'not_configured';
+    } else if (!health.hasCredentials && !health.connected) {
       message = `${health.label} is not_configured — connect credentials before testing.`;
       status = 'not_configured';
     } else if (!this.encryptionKey && accountKind === 'business_gmail') {
       message = 'INTEGRATIONS_ENCRYPTION_KEY missing — cannot validate encrypted credentials.';
       status = 'error';
     } else if (health.connected || health.hasCredentials) {
-      // V1: honest connection-test stub (no external call unless provider wired)
       ok = health.connected;
       message = health.connected
         ? `${health.label} credentials present — live provider probe remains additive when API clients are configured.`
@@ -1167,13 +1500,38 @@ export class CommunicationsPlatformService {
   private toHealth(
     row: typeof commPlatformAccounts.$inferSelect | null,
     empty: CommPlatformConnectionHealth,
+    options?: {
+      oauthConfigured?: boolean;
+      preferNotConfiguredWhenOAuthMissing?: boolean;
+    },
   ): CommPlatformConnectionHealth {
-    if (!row) return empty;
-    const connected = row.status === 'connected';
+    const oauthConfigured = options?.oauthConfigured;
+    if (!row) {
+      return {
+        ...empty,
+        oauthConfigured: oauthConfigured ?? empty.oauthConfigured,
+        emptyStateMessage:
+          options?.preferNotConfiguredWhenOAuthMissing && oauthConfigured === false
+            ? 'Not configured — Google OAuth client credentials are missing on the API host.'
+            : empty.emptyStateMessage,
+      };
+    }
+
+    let status = row.status;
+    if (
+      options?.preferNotConfiguredWhenOAuthMissing &&
+      oauthConfigured === false &&
+      !row.credentialsEncrypted
+    ) {
+      status = 'not_configured';
+    }
+
+    const connected = status === 'connected';
+    const meta = row.metadata ?? {};
     return {
       accountKind: row.accountKind,
       label: row.label,
-      status: row.status,
+      status,
       connected,
       hasCredentials: Boolean(row.credentialsEncrypted),
       lastTestAt: row.lastTestAt?.toISOString() ?? null,
@@ -1183,10 +1541,168 @@ export class CommunicationsPlatformService {
       privacyDefault: row.privateByDefault ? 'private' : 'business',
       syncEnabled: row.syncEnabled,
       retentionDays: row.retentionDays,
+      oauthConfigured,
+      emailAddress: row.externalAddress,
+      lastSyncAt: typeof meta.lastSyncAt === 'string' ? meta.lastSyncAt : null,
+      lastSyncStatus: typeof meta.lastSyncStatus === 'string' ? meta.lastSyncStatus : null,
       emptyStateMessage: connected
-        ? `${row.label} connected — showing real indexed traffic only.`
-        : empty.emptyStateMessage,
+        ? `${row.label} connected${row.externalAddress ? ` (${row.externalAddress})` : ''} — showing real indexed traffic only.`
+        : oauthConfigured === false
+          ? 'Not configured — set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET, then connect via Google OAuth.'
+          : empty.emptyStateMessage,
     };
+  }
+
+  private async buildEntityLinkLookups(companyId: string): Promise<GmailEntityLinkLookups> {
+    const [customerRows, leadRows, jobRows, quoteRows, invoiceRows] = await Promise.all([
+      this.db
+        .select({ id: customers.id, email: customers.email })
+        .from(customers)
+        .where(eq(customers.companyId, companyId)),
+      this.db
+        .select({ id: leads.id, email: leads.contactEmail })
+        .from(leads)
+        .where(eq(leads.companyId, companyId)),
+      this.db
+        .select({ id: jobs.id, customerId: jobs.customerId })
+        .from(jobs)
+        .where(eq(jobs.companyId, companyId)),
+      this.db
+        .select({ id: quotes.id, customerId: quotes.customerId })
+        .from(quotes)
+        .where(eq(quotes.companyId, companyId)),
+      this.db
+        .select({
+          id: invoices.id,
+          customerId: invoices.customerId,
+          billingEmail: invoices.billingEmail,
+        })
+        .from(invoices)
+        .where(eq(invoices.companyId, companyId)),
+    ]);
+
+    const customersByEmail = new Map<string, string[]>();
+    for (const row of customerRows) {
+      const email = normalizeEmail(row.email);
+      if (!email) continue;
+      const list = customersByEmail.get(email) ?? [];
+      list.push(row.id);
+      customersByEmail.set(email, list);
+    }
+
+    const leadsByEmail = new Map<string, string[]>();
+    for (const row of leadRows) {
+      const email = normalizeEmail(row.email);
+      if (!email) continue;
+      const list = leadsByEmail.get(email) ?? [];
+      list.push(row.id);
+      leadsByEmail.set(email, list);
+    }
+
+    const jobsByCustomerId = new Map<string, string[]>();
+    for (const row of jobRows) {
+      if (!row.customerId) continue;
+      const list = jobsByCustomerId.get(row.customerId) ?? [];
+      list.push(row.id);
+      jobsByCustomerId.set(row.customerId, list);
+    }
+
+    const quotesByCustomerId = new Map<string, string[]>();
+    for (const row of quoteRows) {
+      if (!row.customerId) continue;
+      const list = quotesByCustomerId.get(row.customerId) ?? [];
+      list.push(row.id);
+      quotesByCustomerId.set(row.customerId, list);
+    }
+
+    const invoicesByEmail = new Map<string, string[]>();
+    const invoicesByCustomerId = new Map<string, string[]>();
+    for (const row of invoiceRows) {
+      if (row.customerId) {
+        const list = invoicesByCustomerId.get(row.customerId) ?? [];
+        list.push(row.id);
+        invoicesByCustomerId.set(row.customerId, list);
+      }
+      const email = normalizeEmail(row.billingEmail);
+      if (email) {
+        const list = invoicesByEmail.get(email) ?? [];
+        list.push(row.id);
+        invoicesByEmail.set(email, list);
+      }
+    }
+
+    return {
+      customersByEmail,
+      leadsByEmail,
+      jobsByCustomerId,
+      quotesByCustomerId,
+      invoicesByEmail,
+      invoicesByCustomerId,
+    };
+  }
+
+  private async indexGmailMessage(
+    companyId: string,
+    accountId: string | null,
+    message: GmailMessage,
+    lookups: GmailEntityLinkLookups,
+    folderHint: string,
+  ): Promise<void> {
+    const from = getHeader(message, 'From');
+    const to = getHeader(message, 'To');
+    const subject = getHeader(message, 'Subject');
+    const labelIds = message.labelIds ?? [];
+    const folder = labelIds.includes('DRAFT')
+      ? 'drafts'
+      : labelIds.includes('SENT')
+        ? 'sent'
+        : labelIds.includes('INBOX')
+          ? 'inbox'
+          : folderHint === 'labels' || folderHint === 'all'
+            ? 'inbox'
+            : folderHint;
+
+    const participantEmails = [
+      ...extractEmailsFromHeader(from),
+      ...extractEmailsFromHeader(to),
+    ];
+    const link = resolveConfidentGmailEntityLink(participantEmails, lookups);
+    const attachments = collectAttachments(message.payload).map((a) => ({
+      ...a,
+      messageId: message.id,
+    }));
+    const bodyPreview = extractTextBody(message.payload).slice(0, 400) || message.snippet || null;
+    const occurredAt = message.internalDate
+      ? new Date(Number(message.internalDate))
+      : new Date();
+
+    await this.db.insert(commPlatformInboxIndex).values({
+      companyId,
+      accountId,
+      accountKind: 'business_gmail',
+      channel: 'email',
+      externalThreadId: message.threadId,
+      externalMessageId: message.id,
+      subject,
+      preview: bodyPreview,
+      participantLabel: from ?? to,
+      participantKind: link?.participantKind ?? 'unknown',
+      folder,
+      unread: labelIds.includes('UNREAD'),
+      urgent: labelIds.includes('IMPORTANT'),
+      direction: labelIds.includes('SENT') ? 'outbound' : 'inbound',
+      linkTargetType: link?.linkTargetType ?? null,
+      linkTargetId: link?.linkTargetId ?? null,
+      assignedJobId: link?.linkTargetType === 'job' ? link.linkTargetId : null,
+      attachmentCount: attachments.length,
+      labels: labelIds,
+      occurredAt: Number.isNaN(occurredAt.getTime()) ? new Date() : occurredAt,
+      metadata: {
+        attachments,
+        linkConfidence: link?.confidence ?? null,
+        gmailThreadId: message.threadId,
+      },
+    });
   }
 
   private healthSummaryLine(
@@ -1292,6 +1808,22 @@ export function mapCommunicationsPlatformError(error: unknown): {
               ? 400
               : 500;
     return { status, code: error.code, message: error.message };
+  }
+  if (error instanceof GmailOAuthError) {
+    const status =
+      error.code === 'NOT_CONFIGURED'
+        ? 503
+        : error.code === 'NOT_CONNECTED' || error.code === 'RECONNECT_REQUIRED'
+          ? 409
+          : 400;
+    return { status, code: error.code, message: error.message };
+  }
+  if (error instanceof GmailClientError) {
+    return {
+      status: error.status === 401 || error.status === 403 ? 401 : 502,
+      code: error.code,
+      message: error.message,
+    };
   }
   return { status: 500, code: 'INTERNAL_ERROR', message: 'Communications platform error' };
 }

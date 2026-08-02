@@ -6,17 +6,17 @@ export type IntegrationProvider =
   | 'whatsapp'
   | 'google_calendar'
   | 'google_maps'
+  | 'gmail'
   | 'microsoft_365'
   | 'resend'
   | 'custom';
 
 /**
- * Honesty-only synthetic providers (Decision 6 / UX-G). These never map to a
- * real backend connector and must never appear in `IntegrationProvider`
- * columns/enums — they exist only as dashboard-status pseudo-entries so the
- * UI can render an honest "NOT IMPLEMENTED" card instead of hiding them.
+ * Non-enum provider ids that may appear on Integrations status cards only.
+ * Gmail graduated to a real OAuth connector (Communications Platform).
+ * n8n is Automation-owned (UX-J) and still widens IntegrationProviderStatus.
  */
-export type HonestyOnlyIntegrationProvider = 'gmail' | 'n8n'; // n8n remains in union for Integrations status card; not honesty-only after UX-J
+export type HonestyOnlyIntegrationProvider = 'n8n';
 
 export type IntegrationConnectionStatus = 'disconnected' | 'pending' | 'connected' | 'error';
 
@@ -149,6 +149,17 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
     availability: 'available',
     settingsPath: '/integrations/google-maps',
     supportsSync: false,
+    supportsWebhooks: false,
+  },
+  {
+    provider: 'gmail',
+    name: 'Business Gmail',
+    description:
+      'Young Guns Business Gmail via official Google OAuth — Inbox, Sent, Drafts, Labels, sync, and approved sends.',
+    category: 'communications',
+    availability: 'available',
+    settingsPath: '/communications-hub',
+    supportsSync: true,
     supportsWebhooks: false,
   },
   {

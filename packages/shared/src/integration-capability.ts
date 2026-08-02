@@ -112,17 +112,16 @@ export function formatCapabilityStateLabel(
 /**
  * Synthetic providers that must never claim usable without a real connector.
  * UX-J: n8n removed — real Automation-owned connector drives Integrations status.
+ * Gmail graduated to real Google OAuth under Communications Platform (no longer honesty-only).
  */
-export const HONESTY_ONLY_PROVIDERS = [
-  {
-    id: 'gmail',
-    name: 'Gmail',
-    description: 'Gmail intelligence is not implemented. Use Email (SMTP) for transactional mail.',
-    category: 'communications' as const,
-    capabilityState: 'not_implemented' as const,
-    deepLinkPath: null as string | null,
-  },
-] as const;
+export const HONESTY_ONLY_PROVIDERS: ReadonlyArray<{
+  id: string;
+  name: string;
+  description: string;
+  category: 'communications' | 'automation';
+  capabilityState: 'not_implemented';
+  deepLinkPath: string | null;
+}> = [];
 
 /** Integrations deep-link target for n8n (configuration lives under Automations). */
 export const N8N_AUTOMATIONS_PATH = '/automation/n8n' as const;

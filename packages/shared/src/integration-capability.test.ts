@@ -128,19 +128,10 @@ describe('formatCapabilityStateLabel', () => {
 
 describe('HONESTY_ONLY_PROVIDERS', () => {
   it('never claims a usable capability state for synthetic providers', () => {
-    for (const provider of HONESTY_ONLY_PROVIDERS) {
-      assert.equal(provider.capabilityState, 'not_implemented');
-    }
+    assert.equal(HONESTY_ONLY_PROVIDERS.length, 0);
   });
 
-  it('includes gmail only; n8n is Automation-owned (UX-J), not honesty-only', () => {
-    const gmail = HONESTY_ONLY_PROVIDERS.find((provider) => provider.id === 'gmail');
-    assert.ok(gmail);
-    assert.equal(gmail?.deepLinkPath, null);
-    assert.equal(
-      HONESTY_ONLY_PROVIDERS.some((provider) => provider.id === 'gmail'),
-      true,
-    );
-    assert.equal(HONESTY_ONLY_PROVIDERS.length, 1);
+  it('no longer lists gmail as honesty-only (real OAuth connector); n8n is Automation-owned', () => {
+    assert.equal(HONESTY_ONLY_PROVIDERS.length, 0);
   });
 });

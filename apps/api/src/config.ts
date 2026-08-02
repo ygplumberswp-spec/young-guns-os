@@ -20,6 +20,10 @@ const envSchema = z.object({
   XERO_CLIENT_ID: z.string().trim().min(1).optional(),
   XERO_CLIENT_SECRET: z.string().min(1).optional(),
   XERO_REDIRECT_URI: z.string().url().optional(),
+  /** Google OAuth (Business Gmail) — official OAuth 2.0 client. */
+  GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
+  GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional(),
   SEED_DEV: z
     .enum(['true', 'false'])
     .default('false')
@@ -219,6 +223,39 @@ export function resolveXeroOAuthConfig(
   const redirectUri =
     env.XERO_REDIRECT_URI?.trim() ??
     `${apiPublicUrl.replace(/\/$/, '')}/api/v1/integrations/xero/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    clientId,
+    clientSecret,
+    redirectUri,
+  };
+}
+
+export type GmailOAuthEnvConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  configured: true;
+};
+
+/**
+ * Business Gmail OAuth. Honest not_configured when client id/secret are absent.
+ * Does not invent a connected state — secrets must be set on the API host.
+ */
+export function resolveGmailOAuthConfig(
+  env: Env,
+  apiPublicUrl: string,
+): GmailOAuthEnvConfig | { configured: false } {
+  const clientId = env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri =
+    env.GOOGLE_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/communications-platform/gmail/oauth/callback`;
 
   if (!clientId || !clientSecret) {
     return { configured: false };

@@ -3,16 +3,21 @@ import { Link } from 'wouter';
 import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import { isPlatformOwnerRole } from '@titan/auth/browser';
 import type {
+  CommPlatformGmailOAuthStatus,
   CommPlatformHubDashboard,
   CommPlatformInboxResult,
   CommPlatformSettingsSummary,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
+  disconnectBusinessGmail,
   fetchCommunicationsPlatformHub,
   fetchCommunicationsPlatformInbox,
   fetchCommunicationsPlatformSettings,
+  fetchGmailOAuthStatus,
   searchCommunicationsPlatformBusiness,
+  startGmailOAuth,
+  syncGmailMailbox,
   testCommunicationsConnection,
 } from '../../lib/communications-platform-api';
 import { useAuth } from '../../lib/auth-context';
@@ -25,6 +30,7 @@ export function CommunicationsPlatformPanel() {
   const [dashboard, setDashboard] = useState<CommPlatformHubDashboard | null>(null);
   const [inbox, setInbox] = useState<CommPlatformInboxResult | null>(null);
   const [settings, setSettings] = useState<CommPlatformSettingsSummary | null>(null);
+  const [gmailOAuth, setGmailOAuth] = useState<CommPlatformGmailOAuthStatus | null>(null);
   const [searchQ, setSearchQ] = useState('');
   const [channel, setChannel] = useState<'all' | 'email' | 'whatsapp'>('all');
   const [unreadOnly, setUnreadOnly] = useState(false);
@@ -48,12 +54,14 @@ export function CommunicationsPlatformPanel() {
 
   async function reload() {
     if (!accessToken) return;
-    const [hub, settingsData] = await Promise.all([
+    const [hub, settingsData, oauthStatus] = await Promise.all([
       fetchCommunicationsPlatformHub(accessToken),
       fetchCommunicationsPlatformSettings(accessToken),
+      fetchGmailOAuthStatus(accessToken),
     ]);
     setDashboard(hub);
     setSettings(settingsData);
+    setGmailOAuth(oauthStatus);
     const inboxData = await fetchCommunicationsPlatformInbox(accessToken, {
       channel,
       unread: unreadOnly || undefined,
@@ -73,6 +81,22 @@ export function CommunicationsPlatformPanel() {
         return;
       }
       try {
+        const params = new URLSearchParams(window.location.search);
+        const gmailOutcome = params.get('gmail');
+        const gmailMessage = params.get('message');
+        if (gmailOutcome === 'connected') {
+          setSuccess(gmailMessage?.trim() || 'Business Gmail connected via Google OAuth.');
+          setTab('settings');
+        } else if (gmailOutcome === 'error') {
+          setError(gmailMessage?.trim() || 'Google OAuth for Business Gmail failed.');
+          setTab('settings');
+        }
+        if (gmailOutcome) {
+          params.delete('gmail');
+          params.delete('message');
+          const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
+          window.history.replaceState({}, '', next);
+        }
         await reload();
       } catch (err) {
         if (!cancelled) {
@@ -157,8 +181,68 @@ export function CommunicationsPlatformPanel() {
       setSuccess(result.message);
       const settingsData = await fetchCommunicationsPlatformSettings(accessToken);
       setSettings(settingsData);
+      if (accountKind === 'business_gmail') {
+        setGmailOAuth(await fetchGmailOAuthStatus(accessToken));
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Connection test failed');
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
+  async function connectGmail() {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      if (gmailOAuth && !gmailOAuth.oauthConfigured) {
+        setError(
+          'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API (Railway), then reload.',
+        );
+        return;
+      }
+      const url = await startGmailOAuth(accessToken, '/communications-hub');
+      window.location.assign(url);
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Unable to start Google OAuth for Business Gmail',
+      );
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
+  async function syncGmail() {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await syncGmailMailbox(accessToken, { folder: 'inbox', maxMessages: 40 });
+      setSuccess(result.note);
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Gmail sync failed');
+    } finally {
+      setIsWorking(false);
+    }
+  }
+
+  async function disconnectGmail() {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await disconnectBusinessGmail(accessToken);
+      setSuccess('Business Gmail disconnected.');
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Disconnect failed');
     } finally {
       setIsWorking(false);
     }
@@ -329,12 +413,51 @@ export function CommunicationsPlatformPanel() {
           </div>
 
           <Panel title="Business Gmail">
-            <p>{settings.businessGmail.emptyStateMessage}</p>
+            {gmailOAuth && !gmailOAuth.oauthConfigured ? (
+              <EmptyState
+                title="Not configured"
+                description="Google OAuth client credentials are missing on the API. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and optional GOOGLE_REDIRECT_URI on Railway staging API. TITAN will not show a fake connected state."
+              />
+            ) : (
+              <p>{settings.businessGmail.emptyStateMessage}</p>
+            )}
             <p>
-              Privacy: business · Sync: {settings.businessGmail.syncEnabled ? 'on' : 'off'} ·
-              Credentials: {settings.businessGmail.hasCredentials ? 'stored (encrypted)' : 'none'}
+              Status:{' '}
+              {gmailOAuth && !gmailOAuth.oauthConfigured
+                ? 'not_configured'
+                : settings.businessGmail.status}
+              {settings.businessGmail.emailAddress
+                ? ` · ${settings.businessGmail.emailAddress}`
+                : ''}
+              {' · '}
+              Sync: {settings.businessGmail.syncEnabled ? 'on' : 'off'}
+              {settings.businessGmail.lastSyncAt
+                ? ` · Last sync: ${settings.businessGmail.lastSyncAt}`
+                : ''}
+              {' · '}
+              Credentials:{' '}
+              {settings.businessGmail.hasCredentials ? 'stored (encrypted)' : 'none'}
             </p>
             <div className="page-header-actions">
+              <Button
+                disabled={
+                  isWorking || Boolean(gmailOAuth && !gmailOAuth.oauthConfigured)
+                }
+                onClick={() => void connectGmail()}
+              >
+                Connect Gmail
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={
+                  isWorking ||
+                  !settings.businessGmail.connected ||
+                  Boolean(gmailOAuth && !gmailOAuth.oauthConfigured)
+                }
+                onClick={() => void syncGmail()}
+              >
+                Sync mailbox
+              </Button>
               <Button
                 variant="secondary"
                 disabled={isWorking}
@@ -342,13 +465,21 @@ export function CommunicationsPlatformPanel() {
               >
                 Test Gmail connection
               </Button>
+              <Button
+                variant="secondary"
+                disabled={isWorking || !settings.businessGmail.hasCredentials}
+                onClick={() => void disconnectGmail()}
+              >
+                Disconnect
+              </Button>
               <Link href="/integrations">
                 <Button variant="secondary">Integration Hub</Button>
               </Link>
             </div>
             <p className="muted">
-              OAuth setup required (Google Cloud / Workspace). Tokens encrypt with
-              INTEGRATIONS_ENCRYPTION_KEY. Drafts only until approve → execute.
+              Official Google OAuth 2.0. Tokens encrypt with INTEGRATIONS_ENCRYPTION_KEY and
+              refresh automatically. AURA may summarize/draft only — send requires Owner/staff
+              approve → execute. Personal WhatsApp stays Owner-only and private.
             </p>
           </Panel>
 

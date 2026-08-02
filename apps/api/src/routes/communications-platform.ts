@@ -27,7 +27,7 @@ const inboxFilterSchema = z.object({
   folder: z.enum(['inbox', 'sent', 'drafts', 'labels', 'all', 'chats']).optional(),
   q: z.string().trim().max(500).optional(),
   linkTargetType: z
-    .enum(['customer', 'job', 'quote', 'invoice', 'property', 'supplier', 'staff'])
+    .enum(['customer', 'lead', 'job', 'quote', 'invoice', 'property', 'supplier', 'staff'])
     .optional(),
   linkTargetId: z.string().uuid().optional(),
   includePersonal: z
@@ -74,7 +74,7 @@ const importDecisionSchema = z.object({
   contactName: z.string().trim().max(200).optional(),
   action: z.enum(['import', 'import_from', 'create_customer', 'link', 'keep_private']),
   linkTargetType: z
-    .enum(['customer', 'job', 'quote', 'invoice', 'property', 'supplier', 'staff'])
+    .enum(['customer', 'lead', 'job', 'quote', 'invoice', 'property', 'supplier', 'staff'])
     .optional(),
   linkTargetId: z.string().uuid().optional(),
   notes: z.string().trim().max(2000).optional(),
@@ -82,7 +82,16 @@ const importDecisionSchema = z.object({
 });
 
 const linkSchema = z.object({
-  linkTargetType: z.enum(['customer', 'job', 'quote', 'invoice', 'property', 'supplier', 'staff']),
+  linkTargetType: z.enum([
+    'customer',
+    'lead',
+    'job',
+    'quote',
+    'invoice',
+    'property',
+    'supplier',
+    'staff',
+  ]),
   linkTargetId: z.string().uuid(),
 });
 
@@ -90,11 +99,26 @@ const testSchema = z.object({
   accountKind: z.enum(['business_gmail', 'business_whatsapp', 'personal_whatsapp']),
 });
 
+const gmailOAuthStartSchema = z.object({
+  returnPath: z.string().trim().max(300).optional(),
+});
+
+const gmailSyncSchema = z.object({
+  folder: z.enum(['inbox', 'sent', 'drafts', 'labels', 'all', 'chats']).optional(),
+  maxMessages: z.number().int().min(1).max(100).optional(),
+});
+
+const auraAssistSchema = z.object({
+  mode: z.enum(['summarize', 'draft_reply']),
+});
+
 type RouterDeps = {
   communicationsPlatformService: CommunicationsPlatformService;
+  gmailOAuthService: import('../services/gmail-oauth.service.js').GmailOAuthService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
+  appUrl: string;
 };
 
 function getActor(req: AuthenticatedRequest): CommPlatformActor {
@@ -141,6 +165,25 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
     'integrations:manage',
     '*',
   );
+
+  // OAuth callback is unauthenticated (Google redirect) — registered before auth middleware.
+  router.get('/gmail/oauth/callback', async (req, res) => {
+    try {
+      const redirectUrl = await deps.gmailOAuthService.handleOAuthCallback({
+        code: req.query.code as string | string[] | undefined,
+        state: req.query.state as string | string[] | undefined,
+        error: req.query.error as string | string[] | undefined,
+        errorDescription: req.query.error_description as string | string[] | undefined,
+      });
+      res.redirect(redirectUrl);
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      const fallback = new URL('/communications-hub', deps.appUrl);
+      fallback.searchParams.set('gmail', 'error');
+      fallback.searchParams.set('message', mapped.message);
+      res.redirect(fallback.toString());
+    }
+  });
 
   router.use(requireAuth);
   router.use(async (req, _res, next) => {
@@ -218,7 +261,128 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
     res.json({ data: { hooks } });
   });
 
-  // --- Gmail ---
+  // --- Gmail OAuth / sync ---
+  router.get('/gmail/oauth/status', requireRead, async (req, res) => {
+    try {
+      const actor = getActor(req as AuthenticatedRequest);
+      const status = await deps.gmailOAuthService.getOAuthStatus(actor.companyId);
+      res.json({ data: { status } });
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    }
+  });
+
+  router.post('/gmail/oauth/start', requireWrite, async (req, res) => {
+    try {
+      const actor = getActor(req as AuthenticatedRequest);
+      if (actor.roleName === 'Technician') {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Technicians cannot connect Gmail' },
+        });
+        return;
+      }
+      if (!deps.gmailOAuthService.isAppConfigured()) {
+        res.status(503).json({
+          error: {
+            code: 'NOT_CONFIGURED',
+            message:
+              'Business Gmail is not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.',
+          },
+        });
+        return;
+      }
+      const parsed = gmailOAuthStartSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid Gmail OAuth start payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+      const result = await deps.gmailOAuthService.startOAuth({
+        companyId: actor.companyId,
+        userId: actor.userId,
+        returnPath: parsed.data.returnPath ?? '/communications-hub',
+      });
+      res.json({ data: result });
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    }
+  });
+
+  router.post('/gmail/sync', requireWrite, async (req, res) => {
+    try {
+      const parsed = gmailSyncSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid Gmail sync payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+      const result = await deps.communicationsPlatformService.syncGmailMailbox(
+        getActor(req as AuthenticatedRequest),
+        parsed.data,
+      );
+      res.json({ data: { sync: result } });
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    }
+  });
+
+  router.get(
+    '/gmail/inbox/:id/attachments/:attachmentId',
+    requireRead,
+    async (req, res) => {
+      try {
+        const result = await deps.communicationsPlatformService.getGmailAttachment(
+          getActor(req as AuthenticatedRequest),
+          getRouteParam(req.params.id),
+          getRouteParam(req.params.attachmentId),
+        );
+        res.json({ data: result });
+      } catch (error) {
+        const mapped = mapCommunicationsPlatformError(error);
+        res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+      }
+    },
+  );
+
+  router.post('/gmail/inbox/:id/aura-assist', requireWrite, async (req, res) => {
+    try {
+      const parsed = auraAssistSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid AURA assist payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+      const result = await deps.communicationsPlatformService.auraAssistGmail(
+        getActor(req as AuthenticatedRequest),
+        getRouteParam(req.params.id),
+        parsed.data.mode,
+      );
+      res.json({ data: { assist: result } });
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    }
+  });
+
+  // --- Gmail mailbox ---
   router.get('/gmail/:folder', requireRead, async (req, res) => {
     try {
       const folder = getRouteParam(req.params.folder) as

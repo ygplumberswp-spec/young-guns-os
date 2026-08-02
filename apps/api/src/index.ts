@@ -11,7 +11,12 @@ import {
   probeDbConnection,
   summarizeDatabaseUrl,
 } from '@titan/db';
-import { loadAuraEnvConfig, loadEnv, resolveXeroOAuthConfig } from './config.js';
+import {
+  loadAuraEnvConfig,
+  loadEnv,
+  resolveGmailOAuthConfig,
+  resolveXeroOAuthConfig,
+} from './config.js';
 
 import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/db-diagnostics.js';
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
@@ -117,6 +122,7 @@ import { EnterpriseUnifiedCommunicationsService } from './services/enterprise-un
 import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
 import { CommunicationsPlatformService } from './services/communications-platform.service.js';
 import { createCommunicationsPlatformRouter } from './routes/communications-platform.js';
+import { GmailOAuthService } from './services/gmail-oauth.service.js';
 import { EnterpriseCustomerExperienceService } from './services/enterprise-customer-experience.service.js';
 import { createEnterpriseCustomerExperienceRouter } from './routes/enterprise-customer-experience.js';
 import { EnterpriseAssetLifecycleService } from './services/enterprise-asset-lifecycle.service.js';
@@ -413,6 +419,13 @@ const xeroOAuthService = XeroOAuthService.create({
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   appUrl: env.APP_URL,
   oauthConfig: xeroOAuthConfig,
+});
+const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
+const gmailOAuthService = GmailOAuthService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  oauthConfig: gmailOAuthConfig,
 });
 const businessIntegrationsService = BusinessIntegrationsService.create({
   db,
@@ -802,6 +815,7 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
 const communicationsPlatformService = CommunicationsPlatformService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  gmailOAuthService,
 });
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
   db,
@@ -1624,9 +1638,11 @@ app.use(
   '/api/v1/communications-platform',
   createCommunicationsPlatformRouter({
     communicationsPlatformService,
+    gmailOAuthService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
+    appUrl: env.APP_URL,
   }),
 );
 app.use(

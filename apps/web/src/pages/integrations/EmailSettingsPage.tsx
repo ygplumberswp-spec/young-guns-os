@@ -228,9 +228,10 @@ export function EmailSettingsPage() {
 
       <Panel title="Provider support">
         <p className="page-muted">
-          Gmail and Microsoft 365 OAuth connectors remain on the product roadmap. SMTP is supported
-          today with the same connect-once lock pattern. AURA may classify incoming mail and draft
-          replies — sending requires approval.
+          Business Gmail OAuth lives in Communications Hub (Connect Google Gmail). SMTP remains
+          available here with the same connect-once lock pattern. Microsoft 365 OAuth is still on
+          the roadmap. AURA may classify incoming mail and draft replies — sending requires
+          approval (draft → approve → execute).
         </p>
       </Panel>
     </div>

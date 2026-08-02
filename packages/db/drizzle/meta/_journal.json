@@ -841,6 +841,13 @@
       "when": 1754280000000,
       "tag": "0121_communications_platform_v1",
       "breakpoints": true
+    },
+    {
+      "idx": 120,
+      "version": "7",
+      "when": 1754283600000,
+      "tag": "0122_gmail_oauth_provider",
+      "breakpoints": true
     }
   ]
 }

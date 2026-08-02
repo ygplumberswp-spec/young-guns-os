@@ -62,4 +62,12 @@ describe('communications platform API envelope & safety', () => {
     assert.ok(serviceSource.includes('executedImport: false'));
     assert.ok(serviceSource.includes('Nothing was auto-imported'));
   });
+
+  it('wires Gmail OAuth start/callback and honest not_configured', () => {
+    assert.ok(routeSource.includes('/gmail/oauth/callback'));
+    assert.ok(routeSource.includes('/gmail/oauth/start'));
+    assert.ok(routeSource.includes("code: 'NOT_CONFIGURED'"));
+    assert.ok(routeSource.includes('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET'));
+    assert.ok(serviceSource.includes('AURA never auto-sends'));
+  });
 });

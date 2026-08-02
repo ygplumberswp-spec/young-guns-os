@@ -33,6 +33,7 @@ export const commPlatformCapabilityStateEnum = pgEnum('comm_platform_capability_
 
 export const commPlatformLinkTargetTypeEnum = pgEnum('comm_platform_link_target_type', [
   'customer',
+  'lead',
   'job',
   'quote',
   'invoice',

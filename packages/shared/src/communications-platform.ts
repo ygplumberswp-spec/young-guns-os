@@ -24,6 +24,7 @@ export const COMM_PLATFORM_BUSINESS_ACCOUNT_KINDS: CommPlatformAccountKind[] = [
 
 export type CommPlatformLinkTargetType =
   | 'customer'
+  | 'lead'
   | 'job'
   | 'quote'
   | 'invoice'
@@ -108,6 +109,14 @@ export type CommPlatformConnectionHealth = {
   retentionDays: number | null;
   /** Honest empty-state copy when not connected. */
   emptyStateMessage: string;
+  /** Google OAuth client id/secret present on the API host. */
+  oauthConfigured?: boolean;
+  /** Connected Workspace / Gmail address when known. */
+  emailAddress?: string | null;
+  /** Last successful provider sync (ISO). */
+  lastSyncAt?: string | null;
+  /** Last sync outcome for honest UI. */
+  lastSyncStatus?: string | null;
 };
 
 export type CommPlatformSettingsSummary = {
@@ -277,8 +286,50 @@ export type SaveCommPlatformGmailConnectionRequest = {
   accessToken?: string;
   refreshToken?: string;
   expiresAt?: string;
+  scope?: string;
   syncEnabled?: boolean;
   retentionDays?: number;
+};
+
+export type CommPlatformGmailOAuthStartResult = {
+  authorizationUrl: string;
+  oauthConfigured: true;
+};
+
+export type CommPlatformGmailOAuthStatus = {
+  oauthConfigured: boolean;
+  connected: boolean;
+  status: CommPlatformCapabilityState;
+  emailAddress: string | null;
+  redirectUri: string | null;
+  scopes: string[];
+  emptyStateMessage: string;
+};
+
+export type CommPlatformGmailSyncResult = {
+  synced: number;
+  skipped: number;
+  labels: string[];
+  capabilityState: CommPlatformCapabilityState;
+  note: string;
+};
+
+export type CommPlatformGmailAttachmentMeta = {
+  attachmentId: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  messageId: string;
+};
+
+export type CommPlatformAuraDraftAssistResult = {
+  mode: 'summarize' | 'draft_reply';
+  status: 'ready' | 'not_configured' | 'stub';
+  summary?: string;
+  draft?: CommPlatformGmailDraftSummary;
+  note: string;
+  /** Always false — AURA never auto-sends. */
+  autoSend: false;
 };
 
 export type SaveCommPlatformPersonalWhatsappRequest = {

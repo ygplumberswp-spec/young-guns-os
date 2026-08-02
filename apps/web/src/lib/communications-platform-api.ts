@@ -1,8 +1,11 @@
 import { request } from './api-client';
 import type {
+  CommPlatformAuraDraftAssistResult,
   CommPlatformGmailDraftRequest,
   CommPlatformGmailDraftSummary,
   CommPlatformGmailMailboxView,
+  CommPlatformGmailOAuthStatus,
+  CommPlatformGmailSyncResult,
   CommPlatformHubDashboard,
   CommPlatformImportDecisionRequest,
   CommPlatformImportDecisionSummary,
@@ -131,6 +134,48 @@ export async function disconnectBusinessGmail(accessToken: string) {
     { method: 'DELETE', accessToken },
   );
   return data.connection;
+}
+
+export async function fetchGmailOAuthStatus(accessToken: string) {
+  const data = await request<{ status: CommPlatformGmailOAuthStatus }>(
+    '/communications-platform/gmail/oauth/status',
+    { accessToken },
+  );
+  return data.status;
+}
+
+export async function startGmailOAuth(
+  accessToken: string,
+  returnPath = '/communications-hub',
+) {
+  const data = await request<{ authorizationUrl: string }>(
+    '/communications-platform/gmail/oauth/start',
+    { method: 'POST', accessToken, body: { returnPath } },
+  );
+  return data.authorizationUrl;
+}
+
+export async function syncGmailMailbox(
+  accessToken: string,
+  body: { folder?: 'inbox' | 'sent' | 'drafts' | 'labels' | 'all'; maxMessages?: number } = {},
+) {
+  const data = await request<{ sync: CommPlatformGmailSyncResult }>(
+    '/communications-platform/gmail/sync',
+    { method: 'POST', accessToken, body },
+  );
+  return data.sync;
+}
+
+export async function auraAssistGmail(
+  accessToken: string,
+  inboxItemId: string,
+  mode: 'summarize' | 'draft_reply',
+) {
+  const data = await request<{ assist: CommPlatformAuraDraftAssistResult }>(
+    `/communications-platform/gmail/inbox/${inboxItemId}/aura-assist`,
+    { method: 'POST', accessToken, body: { mode } },
+  );
+  return data.assist;
 }
 
 export async function fetchBusinessWhatsappChats(accessToken: string) {

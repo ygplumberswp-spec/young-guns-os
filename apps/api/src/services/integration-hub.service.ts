@@ -268,16 +268,16 @@ export class IntegrationHubService {
     );
 
     const honestyStatuses: IntegrationProviderStatus[] = HONESTY_ONLY_PROVIDERS.map((honesty) => ({
-      provider: honesty.id,
+      provider: honesty.id as IntegrationProviderStatus['provider'],
       name: honesty.name,
       description: honesty.description,
       category: honesty.category,
-      availability: 'planned',
+      availability: 'planned' as const,
       settingsPath: honesty.deepLinkPath,
       supportsSync: false,
       supportsWebhooks: false,
       connectionId: null,
-      connectionStatus: 'disconnected',
+      connectionStatus: 'disconnected' as const,
       isConfigured: false,
       lastSyncAt: null,
       lastError: null,
