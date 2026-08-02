@@ -459,14 +459,29 @@ export function resolveEffectiveInvoiceTotalCents(input: {
   return input.amountCents > 0 ? input.amountCents : 0;
 }
 
+/** Prefer stored amount_paid; fall back to sum of linked payment rows when invoice field is stale (false-zero). */
+export function resolveEffectiveAmountPaidCents(input: {
+  amountPaidCents: number;
+  allocatedPaymentsCents?: number | null;
+}): number {
+  const allocated = input.allocatedPaymentsCents ?? 0;
+  if (allocated <= 0) return input.amountPaidCents;
+  return Math.max(input.amountPaidCents, allocated);
+}
+
 export function resolveEffectiveInvoiceOutstandingCents(input: {
   amountCents: number;
   totalCents?: number | null;
   amountPaidCents: number;
+  allocatedPaymentsCents?: number | null;
 }): number {
   const total = resolveEffectiveInvoiceTotalCents(input);
   if (total <= 0) return 0;
-  return Math.max(0, total - input.amountPaidCents);
+  const paid = resolveEffectiveAmountPaidCents({
+    amountPaidCents: input.amountPaidCents,
+    allocatedPaymentsCents: input.allocatedPaymentsCents,
+  });
+  return Math.max(0, total - paid);
 }
 
 export function displayInvoiceNumber(input: {

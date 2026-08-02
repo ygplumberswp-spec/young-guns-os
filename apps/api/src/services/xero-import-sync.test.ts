@@ -56,6 +56,7 @@ test('buildSyncedInvoiceMappingLookup indexes synced rows by xero invoice id', (
     currency: 'ZAR',
     amountPaidCents: 0,
     amountCents: 10_000,
+    totalCents: 10_000,
     status: 'sent' as const,
     invoiceNumber: 'INV-001',
   };

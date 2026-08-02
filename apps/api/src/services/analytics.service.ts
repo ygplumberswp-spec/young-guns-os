@@ -16,7 +16,7 @@ import type {
   ReportType,
   TechnicianPerformanceAnalytics,
 } from '@titan/shared';
-import { REPORT_TYPE_OPTIONS } from '@titan/shared';
+import { REPORT_TYPE_OPTIONS, resolveEffectiveInvoiceOutstandingCents, resolveEffectiveInvoiceTotalCents } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   analyticsSnapshots,
@@ -138,7 +138,13 @@ export class AnalyticsService {
     });
 
     const outstandingTotal = outstandingRows.reduce(
-      (sum, invoice) => sum + Math.max(0, invoice.amountCents - invoice.amountPaidCents),
+      (sum, invoice) =>
+        sum +
+        resolveEffectiveInvoiceOutstandingCents({
+          amountCents: invoice.amountCents,
+          totalCents: invoice.totalCents,
+          amountPaidCents: invoice.amountPaidCents,
+        }),
       0,
     );
 
@@ -179,7 +185,15 @@ export class AnalyticsService {
           .length,
         paid: invoiceRows.filter((row) => row.status === 'paid').length,
         overdue: invoiceRows.filter((row) => row.status === 'overdue').length,
-        totalInvoicedCents: invoiceRows.reduce((sum, row) => sum + row.amountCents, 0),
+        totalInvoicedCents: invoiceRows.reduce(
+          (sum, row) =>
+            sum +
+            resolveEffectiveInvoiceTotalCents({
+              amountCents: row.amountCents,
+              totalCents: row.totalCents,
+            }),
+          0,
+        ),
         totalPaidCents: invoiceRows.reduce((sum, row) => sum + row.amountPaidCents, 0),
       },
       paymentPerformance: {
@@ -504,6 +518,29 @@ export class AnalyticsService {
       this.sumPayments(companyId, range.previousFrom, range.previousTo),
     ]);
 
+    const paymentAllocations =
+      invoiceRows.length > 0
+        ? await this.db
+            .select({
+              invoiceId: payments.invoiceId,
+              total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int`,
+            })
+            .from(payments)
+            .where(
+              and(
+                eq(payments.companyId, companyId),
+                inArray(
+                  payments.invoiceId,
+                  invoiceRows.map((row) => row.id),
+                ),
+              ),
+            )
+            .groupBy(payments.invoiceId)
+        : [];
+    const allocatedByInvoiceId = new Map(
+      paymentAllocations.map((row) => [row.invoiceId, row.total]),
+    );
+
     const invoicedInPeriod = invoiceRows.filter(
       (row) => row.createdAt >= range.from && row.createdAt <= range.to,
     );
@@ -519,9 +556,24 @@ export class AnalyticsService {
       currency,
       cashFlow: {
         inflowCents: paymentRows.reduce((sum, row) => sum + row.amountCents, 0),
-        invoicedCents: invoicedInPeriod.reduce((sum, row) => sum + row.amountCents, 0),
+        invoicedCents: invoicedInPeriod.reduce(
+          (sum, row) =>
+            sum +
+            resolveEffectiveInvoiceTotalCents({
+              amountCents: row.amountCents,
+              totalCents: row.totalCents,
+            }),
+          0,
+        ),
         outstandingCents: outstanding.reduce(
-          (sum, row) => sum + Math.max(0, row.amountCents - row.amountPaidCents),
+          (sum, row) =>
+            sum +
+            resolveEffectiveInvoiceOutstandingCents({
+              amountCents: row.amountCents,
+              totalCents: row.totalCents,
+              amountPaidCents: row.amountPaidCents,
+              allocatedPaymentsCents: allocatedByInvoiceId.get(row.id),
+            }),
           0,
         ),
       },
@@ -531,7 +583,12 @@ export class AnalyticsService {
         id: row.id,
         invoiceNumber: row.invoiceNumber,
         customerName: row.customer?.name ?? 'Unknown',
-        outstandingCents: Math.max(0, row.amountCents - row.amountPaidCents),
+        outstandingCents: resolveEffectiveInvoiceOutstandingCents({
+          amountCents: row.amountCents,
+          totalCents: row.totalCents,
+          amountPaidCents: row.amountPaidCents,
+          allocatedPaymentsCents: allocatedByInvoiceId.get(row.id),
+        }),
         dueDate: row.dueDate?.toISOString() ?? null,
         daysOverdue:
           row.dueDate && row.dueDate < now

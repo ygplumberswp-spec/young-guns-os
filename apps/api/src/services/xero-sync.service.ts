@@ -11,6 +11,7 @@ import type {
   XeroSyncStatusResponse,
   IntegrationSyncTrigger,
 } from '@titan/shared';
+import { resolveEffectiveInvoiceTotalCents } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
@@ -1403,15 +1404,18 @@ export class XeroSyncService {
             continue;
           }
 
+          const paymentCents = amountToCents(remotePayment.amount);
+
           const [createdPayment] = await this.db
             .insert(payments)
             .values({
               companyId,
               invoiceId: invoiceMapping.invoiceId,
-              amountCents: amountToCents(remotePayment.amount),
+              amountCents: paymentCents,
               currency: remotePayment.currencyCode ?? invoiceMapping.invoice.currency,
               method: 'bank_transfer',
               reference: remotePayment.paymentId,
+              xeroPaymentId: remotePayment.paymentId,
               paidAt: remotePayment.date ? new Date(remotePayment.date) : new Date(),
               notes: 'Imported from Xero',
             })
@@ -1433,10 +1437,11 @@ export class XeroSyncService {
             lastSuccessfulSyncAt: new Date(),
           });
 
-          // Avoid N+1 Xero invoice fetches during payment sync.
-          const paymentCents = amountToCents(remotePayment.amount);
           const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
-          const invoiceTotalCents = invoiceMapping.invoice.amountCents ?? 0;
+          const invoiceTotalCents = resolveEffectiveInvoiceTotalCents({
+            amountCents: invoiceMapping.invoice.amountCents ?? 0,
+            totalCents: invoiceMapping.invoice.totalCents,
+          });
           const amountDue = Math.max(invoiceTotalCents - nextPaidCents, 0) / 100;
           const amountPaid = nextPaidCents / 100;
           const total = invoiceTotalCents / 100;
@@ -2159,6 +2164,7 @@ export class XeroSyncService {
             currency: remotePayment.currencyCode ?? invoiceMapping.invoice.currency,
             method: 'bank_transfer',
             reference: remotePayment.paymentId,
+            xeroPaymentId: remotePayment.paymentId,
             paidAt: remotePayment.date ? new Date(remotePayment.date) : new Date(),
             notes: 'Imported from Xero',
           })
@@ -2182,7 +2188,10 @@ export class XeroSyncService {
         });
 
         const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
-        const invoiceTotalCents = invoiceMapping.invoice.amountCents ?? 0;
+        const invoiceTotalCents = resolveEffectiveInvoiceTotalCents({
+          amountCents: invoiceMapping.invoice.amountCents ?? 0,
+          totalCents: invoiceMapping.invoice.totalCents,
+        });
         const amountDue = Math.max(invoiceTotalCents - nextPaidCents, 0) / 100;
         const amountPaid = nextPaidCents / 100;
         const total = invoiceTotalCents / 100;
@@ -2408,6 +2417,7 @@ export class XeroSyncService {
           currency: invoices.currency,
           amountPaidCents: invoices.amountPaidCents,
           amountCents: invoices.amountCents,
+          totalCents: invoices.totalCents,
           status: invoices.status,
           invoiceNumber: invoices.invoiceNumber,
         },
@@ -2459,6 +2469,7 @@ export type SyncedInvoiceMappingForPayment = {
     currency: string;
     amountPaidCents: number | null;
     amountCents: number | null;
+    totalCents: number | null;
     status: (typeof invoices.$inferSelect)['status'];
     invoiceNumber: string;
   };

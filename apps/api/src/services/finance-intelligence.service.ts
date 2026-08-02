@@ -113,11 +113,11 @@ export class FinanceIntelligenceService {
 
     const receivableDueWeek = invoiceRows
       .filter((row) => row.dueDate && new Date(row.dueDate) <= weekAhead)
-      .reduce((sum, row) => sum + Math.max(0, row.amountCents - row.amountPaidCents), 0);
+      .reduce((sum, row) => sum + row.outstandingCents, 0);
 
     const receivableDueMonth = invoiceRows
       .filter((row) => row.dueDate && new Date(row.dueDate) <= monthAhead)
-      .reduce((sum, row) => sum + Math.max(0, row.amountCents - row.amountPaidCents), 0);
+      .reduce((sum, row) => sum + row.outstandingCents, 0);
 
     const avgWeeklyInflow =
       paymentRows.length > 0
@@ -288,7 +288,7 @@ export class FinanceIntelligenceService {
     let overdueAmountCents = 0;
 
     for (const invoice of invoiceRows) {
-      const outstanding = Math.max(0, invoice.amountCents - invoice.amountPaidCents);
+      const outstanding = invoice.outstandingCents;
       if (outstanding <= 0 || ['paid', 'cancelled', 'draft'].includes(invoice.status)) {
         continue;
       }

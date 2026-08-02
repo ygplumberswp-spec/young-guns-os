@@ -24,6 +24,7 @@ import {
   displayInvoiceNumber,
   formatInternalInvoiceNumber,
   formatMoney,
+  resolveEffectiveAmountPaidCents,
   resolveEffectiveInvoiceOutstandingCents,
   resolveEffectiveInvoiceTotalCents,
   deriveJobListFinanceSnapshot,
@@ -152,7 +153,32 @@ export class FinanceService {
         : [];
     const mappingByInvoiceId = new Map(mappings.map((mapping) => [mapping.invoiceId, mapping]));
 
-    return rows.map((row) => toInvoiceSummary(row, mappingByInvoiceId.get(row.id)));
+    const paymentAllocations =
+      rows.length > 0
+        ? await this.db
+            .select({
+              invoiceId: payments.invoiceId,
+              total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int`,
+            })
+            .from(payments)
+            .where(
+              and(
+                eq(payments.companyId, companyId),
+                inArray(
+                  payments.invoiceId,
+                  rows.map((row) => row.id),
+                ),
+              ),
+            )
+            .groupBy(payments.invoiceId)
+        : [];
+    const allocatedByInvoiceId = new Map(
+      paymentAllocations.map((row) => [row.invoiceId, row.total]),
+    );
+
+    return rows.map((row) =>
+      toInvoiceSummary(row, mappingByInvoiceId.get(row.id), allocatedByInvoiceId.get(row.id)),
+    );
   }
 
   async listPayments(companyId: string, query: FinanceListQuery = {}): Promise<PaymentSummary[]> {
@@ -633,6 +659,21 @@ export class FinanceService {
     const invoicesByJob = groupRowsByJobId(invoiceRows);
     const paymentsByJob = new Map<string, PaymentSummary[]>();
 
+    const paymentAllocations =
+      invoiceIds.length > 0
+        ? await this.db
+            .select({
+              invoiceId: payments.invoiceId,
+              total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int`,
+            })
+            .from(payments)
+            .where(and(eq(payments.companyId, companyId), inArray(payments.invoiceId, invoiceIds)))
+            .groupBy(payments.invoiceId)
+        : [];
+    const allocatedByInvoiceId = new Map(
+      paymentAllocations.map((row) => [row.invoiceId, row.total]),
+    );
+
     for (const paymentRow of paymentRows) {
       const jobId = paymentRow.invoice?.jobId;
       if (!jobId) continue;
@@ -643,7 +684,9 @@ export class FinanceService {
 
     for (const jobId of jobIds) {
       const quotesOut = (quotesByJob.get(jobId) ?? []).map((row) => toQuoteSummary(row));
-      const invoicesOut = (invoicesByJob.get(jobId) ?? []).map((row) => toInvoiceSummary(row));
+      const invoicesOut = (invoicesByJob.get(jobId) ?? []).map((row) =>
+        toInvoiceSummary(row, undefined, allocatedByInvoiceId.get(row.id)),
+      );
       const paymentsOut = paymentsByJob.get(jobId) ?? [];
       result.set(
         jobId,
@@ -688,14 +731,70 @@ export class FinanceService {
 
         const currency = await this.resolveCurrency(companyId);
 
+        const openInvoiceRows = await this.db.query.invoices.findMany({
+          where: and(
+            eq(invoices.companyId, companyId),
+            inArray(invoices.status, ['sent', 'partial', 'overdue']),
+          ),
+          columns: {
+            id: true,
+            amountCents: true,
+            totalCents: true,
+            amountPaidCents: true,
+            dueDate: true,
+          },
+        });
+
+        const openInvoiceIds = openInvoiceRows.map((row) => row.id);
+        const paymentAllocations =
+          openInvoiceIds.length > 0
+            ? await this.db
+                .select({
+                  invoiceId: payments.invoiceId,
+                  total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int`,
+                })
+                .from(payments)
+                .where(
+                  and(
+                    eq(payments.companyId, companyId),
+                    inArray(payments.invoiceId, openInvoiceIds),
+                  ),
+                )
+                .groupBy(payments.invoiceId)
+            : [];
+        const allocatedByInvoiceId = new Map(
+          paymentAllocations.map((row) => [row.invoiceId, row.total]),
+        );
+
+        const now = new Date();
+        let outstandingCents = 0;
+        let overdueInvoiceCount = 0;
+
+        for (const invoice of openInvoiceRows) {
+          const outstanding = resolveEffectiveInvoiceOutstandingCents({
+            amountCents: invoice.amountCents,
+            totalCents: invoice.totalCents,
+            amountPaidCents: invoice.amountPaidCents,
+            allocatedPaymentsCents: allocatedByInvoiceId.get(invoice.id),
+          });
+          outstandingCents += outstanding;
+          if (
+            outstanding > 0 &&
+            invoice.dueDate &&
+            invoice.dueDate < now
+          ) {
+            overdueInvoiceCount += 1;
+          }
+        }
+
         return {
           openQuoteCount: openQuotesRow?.count ?? 0,
           revenueMtdCents: revenueRow?.total ?? 0,
           currency,
           invoiceCount: invoiceCountRow?.count ?? 0,
           paymentCount: paymentCountRow?.count ?? 0,
-          outstandingCents: 0,
-          overdueInvoiceCount: 0,
+          outstandingCents,
+          overdueInvoiceCount,
         };
       },
       CACHE_TTLS.stats,
@@ -968,6 +1067,7 @@ type XeroInvoiceMappingSummary = Pick<
 function toInvoiceSummary(
   row: InvoiceWithRelations & Record<string, any>,
   mapping?: XeroInvoiceMappingSummary,
+  allocatedPaymentsCents?: number,
 ): InvoiceSummary {
   const xeroSyncStatus = mapping?.syncStatus ?? null;
   const xeroInvoiceNumber =
@@ -981,6 +1081,16 @@ function toInvoiceSummary(
     totalCents: row.totalCents,
   });
   const financialDataComplete = totalCents > 0;
+  const paymentRows = Array.isArray(row.payments) ? row.payments : null;
+  const allocatedFromPayments =
+    allocatedPaymentsCents ??
+    (paymentRows
+      ? paymentRows.reduce((sum: number, payment: { amountCents: number }) => sum + payment.amountCents, 0)
+      : undefined);
+  const amountPaidCents = resolveEffectiveAmountPaidCents({
+    amountPaidCents: row.amountPaidCents,
+    allocatedPaymentsCents: allocatedFromPayments,
+  });
 
   return {
     id: row.id,
@@ -1008,11 +1118,12 @@ function toInvoiceSummary(
     quoteVersionNumber: row.quoteVersionNumber ?? null,
     amountCents: row.amountCents,
     totalCents,
-    amountPaidCents: row.amountPaidCents,
+    amountPaidCents,
     outstandingCents: resolveEffectiveInvoiceOutstandingCents({
       amountCents: row.amountCents,
       totalCents: row.totalCents,
       amountPaidCents: row.amountPaidCents,
+      allocatedPaymentsCents: allocatedFromPayments,
     }),
     isOverdue: Boolean(row.dueDate && row.dueDate < new Date() && ['sent', 'partial', 'overdue'].includes(row.status)),
     currency: row.currency,
