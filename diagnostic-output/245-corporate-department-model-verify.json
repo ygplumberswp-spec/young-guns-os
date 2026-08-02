@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-02T07:56:36.913Z",
+  "generatedAt": "2026-08-02T08:11:05.372Z",
   "label": "245-corporate-department-model-verify",
   "phase": 13,
   "branch": "cursor/titan-owner-operating-model-final",
-  "commitSha": "d1e67bf",
+  "commitSha": "940b5f6",
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
   "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -26,7 +26,7 @@
         "hasWeeklyRoutine": true,
         "hasApprovals": true,
         "hasKpis": true,
-        "todayQueueCount": 0
+        "todayQueueCount": 4
       },
       {
         "departmentId": "finance_accounting",
@@ -34,7 +34,7 @@
         "hasWeeklyRoutine": true,
         "hasApprovals": true,
         "hasKpis": true,
-        "todayQueueCount": 1
+        "todayQueueCount": 4
       },
       {
         "departmentId": "scheduling_dispatch",
@@ -42,7 +42,7 @@
         "hasWeeklyRoutine": true,
         "hasApprovals": true,
         "hasKpis": true,
-        "todayQueueCount": 0
+        "todayQueueCount": 3
       },
       {
         "departmentId": "hr_workforce",
@@ -50,7 +50,7 @@
         "hasWeeklyRoutine": true,
         "hasApprovals": true,
         "hasKpis": true,
-        "todayQueueCount": 0
+        "todayQueueCount": 2
       },
       {
         "departmentId": "aura_digital_workforce",
@@ -58,7 +58,7 @@
         "hasWeeklyRoutine": true,
         "hasApprovals": true,
         "hasKpis": true,
-        "todayQueueCount": 0
+        "todayQueueCount": 2
       }
     ]
   },
@@ -271,5 +271,31 @@
   "consoleErrors": [],
   "verdict": "GO",
   "blockers": [],
-  "holdItems": []
+  "holdItems": [],
+  "routineTasks": {
+    "generate": {
+      "status": 200,
+      "created": 0,
+      "total": 59
+    },
+    "finance": {
+      "status": 200,
+      "taskCount": 5
+    },
+    "sampleTask": {
+      "idPrefix": "8bde7854",
+      "dueDate": "2026-08-02",
+      "accountableOwner": "Accountant",
+      "status": "pending",
+      "cadence": "weekly"
+    },
+    "audit": {
+      "status": 200,
+      "eventCount": 1,
+      "hasCreatedEvent": true
+    },
+    "todayQueueIntegration": {
+      "routineInTodayQueue": true
+    }
+  }
 }

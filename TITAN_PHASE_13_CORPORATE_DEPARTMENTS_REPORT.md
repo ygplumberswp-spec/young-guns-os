@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 12):** `1d0d7af`  
 **Initial Phase 13 SHA:** `f5dfd93`  
-**Final SHA:** *(see post-deploy commit below)*  
+**Final SHA:** `940b5f6`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02  
 
@@ -15,10 +15,10 @@
 | **Department hub API** | **GO** | `GET /api/v1/corporate-departments/hub` @ 245 — 19 departments |
 | **Department workspace UI** | **GO** | `/departments`, `/departments/:id`, alias `/company-health/departments` |
 | **Today queues (live + routine tasks)** | **GO** | Executive signals + persisted `department_routine_task` instances |
-| **Recurring department tasks** | **GO** | 59 routine definitions → persisted instances with owner, due date, status, audit |
+| **Recurring department tasks** | **GO** | 59 routine definitions → 59 persisted instances on YGP staging |
 | **Model documentation** | **GO** | RACI, handoffs, routines, corporate model report |
 
-**Overall:** **GO** — Phase 13 base @ `f5dfd93` + extension (recurring tasks) verified @ 245
+**Overall:** **GO** @ `940b5f6` — authenticated staging verification 245 (0 blockers, 59 routine tasks)
 
 ## Summary
 
@@ -128,13 +128,23 @@ Unique dedupe index: `(company_id, routine_key, period_start)` — idempotent ge
 
 | Check | Result |
 |---|---|
-| Migration 0118 applied | *(post-deploy)* |
-| `POST /tasks/generate` | 200 — creates up to 59 instances (idempotent) |
-| Task instances have owner, due date, status | PASS |
+| Migration 0118 applied (staging) | **YES** — `0118_department_routine_tasks.sql` (manual apply via `apply-0118-staging.mjs` after journal drift; tables confirmed) |
+| `POST /tasks/generate` | 200 — idempotent re-run: created=0, total=**59** |
+| Task instances have owner, due date, status | PASS (finance sample: Accountant, due 2026-08-02, pending) |
 | Audit trail `created` event | PASS |
 | Finance Today queue includes routine tasks | PASS |
-| `/departments` UI | PASS |
+| `/departments` UI | PASS — 19 department cards |
+| Console errors | None |
 | Phase 14 | **NOT started** |
+
+**YGP staging task count after seed/generate:** **59** (5 daily + 54 weekly/monthly across 19 departments)
+
+**Staging deploy IDs**
+
+| Service | Deployment ID |
+|---|---|
+| API (`young-guns-os`) | `b498fe17-0103-4916-a321-9d0c42b7e267` |
+| Web (`comfortable-determination`) | `0f212a10-92c2-4eae-bcfa-01822fb68296` |
 
 ## Remaining HOLD items
 
