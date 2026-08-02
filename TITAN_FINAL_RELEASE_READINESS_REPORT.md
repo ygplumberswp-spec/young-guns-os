@@ -19,13 +19,32 @@
 
 ---
 
+## Phase 18 correction pass (post-493c1dc)
+
+| Gate | Verdict | Rationale |
+|------|---------|-----------|
+| Session refresh in verify 231 | **GO** | Re-mint @ 8m TTL; mobile/late routes force refresh |
+| Technician mobile staging | **GO** | Dashboard API loads; 11 mobile screenshots re-captured |
+| Back navigation | **GO** | `?view=month` restored on browser Back (verify JSON proof) |
+| Fleet wording | **GO** | Dispatch vs Live Map copy aligned; contradictory pill removed |
+| Mobile header @ 375 | **GO** | Header compaction CSS; 6 owner routes re-captured |
+| Verify 231 (correction) | **GO** | 49 correction PNGs; 0 blockers; total 236 screenshots indexed |
+
+**Correction deploy (web):** `33400ea4-95d9-40fe-866c-4105df40725d`  
+**Report:** `TITAN_PHASE_18_CORRECTION_REPORT.md`  
+**Supplementary folder:** `diagnostic-output/phase18-correction-staging/`
+
+Production remains **NO-GO**. Final consolidation not started.
+
+---
+
 ## GO / HOLD / NO-GO matrix (consolidated)
 
 | Area | GO | HOLD | NO-GO | Notes |
 |------|---:|-----:|------:|-------|
 | Inventoried staff routes (138) | 62 | 46 | 30 | Per `TITAN_FINAL_ROUTE_AND_GAP_MATRIX.md` |
 | Locked UX (Phase 18) | 3 | 0 | 0 | Dashboard links, nav icons, customer columns |
-| Visual audit (231) | 187 screenshots | 0 | 0 | Authenticated Playwright @ 5 viewports |
+| Visual audit (231) | 236 screenshots | 0 | 0 | Phase 18 + correction pass (49 re-captured) |
 | RBAC security (249) | Owner + Technician | Accountant/Dispatcher/Client | — | No YGP users for some roles |
 | Integrations | Xero read, Cartrack live | Gmail/M365 OAuth | n8n decorative | Honest cards only |
 | Production deploy | — | — | **Blocked** | Not executed per master directive |
@@ -36,7 +55,7 @@
 
 | Service | URL | Deployment ID | Phase 18 |
 |---------|-----|---------------|----------|
-| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `c663f3cb-a7f5-4d41-b1d7-87f68b491631` | UX fixes deployed via `railway up` |
+| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `33400ea4-95d9-40fe-866c-4105df40725d` | Phase 18 correction pass |
 | API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | unchanged @ Phase 17 | No API changes required |
 
 ---
@@ -71,6 +90,7 @@
 | Visual acceptance index | `TITAN_FINAL_VISUAL_ACCEPTANCE_INDEX.md` |
 | Release readiness (this file) | `TITAN_FINAL_RELEASE_READINESS_REPORT.md` |
 | Phase 18 completion | `TITAN_PHASE_18_VISUAL_AUDIT_REPORT.md` |
+| Phase 18 correction | `TITAN_PHASE_18_CORRECTION_REPORT.md` |
 | UX consolidation update | `TITAN_FINAL_UX_CONSOLIDATION_REPORT.md` |
 | Verify script + JSON | `diagnostic-output/231-titan-owner-operating-model-final-verify.mjs` + `.json` |
 | Screenshot zip | `TITAN_AUTHENTICATED_VISUAL_AUDIT.zip` |

@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
-import { formatMapsEtaCapabilityLabel, buildAddressMapsDeepLink } from '@titan/shared';
+import { buildAddressMapsDeepLink } from '@titan/shared';
 import { fetchTodaysJobs } from '../../lib/jobs-api';
 import { fetchVehicles } from '../../lib/fleet-api';
 import { useAuth } from '../../lib/auth-context';
@@ -8,11 +8,10 @@ import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 
 /**
  * UX-024 — operational dispatch surface from stored job/vehicle data.
- * Live Google Maps / Cartrack routing is NOT IMPLEMENTED — never fake GPS/routes/ETA.
+ * Registry and planned times only — live GPS is on Fleet → Live Map.
  */
 export function FleetDispatchBoard() {
   const { accessToken } = useAuth();
-  const mapsLabel = formatMapsEtaCapabilityLabel('not_implemented');
 
   const jobsQuery = useStaffCachedQuery({
     queryKey: 'fleet/dispatch-today-jobs',
@@ -33,14 +32,11 @@ export function FleetDispatchBoard() {
   return (
     <Panel
       title="Today's dispatch board"
-      description="Job sites and assigned vehicles from TITAN records — not live provider tracking."
+      description="Assigned vehicles and today's jobs from TITAN records — not live GPS (see Live Map tab)."
     >
-      <p className="status-pill status-pill--disabled" style={{ display: 'inline-block' }}>
-        {mapsLabel}
-      </p>
-      <p className="page-muted" style={{ marginTop: '0.5rem' }}>
-        Live map tiles, turn-by-turn routing and provider ETA are not connected. Planned times and
-        stored addresses are shown below. Open an address deep-link only when a site address exists.
+      <p className="page-muted" style={{ marginTop: '0.25rem' }}>
+        Turn-by-turn routing and provider ETA are not on this page. Planned times and stored
+        addresses are shown below.
       </p>
 
       {loading ? <LoadingState label="Loading today's dispatch…" /> : null}
@@ -78,10 +74,10 @@ export function FleetDispatchBoard() {
                   <strong>
                     {vehicle.name} · {vehicle.licensePlate}
                   </strong>
-                  <span>
+                  <span className="page-muted">
+                    {' · '}
                     {vehicle.status.replace(/_/g, ' ')}
                     {vehicle.assignedUserName ? ` · ${vehicle.assignedUserName}` : ' · unassigned'}
-                    {' · live GPS: not shown (provider depth deferred)'}
                   </span>
                 </li>
               ))}

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
- * 231 — Phase 18 Final Authenticated Visual Audit + locked UX verification.
+ * 231 — Phase 18 visual audit + Phase 18 correction pass verification.
  * Staging only. Auth via route intercept (237 pattern) + railway run owner session mint.
+ * Re-mints access token before expiry during long capture runs (15m TTL).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -12,12 +13,15 @@ import { chromium } from '@playwright/test';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 const OUT_DIR = path.resolve(__dirname, 'phase18-visual-audit-staging');
+const CORRECTION_DIR = path.resolve(__dirname, 'phase18-correction-staging');
 const OUT_JSON = path.resolve(__dirname, '231-titan-owner-operating-model-final-verify.json');
 const ZIP_DIR = path.resolve(repoRoot, 'TITAN_AUTHENTICATED_VISUAL_AUDIT');
 
 const WEB = 'https://comfortable-determination-staging.up.railway.app';
 const API = 'https://young-guns-os-staging.up.railway.app';
 const YGP_COMPANY_ID = '095aef76-fef5-4139-af37-a42f2d7e2faf';
+const SESSION_REFRESH_MS = 8 * 60 * 1000;
+const CORRECTION_ONLY = process.argv.includes('--correction') || process.env.TITAN_231_CORRECTION === '1';
 
 const VIEWPORTS = [
   { id: '1440', width: 1440, height: 1000 },
@@ -71,6 +75,33 @@ const ROUTES = [
 ];
 
 const PLACEHOLDER_ID = '00000000-0000-4000-8000-000000000001';
+
+/** Routes re-captured in Phase 18 correction pass (session expiry, mobile, fleet, header). */
+const CORRECTION_LABELS = new Set([
+  'dashboard',
+  'customers',
+  'jobs',
+  'scheduling',
+  'fleet',
+  'fleet_live_map',
+  'technician_mobile',
+  'technician_jobs',
+  'technician_route',
+  'aura_chat',
+  'aura_todays_plan',
+  'customer_360',
+  'job_360',
+]);
+
+const CORRECTION_MOBILE_LABELS = new Set(['dashboard', 'customers', 'jobs', 'scheduling', 'fleet', 'fleet_live_map']);
+
+const authSession = {
+  token: null,
+  roleName: 'Company Owner',
+  permissions: ['*'],
+  payload: null,
+  mintedAt: 0,
+};
 
 function gitSha() {
   try {
@@ -170,8 +201,39 @@ async function resolveDynamicRoutes(token) {
   return resolved;
 }
 
-async function seedSession(context, page, token, roleName, permissions) {
-  const authPayload = await fetchAuthPayload(token, roleName, permissions);
+async function refreshAuthSession(force = false) {
+  if (!force && authSession.token && Date.now() - authSession.mintedAt < SESSION_REFRESH_MS) {
+    return authSession;
+  }
+  const session = await mintOwnerSession();
+  authSession.token = session.accessToken;
+  authSession.roleName = session.roleName;
+  authSession.payload = await fetchAuthPayload(session.accessToken, session.roleName, authSession.permissions);
+  authSession.mintedAt = Date.now();
+  return authSession;
+}
+
+async function installAuthRoutes(page) {
+  await page.unroute('**/api/v1/auth/refresh').catch(() => {});
+  await page.unroute('**/api/v1/auth/me').catch(() => {});
+  await page.route('**/api/v1/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: authSession.payload }),
+    });
+  });
+  await page.route('**/api/v1/auth/me', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: { user: authSession.payload.user } }),
+    });
+  });
+}
+
+async function seedSession(context, page) {
+  await refreshAuthSession(true);
   await context.addCookies([
     {
       name: 'titan_refresh_token',
@@ -183,21 +245,23 @@ async function seedSession(context, page, token, roleName, permissions) {
       sameSite: 'Lax',
     },
   ]);
-  await page.route('**/api/v1/auth/refresh', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ data: authPayload }),
-    });
-  });
-  await page.route('**/api/v1/auth/me', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ data: { user: authPayload.user } }),
-    });
-  });
+  await installAuthRoutes(page);
   await page.goto(`${WEB}/`, { waitUntil: 'networkidle', timeout: 120_000 });
+}
+
+async function ensureFreshSession(page, routeDef) {
+  const mobileRoute = routeDef.path.startsWith('/mobile');
+  const lateRoute = ['aura_chat', 'aura_todays_plan', 'customer_360', 'job_360'].includes(routeDef.label);
+  const shouldRefresh =
+    mobileRoute ||
+    lateRoute ||
+    Date.now() - authSession.mintedAt >= SESSION_REFRESH_MS;
+  if (!shouldRefresh) return authSession.token;
+  await refreshAuthSession(true);
+  await installAuthRoutes(page);
+  await page.reload({ waitUntil: 'networkidle', timeout: 120_000 }).catch(() => null);
+  await page.waitForTimeout(1500);
+  return authSession.token;
 }
 
 async function waitForRouteReady(page, routeDef) {
@@ -217,6 +281,15 @@ async function waitForRouteReady(page, routeDef) {
       .waitFor({ state: 'visible', timeout: 60_000 })
       .catch(() => null);
     await page.waitForTimeout(1000);
+    return;
+  }
+  if (routeDef.path.startsWith('/mobile')) {
+    await page
+      .locator('.portal-page, .mobile-dashboard-page, .portal-list, .titan-empty-state')
+      .first()
+      .waitFor({ state: 'visible', timeout: 60_000 })
+      .catch(() => null);
+    await page.waitForTimeout(2000);
     return;
   }
   await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => null);
@@ -269,67 +342,138 @@ async function runUxChecks(page, checks, routePath = '') {
   return results;
 }
 
-async function captureRoute(page, routeDef, viewport, token) {
+async function detectCaptureIssues(page, routeDef) {
+  const issues = [];
+  const url = page.url();
+  if (url.includes('/auth/login') || url.includes('session_expired')) {
+    issues.push('login_redirect');
+  }
+  const bodyText = await page.locator('body').innerText().catch(() => '');
+  if (/invalid or expired access token/i.test(bodyText)) {
+    issues.push('expired_session_api');
+  }
+  if (/unable to load this section/i.test(bodyText) && routeDef.path.startsWith('/mobile')) {
+    issues.push('mobile_load_error');
+  }
+  if (routeDef.label === 'fleet' && /LIVE MAPS\/ROUTING NOT IMPLEMENTED/i.test(bodyText)) {
+    issues.push('fleet_contradictory_wording');
+  }
+  return issues;
+}
+
+async function verifyBackNavigation(page) {
+  await page.goto(`${WEB}/scheduling?view=month`, { waitUntil: 'networkidle', timeout: 120_000 });
+  await page.waitForTimeout(1500);
+  const monthUrl = page.url();
+  await page.goto(`${WEB}/jobs`, { waitUntil: 'networkidle', timeout: 120_000 });
+  await page.waitForTimeout(1000);
+  await page.goBack({ waitUntil: 'networkidle', timeout: 60_000 }).catch(() => null);
+  await page.waitForTimeout(1000);
+  const afterBack = page.url();
+  const viewParam = new URL(afterBack).searchParams.get('view');
+  return {
+    monthUrl,
+    afterBack,
+    viewRestored: viewParam === 'month' || afterBack.includes('view=month'),
+    scrollY: await page.evaluate(() => window.scrollY),
+  };
+}
+
+async function captureRoute(page, routeDef, viewport, outDir = OUT_DIR) {
   const url = `${WEB}${routeDef.path}`;
   const slug = `${routeDef.label}-${viewport.id}`;
   const shots = [];
 
   try {
+    await ensureFreshSession(page, routeDef);
     await page.setViewportSize({ width: viewport.width, height: viewport.height });
     await page.goto(url, { waitUntil: 'networkidle', timeout: 120_000 });
     await waitForRouteReady(page, routeDef);
 
-    const topPath = path.join(OUT_DIR, `${slug}-top.png`);
+    const issues = await detectCaptureIssues(page, routeDef);
+
+    const topPath = path.join(outDir, `${slug}-top.png`);
     await page.screenshot({ path: topPath, fullPage: false });
     shots.push(topPath);
 
     if (routeDef.scroll) {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight / 2));
       await page.waitForTimeout(500);
-      const midPath = path.join(OUT_DIR, `${slug}-mid.png`);
+      const midPath = path.join(outDir, `${slug}-mid.png`);
       await page.screenshot({ path: midPath, fullPage: false });
       shots.push(midPath);
 
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await page.waitForTimeout(500);
-      const bottomPath = path.join(OUT_DIR, `${slug}-bottom.png`);
+      const bottomPath = path.join(outDir, `${slug}-bottom.png`);
       await page.screenshot({ path: bottomPath, fullPage: false });
       shots.push(bottomPath);
     }
 
     const ux = routeDef.uxChecks ? await runUxChecks(page, routeDef.uxChecks, routeDef.path) : {};
-    return { captured: true, shots, ux, error: null };
+    return {
+      captured: issues.length === 0,
+      shots,
+      ux,
+      error: issues.length ? issues.join(', ') : null,
+      issues,
+    };
   } catch (err) {
-    return { captured: false, shots, ux: {}, error: String(err.message ?? err) };
+    return { captured: false, shots, ux: {}, error: String(err.message ?? err), issues: ['capture_exception'] };
   }
 }
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
+  fs.mkdirSync(CORRECTION_DIR, { recursive: true });
   fs.mkdirSync(ZIP_DIR, { recursive: true });
 
-  const session = await mintOwnerSession();
-  const token = session.accessToken;
+  await refreshAuthSession(true);
+  const token = authSession.token;
   const dynamicRoutes = await resolveDynamicRoutes(token);
   const allRoutes = [...ROUTES, ...dynamicRoutes];
+  const routesToRun = CORRECTION_ONLY
+    ? allRoutes.filter((routeDef) => CORRECTION_LABELS.has(routeDef.label))
+    : allRoutes;
+
+  const priorReport = fs.existsSync(OUT_JSON) ? JSON.parse(fs.readFileSync(OUT_JSON, 'utf8')) : null;
 
   const report = {
-    schemaVersion: 'phase18-visual-audit-v1',
+    schemaVersion: CORRECTION_ONLY ? 'phase18-correction-v1' : 'phase18-visual-audit-v1',
     label: '231-titan-owner-operating-model-final-verify',
     generatedAt: new Date().toISOString(),
     branch: 'cursor/titan-owner-operating-model-final',
     commitSha: gitSha(),
     stagingWeb: WEB,
     stagingApi: API,
-    auth: { method: 'railway_programmatic_session_route_intercept', secretsInOutput: false },
-    uxFixes: {
-      dashboardClickableCounters: { required: true, verified: false },
-      navIconsAllItems: { required: true, verified: false },
-      customerListSimplified: { required: true, verified: false },
+    auth: {
+      method: 'railway_programmatic_session_route_intercept',
+      secretsInOutput: false,
+      sessionRefreshMs: SESSION_REFRESH_MS,
     },
-    routes: [],
-    screenshots: [],
-    screenshotCount: 0,
+    correctionPass: CORRECTION_ONLY
+      ? {
+          baseCommit: priorReport?.commitSha ?? '493c1dc',
+          defects: [
+            'expired_session_screenshot_failures',
+            'technician_mobile_loading',
+            'back_history_state',
+            'fleet_contradictory_wording',
+            'crowded_mobile_header',
+          ],
+          routesRecaptured: [],
+          screenshotCount: 0,
+          backNavigation: null,
+        }
+      : undefined,
+    uxFixes: {
+      dashboardClickableCounters: { required: true, verified: priorReport?.uxFixes?.dashboardClickableCounters?.verified ?? false },
+      navIconsAllItems: { required: true, verified: priorReport?.uxFixes?.navIconsAllItems?.verified ?? false },
+      customerListSimplified: { required: true, verified: priorReport?.uxFixes?.customerListSimplified?.verified ?? false },
+    },
+    routes: CORRECTION_ONLY && priorReport?.routes ? [...priorReport.routes] : [],
+    screenshots: CORRECTION_ONLY && priorReport?.screenshots ? [...priorReport.screenshots] : [],
+    screenshotCount: CORRECTION_ONLY && priorReport?.screenshotCount ? priorReport.screenshotCount : 0,
     blockers: [],
     verdict: 'HOLD',
   };
@@ -339,33 +483,81 @@ async function main() {
     .catch(() => chromium.launch({ headless: true }));
   const context = await browser.newContext();
   const page = await context.newPage();
-  await seedSession(context, page, token, session.roleName, ['*']);
+  await seedSession(context, page);
 
-  for (const routeDef of allRoutes) {
-    const viewports = routeDef.primary ? VIEWPORTS : [VIEWPORTS[0]];
-    const routeEntry = {
-      path: routeDef.path,
-      label: routeDef.label,
-      primary: Boolean(routeDef.primary),
-      captures: [],
-    };
+  if (CORRECTION_ONLY) {
+    report.correctionPass.backNavigation = await verifyBackNavigation(page);
+    if (!report.correctionPass.backNavigation.viewRestored) {
+      report.blockers.push('Back navigation did not restore scheduling ?view=month');
+    }
+  }
+
+  for (const routeDef of routesToRun) {
+    const viewports = routeDef.primary
+      ? CORRECTION_ONLY && CORRECTION_MOBILE_LABELS.has(routeDef.label)
+        ? VIEWPORTS.filter((vp) => vp.id === '375')
+        : CORRECTION_ONLY
+          ? VIEWPORTS
+          : VIEWPORTS
+      : CORRECTION_ONLY
+        ? [VIEWPORTS.find((vp) => vp.id === '375') ?? VIEWPORTS[0]]
+        : [VIEWPORTS[0]];
+
+    let routeEntry = report.routes.find((entry) => entry.label === routeDef.label);
+    if (!routeEntry) {
+      routeEntry = {
+        path: routeDef.path,
+        label: routeDef.label,
+        primary: Boolean(routeDef.primary),
+        captures: [],
+      };
+      report.routes.push(routeEntry);
+    }
 
     for (const vp of viewports) {
-      const result = await captureRoute(page, routeDef, vp, token);
-      routeEntry.captures.push({
+      const outDir = CORRECTION_ONLY ? CORRECTION_DIR : OUT_DIR;
+      const result = await captureRoute(page, routeDef, vp, outDir);
+      const shotPaths = result.shots.map((s) => path.relative(repoRoot, s));
+
+      const captureRecord = {
         viewport: vp.id,
         captured: result.captured,
         shotCount: result.shots.length,
-        screenshots: result.shots.map((s) => path.relative(repoRoot, s)),
+        screenshots: shotPaths,
         ux: result.ux,
         error: result.error,
-      });
+        correctionPass: CORRECTION_ONLY ? true : undefined,
+        issues: result.issues ?? [],
+      };
+
+      const existingIdx = routeEntry.captures.findIndex((c) => c.viewport === vp.id);
+      if (existingIdx >= 0) {
+        for (const oldShot of routeEntry.captures[existingIdx].screenshots ?? []) {
+          const idx = report.screenshots.indexOf(oldShot);
+          if (idx >= 0) report.screenshots.splice(idx, 1);
+        }
+        routeEntry.captures[existingIdx] = captureRecord;
+      } else {
+        routeEntry.captures.push(captureRecord);
+      }
+
       for (const shot of result.shots) {
-        report.screenshots.push(path.relative(repoRoot, shot));
+        const rel = path.relative(repoRoot, shot);
+        if (!report.screenshots.includes(rel)) report.screenshots.push(rel);
         report.screenshotCount += 1;
         const dest = path.join(ZIP_DIR, path.basename(shot));
         fs.copyFileSync(shot, dest);
+        if (CORRECTION_ONLY) {
+          const primaryDest = path.join(OUT_DIR, path.basename(shot));
+          fs.copyFileSync(shot, primaryDest);
+        }
       }
+
+      if (CORRECTION_ONLY) {
+        report.correctionPass.routesRecaptured.push(`${routeDef.label}@${vp.id}`);
+        report.correctionPass.screenshotCount += result.shots.length;
+      }
+
       if (!result.captured) {
         report.blockers.push(`Capture failed ${routeDef.label} @ ${vp.id}: ${result.error}`);
       }
@@ -388,7 +580,6 @@ async function main() {
         report.uxFixes.customerListSimplified.verified = true;
       }
     }
-    report.routes.push(routeEntry);
   }
 
   await browser.close();

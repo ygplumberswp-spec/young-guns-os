@@ -1,14 +1,71 @@
 {
-  "schemaVersion": "phase18-visual-audit-v1",
+  "schemaVersion": "phase18-correction-v1",
   "label": "231-titan-owner-operating-model-final-verify",
-  "generatedAt": "2026-08-02T10:01:48.213Z",
+  "generatedAt": "2026-08-02T10:44:24.749Z",
   "branch": "cursor/titan-owner-operating-model-final",
-  "commitSha": "ac5febc5f394101845c1eae50c217536989871ec",
+  "commitSha": "37038d2",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
   "auth": {
     "method": "railway_programmatic_session_route_intercept",
-    "secretsInOutput": false
+    "secretsInOutput": false,
+    "sessionRefreshMs": 480000
+  },
+  "correctionPass": {
+    "baseCommit": "ac5febc5f394101845c1eae50c217536989871ec",
+    "defects": [
+      "expired_session_screenshot_failures",
+      "technician_mobile_loading",
+      "back_history_state",
+      "fleet_contradictory_wording",
+      "crowded_mobile_header"
+    ],
+    "routesRecaptured": [
+      "dashboard@375",
+      "customers@375",
+      "jobs@375",
+      "scheduling@375",
+      "fleet@375",
+      "fleet_live_map@375",
+      "aura_chat@1440",
+      "aura_chat@1280",
+      "aura_chat@1024",
+      "aura_chat@768",
+      "aura_chat@375",
+      "aura_todays_plan@1440",
+      "aura_todays_plan@1280",
+      "aura_todays_plan@1024",
+      "aura_todays_plan@768",
+      "aura_todays_plan@375",
+      "technician_mobile@1440",
+      "technician_mobile@1280",
+      "technician_mobile@1024",
+      "technician_mobile@768",
+      "technician_mobile@375",
+      "technician_jobs@1440",
+      "technician_jobs@1280",
+      "technician_jobs@1024",
+      "technician_jobs@768",
+      "technician_jobs@375",
+      "technician_route@375",
+      "customer_360@1440",
+      "customer_360@1280",
+      "customer_360@1024",
+      "customer_360@768",
+      "customer_360@375",
+      "job_360@1440",
+      "job_360@1280",
+      "job_360@1024",
+      "job_360@768",
+      "job_360@375"
+    ],
+    "screenshotCount": 49,
+    "backNavigation": {
+      "monthUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month",
+      "afterBack": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month",
+      "viewRestored": true,
+      "scrollY": 0
+    }
   },
   "uxFixes": {
     "dashboardClickableCounters": {
@@ -91,14 +148,16 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/dashboard-375-top.png"
+            "diagnostic-output/phase18-correction-staging/dashboard-375-top.png"
           ],
           "ux": {
             "dashboardGlanceLinkCount": 4,
             "dashboardGlancePointerCursor": true,
             "dashboardGlanceHasHref": true
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -196,7 +255,7 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customers-375-top.png"
+            "diagnostic-output/phase18-correction-staging/customers-375-top.png"
           ],
           "ux": {
             "sidebarNavIconCount": 23,
@@ -210,7 +269,9 @@
             ],
             "customerOwnerColumnsOk": true
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -348,13 +409,15 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/jobs-375-top.png"
+            "diagnostic-output/phase18-correction-staging/jobs-375-top.png"
           ],
           "ux": {
             "sidebarNavIconCount": 23,
             "sidebarHasClearIcons": false
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -428,15 +491,17 @@
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-bottom.png"
+            "diagnostic-output/phase18-correction-staging/scheduling-375-top.png",
+            "diagnostic-output/phase18-correction-staging/scheduling-375-mid.png",
+            "diagnostic-output/phase18-correction-staging/scheduling-375-bottom.png"
           ],
           "ux": {
             "sidebarNavIconCount": 23,
             "sidebarHasClearIcons": false
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -1026,13 +1091,15 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/fleet-375-top.png"
+            "diagnostic-output/phase18-correction-staging/fleet-375-top.png"
           ],
           "ux": {
             "sidebarNavIconCount": 23,
             "sidebarHasClearIcons": false
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -1098,13 +1165,15 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-375-top.png"
+            "diagnostic-output/phase18-correction-staging/fleet_live_map-375-top.png"
           ],
           "ux": {
             "sidebarNavIconCount": 23,
             "sidebarHasClearIcons": false
           },
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -1918,50 +1987,60 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1440-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_chat-1440-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1280-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_chat-1280-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1024-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_chat-1024-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_chat-768-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_chat-768-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_chat-375-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_chat-375-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -1975,50 +2054,60 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1440-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_todays_plan-1440-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1280-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_todays_plan-1280-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1024-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_todays_plan-1024-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-768-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_todays_plan-768-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-375-top.png"
+            "diagnostic-output/phase18-correction-staging/aura_todays_plan-375-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2052,50 +2141,60 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1440-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_mobile-1440-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1280-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_mobile-1280-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1024-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_mobile-1024-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-768-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_mobile-768-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-375-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_mobile-375-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2109,50 +2208,60 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1440-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_jobs-1440-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1280-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_jobs-1280-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1024-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_jobs-1024-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-768-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_jobs-768-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-375-top.png"
+            "diagnostic-output/phase18-correction-staging/technician_jobs-375-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2170,6 +2279,18 @@
           ],
           "ux": {},
           "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-correction-staging/technician_route-375-top.png"
+          ],
+          "ux": {},
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2251,50 +2372,60 @@
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customer_360-1440-top.png"
+            "diagnostic-output/phase18-correction-staging/customer_360-1440-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customer_360-1280-top.png"
+            "diagnostic-output/phase18-correction-staging/customer_360-1280-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customer_360-1024-top.png"
+            "diagnostic-output/phase18-correction-staging/customer_360-1024-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customer_360-768-top.png"
+            "diagnostic-output/phase18-correction-staging/customer_360-768-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 1,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/customer_360-375-top.png"
+            "diagnostic-output/phase18-correction-staging/customer_360-375-top.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2325,60 +2456,70 @@
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-bottom.png"
+            "diagnostic-output/phase18-correction-staging/job_360-1440-top.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1440-mid.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1440-bottom.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1280",
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-bottom.png"
+            "diagnostic-output/phase18-correction-staging/job_360-1280-top.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1280-mid.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1280-bottom.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "1024",
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-bottom.png"
+            "diagnostic-output/phase18-correction-staging/job_360-1024-top.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1024-mid.png",
+            "diagnostic-output/phase18-correction-staging/job_360-1024-bottom.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "768",
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/job_360-768-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-768-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-768-bottom.png"
+            "diagnostic-output/phase18-correction-staging/job_360-768-top.png",
+            "diagnostic-output/phase18-correction-staging/job_360-768-mid.png",
+            "diagnostic-output/phase18-correction-staging/job_360-768-bottom.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         },
         {
           "viewport": "375",
           "captured": true,
           "shotCount": 3,
           "screenshots": [
-            "diagnostic-output/phase18-visual-audit-staging/job_360-375-top.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-375-mid.png",
-            "diagnostic-output/phase18-visual-audit-staging/job_360-375-bottom.png"
+            "diagnostic-output/phase18-correction-staging/job_360-375-top.png",
+            "diagnostic-output/phase18-correction-staging/job_360-375-mid.png",
+            "diagnostic-output/phase18-correction-staging/job_360-375-bottom.png"
           ],
           "ux": {},
-          "error": null
+          "error": null,
+          "correctionPass": true,
+          "issues": []
         }
       ]
     },
@@ -2473,12 +2614,10 @@
     "diagnostic-output/phase18-visual-audit-staging/dashboard-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/dashboard-1024-top.png",
     "diagnostic-output/phase18-visual-audit-staging/dashboard-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/dashboard-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customers-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customers-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customers-1024-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customers-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customers-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/leads-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/leads-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/leads-1024-top.png",
@@ -2488,7 +2627,6 @@
     "diagnostic-output/phase18-visual-audit-staging/jobs-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/jobs-1024-top.png",
     "diagnostic-output/phase18-visual-audit-staging/jobs-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/jobs-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-mid.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-bottom.png",
@@ -2501,9 +2639,6 @@
     "diagnostic-output/phase18-visual-audit-staging/scheduling-768-top.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling-768-mid.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling-768-bottom.png",
-    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-bottom.png",
     "diagnostic-output/phase18-visual-audit-staging/quotes-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/quotes-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/quotes-1024-top.png",
@@ -2544,12 +2679,10 @@
     "diagnostic-output/phase18-visual-audit-staging/fleet-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet-1024-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/fleet-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1024-top.png",
     "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1280-top.png",
     "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1024-top.png",
@@ -2604,60 +2737,69 @@
     "diagnostic-output/phase18-visual-audit-staging/integrations-768-top.png",
     "diagnostic-output/phase18-visual-audit-staging/integrations-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/settings_security-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_chat-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_chat-375-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/aura_business_rules-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-375-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/technician_route-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customer_create-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/job_create-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling_week-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/scheduling_month-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customer_360-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customer_360-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customer_360-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customer_360-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/customer_360-375-top.png",
     "diagnostic-output/phase18-visual-audit-staging/customer_communications-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-bottom.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-bottom.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-bottom.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-768-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-768-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-768-bottom.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-375-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-375-mid.png",
-    "diagnostic-output/phase18-visual-audit-staging/job_360-375-bottom.png",
     "diagnostic-output/phase18-visual-audit-staging/job_payment_ledger-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/job_documents-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/job_checklist-1440-top.png",
     "diagnostic-output/phase18-visual-audit-staging/invoice_detail-1440-top.png",
-    "diagnostic-output/phase18-visual-audit-staging/payment_detail-1440-top.png"
+    "diagnostic-output/phase18-visual-audit-staging/payment_detail-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/dashboard-375-top.png",
+    "diagnostic-output/phase18-correction-staging/customers-375-top.png",
+    "diagnostic-output/phase18-correction-staging/jobs-375-top.png",
+    "diagnostic-output/phase18-correction-staging/scheduling-375-top.png",
+    "diagnostic-output/phase18-correction-staging/scheduling-375-mid.png",
+    "diagnostic-output/phase18-correction-staging/scheduling-375-bottom.png",
+    "diagnostic-output/phase18-correction-staging/fleet-375-top.png",
+    "diagnostic-output/phase18-correction-staging/fleet_live_map-375-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_chat-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_chat-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_chat-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_chat-768-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_chat-375-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_todays_plan-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_todays_plan-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_todays_plan-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_todays_plan-768-top.png",
+    "diagnostic-output/phase18-correction-staging/aura_todays_plan-375-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_mobile-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_mobile-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_mobile-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_mobile-768-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_mobile-375-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_jobs-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_jobs-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_jobs-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_jobs-768-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_jobs-375-top.png",
+    "diagnostic-output/phase18-correction-staging/technician_route-375-top.png",
+    "diagnostic-output/phase18-correction-staging/customer_360-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/customer_360-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/customer_360-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/customer_360-768-top.png",
+    "diagnostic-output/phase18-correction-staging/customer_360-375-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1440-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1440-mid.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1440-bottom.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1280-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1280-mid.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1280-bottom.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1024-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1024-mid.png",
+    "diagnostic-output/phase18-correction-staging/job_360-1024-bottom.png",
+    "diagnostic-output/phase18-correction-staging/job_360-768-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-768-mid.png",
+    "diagnostic-output/phase18-correction-staging/job_360-768-bottom.png",
+    "diagnostic-output/phase18-correction-staging/job_360-375-top.png",
+    "diagnostic-output/phase18-correction-staging/job_360-375-mid.png",
+    "diagnostic-output/phase18-correction-staging/job_360-375-bottom.png"
   ],
-  "screenshotCount": 187,
+  "screenshotCount": 236,
   "blockers": [],
   "verdict": "GO"
 }

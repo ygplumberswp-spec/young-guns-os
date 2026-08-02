@@ -96,6 +96,14 @@ export function useTitanNavigationHistory() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [location]);
 
+  useEffect(() => {
+    function handlePopState() {
+      restoreScrollForPath(window.location.pathname);
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const saveListState = useCallback(
     (patch: Partial<TitanNavState>) => {
       writeNavState(location, patch);

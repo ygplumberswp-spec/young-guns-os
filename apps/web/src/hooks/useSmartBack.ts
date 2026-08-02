@@ -19,11 +19,8 @@ export function useSmartBack(explicitFallback?: string) {
     stageNavStateForFallback(fallback);
 
     if (typeof window !== 'undefined' && window.history.length > 1) {
-      const referrer = document.referrer;
-      if (referrer && referrer.includes(window.location.origin)) {
-        window.history.back();
-        return;
-      }
+      window.history.back();
+      return;
     }
     navigate(fallback);
   }, [fallback, navigate]);

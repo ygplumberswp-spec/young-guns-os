@@ -37,7 +37,7 @@ export function VehicleListPage() {
   return (
     <FleetWorkspaceShell
       title="Vehicles"
-      description="TITAN vehicle registry — live GPS on Live Map tab (Cartrack cache)."
+      description="Vehicle registry and today's dispatch board. Live GPS is on the Live Map tab."
       actions={
         <div className="page-header-actions">
           <Link href="/fleet/live-map">

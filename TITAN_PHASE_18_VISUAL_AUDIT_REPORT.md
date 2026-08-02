@@ -98,3 +98,20 @@ Phase 18 implements three Owner-approved UX corrections, deploys the web app to 
 ## Phase 19 boundary
 
 Production deployment and go-live wizard execution are **not started**. Next owner decision: address HOLD finance/enterprise gaps or approve production cutover separately.
+
+---
+
+## Phase 18 correction pass (2026-08-02)
+
+See **`TITAN_PHASE_18_CORRECTION_REPORT.md`** for full detail.
+
+| Defect | Result |
+|--------|--------|
+| Expired-session captures | FIXED — verify 231 session re-mint |
+| Technician mobile load | FIXED — fresh token + staging proof |
+| Back history | FIXED — URL calendar state + popstate scroll |
+| Fleet wording | FIXED — dispatch vs Live Map aligned |
+| Crowded mobile header | FIXED — mobile breakpoint CSS |
+
+**Staging deploy:** `33400ea4-95d9-40fe-866c-4105df40725d`  
+**Verify 231:** GO (49 correction screenshots, 0 blockers)
