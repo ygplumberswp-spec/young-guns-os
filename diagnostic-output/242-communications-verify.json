@@ -1,0 +1,92 @@
+{
+  "generatedAt": "2026-08-02T07:00:29.435Z",
+  "label": "242-communications-verify",
+  "phase": 10,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "dea3919",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "communicationsWorkspace": {
+      "status": 200,
+      "hasIntegrations": true,
+      "integrationChannels": [
+        "whatsapp_business",
+        "personal_whatsapp",
+        "email",
+        "sms",
+        "calls",
+        "system"
+      ],
+      "hasQueueSummaries": true,
+      "queueKeys": [
+        "unread",
+        "needs_reply",
+        "waiting_for_customer",
+        "booking",
+        "eta_delay",
+        "quote_followup",
+        "payment_followup",
+        "complaint",
+        "supplier",
+        "cv_recruitment",
+        "marketing_opt_out",
+        "escalated"
+      ],
+      "hasConversations": true,
+      "conversationCount": 0,
+      "personalWhatsappState": "provider_unavailable"
+    }
+  },
+  "rbac": {
+    "technicianSessionError": "Command failed: railway run node /Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-mint-session-242-tech.mjs\nfile:///Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-mint-session-242"
+  },
+  "commRoutes": [
+    {
+      "href": "/communications/inbox",
+      "label": "Inbox workspace",
+      "navVisible": true,
+      "integrationVisible": true,
+      "queueFilterVisible": true,
+      "emptyHonest": true
+    },
+    {
+      "href": "/communications/messages",
+      "label": "History",
+      "navVisible": true,
+      "integrationVisible": null,
+      "queueFilterVisible": null,
+      "emptyHonest": null
+    },
+    {
+      "href": "/communications/templates",
+      "label": "Templates",
+      "navVisible": true,
+      "integrationVisible": null,
+      "queueFilterVisible": null,
+      "emptyHonest": null
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "diagnostic-output/phase10-communications-staging/communications-inbox-1440.png",
+      "href": "/communications/inbox"
+    },
+    {
+      "path": "diagnostic-output/phase10-communications-staging/communications-history-1440.png",
+      "href": "/communications/messages"
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": [],
+  "holdItems": [
+    "Technician RBAC session mint failed — manual RBAC check required"
+  ]
+}
