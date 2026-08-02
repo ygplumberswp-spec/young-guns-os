@@ -2,7 +2,7 @@
 
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Starting SHA:** `275769e`  
-**Final SHA:** `7f6763f` (RBAC fix + verify 251 rerun)  
+**Final SHA:** `a0a43d2` (RBAC fix @ `7f6763f` + verify 251 rerun)  
 **Environment:** Staging only — **production NOT touched**  
 **Generated:** 2026-08-02  
 
@@ -117,8 +117,8 @@ RBAC guard fix deployed to staging for verify 251 rerun.
 
 | Service | Deployment ID | SHA | Status |
 |---------|---------------|-----|--------|
-| `young-guns-os` (API) | `9c6e60d8-3bf7-4a53-9262-39cf6b0dd3ba` | `7f6763f` | Deployed |
-| `comfortable-determination` (web) | `11e738ef-5180-422b-a12e-48956eb36c2f` | `7f6763f` | Deployed |
+| `young-guns-os` (API) | `fd06f41d-d2d8-49d6-9711-30e22c60d17c` | `7f6763f` | Deployed |
+| `comfortable-determination` (web) | `da553cca-aeb0-4679-bc4e-eb9400d09d94` | `7f6763f` | Deployed |
 
 - **Production:** untouched  
 - **Finance / Xero / orphans:** untouched  

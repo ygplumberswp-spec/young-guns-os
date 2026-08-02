@@ -1,7 +1,7 @@
 {
   "schemaVersion": "251-rbac-missing-roles-v1",
   "label": "251-rbac-missing-roles-verify",
-  "generatedAt": "2026-08-02T12:00:22.573Z",
+  "generatedAt": "2026-08-02T12:00:54.013Z",
   "branch": "cursor/titan-owner-operating-model-final",
   "commitSha": "7f6763f91038cbb136862ed032e5e7d3481e95d3",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
@@ -142,7 +142,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 5082,
+          "ms": 2153,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -151,7 +151,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 892,
+          "ms": 905,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -161,7 +161,7 @@
         },
         "accountant": {
           "status": 200,
-          "ms": 2714,
+          "ms": 2970,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -170,7 +170,7 @@
         },
         "dispatcher": {
           "status": 403,
-          "ms": 1207,
+          "ms": 1224,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -180,7 +180,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 300,
+          "ms": 402,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -196,7 +196,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 1177,
+          "ms": 1200,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -205,7 +205,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 903,
+          "ms": 891,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -215,7 +215,7 @@
         },
         "accountant": {
           "status": 200,
-          "ms": 1176,
+          "ms": 1295,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -224,7 +224,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 1191,
+          "ms": 1229,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -233,7 +233,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 300,
+          "ms": 304,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -249,7 +249,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 1215,
+          "ms": 1210,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -258,7 +258,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 889,
+          "ms": 942,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -268,7 +268,7 @@
         },
         "accountant": {
           "status": 403,
-          "ms": 880,
+          "ms": 902,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -278,7 +278,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 1175,
+          "ms": 1199,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -287,7 +287,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 309,
+          "ms": 307,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -303,7 +303,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 1499,
+          "ms": 932,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -312,7 +312,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 879,
+          "ms": 905,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -322,7 +322,7 @@
         },
         "accountant": {
           "status": 200,
-          "ms": 907,
+          "ms": 2045,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -331,7 +331,7 @@
         },
         "dispatcher": {
           "status": 403,
-          "ms": 941,
+          "ms": 889,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -341,7 +341,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 306,
+          "ms": 323,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -357,7 +357,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 1864,
+          "ms": 1784,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -366,7 +366,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 902,
+          "ms": 2081,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -376,7 +376,7 @@
         },
         "accountant": {
           "status": 403,
-          "ms": 879,
+          "ms": 909,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -386,7 +386,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 1826,
+          "ms": 1893,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -395,7 +395,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 301,
+          "ms": 305,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -411,7 +411,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 3896,
+          "ms": 4560,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -420,7 +420,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 897,
+          "ms": 890,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -430,7 +430,7 @@
         },
         "accountant": {
           "status": 200,
-          "ms": 3217,
+          "ms": 3164,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -439,7 +439,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 3350,
+          "ms": 3144,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -448,7 +448,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 393,
+          "ms": 304,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -464,7 +464,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 1180,
+          "ms": 1173,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -473,7 +473,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 597,
+          "ms": 1759,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -483,7 +483,7 @@
         },
         "accountant": {
           "status": 403,
-          "ms": 588,
+          "ms": 780,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -493,7 +493,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 1204,
+          "ms": 1558,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -502,7 +502,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 301,
+          "ms": 303,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -518,7 +518,7 @@
       "roles": {
         "owner": {
           "status": 403,
-          "ms": 1207,
+          "ms": 1194,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -529,7 +529,7 @@
         },
         "technician": {
           "status": 403,
-          "ms": 888,
+          "ms": 5361,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -540,7 +540,7 @@
         },
         "accountant": {
           "status": 403,
-          "ms": 883,
+          "ms": 888,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -551,7 +551,7 @@
         },
         "dispatcher": {
           "status": 403,
-          "ms": 892,
+          "ms": 891,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -562,7 +562,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 297,
+          "ms": 306,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -579,7 +579,7 @@
       "roles": {
         "owner": {
           "status": 200,
-          "ms": 5291,
+          "ms": 5421,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -590,7 +590,7 @@
         },
         "technician": {
           "status": 200,
-          "ms": 5261,
+          "ms": 5904,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -599,7 +599,7 @@
         },
         "accountant": {
           "status": 403,
-          "ms": 900,
+          "ms": 889,
           "snippet": "FORBIDDEN",
           "result": "pass",
           "expected": [
@@ -609,7 +609,7 @@
         },
         "dispatcher": {
           "status": 200,
-          "ms": 4505,
+          "ms": 4980,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
@@ -618,7 +618,7 @@
         },
         "client": {
           "status": 401,
-          "ms": 298,
+          "ms": 305,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -634,7 +634,7 @@
       "roles": {
         "owner": {
           "status": 401,
-          "ms": 300,
+          "ms": 310,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -644,7 +644,7 @@
         },
         "technician": {
           "status": 401,
-          "ms": 689,
+          "ms": 305,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -654,7 +654,7 @@
         },
         "accountant": {
           "status": 401,
-          "ms": 300,
+          "ms": 316,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -664,7 +664,7 @@
         },
         "dispatcher": {
           "status": 401,
-          "ms": 301,
+          "ms": 306,
           "snippet": "UNAUTHORIZED",
           "result": "pass",
           "expected": [
@@ -674,7 +674,7 @@
         },
         "client": {
           "status": 200,
-          "ms": 2352,
+          "ms": 2545,
           "snippet": "has_data",
           "result": "pass",
           "expected": [
