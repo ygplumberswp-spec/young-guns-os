@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 7):** `d7ff4fd`  
 **Code SHA:** `5d5d9dc`  
-**Final SHA:** `5d5d9dc`  
+**Final SHA:** `d5e15c6`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02
 
