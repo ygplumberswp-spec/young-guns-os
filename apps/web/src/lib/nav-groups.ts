@@ -38,6 +38,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/aura/agents': 'intelligence',
   '/automation': 'intelligence',
   '/mission-control': 'intelligence',
+  '/departments': 'intelligence',
 };
 
 export function groupNavItems(items: NavItemConfig[]): Array<{

@@ -34,6 +34,7 @@ import { CompanyMediaService } from './services/company-media.service.js';
 import { TeamService } from './services/team.service.js';
 import { createCrmRouter } from './routes/crm.js';
 import { createDashboardRouter } from './routes/dashboard.js';
+import { createCorporateDepartmentsRouter } from './routes/corporate-departments.js';
 import { createCustomersRouter } from './routes/customers.js';
 import { createSupplierPriceIntelligenceRouter } from './routes/supplier-price-intelligence.js';
 import { createMarketingEligibilityRouter } from './routes/marketing-eligibility.js';
@@ -42,6 +43,7 @@ import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
 import { CustomerValueClassificationService } from './services/customer-value-classification.service.js';
 import { DashboardExecutiveService } from './services/dashboard-executive.service.js';
+import { CorporateDepartmentHubService } from './services/corporate-department-hub.service.js';
 import { SupplierPriceIntelligenceService } from './services/supplier-price-intelligence.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
@@ -750,6 +752,11 @@ const enterpriseMissionControlService = new EnterpriseMissionControlService({
   aiOperationsService,
   tenantCapabilityBuilderService,
 });
+const corporateDepartmentHubService = new CorporateDepartmentHubService({
+  dashboardExecutiveService,
+  enterpriseMissionControlService,
+  companyLabel: 'Young Guns Plumbing',
+});
 const enterpriseProductionReadinessService = new EnterpriseProductionReadinessService({
   db,
   databaseUrl: env.DATABASE_URL,
@@ -1431,6 +1438,14 @@ app.use(
   '/api/v1/dashboard',
   createDashboardRouter({
     dashboardExecutiveService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/corporate-departments',
+  createCorporateDepartmentsRouter({
+    corporateDepartmentHubService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

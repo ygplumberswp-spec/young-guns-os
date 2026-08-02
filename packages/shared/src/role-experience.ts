@@ -97,6 +97,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
   },
+  {
+    href: '/departments',
+    label: 'Departments',
+    permissions: ['executive:read', 'ops:read', '*'],
+    experiences: ['company_owner', 'manager', 'platform_owner', 'staff'],
+  },
 ];
 
 /** Procurement is intentionally excluded from default sidebar — direct URL only when enabled. */
@@ -232,6 +238,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/platform',
   '/saas-management',
   '/mission-control',
+  '/departments',
   '/integrations',
   '/security',
   '/settings',
@@ -258,6 +265,7 @@ export const DISPATCHER_BLOCKED_ROUTE_PREFIXES = [
   '/saas-management',
   '/integrations',
   '/mission-control',
+  '/departments',
   '/marketing',
   '/analytics',
   '/automation',

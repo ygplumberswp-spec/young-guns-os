@@ -28,7 +28,7 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   // Jobs & schedule
   { match: /^\/jobs\/new$/, fallback: '/jobs' },
   { match: /^\/jobs\/[^/]+$/, fallback: '/jobs' },
-  { match: /^\/workforce\/day-timeline$/, fallback: '/scheduling' },
+  { match: /^\/departments\/[^/]+$/, fallback: '/departments' },
 
   // CRM & leads
   { match: /^\/crm\/new$/, fallback: '/crm' },
@@ -137,6 +137,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/platform',
   '/operations',
   '/mission-control',
+  '/departments',
   '/knowledge',
   '/digital-twin',
   '/automation-studio',

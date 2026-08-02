@@ -1,5 +1,6 @@
 import { PageHeader, SummaryCardGrid } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel, StatCard, TabNav } from '@titan/ui';
 import { NAV_LABELS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -138,28 +139,35 @@ export function MissionControlPage() {
         title={NAV_LABELS.companyHealth}
         description="Business health across cash flow, jobs, customers, team, fleet, stock, compliance, and integrations."
         actions={
-          canWrite ? (
-            <div className="page-header-actions">
-              <SimpleAdvancedToggle
-                mode={viewMode}
-                onChange={setViewMode}
-                canAccessAdvanced={canWrite}
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                disabled={isWorking}
-                onClick={() =>
-                  void runAction(
-                    () => syncMissionControlAlerts(accessToken!),
-                    'Alerts synced from live module data.',
-                  )
-                }
-              >
-                Refresh alerts
+          <div className="page-header-actions">
+            <Link href="/departments">
+              <Button variant="secondary" size="sm">
+                Departments
               </Button>
-            </div>
-          ) : undefined
+            </Link>
+            {canWrite ? (
+              <>
+                <SimpleAdvancedToggle
+                  mode={viewMode}
+                  onChange={setViewMode}
+                  canAccessAdvanced={canWrite}
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  disabled={isWorking}
+                  onClick={() =>
+                    void runAction(
+                      () => syncMissionControlAlerts(accessToken!),
+                      'Alerts synced from live module data.',
+                    )
+                  }
+                >
+                  Refresh alerts
+                </Button>
+              </>
+            ) : null}
+          </div>
         }
       />
 

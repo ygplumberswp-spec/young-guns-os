@@ -321,6 +321,14 @@ export const MissionControlPage = lazyNamed(
   () => import('../pages/mission-control/MissionControlPage'),
   'MissionControlPage',
 );
+export const DepartmentsHubPage = lazyNamed(
+  () => import('../pages/departments/DepartmentsHubPage'),
+  'DepartmentsHubPage',
+);
+export const DepartmentWorkspacePage = lazyNamed(
+  () => import('../pages/departments/DepartmentWorkspacePage'),
+  'DepartmentWorkspacePage',
+);
 export const EvolutionPage = lazyNamed(
   () => import('../pages/evolution/EvolutionPage'),
   'EvolutionPage',

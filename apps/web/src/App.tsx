@@ -247,6 +247,11 @@ export function App() {
                         <Route path="/drafts" component={OwnerPages.DraftsPage} />
                         <Route path="/evolution" component={OwnerPages.EvolutionPage} />
                         <Route path="/mission-control" component={OwnerPages.MissionControlPage} />
+                        <Route path="/company-health/departments">
+                          {() => <Redirect to="/departments" />}
+                        </Route>
+                        <Route path="/departments/:departmentId" component={OwnerPages.DepartmentWorkspacePage} />
+                        <Route path="/departments" component={OwnerPages.DepartmentsHubPage} />
                         <Route path="/knowledge" component={OwnerPages.KnowledgeGraphPage} />
                         <Route path="/digital-twin" component={OwnerPages.DigitalTwinPage} />
                         <Route
