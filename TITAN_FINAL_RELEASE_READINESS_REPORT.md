@@ -4,7 +4,7 @@
 **Generated (UTC):** 2026-08-02T12:40:00.000Z  
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **HEAD SHA:** `8de56a1624911e792d925e8b9f2491e3c0dc368b`  
-**Origin sync:** pending push — Phase 253 fix + evidence  
+**Origin sync:** `origin/cursor/titan-owner-operating-model-final` @ `9dc060e` — pushed  
 **Environment assessed:** Staging only — **production NOT deployed or touched**
 
 ---
