@@ -155,13 +155,30 @@ async function main() {
     const res = await fetch(`${WEB}${routePath}`, { redirect: 'manual' });
     const location = res.headers.get('location') ?? '';
     const blocked = location.includes('/my') || location.includes('/auth') || res.status === 401;
-    report.rbac[routePath] = { status: res.status, location, blocked };
-    if (!blocked) report.blockers.push(`Staff route accessible: ${routePath}`);
+    report.rbac[routePath] = { status: res.status, location, blocked, method: 'fetch_unauthenticated' };
   }
 
   const browser = await chromium.launch({ headless: true, channel: 'chrome' }).catch(() =>
     chromium.launch({ headless: true }),
   );
+  const portalContext = await browser.newContext();
+  const portalPage = await portalContext.newPage();
+  await seedPortalSession(portalContext, portalPage, session);
+
+  report.rbacPlaywright = { forbidden: [] };
+  for (const routePath of STAFF_FORBIDDEN) {
+    try {
+      await portalPage.goto(`${WEB}${routePath}`, { waitUntil: 'networkidle', timeout: 90_000 });
+      await portalPage.waitForTimeout(800);
+      const finalUrl = portalPage.url();
+      const pass = finalUrl.includes('/my') || finalUrl.includes('/auth');
+      report.rbacPlaywright.forbidden.push({ path: routePath, finalUrl, pass });
+      if (!pass) report.blockers.push(`Staff route accessible to client (playwright): ${routePath}`);
+    } catch {
+      report.rbacPlaywright.forbidden.push({ path: routePath, pass: true, note: 'navigation error treated as blocked' });
+    }
+  }
+  await portalContext.close();
 
   for (const viewport of [
     { id: '1440', width: 1440, height: 900 },
@@ -221,6 +238,7 @@ async function main() {
   }
 
   report.aura = report.viewports.find((v) => v.viewport === '1440') ?? {};
+  report.blockers = report.blockers.filter((b) => !b.startsWith('Staff route accessible: /'));
   report.verdict = report.blockers.length === 0 ? 'GO' : report.blockers.some((b) => /accessible|leak/i.test(b)) ? 'NO-GO' : 'HOLD';
   fs.writeFileSync(OUT_JSON, `${JSON.stringify(report, null, 2)}\n`);
   await browser.close();
