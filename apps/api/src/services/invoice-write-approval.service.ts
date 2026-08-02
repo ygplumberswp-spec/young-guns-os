@@ -14,8 +14,9 @@ import {
   VOID_ELIGIBLE_INVOICE_STATUSES,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { invoices, securityAuditLogs, xeroWriteApprovals } from '@titan/db';
+import { invoices, securityAuditLogs, xeroWriteApprovals, creditNotes } from '@titan/db';
 import { FinanceError, type FinanceActor } from './finance.service.js';
+import type { CreditNoteService } from './credit-note.service.js';
 import {
   XeroWriteApprovalGate,
   XeroWriteApprovalGateError,
@@ -96,6 +97,7 @@ export class InvoiceWriteApprovalService {
   constructor(
     private readonly db: DatabaseClient,
     private readonly writeApprovalGate: XeroWriteApprovalGate,
+    private readonly creditNoteService?: CreditNoteService,
   ) {}
 
   async listPending(companyId: string): Promise<InvoiceWriteApprovalSummary[]> {
@@ -342,7 +344,11 @@ export class InvoiceWriteApprovalService {
     const providerAuthorized = isProviderWriteAuthorized();
     if (!providerAuthorized) {
       const blockedMessage =
-        'Approved — awaiting explicit Xero provider write authorization (TITAN_XERO_PROVIDER_WRITES_AUTHORIZED). No Xero write or silent invoice edit performed.';
+        'Approved — awaiting explicit Xero provider write authorization (TITAN_XERO_PROVIDER_WRITES_AUTHORIZED). Owner approval + provider authorization required. No Xero write performed.';
+
+      if (approval.writeOperation === 'credit_note_create') {
+        await this.ensureCreditNoteFromApproval(actor.companyId, approval, metadata);
+      }
 
       await this.db
         .update(xeroWriteApprovals)
@@ -429,8 +435,43 @@ export class InvoiceWriteApprovalService {
       return true;
     }
 
-    // Credit note: record intent only — no credit note entity table yet (stub boundary).
+    // Credit note: create internal entity — no Xero write unless provider authorized.
+    if (approval.writeOperation === 'credit_note_create') {
+      await this.ensureCreditNoteFromApproval(companyId, approval, metadata);
+      return true;
+    }
     return false;
+  }
+
+  private async ensureCreditNoteFromApproval(
+    companyId: string,
+    approval: typeof xeroWriteApprovals.$inferSelect,
+    metadata: Record<string, unknown>,
+  ): Promise<void> {
+    if (!this.creditNoteService) return;
+
+    const existingKey = `approval:${approval.id}`;
+    const existing = await this.db.query.creditNotes.findFirst({
+      where: and(
+        eq(creditNotes.companyId, companyId),
+        eq(creditNotes.idempotencyKey, existingKey),
+      ),
+    });
+    if (existing) return;
+
+    const lineItems = (metadata.lineItems as Array<{
+      description: string;
+      quantity?: number;
+      unitPriceCents: number;
+      vatRateBps?: number;
+    }>) ?? [];
+
+    await this.creditNoteService.linkFromWriteApproval(companyId, approval.id, approval.entityId, {
+      reason: String(metadata.reason ?? ''),
+      lineItems,
+      creditAmountCents: Number(metadata.creditAmountCents ?? 0),
+      requestedByUserId: (metadata.requestedByUserId as string | undefined) ?? null,
+    });
   }
 
   private assertVoidEligible(status: string): void {

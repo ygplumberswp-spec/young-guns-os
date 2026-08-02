@@ -5,6 +5,8 @@ import type { FinanceService } from '../services/finance.service.js';
 import { FinanceError } from '../services/finance.service.js';
 import type { InvoiceWriteApprovalService } from '../services/invoice-write-approval.service.js';
 import { mapInvoiceWriteApprovalError } from '../services/invoice-write-approval.service.js';
+import type { CreditNoteService } from '../services/credit-note.service.js';
+import { mapCreditNoteError } from '../services/credit-note.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
@@ -92,6 +94,7 @@ const createPaymentSchema = z.object({
 type FinanceRouterDeps = {
   financeService: FinanceService;
   invoiceWriteApprovalService: InvoiceWriteApprovalService;
+  creditNoteService: CreditNoteService;
   teamService: TeamService;
   db: DatabaseClient;
   jwtSecret: string;
@@ -105,6 +108,7 @@ function getAuth(req: import('express').Request) {
 export function createFinanceRouter({
   financeService,
   invoiceWriteApprovalService,
+  creditNoteService,
   teamService,
   db,
   jwtSecret,
@@ -430,6 +434,130 @@ export function createFinanceRouter({
       res.json({ data: result });
     } catch (error) {
       handleWriteApprovalError(res, error);
+    }
+  });
+
+  router.get('/invoices/:id/credit-notes', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    try {
+      const creditNotes = await creditNoteService.listForInvoice(
+        getAuth(req).companyId,
+        routeParam(req.params.id),
+      );
+      res.json({ data: { creditNotes } });
+    } catch (error) {
+      mapCreditNoteError(res, error);
+    }
+  });
+
+  router.post('/invoices/:id/credit-notes', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = z
+      .object({
+        reason: z.string().trim().min(3).max(2000),
+        clientActionId: z.string().trim().min(1).max(200),
+        lineItems: z.array(
+          z.object({
+            description: z.string().trim().min(1),
+            quantity: z.number().positive().optional(),
+            unitPriceCents: z.number().int(),
+            vatRateBps: z.number().int().min(0).max(10000).optional(),
+          }),
+        ).min(1),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid credit note payload' } });
+      return;
+    }
+    try {
+      const creditNote = await creditNoteService.createDraft(
+        toFinanceActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: { creditNote } });
+    } catch (error) {
+      mapCreditNoteError(res, error);
+    }
+  });
+
+  router.patch('/credit-notes/:id', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = z
+      .object({
+        reason: z.string().trim().min(3).max(2000).optional(),
+        lineItems: z
+          .array(
+            z.object({
+              description: z.string().trim().min(1),
+              quantity: z.number().positive().optional(),
+              unitPriceCents: z.number().int(),
+              vatRateBps: z.number().int().min(0).max(10000).optional(),
+            }),
+          )
+          .optional(),
+      })
+      .safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid credit note update' } });
+      return;
+    }
+    try {
+      const creditNote = await creditNoteService.updateDraft(
+        toFinanceActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { creditNote } });
+    } catch (error) {
+      mapCreditNoteError(res, error);
+    }
+  });
+
+  const billingRecipientSchema = z.object({
+    billingCustomerId: z.string().uuid().nullable().optional(),
+    recipientName: z.string().trim().max(200).nullable().optional(),
+    recipientEmail: z.string().trim().email().nullable().optional(),
+    recipientPhone: z.string().trim().max(40).nullable().optional(),
+    billingAddress: z.string().trim().max(2000).nullable().optional(),
+    vatNumber: z.string().trim().max(80).nullable().optional(),
+    poReference: z.string().trim().max(120).nullable().optional(),
+    attentionPerson: z.string().trim().max(120).nullable().optional(),
+    copyFromServiceCustomer: z.boolean().optional(),
+    reason: z.string().trim().min(3).max(500),
+  });
+
+  router.patch('/quotes/:id/billing-recipient', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = billingRecipientSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid billing recipient payload' } });
+      return;
+    }
+    try {
+      const quote = await financeService.updateQuoteBillingRecipient(
+        toFinanceActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { quote } });
+    } catch (error) {
+      handleFinanceError(res, error);
+    }
+  });
+
+  router.patch('/invoices/:id/billing-recipient', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = billingRecipientSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid billing recipient payload' } });
+      return;
+    }
+    try {
+      const invoice = await financeService.updateInvoiceBillingRecipient(
+        toFinanceActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.json({ data: { invoice } });
+    } catch (error) {
+      handleFinanceError(res, error);
     }
   });
 

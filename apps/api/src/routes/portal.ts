@@ -6,6 +6,8 @@ import type { PortalService } from '../services/portal.service.js';
 import { PortalError } from '../services/portal.service.js';
 import type { PortalExperienceService } from '../services/portal-experience.service.js';
 import { PortalExperienceError } from '../services/portal-experience.service.js';
+import type { PortalAuraService } from '../services/portal-aura.service.js';
+import { PortalAuraError } from '../services/portal-aura.service.js';
 import type { NotificationService } from '../services/notification.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
@@ -105,6 +107,7 @@ const createPortalInviteSchema = z.object({
 type PortalRouterDeps = {
   portalService: PortalService;
   portalExperienceService: PortalExperienceService;
+  portalAuraService: PortalAuraService;
   notificationService: NotificationService;
   portalAuthService: PortalAuthService;
   teamService: TeamService;
@@ -137,6 +140,7 @@ function portalScope(req: import('express').Request) {
 export function createPortalRouter({
   portalService,
   portalExperienceService,
+  portalAuraService,
   notificationService,
   portalAuthService,
   teamService,
@@ -444,6 +448,48 @@ export function createPortalRouter({
     },
   );
 
+  router.post(
+    '/aura/chat',
+    requirePortalAuth,
+    requirePortalPermission('portal.dashboard:read'),
+    async (req, res) => {
+      const parsed = z
+        .object({
+          content: z.string().trim().min(1).max(4000),
+          pageContext: z.object({
+            route: z.string().trim().min(1).max(300),
+            module: z.string().trim().min(1).max(80),
+            recordType: z.string().trim().max(80).optional(),
+            recordId: z.string().uuid().optional(),
+            customerId: z.string().uuid().optional(),
+            jobId: z.string().uuid().optional(),
+          }),
+          history: z
+            .array(
+              z.object({
+                role: z.enum(['user', 'assistant']),
+                content: z.string().trim().min(1).max(8000),
+              }),
+            )
+            .max(8)
+            .optional(),
+        })
+        .safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid AURA chat payload' } });
+        return;
+      }
+
+      try {
+        const result = await portalAuraService.sendChatMessage(portalScope(req), parsed.data);
+        res.json({ data: result });
+      } catch (error) {
+        handlePortalAuraError(res, error);
+      }
+    },
+  );
+
   router.get('/permissions/catalog', requireStaffAuth, async (_req, res) => {
     res.json({ data: { permissions: portalService.getAccessPermissionCatalog() } });
   });
@@ -696,6 +742,21 @@ function handlePortalExperienceError(res: import('express').Response, error: unk
         message: error.message,
       },
     });
+    return;
+  }
+
+  throw error;
+}
+
+function handlePortalAuraError(res: import('express').Response, error: unknown) {
+  if (error instanceof PortalAuraError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'PROVIDER_NOT_CONFIGURED' || error.code === 'PROVIDER_ERROR'
+          ? 503
+          : 400;
+    res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
 

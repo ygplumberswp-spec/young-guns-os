@@ -1002,6 +1002,120 @@ export class FinanceService {
       lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents,
     })));
   }
+
+  async updateQuoteBillingRecipient(
+    actor: FinanceActor,
+    quoteId: string,
+    input: import('@titan/shared').UpdateBillingRecipientRequest,
+  ): Promise<QuoteSummary> {
+    if (!actor.canWrite) throw new FinanceError('FORBIDDEN', 'Finance write permission required');
+    const quote = await this.db.query.quotes.findFirst({
+      where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)),
+      with: { customer: true },
+    });
+    if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
+    if (quote.isImmutable) {
+      throw new FinanceError('VALIDATION_ERROR', 'Issued quotes cannot change billing recipient — use void/credit/reissue');
+    }
+
+    const serviceCustomer = quote.customer;
+    const patch = await this.resolveBillingRecipientPatch(actor.companyId, quote.customerId, serviceCustomer, input);
+
+    await this.db.update(quotes).set({ ...patch, updatedAt: new Date() }).where(eq(quotes.id, quoteId));
+    await this.db.insert(securityAuditLogs).values({
+      companyId: actor.companyId,
+      category: 'financial',
+      action: 'quote_billing_recipient_updated',
+      entityType: 'quote',
+      entityId: quoteId,
+      userId: actor.userId ?? null,
+      metadata: { reason: input.reason, oldCustomerId: quote.customerId, patch },
+    });
+    return (await this.getQuote(actor.companyId, quoteId))!;
+  }
+
+  async updateInvoiceBillingRecipient(
+    actor: FinanceActor,
+    invoiceId: string,
+    input: import('@titan/shared').UpdateBillingRecipientRequest,
+  ): Promise<InvoiceSummary> {
+    if (!actor.canWrite) throw new FinanceError('FORBIDDEN', 'Finance write permission required');
+    const invoice = await this.db.query.invoices.findFirst({
+      where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, actor.companyId)),
+      with: { customer: true },
+    });
+    if (!invoice) throw new FinanceError('NOT_FOUND', 'Invoice not found');
+    if (invoice.status !== 'draft') {
+      throw new FinanceError(
+        'VALIDATION_ERROR',
+        'Issued invoices cannot silently replace billing recipient — use void/credit note/reissue',
+      );
+    }
+
+    const patch = await this.resolveBillingRecipientPatch(
+      actor.companyId,
+      invoice.customerId,
+      invoice.customer,
+      input,
+    );
+
+    await this.db.update(invoices).set({ ...patch, updatedAt: new Date() }).where(eq(invoices.id, invoiceId));
+    await this.db.insert(securityAuditLogs).values({
+      companyId: actor.companyId,
+      category: 'financial',
+      action: 'invoice_billing_recipient_updated',
+      entityType: 'invoice',
+      entityId: invoiceId,
+      userId: actor.userId ?? null,
+      metadata: { reason: input.reason, oldCustomerId: invoice.customerId, patch },
+    });
+    return (await this.getInvoice(actor.companyId, invoiceId))!;
+  }
+
+  private async resolveBillingRecipientPatch(
+    companyId: string,
+    serviceCustomerId: string,
+    serviceCustomer: { name: string; email?: string | null; phone?: string | null } | null | undefined,
+    input: import('@titan/shared').UpdateBillingRecipientRequest,
+  ) {
+    if (input.copyFromServiceCustomer) {
+      return {
+        billingCustomerId: serviceCustomerId,
+        recipientName: serviceCustomer?.name ?? null,
+        recipientEmail: serviceCustomer?.email ?? null,
+        recipientPhone: serviceCustomer?.phone ?? null,
+        billingName: serviceCustomer?.name ?? null,
+        billingEmail: serviceCustomer?.email ?? null,
+        billingPhone: serviceCustomer?.phone ?? null,
+        billingAddress: input.billingAddress === undefined ? undefined : normalizeOptionalText(input.billingAddress),
+        vatNumber: input.vatNumber === undefined ? undefined : normalizeOptionalText(input.vatNumber),
+        poReference: input.poReference === undefined ? undefined : normalizeOptionalText(input.poReference),
+        attentionPerson: input.attentionPerson === undefined ? undefined : normalizeOptionalText(input.attentionPerson),
+      };
+    }
+
+    let billingCustomerId = input.billingCustomerId;
+    if (billingCustomerId) {
+      const billingCustomer = await this.db.query.customers.findFirst({
+        where: and(eq(customers.id, billingCustomerId), eq(customers.companyId, companyId)),
+      });
+      if (!billingCustomer) throw new FinanceError('NOT_FOUND', 'Billing customer not found');
+    }
+
+    return {
+      billingCustomerId: billingCustomerId === undefined ? undefined : billingCustomerId,
+      recipientName: input.recipientName === undefined ? undefined : normalizeOptionalText(input.recipientName),
+      recipientEmail: input.recipientEmail === undefined ? undefined : normalizeOptionalText(input.recipientEmail),
+      recipientPhone: input.recipientPhone === undefined ? undefined : normalizeOptionalText(input.recipientPhone),
+      billingName: input.recipientName === undefined ? undefined : normalizeOptionalText(input.recipientName),
+      billingEmail: input.recipientEmail === undefined ? undefined : normalizeOptionalText(input.recipientEmail),
+      billingPhone: input.recipientPhone === undefined ? undefined : normalizeOptionalText(input.recipientPhone),
+      billingAddress: input.billingAddress === undefined ? undefined : normalizeOptionalText(input.billingAddress),
+      vatNumber: input.vatNumber === undefined ? undefined : normalizeOptionalText(input.vatNumber),
+      poReference: input.poReference === undefined ? undefined : normalizeOptionalText(input.poReference),
+      attentionPerson: input.attentionPerson === undefined ? undefined : normalizeOptionalText(input.attentionPerson),
+    };
+  }
 }
 
 type QuoteWithRelations = typeof quotes.$inferSelect & {

@@ -71,6 +71,8 @@ import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
 import { InvoiceWriteApprovalService } from './services/invoice-write-approval.service.js';
+import { CreditNoteService } from './services/credit-note.service.js';
+import { PortalAuraService } from './services/portal-aura.service.js';
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
@@ -415,7 +417,12 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   xeroOAuthService,
 });
 const xeroWriteApprovalGate = new XeroWriteApprovalGate(db);
-const invoiceWriteApprovalService = new InvoiceWriteApprovalService(db, xeroWriteApprovalGate);
+const creditNoteService = new CreditNoteService(db);
+const invoiceWriteApprovalService = new InvoiceWriteApprovalService(
+  db,
+  xeroWriteApprovalGate,
+  creditNoteService,
+);
 const xeroMappingConflictService = new XeroMappingConflictService(db);
 const xeroSyncService = XeroSyncService.create({
   db,
@@ -705,6 +712,7 @@ const aiProviderResilienceService = new AiProviderResilienceService({
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   envProvider: auraProvider,
 });
+const portalAuraService = new PortalAuraService(db, portalExperienceService, aiProviderResilienceService);
 const aiComparisonService = new AiComparisonService({
   db,
   aiProviderResilienceService,
@@ -1517,6 +1525,7 @@ app.use(
   createFinanceRouter({
     financeService,
     invoiceWriteApprovalService,
+    creditNoteService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
@@ -2328,6 +2337,7 @@ app.use(
   createPortalRouter({
     portalService,
     portalExperienceService,
+    portalAuraService,
     notificationService,
     portalAuthService,
     teamService,
