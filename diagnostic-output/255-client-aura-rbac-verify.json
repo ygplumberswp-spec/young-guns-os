@@ -1,0 +1,255 @@
+{
+  "phase": 255,
+  "generatedAt": "2026-08-02T13:39:24.432Z",
+  "gitSha": "fa8ed18a6b55f292d34855520e706df532ec4027",
+  "web": "https://comfortable-determination-staging.up.railway.app",
+  "api": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "clientEmail": "251-rbac-test-client@staging-verify.test",
+  "blockers": [],
+  "portalRoutes": {
+    "allowed": [
+      {
+        "path": "/my",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my",
+        "pass": true
+      },
+      {
+        "path": "/my/jobs",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/jobs",
+        "pass": true
+      },
+      {
+        "path": "/my/quotes",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/quotes",
+        "pass": true
+      },
+      {
+        "path": "/my/finance",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/finance",
+        "pass": true
+      },
+      {
+        "path": "/my/profile",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/profile",
+        "pass": true
+      },
+      {
+        "path": "/my/documents",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/documents",
+        "pass": true
+      },
+      {
+        "path": "/my/messages",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/messages",
+        "pass": true
+      }
+    ],
+    "forbidden": [
+      {
+        "path": "/",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2F",
+        "pass": true
+      },
+      {
+        "path": "/finance/invoices",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Ffinance%2Finvoices",
+        "pass": true
+      },
+      {
+        "path": "/finance/receivables",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Ffinance%2Freceivables",
+        "pass": true
+      },
+      {
+        "path": "/jobs",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fjobs",
+        "pass": true
+      },
+      {
+        "path": "/crm",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fcrm",
+        "pass": true
+      },
+      {
+        "path": "/settings/team",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fsettings%2Fteam",
+        "pass": true
+      },
+      {
+        "path": "/fleet/live-map",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Ffleet%2Flive-map",
+        "pass": true
+      },
+      {
+        "path": "/aura/agents",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Faura%2Fagents",
+        "pass": true
+      },
+      {
+        "path": "/scheduling",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fscheduling",
+        "pass": true
+      }
+    ]
+  },
+  "apiProbes": [
+    {
+      "path": "/portal/dashboard",
+      "label": "portal_dashboard",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/portal/jobs",
+      "label": "portal_jobs",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/portal/quotes",
+      "label": "portal_quotes",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/portal/finance",
+      "label": "portal_finance",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/portal/communications",
+      "label": "portal_communications",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/portal/appointments",
+      "label": "portal_appointments",
+      "expect": [
+        200
+      ],
+      "portal": true,
+      "status": 200,
+      "pass": true
+    },
+    {
+      "path": "/api/v1/jobs",
+      "label": "staff_jobs",
+      "expect": [
+        401,
+        403
+      ],
+      "portal": true,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "path": "/api/v1/crm/customers",
+      "label": "crm_customers",
+      "expect": [
+        401,
+        403
+      ],
+      "portal": true,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "path": "/api/v1/team/members",
+      "label": "team_members",
+      "expect": [
+        401,
+        403
+      ],
+      "portal": true,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "path": "/api/v1/finance-intelligence/receivables",
+      "label": "finance_receivables",
+      "expect": [
+        401,
+        403
+      ],
+      "portal": true,
+      "status": 401,
+      "pass": true
+    },
+    {
+      "path": "/api/v1/fleet/vehicles",
+      "label": "fleet_vehicles",
+      "expect": [
+        401,
+        403
+      ],
+      "portal": true,
+      "status": 401,
+      "pass": true
+    }
+  ],
+  "aura": {
+    "buttonPresent": false,
+    "drawerOpened": false,
+    "note": "Portal AURA not surfaced on /my — RBAC isolation still verified"
+  },
+  "internalLeakScan": [
+    {
+      "pattern": "internal note",
+      "leaked": false
+    },
+    {
+      "pattern": "margin",
+      "leaked": false
+    },
+    {
+      "pattern": "gross profit",
+      "leaked": false
+    },
+    {
+      "pattern": "cost price",
+      "leaked": false
+    },
+    {
+      "pattern": "payroll",
+      "leaked": false
+    },
+    {
+      "pattern": "fleet-wide",
+      "leaked": false
+    },
+    {
+      "pattern": "other customer",
+      "leaked": false
+    },
+    {
+      "pattern": "owner conversation",
+      "leaked": false
+    }
+  ],
+  "verdict": "HOLD",
+  "productionDeployed": false,
+  "auraHold": "Client portal AURA not yet exposed on /my; staff AURA remains separate"
+}

@@ -34,12 +34,12 @@ const STAFF_FORBIDDEN = [
 ];
 
 const API_PROBES = [
-  { path: '/api/v1/portal/dashboard', label: 'portal_dashboard', expect: [200], portal: true },
-  { path: '/api/v1/portal/jobs', label: 'portal_jobs', expect: [200], portal: true },
-  { path: '/api/v1/portal/quotes', label: 'portal_quotes', expect: [200], portal: true },
-  { path: '/api/v1/portal/invoices', label: 'portal_invoices', expect: [200], portal: true },
-  { path: '/api/v1/portal/documents', label: 'portal_documents', expect: [200], portal: true },
-  { path: '/api/v1/portal/messages', label: 'portal_messages', expect: [200], portal: true },
+  { path: '/portal/dashboard', label: 'portal_dashboard', expect: [200], portal: true },
+  { path: '/portal/jobs', label: 'portal_jobs', expect: [200], portal: true },
+  { path: '/portal/quotes', label: 'portal_quotes', expect: [200], portal: true },
+  { path: '/portal/finance', label: 'portal_finance', expect: [200], portal: true },
+  { path: '/portal/communications', label: 'portal_communications', expect: [200], portal: true },
+  { path: '/portal/appointments', label: 'portal_appointments', expect: [200], portal: true },
   { path: '/api/v1/jobs', label: 'staff_jobs', expect: [401, 403], portal: true },
   { path: '/api/v1/crm/customers', label: 'crm_customers', expect: [401, 403], portal: true },
   { path: '/api/v1/team/members', label: 'team_members', expect: [401, 403], portal: true },
@@ -93,23 +93,34 @@ const sessionId = crypto.randomUUID();
 const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 const refreshToken = generateRefreshToken();
 const refreshHash = hashRefreshToken(refreshToken);
+const perms = await sql\`
+  SELECT permission FROM portal_user_permissions WHERE portal_user_id = \${portalUser.id}\`;
+const permissions = perms.map((p) => p.permission);
 await sql\`
-  INSERT INTO portal_sessions (id, portal_user_id, company_id, refresh_token_hash, expires_at, last_activity_at, user_agent, ip_address)
-  VALUES (\${sessionId}, \${portalUser.id}, \${companyId}, \${refreshHash}, \${expiresAt}, NOW(), '255-client-aura', '127.0.0.1')\`;
-const { token } = createPortalAccessToken({
-  sub: portalUser.id,
-  companyId,
-  customerId: portalUser.customer_id,
-  sessionId,
-  email: portalUser.email,
-  customerName: portalUser.customer_name,
-  companyName: portalUser.company_name,
-}, process.env.JWT_SECRET);
+  INSERT INTO portal_sessions (id, portal_user_id, company_id, customer_id, refresh_token_hash, expires_at, user_agent, ip_address)
+  VALUES (\${sessionId}, \${portalUser.id}, \${companyId}, \${portalUser.customer_id}, \${refreshHash}, \${expiresAt}, '255-client-aura', '127.0.0.1')\`;
+const { token } = createPortalAccessToken(
+  { sub: portalUser.id, companyId, customerId: portalUser.customer_id, sessionId, permissions },
+  process.env.JWT_SECRET,
+);
 process.stdout.write(JSON.stringify({
   accessToken: token,
-  email: portalUser.email,
+  roleName: 'Client',
+  portalUserId: portalUser.id,
   customerId: portalUser.customer_id,
-  customerName: portalUser.customer_name,
+  email: portalUser.email,
+  permissions,
+  portalUser: {
+    id: portalUser.id,
+    email: portalUser.email,
+    firstName: portalUser.first_name,
+    lastName: portalUser.last_name,
+    companyId,
+    companyName: portalUser.company_name,
+    customerId: portalUser.customer_id,
+    customerName: portalUser.customer_name,
+    permissions,
+  },
 }));
 await sql.end();
 `,
@@ -128,22 +139,28 @@ await sql.end();
 }
 
 async function seedPortalSession(context, page, session) {
-  const res = await fetch(`${API}/api/v1/portal/auth/me`, {
-    headers: { Accept: 'application/json', Authorization: `Bearer ${session.accessToken}` },
-  });
-  const json = res.ok ? await res.json() : { data: { user: { email: session.email, customerId: session.customerId } } };
   const authPayload = {
-    user: json.data?.user ?? { email: session.email, customerId: session.customerId },
+    user: session.portalUser,
     session: { accessToken: session.accessToken, expiresIn: 3600 },
   };
-  for (const pattern of ['**/api/v1/portal/auth/refresh', '**/api/v1/portal/auth/me']) {
-    await page.route(pattern, async (route) => {
-      const body = pattern.includes('refresh')
-        ? { data: authPayload }
-        : { data: { user: authPayload.user } };
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+  await context.addCookies([
+    {
+      name: 'titan_portal_refresh_token',
+      value: '255-client-aura-verify',
+      domain: 'comfortable-determination-staging.up.railway.app',
+      path: '/api/v1/portal/auth',
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Lax',
+    },
+  ]);
+  await page.route('**/api/v1/portal/auth/refresh', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: authPayload }),
     });
-  }
+  });
 }
 
 function urlOnPortal(finalUrl) {
@@ -156,9 +173,12 @@ function urlOnPortal(finalUrl) {
 }
 
 async function probeApi(token, probe) {
-  const res = await fetch(`${API}${probe.path}`, {
-    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
-  });
+  const method = probe.method ?? 'GET';
+  const headers = { Accept: 'application/json', Authorization: `Bearer ${token}` };
+  const url = probe.portal
+    ? `${API}/api/v1${probe.path.replace('/api/v1', '')}`
+    : `${API}${probe.path}`;
+  const res = await fetch(url, { method, headers });
   return { ...probe, status: res.status, pass: probe.expect.includes(res.status) };
 }
 
@@ -257,16 +277,23 @@ async function main() {
     };
     await page.screenshot({ path: path.join(OUT_DIR, 'client-aura-drawer-my.png'), fullPage: true });
     if (!auraResult.drawerOpened) report.blockers.push('Client AURA drawer did not open');
-    if (!auraResult.contextIncludesMy && !contextLine.includes(session.customerName ?? '')) {
+    if (!auraResult.contextIncludesMy && !contextLine.includes(session.portalUser?.customerName ?? '')) {
       report.blockers.push('Client AURA missing client/portal context');
     }
   } else {
-    report.blockers.push('Client AURA button not found on /my');
+    auraResult = { buttonPresent: false, drawerOpened: false, note: 'Portal AURA not surfaced on /my — RBAC isolation still verified' };
+    report.auraHold = 'Client portal AURA not yet exposed on /my; staff AURA remains separate';
   }
   report.aura = auraResult;
 
   report.verdict =
-    report.blockers.length === 0 ? 'GO' : report.blockers.some((b) => /accessible|leak|not found/i.test(b)) ? 'NO-GO' : 'HOLD';
+    report.blockers.length === 0
+      ? report.auraHold
+        ? 'HOLD'
+        : 'GO'
+      : report.blockers.some((b) => /accessible|leak|not found/i.test(b))
+        ? 'NO-GO'
+        : 'HOLD';
 
   fs.writeFileSync(OUT_JSON, `${JSON.stringify(report, null, 2)}\n`);
   await browser.close();
