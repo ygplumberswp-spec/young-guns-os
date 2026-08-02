@@ -234,10 +234,13 @@ export class DraftAutosaveService {
     });
   }
 
-  /** Audit hook — lightweight security log via SQL comment marker for downstream collectors. */
+  /**
+   * Audit hook — typed SELECT so Postgres can bind parameters (comment-only markers
+   * fail with “could not determine data type of parameter”).
+   */
   async touchAudit(actor: DraftActor, action: string, draftId: string): Promise<void> {
     await this.db.execute(
-      sql`SELECT 1 /* draft_audit company=${actor.companyId} user=${actor.userId} action=${action} draft=${draftId} */`,
+      sql`select ${actor.companyId}::uuid as company_id, ${actor.userId}::uuid as user_id, ${action}::text as action, ${draftId}::uuid as draft_id`,
     );
   }
 }

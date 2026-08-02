@@ -159,11 +159,15 @@ export function createDraftsRouter({
         { companyId: auth.companyId, userId: auth.userId },
         parsed.data,
       );
-      await draftAutosaveService.touchAudit(
-        { companyId: auth.companyId, userId: auth.userId },
-        'upsert',
-        draft.id,
-      );
+      try {
+        await draftAutosaveService.touchAudit(
+          { companyId: auth.companyId, userId: auth.userId },
+          'upsert',
+          draft.id,
+        );
+      } catch {
+        // Draft persistence already succeeded — do not fail the request on audit marker issues.
+      }
       res.json({ data: { draft } });
     } catch (error) {
       handleDraftError(res, error);
