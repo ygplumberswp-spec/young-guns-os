@@ -29,6 +29,7 @@ import { customers } from './customers';
 import { jobs } from './jobs';
 import { cxCustomerProperties } from './enterprise-customer-experience';
 import { invoiceLineItems, invoices } from './invoices';
+import { creditNoteLineItems, creditNotes } from './credit-notes';
 import { inventoryItems } from './inventory-items';
 import { inventoryLocations } from './inventory-locations';
 import { inventoryStockLevels } from './inventory-stock-levels';
@@ -730,6 +731,38 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   }),
   lineItems: many(invoiceLineItems),
   payments: many(payments),
+  creditNotes: many(creditNotes),
+}));
+
+export const creditNotesRelations = relations(creditNotes, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [creditNotes.companyId],
+    references: [companies.id],
+  }),
+  invoice: one(invoices, {
+    fields: [creditNotes.invoiceId],
+    references: [invoices.id],
+  }),
+  customer: one(customers, {
+    fields: [creditNotes.customerId],
+    references: [customers.id],
+  }),
+  job: one(jobs, {
+    fields: [creditNotes.jobId],
+    references: [jobs.id],
+  }),
+  lineItems: many(creditNoteLineItems),
+}));
+
+export const creditNoteLineItemsRelations = relations(creditNoteLineItems, ({ one }) => ({
+  creditNote: one(creditNotes, {
+    fields: [creditNoteLineItems.creditNoteId],
+    references: [creditNotes.id],
+  }),
+  company: one(companies, {
+    fields: [creditNoteLineItems.companyId],
+    references: [companies.id],
+  }),
 }));
 
 export const invoiceLineItemsRelations = relations(invoiceLineItems, ({ one }) => ({

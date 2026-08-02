@@ -24,6 +24,7 @@ export * from './boq';
 export * from './draft-workspace';
 export * from './job-document-packs';
 export * from './invoices';
+export * from './credit-notes';
 export * from './payments';
 export * from './inventory-locations';
 export * from './inventory-items';
