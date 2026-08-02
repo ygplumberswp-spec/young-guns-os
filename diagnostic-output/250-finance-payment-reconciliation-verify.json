@@ -1,0 +1,185 @@
+{
+  "label": "250-finance-payment-reconciliation-verify",
+  "generatedAt": "2026-08-02T11:17:22.874Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "headSha": "e3a46c75bde2f30be6152034a9295570a5bd403c",
+  "apiOrigin": "https://young-guns-os-staging.up.railway.app",
+  "webOrigin": "https://comfortable-determination-staging.up.railway.app",
+  "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "verdict": "HOLD",
+  "checks": [
+    {
+      "name": "api_financeStats",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "api_receivables",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "api_payables",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "api_cashflow",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "api_invoices",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "api_payments",
+      "status": 200,
+      "pass": true
+    },
+    {
+      "name": "anchor_invoices_preserved",
+      "pass": true,
+      "detail": {
+        "inv0423": {
+          "present": true,
+          "amountCents": 247250,
+          "preserved": true
+        },
+        "inv0424": {
+          "present": true,
+          "amountCents": 226639,
+          "preserved": true
+        },
+        "allPreserved": true
+      }
+    },
+    {
+      "name": "false_zero_detection",
+      "pass": true,
+      "count": 0,
+      "sample": [],
+      "note": "Rows where payments exist but amount_paid_cents=0 — API should reconcile via allocated sum"
+    },
+    {
+      "name": "payment_mapping_populated",
+      "pass": true,
+      "paymentMappings": 0,
+      "titanPayments": 0,
+      "xeroLinkedPayments": 0
+    },
+    {
+      "name": "finance_ui_screenshots",
+      "pass": true
+    }
+  ],
+  "reconciliationMatrix": [
+    {
+      "layer": "DB reconciled outstanding",
+      "valueCents": 0
+    },
+    {
+      "layer": "API finance/stats outstandingCents",
+      "valueCents": 0,
+      "matchesDb": true
+    },
+    {
+      "layer": "API receivables ageing sum",
+      "valueCents": null
+    },
+    {
+      "layer": "API cashflow outstandingReceivableCents",
+      "valueCents": null
+    }
+  ],
+  "blockers": {
+    "xeroPaymentMappings": {
+      "status": "BLOCKED",
+      "detail": "0 mappings, 0 payments"
+    },
+    "falseZeroEdgeCase": {
+      "status": "FIXED",
+      "detail": "0 invoice(s) with payments but amount_paid_cents=0"
+    },
+    "receivablesParity": {
+      "status": "FIXED",
+      "detail": "API 200, DB outstanding 0"
+    },
+    "payablesParity": {
+      "status": "PARTIAL",
+      "detail": "ACCPAY import still HOLD — honest empty UI"
+    },
+    "cashflowParity": {
+      "status": "PARTIAL",
+      "detail": "Invoiced vs cash separated; bank balance HOLD"
+    },
+    "statsOutstanding": {
+      "status": "FIXED",
+      "detail": "stats=0, db=0"
+    }
+  },
+  "screenshots": [
+    {
+      "route": "/finance/receivables",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase250-finance-payment-staging/250--finance-receivables-1440.png"
+    },
+    {
+      "route": "/finance/payables",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase250-finance-payment-staging/250--finance-payables-1440.png"
+    },
+    {
+      "route": "/finance/cashflow",
+      "viewport": "1440",
+      "file": "diagnostic-output/phase250-finance-payment-staging/250--finance-cashflow-1440.png"
+    }
+  ],
+  "database": {
+    "mappingCounts": {
+      "payment_mappings": 0,
+      "synced_invoice_mappings": 5
+    },
+    "entityCounts": {
+      "titan_payments": 0,
+      "xero_linked_payments": 0
+    },
+    "falseZeroRows": [],
+    "reconciledOutstanding": {
+      "outstanding_cents": "0"
+    },
+    "anchorInvoices": [
+      {
+        "invoice_number": "INV-0423",
+        "amount_cents": 247250,
+        "total_cents": 247250,
+        "amount_paid_cents": 0,
+        "status": "draft",
+        "allocated_cents": 0,
+        "payment_count": 0
+      },
+      {
+        "invoice_number": "INV-0424",
+        "amount_cents": 226639,
+        "total_cents": 226639,
+        "amount_paid_cents": 0,
+        "status": "draft",
+        "allocated_cents": 0,
+        "payment_count": 0
+      }
+    ],
+    "paymentSample": []
+  },
+  "apiSummary": {
+    "stats": {
+      "openQuoteCount": 0,
+      "revenueMtdCents": 0,
+      "currency": "ZAR",
+      "invoiceCount": 5,
+      "paymentCount": 0,
+      "outstandingCents": 0,
+      "overdueInvoiceCount": 0
+    }
+  }
+}

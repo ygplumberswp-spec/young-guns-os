@@ -57,7 +57,7 @@ await sql.end();
 `,
   );
   try {
-    const raw = execSync(`railway run node ${scriptPath}`, {
+    const raw = execSync(`railway run -s young-guns-os node ${scriptPath}`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -153,7 +153,7 @@ try {
 `,
   );
   try {
-    const raw = execSync(`railway run node ${scriptPath}`, {
+    const raw = execSync(`railway run -s young-guns-os node ${scriptPath}`, {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],

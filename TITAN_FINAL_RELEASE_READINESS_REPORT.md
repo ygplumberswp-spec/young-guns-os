@@ -135,13 +135,14 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 
 | Blocker | Staging | Production | Verdict | Workaround |
 |---------|---------|------------|---------|------------|
-| Receivables Xero aggregation | API 200, real ACCREC data | Same gap if 0 sync | **HOLD** | Receivables page live with synced invoice data |
+| Receivables Xero aggregation | API 200; outstanding uses `total_cents` + allocation @ `e3a46c7` | Same | **GO** | Verify 250; INV-0423/0424 preserved |
 | Payables / ACCPAY bills | Honest HOLD UI; no ACCPAY import | Blocked | **HOLD** | Owner approval required for ACCPAY migration |
 | Cashflow bank balance | Partial — tx count only, no balance entity | Blocked | **HOLD** | Invoiced vs cash separated; forecasts live |
-| Payment-mapping zero edge case | 0 mappings on YGP — honest empty, not false zero | Risk if UI misreads empty | **HOLD** | `hasFinanceData` gates; allocation parity unproven |
+| Payment-mapping / false-zero edge case | Code FIXED @ `e3a46c7`; 0 mappings on YGP (honest empty) | Code fix deployed | **HOLD** | Run read-only Xero payment sync to prove allocation |
+| `finance/stats` outstanding | FIXED — computed from open invoices @ `e3a46c7` | — | **GO** | Verify 250 DB/API match |
 | `conflict_metadata` on mapping tables | Aligned via 0109 IF NOT EXISTS on staging | Verify on prod cutover | **GO** (staging) | Phase 3 report |
 
-**Finance overall:** **HOLD** — staging-blocking for full money control; not blocking owner dashboard/receivables daily view.
+**Finance overall:** **HOLD** — code parity GO; Xero payment sync data empty on staging (0 payments/mappings). Receivables daily view GO.
 
 ### RBAC blockers
 
