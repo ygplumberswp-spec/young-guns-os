@@ -2,7 +2,7 @@
 
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Starting SHA:** `275769e`  
-**Final SHA:** `275769e` (evidence-only commit pending)  
+**Final SHA:** `7f6763f` (RBAC fix + verify 251 rerun)  
 **Environment:** Staging only — **production NOT touched**  
 **Generated:** 2026-08-02  
 
@@ -13,14 +13,16 @@
 | **Owner** (reference) | **GO** | 16/16 API+UI | n/a | pass |
 | **Technician** (reference) | **GO** | 12/12 UI + API | 12/12 blocked | pass |
 | **Accountant** | **GO** | 15/15 UI + 10/10 API | 11/11 UI redirects | pass |
-| **Dispatcher** | **HOLD** | 16/17 UI + 9/10 API | 1 gap (receivables) | pass |
+| **Dispatcher** | **GO** | 17/17 UI + 10/10 API | 8/8 UI redirects | pass |
 | **Client** (portal) | **GO** | 5/5 portal UI + 1/1 portal API | 5/5 staff routes blocked | pass |
 
-**Overall RBAC verdict:** **HOLD** @ `275769e` — Accountant, Client, and reference roles verified on staging; **Dispatcher receivables exposure** remains (API + direct URL vs role-experience nav)
+**Overall RBAC verdict:** **GO** @ `7f6763f` — all five roles pass verify 251 on staging; Dispatcher receivables gap **FIXED**
 
 ## Summary
 
-Verify **251** seeds staging-only test accounts on Young Guns Plumbing (YGP), mints authenticated sessions via `railway run node` + Playwright route intercept (237/249 pattern), and exercises allowed/forbidden routes plus data-isolation probes. Accountant finance modules, CRM read, integrations hub, and UI redirect guards pass. Client portal `/my/*` routes load; staff routes redirect to login. Dispatcher operational routes pass; **executive receivables** (`/api/v1/finance-intelligence/receivables` and `/finance/receivables`) remain reachable despite exclusion from `DISPATCHER_ALLOWED_HREFS` / nav experiences — documented gap, no finance-route code change per scope.
+Verify **251** seeds staging-only test accounts on Young Guns Plumbing (YGP), mints authenticated sessions via `railway run node` + Playwright route intercept (237/249 pattern), and exercises allowed/forbidden routes plus data-isolation probes. Accountant finance modules, CRM read, integrations hub, and UI redirect guards pass. Client portal `/my/*` routes load; staff routes redirect to login. Dispatcher operational routes pass; **executive receivables** (`/api/v1/finance-intelligence/receivables` and `/finance/receivables`) are now **forbidden** for Dispatcher, aligned with `DISPATCHER_ALLOWED_HREFS` / nav experiences.
+
+**Dispatcher receivables fix (`7f6763f`):** API guard `createDenyDispatcherFromExecutiveFinance`, web direct-URL allowlist via `isExperienceAllowedHref`, and receivables page `canAccessFinanceReceivables` — RBAC only, no finance calculation changes.
 
 **Explicit scope confirmation:** Production, finance payment/Xero work, and orphan route cleanup **untouched**.
 
@@ -51,7 +53,7 @@ Passwords: staging-only test password (set by seed script; **redacted** from com
 
 | Probe | Owner | Technician | Accountant | Dispatcher | Client |
 |-------|-------|------------|------------|------------|--------|
-| `finance-intelligence/receivables` | pass 200 | pass 403 | pass 200 | **fail 200** | pass 401 |
+| `finance-intelligence/receivables` | pass 200 | pass 403 | pass 200 | pass 403 | pass 401 |
 | `finance/quotes` | pass 200 | pass 403 | pass 200 | pass 200 | pass 401 |
 | `fleet/vehicles` | pass 200 | pass 403 | pass 403 | pass 200 | pass 401 |
 | `integrations/hub` | pass 200 | pass 403 | pass 200 | pass 403 | pass 401 |
@@ -71,8 +73,15 @@ Passwords: staging-only test password (set by seed script; **redacted** from com
 | `/fleet/live-map` | redirect → `/finance/invoices` | loads | login block |
 | `/aura/agents` | redirect → `/finance/invoices` | redirect → `/` | login block |
 | `/integrations` | n/a | redirect → `/` | login block |
-| `/finance/receivables` | loads (allowed) | **loads (gap)** | login block |
+| `/finance/receivables` | loads (allowed) | redirect → `/` | login block |
 | `/my`, `/my/jobs`, … | n/a | n/a | loads |
+
+### Dispatcher receivables — before / after fix
+
+| Surface | Before (`275769e`) | After (`7f6763f`) |
+|---------|-------------------|-------------------|
+| API `/api/v1/finance-intelligence/receivables` | **200** (gap) | **403 FORBIDDEN** |
+| UI `/finance/receivables` direct URL | **loads** (gap) | **redirect → `/`** |
 
 ## Data isolation checks
 
@@ -87,8 +96,8 @@ Passwords: staging-only test password (set by seed script; **redacted** from com
 
 ## Gaps (honest)
 
-1. **Dispatcher receivables** — API guard accepts `finance:read`; nav/`DISPATCHER_ALLOWED_HREFS` excludes receivables. Direct URL and API both expose receivables data. **HOLD** until API guard aligns with role-experience (deferred — finance-intelligence route out of scope).
-2. **Phase 17 rows** — Accountant/Dispatcher/Client were **hold** (no users); now **GO/HOLD/GO** with live staging evidence.
+1. ~~**Dispatcher receivables**~~ — **FIXED** @ `7f6763f` (API 403 + UI redirect).
+2. **Phase 17 rows** — Accountant/Dispatcher/Client were **hold** (no users); now **GO** with live staging evidence.
 3. **Technician session** — still minted programmatically (no dedicated staging technician user).
 
 ## Deliverables
@@ -104,16 +113,16 @@ Passwords: staging-only test password (set by seed script; **redacted** from com
 
 ## Deploy (staging)
 
-**No deploy required** — verification only; no RBAC code fixes merged.
+RBAC guard fix deployed to staging for verify 251 rerun.
 
-| Service | Deployment | Status |
-|---------|------------|--------|
-| `young-guns-os` (API) | unchanged @ Phase 16/17 | — |
-| `comfortable-determination` (web) | unchanged @ Phase 18 | — |
+| Service | Deployment ID | SHA | Status |
+|---------|---------------|-----|--------|
+| `young-guns-os` (API) | `9c6e60d8-3bf7-4a53-9262-39cf6b0dd3ba` | `7f6763f` | Deployed |
+| `comfortable-determination` (web) | `11e738ef-5180-422b-a12e-48956eb36c2f` | `7f6763f` | Deployed |
 
 - **Production:** untouched  
 - **Finance / Xero / orphans:** untouched  
 
 ## Phase 17 cross-reference
 
-Phase 17 verify **249** marked Accountant/Dispatcher/Client as **hold** (zero YGP users). This phase closes that gap for Accountant and Client; Dispatcher **HOLD** updated with receivables finding. See `TITAN_PHASE_17_RBAC_SECURITY_REPORT.md` § Gaps.
+Phase 17 verify **249** marked Accountant/Dispatcher/Client as **hold** (zero YGP users). This phase closes that gap for all three roles. See `TITAN_PHASE_17_RBAC_SECURITY_REPORT.md` § Gaps.

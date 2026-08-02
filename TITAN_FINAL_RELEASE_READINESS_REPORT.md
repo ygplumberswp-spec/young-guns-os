@@ -14,7 +14,7 @@
 | Gate | Verdict | Rationale |
 |------|---------|-----------|
 | **Staging owner daily ops** | **GO** | Consolidation smoke 12/12 API probes + web healthz; verify 231 GO (236 screenshots, 0 blockers) |
-| **Staging release candidate** | **HOLD** | 46 HOLD + 55 NO-GO routes; finance Xero aggregation gaps; orphan enterprise routes; **Dispatcher receivables RBAC gap (verify 251)** |
+| **Staging release candidate** | **HOLD** | 46 HOLD + 55 NO-GO routes; finance Xero aggregation gaps; orphan enterprise routes; RBAC verify 251 **GO** (Dispatcher receivables fixed @ `7f6763f`) |
 | **Production launch** | **NO-GO** | Scaffold routes, incomplete integrations, unverified production cutover, finance/RBAC blockers |
 
 **Overall consolidation verdict:** **Staging GO** for owner daily ops · **Staging HOLD** as release candidate · **Production NO-GO**
@@ -48,8 +48,8 @@
 
 | Service | URL | Deployment ID | Deploy time (UTC) | Logical SHA |
 |---------|-----|---------------|-------------------|-------------|
-| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `33400ea4-95d9-40fe-866c-4105df40725d` | 2026-08-02T10:42:43Z | `08cb0f9` (Phase 18 correction UX) |
-| API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | `0400c5a7-3052-4e4c-8c7b-734903be0f7c` | 2026-08-02T08:59:55Z | Pre-correction (no API changes in 08cb0f9→HEAD) |
+| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `11e738ef-5180-422b-a12e-48956eb36c2f` | 2026-08-02T12:00Z | `7f6763f` (Dispatcher receivables RBAC) |
+| API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | `9c6e60d8-3bf7-4a53-9262-39cf6b0dd3ba` | 2026-08-02T12:00Z | `7f6763f` (Dispatcher receivables RBAC) |
 
 ### Deploy SHA vs git HEAD
 
@@ -153,12 +153,12 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 | Owner role | Verified @ 249 + 231 + **251** | — | **GO** | — |
 | Technician role | Verified @ 249 + **251** (403 + UI redirect) | — | **GO** | Programmatic session mint |
 | Accountant | Verified @ **251** (staging test user) | — | **GO** | `251-rbac-test-accountant@staging-verify.test` |
-| Dispatcher | Verified @ **251** — receivables API/UI gap | — | **HOLD** | Receivables reachable despite nav exclusion |
+| Dispatcher | Verified @ **251** — receivables forbidden (403 API, UI redirect) | — | **GO** | Fixed @ `7f6763f` |
 | Client / Customer portal | Verified @ **251** (portal user) | — | **GO** | `251-rbac-test-client@staging-verify.test` |
 | Phase 17 RBAC gate | Owner + Technician GO | — | **GO** @ `376e15d` | `249-rbac-security-gate-verify.json` |
-| Verify 251 missing roles | Accountant + Client GO; Dispatcher HOLD | — | **HOLD** | `251-rbac-missing-roles-verify.json` |
+| Verify 251 missing roles | All roles GO (Acct/Dispatch/Client + refs) | — | **GO** | `251-rbac-missing-roles-verify.json` @ `7f6763f` |
 
-**RBAC overall:** **GO** for Owner, Technician, Accountant, Client · **HOLD** for Dispatcher (receivables exposure) · See `TITAN_RBAC_MISSING_ROLES_REPORT.md`
+**RBAC overall:** **GO** — Owner, Technician, Accountant, Dispatcher, Client all pass verify 251 on staging · See `TITAN_RBAC_MISSING_ROLES_REPORT.md`
 
 ### Orphan routes
 
@@ -197,7 +197,7 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 | 15 | Analytics / reporting | **GO** | Verify 247 |
 | 16 | Settings / integrations | **GO** | Verify 248 |
 | 17 | RBAC / security gate | **GO** + role HOLD | Verify 249 |
-| 251 | Missing-role RBAC (Acct/Dispatch/Client) | **HOLD** | Verify 251 — `TITAN_RBAC_MISSING_ROLES_REPORT.md` |
+| 251 | Missing-role RBAC (Acct/Dispatch/Client) | **GO** | Verify 251 — `TITAN_RBAC_MISSING_ROLES_REPORT.md` @ `7f6763f` |
 | 18 | Visual audit + locked UX | **HOLD** (prod NO-GO) | Verify 231, 236 screenshots |
 | 18 correction | UX defect fixes | **GO** | Verify 231 re-run, deploy `33400ea4` |
 
