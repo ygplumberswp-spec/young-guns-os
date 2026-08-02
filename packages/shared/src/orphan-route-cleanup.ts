@@ -291,10 +291,10 @@ export const ORPHAN_ROUTE_ENTRIES: OrphanRouteEntry[] = [
   },
   {
     path: '/procurement/parts-requests',
-    disposition: 'HIDE_REDIRECT',
-    redirectTo: '/procurement',
-    priorStatus: 'NO-GO',
-    rationale: 'Parts requests scaffold — procurement list is GO',
+    disposition: 'RETAIN_COMPLETE',
+    redirectTo: '/procurement/parts-requests',
+    priorStatus: 'GO',
+    rationale: 'Parts requests LIVE @ Phase 9 — job material authorization queue',
   },
   {
     path: '/procurement/purchase-orders/*',

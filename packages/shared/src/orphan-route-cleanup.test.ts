@@ -89,7 +89,6 @@ describe('resolveOrphanRouteCleanup', () => {
       '/operations',
       '/personal-communications-intelligence',
       '/platform',
-      '/procurement/parts-requests',
       '/procurement/purchase-orders/po-1',
       '/procurement/purchase-orders/new',
       '/procurement/suppliers/sup-1',

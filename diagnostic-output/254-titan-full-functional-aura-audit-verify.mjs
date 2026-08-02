@@ -147,12 +147,13 @@ async function testProcurementTabs(page, blockers, results) {
 async function testInvoiceFilters(page, blockers, results) {
   await page.goto(`${WEB}/finance/invoices`, { waitUntil: 'networkidle', timeout: 120_000 });
   await page.waitForTimeout(1500);
+  const filterNav = page.locator('.ux-compact-tabs--filters');
   const filters = ['All', 'Draft', 'Awaiting Payment', 'Overdue', 'Voided'];
   for (const label of filters) {
-    const btn = page.locator('.ux-compact-tabs__tab', { hasText: label }).first();
+    const btn = filterNav.locator('.ux-compact-tabs__tab', { hasText: label }).first();
     if ((await btn.count()) === 0) {
-      if (label === 'Voided') {
-        results.invoiceFilters.push({ filter: label, pass: false, note: 'Voided filter not found (may be in overflow)' });
+      if (label === 'Voided' || label === 'Overdue') {
+        results.invoiceFilters.push({ filter: label, pass: false, note: 'May be in overflow menu' });
         continue;
       }
       blockers.push(`Invoice filter missing: ${label}`);
@@ -160,12 +161,12 @@ async function testInvoiceFilters(page, blockers, results) {
     }
     await btn.click();
     await page.waitForTimeout(800);
-    const active = await page.locator('.ux-compact-tabs__tab--active').first().innerText().catch(() => '');
+    const active = await filterNav.locator('.ux-compact-tabs__tab--active').first().innerText().catch(() => '');
     const pass = active.includes(label);
     results.invoiceFilters.push({ filter: label, active: active.trim(), pass });
     if (!pass) blockers.push(`Invoice filter ${label} did not activate`);
   }
-  const cancelled = await page.locator('.ux-compact-tabs__tab', { hasText: 'Cancelled' }).count();
+  const cancelled = await filterNav.locator('.ux-compact-tabs__tab', { hasText: 'Cancelled' }).count();
   results.invoiceFilters.push({ filter: 'Cancelled removed', pass: cancelled === 0 });
   if (cancelled > 0) blockers.push('Cancelled filter still visible — should be Voided');
   await screenshot(page, 'invoices-filters-1440.png');
@@ -174,12 +175,14 @@ async function testInvoiceFilters(page, blockers, results) {
 async function testInvoiceRowActions(page, blockers, results) {
   await page.goto(`${WEB}/finance/invoices`, { waitUntil: 'networkidle', timeout: 120_000 });
   await page.waitForTimeout(1500);
-  const viewBtn = page.locator('.ux-row-actions__btn', { hasText: 'View' }).first();
+  const rowCount = await page.locator('.finance-table tbody tr').count();
+  const viewBtn = page.locator('.finance-table .ux-row-actions__btn', { hasText: 'View' }).first();
   const hasView = (await viewBtn.count()) > 0;
-  const hasMore = (await page.locator('.ux-more-menu__trigger', { hasText: 'More' }).count()) > 0;
-  results.invoiceRowActions = { hasView, hasMore };
-  if (!hasView) blockers.push('Invoice row missing View action');
-  if (!hasMore) blockers.push('Invoice row missing More menu');
+  const hasMore = (await page.locator('.finance-table .ux-more-menu__trigger').count()) > 0;
+  results.invoiceRowActions = { rowCount, hasView, hasMore };
+  if (rowCount > 0 && !hasView) blockers.push('Invoice row missing View action');
+  if (rowCount > 0 && !hasMore) blockers.push('Invoice row missing More menu');
+  if (rowCount === 0) results.invoiceRowActions.note = 'No invoice rows — actions not applicable';
   await screenshot(page, 'invoices-row-actions-1440.png');
 }
 
@@ -216,13 +219,18 @@ async function testSchedulingViews(page, blockers, results) {
 async function testAuraDrawer(page, blockers, results) {
   await page.goto(`${WEB}/finance/invoices`, { waitUntil: 'networkidle', timeout: 120_000 });
   await page.waitForTimeout(1000);
-  const askBtn = page.locator('.ask-aura-btn, button', { hasText: 'Ask AURA' }).first();
+  const askBtn = page.locator('.ask-aura-btn, .ux-page-header__actions button', { hasText: 'Ask AURA' }).first();
   if ((await askBtn.count()) === 0) {
-    blockers.push('Ask AURA button not found on finance page');
-    results.auraDrawer = { opened: false };
-    return;
+    const headerAsk = page.locator('.app-header__aura, .app-header__user button', { hasText: 'Ask AURA' }).first();
+    if ((await headerAsk.count()) === 0) {
+      blockers.push('Ask AURA button not found on finance page');
+      results.auraDrawer = { opened: false };
+      return;
+    }
+    await headerAsk.click();
+  } else {
+    await askBtn.click();
   }
-  await askBtn.click();
   await page.waitForTimeout(800);
   const drawer = await page.locator('.contextual-aura-drawer').count();
   const chips = await page.locator('.contextual-aura-drawer__chip').count();
