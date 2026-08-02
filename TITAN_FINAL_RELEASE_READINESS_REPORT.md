@@ -3,7 +3,7 @@
 **Phase:** Final Consolidation (post Phase 18 + correction pass)  
 **Generated (UTC):** 2026-08-02T11:06:00.000Z  
 **Branch:** `cursor/titan-owner-operating-model-final`  
-**HEAD SHA:** `6e5c6796bdb10238d8b6ca89392baf59ff26fdfb` (Final Consolidation commit)  
+**HEAD SHA:** `ffcf90b383eb4333adf395f1da0c9db15bb3f742` (Final Consolidation commit)  
 **Base SHA (consolidation start):** `338d086` (Phase 18 correction pass complete)  
 **Environment assessed:** Staging only — **production NOT deployed or touched**
 
@@ -26,9 +26,9 @@
 | Item | Value |
 |------|-------|
 | Authoritative branch | `cursor/titan-owner-operating-model-final` |
-| HEAD | `338d086` — *Phase 18 correction: align verify 231 JSON commit SHA* |
-| Commits ahead of `main` | 212 |
-| Commits ahead of base `338d086` | 0 (consolidation starts at HEAD) |
+| HEAD | `ffcf90b` — *Final consolidation: release readiness + staging smoke* |
+| Commits ahead of `main` | 214 |
+| Commits ahead of base `338d086` | 2 (`11b03a1` consolidation, `ffcf90b` SHA fix) |
 | Merge-base with `main` | `8d35bfd` |
 | Merge-base with `cursor/titan-final-product-consolidation` | `45b41ca` |
 | Remote tracking | `origin/cursor/titan-owner-operating-model-final` exists |
@@ -40,7 +40,7 @@
 | `cursor/titan-final-product-consolidation` | Upstream consolidation base (Fleet API, MapLibre fix) |
 | `cursor/xero-payments-hotfix` | Parallel hotfix branch |
 | `cursor/ux-hardening-phase1`, `cursor/visual-alignment-polish` | Prior UX work, merged into owner model |
-| `main` | 212 commits behind this branch |
+| `main` | 214 commits behind this branch |
 
 ---
 
@@ -49,14 +49,14 @@
 | Service | URL | Deployment ID | Deploy time (UTC) | Logical SHA |
 |---------|-----|---------------|-------------------|-------------|
 | Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `33400ea4-95d9-40fe-866c-4105df40725d` | 2026-08-02T10:42:43Z | `08cb0f9` (Phase 18 correction UX) |
-| API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | `0400c5a7-3052-4e4c-8c7b-734903be0f7c` | 2026-08-02T08:59:55Z | Pre-correction (no API changes in 08cb0f9→338d086) |
+| API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | `0400c5a7-3052-4e4c-8c7b-734903be0f7c` | 2026-08-02T08:59:55Z | Pre-correction (no API changes in 08cb0f9→HEAD) |
 
 ### Deploy SHA vs git HEAD
 
 | Check | Result |
 |-------|--------|
-| Code diff `08cb0f9..338d086` | **1 file** — verify 231 JSON metadata only (no app code) |
-| API changes since API deploy | **None** — Phase 18/correction were web-only |
+| Code diff `08cb0f9..ffcf90b` | Evidence/docs only (verify 231 JSON, reports, smoke JSON) — no app code |
+| API changes since API deploy | **None** — Phase 18/correction/consolidation were web-only |
 | Redeploy required? | **No** — services logically aligned; HEAD adds evidence metadata only |
 | Web healthz | **200** `ok` |
 | API `/api/v1/health/ready` | **200** — database connected |
@@ -105,7 +105,7 @@
 | Verdict | **GO** |
 | Blockers | 0 |
 | Screenshots indexed | 236 |
-| Commit SHA in JSON | `08cb0f9` (functional deploy SHA; HEAD `338d086` aligns metadata) |
+| Commit SHA in JSON | `08cb0f9` (functional web deploy SHA; consolidation HEAD `ffcf90b` is evidence-only) |
 
 Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet, finance (receivables/payables/cashflow), settings, integrations, technician mobile, aura.
 
@@ -253,5 +253,5 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 
 ---
 
-**Final consolidation SHA:** `6e5c6796bdb10238d8b6ca89392baf59ff26fdfb`  
+**Final consolidation SHA:** `ffcf90b383eb4333adf395f1da0c9db15bb3f742`  
 **Production deployed:** **NO** — explicitly not executed.
