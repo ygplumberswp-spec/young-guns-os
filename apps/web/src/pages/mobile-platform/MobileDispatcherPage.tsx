@@ -8,8 +8,19 @@ import { fetchMobileDispatcherWorkspace } from '../../lib/enterprise-mobile-api-
 import { useAuth } from '../../lib/auth-context';
 import { canAccessMobilePlatform, formatDeviceStatus } from '../../features/mobile-platform/utils';
 import { LiveDispatchNav } from '../../features/dispatch/LiveDispatchNav';
-import { LiveDispatchPositionsPanel } from '../../features/dispatch/LiveDispatchPositionsPanel';
+import { LiveDispatchMapPanel } from '../../features/dispatch/LiveDispatchMapPanel';
+import { LiveDispatchWorkQueues } from '../../features/dispatch/LiveDispatchWorkQueues';
 import { PageHeader } from '../../components/ux';
+
+function canAccessLiveDispatch(permissions: string[]): boolean {
+  return (
+    canAccessMobilePlatform(permissions) ||
+    permissions.includes('dispatch:read') ||
+    permissions.includes('dispatch_intelligence:read') ||
+    permissions.includes('scheduling:read') ||
+    permissions.includes('*')
+  );
+}
 
 export function MobileDispatcherPage() {
   const { accessToken, user } = useAuth();
@@ -18,12 +29,7 @@ export function MobileDispatcherPage() {
   const [error, setError] = useState<string | null>(null);
 
   const canView = useMemo(
-    () =>
-      user
-        ? canAccessMobilePlatform(user.permissions) ||
-          user.permissions.includes('dispatch:read') ||
-          user.permissions.includes('*')
-        : false,
+    () => (user ? canAccessLiveDispatch(user.permissions) : false),
     [user],
   );
 
@@ -54,54 +60,61 @@ export function MobileDispatcherPage() {
 
   if (!canView) {
     return (
-      <div className="automation-page">
+      <div className="automation-page live-dispatch-page">
         <PageHeader
-          title="Dispatcher Workspace"
-          description="You do not have permission to view the dispatcher workspace."
+          title={NAV_LABELS.liveDispatch}
+          description="You do not have permission to view live dispatch."
         />
       </div>
     );
   }
 
   return (
-    <div className="automation-page">
+    <div className="automation-page live-dispatch-page">
       <PageHeader
         title={NAV_LABELS.liveDispatch}
-        description="Live technician status, dispatch overview, fleet tracking, and AI recommendations from real data."
+        description="Live map, technician status, work queues, and Cartrack GPS — staff only."
         breadcrumbs={[{ label: NAV_LABELS.liveDispatch }]}
         actions={
-          <Link href="/mobile-platform">
-            <Button variant="secondary">Mobile Platform Admin</Button>
-          </Link>
+          <div className="page-header-actions">
+            <Link href="/scheduling">
+              <Button variant="secondary">Scheduling</Button>
+            </Link>
+            <Link href="/mobile-platform">
+              <Button variant="ghost">Mobile Platform Admin</Button>
+            </Link>
+          </div>
         }
       />
       <LiveDispatchNav />
 
       {error ? <p className="form-error">{error}</p> : null}
 
+      <LiveDispatchMapPanel accessToken={accessToken} enabled={canView} />
+
+      <LiveDispatchWorkQueues accessToken={accessToken} enabled={canView} />
+
       {isLoading ? (
-        <Panel title="Loading">Loading dispatcher workspace…</Panel>
+        <Panel title="Technician workspace">Loading dispatcher workspace…</Panel>
       ) : !workspace ? (
-        <EmptyState title="No data" description="Dispatcher workspace is unavailable." />
+        <EmptyState title="No workspace data" description="Dispatcher workspace is unavailable." />
       ) : (
         <>
-          <Panel title="Dispatch Summary">
+          <Panel title="Dispatch summary">
             <p>{workspace.summary}</p>
           </Panel>
 
           <div className="stat-grid">
-            <StatCard label="Pending Dispatch" value={String(workspace.pendingDispatchCount)} />
-            <StatCard label="Fleet Vehicles" value={String(workspace.fleetVehicleCount)} />
-            <StatCard label="Incident Alerts" value={String(workspace.incidentAlertCount)} />
+            <StatCard label="Pending dispatch" value={String(workspace.pendingDispatchCount)} />
+            <StatCard label="Fleet vehicles" value={String(workspace.fleetVehicleCount)} />
+            <StatCard label="Incident alerts" value={String(workspace.incidentAlertCount)} />
             <StatCard
-              label="Tracking Provider"
+              label="Tracking provider"
               value={workspace.activeTrackingProvider?.replace(/_/g, ' ') ?? 'None active'}
             />
           </div>
 
-          <LiveDispatchPositionsPanel accessToken={accessToken} />
-
-          <Panel title="Technician Status">
+          <Panel title="Technician status">
             {workspace.technicianStatuses.length === 0 ? (
               <EmptyState
                 title="No technicians"
@@ -113,6 +126,9 @@ export function MobileDispatcherPage() {
                   <div key={tech.userId} className="data-list-item">
                     <strong>{tech.userName}</strong>
                     <span className="status-pill">{tech.assignedJobCount} job(s)</span>
+                    {tech.activeJobTitle ? (
+                      <p className="page-muted">Current: {tech.activeJobTitle}</p>
+                    ) : null}
                     <p>
                       Device: {tech.deviceStatus ? formatDeviceStatus(tech.deviceStatus) : 'none'} ·
                       Last sync: {tech.lastSyncAt ?? 'never'}
@@ -124,7 +140,7 @@ export function MobileDispatcherPage() {
           </Panel>
 
           {workspace.recommendations.length > 0 ? (
-            <Panel title="AI Recommendations">
+            <Panel title="AI recommendations">
               <ul className="portal-list">
                 {workspace.recommendations.map((rec, index) => (
                   <li key={index}>{rec}</li>

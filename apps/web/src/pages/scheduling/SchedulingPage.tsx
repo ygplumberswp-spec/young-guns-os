@@ -98,7 +98,7 @@ export function SchedulingPage() {
         description="Dispatch calendar — week view opens by default."
         actions={
           <div className="scheduling-page__actions">
-            <Link href="/workforce/day-timeline">
+            <Link href="/mobile-platform/dispatcher">
               <Button variant="secondary">Live dispatch</Button>
             </Link>
             <Link href={`/aura?scheduling=1`}>
