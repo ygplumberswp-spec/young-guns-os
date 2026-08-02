@@ -34,9 +34,6 @@ export function ExecutiveDashboardHeader({
           </Button>
         </Link>
         <QuickActionsDropdown />
-        <Link href="/aura">
-          <Button size="sm">Ask AURA</Button>
-        </Link>
       </div>
     </header>
   );

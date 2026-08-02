@@ -22,8 +22,10 @@ import {
   formatProviderChannel,
   formatProviderStatus,
 } from '../../features/communications-hub/utils';
+import { CommunicationsPlatformPanel } from '../../features/communications-hub/CommunicationsPlatformPanel';
 
 type CommsHubTab =
+  | 'platform'
   | 'overview'
   | 'providers'
   | 'voice'
@@ -35,7 +37,7 @@ type CommsHubTab =
 
 export function CommunicationsHubPage() {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<CommsHubTab>('overview');
+  const [activeTab, setActiveTab] = useState<CommsHubTab>('platform');
   const [dashboard, setDashboard] = useState<EnterpriseUnifiedCommunicationsDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -119,6 +121,7 @@ export function CommunicationsHubPage() {
   }
 
   const tabs: Array<{ id: CommsHubTab; label: string }> = [
+    { id: 'platform', label: 'Inbox & Channels' },
     { id: 'overview', label: 'Overview' },
     { id: 'providers', label: 'Providers' },
     { id: 'voice', label: 'AI Voice' },
@@ -133,11 +136,14 @@ export function CommunicationsHubPage() {
     <div className="automation-page">
       <PageHeader
         title="Communications Hub"
-        description="Unified voice, calls, and multi-channel communications — real data only, vendor-agnostic providers."
+        description="Business Gmail, Business WhatsApp, and optional Personal Assistant — real data only; send requires approval."
         actions={
           <div className="page-header-actions">
             <Link href="/communications-intelligence">
               <Button variant="secondary">Comms Intelligence</Button>
+            </Link>
+            <Link href="/integrations/whatsapp">
+              <Button variant="secondary">WhatsApp</Button>
             </Link>
             <Link href="/portal/communications">
               <Button variant="secondary">Customer Center</Button>
@@ -176,11 +182,13 @@ export function CommunicationsHubPage() {
         ))}
       </div>
 
-      {isLoading ? (
+      {activeTab === 'platform' ? <CommunicationsPlatformPanel /> : null}
+
+      {activeTab !== 'platform' && isLoading ? (
         <Panel title="Loading">Loading communications hub…</Panel>
-      ) : !dashboard ? (
+      ) : activeTab !== 'platform' && !dashboard ? (
         <EmptyState title="No data" description="Communications hub is unavailable." />
-      ) : (
+      ) : activeTab !== 'platform' && dashboard ? (
         <>
           <Panel title="Platform Summary">
             <p>{dashboard.summary}</p>
@@ -446,7 +454,7 @@ export function CommunicationsHubPage() {
             <Panel title="AURA Communications Agent">
               <p>
                 Ask about communication history, draft replies, call summaries, and customer
-                updates. Recommendations only.
+                updates. Recommendations only — business channels; personal data not exposed.
               </p>
               {assistantError ? <p className="form-error">{assistantError}</p> : null}
               <AuraMessageList messages={agentMessages} isSending={isSending} />
@@ -466,7 +474,7 @@ export function CommunicationsHubPage() {
             </Panel>
           ) : null}
         </>
-      )}
+      ) : null}
     </div>
   );
 }

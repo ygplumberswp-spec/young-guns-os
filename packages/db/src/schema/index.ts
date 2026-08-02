@@ -115,6 +115,7 @@ export * from './enterprise-saas-platform';
 export * from './enterprise-production-readiness';
 export * from './enterprise-mobile-platform';
 export * from './enterprise-unified-communications';
+export * from './communications-platform';
 export * from './enterprise-customer-experience';
 export * from './enterprise-asset-lifecycle';
 export * from './enterprise-workforce-intelligence';

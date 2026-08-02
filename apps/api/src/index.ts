@@ -115,6 +115,8 @@ import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-pl
 import { createEnterpriseMobilePlatformRouter } from './routes/enterprise-mobile-platform.js';
 import { EnterpriseUnifiedCommunicationsService } from './services/enterprise-unified-communications.service.js';
 import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
+import { CommunicationsPlatformService } from './services/communications-platform.service.js';
+import { createCommunicationsPlatformRouter } from './routes/communications-platform.js';
 import { EnterpriseCustomerExperienceService } from './services/enterprise-customer-experience.service.js';
 import { createEnterpriseCustomerExperienceRouter } from './routes/enterprise-customer-experience.js';
 import { EnterpriseAssetLifecycleService } from './services/enterprise-asset-lifecycle.service.js';
@@ -796,6 +798,10 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
   whatsappService,
   integrationsService,
   integrationHubService,
+});
+const communicationsPlatformService = CommunicationsPlatformService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
 });
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
   db,
@@ -1609,6 +1615,15 @@ app.use(
   '/api/v1/communications',
   createCommunicationsRouter({
     communicationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/communications-platform',
+  createCommunicationsPlatformRouter({
+    communicationsPlatformService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

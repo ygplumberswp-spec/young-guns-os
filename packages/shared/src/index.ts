@@ -123,6 +123,7 @@ export * from './unified-ai-orchestration.js';
 export * from './enterprise-production-readiness.js';
 export * from './enterprise-mobile-platform.js';
 export * from './enterprise-unified-communications.js';
+export * from './communications-platform.js';
 export * from './enterprise-customer-experience.js';
 export * from './enterprise-asset-lifecycle.js';
 export * from './enterprise-workforce-intelligence.js';

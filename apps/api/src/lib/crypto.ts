@@ -274,3 +274,38 @@ export function decryptGoogleMapsCredentials(
     browserApiKey: parsed.browserApiKey?.trim() || undefined,
   };
 }
+
+/** Gmail OAuth tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type GmailOAuthStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  emailAddress?: string;
+  scope?: string;
+};
+
+export function encryptGmailCredentials(
+  credentials: GmailOAuthStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGmailCredentials(
+  payload: string,
+  encryptionKey: string,
+): GmailOAuthStoredCredentials {
+  const parsed = decryptJsonCredentials<GmailOAuthStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim() && !parsed.refreshToken?.trim()) {
+    throw new Error('Invalid stored Gmail credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken?.trim() ?? '',
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    emailAddress: parsed.emailAddress?.trim() || undefined,
+    scope: parsed.scope,
+  };
+}
