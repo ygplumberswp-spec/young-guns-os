@@ -1,6 +1,7 @@
 import type {
   CreateDocumentCategoryRequest,
   CreateDocumentRequest,
+  ComplianceWorkspaceResponse,
   DocumentCategorySummary,
   DocumentDetail,
   DocumentSummary,
@@ -8,6 +9,12 @@ import type {
   UpdateDocumentRequest,
 } from '@titan/shared';
 import { request } from './api-client';
+
+export async function fetchDocumentsComplianceWorkspace(
+  accessToken: string,
+): Promise<ComplianceWorkspaceResponse> {
+  return request<ComplianceWorkspaceResponse>('/documents/compliance/workspace', { accessToken });
+}
 
 export async function fetchDocumentsStats(accessToken: string): Promise<DocumentsStats> {
   return request<DocumentsStats>('/documents/stats', { accessToken });

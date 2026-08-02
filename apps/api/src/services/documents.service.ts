@@ -9,7 +9,7 @@ import type {
   UpdateDocumentRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { customers, documentCategories, documents, jobs, users } from '@titan/db';
+import { customers, documentCategories, documents, jobs, securityAuditLogs, users } from '@titan/db';
 
 export class DocumentsError extends Error {
   constructor(
@@ -179,6 +179,21 @@ export class DocumentsService {
       throw new DocumentsError('CREATE_FAILED', 'Unable to load document record');
     }
 
+    await this.db.insert(securityAuditLogs).values({
+      companyId: scope.companyId,
+      category: 'quality',
+      action: 'document_uploaded',
+      entityType: 'document',
+      entityId: created.id,
+      userId: scope.userId,
+      metadata: {
+        title: created.title,
+        fileName: created.fileName,
+        jobId: created.jobId,
+        customerId: created.customerId,
+      },
+    });
+
     return toDocumentSummary(row);
   }
 
@@ -186,6 +201,7 @@ export class DocumentsService {
     companyId: string,
     documentId: string,
     input: UpdateDocumentRequest,
+    userId?: string,
   ): Promise<DocumentDetail> {
     const existing = await this.db.query.documents.findFirst({
       where: and(eq(documents.id, documentId), eq(documents.companyId, companyId)),
@@ -248,6 +264,21 @@ export class DocumentsService {
     if (!row) {
       throw new DocumentsError('UPDATE_FAILED', 'Unable to load document record');
     }
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId,
+      category: 'quality',
+      action: 'document_updated',
+      entityType: 'document',
+      entityId: documentId,
+      userId: userId ?? null,
+      metadata: {
+        title: row.title,
+        fileName: row.fileName,
+        jobId: row.jobId,
+        customerId: row.customerId,
+      },
+    });
 
     return toDocumentSummary(row);
   }

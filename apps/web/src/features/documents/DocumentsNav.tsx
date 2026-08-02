@@ -2,13 +2,19 @@ import { Link, useLocation } from 'wouter';
 
 const tabs = [
   {
+    href: '/documents/compliance',
+    label: 'Daily compliance',
+    match: (location: string) => location.startsWith('/documents/compliance'),
+  },
+  {
     href: '/documents',
     label: 'Documents',
     match: (location: string) =>
       location === '/documents' ||
       (location.startsWith('/documents/') &&
         !location.startsWith('/documents/categories') &&
-        !location.startsWith('/documents/job-packs')),
+        !location.startsWith('/documents/job-packs') &&
+        !location.startsWith('/documents/compliance')),
   },
   {
     href: '/documents/job-packs',

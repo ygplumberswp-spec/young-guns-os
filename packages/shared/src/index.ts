@@ -57,6 +57,7 @@ export * from './dashboard-executive.js';
 export * from './supplier-price-intelligence.js';
 export * from './communications.js';
 export * from './documents.js';
+export * from './documents-compliance.js';
 export * from './automation.js';
 export * from './n8n-orchestration.js';
 export * from './enterprise-modules.js';

@@ -78,6 +78,7 @@ import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
 import { DocumentsService } from './services/documents.service.js';
+import { DocumentsComplianceService } from './services/documents-compliance.service.js';
 import { createDocumentsRouter } from './routes/documents.js';
 import { AutomationService } from './services/automation.service.js';
 import { N8nOrchestrationService } from './services/n8n-orchestration.service.js';
@@ -495,6 +496,7 @@ integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
 });
 const communicationsService = new CommunicationsService(db);
 const documentsService = new DocumentsService(db);
+const documentsComplianceService = new DocumentsComplianceService(db);
 const automationService = new AutomationService(db);
 const agentOrchestrationService = new AgentOrchestrationService(db);
 const salesService = new SalesService(db);
@@ -1589,6 +1591,7 @@ app.use(
   '/api/v1/documents',
   createDocumentsRouter({
     documentsService,
+    documentsComplianceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

@@ -261,6 +261,10 @@ export function App() {
                           path="/enterprise-modules"
                           component={OwnerPages.EnterpriseModulesPage}
                         />
+                        <Route
+                          path="/documents/compliance"
+                          component={OwnerPages.ComplianceWorkspacePage}
+                        />
                         <Route path="/documents/new" component={OwnerPages.DocumentCreatePage} />
                         <Route
                           path="/documents/categories/new"

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { DocumentsService } from '../services/documents.service.js';
 import { DocumentsError } from '../services/documents.service.js';
+import type { DocumentsComplianceService } from '../services/documents-compliance.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -26,6 +27,7 @@ const updateDocumentSchema = createDocumentSchema.partial();
 
 type DocumentsRouterDeps = {
   documentsService: DocumentsService;
+  documentsComplianceService: DocumentsComplianceService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -41,6 +43,7 @@ function getRouteParam(value: string | string[]): string {
 
 export function createDocumentsRouter({
   documentsService,
+  documentsComplianceService,
   teamService,
   jwtSecret,
   authService,
@@ -62,6 +65,21 @@ export function createDocumentsRouter({
       const { companyId } = getAuth(req);
       const stats = await documentsService.getStats(companyId);
       res.json({ data: stats });
+    },
+  );
+
+  router.get(
+    '/compliance/workspace',
+    requireAnyPermission('documents:read', 'documents:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const workspace = await documentsComplianceService.buildComplianceWorkspace({
+        companyId: auth.companyId,
+        userId: auth.userId,
+        roleName: auth.roleName,
+        permissions: auth.permissions,
+      });
+      res.json({ data: workspace });
     },
   );
 
@@ -153,7 +171,7 @@ export function createDocumentsRouter({
   );
 
   router.patch('/documents/:id', requireAnyPermission('documents:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const { companyId, userId } = getAuth(req);
     const parsed = updateDocumentSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -172,6 +190,7 @@ export function createDocumentsRouter({
         companyId,
         getRouteParam(req.params.id),
         parsed.data,
+        userId,
       );
       res.json({ data: { document } });
     } catch (error) {

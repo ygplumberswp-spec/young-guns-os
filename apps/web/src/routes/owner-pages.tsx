@@ -249,6 +249,10 @@ export const DocumentListPage = lazyNamed(
   () => import('../pages/documents/DocumentListPage'),
   'DocumentListPage',
 );
+export const ComplianceWorkspacePage = lazyNamed(
+  () => import('../pages/documents/ComplianceWorkspacePage'),
+  'ComplianceWorkspacePage',
+);
 export const DocumentCreatePage = lazyNamed(
   () => import('../pages/documents/DocumentCreatePage'),
   'DocumentCreatePage',
