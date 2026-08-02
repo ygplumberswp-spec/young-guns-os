@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-08-01T20:36:44.146Z",
+  "generatedAt": "2026-08-02T06:37:17.944Z",
   "label": "229-fleet-api-deployment-reconciliation",
-  "branch": "cursor/titan-final-product-consolidation",
-  "consolidationCommitSha": "8fe0109455c1a88d5098c0568969af361e1ba077",
-  "consolidationCommitShort": "8fe0109",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "consolidationCommitSha": "5d5d9dc093e96f1477fe27736607de21f86bb0f2",
+  "consolidationCommitShort": "5d5d9dc",
   "merge": {
     "baseSha": "4430edd",
     "cartrackSourceSha": "8b89ee4",
@@ -34,16 +34,16 @@
     "symptom": "Web had Fleet Live Map UI; API missing GET /api/v1/fleet/live-map → 404 Route not found"
   },
   "deploy": {
-    "method": "railway up -y -d from consolidation worktree @ merge commit",
-    "apiDeploymentId": "0bd0083c-fe03-4520-85aa-3b44c11809d8",
-    "webDeploymentId": "97dbe327-5b91-4564-b2af-812919a906bc",
+    "method": "railway up -y -d Phase 8 web @ 5d5d9dc (API unchanged from Phase 7)",
+    "apiDeploymentId": "67811afa-f730-4d06-ab02-a365735f4a81",
+    "webDeploymentId": "cadc206a-784e-49ca-a0c2-41374c896d1c",
     "productionTouched": false,
     "migrationsApplied": false,
     "xeroImportStarted": false,
     "xeroWrites": false,
     "cartrackReconnect": false,
     "manualSync": false,
-    "webBundleAfter": "assets/index-WUOJ5w7S.js"
+    "webBundleAfter": "assets/index-D5t1VSWe.js"
   },
   "health": {
     "ready": {
@@ -56,13 +56,13 @@
         "schedulersEnabled": true,
         "workersEnabled": false,
         "webhooksEnabled": false,
-        "timestamp": "2026-08-01T20:36:44.948Z"
+        "timestamp": "2026-08-02T06:37:19.028Z"
       }
     }
   },
   "cartrack": {
     "status": "connected",
-    "lastSyncAt": "2026-08-01T20:32:49.694Z",
+    "lastSyncAt": "2026-08-02T06:36:28.034Z",
     "mappedCount": 2,
     "positionCount": 12,
     "hasCredentials": true
@@ -71,7 +71,7 @@
     "trackingApi": {
       "positionCount": 2,
       "mappedVehicleCount": 2,
-      "lastSyncAt": "2026-08-01T20:32:49.694Z"
+      "lastSyncAt": "2026-08-02T06:36:28.034Z"
     }
   },
   "liveMap": {
@@ -82,7 +82,7 @@
       "CF77263",
       "CF172047"
     ],
-    "generatedAt": "2026-08-01T20:36:55.966Z",
+    "generatedAt": "2026-08-02T06:37:32.300Z",
     "lastFleetSyncAt": null,
     "providerError": null
   },
@@ -100,7 +100,7 @@
     {
       "name": "web_bundle_changed",
       "pass": true,
-      "detail": "assets/index-WUOJ5w7S.js"
+      "detail": "assets/index-D5t1VSWe.js"
     },
     {
       "name": "authenticated_live_map_200",
@@ -139,11 +139,6 @@
     }
   ],
   "screenshots": [],
-  "mapTiles": {
-    "priority": "secondary",
-    "verdict": "HOLD",
-    "note": "API route reconciliation GO; MapLibre tile rendering not re-verified this phase (see 228/56eb55e on cartrack branch if needed)"
-  },
   "verdict": "GO",
   "blockers": [],
   "dbSnapshot": {

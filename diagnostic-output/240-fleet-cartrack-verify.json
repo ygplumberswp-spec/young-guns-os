@@ -1,0 +1,159 @@
+{
+  "generatedAt": "2026-08-02T06:37:38.481Z",
+  "label": "240-fleet-cartrack-verify",
+  "phase": 8,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "5d5d9dc",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "status": 200,
+    "vehicleCount": 2,
+    "registrations": [
+      "CF77263",
+      "CF172047"
+    ],
+    "positionedCount": 2,
+    "tracking": {
+      "cartrackStatus": "connected",
+      "cartrackConnected": true,
+      "mappedVehicleCount": 2,
+      "unmappedVehicleCount": 0,
+      "positionCount": 2,
+      "lastSyncAt": "2026-08-02T06:36:28.034Z",
+      "latestPositions": [
+        {
+          "vehicleId": "1aab5139-5b16-4a89-9152-cee153d17034",
+          "vehicleName": "CF77263",
+          "licensePlate": "CF77263",
+          "externalVehicleId": "609838290",
+          "latitude": -33.829315,
+          "longitude": 18.717449,
+          "speedKmh": 0,
+          "recordedAt": "2026-07-31T19:33:20.000Z"
+        },
+        {
+          "vehicleId": "1a19a54b-6f52-44a1-bc15-b8d26ae7eb8c",
+          "vehicleName": "CF172047",
+          "licensePlate": "CF172047",
+          "externalVehicleId": "609838677",
+          "latitude": -33.82933,
+          "longitude": 18.717421,
+          "speedKmh": 0,
+          "recordedAt": "2026-07-31T18:32:14.000Z"
+        }
+      ]
+    }
+  },
+  "tabs": [
+    {
+      "href": "/fleet/live-map",
+      "label": "Live Map",
+      "navVisible": true,
+      "holdVisible": null,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/vehicles",
+      "label": "Vehicles",
+      "navVisible": true,
+      "holdVisible": null,
+      "hasNotImplementedCopy": true
+    },
+    {
+      "href": "/fleet/trips",
+      "label": "Trips",
+      "navVisible": true,
+      "holdVisible": true,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/alerts",
+      "label": "Alerts",
+      "navVisible": true,
+      "holdVisible": true,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/drivers",
+      "label": "Drivers",
+      "navVisible": true,
+      "holdVisible": null,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/geofences",
+      "label": "Places",
+      "navVisible": true,
+      "holdVisible": true,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/maintenance",
+      "label": "Maintenance",
+      "navVisible": true,
+      "holdVisible": true,
+      "hasNotImplementedCopy": false
+    },
+    {
+      "href": "/fleet/reports",
+      "label": "Reports",
+      "navVisible": true,
+      "holdVisible": true,
+      "hasNotImplementedCopy": false
+    }
+  ],
+  "map": {
+    "mapReadyAttr": true,
+    "maplibreCanvasCount": 1,
+    "fallbackListVisible": false,
+    "markerPinCount": 2,
+    "containerHeightPx": 414,
+    "containerWidthPx": 654,
+    "maplibreMounted": true
+  },
+  "markers": {
+    "CF172047": {
+      "pinVisible": true,
+      "panelVisible": true,
+      "panelShowsRegistration": false
+    },
+    "CF77263": {
+      "pinVisible": true,
+      "panelVisible": true,
+      "panelShowsRegistration": false
+    }
+  },
+  "screenshots": [
+    {
+      "viewport": "1440",
+      "path": "diagnostic-output/phase8-fleet-cartrack-staging/fleet-live-map-1440.png",
+      "markerPinCount": 2,
+      "maplibreCanvasCount": 1,
+      "fallbackVisible": false
+    },
+    {
+      "viewport": "768",
+      "path": "diagnostic-output/phase8-fleet-cartrack-staging/fleet-live-map-768.png",
+      "markerPinCount": 2,
+      "maplibreCanvasCount": 1,
+      "fallbackVisible": false
+    },
+    {
+      "viewport": "375",
+      "path": "diagnostic-output/phase8-fleet-cartrack-staging/fleet-live-map-375.png",
+      "markerPinCount": 2,
+      "maplibreCanvasCount": 1,
+      "fallbackVisible": false
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": []
+}
