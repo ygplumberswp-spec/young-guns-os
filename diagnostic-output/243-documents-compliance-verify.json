@@ -1,0 +1,83 @@
+{
+  "generatedAt": "2026-08-02T07:21:08.982Z",
+  "label": "243-documents-compliance-verify",
+  "phase": 11,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "cf8a742",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "complianceWorkspace": {
+      "status": 200,
+      "hasQueueSummaries": true,
+      "queueKeys": [
+        "missing_coc",
+        "missing_signature",
+        "missing_photos",
+        "missing_slips",
+        "missing_quote_invoice_link",
+        "coc_awaiting_completion",
+        "coc_issued",
+        "correction_required",
+        "expiring_certificates",
+        "vehicle_documents",
+        "equipment_documents"
+      ],
+      "hasItems": true,
+      "itemCount": 2,
+      "hasDisclaimer": true,
+      "documentAuditRecentCount": 0
+    }
+  },
+  "rbac": {
+    "technicianSessionError": "Command failed: railway run node /Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-mint-session-243-tech.mjs\nfile:///Users/keanuventer/Downloads/Titan-Aura-Consolidation/.tmp-mint-session-243"
+  },
+  "docRoutes": [
+    {
+      "href": "/documents/compliance",
+      "label": "Daily compliance workspace",
+      "navVisible": true,
+      "queueFilterVisible": true,
+      "disclaimerVisible": true,
+      "emptyHonest": false
+    },
+    {
+      "href": "/documents",
+      "label": "Document library",
+      "navVisible": true,
+      "queueFilterVisible": null,
+      "disclaimerVisible": null,
+      "emptyHonest": null
+    },
+    {
+      "href": "/documents/job-packs",
+      "label": "Job packs",
+      "navVisible": true,
+      "queueFilterVisible": null,
+      "disclaimerVisible": null,
+      "emptyHonest": null
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "diagnostic-output/phase11-documents-compliance-staging/documents-compliance-1440.png",
+      "href": "/documents/compliance"
+    },
+    {
+      "path": "diagnostic-output/phase11-documents-compliance-staging/documents-library-1440.png",
+      "href": "/documents"
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": [],
+  "holdItems": [
+    "Technician RBAC session mint failed — manual RBAC check required"
+  ]
+}
