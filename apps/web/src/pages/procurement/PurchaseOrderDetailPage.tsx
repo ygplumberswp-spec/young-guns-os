@@ -159,7 +159,7 @@ export function PurchaseOrderDetailPage() {
 
   const canReceive =
     canWrite &&
-    ['approved', 'ordered'].includes(purchaseOrder.status) &&
+    ['approved', 'ordered', 'received'].includes(purchaseOrder.status) &&
     purchaseOrder.deliveryStatus !== 'delivered';
   const nextStatuses = NEXT_STATUS_OPTIONS[purchaseOrder.status] ?? [];
 

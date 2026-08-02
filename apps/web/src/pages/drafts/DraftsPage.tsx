@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearch } from 'wouter';
-import { Button, EmptyState, LoadingState } from '@titan/ui';
+import { Link, useLocation } from 'wouter';
+import { Button, EmptyState, LoadingState, PageHeader } from '@titan/ui';
 import { hasAnyPermission } from '@titan/auth/browser';
 import {
   DRAFT_RECORD_TYPES,
@@ -10,8 +10,6 @@ import {
   type DraftRecordType,
   type DraftWorkspaceSummary,
 } from '@titan/shared';
-import { PageHeader } from '../../components/ux';
-import { useTitanNotify } from '../../components/ux/TitanNotifications';
 import { useAuth } from '../../lib/auth-context';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -28,13 +26,10 @@ function formatWhen(value: string): string {
 export function DraftsPage() {
   const { accessToken, user } = useAuth();
   const [, navigate] = useLocation();
-  const search = useSearch();
-  const searchParams = useMemo(() => new URLSearchParams(search), [search]);
-  const viewArchived = searchParams.get('status') === 'archived';
-  const { notify } = useTitanNotify();
   const [drafts, setDrafts] = useState<DraftWorkspaceSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const canAccess = user
@@ -45,6 +40,8 @@ export function DraftsPage() {
         'jobs:write',
         'customers:read',
         'documents:read',
+        'marketing:read',
+        'procurement:read',
         '*',
       ])
     : false;
@@ -56,16 +53,14 @@ export function DraftsPage() {
     }
     setError(null);
     try {
-      const rows = await fetchDrafts(accessToken, {
-        status: viewArchived ? 'archived' : 'active',
-      });
+      const rows = await fetchDrafts(accessToken, { status: 'active' });
       setDrafts(rows);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to load drafts');
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, viewArchived]);
+  }, [accessToken]);
 
   useEffect(() => {
     void loadDrafts();
@@ -77,7 +72,10 @@ export function DraftsPage() {
       map.set(type, []);
     }
     for (const draft of drafts) {
-      if (!user || !hasAnyPermission(user.permissions, [...permissionsForDraftType(draft.recordType), '*'])) {
+      if (
+        !user ||
+        !hasAnyPermission(user.permissions, [...permissionsForDraftType(draft.recordType), '*'])
+      ) {
         continue;
       }
       map.get(draft.recordType)?.push(draft);
@@ -88,19 +86,14 @@ export function DraftsPage() {
   async function handleDuplicate(draft: DraftWorkspaceSummary) {
     if (!accessToken) return;
     setBusyId(draft.id);
+    setSuccess(null);
     try {
       const copy = await duplicateDraft(accessToken, draft.id);
-      notify({
-        variant: 'saved',
-        message: `Duplicate created — ${copy.title ?? 'Untitled'}`,
-      });
+      setSuccess(`Duplicate created — ${copy.title ?? 'Untitled'}`);
       await loadDrafts();
       navigate(draftContinueHref(copy));
     } catch (err) {
-      notify({
-        variant: 'failed',
-        message: err instanceof ApiClientError ? err.message : 'Unable to duplicate draft',
-      });
+      setError(err instanceof ApiClientError ? err.message : 'Unable to duplicate draft');
     } finally {
       setBusyId(null);
     }
@@ -109,15 +102,13 @@ export function DraftsPage() {
   async function handleArchive(draft: DraftWorkspaceSummary) {
     if (!accessToken) return;
     setBusyId(draft.id);
+    setSuccess(null);
     try {
       await archiveDraft(accessToken, draft.id);
-      notify({ variant: 'archived', message: 'Draft archived', dedupeKey: `archive-${draft.id}` });
+      setSuccess('Draft archived');
       await loadDrafts();
     } catch (err) {
-      notify({
-        variant: 'failed',
-        message: err instanceof ApiClientError ? err.message : 'Unable to archive draft',
-      });
+      setError(err instanceof ApiClientError ? err.message : 'Unable to archive draft');
     } finally {
       setBusyId(null);
     }
@@ -127,15 +118,13 @@ export function DraftsPage() {
     if (!accessToken) return;
     if (!window.confirm(`Delete draft "${draft.title ?? 'Untitled'}"? This cannot be undone.`)) return;
     setBusyId(draft.id);
+    setSuccess(null);
     try {
       await deleteDraft(accessToken, draft.id);
-      notify({ variant: 'deleted', message: 'Draft deleted', dedupeKey: `delete-${draft.id}` });
+      setSuccess('Draft deleted');
       await loadDrafts();
     } catch (err) {
-      notify({
-        variant: 'failed',
-        message: err instanceof ApiClientError ? err.message : 'Unable to delete draft',
-      });
+      setError(err instanceof ApiClientError ? err.message : 'Unable to delete draft');
     } finally {
       setBusyId(null);
     }
@@ -153,21 +142,23 @@ export function DraftsPage() {
   return (
     <div className="drafts-page">
       <PageHeader
-        title={viewArchived ? 'Archived drafts' : 'Drafts'}
-        description={
-          viewArchived
-            ? 'Archived work-in-progress drafts across TITAN modules.'
-            : 'Continue quotes, invoices, jobs, and other work saved automatically.'
+        title="Drafts"
+        description="Continue customer, purchase order, document, marketing, and other work saved automatically. Publishing and sending stay approval-gated."
+        actions={
+          <Link href="/">
+            <Button variant="secondary">Home</Button>
+          </Link>
         }
       />
 
       {isLoading ? <LoadingState label="Loading drafts…" /> : null}
       {error ? <p className="form-error">{error}</p> : null}
+      {success ? <p className="form-success">{success}</p> : null}
 
       {!isLoading && drafts.length === 0 ? (
         <EmptyState
           title="No drafts yet"
-          description="Start a quote, invoice, or job — TITAN will save your progress in the background."
+          description="Start a customer, purchase order, document, or marketing audience form — TITAN saves draft fields in the background without submitting."
         />
       ) : null}
 
@@ -175,20 +166,34 @@ export function DraftsPage() {
         const rows = grouped.get(type) ?? [];
         if (rows.length === 0) return null;
         return (
-          <section key={type} className="drafts-page__group">
-            <h2 className="drafts-page__group-title">{draftRecordTypeLabel(type)}</h2>
+          <section key={type} className="drafts-page__group" style={{ marginBottom: '1.5rem' }}>
+            <h2 className="page-section-title">{draftRecordTypeLabel(type)}</h2>
             {rows.map((draft) => (
-              <div key={draft.id} className="drafts-page__row">
-                <div className="drafts-page__meta">
-                  <div className="drafts-page__title">{draft.title ?? 'Untitled draft'}</div>
-                  <div className="drafts-page__sub">
+              <div
+                key={draft.id}
+                className="drafts-page__row"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '0.75rem 0',
+                  borderBottom: '1px solid var(--titan-border-subtle, #e2e8f0)',
+                }}
+              >
+                <div>
+                  <div>
+                    <strong>{draft.title ?? 'Untitled draft'}</strong>
+                  </div>
+                  <div className="page-muted">
                     {draft.customerLabel ? `${draft.customerLabel} · ` : ''}
                     Edited {formatWhen(draft.lastEditedAt)}
                     {draft.lastEditedByName ? ` by ${draft.lastEditedByName}` : ''}
                     {draft.completionPct != null ? ` · ${draft.completionPct}% complete` : ''}
                   </div>
                 </div>
-                <div className="drafts-page__actions">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <Link href={draftContinueHref(draft)}>
                     <Button variant="secondary" disabled={busyId === draft.id}>
                       Continue

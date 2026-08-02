@@ -9,6 +9,7 @@ import type {
   JobMaterialLineSummary,
   JobsStats,
   JobSummary,
+  JobTimelineEventSummary,
   JobVehicleAssignmentSummary,
   ReturnJobMaterialLineRequest,
   UpdateJobRequest,
@@ -74,6 +75,16 @@ export async function fetchJobExecution(
     accessToken,
   });
   return data.summary;
+}
+
+export async function fetchJobTimeline(
+  accessToken: string,
+  jobId: string,
+): Promise<JobTimelineEventSummary[]> {
+  const data = await request<{ events: JobTimelineEventSummary[] }>(`/jobs/${jobId}/timeline`, {
+    accessToken,
+  });
+  return data.events;
 }
 
 export async function assignJobCrew(

@@ -54,6 +54,10 @@ export const CustomerDetailPage = lazyNamed(
   () => import('../pages/crm/CustomerDetailPage'),
   'CustomerDetailPage',
 );
+export const DraftsPage = lazyNamed(
+  () => import('../pages/drafts/DraftsPage'),
+  'DraftsPage',
+);
 export const JobListPage = lazyNamed(() => import('../pages/jobs/JobListPage'), 'JobListPage');
 export const JobCreatePage = lazyNamed(
   () => import('../pages/jobs/JobCreatePage'),

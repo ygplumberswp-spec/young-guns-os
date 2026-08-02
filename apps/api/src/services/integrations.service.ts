@@ -1,27 +1,23 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
   CartrackSyncResult,
   FleetTrackingContext,
   IntegrationMappingStatus,
-  IntegrationSyncHealth,
   IntegrationVehicleMappingSummary,
   SaveCartrackConnectionRequest,
   UpdateIntegrationVehicleMappingRequest,
-  ValidateCartrackCredentialsResult,
 } from '@titan/shared';
 import {
-  deriveMappingReviewCategory,
-  INTEGRATION_MAPPING_REVIEW_LABELS,
-  matchVehicleByRegistration,
+  deriveCartrackCapabilityState,
+  deriveFleetConnectionDisplayState,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   gpsPositions,
   integrationConnections,
-  integrationSyncSchedules,
   integrationVehicleMappings,
-  securityAuditLogs,
+  users,
   vehicles,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
@@ -40,10 +36,6 @@ export class IntegrationsError extends Error {
   }
 }
 
-type SaveCartrackActor = {
-  userId: string;
-};
-
 type IntegrationsServiceDeps = {
   db: DatabaseClient;
   encryptionKey?: string;
@@ -51,9 +43,6 @@ type IntegrationsServiceDeps = {
 };
 
 export class IntegrationsService {
-  private onCartrackConnectedHook: ((input: { companyId: string }) => void | Promise<void>) | null =
-    null;
-
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
@@ -62,12 +51,6 @@ export class IntegrationsService {
 
   static create(deps: IntegrationsServiceDeps): IntegrationsService {
     return new IntegrationsService(deps.db, deps.encryptionKey, deps.hubService);
-  }
-
-  setOnCartrackConnectedHook(
-    hook: ((input: { companyId: string }) => void | Promise<void>) | null,
-  ): void {
-    this.onCartrackConnectedHook = hook;
   }
 
   async getCartrackConnection(companyId: string): Promise<CartrackConnectionSummary> {
@@ -79,7 +62,6 @@ export class IntegrationsService {
       .where(eq(gpsPositions.companyId, companyId));
 
     const credentials = this.tryDecryptCredentials(connection.credentialsEncrypted);
-    const nextScheduledSyncAt = await this.getNextCartrackScheduledSyncAt(companyId);
 
     return {
       provider: 'cartrack',
@@ -90,88 +72,15 @@ export class IntegrationsService {
       lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
       lastError: connection.lastError,
       connectedAt: connection.connectedAt?.toISOString() ?? null,
-      lastCredentialChangeAt: connection.config.lastCredentialChangeAt ?? null,
-      nextScheduledSyncAt,
-      syncHealth: deriveCartrackSyncHealth(connection),
       mappedVehicleCount: counts.mapped,
       unmappedVehicleCount: counts.unmapped,
       positionCount: positionCountRow?.count ?? 0,
     };
   }
 
-  async validateCartrackCredentials(
-    input: SaveCartrackConnectionRequest,
-  ): Promise<ValidateCartrackCredentialsResult> {
-    const baseUrl = input.baseUrl.trim();
-    const username = input.username.trim();
-    const password = input.password;
-
-    if (!baseUrl || !username || !password) {
-      return {
-        valid: false,
-        message: 'Cartrack base URL, username, and password are required.',
-      };
-    }
-
-    const client = new CartrackClient({ baseUrl, username, password });
-
-    try {
-      await client.testConnection();
-      return {
-        valid: true,
-        message: 'Cartrack credentials verified successfully.',
-      };
-    } catch (error) {
-      return {
-        valid: false,
-        message: mapCartrackError(error),
-      };
-    }
-  }
-
-  async verifyStoredCartrackConnection(companyId: string): Promise<CartrackConnectionSummary> {
-    const connection = await this.getOrCreateConnection(companyId);
-
-    if (!connection.credentialsEncrypted) {
-      throw new IntegrationsError(
-        'NOT_CONNECTED',
-        'Cartrack credentials are not stored for this company.',
-      );
-    }
-
-    const client = this.createClient(connection);
-
-    try {
-      await client.testConnection();
-    } catch (error) {
-      const message = mapCartrackError(error);
-      await this.db
-        .update(integrationConnections)
-        .set({
-          lastError: message,
-          updatedAt: new Date(),
-        })
-        .where(eq(integrationConnections.id, connection.id));
-
-      throw new IntegrationsError('CONNECTION_FAILED', message);
-    }
-
-    await this.db
-      .update(integrationConnections)
-      .set({
-        status: 'connected',
-        lastError: null,
-        updatedAt: new Date(),
-      })
-      .where(eq(integrationConnections.id, connection.id));
-
-    return this.getCartrackConnection(companyId);
-  }
-
   async saveCartrackConnection(
     companyId: string,
     input: SaveCartrackConnectionRequest,
-    actor?: SaveCartrackActor,
   ): Promise<CartrackConnectionSummary> {
     this.ensureEncryptionKey();
 
@@ -191,52 +100,34 @@ export class IntegrationsService {
     }
 
     const connection = await this.getOrCreateConnection(companyId);
-    const isCredentialReplace =
-      Boolean(connection.credentialsEncrypted) &&
-      (connection.status === 'connected' || connection.status === 'error');
-
     const client = new CartrackClient({ baseUrl, username, password });
 
-    if (!isCredentialReplace) {
-      await this.db
-        .update(integrationConnections)
-        .set({
-          status: 'pending',
-          config: { baseUrl },
-          lastError: null,
-          updatedAt: new Date(),
-        })
-        .where(eq(integrationConnections.id, connection.id));
-    }
+    await this.db
+      .update(integrationConnections)
+      .set({
+        status: 'pending',
+        config: { baseUrl },
+        lastError: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationConnections.id, connection.id));
 
     try {
       await client.testConnection();
     } catch (error) {
       const message = mapCartrackError(error);
 
-      if (isCredentialReplace) {
-        await this.db
-          .update(integrationConnections)
-          .set({
-            lastError: message,
-            updatedAt: new Date(),
-          })
-          .where(eq(integrationConnections.id, connection.id));
-      } else {
-        await this.db
-          .update(integrationConnections)
-          .set({
-            status: 'error',
-            lastError: message,
-            updatedAt: new Date(),
-          })
-          .where(eq(integrationConnections.id, connection.id));
-      }
+      await this.db
+        .update(integrationConnections)
+        .set({
+          status: 'error',
+          lastError: message,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationConnections.id, connection.id));
 
       throw new IntegrationsError('CONNECTION_FAILED', message);
     }
-
-    const credentialChangedAt = new Date().toISOString();
 
     await this.db
       .update(integrationConnections)
@@ -246,38 +137,14 @@ export class IntegrationsService {
           { username, password },
           this.encryptionKey!,
         ),
-        config: {
-          baseUrl,
-          lastCredentialChangeAt: credentialChangedAt,
-        },
-        connectedAt: connection.connectedAt ?? new Date(),
+        config: { baseUrl },
+        connectedAt: new Date(),
         lastError: null,
         updatedAt: new Date(),
       })
       .where(eq(integrationConnections.id, connection.id));
 
-    if (actor?.userId) {
-      await this.recordConnectionAudit(companyId, actor.userId, 'cartrack_credentials_saved', {
-        action: isCredentialReplace ? 'replace' : 'connect',
-        usernameHint: maskUsername(username),
-      });
-    }
-
-    if (this.onCartrackConnectedHook) {
-      void Promise.resolve(this.onCartrackConnectedHook({ companyId })).catch((hookError) => {
-        console.error('[integrations] Cartrack auto-sync hook failed', hookError);
-      });
-    }
-
     return this.getCartrackConnection(companyId);
-  }
-
-  async replaceCartrackCredentials(
-    companyId: string,
-    input: SaveCartrackConnectionRequest,
-    actor: SaveCartrackActor,
-  ): Promise<CartrackConnectionSummary> {
-    return this.saveCartrackConnection(companyId, input, actor);
   }
 
   async disconnectCartrack(companyId: string): Promise<CartrackConnectionSummary> {
@@ -301,9 +168,6 @@ export class IntegrationsService {
 
   async listCartrackMappings(companyId: string): Promise<IntegrationVehicleMappingSummary[]> {
     const connection = await this.getOrCreateConnection(companyId);
-    const companyVehicles = await this.db.query.vehicles.findMany({
-      where: eq(vehicles.companyId, companyId),
-    });
 
     const rows = await this.db.query.integrationVehicleMappings.findMany({
       where: and(
@@ -314,7 +178,7 @@ export class IntegrationsService {
       orderBy: [desc(integrationVehicleMappings.updatedAt)],
     });
 
-    return rows.map((row) => toMappingSummary(row, companyVehicles));
+    return rows.map(toMappingSummary);
   }
 
   async updateCartrackMapping(
@@ -365,9 +229,7 @@ export class IntegrationsService {
       throw new IntegrationsError('NOT_FOUND', 'Vehicle mapping not found');
     }
 
-    return toMappingSummary(row, await this.db.query.vehicles.findMany({
-      where: eq(vehicles.companyId, companyId),
-    }));
+    return toMappingSummary(row);
   }
 
   async syncCartrack(companyId: string): Promise<CartrackSyncResult> {
@@ -397,14 +259,14 @@ export class IntegrationsService {
         ),
       });
 
-      const match = matchVehicleByRegistration(
+      const matchedVehicle = findVehicleByRegistration(
         companyVehicles,
         externalVehicle.externalRegistration,
       );
 
       if (existing) {
         const shouldAutoMap =
-          !existing.vehicleId && existing.status === 'unmapped' && match.kind === 'unique';
+          !existing.vehicleId && existing.status === 'unmapped' && matchedVehicle !== null;
 
         await this.db
           .update(integrationVehicleMappings)
@@ -412,7 +274,7 @@ export class IntegrationsService {
             externalRegistration: externalVehicle.externalRegistration,
             externalName: externalVehicle.externalName,
             lastSeenAt: new Date(),
-            vehicleId: shouldAutoMap ? match.vehicleId : existing.vehicleId,
+            vehicleId: shouldAutoMap ? matchedVehicle!.id : existing.vehicleId,
             status: shouldAutoMap ? 'mapped' : existing.status,
             updatedAt: new Date(),
           })
@@ -422,17 +284,12 @@ export class IntegrationsService {
 
         if (shouldAutoMap) {
           autoMappedCount += 1;
-          await this.recordAutoMappingAudit(companyId, {
-            externalVehicleId: externalVehicle.externalVehicleId,
-            externalRegistration: externalVehicle.externalRegistration,
-            vehicleId: match.vehicleId,
-          });
         }
 
         continue;
       }
 
-      const autoMappedVehicleId = match.kind === 'unique' ? match.vehicleId : null;
+      const autoMappedVehicle = matchedVehicle;
 
       await this.db.insert(integrationVehicleMappings).values({
         companyId,
@@ -440,20 +297,15 @@ export class IntegrationsService {
         externalVehicleId: externalVehicle.externalVehicleId,
         externalRegistration: externalVehicle.externalRegistration,
         externalName: externalVehicle.externalName,
-        vehicleId: autoMappedVehicleId,
-        status: autoMappedVehicleId ? 'mapped' : 'unmapped',
+        vehicleId: autoMappedVehicle?.id ?? null,
+        status: autoMappedVehicle ? 'mapped' : 'unmapped',
         lastSeenAt: new Date(),
       });
 
       mappingsCreated += 1;
 
-      if (autoMappedVehicleId) {
+      if (autoMappedVehicle) {
         autoMappedCount += 1;
-        await this.recordAutoMappingAudit(companyId, {
-          externalVehicleId: externalVehicle.externalVehicleId,
-          externalRegistration: externalVehicle.externalRegistration,
-          vehicleId: autoMappedVehicleId,
-        });
       }
     }
 
@@ -579,10 +431,30 @@ export class IntegrationsService {
       return emptyTrackingContext();
     }
 
+    const hasCredentials = Boolean(connection.credentialsEncrypted);
     const counts = await this.getMappingCounts(companyId, connection.id);
+    const lastSyncAt = connection.lastSyncAt?.toISOString() ?? null;
+    const capabilityState = deriveCartrackCapabilityState({
+      connectionStatus: connection.status,
+      hasCredentials,
+      lastError: connection.lastError,
+    });
+    const connectionDisplayState = deriveFleetConnectionDisplayState({
+      connectionStatus: connection.status,
+      hasCredentials,
+      lastSyncAt,
+      lastError: connection.lastError,
+    });
+    const cartrackConnected = connection.status === 'connected' && hasCredentials;
+    // Aggressive live polling only when display state is fully connected — never while
+    // sync is stale, credentials are missing, or the connection is degraded/error.
+    const livePollingAllowed =
+      cartrackConnected &&
+      capabilityState === 'connected_usable' &&
+      connectionDisplayState === 'connected';
 
     const [positionCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
       .from(gpsPositions)
       .where(eq(gpsPositions.companyId, companyId));
 
@@ -590,26 +462,88 @@ export class IntegrationsService {
       where: eq(gpsPositions.companyId, companyId),
       with: { vehicle: true },
       orderBy: [desc(gpsPositions.recordedAt)],
-      limit: 10,
+      limit: 80,
     });
+
+    const latestByVehicle = new Map<string, (typeof latestRows)[number]>();
+    for (const row of latestRows) {
+      const key = row.vehicleId ?? `ext:${row.externalVehicleId}`;
+      if (latestByVehicle.has(key)) continue;
+      latestByVehicle.set(key, row);
+    }
+
+    const assigneeIds = [
+      ...new Set(
+        [...latestByVehicle.values()]
+          .map((row) => row.vehicle?.assignedUserId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const assigneeRows =
+      assigneeIds.length > 0
+        ? await this.db.query.users.findMany({
+            where: and(eq(users.companyId, companyId), inArray(users.id, assigneeIds)),
+            columns: { id: true, firstName: true, lastName: true },
+          })
+        : [];
+    const assigneesById = new Map(
+      assigneeRows.map((user) => [
+        user.id,
+        `${user.firstName} ${user.lastName}`.trim() || null,
+      ]),
+    );
 
     return {
       cartrackStatus: connection.status,
-      cartrackConnected: connection.status === 'connected',
+      cartrackConnected,
+      hasCredentials,
+      capabilityState,
+      connectionDisplayState,
       mappedVehicleCount: counts.mapped,
       unmappedVehicleCount: counts.unmapped,
       positionCount: positionCountRow?.count ?? 0,
-      lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
-      latestPositions: latestRows.map((row) => ({
-        vehicleId: row.vehicleId,
-        vehicleName: row.vehicle?.name ?? null,
-        licensePlate: row.vehicle?.licensePlate ?? row.externalVehicleId,
-        externalVehicleId: row.externalVehicleId,
-        latitude: row.latitude,
-        longitude: row.longitude,
-        speedKmh: row.speedKmh,
-        recordedAt: row.recordedAt.toISOString(),
-      })),
+      lastSyncAt,
+      lastError: connection.lastError,
+      livePollingAllowed,
+      latestPositions: [...latestByVehicle.values()].map((row) => {
+        const raw =
+          row.rawPayload && typeof row.rawPayload === 'object'
+            ? (row.rawPayload as Record<string, unknown>)
+            : null;
+        const ignitionOn =
+          typeof raw?.ignition_on === 'boolean'
+            ? raw.ignition_on
+            : typeof raw?.ignitionOn === 'boolean'
+              ? raw.ignitionOn
+              : null;
+        const odometerRaw = raw?.odometer_km ?? raw?.odometerKm ?? raw?.odometer;
+        const odometerKm =
+          typeof odometerRaw === 'number' && Number.isFinite(odometerRaw) ? odometerRaw : null;
+        const driverName =
+          (typeof raw?.driver_name === 'string' ? raw.driver_name : null) ??
+          (typeof raw?.driverName === 'string' ? raw.driverName : null);
+        const assignedUserName = row.vehicle?.assignedUserId
+          ? (assigneesById.get(row.vehicle.assignedUserId) ?? null)
+          : null;
+
+        return {
+          vehicleId: row.vehicleId,
+          vehicleName: row.vehicle?.name ?? null,
+          licensePlate: row.vehicle?.licensePlate ?? row.externalVehicleId,
+          make: row.vehicle?.make ?? null,
+          model: row.vehicle?.model ?? null,
+          assignedUserName,
+          driverName,
+          externalVehicleId: row.externalVehicleId,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          speedKmh: row.speedKmh,
+          heading: row.heading ?? null,
+          ignitionOn,
+          odometerKm,
+          recordedAt: row.recordedAt.toISOString(),
+        };
+      }),
     };
   }
 
@@ -644,18 +578,7 @@ export class IntegrationsService {
   private async requireConnectedConnection(companyId: string) {
     const connection = await this.getOrCreateConnection(companyId);
 
-    if (!connection.credentialsEncrypted) {
-      throw new IntegrationsError(
-        'NOT_CONNECTED',
-        'Cartrack is not connected. Save valid credentials before syncing.',
-      );
-    }
-
-    if (
-      connection.status !== 'connected' &&
-      connection.status !== 'error' &&
-      connection.status !== 'pending'
-    ) {
+    if (connection.status !== 'connected' || !connection.credentialsEncrypted) {
       throw new IntegrationsError(
         'NOT_CONNECTED',
         'Cartrack is not connected. Save valid credentials before syncing.',
@@ -743,77 +666,19 @@ export class IntegrationsService {
       throw new IntegrationsError('VEHICLE_NOT_FOUND', 'Vehicle not found');
     }
   }
-
-  private async getNextCartrackScheduledSyncAt(companyId: string): Promise<string | null> {
-    const schedule = await this.db.query.integrationSyncSchedules.findFirst({
-      where: and(
-        eq(integrationSyncSchedules.companyId, companyId),
-        eq(integrationSyncSchedules.enabled, true),
-      ),
-      orderBy: [desc(integrationSyncSchedules.nextRunAt)],
-    });
-
-    return schedule?.nextRunAt?.toISOString() ?? null;
-  }
-
-  private async recordConnectionAudit(
-    companyId: string,
-    userId: string,
-    action: string,
-    metadata: Record<string, unknown>,
-  ) {
-    await this.db.insert(securityAuditLogs).values({
-      companyId,
-      category: 'integrations',
-      action,
-      entityType: 'integration_connection',
-      entityId: null,
-      userId,
-      metadata,
-    });
-  }
-
-  private async recordAutoMappingAudit(
-    companyId: string,
-    metadata: {
-      externalVehicleId: string;
-      externalRegistration: string | null;
-      vehicleId: string;
-    },
-  ) {
-    await this.db.insert(securityAuditLogs).values({
-      companyId,
-      category: 'integrations',
-      action: 'cartrack_vehicle_auto_mapped',
-      entityType: 'integration_vehicle_mapping',
-      entityId: metadata.vehicleId,
-      userId: null,
-      metadata,
-    });
-  }
 }
 
 function toMappingSummary(
   row: typeof integrationVehicleMappings.$inferSelect & {
     vehicle: typeof vehicles.$inferSelect | null;
   },
-  companyVehicles: Array<typeof vehicles.$inferSelect>,
 ): IntegrationVehicleMappingSummary {
-  const match = matchVehicleByRegistration(companyVehicles, row.externalRegistration);
-  const reviewCategory = deriveMappingReviewCategory({
-    status: row.status,
-    vehicleId: row.vehicleId,
-    match,
-  });
-
   return {
     id: row.id,
     externalVehicleId: row.externalVehicleId,
     externalRegistration: row.externalRegistration,
     externalName: row.externalName,
     status: row.status,
-    reviewCategory,
-    reviewLabel: INTEGRATION_MAPPING_REVIEW_LABELS[reviewCategory],
     vehicleId: row.vehicleId,
     vehicleName: row.vehicle?.name ?? null,
     vehicleLicensePlate: row.vehicle?.licensePlate ?? null,
@@ -842,22 +707,20 @@ function resolveMappingStatus(
   return 'mapped';
 }
 
-function deriveCartrackSyncHealth(
-  connection: typeof integrationConnections.$inferSelect,
-): IntegrationSyncHealth {
-  if (connection.status === 'connected' && !connection.lastError) {
-    return 'healthy';
+function findVehicleByRegistration(
+  companyVehicles: Array<typeof vehicles.$inferSelect>,
+  registration: string | null,
+) {
+  if (!registration) {
+    return null;
   }
 
-  if (connection.status === 'connected' && connection.lastError) {
-    return 'degraded';
-  }
+  const normalized = registration.trim().toLowerCase();
 
-  if (connection.status === 'error') {
-    return 'failed';
-  }
-
-  return 'unknown';
+  return (
+    companyVehicles.find((vehicle) => vehicle.licensePlate.trim().toLowerCase() === normalized) ??
+    null
+  );
 }
 
 function maskUsername(username: string): string {
@@ -884,10 +747,15 @@ function emptyTrackingContext(): FleetTrackingContext {
   return {
     cartrackStatus: 'disconnected',
     cartrackConnected: false,
+    hasCredentials: false,
+    capabilityState: 'not_configured',
+    connectionDisplayState: 'not_configured',
     mappedVehicleCount: 0,
     unmappedVehicleCount: 0,
     positionCount: 0,
     lastSyncAt: null,
+    lastError: null,
+    livePollingAllowed: false,
     latestPositions: [],
   };
 }

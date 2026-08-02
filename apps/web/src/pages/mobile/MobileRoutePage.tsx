@@ -55,7 +55,7 @@ export function MobileRoutePage() {
                 Live tracking:{' '}
                 {route.liveTrackingAvailable
                   ? 'Available from connected fleet provider'
-                  : 'Unavailable — Cartrack/Maps provider depth deferred; no fake coordinates'}
+                  : 'Unavailable — no assigned-vehicle GPS for this technician; fleet-wide tracking is blocked'}
               </p>
             </Panel>
 
@@ -133,7 +133,7 @@ export function MobileRoutePage() {
                 {route.cartrackConnected ? 'configured in integrations' : 'not connected'}
               </p>
               <p className="page-muted">
-                UX-I does not activate Cartrack or invent GPS. Live provider depth is deferred.
+                Technician route shows assigned context only. Fleet-wide Cartrack tracking is office/owner only — TITAN never invents GPS.
               </p>
               <Button size="sm" variant="secondary" onClick={() => void routeQuery.refetch()}>
                 Refresh

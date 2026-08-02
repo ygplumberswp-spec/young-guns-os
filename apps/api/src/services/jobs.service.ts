@@ -10,6 +10,8 @@ import type {
 import {
   buildJobAddressDisplay,
   generateJobTitle,
+  getCompletedJobPostCompletionAttempts,
+  getCompletedJobStructuralAttempts,
   isPlaceholderEmail,
   isValidEmailAddress,
   isValidSaMobile,
@@ -21,7 +23,8 @@ import {
   customers,
   cxCustomerProperties,
   documents,
-  invoices,
+  jobCompletionSnapshots,
+  jobMaterialLines,
   jobs,
   securityAuditLogs,
   users,
@@ -66,14 +69,21 @@ export type AuraJobsContext = {
     id: string;
     title: string;
     status: string;
+    jobNumber: string | null;
+    executionPhase: string | null;
+    priority: string | null;
     description: string | null;
     notes: string | null;
     scheduledAt: string | null;
     scheduledEndAt: string | null;
     customerId: string;
     customerName: string;
+    propertyId: string | null;
+    siteAddress: string | null;
     assignedUserId: string | null;
     assignedUserName: string | null;
+    materialLineCount: number;
+    hasCompletionSnapshot: boolean;
   } | null;
 };
 
@@ -493,11 +503,26 @@ export class JobsService {
     return jobDetail;
   }
 
-  async updateJob(companyId: string, jobId: string, input: UpdateJobRequest): Promise<JobDetail> {
+  async updateJob(
+    companyId: string,
+    jobId: string,
+    input: UpdateJobRequest,
+    actor?: { userId: string },
+  ): Promise<JobDetail> {
     const existing = await this.getJob(companyId, jobId);
 
     if (!existing) {
       throw new JobsError('NOT_FOUND', 'Job not found');
+    }
+
+    if (existing.status === 'completed') {
+      const attemptedStructural = getCompletedJobStructuralAttempts(input);
+      if (attemptedStructural.length > 0) {
+        throw new JobsError(
+          'JOB_COMPLETED_IMMUTABLE',
+          'Completed jobs cannot change operational fields. Reopen the job with a reason before editing.',
+        );
+      }
     }
 
     if (input.customerId) {
@@ -576,6 +601,24 @@ export class JobsService {
 
     if (!updated) {
       throw new JobsError('UPDATE_FAILED', 'Unable to update job');
+    }
+
+    if (existing.status === 'completed' && actor?.userId) {
+      const postCompletionFields = getCompletedJobPostCompletionAttempts(input);
+      if (postCompletionFields.length > 0) {
+        await this.db.insert(securityAuditLogs).values({
+          companyId,
+          category: 'workflow',
+          action: 'job_post_completion_update',
+          entityType: 'job',
+          entityId: jobId,
+          userId: actor.userId,
+          metadata: {
+            fields: postCompletionFields,
+            marked: 'post_completion',
+          },
+        });
+      }
     }
 
     if (input.assignedUserId) {
@@ -708,21 +751,45 @@ export class JobsService {
     let focusedJob: AuraJobsContext['focusedJob'] = null;
 
     if (jobId) {
-      const detail = await this.getJob(companyId, jobId);
+      const [detail, jobRow, materialCountRow, snapshotRow] = await Promise.all([
+        this.getJob(companyId, jobId),
+        this.db.query.jobs.findFirst({
+          where: and(eq(jobs.id, jobId), eq(jobs.companyId, companyId)),
+          columns: { executionPhase: true },
+        }),
+        this.db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(jobMaterialLines)
+          .where(and(eq(jobMaterialLines.companyId, companyId), eq(jobMaterialLines.jobId, jobId))),
+        this.db.query.jobCompletionSnapshots.findFirst({
+          where: and(
+            eq(jobCompletionSnapshots.companyId, companyId),
+            eq(jobCompletionSnapshots.jobId, jobId),
+          ),
+          columns: { id: true },
+        }),
+      ]);
 
       if (detail) {
         focusedJob = {
           id: detail.id,
           title: detail.title,
           status: detail.status,
+          jobNumber: detail.jobNumber ?? null,
+          executionPhase: jobRow?.executionPhase ?? null,
+          priority: detail.priority ?? null,
           description: detail.description,
           notes: detail.notes,
           scheduledAt: detail.scheduledAt,
           scheduledEndAt: detail.scheduledEndAt,
           customerId: detail.customerId,
           customerName: detail.customerName,
+          propertyId: detail.propertyId ?? null,
+          siteAddress: detail.address?.display ?? null,
           assignedUserId: detail.assignedUserId,
           assignedUserName: detail.assignedUserName,
+          materialLineCount: materialCountRow[0]?.count ?? 0,
+          hasCompletionSnapshot: Boolean(snapshotRow),
         };
       }
     }
@@ -769,58 +836,6 @@ export class JobsService {
       throw new JobsError('ASSIGNEE_NOT_FOUND', 'Team member not found for this company');
     }
   }
-
-  async deleteJob(
-    scope: JobActor,
-    jobId: string,
-    opts: { isOwner?: boolean } = {},
-  ): Promise<void> {
-    if (!opts.isOwner) {
-      throw new JobsError('FORBIDDEN', 'Only the company owner may permanently delete jobs');
-    }
-
-    const job = await this.getJob(scope.companyId, jobId);
-    if (!job) {
-      throw new JobsError('NOT_FOUND', 'Job not found');
-    }
-
-    if (job.status !== 'new') {
-      throw new JobsError(
-        'VALIDATION_ERROR',
-        'Only empty draft jobs can be deleted. Cancel or archive instead.',
-      );
-    }
-
-    const [invoiceCount] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(invoices)
-      .where(and(eq(invoices.jobId, jobId), eq(invoices.companyId, scope.companyId)));
-
-    if ((invoiceCount?.count ?? 0) > 0) {
-      throw new JobsError(
-        'VALIDATION_ERROR',
-        'Job has linked invoices. Cancel or archive instead.',
-      );
-    }
-
-    const deleted = await this.db
-      .delete(jobs)
-      .where(and(eq(jobs.id, jobId), eq(jobs.companyId, scope.companyId)))
-      .returning({ id: jobs.id });
-
-    if (deleted.length === 0) {
-      throw new JobsError('DELETE_FAILED', 'Unable to delete job');
-    }
-
-    emitBusinessEvent({
-      companyId: scope.companyId,
-      eventType: 'job.deleted',
-      entityType: 'job',
-      entityId: jobId,
-      payload: { job: { id: jobId, jobNumber: job.jobNumber } },
-      actorUserId: scope.userId,
-    });
-  }
 }
 
 type JobWithRelations = typeof jobs.$inferSelect & {
@@ -859,7 +874,6 @@ function toJobSummary(job: JobWithRelations): JobSummary {
       : null,
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
-    etaAt: null,
   };
 }
 

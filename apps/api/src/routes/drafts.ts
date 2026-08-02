@@ -51,9 +51,21 @@ function canAccessDraftType(permissions: string[], recordType: DraftRecordType):
   return hasAnyPermission(permissions, [...required, '*']);
 }
 
+function canAccessOtherUsersDrafts(permissions: string[]): boolean {
+  return hasAnyPermission(permissions, ['*']);
+}
+
+function assertDraftOwnership(
+  auth: { userId: string; permissions: string[] },
+  draft: { userId: string },
+): boolean {
+  return draft.userId === auth.userId || canAccessOtherUsersDrafts(auth.permissions);
+}
+
 function handleDraftError(res: import('express').Response, error: unknown) {
   if (error instanceof DraftAutosaveError) {
-    const status = error.code === 'NOT_FOUND' ? 404 : 400;
+    const status =
+      error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400;
     res.status(status).json({ error: { code: error.code, message: error.message } });
     return;
   }
@@ -89,9 +101,15 @@ export function createDraftsRouter({
     const drafts = await draftAutosaveService.listDrafts(auth.companyId, {
       status: (stringQuery(req.query.status) as 'active' | 'archived' | undefined) ?? 'active',
       recordType,
+      // Default to the caller’s drafts — company-wide listing requires platform/owner *.
+      userId: canAccessOtherUsersDrafts(auth.permissions) ? undefined : auth.userId,
     });
 
-    const filtered = drafts.filter((draft) => canAccessDraftType(auth.permissions, draft.recordType));
+    const filtered = drafts.filter(
+      (draft) =>
+        canAccessDraftType(auth.permissions, draft.recordType) &&
+        assertDraftOwnership(auth, draft),
+    );
     res.json({ data: { drafts: filtered } });
   });
 
@@ -103,7 +121,7 @@ export function createDraftsRouter({
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Draft not found' } });
       return;
     }
-    if (!canAccessDraftType(auth.permissions, draft.recordType)) {
+    if (!canAccessDraftType(auth.permissions, draft.recordType) || !assertDraftOwnership(auth, draft)) {
       res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
       return;
     }
@@ -117,7 +135,7 @@ export function createDraftsRouter({
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Draft not found' } });
       return;
     }
-    if (!canAccessDraftType(auth.permissions, draft.recordType)) {
+    if (!canAccessDraftType(auth.permissions, draft.recordType) || !assertDraftOwnership(auth, draft)) {
       res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
       return;
     }
@@ -141,11 +159,15 @@ export function createDraftsRouter({
         { companyId: auth.companyId, userId: auth.userId },
         parsed.data,
       );
-      await draftAutosaveService.touchAudit(
-        { companyId: auth.companyId, userId: auth.userId },
-        'upsert',
-        draft.id,
-      );
+      try {
+        await draftAutosaveService.touchAudit(
+          { companyId: auth.companyId, userId: auth.userId },
+          'upsert',
+          draft.id,
+        );
+      } catch {
+        // Draft persistence already succeeded — do not fail the request on audit marker issues.
+      }
       res.json({ data: { draft } });
     } catch (error) {
       handleDraftError(res, error);
@@ -165,7 +187,10 @@ export function createDraftsRouter({
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Draft not found' } });
       return;
     }
-    if (!canAccessDraftType(auth.permissions, source.recordType)) {
+    if (
+      !canAccessDraftType(auth.permissions, source.recordType) ||
+      !assertDraftOwnership(auth, source)
+    ) {
       res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
       return;
     }
@@ -194,7 +219,10 @@ export function createDraftsRouter({
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Draft not found' } });
       return;
     }
-    if (!canAccessDraftType(auth.permissions, existing.recordType)) {
+    if (
+      !canAccessDraftType(auth.permissions, existing.recordType) ||
+      !assertDraftOwnership(auth, existing)
+    ) {
       res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
       return;
     }
@@ -222,7 +250,10 @@ export function createDraftsRouter({
       res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Draft not found' } });
       return;
     }
-    if (!canAccessDraftType(auth.permissions, existing.recordType)) {
+    if (
+      !canAccessDraftType(auth.permissions, existing.recordType) ||
+      !assertDraftOwnership(auth, existing)
+    ) {
       res.status(403).json({ error: { code: 'FORBIDDEN', message: 'Insufficient permissions' } });
       return;
     }

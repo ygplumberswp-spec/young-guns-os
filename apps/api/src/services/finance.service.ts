@@ -23,8 +23,7 @@ import {
   displayInvoiceNumber,
   formatInternalInvoiceNumber,
   formatMoney,
-  resolveEffectiveInvoiceOutstandingCents,
-  resolveEffectiveInvoiceTotalCents,
+  deriveJobPaymentLedger,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -39,7 +38,6 @@ import {
   quoteLineItems,
   quotes,
   securityAuditLogs,
-  xeroInvoiceMappings,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
@@ -121,21 +119,7 @@ export class FinanceService {
       orderBy: [desc(invoices.updatedAt)],
     });
 
-    const mappings =
-      rows.length > 0
-        ? await this.db.query.xeroInvoiceMappings.findMany({
-            where: and(
-              eq(xeroInvoiceMappings.companyId, companyId),
-              inArray(
-                xeroInvoiceMappings.invoiceId,
-                rows.map((row) => row.id),
-              ),
-            ),
-          })
-        : [];
-    const mappingByInvoiceId = new Map(mappings.map((mapping) => [mapping.invoiceId, mapping]));
-
-    return rows.map((row) => toInvoiceSummary(row, mappingByInvoiceId.get(row.id)));
+    return rows.map(toInvoiceSummary);
   }
 
   async listPayments(companyId: string, query: FinanceListQuery = {}): Promise<PaymentSummary[]> {
@@ -409,25 +393,8 @@ export class FinanceService {
     const computed = input.lineItems ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, input.discountCents ?? current.discountCents) : null;
     if (computed) this.assertFloor(actor, computed.profit.belowFloor, input.belowFloorOverride, input.belowFloorReason, settings.allowBelowFloorWithOverride);
     await this.db.update(quotes).set({
-      title: input.title?.trim() || current.title,
-      status: input.status ?? current.status,
-      jobId: input.jobId === undefined ? current.jobId : input.jobId,
-      currency: input.currency?.trim() || current.currency,
-      validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil),
-      notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
-      scopeOfWork: input.scopeOfWork === undefined ? current.scopeOfWork : normalizeOptionalText(input.scopeOfWork),
-      exclusions: input.exclusions === undefined ? current.exclusions : normalizeOptionalText(input.exclusions),
-      assumptions: input.assumptions === undefined ? current.assumptions : normalizeOptionalText(input.assumptions),
-      internalNotes: input.internalNotes === undefined ? current.internalNotes : normalizeOptionalText(input.internalNotes),
-      paymentTerms: input.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(input.paymentTerms),
-      belowFloorOverride: input.belowFloorOverride === undefined ? current.belowFloorOverride : Boolean(input.belowFloorOverride),
-      belowFloorReason: input.belowFloorReason === undefined ? current.belowFloorReason : normalizeOptionalText(input.belowFloorReason),
-      belowFloorAuthorizedBy:
-        input.belowFloorOverride === undefined
-          ? current.belowFloorAuthorizedBy
-          : input.belowFloorOverride
-            ? actor.userId ?? null
-            : null,
+      title: input.title?.trim() || current.title, status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
+      validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil), notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
@@ -438,10 +405,6 @@ export class FinanceService {
   async issueQuote(actorOrCompany: FinanceActor | string, quoteId: string): Promise<QuoteSummary> {
     const actor = toActor(actorOrCompany); const quote = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, actor.companyId)) });
     if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
-    if (quote.isImmutable) throw new FinanceError('VALIDATION_ERROR', 'Quote is already issued');
-    if (quote.status !== 'approved_for_sending') {
-      throw new FinanceError('VALIDATION_ERROR', 'Quote must be approved for sending before issue');
-    }
     this.assertFloor(actor, quote.totalCents < quote.profitFloorCents && quote.estimatedCostCents > 0, quote.belowFloorOverride, quote.belowFloorReason, true);
     await this.db.update(quotes).set({ status: 'sent', isImmutable: true, issuedAt: new Date(), updatedAt: new Date() }).where(eq(quotes.id, quoteId));
     return (await this.getQuote(actor.companyId, quoteId))!;
@@ -471,23 +434,6 @@ export class FinanceService {
     return (await this.getInvoice(actor.companyId, invoice.id))!;
   }
 
-  async createInvoiceFromJob(actorOrCompany: FinanceActor | string, jobId: string, input: CreateInvoiceFromQuoteRequest): Promise<InvoiceSummary> {
-    const actor = toActor(actorOrCompany);
-    const job = await this.db.query.jobs.findFirst({ where: and(eq(jobs.id, jobId), eq(jobs.companyId, actor.companyId)) });
-    if (!job) throw new FinanceError('JOB_NOT_FOUND', 'Job not found');
-    const acceptedQuote = await this.db.query.quotes.findFirst({
-      where: and(eq(quotes.companyId, actor.companyId), eq(quotes.jobId, jobId), eq(quotes.status, 'accepted')),
-      orderBy: [desc(quotes.updatedAt)],
-    });
-    if (!acceptedQuote) {
-      throw new FinanceError(
-        'VALIDATION_ERROR',
-        'No accepted quote is linked to this job — accept a quote before creating an invoice',
-      );
-    }
-    return this.createInvoiceFromQuote(actor, acceptedQuote.id, input);
-  }
-
   async getInvoiceDetail(companyId: string, invoiceId: string): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
@@ -507,7 +453,7 @@ export class FinanceService {
       this.db.query.payments.findMany({ where: and(eq(payments.companyId, companyId), sql`exists (select 1 from invoices where invoices.id = ${payments.invoiceId} and invoices.job_id = ${jobId})`), with: { invoice: { with: { customer: true } } } }),
     ]);
     const quotesOut = quoteRows.map(row => toQuoteSummary(row, options.includeProfit ? profitFromQuote(row) : null));
-    const invoicesOut = invoiceRows.map((row) => toInvoiceSummary(row)); const paymentsOut = paymentRows.map(toPaymentSummary);
+    const invoicesOut = invoiceRows.map(toInvoiceSummary); const paymentsOut = paymentRows.map(toPaymentSummary);
     const currency = quotesOut[0]?.currency ?? invoicesOut[0]?.currency ?? 'ZAR';
     const quotedCents = quotesOut.reduce((sum, item) => sum + item.totalCents, 0);
     const accepted = quotesOut.find((item) => item.status === 'accepted') ?? null;
@@ -569,7 +515,19 @@ export class FinanceService {
         });
       }
     }
-    return { jobId, quotes: quotesOut, invoices: invoicesOut, payments: paymentsOut, chips };
+    return {
+      jobId,
+      quotes: quotesOut,
+      invoices: invoicesOut,
+      payments: paymentsOut,
+      chips,
+      ledger: deriveJobPaymentLedger({
+        quotes: quotesOut,
+        invoices: invoicesOut,
+        payments: paymentsOut,
+        currency,
+      }),
+    };
   }
 
   async getStats(companyId: string): Promise<FinanceStats> {
@@ -856,6 +814,7 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     totalCents: row.totalCents ?? row.amountCents,
     currency: row.currency,
     validUntil: row.validUntil ? row.validUntil.toISOString() : null,
+    depositPercent: row.depositPercent ?? null,
     issuedAt: row.issuedAt?.toISOString() ?? null,
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
@@ -864,36 +823,15 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
   };
 }
 
-function toInvoiceSummary(
-  row: InvoiceWithRelations & Record<string, any>,
-  mapping?: typeof xeroInvoiceMappings.$inferSelect,
-): InvoiceSummary {
-  const xeroSyncStatus = mapping?.syncStatus ?? null;
-  const xeroInvoiceNumber =
-    row.xeroInvoiceNumber ?? mapping?.xeroInvoiceNumber ?? (xeroSyncStatus === 'synced' ? row.invoiceNumber : null);
-  const numberAuthority: InvoiceSummary['numberAuthority'] =
-    row.numberAuthority === 'xero' || xeroSyncStatus === 'synced'
-      ? 'xero'
-      : 'internal_pending_xero';
-  const totalCents = resolveEffectiveInvoiceTotalCents({
-    amountCents: row.amountCents,
-    totalCents: row.totalCents,
-  });
-  const financialDataComplete = totalCents > 0;
-
+function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): InvoiceSummary {
   return {
     id: row.id,
     invoiceNumber: row.invoiceNumber,
     internalNumber: row.internalNumber ?? row.invoiceNumber,
-    displayInvoiceNumber: displayInvoiceNumber({
-      xeroInvoiceNumber,
-      internalNumber: row.internalNumber,
-      invoiceNumber: row.invoiceNumber,
-      numberAuthority,
-    }),
-    xeroInvoiceNumber,
-    xeroReference: row.xeroReference ?? mapping?.xeroReference ?? null,
-    numberAuthority,
+    displayInvoiceNumber: displayInvoiceNumber(row),
+    xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
+    xeroReference: row.xeroReference ?? null,
+    numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as InvoiceSummary['numberAuthority'],
     title: row.title,
     status: row.status,
     stage: row.stage ?? 'standard',
@@ -906,18 +844,12 @@ function toInvoiceSummary(
     quoteNumber: row.quote?.quoteNumber ?? null,
     quoteVersionNumber: row.quoteVersionNumber ?? null,
     amountCents: row.amountCents,
-    totalCents,
+    totalCents: row.totalCents ?? row.amountCents,
     amountPaidCents: row.amountPaidCents,
-    outstandingCents: resolveEffectiveInvoiceOutstandingCents({
-      amountCents: row.amountCents,
-      totalCents: row.totalCents,
-      amountPaidCents: row.amountPaidCents,
-    }),
+    outstandingCents: Math.max(0, (row.totalCents ?? row.amountCents) - row.amountPaidCents),
     isOverdue: Boolean(row.dueDate && row.dueDate < new Date() && ['sent', 'partial', 'overdue'].includes(row.status)),
     currency: row.currency,
     dueDate: row.dueDate ? row.dueDate.toISOString() : null,
-    xeroSyncStatus,
-    financialDataComplete,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

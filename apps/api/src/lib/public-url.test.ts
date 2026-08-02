@@ -24,6 +24,10 @@ describe('public-url', () => {
       true,
     );
     assert.equal(isPlaceholderPublicUrl('https://young-guns-os-web.up.railway.app'), false);
+    assert.equal(
+      isPlaceholderPublicUrl('https://comfortable-determination-staging.up.railway.app'),
+      false,
+    );
   });
 
   it('allows the live TITAN staging web origin (not a docs placeholder)', () => {

@@ -1,12 +1,21 @@
-import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { useRoute } from 'wouter';
-import { Button, Input, Panel } from '@titan/ui';
-import type { SupplierActivitySummary, SupplierStatus, SupplierSummary } from '@titan/shared';
+import { Link, useRoute } from 'wouter';
+import { Button, Input, PageHeader, Panel } from '@titan/ui';
+import type {
+  InventoryItemSummary,
+  SupplierActivitySummary,
+  SupplierProductSummary,
+  SupplierStatus,
+  SupplierSummary,
+} from '@titan/shared';
+import { formatMoney } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
+import { fetchInventoryItems } from '../../lib/inventory-api';
 import {
   createSupplierActivity,
+  createSupplierProduct,
   fetchSupplierActivities,
+  fetchSupplierProducts,
   fetchSuppliers,
   updateSupplier,
 } from '../../lib/procurement-api';
@@ -19,6 +28,8 @@ export function SupplierDetailPage() {
   const { accessToken, user } = useAuth();
   const [supplier, setSupplier] = useState<SupplierSummary | null>(null);
   const [activities, setActivities] = useState<SupplierActivitySummary[]>([]);
+  const [products, setProducts] = useState<SupplierProductSummary[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,19 +45,28 @@ export function SupplierDetailPage() {
   const [status, setStatus] = useState<SupplierStatus>('active');
 
   const [activityBody, setActivityBody] = useState('');
+  const [productName, setProductName] = useState('');
+  const [supplierSku, setSupplierSku] = useState('');
+  const [unitCostRands, setUnitCostRands] = useState('0');
+  const [leadTimeDays, setLeadTimeDays] = useState('');
+  const [linkedItemId, setLinkedItemId] = useState('');
 
   const canWrite = useMemo(() => (user ? canManageProcurement(user.permissions) : false), [user]);
 
   async function loadSupplier() {
     if (!accessToken || !supplierId) return;
 
-    const [suppliers, activityData] = await Promise.all([
+    const [suppliers, activityData, productData, items] = await Promise.all([
       fetchSuppliers(accessToken),
       fetchSupplierActivities(accessToken, supplierId),
+      fetchSupplierProducts(accessToken),
+      fetchInventoryItems(accessToken),
     ]);
     const found = suppliers.find((s) => s.id === supplierId) ?? null;
     setSupplier(found);
     setActivities(activityData);
+    setProducts(productData.filter((product) => product.supplierId === supplierId));
+    setInventoryItems(items);
     if (found) {
       setName(found.name);
       setContactName(found.contactName ?? '');
@@ -132,12 +152,57 @@ export function SupplierDetailPage() {
     }
   }
 
+  async function handleAddProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!accessToken || !canWrite || !supplierId || !productName.trim()) return;
+
+    const unitCostCents = Math.round(Number.parseFloat(unitCostRands || '0') * 100);
+    if (!Number.isFinite(unitCostCents) || unitCostCents < 0) {
+      setError('Enter a valid unit cost');
+      return;
+    }
+
+    const parsedLead = leadTimeDays.trim() ? Number.parseInt(leadTimeDays, 10) : null;
+    if (parsedLead != null && (!Number.isFinite(parsedLead) || parsedLead < 0)) {
+      setError('Enter a valid lead time in days');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await createSupplierProduct(accessToken, {
+        supplierId,
+        productName: productName.trim(),
+        supplierSku: supplierSku.trim() || null,
+        unitCostCents,
+        leadTimeDays: parsedLead,
+        inventoryItemId: linkedItemId || null,
+      });
+      setProductName('');
+      setSupplierSku('');
+      setUnitCostRands('0');
+      setLeadTimeDays('');
+      setLinkedItemId('');
+      await loadSupplier();
+      setSuccess('Supplier product added.');
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to add supplier product');
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   if (isLoading) return <p className="page-muted">Loading supplier…</p>;
 
   if (!supplier) {
     return (
       <div className="inventory-page">
         <PageHeader title="Supplier not found" description="This supplier may have been removed." />
+        <Link href="/procurement/suppliers">
+          <Button variant="secondary">Back to suppliers</Button>
+        </Link>
       </div>
     );
   }
@@ -149,6 +214,9 @@ export function SupplierDetailPage() {
         description={`${supplier.purchaseOrderCount} purchase order(s) · ${supplier.status}`}
         actions={
           <div className="fleet-detail__actions">
+            <Link href="/procurement/suppliers">
+              <Button variant="secondary">Back to suppliers</Button>
+            </Link>
             {canWrite ? (
               <Button variant="secondary" onClick={() => setIsEditing((value) => !value)}>
                 {isEditing ? 'Cancel edit' : 'Edit supplier'}
@@ -228,6 +296,83 @@ export function SupplierDetailPage() {
           </dl>
         </Panel>
       )}
+
+      <Panel title="Supplier products" description="Catalog links used when raising purchase orders.">
+        {canWrite ? (
+          <form className="inventory-form" onSubmit={(event) => void handleAddProduct(event)}>
+            <Input
+              label="Product name"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              required
+            />
+            <Input
+              label="Supplier SKU"
+              value={supplierSku}
+              onChange={(e) => setSupplierSku(e.target.value)}
+            />
+            <Input
+              label="Unit cost (R)"
+              value={unitCostRands}
+              onChange={(e) => setUnitCostRands(e.target.value)}
+              required
+            />
+            <Input
+              label="Lead time (days)"
+              value={leadTimeDays}
+              onChange={(e) => setLeadTimeDays(e.target.value)}
+            />
+            <label className="titan-input-group">
+              <span className="titan-input-label">Linked inventory item</span>
+              <select
+                className="titan-input"
+                value={linkedItemId}
+                onChange={(e) => setLinkedItemId(e.target.value)}
+              >
+                <option value="">None</option>
+                {inventoryItems.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.sku} — {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Button type="submit" disabled={isSaving || !productName.trim()}>
+              Add product
+            </Button>
+          </form>
+        ) : null}
+        {products.length === 0 ? (
+          <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+            No supplier products linked yet.
+          </p>
+        ) : (
+          <div className="inventory-table-wrap" style={{ marginTop: '0.75rem' }}>
+            <table className="inventory-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Unit cost</th>
+                  <th>Lead time</th>
+                  <th>Inventory item</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id}>
+                    <td>{product.productName}</td>
+                    <td>{product.supplierSku ?? '—'}</td>
+                    <td>{formatMoney(product.unitCostCents)}</td>
+                    <td>{product.leadTimeDays != null ? `${product.leadTimeDays}d` : '—'}</td>
+                    <td>{product.inventoryItemName ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
 
       <Panel title="Activity log" description="Notes, communications and performance history.">
         {canWrite ? (

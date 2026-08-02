@@ -12,6 +12,7 @@ import type {
   JobVariationStatus,
   JobVariationSummary,
   JobVehicleAssignmentSummary,
+  JobTimelineEventSummary,
   JobWorkflowAction,
   JobWorkflowTransitionRequest,
   RecordJobMaterialLineRequest,
@@ -20,10 +21,6 @@ import type {
 } from '@titan/shared';
 import { JOB_EXECUTION_TRANSITIONS, evaluateCompletionGate, phaseToJobStatus } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import {
-  shouldRejectDuplicateCompletionSnapshot,
-  shouldReplayGatedCompletionByClientActionId,
-} from './job-execution-completion-idempotency.js';
 import {
   inventoryItems,
   inventoryLocations,
@@ -41,7 +38,7 @@ import {
   users,
   vehicles,
 } from '@titan/db';
-import { publishTenantDomainEvent } from '../lib/tenant-domain-event-publisher.js';
+import { emitBusinessEvent } from '../lib/automation-events.js';
 import { StockMovementError, type StockMovementsService } from './stock-movements.service.js';
 
 export class JobExecutionError extends Error {
@@ -468,7 +465,7 @@ export class JobExecutionService {
     });
 
     if (toStatus !== job.status) {
-      publishTenantDomainEvent({
+      emitBusinessEvent({
         companyId: scope.companyId,
         eventType: 'job.status_changed',
         entityType: 'job',
@@ -556,7 +553,7 @@ export class JobExecutionService {
       metadata: { reason: trimmedReason, toPhase },
     });
 
-    publishTenantDomainEvent({
+    emitBusinessEvent({
       companyId: actor.companyId,
       eventType: 'job.status_changed',
       entityType: 'job',
@@ -842,7 +839,7 @@ export class JobExecutionService {
       },
     });
 
-    publishTenantDomainEvent({
+    emitBusinessEvent({
       companyId: actor.companyId,
       eventType: 'job.material_used',
       entityType: 'job_material_line',
@@ -945,11 +942,23 @@ export class JobExecutionService {
     }
 
     const locationId = input.locationId ?? line.locationId;
+    const inventoryItemId = input.inventoryItemId ?? line.inventoryItemId;
     const isStockSource = line.materialSource === 'vehicle_stock' || line.materialSource === 'warehouse_stock';
-    const needsStock = Boolean(line.inventoryItemId && locationId && isStockSource);
+
+    if (isStockSource && (!inventoryItemId || !locationId)) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Inventory item and stock location are required to approve vehicle/warehouse stock use',
+      );
+    }
+
+    const needsStock = Boolean(inventoryItemId && locationId && isStockSource);
 
     if (locationId) {
       await this.ensureLocationBelongsToCompany(actor.companyId, locationId);
+    }
+    if (inventoryItemId) {
+      await this.ensureInventoryItemBelongsToCompany(actor.companyId, inventoryItemId);
     }
 
     let unitCostCents = line.unitCostCents;
@@ -961,7 +970,7 @@ export class JobExecutionService {
         try {
           movement = await this.stockMovementsService.applyMovement(tx, {
             companyId: actor.companyId,
-            itemId: line.inventoryItemId!,
+            itemId: inventoryItemId!,
             locationId: locationId!,
             movementType: 'issue',
             quantityDelta: -fulfilledQuantity,
@@ -989,6 +998,7 @@ export class JobExecutionService {
         .set({
           status,
           fulfilledQuantity: String(fulfilledQuantity),
+          inventoryItemId: inventoryItemId ?? null,
           locationId: locationId ?? null,
           unitCostCents,
           stockMovementId,
@@ -1015,7 +1025,7 @@ export class JobExecutionService {
       },
     });
 
-    publishTenantDomainEvent({
+    emitBusinessEvent({
       companyId: actor.companyId,
       eventType: 'job.material_used',
       entityType: 'job_material_line',
@@ -1197,48 +1207,48 @@ export class JobExecutionService {
 
     const [crew, vehicle, pendingVariations, completionGate, completionSnapshotRow, docs, labourRows] =
       await Promise.all([
-      this.getCrew(scope.companyId, jobId),
-      this.getActiveVehicle(scope.companyId, jobId),
-      this.listVariations(scope.companyId, jobId, 'pending'),
-      this.getCompletionGate(scope, jobId),
-      this.db.query.jobCompletionSnapshots.findFirst({
-        where: and(
-          eq(jobCompletionSnapshots.companyId, scope.companyId),
-          eq(jobCompletionSnapshots.jobId, jobId),
-        ),
-        columns: {
-          id: true,
-          jobId: true,
-          completedByUserId: true,
-          createdAt: true,
-          snapshot: true,
-        },
-      }),
-      this.db.query.mobileJobDocumentation.findMany({
-        where: and(
-          eq(mobileJobDocumentation.companyId, scope.companyId),
-          eq(mobileJobDocumentation.jobId, jobId),
-        ),
-        orderBy: [desc(mobileJobDocumentation.createdAt)],
-        columns: {
-          id: true,
-          documentationType: true,
-          title: true,
-          evidencePhase: true,
-          storageKey: true,
-          mimeType: true,
-          sizeBytes: true,
-          createdAt: true,
-        },
-      }),
-      this.db.query.mobileTimeEntries.findMany({
-        where: and(
-          eq(mobileTimeEntries.companyId, scope.companyId),
-          eq(mobileTimeEntries.jobId, jobId),
-        ),
-        columns: { durationMinutes: true },
-      }),
-    ]);
+        this.getCrew(scope.companyId, jobId),
+        this.getActiveVehicle(scope.companyId, jobId),
+        this.listVariations(scope.companyId, jobId, 'pending'),
+        this.getCompletionGate(scope, jobId),
+        this.db.query.jobCompletionSnapshots.findFirst({
+          where: and(
+            eq(jobCompletionSnapshots.companyId, scope.companyId),
+            eq(jobCompletionSnapshots.jobId, jobId),
+          ),
+          columns: {
+            id: true,
+            jobId: true,
+            completedByUserId: true,
+            createdAt: true,
+            snapshot: true,
+          },
+        }),
+        this.db.query.mobileJobDocumentation.findMany({
+          where: and(
+            eq(mobileJobDocumentation.companyId, scope.companyId),
+            eq(mobileJobDocumentation.jobId, jobId),
+          ),
+          orderBy: [desc(mobileJobDocumentation.createdAt)],
+          columns: {
+            id: true,
+            documentationType: true,
+            title: true,
+            evidencePhase: true,
+            storageKey: true,
+            mimeType: true,
+            sizeBytes: true,
+            createdAt: true,
+          },
+        }),
+        this.db.query.mobileTimeEntries.findMany({
+          where: and(
+            eq(mobileTimeEntries.companyId, scope.companyId),
+            eq(mobileTimeEntries.jobId, jobId),
+          ),
+          columns: { durationMinutes: true },
+        }),
+      ]);
 
     const labourTotalMinutes = labourRows.reduce(
       (sum, row) => sum + (row.durationMinutes ?? 0),
@@ -1259,7 +1269,7 @@ export class JobExecutionService {
             jobId: completionSnapshotRow.jobId,
             completedByUserId: completionSnapshotRow.completedByUserId,
             createdAt: completionSnapshotRow.createdAt.toISOString(),
-            snapshot: completionSnapshotRow.snapshot,
+            snapshot: completionSnapshotRow.snapshot as Record<string, unknown>,
           }
         : null,
       labour: {
@@ -1283,6 +1293,44 @@ export class JobExecutionService {
         };
       }),
     };
+  }
+
+  /** Job 360 operational timeline from existing workflow events (tenant-scoped). */
+  async listTimeline(scope: ExecutionScope, jobId: string): Promise<JobTimelineEventSummary[]> {
+    await this.requireJob(scope.companyId, jobId);
+
+    const rows = await this.db.query.jobWorkflowEvents.findMany({
+      where: and(eq(jobWorkflowEvents.companyId, scope.companyId), eq(jobWorkflowEvents.jobId, jobId)),
+      orderBy: [desc(jobWorkflowEvents.createdAt)],
+      limit: 200,
+    });
+
+    const userIds = [...new Set(rows.map((row) => row.userId))];
+    const userRows =
+      userIds.length > 0
+        ? await this.db.query.users.findMany({
+            where: and(eq(users.companyId, scope.companyId), inArray(users.id, userIds)),
+            columns: { id: true, firstName: true, lastName: true },
+          })
+        : [];
+    const usersById = new Map(userRows.map((user) => [user.id, user]));
+
+    return rows.map((row) => {
+      const user = usersById.get(row.userId);
+      return {
+        id: row.id,
+        action: row.action,
+        fromPhase: row.fromPhase,
+        toPhase: row.toPhase,
+        fromStatus: row.fromStatus,
+        toStatus: row.toStatus,
+        reason: row.reason,
+        userId: row.userId,
+        userName: user ? `${user.firstName} ${user.lastName}`.trim() : null,
+        metadata: (row.metadata ?? {}) as Record<string, unknown>,
+        createdAt: row.createdAt.toISOString(),
+      };
+    });
   }
 
   async getCompletionGate(scope: ExecutionScope, jobId: string): Promise<JobCompletionGateResult> {
@@ -1321,7 +1369,7 @@ export class JobExecutionService {
           eq(jobWorkflowEvents.clientActionId, input.clientActionId),
         ),
       });
-      if (shouldReplayGatedCompletionByClientActionId(existing)) {
+      if (existing) {
         return this.requireJob(scope.companyId, jobId);
       }
     }
@@ -1340,16 +1388,15 @@ export class JobExecutionService {
       ),
       columns: { createdAt: true },
     });
-    if (
-      shouldRejectDuplicateCompletionSnapshot({
-        existingSnapshot,
-        reopenAt: job.reopenAt,
-      })
-    ) {
-      throw new JobExecutionError(
-        'COMPLETION_SNAPSHOT_EXISTS',
-        'A completion snapshot already exists for this job — reopen the job with a reason before recording a new completion',
-      );
+    if (existingSnapshot) {
+      const reopenedSinceSnapshot =
+        job.reopenAt != null && job.reopenAt.getTime() > existingSnapshot.createdAt.getTime();
+      if (!reopenedSinceSnapshot) {
+        throw new JobExecutionError(
+          'COMPLETION_SNAPSHOT_EXISTS',
+          'A completion snapshot already exists for this job — reopen the job with a reason before recording a new completion',
+        );
+      }
     }
 
     const context = await this.collectGateContext(scope.companyId, jobId);
@@ -1445,7 +1492,7 @@ export class JobExecutionService {
     });
 
     // Never call Xero (or any provider) directly here — downstream automation subscribes to these events.
-    publishTenantDomainEvent({
+    emitBusinessEvent({
       companyId: scope.companyId,
       eventType: 'job.status_changed',
       entityType: 'job',
@@ -1462,7 +1509,7 @@ export class JobExecutionService {
         executionPhase: 'completed',
       },
     });
-    publishTenantDomainEvent({
+    emitBusinessEvent({
       companyId: scope.companyId,
       eventType: 'job.completed',
       entityType: 'job',

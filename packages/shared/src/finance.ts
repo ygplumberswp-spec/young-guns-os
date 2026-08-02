@@ -1,3 +1,5 @@
+import type { JobPaymentLedger } from './job-payment-ledger.js';
+
 export type QuoteStatus =
   | 'draft'
   | 'internal_review'
@@ -143,6 +145,7 @@ export type QuoteSummary = {
   totalCents: number;
   currency: string;
   validUntil: string | null;
+  depositPercent?: number | null;
   issuedAt: string | null;
   acceptedAt: string | null;
   createdAt: string;
@@ -286,6 +289,8 @@ export type JobFinanceSummary = {
   quotes: QuoteSummary[];
   invoices: InvoiceSummary[];
   payments: PaymentSummary[];
+  /** Derived payment ledger for Job 360 finance strip (read-only; no Xero writes). */
+  ledger: JobPaymentLedger;
 };
 
 export type CreateQuoteRequest = {

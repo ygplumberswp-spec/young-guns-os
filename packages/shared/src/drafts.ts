@@ -1,4 +1,4 @@
-/** Phase 1 polish — draft workspace types and Young Guns safe defaults. */
+/** ASV-001 / Phase 1 — draft workspace types and Young Guns safe defaults. */
 
 export const DRAFT_RECORD_TYPES = [
   'quote',
@@ -15,6 +15,9 @@ export type DraftRecordType = (typeof DRAFT_RECORD_TYPES)[number];
 export const DRAFT_STATUSES = ['active', 'archived', 'published'] as const;
 
 export type DraftStatus = (typeof DRAFT_STATUSES)[number];
+
+/** Marker stored in `other` payloads for purchase-order drafts (no enum migration). */
+export const PURCHASE_ORDER_DRAFT_KIND = 'purchase_order';
 
 export type DraftWorkspaceSummary = {
   id: string;
@@ -94,10 +97,26 @@ export function draftRecordTypeLabel(type: DraftRecordType): string {
   return labels[type];
 }
 
-export function draftContinueHref(draft: Pick<DraftWorkspaceSummary, 'recordType' | 'recordId' | 'id'>): string {
+export function isPurchaseOrderDraft(
+  draft: Pick<DraftWorkspaceSummary, 'recordType' | 'title'> & {
+    payload?: Record<string, unknown>;
+  },
+): boolean {
+  if (draft.recordType !== 'other') return false;
+  if (draft.payload?.draftKind === PURCHASE_ORDER_DRAFT_KIND) return true;
+  return Boolean(draft.title?.startsWith('PO draft:'));
+}
+
+export function draftContinueHref(
+  draft: Pick<DraftWorkspaceSummary, 'recordType' | 'recordId' | 'id' | 'title'> & {
+    payload?: Record<string, unknown>;
+  },
+): string {
   switch (draft.recordType) {
     case 'quote':
-      return draft.recordId ? `/finance/quotes/${draft.recordId}/edit` : `/finance/quotes/new?draftId=${draft.id}`;
+      return draft.recordId
+        ? `/finance/quotes/${draft.recordId}/edit`
+        : `/finance/quotes/new?draftId=${draft.id}`;
     case 'invoice':
       return draft.recordId
         ? `/finance/invoices/${draft.recordId}`
@@ -105,9 +124,20 @@ export function draftContinueHref(draft: Pick<DraftWorkspaceSummary, 'recordType
     case 'job':
       return draft.recordId ? `/jobs/${draft.recordId}` : `/jobs/new?draftId=${draft.id}`;
     case 'customer':
-      return draft.recordId ? `/crm/${draft.recordId}` : `/crm/new?draftId=${draft.id}`;
+      return draft.recordId ? `/crm/${draft.recordId}?draftId=${draft.id}` : `/crm/new?draftId=${draft.id}`;
     case 'document':
-      return draft.recordId ? `/documents/${draft.recordId}` : `/documents/new?draftId=${draft.id}`;
+      return draft.recordId
+        ? `/documents/${draft.recordId}?draftId=${draft.id}`
+        : `/documents/new?draftId=${draft.id}`;
+    case 'marketing':
+      return `/marketing-intelligence?tab=reactivation&draftId=${draft.id}`;
+    case 'other':
+      if (isPurchaseOrderDraft(draft)) {
+        return draft.recordId
+          ? `/procurement/purchase-orders/${draft.recordId}`
+          : `/procurement/purchase-orders/new?draftId=${draft.id}`;
+      }
+      return `/drafts`;
     default:
       return `/drafts`;
   }
@@ -126,7 +156,88 @@ export function permissionsForDraftType(recordType: DraftRecordType): string[] {
       return ['documents:read', 'documents:write'];
     case 'marketing':
       return ['marketing:read', 'marketing:write'];
+    case 'other':
+      // Purchase-order drafts use `other` until a dedicated enum value is migrated.
+      return ['procurement:read', 'procurement:write', '*'];
     default:
       return ['*'];
   }
+}
+
+const SENSITIVE_DRAFT_KEY_PATTERN =
+  /(secret|password|token|api[_-]?key|refresh[_-]?token|access[_-]?token|client[_-]?secret|authorization|bearer|credential|private[_-]?key|xero.*secret|smtp.*pass)/i;
+
+/** Strip finance/provider secrets and binary blobs before persisting browser/API drafts. */
+export function sanitizeDraftPayload(payload: Record<string, unknown>): Record<string, unknown> {
+  const next: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(payload)) {
+    if (SENSITIVE_DRAFT_KEY_PATTERN.test(key)) continue;
+    if (key === 'fileBytes' || key === 'fileBase64' || key === 'binaryContent' || key === 'contentBase64') {
+      continue;
+    }
+    if (Array.isArray(value)) {
+      next[key] = value.map((item) =>
+        item && typeof item === 'object' && !Array.isArray(item)
+          ? sanitizeDraftPayload(item as Record<string, unknown>)
+          : item,
+      );
+      continue;
+    }
+    if (value && typeof value === 'object') {
+      next[key] = sanitizeDraftPayload(value as Record<string, unknown>);
+      continue;
+    }
+    next[key] = value;
+  }
+  return next;
+}
+
+/**
+ * Customer draft restore must not silently overwrite verified contact channels.
+ * Returns which draft fields are safe to apply.
+ */
+export function selectSafeCustomerDraftRestore(input: {
+  draft: { name?: unknown; email?: unknown; phone?: unknown; status?: unknown; notes?: unknown };
+  current: { name: string; email: string | null; phone: string | null; status: string; notes: string | null };
+  verifiedEmail?: boolean;
+  verifiedPhone?: boolean;
+}): {
+  name?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+  notes?: string;
+  skippedVerified: string[];
+} {
+  const skippedVerified: string[] = [];
+  const out: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    status?: string;
+    notes?: string;
+    skippedVerified: string[];
+  } = { skippedVerified };
+
+  if (typeof input.draft.name === 'string') out.name = input.draft.name;
+  if (typeof input.draft.status === 'string') out.status = input.draft.status;
+  if (typeof input.draft.notes === 'string') out.notes = input.draft.notes;
+
+  if (typeof input.draft.email === 'string') {
+    if (input.verifiedEmail && input.draft.email !== (input.current.email ?? '')) {
+      skippedVerified.push('email');
+    } else {
+      out.email = input.draft.email;
+    }
+  }
+
+  if (typeof input.draft.phone === 'string') {
+    if (input.verifiedPhone && input.draft.phone !== (input.current.phone ?? '')) {
+      skippedVerified.push('phone');
+    } else {
+      out.phone = input.draft.phone;
+    }
+  }
+
+  return out;
 }

@@ -311,10 +311,26 @@ export type MobileWorkforceJobList = {
   completedCount: number;
 };
 
+export type MobileInventoryCatalogItem = {
+  id: string;
+  name: string;
+  sku: string | null;
+};
+
+export type MobileInventoryCatalogLocation = {
+  id: string;
+  name: string;
+  locationType: 'warehouse' | 'van' | 'other';
+  vehicleId: string | null;
+};
+
 export type MobileWorkforceInventoryCentre = {
   alerts: MobileInventoryAlert[];
   recentUsage: MobileJobInventoryUsageSummary[];
   pendingUsageCount: number;
+  /** UX-F / UX-042 — stock-linked material requests from the field. */
+  catalogItems: MobileInventoryCatalogItem[];
+  locations: MobileInventoryCatalogLocation[];
 };
 
 export type MobileWorkforceNotificationCentre = {

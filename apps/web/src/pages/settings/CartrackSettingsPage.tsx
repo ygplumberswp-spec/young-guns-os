@@ -1,9 +1,10 @@
-import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
-import { Panel } from '@titan/ui';
-import { isCompanyOwnerRole } from '@titan/auth/browser';
+import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import {
+  INTEGRATION_CONNECTION_STATUS_OPTIONS,
+  deriveFleetConnectionDisplayState,
+  formatFleetConnectionDisplayLabel,
   type CartrackConnectionSummary,
   type IntegrationVehicleMappingSummary,
 } from '@titan/shared';
@@ -13,30 +14,18 @@ import {
   disconnectCartrack,
   fetchCartrackConnection,
   fetchCartrackMappings,
-  replaceCartrackCredentials,
   saveCartrackConnection,
+  syncCartrack,
   updateCartrackMapping,
-  verifyStoredCartrackConnection,
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
-import { IntegrationConnectionLock } from '../../features/integrations/IntegrationConnectionLock';
-import { CartrackSyncPanel } from '../../features/integrations/CartrackSyncPanel';
 
-const CONNECT_FIELD_KEYS = ['baseUrl', 'username', 'password'] as const;
-
-function reviewCategoryModifier(category: IntegrationVehicleMappingSummary['reviewCategory']): string {
-  switch (category) {
-    case 'auto_matched':
-      return 'success';
-    case 'ambiguous_match':
-      return 'warning';
-    case 'no_titan_vehicle':
-      return 'muted';
-    default:
-      return 'neutral';
-  }
+function formatConnectionStatus(status: CartrackConnectionSummary['status']): string {
+  return (
+    INTEGRATION_CONNECTION_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status
+  );
 }
 
 export function CartrackSettingsPage() {
@@ -44,25 +33,17 @@ export function CartrackSettingsPage() {
   const [connection, setConnection] = useState<CartrackConnectionSummary | null>(null);
   const [mappings, setMappings] = useState<IntegrationVehicleMappingSummary[]>([]);
   const [vehicles, setVehicles] = useState<Awaited<ReturnType<typeof fetchVehicles>>>([]);
-  const [formValues, setFormValues] = useState({
-    baseUrl: 'https://fleetapi-za.cartrack.com/rest',
-    username: '',
-    password: '',
-  });
+  const [baseUrl, setBaseUrl] = useState('https://fleetapi-za.cartrack.com/rest');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isBusy, setIsBusy] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const canView = useMemo(() => (user ? canAccessIntegrations(user.permissions) : false), [user]);
   const canManage = useMemo(() => (user ? canManageIntegrations(user.permissions) : false), [user]);
-  const isOwner = useMemo(
-    () =>
-      user
-        ? isCompanyOwnerRole({ roleName: user.roleName, permissions: user.permissions })
-        : false,
-    [user],
-  );
 
   async function loadPageData() {
     if (!accessToken || !canView) {
@@ -79,11 +60,9 @@ export function CartrackSettingsPage() {
     setMappings(mappingData);
     setVehicles(vehicleData);
 
-    setFormValues((current) => ({
-      baseUrl: connectionData.baseUrl ?? current.baseUrl,
-      username: '',
-      password: '',
-    }));
+    if (connectionData.baseUrl) {
+      setBaseUrl(connectionData.baseUrl);
+    }
   }
 
   useEffect(() => {
@@ -114,27 +93,19 @@ export function CartrackSettingsPage() {
     };
   }, [accessToken, canView]);
 
-  function resetCredentialFields() {
-    setFormValues((current) => ({
-      ...current,
-      username: '',
-      password: '',
-    }));
-  }
-
   async function handleConnect(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken || !canManage) return;
 
-    setIsBusy(true);
+    setIsSaving(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const updated = await saveCartrackConnection(accessToken, formValues);
+      const updated = await saveCartrackConnection(accessToken, { baseUrl, username, password });
       setConnection(updated);
-      resetCredentialFields();
-      setSuccess('Cartrack connected successfully. Vehicle discovery and background sync will start automatically.');
+      setPassword('');
+      setSuccess('Cartrack connected successfully.');
       await loadPageData();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to connect Cartrack');
@@ -143,43 +114,14 @@ export function CartrackSettingsPage() {
         if (latest) setConnection(latest);
       }
     } finally {
-      setIsBusy(false);
-    }
-  }
-
-  async function handleReplaceCredentials(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken || !canManage || !isOwner) return;
-
-    setIsBusy(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const updated = await replaceCartrackCredentials(accessToken, formValues);
-      setConnection(updated);
-      resetCredentialFields();
-      setSuccess('Cartrack credentials replaced successfully.');
-      await loadPageData();
-    } catch (err) {
-      setError(
-        err instanceof ApiClientError
-          ? err.message
-          : 'Credential validation failed. Your previous connection was preserved.',
-      );
-      if (accessToken) {
-        const latest = await fetchCartrackConnection(accessToken).catch(() => null);
-        if (latest) setConnection(latest);
-      }
-    } finally {
-      setIsBusy(false);
+      setIsSaving(false);
     }
   }
 
   async function handleDisconnect() {
     if (!accessToken || !canManage) return;
 
-    setIsBusy(true);
+    setIsSaving(true);
     setError(null);
     setSuccess(null);
 
@@ -187,31 +129,32 @@ export function CartrackSettingsPage() {
       const updated = await disconnectCartrack(accessToken);
       setConnection(updated);
       setMappings([]);
-      resetCredentialFields();
+      setPassword('');
       setSuccess('Cartrack disconnected.');
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to disconnect Cartrack');
     } finally {
-      setIsBusy(false);
+      setIsSaving(false);
     }
   }
 
-  async function handleVerifyStored() {
+  async function handleSync() {
     if (!accessToken || !canManage) return;
 
-    setIsBusy(true);
+    setIsSyncing(true);
     setError(null);
     setSuccess(null);
 
     try {
-      const updated = await verifyStoredCartrackConnection(accessToken);
-      setConnection(updated);
-      setSuccess('Stored Cartrack credentials verified successfully.');
+      const result = await syncCartrack(accessToken);
+      setSuccess(
+        `Sync complete: ${result.externalVehicleCount} external vehicles, ${result.positionsStored} GPS positions stored.`,
+      );
       await loadPageData();
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to verify stored credentials');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to sync Cartrack data');
     } finally {
-      setIsBusy(false);
+      setIsSyncing(false);
     }
   }
 
@@ -231,9 +174,6 @@ export function CartrackSettingsPage() {
     }
   }
 
-  const reviewMappings = mappings.filter((mapping) => mapping.reviewCategory !== 'auto_matched');
-  const autoMappedMappings = mappings.filter((mapping) => mapping.reviewCategory === 'auto_matched');
-
   if (!canView) {
     return (
       <div className="integrations-page">
@@ -250,7 +190,7 @@ export function CartrackSettingsPage() {
       <div className="integrations-page">
         <PageHeader
           title="Cartrack GPS"
-          description="Connect Cartrack once — vehicles, GPS positions, and fleet data sync automatically in the background."
+          description="Connect Cartrack to sync vehicles and store live GPS positions for your fleet."
         />
         <IntegrationsNav />
         <p className="page-muted">Loading Cartrack settings…</p>
@@ -262,176 +202,181 @@ export function CartrackSettingsPage() {
     <div className="integrations-page">
       <PageHeader
         title="Cartrack GPS"
-        description="Connect Cartrack once — vehicles, GPS positions, and fleet data sync automatically in the background."
+        description="Connect Cartrack to sync vehicles and store live GPS positions for your fleet."
       />
       <IntegrationsNav />
 
-      {connection ? (
-        <IntegrationConnectionLock
-          providerName="Cartrack"
-          status={connection.status}
-          isConnected={connection.hasCredentials}
-          canManage={canManage}
-          isOwner={isOwner}
-          isBusy={isBusy}
-          error={error}
-          success={success}
-          statusRows={[
-            { label: 'Base URL', value: connection.baseUrl ?? 'Not configured' },
-            { label: 'Username', value: connection.usernameHint ?? 'Not configured' },
-            {
-              label: 'Last successful sync',
-              value: connection.lastSyncAt
-                ? new Date(connection.lastSyncAt).toLocaleString()
-                : 'Never',
-            },
-            {
-              label: 'Next automatic sync',
-              value: connection.nextScheduledSyncAt
-                ? new Date(connection.nextScheduledSyncAt).toLocaleString()
-                : 'Pending schedule',
-            },
-            { label: 'Sync health', value: connection.syncHealth },
-            { label: 'Mapped vehicles', value: String(connection.mappedVehicleCount) },
-            { label: 'GPS positions stored', value: String(connection.positionCount) },
-          ]}
-          connectFields={[
-            {
-              key: 'baseUrl',
-              label: 'API base URL',
-              autoComplete: 'off',
-              placeholder: 'https://fleetapi-za.cartrack.com/rest',
-            },
-            {
-              key: 'username',
-              label: 'Username',
-              autoComplete: 'off',
-            },
-            {
-              key: 'password',
-              label: 'Password',
-              type: 'password',
-              autoComplete: 'new-password',
-            },
-          ]}
-          connectValues={formValues}
-          onConnectValueChange={(key, value) => {
-            if (!CONNECT_FIELD_KEYS.includes(key as (typeof CONNECT_FIELD_KEYS)[number])) {
-              return;
-            }
-            setFormValues((current) => ({ ...current, [key]: value }));
-          }}
-          onConnect={handleConnect}
-          onDisconnect={handleDisconnect}
-          onReplaceCredentials={handleReplaceCredentials}
-          onVerifyStored={handleVerifyStored}
-          connectHelpText="Credentials are encrypted at rest, validated against the live Cartrack API before saving, and never returned to the browser."
-          recoveryContent={
-            accessToken ? (
-              <CartrackSyncPanel
-                accessToken={accessToken}
-                connection={connection}
-                canManage={canManage}
-                onConnectionChange={loadPageData}
-              />
-            ) : null
-          }
-        />
+      {error ? <p className="form-error">{error}</p> : null}
+      {success ? <p className="form-success">{success}</p> : null}
+
+      <Panel title="Connection status">
+        <dl className="integration-status-list">
+          <div>
+            <dt>Provider status</dt>
+            <dd>{connection ? formatConnectionStatus(connection.status) : 'Disconnected'}</dd>
+          </div>
+          <div>
+            <dt>Fleet health</dt>
+            <dd>
+              {connection
+                ? formatFleetConnectionDisplayLabel(
+                    deriveFleetConnectionDisplayState({
+                      connectionStatus: connection.status,
+                      hasCredentials: connection.hasCredentials,
+                      lastSyncAt: connection.lastSyncAt,
+                      lastError: connection.lastError,
+                    }),
+                  )
+                : 'Not configured'}
+            </dd>
+          </div>
+          <div>
+            <dt>Base URL</dt>
+            <dd>{connection?.baseUrl ?? 'Not configured'}</dd>
+          </div>
+          <div>
+            <dt>Username</dt>
+            <dd>{connection?.usernameHint ?? 'Not configured'}</dd>
+          </div>
+          <div>
+            <dt>Last successful sync</dt>
+            <dd>
+              {connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'}
+            </dd>
+          </div>
+          <div>
+            <dt>Credentials</dt>
+            <dd>{connection?.hasCredentials ? 'Present' : 'Missing'}</dd>
+          </div>
+          <div>
+            <dt>Mapped vehicles</dt>
+            <dd>{connection?.mappedVehicleCount ?? 0}</dd>
+          </div>
+          <div>
+            <dt>GPS positions stored</dt>
+            <dd>{connection?.positionCount ?? 0}</dd>
+          </div>
+          {connection?.lastError ? (
+            <div>
+              <dt>Last error</dt>
+              <dd className="integration-status-list__error">{connection.lastError}</dd>
+            </div>
+          ) : null}
+        </dl>
+        <p className="page-muted">
+          Live positions on Fleet Dispatch never claim “live” when disconnected, credentials are
+          missing, sync is stale, or a position is older than two minutes.
+        </p>
+      </Panel>
+
+      {canManage ? (
+        <Panel title="Connect Cartrack">
+          <form className="settings-form" onSubmit={(event) => void handleConnect(event)}>
+            <Input
+              label="API base URL"
+              value={baseUrl}
+              onChange={(e) => setBaseUrl(e.target.value)}
+              placeholder="https://fleetapi-za.cartrack.com/rest"
+              required
+            />
+            <Input
+              label="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <p className="page-muted">
+              Credentials are encrypted at rest and never returned to the browser after saving.
+              Connection is verified against the live Cartrack API before being marked connected.
+            </p>
+            <div className="integration-actions">
+              <Button type="submit" disabled={isSaving}>
+                {isSaving
+                  ? 'Connecting…'
+                  : connection?.status === 'connected'
+                    ? 'Update connection'
+                    : 'Connect'}
+              </Button>
+              {connection?.status === 'connected' ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSyncing}
+                    onClick={() => void handleSync()}
+                  >
+                    {isSyncing ? 'Syncing…' : 'Sync now'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={isSaving}
+                    onClick={() => void handleDisconnect()}
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </form>
+        </Panel>
       ) : null}
 
-      <Panel title="Vehicle mappings">
+      <Panel title="Vehicle sync mappings">
         {mappings.length === 0 ? (
           <p className="page-muted">
-            No Cartrack vehicles discovered yet. Connect Cartrack to import vehicles and auto-map
-            exact registration matches.
+            No Cartrack vehicles synced yet. Connect Cartrack and run a sync to import external
+            vehicles.
           </p>
         ) : (
-          <>
-            {autoMappedMappings.length > 0 ? (
-              <div className="integration-mapping-group">
-                <h3 className="integration-mapping-group__title">Automatically matched</h3>
-                <div className="integration-table-wrap">
-                  <table className="integration-table">
-                    <thead>
-                      <tr>
-                        <th>External vehicle</th>
-                        <th>Registration</th>
-                        <th>Titan vehicle</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {autoMappedMappings.map((mapping) => (
-                        <tr key={mapping.id}>
-                          <td>{mapping.externalName ?? mapping.externalVehicleId}</td>
-                          <td>{mapping.externalRegistration ?? '—'}</td>
-                          <td>
-                            {mapping.vehicleName
-                              ? `${mapping.vehicleName} (${mapping.vehicleLicensePlate ?? '—'})`
-                              : '—'}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : null}
-
-            {reviewMappings.length > 0 ? (
-              <div className="integration-mapping-group">
-                <h3 className="integration-mapping-group__title">Needs review</h3>
-                <div className="integration-table-wrap">
-                  <table className="integration-table">
-                    <thead>
-                      <tr>
-                        <th>External vehicle</th>
-                        <th>Registration</th>
-                        <th>Status</th>
-                        <th>Titan vehicle</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {reviewMappings.map((mapping) => (
-                        <tr key={mapping.id}>
-                          <td>{mapping.externalName ?? mapping.externalVehicleId}</td>
-                          <td>{mapping.externalRegistration ?? '—'}</td>
-                          <td>
-                            <span
-                              className={`status-pill status-pill--${reviewCategoryModifier(mapping.reviewCategory)}`}
-                            >
-                              {mapping.reviewLabel}
-                            </span>
-                          </td>
-                          <td>
-                            {canManage &&
-                            (mapping.reviewCategory === 'needs_review' ||
-                              mapping.reviewCategory === 'ambiguous_match') ? (
-                              <select
-                                className="titan-input"
-                                value={mapping.vehicleId ?? ''}
-                                onChange={(event) =>
-                                  void handleMappingChange(mapping.id, event.target.value)
-                                }
-                              >
-                                <option value="">Select vehicle</option>
-                                {vehicles.map((vehicle) => (
-                                  <option key={vehicle.id} value={vehicle.id}>
-                                    {vehicle.name} ({vehicle.licensePlate})
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              (mapping.vehicleName ?? '—')
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : null}
-          </>
+          <div className="integration-table-wrap">
+            <table className="integration-table">
+              <thead>
+                <tr>
+                  <th>External vehicle</th>
+                  <th>Registration</th>
+                  <th>Status</th>
+                  <th>Titan vehicle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mappings.map((mapping) => (
+                  <tr key={mapping.id}>
+                    <td>{mapping.externalName ?? mapping.externalVehicleId}</td>
+                    <td>{mapping.externalRegistration ?? '—'}</td>
+                    <td>{mapping.status}</td>
+                    <td>
+                      {canManage ? (
+                        <select
+                          className="titan-input"
+                          value={mapping.vehicleId ?? ''}
+                          onChange={(e) => void handleMappingChange(mapping.id, e.target.value)}
+                        >
+                          <option value="">Unmapped</option>
+                          {vehicles.map((vehicle) => (
+                            <option key={vehicle.id} value={vehicle.id}>
+                              {vehicle.name} ({vehicle.licensePlate})
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        (mapping.vehicleName ?? 'Unmapped')
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </Panel>
 

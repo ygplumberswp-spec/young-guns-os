@@ -2,11 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   buildDraftKey,
   DEFAULT_DRAFT_DEBOUNCE_MS,
+  sanitizeDraftPayload,
   type DraftRecordType,
 } from '@titan/shared';
 import { upsertDraft } from '../lib/drafts-api';
 
-export type DraftAutosaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
+export type DraftAutosaveStatus = 'idle' | 'saving' | 'saved' | 'failed' | 'offline';
 
 type UseDraftAutosaveOptions = {
   accessToken: string | null;
@@ -45,12 +46,32 @@ export function useDraftAutosave({
   metaRef.current = getMeta;
 
   const draftKey =
-    userId != null
-      ? buildDraftKey({ userId, recordType, recordId: recordId ?? null })
-      : null;
+    userId != null ? buildDraftKey({ userId, recordType, recordId: recordId ?? null }) : null;
+
+  useEffect(() => {
+    function handleOnline() {
+      setStatus((prev) => (prev === 'offline' ? 'idle' : prev));
+    }
+    function handleOffline() {
+      setStatus('offline');
+    }
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setStatus('offline');
+    }
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const saveNow = useCallback(async (): Promise<boolean> => {
     if (!accessToken || !userId || !draftKey || !enabled) return false;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setStatus('offline');
+      return false;
+    }
 
     setStatus('saving');
     try {
@@ -62,7 +83,7 @@ export function useDraftAutosave({
         title: meta.title,
         customerLabel: meta.customerLabel,
         completionPct: meta.completionPct,
-        payload: payloadRef.current(),
+        payload: sanitizeDraftPayload(payloadRef.current()),
       });
       setDraftId(draft.id);
       setLastSavedAt(draft.lastEditedAt);
@@ -73,18 +94,14 @@ export function useDraftAutosave({
       setStatus('failed');
       return false;
     }
-  }, [
-    accessToken,
-    draftKey,
-    enabled,
-    onDraftSaved,
-    recordId,
-    recordType,
-    userId,
-  ]);
+  }, [accessToken, draftKey, enabled, onDraftSaved, recordId, recordType, userId]);
 
   const scheduleSave = useCallback(() => {
     if (!enabled || !accessToken || !userId) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setStatus('offline');
+      return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       void saveNow();
@@ -98,6 +115,19 @@ export function useDraftAutosave({
     [],
   );
 
+  const statusLabel =
+    status === 'saving'
+      ? 'Saving…'
+      : status === 'saved'
+        ? lastSavedAt
+          ? `Draft saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
+          : 'Draft saved'
+        : status === 'failed'
+          ? 'Save failed'
+          : status === 'offline'
+            ? 'Offline — draft not saved'
+            : null;
+
   return {
     status,
     draftId,
@@ -105,13 +135,6 @@ export function useDraftAutosave({
     lastSavedAt,
     scheduleSave,
     saveNow,
-    statusLabel:
-      status === 'saving'
-        ? 'Saving…'
-        : status === 'saved'
-          ? 'Draft saved'
-          : status === 'failed'
-            ? 'Save failed'
-            : null,
+    statusLabel,
   };
 }

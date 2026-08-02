@@ -9,7 +9,7 @@ import type {
   DuplicateDraftRequest,
   UpsertDraftRequest,
 } from '@titan/shared';
-import { buildDraftKey } from '@titan/shared';
+import { buildDraftKey, sanitizeDraftPayload } from '@titan/shared';
 
 export class DraftAutosaveError extends Error {
   constructor(
@@ -97,15 +97,22 @@ export class DraftAutosaveService {
   }
 
   async upsertDraft(actor: DraftActor, input: UpsertDraftRequest): Promise<DraftWorkspaceDetail> {
+    const expectedKey = buildDraftKey({
+      userId: actor.userId,
+      recordType: input.recordType,
+      recordId: input.recordId ?? null,
+    });
+    const requestedKey = input.draftKey?.trim();
+    // Never allow a caller to target another user’s draftKey.
     const draftKey =
-      input.draftKey?.trim() ||
-      buildDraftKey({
-        userId: actor.userId,
-        recordType: input.recordType,
-        recordId: input.recordId ?? null,
-      });
+      requestedKey && requestedKey.startsWith(`${actor.userId}:`) ? requestedKey : expectedKey;
 
     const existing = await this.getDraftByKey(actor.companyId, draftKey);
+    if (existing && existing.userId !== actor.userId) {
+      throw new DraftAutosaveError('FORBIDDEN', 'Cannot overwrite another user’s draft');
+    }
+
+    const safePayload = sanitizeDraftPayload(input.payload ?? {});
     const now = new Date();
 
     if (existing) {
@@ -124,7 +131,7 @@ export class DraftAutosaveService {
           title: input.title ?? existing.title,
           customerLabel: input.customerLabel ?? existing.customerLabel,
           completionPct: input.completionPct ?? existing.completionPct,
-          payload: input.payload,
+          payload: safePayload,
           payloadHistory: nextHistory,
           version: nextVersion,
           lastEditedAt: now,
@@ -153,7 +160,7 @@ export class DraftAutosaveService {
         title: input.title?.trim() || null,
         customerLabel: input.customerLabel?.trim() || null,
         completionPct: input.completionPct ?? null,
-        payload: input.payload,
+        payload: safePayload,
         lastEditedAt: now,
         lastEditedByUserId: actor.userId,
       })
@@ -212,7 +219,9 @@ export class DraftAutosaveService {
       recordId: null,
     }).replace(':new', `:${Date.now()}`);
 
-    const sanitizedPayload = stripNonDuplicableFields(source.payload, source.recordType);
+    const sanitizedPayload = sanitizeDraftPayload(
+      stripNonDuplicableFields(source.payload, source.recordType),
+    );
 
     return this.upsertDraft(actor, {
       recordType: source.recordType,
@@ -225,10 +234,13 @@ export class DraftAutosaveService {
     });
   }
 
-  /** Audit hook — lightweight security log via SQL comment marker for downstream collectors. */
+  /**
+   * Audit hook — typed SELECT so Postgres can bind parameters (comment-only markers
+   * fail with “could not determine data type of parameter”).
+   */
   async touchAudit(actor: DraftActor, action: string, draftId: string): Promise<void> {
     await this.db.execute(
-      sql`SELECT 1 /* draft_audit company=${actor.companyId} user=${actor.userId} action=${action} draft=${draftId} */`,
+      sql`select ${actor.companyId}::uuid as company_id, ${actor.userId}::uuid as user_id, ${action}::text as action, ${draftId}::uuid as draft_id`,
     );
   }
 }
