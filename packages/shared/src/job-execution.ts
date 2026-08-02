@@ -222,6 +222,8 @@ export type AuthorizeJobMaterialLineRequest = {
   fulfilledQuantity?: number;
   reason?: string | null;
   clientActionId: string;
+  /** Office may attach stock identity when the tech request omitted it. */
+  inventoryItemId?: string | null;
   locationId?: string | null;
 };
 

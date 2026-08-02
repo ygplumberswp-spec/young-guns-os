@@ -2,6 +2,8 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import type {
+  InventoryItemSummary,
+  InventoryLocationSummary,
   JobDetail,
   JobExecutionSummary,
   JobFinanceSummary,
@@ -22,6 +24,7 @@ import {
   returnJobMaterialLine,
   updateJob,
 } from '../../lib/jobs-api';
+import { fetchInventoryItems, fetchInventoryLocations } from '../../lib/inventory-api';
 import { fetchJobFinanceSummary } from '../../lib/finance-api';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
@@ -30,6 +33,15 @@ import { canAccessFinance } from '../../features/finance/utils';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
+
+type StockSelection = {
+  inventoryItemId: string;
+  locationId: string;
+};
+
+function isStockSource(source: JobMaterialLineSummary['materialSource']) {
+  return source === 'vehicle_stock' || source === 'warehouse_stock';
+}
 
 export function JobDetailPage() {
   const [, params] = useRoute('/jobs/:id');
@@ -40,6 +52,9 @@ export function JobDetailPage() {
   const [financeSummary, setFinanceSummary] = useState<JobFinanceSummary | null>(null);
   const [materialLines, setMaterialLines] = useState<JobMaterialLineSummary[]>([]);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrderSummary[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItemSummary[]>([]);
+  const [inventoryLocations, setInventoryLocations] = useState<InventoryLocationSummary[]>([]);
+  const [stockSelections, setStockSelections] = useState<Record<string, StockSelection>>({});
   const [materialBusyId, setMaterialBusyId] = useState<string | null>(null);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -95,31 +110,87 @@ export function JobDetailPage() {
       setExecution(null);
     }
     try {
-      setMaterialLines(await fetchJobMaterialLines(accessToken, jobId));
+      const lines = await fetchJobMaterialLines(accessToken, jobId);
+      setMaterialLines(lines);
+      setStockSelections((prev) => {
+        const next = { ...prev };
+        for (const line of lines) {
+          if (next[line.id]) continue;
+          next[line.id] = {
+            inventoryItemId: line.inventoryItemId ?? '',
+            locationId: line.locationId ?? '',
+          };
+        }
+        return next;
+      });
     } catch {
       setMaterialLines([]);
     }
+
+    try {
+      const [items, locations] = await Promise.all([
+        fetchInventoryItems(accessToken),
+        fetchInventoryLocations(accessToken),
+      ]);
+      setInventoryItems(items);
+      setInventoryLocations(locations);
+    } catch {
+      setInventoryItems([]);
+      setInventoryLocations([]);
+    }
+  }
+
+  function updateStockSelection(lineId: string, patch: Partial<StockSelection>) {
+    setStockSelections((prev) => ({
+      ...prev,
+      [lineId]: {
+        inventoryItemId: prev[lineId]?.inventoryItemId ?? '',
+        locationId: prev[lineId]?.locationId ?? '',
+        ...patch,
+      },
+    }));
   }
 
   async function handleAuthorizeMaterial(
-    materialLineId: string,
+    line: JobMaterialLineSummary,
     decision: 'approve' | 'reject',
   ) {
     if (!accessToken || !jobId || materialBusyId) return;
-    if (decision === 'reject' && !rejectReasons[materialLineId]?.trim()) {
+    if (decision === 'reject' && !rejectReasons[line.id]?.trim()) {
       setError('A rejection reason is required');
       return;
     }
-    setMaterialBusyId(materialLineId);
+
+    const selection = stockSelections[line.id] ?? {
+      inventoryItemId: line.inventoryItemId ?? '',
+      locationId: line.locationId ?? '',
+    };
+
+    if (
+      decision === 'approve' &&
+      isStockSource(line.materialSource) &&
+      (!selection.inventoryItemId || !selection.locationId)
+    ) {
+      setError('Select an inventory item and location before approving stock use');
+      return;
+    }
+
+    setMaterialBusyId(line.id);
     setError(null);
     try {
-      await authorizeJobMaterialLine(accessToken, jobId, materialLineId, {
+      await authorizeJobMaterialLine(accessToken, jobId, line.id, {
         decision,
-        reason: decision === 'reject' ? rejectReasons[materialLineId]?.trim() : null,
+        reason: decision === 'reject' ? rejectReasons[line.id]?.trim() : null,
         clientActionId: newJobsClientActionId(decision),
+        inventoryItemId: selection.inventoryItemId || null,
+        locationId: selection.locationId || null,
       });
       setMaterialLines(await fetchJobMaterialLines(accessToken, jobId));
-      setSuccess(decision === 'approve' ? 'Material approved.' : 'Material rejected.');
+      setSuccess(
+        decision === 'approve'
+          ? 'Material approved — stock decremented when linked to inventory.'
+          : 'Material rejected.',
+      );
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to update material request');
     } finally {
@@ -663,13 +734,19 @@ export function JobDetailPage() {
                     <th>Description</th>
                     <th>Quantity</th>
                     <th>Source</th>
+                    <th>Stock link</th>
                     <th>Cost</th>
                     <th>Status</th>
                     {canWrite ? <th>Actions</th> : null}
                   </tr>
                 </thead>
                 <tbody>
-                  {materialLines.map((line) => (
+                  {materialLines.map((line) => {
+                    const selection = stockSelections[line.id] ?? {
+                      inventoryItemId: line.inventoryItemId ?? '',
+                      locationId: line.locationId ?? '',
+                    };
+                    return (
                     <tr key={line.id}>
                       <td>
                         {line.description}
@@ -682,6 +759,50 @@ export function JobDetailPage() {
                         {line.fulfilledQuantity ? ` · ${line.fulfilledQuantity} fulfilled` : ''}
                       </td>
                       <td>{line.materialSource.replace(/_/g, ' ')}</td>
+                      <td>
+                        {line.status === 'requested' && isStockSource(line.materialSource) && canWrite ? (
+                          <div className="jobs-form__actions">
+                            <label className="titan-input-group">
+                              <span className="titan-input-label">Item</span>
+                              <select
+                                className="titan-input"
+                                value={selection.inventoryItemId}
+                                onChange={(e) =>
+                                  updateStockSelection(line.id, { inventoryItemId: e.target.value })
+                                }
+                              >
+                                <option value="">Select item</option>
+                                {inventoryItems.map((item) => (
+                                  <option key={item.id} value={item.id}>
+                                    {item.sku} — {item.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="titan-input-group">
+                              <span className="titan-input-label">Location</span>
+                              <select
+                                className="titan-input"
+                                value={selection.locationId}
+                                onChange={(e) =>
+                                  updateStockSelection(line.id, { locationId: e.target.value })
+                                }
+                              >
+                                <option value="">Select location</option>
+                                {inventoryLocations.map((location) => (
+                                  <option key={location.id} value={location.id}>
+                                    {location.name} ({location.locationType})
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        ) : line.locationName || line.inventoryItemName ? (
+                          [line.inventoryItemName, line.locationName].filter(Boolean).join(' @ ')
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td>{line.lineTotalCents != null ? formatMoney(line.lineTotalCents) : '—'}</td>
                       <td>
                         <span className={materialLineStatusPillClass(line.status)}>
@@ -695,7 +816,7 @@ export function JobDetailPage() {
                               <Button
                                 size="sm"
                                 disabled={materialBusyId === line.id}
-                                onClick={() => void handleAuthorizeMaterial(line.id, 'approve')}
+                                onClick={() => void handleAuthorizeMaterial(line, 'approve')}
                               >
                                 Approve
                               </Button>
@@ -710,7 +831,7 @@ export function JobDetailPage() {
                                 size="sm"
                                 variant="destructive"
                                 disabled={materialBusyId === line.id}
-                                onClick={() => void handleAuthorizeMaterial(line.id, 'reject')}
+                                onClick={() => void handleAuthorizeMaterial(line, 'reject')}
                               >
                                 Reject
                               </Button>
@@ -735,7 +856,8 @@ export function JobDetailPage() {
                         </td>
                       ) : null}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

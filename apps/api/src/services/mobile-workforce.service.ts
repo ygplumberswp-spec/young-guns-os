@@ -38,6 +38,7 @@ import type { DatabaseClient } from '@titan/db';
 import {
   customers,
   inventoryItems,
+  inventoryLocations,
   jobs,
   mobileActionLogs,
   mobileCompanyAnnouncements,
@@ -362,7 +363,7 @@ export class MobileWorkforceService {
   }
 
   async getInventoryCentre(scope: TechnicianScope): Promise<MobileWorkforceInventoryCentre> {
-    const [alerts, recentUsage] = await Promise.all([
+    const [alerts, recentUsage, catalogItems, locations] = await Promise.all([
       this.getInventoryAlerts(scope.companyId),
       this.db.query.mobileJobInventoryUsage.findMany({
         where: and(
@@ -373,12 +374,33 @@ export class MobileWorkforceService {
         orderBy: [desc(mobileJobInventoryUsage.createdAt)],
         limit: 25,
       }),
+      this.db.query.inventoryItems.findMany({
+        where: and(eq(inventoryItems.companyId, scope.companyId), eq(inventoryItems.status, 'active')),
+        orderBy: [desc(inventoryItems.updatedAt)],
+        limit: 200,
+      }),
+      this.db.query.inventoryLocations.findMany({
+        where: eq(inventoryLocations.companyId, scope.companyId),
+        orderBy: [desc(inventoryLocations.updatedAt)],
+        limit: 100,
+      }),
     ]);
 
     return {
       alerts,
       recentUsage: recentUsage.map(toInventoryUsageSummary),
       pendingUsageCount: recentUsage.filter((item) => item.status === 'pending_approval').length,
+      catalogItems: catalogItems.map((item) => ({
+        id: item.id,
+        name: item.name,
+        sku: item.sku ?? null,
+      })),
+      locations: locations.map((location) => ({
+        id: location.id,
+        name: location.name,
+        locationType: location.locationType,
+        vehicleId: location.vehicleId ?? null,
+      })),
     };
   }
 

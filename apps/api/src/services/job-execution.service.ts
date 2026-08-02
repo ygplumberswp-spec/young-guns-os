@@ -941,11 +941,23 @@ export class JobExecutionService {
     }
 
     const locationId = input.locationId ?? line.locationId;
+    const inventoryItemId = input.inventoryItemId ?? line.inventoryItemId;
     const isStockSource = line.materialSource === 'vehicle_stock' || line.materialSource === 'warehouse_stock';
-    const needsStock = Boolean(line.inventoryItemId && locationId && isStockSource);
+
+    if (isStockSource && (!inventoryItemId || !locationId)) {
+      throw new JobExecutionError(
+        'VALIDATION_ERROR',
+        'Inventory item and stock location are required to approve vehicle/warehouse stock use',
+      );
+    }
+
+    const needsStock = Boolean(inventoryItemId && locationId && isStockSource);
 
     if (locationId) {
       await this.ensureLocationBelongsToCompany(actor.companyId, locationId);
+    }
+    if (inventoryItemId) {
+      await this.ensureInventoryItemBelongsToCompany(actor.companyId, inventoryItemId);
     }
 
     let unitCostCents = line.unitCostCents;
@@ -957,7 +969,7 @@ export class JobExecutionService {
         try {
           movement = await this.stockMovementsService.applyMovement(tx, {
             companyId: actor.companyId,
-            itemId: line.inventoryItemId!,
+            itemId: inventoryItemId!,
             locationId: locationId!,
             movementType: 'issue',
             quantityDelta: -fulfilledQuantity,
@@ -985,6 +997,7 @@ export class JobExecutionService {
         .set({
           status,
           fulfilledQuantity: String(fulfilledQuantity),
+          inventoryItemId: inventoryItemId ?? null,
           locationId: locationId ?? null,
           unitCostCents,
           stockMovementId,

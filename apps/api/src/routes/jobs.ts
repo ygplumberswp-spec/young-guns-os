@@ -124,6 +124,7 @@ const authorizeMaterialLineSchema = z.object({
   fulfilledQuantity: z.number().positive().optional(),
   reason: z.string().trim().max(2000).optional().nullable(),
   clientActionId: z.string().trim().min(1).max(200),
+  inventoryItemId: z.string().uuid().optional().nullable(),
   locationId: z.string().uuid().optional().nullable(),
 });
 
