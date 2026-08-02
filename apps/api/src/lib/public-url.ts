@@ -7,9 +7,10 @@ export function normalizePublicOrigin(url: string): string {
 export function isPlaceholderPublicUrl(url: string): boolean {
   try {
     const host = new URL(url.trim()).hostname.toLowerCase();
+    // Match docs placeholders (e.g. YOUR-COMFORTABLE-DETERMINATION-URL), not real
+    // Railway service hosts that happen to contain "comfortable-determination".
     return (
       host.includes('your-') ||
-      host.includes('comfortable-determination') ||
       host.endsWith('.invalid') ||
       host === 'example.com' ||
       host.endsWith('.example.com') ||

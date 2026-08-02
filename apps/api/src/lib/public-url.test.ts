@@ -20,6 +20,10 @@ describe('public-url', () => {
       true,
     );
     assert.equal(isPlaceholderPublicUrl('https://young-guns-os-web.up.railway.app'), false);
+    assert.equal(
+      isPlaceholderPublicUrl('https://comfortable-determination-staging.up.railway.app'),
+      false,
+    );
   });
 
   it('builds CORS allowlist from APP_URL + CORS_ORIGINS', () => {
