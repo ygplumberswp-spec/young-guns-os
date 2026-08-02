@@ -16,6 +16,7 @@ import { useCachedQuery } from '../../lib/use-cached-query';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import {
   canAccessScheduling,
+  canAssignCrewFromCalendar,
   canManageScheduling,
 } from '../../features/scheduling/utils';
 import { SchedulingCalendar, resolveRange } from '../../components/calendar';
@@ -30,7 +31,7 @@ export function SchedulingPage() {
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageScheduling(user.permissions) : false), [user]);
   const canAssignCrew = useMemo(
-    () => Boolean(user?.permissions.includes('jobs:write')),
+    () => (user ? canAssignCrewFromCalendar(user.permissions) : false),
     [user],
   );
 
