@@ -434,6 +434,33 @@ export class FinanceService {
     return (await this.getInvoice(actor.companyId, invoice.id))!;
   }
 
+  async createInvoiceFromJob(
+    actorOrCompany: FinanceActor | string,
+    jobId: string,
+    input: CreateInvoiceFromQuoteRequest,
+  ): Promise<InvoiceSummary> {
+    const actor = toActor(actorOrCompany);
+    const job = await this.db.query.jobs.findFirst({
+      where: and(eq(jobs.id, jobId), eq(jobs.companyId, actor.companyId)),
+    });
+    if (!job) throw new FinanceError('JOB_NOT_FOUND', 'Job not found');
+    const acceptedQuote = await this.db.query.quotes.findFirst({
+      where: and(
+        eq(quotes.companyId, actor.companyId),
+        eq(quotes.jobId, jobId),
+        eq(quotes.status, 'accepted'),
+      ),
+      orderBy: [desc(quotes.updatedAt)],
+    });
+    if (!acceptedQuote) {
+      throw new FinanceError(
+        'VALIDATION_ERROR',
+        'No accepted quote is linked to this job — accept a quote before creating an invoice',
+      );
+    }
+    return this.createInvoiceFromQuote(actor, acceptedQuote.id, input);
+  }
+
   async getInvoiceDetail(companyId: string, invoiceId: string): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
