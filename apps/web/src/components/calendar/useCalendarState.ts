@@ -30,9 +30,10 @@ function readFiltersFromParams(): CalendarPersistedState['filters'] {
 }
 
 function calendarSearchEntries(state: CalendarPersistedState, pathname: string) {
+  const anchor = new Date(state.anchorDate);
   return {
     view: state.view === defaultCalendarView(pathname) ? null : state.view,
-    date: state.anchorDate.slice(0, 10),
+    date: `${anchor.getFullYear()}-${String(anchor.getMonth() + 1).padStart(2, '0')}-${String(anchor.getDate()).padStart(2, '0')}`,
     technicianId: state.filters?.technicianId ?? null,
     team: state.filters?.team ?? null,
     status: state.filters?.status ?? null,
@@ -40,6 +41,11 @@ function calendarSearchEntries(state: CalendarPersistedState, pathname: string) 
     priority: state.filters?.priority ?? null,
     jobType: state.filters?.jobType ?? null,
   };
+}
+
+function localDateFromYmd(ymd: string): Date {
+  const [year, month, day] = ymd.split('-').map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function readCalendarState(pathname: string): CalendarPersistedState {
@@ -54,9 +60,12 @@ function readCalendarState(pathname: string): CalendarPersistedState {
     const urlFilters = readFiltersFromParams();
 
     if (urlView || dateParam || Object.values(urlFilters ?? {}).some(Boolean)) {
+      const anchorDate = dateParam
+        ? localDateFromYmd(dateParam).toISOString()
+        : new Date().toISOString();
       return {
         view: urlView ?? defaultCalendarView(pathname),
-        anchorDate: dateParam ? new Date(dateParam).toISOString() : new Date().toISOString(),
+        anchorDate,
         filters: urlFilters,
       };
     }
@@ -180,29 +189,30 @@ export function useCalendarState(pathname = '/scheduling') {
 
   useEffect(() => {
     syncUrl(snapshot(), 'replace');
-  }, [view, anchorDate, filters, snapshot, syncUrl]);
+  }, [anchorDate, filters, snapshot, syncUrl]);
 
-  const pushHistory = useCallback(
-    (patch: Partial<CalendarPersistedState>) => {
-      syncUrl(snapshot(patch), 'push');
+  const pushViewHistory = useCallback(
+    (next: CalendarPersistedState) => {
+      syncUrl(next, 'push');
     },
-    [snapshot, syncUrl],
+    [syncUrl],
   );
 
   return {
     view,
     setView: (next: CalendarViewMode) => {
-      pushHistory({ view: next });
+      const state = snapshot({ view: next });
+      pushViewHistory(state);
       setViewState(next);
     },
     anchorDate,
     setAnchorDate: (next: Date) => {
-      pushHistory({ anchorDate: next.toISOString() });
+      pushViewHistory(snapshot({ anchorDate: next.toISOString() }));
       setAnchorDateState(next);
     },
     filters,
     setFilters: (next: CalendarPersistedState['filters']) => {
-      pushHistory({ filters: next ?? {} });
+      pushViewHistory(snapshot({ filters: next ?? {} }));
       setFiltersState(next ?? {});
     },
     persist: syncUrl,
