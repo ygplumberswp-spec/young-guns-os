@@ -1,0 +1,1045 @@
+{
+  "schemaVersion": "251-rbac-missing-roles-v1",
+  "label": "251-rbac-missing-roles-verify",
+  "generatedAt": "2026-08-02T11:46:31.029Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "275769e0ac8fc269349588ea75a7e1a7a2f0416a",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "stagingOnlyTestAccounts": {
+    "accountant": "251-rbac-test-accountant@staging-verify.test",
+    "dispatcher": "251-rbac-test-dispatcher@staging-verify.test",
+    "client": "251-rbac-test-client@staging-verify.test",
+    "passwordNote": "Staging-only — redacted; set by 251-seed script"
+  },
+  "seedMeta": {
+    "created": [
+      "accountant",
+      "dispatcher",
+      "client"
+    ],
+    "reused": [],
+    "accounts": {
+      "accountant": {
+        "userId": "4779f40c-86e1-431c-a0e9-a694a9cf0818",
+        "email": "251-rbac-test-accountant@staging-verify.test",
+        "roleName": "Accountant",
+        "status": "created"
+      },
+      "dispatcher": {
+        "userId": "76ca2d56-34f9-4910-8544-a268a4d3d19c",
+        "email": "251-rbac-test-dispatcher@staging-verify.test",
+        "roleName": "Dispatcher",
+        "status": "created"
+      },
+      "client": {
+        "portalUserId": "102003f3-70d2-40a4-adbe-ac84d06ce60e",
+        "email": "251-rbac-test-client@staging-verify.test",
+        "customerId": "3c400ace-f1c5-4933-8f4a-5d11a1bd3c55",
+        "roleName": "Client",
+        "status": "created"
+      }
+    }
+  },
+  "roleDiscovery": {
+    "roles": [
+      {
+        "name": "Accountant",
+        "user_count": 1
+      },
+      {
+        "name": "Admin",
+        "user_count": 0
+      },
+      {
+        "name": "Company Owner",
+        "user_count": 1
+      },
+      {
+        "name": "Dispatcher",
+        "user_count": 1
+      },
+      {
+        "name": "Manager",
+        "user_count": 0
+      },
+      {
+        "name": "Member",
+        "user_count": 0
+      },
+      {
+        "name": "Owner",
+        "user_count": 0
+      },
+      {
+        "name": "Platform Owner",
+        "user_count": 0
+      },
+      {
+        "name": "Technician",
+        "user_count": 0
+      }
+    ],
+    "portalUserCount": 1,
+    "otherCompany": {
+      "id": "e5fc40b3-50e0-49cd-932e-ee8d2c1f7f04",
+      "name": "STAGING-P5 Young Guns 51144398"
+    }
+  },
+  "sessions": {
+    "owner": {
+      "available": true,
+      "method": "railway_programmatic_session",
+      "roleName": "Company Owner",
+      "userId": "d8e6be83-f3ff-4381-a6a3-c3230a6fb3b6",
+      "email": null,
+      "customerId": null,
+      "permissionsCount": 1
+    },
+    "technician": {
+      "available": true,
+      "method": "railway_programmatic_session",
+      "roleName": "Technician",
+      "userId": "d8e6be83-f3ff-4381-a6a3-c3230a6fb3b6",
+      "email": null,
+      "customerId": null,
+      "permissionsCount": 4
+    },
+    "accountant": {
+      "available": true,
+      "method": "railway_programmatic_session",
+      "roleName": "Accountant",
+      "userId": "4779f40c-86e1-431c-a0e9-a694a9cf0818",
+      "email": "251-rbac-test-accountant@staging-verify.test",
+      "customerId": null,
+      "permissionsCount": 14
+    },
+    "dispatcher": {
+      "available": true,
+      "method": "railway_programmatic_session",
+      "roleName": "Dispatcher",
+      "userId": "76ca2d56-34f9-4910-8544-a268a4d3d19c",
+      "email": "251-rbac-test-dispatcher@staging-verify.test",
+      "customerId": null,
+      "permissionsCount": 21
+    },
+    "client": {
+      "available": true,
+      "method": "railway_portal_session",
+      "roleName": "Client",
+      "userId": "102003f3-70d2-40a4-adbe-ac84d06ce60e",
+      "email": "251-rbac-test-client@staging-verify.test",
+      "customerId": "3c400ace-f1c5-4933-8f4a-5d11a1bd3c55",
+      "permissionsCount": 8
+    }
+  },
+  "sessionMintMethod": "railway run node + Playwright route intercept (237/249 pattern)",
+  "apiProbes": [
+    {
+      "label": "finance_receivables",
+      "path": "/api/v1/finance-intelligence/receivables",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 3460,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 913,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 200,
+          "ms": 1839,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 1849,
+          "snippet": "has_data",
+          "result": "fail",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 312,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "finance_quotes",
+      "path": "/api/v1/finance/quotes",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 1225,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 1024,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 200,
+          "ms": 1191,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 1264,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 327,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "fleet_vehicles",
+      "path": "/api/v1/fleet/vehicles",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 1209,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 1024,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 403,
+          "ms": 910,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 1208,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 310,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "integrations_hub",
+      "path": "/api/v1/integrations/hub/dashboard?simple=true",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 1529,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 955,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 200,
+          "ms": 924,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "dispatcher": {
+          "status": 403,
+          "ms": 904,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 436,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "staff_jobs",
+      "path": "/api/v1/jobs",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 1801,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 923,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 403,
+          "ms": 955,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 1811,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 309,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "crm_customers",
+      "path": "/api/v1/crm/customers",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 3920,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 923,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 200,
+          "ms": 3560,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 3237,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 305,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "team_members",
+      "path": "/api/v1/team/members",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 1200,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 708,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 403,
+          "ms": 610,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 1195,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 303,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "platform_provision",
+      "path": "/api/v1/platform/tenants/provision",
+      "roles": {
+        "owner": {
+          "status": 403,
+          "ms": 1214,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ]
+        },
+        "technician": {
+          "status": 403,
+          "ms": 908,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ]
+        },
+        "accountant": {
+          "status": 403,
+          "ms": 883,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ]
+        },
+        "dispatcher": {
+          "status": 403,
+          "ms": 1031,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 318,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ]
+        }
+      }
+    },
+    {
+      "label": "mobile_dashboard",
+      "path": "/api/v1/mobile/technician/workforce/dashboard",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "ms": 5400,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200,
+            401,
+            403
+          ]
+        },
+        "technician": {
+          "status": 200,
+          "ms": 5303,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "accountant": {
+          "status": 403,
+          "ms": 898,
+          "snippet": "FORBIDDEN",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "dispatcher": {
+          "status": 200,
+          "ms": 4435,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        },
+        "client": {
+          "status": 401,
+          "ms": 313,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        }
+      }
+    },
+    {
+      "label": "portal_dashboard",
+      "path": "/api/v1/portal/dashboard",
+      "roles": {
+        "owner": {
+          "status": 401,
+          "ms": 305,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "technician": {
+          "status": 401,
+          "ms": 315,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "accountant": {
+          "status": 401,
+          "ms": 304,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "dispatcher": {
+          "status": 401,
+          "ms": 311,
+          "snippet": "UNAUTHORIZED",
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ]
+        },
+        "client": {
+          "status": 200,
+          "ms": 2420,
+          "snippet": "has_data",
+          "result": "pass",
+          "expected": [
+            200
+          ]
+        }
+      }
+    }
+  ],
+  "uiScans": {
+    "owner": {
+      "allowedResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+          "result": "pass"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/jobs",
+          "result": "pass"
+        },
+        {
+          "path": "/crm",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/crm",
+          "result": "pass"
+        },
+        {
+          "path": "/settings/team",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/settings/team",
+          "result": "pass"
+        },
+        {
+          "path": "/fleet/live-map",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/fleet/live-map",
+          "result": "pass"
+        }
+      ],
+      "forbiddenResults": []
+    },
+    "accountant": {
+      "allowedResults": [
+        {
+          "path": "/finance/invoices",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/quotes",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/quotes",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+          "result": "pass"
+        },
+        {
+          "path": "/crm",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/crm",
+          "result": "pass"
+        },
+        {
+          "path": "/integrations",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/integrations",
+          "result": "pass"
+        }
+      ],
+      "forbiddenResults": [
+        {
+          "path": "/scheduling",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+          "expected": "/finance",
+          "result": "pass"
+        },
+        {
+          "path": "/fleet/live-map",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+          "expected": "/finance",
+          "result": "pass"
+        },
+        {
+          "path": "/aura/agents",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+          "expected": "/finance",
+          "result": "pass"
+        },
+        {
+          "path": "/settings/team",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+          "expected": "/finance",
+          "result": "pass"
+        },
+        {
+          "path": "/mobile/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "expected": "/",
+          "result": "pass"
+        }
+      ]
+    },
+    "dispatcher": {
+      "allowedResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "result": "pass"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/jobs",
+          "result": "pass"
+        },
+        {
+          "path": "/scheduling",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?date=2026-08-02",
+          "result": "pass"
+        },
+        {
+          "path": "/crm",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/crm",
+          "result": "pass"
+        },
+        {
+          "path": "/fleet/live-map",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/fleet/live-map",
+          "result": "pass"
+        },
+        {
+          "path": "/mobile-platform/dispatcher",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile-platform/dispatcher",
+          "result": "pass"
+        },
+        {
+          "path": "/settings/team",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/settings/team",
+          "result": "pass"
+        }
+      ],
+      "forbiddenResults": [
+        {
+          "path": "/aura/agents",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "expected": "/",
+          "result": "pass"
+        },
+        {
+          "path": "/integrations",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "expected": "/",
+          "result": "pass"
+        },
+        {
+          "path": "/saas-management",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "expected": "/",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+          "expected": "/",
+          "result": "fail"
+        }
+      ]
+    },
+    "technician": {
+      "allowedResults": [
+        {
+          "path": "/mobile",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "result": "pass"
+        },
+        {
+          "path": "/mobile/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile/jobs",
+          "result": "pass"
+        }
+      ],
+      "forbiddenResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "expected": "/mobile",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "expected": "/mobile",
+          "result": "pass"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "expected": "/mobile",
+          "result": "pass"
+        }
+      ]
+    },
+    "client": {
+      "allowedResults": [
+        {
+          "path": "/my",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/my",
+          "result": "pass"
+        },
+        {
+          "path": "/my/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/jobs",
+          "result": "pass"
+        },
+        {
+          "path": "/my/quotes",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/quotes",
+          "result": "pass"
+        },
+        {
+          "path": "/my/finance",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/finance",
+          "result": "pass"
+        },
+        {
+          "path": "/my/profile",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/my/profile",
+          "result": "pass"
+        }
+      ],
+      "forbiddenResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2F",
+          "result": "pass"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Ffinance%2Freceivables",
+          "result": "pass"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fjobs",
+          "result": "pass"
+        },
+        {
+          "path": "/crm",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fcrm",
+          "result": "pass"
+        },
+        {
+          "path": "/settings/team",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/auth/login?returnTo=%2Fsettings%2Fteam",
+          "result": "pass"
+        }
+      ]
+    }
+  },
+  "data_isolation_checks": [
+    {
+      "check": "foreign_job_uuid_denied",
+      "role": "owner",
+      "status": 404,
+      "result": "pass"
+    },
+    {
+      "check": "foreign_job_uuid_denied",
+      "role": "technician",
+      "status": 403,
+      "result": "pass"
+    },
+    {
+      "check": "foreign_job_uuid_denied",
+      "role": "accountant",
+      "status": 403,
+      "result": "pass"
+    },
+    {
+      "check": "foreign_job_uuid_denied",
+      "role": "dispatcher",
+      "status": 404,
+      "result": "pass"
+    },
+    {
+      "check": "client_staff_finance_denied",
+      "role": "client",
+      "status": 401,
+      "result": "pass"
+    },
+    {
+      "check": "client_portal_dashboard",
+      "role": "client",
+      "status": 200,
+      "snippet": "has_data",
+      "customerId": "3c400ace-f1c5-4933-8f4a-5d11a1bd3c55",
+      "result": "pass"
+    },
+    {
+      "check": "owner_crm_tenant_scope",
+      "role": "owner",
+      "status": 200,
+      "itemCount": 0,
+      "foreignCompanyIds": 0,
+      "result": "pass"
+    },
+    {
+      "check": "accountant_team_denied",
+      "role": "accountant",
+      "status": 403,
+      "result": "pass"
+    },
+    {
+      "check": "dispatcher_integrations_denied",
+      "role": "dispatcher",
+      "status": 403,
+      "result": "pass"
+    }
+  ],
+  "roleVerdicts": {
+    "owner": {
+      "verdict": "GO",
+      "routes_tested": 16,
+      "routes_allowed_pass": 16,
+      "routes_forbidden_pass": 3,
+      "failures": []
+    },
+    "technician": {
+      "verdict": "GO",
+      "routes_tested": 15,
+      "routes_allowed_pass": 12,
+      "routes_forbidden_pass": 12,
+      "failures": []
+    },
+    "accountant": {
+      "verdict": "GO",
+      "routes_tested": 20,
+      "routes_allowed_pass": 15,
+      "routes_forbidden_pass": 11,
+      "failures": []
+    },
+    "dispatcher": {
+      "verdict": "HOLD",
+      "routes_tested": 21,
+      "routes_allowed_pass": 16,
+      "routes_forbidden_pass": 6,
+      "failures": [
+        "api:finance_receivables:200",
+        "ui_forbidden:/finance/receivables:https://comfortable-determination-staging.up.railway.app/finance/receivables"
+      ]
+    },
+    "client": {
+      "verdict": "GO",
+      "routes_tested": 20,
+      "routes_allowed_pass": 15,
+      "routes_forbidden_pass": 14,
+      "failures": []
+    }
+  },
+  "blockers": [
+    "Dispatcher API fail: finance_receivables returned 200, expected 401|403"
+  ],
+  "holdItems": [],
+  "overallVerdict": "HOLD"
+}

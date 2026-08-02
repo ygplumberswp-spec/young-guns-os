@@ -14,7 +14,7 @@
 | Gate | Verdict | Rationale |
 |------|---------|-----------|
 | **Staging owner daily ops** | **GO** | Consolidation smoke 12/12 API probes + web healthz; verify 231 GO (236 screenshots, 0 blockers) |
-| **Staging release candidate** | **HOLD** | 46 HOLD + 55 NO-GO routes; finance Xero aggregation gaps; orphan enterprise routes; RBAC gaps for unavailable roles |
+| **Staging release candidate** | **HOLD** | 46 HOLD + 55 NO-GO routes; finance Xero aggregation gaps; orphan enterprise routes; **Dispatcher receivables RBAC gap (verify 251)** |
 | **Production launch** | **NO-GO** | Scaffold routes, incomplete integrations, unverified production cutover, finance/RBAC blockers |
 
 **Overall consolidation verdict:** **Staging GO** for owner daily ops · **Staging HOLD** as release candidate · **Production NO-GO**
@@ -150,14 +150,15 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 
 | Blocker | Staging | Production | Verdict | Workaround |
 |---------|---------|------------|---------|------------|
-| Owner role | Verified @ 249 + 231 | — | **GO** | — |
-| Technician role | Verified @ 249 (403 + UI redirect) | — | **GO** | Programmatic session mint |
-| Accountant | 0 YGP users | Cannot verify | **HOLD** | Matrix rows marked hold |
-| Dispatcher | 0 YGP users | Cannot verify | **HOLD** | — |
-| Client / Customer portal | 0 YGP users | Cannot verify | **HOLD** | — |
+| Owner role | Verified @ 249 + 231 + **251** | — | **GO** | — |
+| Technician role | Verified @ 249 + **251** (403 + UI redirect) | — | **GO** | Programmatic session mint |
+| Accountant | Verified @ **251** (staging test user) | — | **GO** | `251-rbac-test-accountant@staging-verify.test` |
+| Dispatcher | Verified @ **251** — receivables API/UI gap | — | **HOLD** | Receivables reachable despite nav exclusion |
+| Client / Customer portal | Verified @ **251** (portal user) | — | **GO** | `251-rbac-test-client@staging-verify.test` |
 | Phase 17 RBAC gate | Owner + Technician GO | — | **GO** @ `376e15d` | `249-rbac-security-gate-verify.json` |
+| Verify 251 missing roles | Accountant + Client GO; Dispatcher HOLD | — | **HOLD** | `251-rbac-missing-roles-verify.json` |
 
-**RBAC overall:** **GO** for Owner/Technician · **HOLD** for Accountant/Dispatcher/Client (staging user gap, not code gap).
+**RBAC overall:** **GO** for Owner, Technician, Accountant, Client · **HOLD** for Dispatcher (receivables exposure) · See `TITAN_RBAC_MISSING_ROLES_REPORT.md`
 
 ### Orphan routes
 
@@ -196,6 +197,7 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 | 15 | Analytics / reporting | **GO** | Verify 247 |
 | 16 | Settings / integrations | **GO** | Verify 248 |
 | 17 | RBAC / security gate | **GO** + role HOLD | Verify 249 |
+| 251 | Missing-role RBAC (Acct/Dispatch/Client) | **HOLD** | Verify 251 — `TITAN_RBAC_MISSING_ROLES_REPORT.md` |
 | 18 | Visual audit + locked UX | **HOLD** (prod NO-GO) | Verify 231, 236 screenshots |
 | 18 correction | UX defect fixes | **GO** | Verify 231 re-run, deploy `33400ea4` |
 

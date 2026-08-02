@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "251-seed-staging-rbac-v1",
+  "generatedAt": "2026-08-02T11:37:48.286Z",
+  "commitSha": "275769e0ac8fc269349588ea75a7e1a7a2f0416a",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "stagingOnly": true,
+  "testAccountEmails": {
+    "accountant": "251-rbac-test-accountant@staging-verify.test",
+    "dispatcher": "251-rbac-test-dispatcher@staging-verify.test",
+    "client": "251-rbac-test-client@staging-verify.test"
+  },
+  "passwordNote": "Staging-only test password set — redacted from committed JSON",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "accounts": {
+    "accountant": {
+      "userId": "4779f40c-86e1-431c-a0e9-a694a9cf0818",
+      "email": "251-rbac-test-accountant@staging-verify.test",
+      "roleName": "Accountant",
+      "status": "created"
+    },
+    "dispatcher": {
+      "userId": "76ca2d56-34f9-4910-8544-a268a4d3d19c",
+      "email": "251-rbac-test-dispatcher@staging-verify.test",
+      "roleName": "Dispatcher",
+      "status": "created"
+    },
+    "client": {
+      "portalUserId": "102003f3-70d2-40a4-adbe-ac84d06ce60e",
+      "email": "251-rbac-test-client@staging-verify.test",
+      "customerId": "3c400ace-f1c5-4933-8f4a-5d11a1bd3c55",
+      "roleName": "Client",
+      "status": "created"
+    }
+  },
+  "created": [
+    "accountant",
+    "dispatcher",
+    "client"
+  ],
+  "reused": [],
+  "roleCounts": [
+    {
+      "name": "Accountant",
+      "user_count": 1
+    },
+    {
+      "name": "Admin",
+      "user_count": 0
+    },
+    {
+      "name": "Company Owner",
+      "user_count": 1
+    },
+    {
+      "name": "Dispatcher",
+      "user_count": 1
+    },
+    {
+      "name": "Manager",
+      "user_count": 0
+    },
+    {
+      "name": "Member",
+      "user_count": 0
+    },
+    {
+      "name": "Owner",
+      "user_count": 0
+    },
+    {
+      "name": "Platform Owner",
+      "user_count": 0
+    },
+    {
+      "name": "Technician",
+      "user_count": 0
+    }
+  ],
+  "portalUserCount": 1
+}

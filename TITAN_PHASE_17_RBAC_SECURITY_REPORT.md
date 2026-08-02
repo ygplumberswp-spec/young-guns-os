@@ -16,7 +16,7 @@
 | **Technician UI guard** | **GO** | `/finance/receivables`, `/jobs`, `/fleet/live-map` redirect to `/mobile` @ 249 |
 | **Security headers & session** | **GO** | API security headers present; refresh rejects missing cookie with `SESSION_MISSING` |
 | **CSP / auth / encryption** | **GO** | No weakening commits; credential encryption unit tests pass |
-| **Accountant / Dispatcher / Client staging** | **HOLD** | No active YGP users for these roles — matrix rows marked hold |
+| **Accountant / Dispatcher / Client staging** | **HOLD → partial @ 251** | Phase 17: 0 users. **Verify 251:** Accountant **GO**, Client **GO**, Dispatcher **HOLD** (receivables) — `TITAN_RBAC_MISSING_ROLES_REPORT.md` |
 | **Performance (cold API)** | **HOLD** | `platform/tenants/provision` probe p95 ~60s (timeout before 403); median 1.2s |
 
 **Overall:** **GO** @ `376e15d` — authenticated staging RBAC evidence for Owner + Technician; honest HOLD gaps for unavailable roles
@@ -141,10 +141,11 @@ No formal load test run (per directive). No performance-driven code changes requ
 
 ## Gaps (honest)
 
-1. **No Accountant, Dispatcher, or Client users** on YGP staging — API/UI matrix rows marked **hold**; unit tests cover these roles locally.
+1. ~~**No Accountant, Dispatcher, or Client users** on YGP staging~~ — **Resolved @ verify 251** for Accountant and Client; Dispatcher verified with **HOLD** (receivables gap). See `TITAN_RBAC_MISSING_ROLES_REPORT.md`.
 2. **Technician session** minted programmatically (no dedicated staging technician user account).
 3. **Platform provision probe latency** — 60s cold timeout before 403; RBAC outcome correct, performance noted.
-4. **Phase 18 not started** — Playwright full visual audit deferred to Phase 18 per master directive.
+4. **Dispatcher receivables** — API accepts `finance:read`; nav excludes receivables (verify 251 HOLD).
+5. **Phase 18 not started** — Playwright full visual audit deferred to Phase 18 per master directive.
 
 ## Phase 18 boundary
 
