@@ -1,7 +1,24 @@
 {
   "phase": 254,
-  "generatedAt": "2026-08-02T13:13:47.188Z",
-  "gitSha": "0e01208716d2404e69956491f459921ebb0f1f1e",
+  "generatedAt": "2026-08-02T13:20:31.646Z",
+  "gitSha": "a7d3258154ca25799546e088c52c8d8edebac1d1",
+  "deployedWebSha": "0e01208716d2404e69956491f459921ebb0f1f1e",
+  "deployedApiSha": "0e01208716d2404e69956491f459921ebb0f1f1e",
+  "deployments": {
+    "web": {
+      "service": "comfortable-determination",
+      "id": "8f517222-8e54-498c-9442-705d2e11b528",
+      "deployedAt": "2026-08-02T13:08:56.298Z",
+      "status": "SUCCESS"
+    },
+    "api": {
+      "service": "young-guns-os",
+      "id": "f4dc78c7-147a-4f93-8e4a-ad49a3c98210",
+      "deployedAt": "2026-08-02T13:09:39.759Z",
+      "status": "SUCCESS"
+    }
+  },
+  "reconciliationNote": "Functional code at 0e01208; repo HEAD a7d3258 is evidence-only. No redeploy required.",
   "web": "https://comfortable-determination-staging.up.railway.app",
   "api": "https://young-guns-os-staging.up.railway.app",
   "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
