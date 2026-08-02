@@ -356,6 +356,10 @@ export function App() {
                         <Route path="/jobs" component={OwnerPages.JobListPage} />
                         <Route path="/drafts" component={OwnerPages.DraftsPage} />
                         <Route path="/crm/new" component={OwnerPages.CustomerCreatePage} />
+                        <Route
+                          path="/crm/duplicates"
+                          component={OwnerPages.CustomerDuplicateMergePage}
+                        />
                         <Route path="/crm/:id" component={OwnerPages.CustomerDetailPage} />
                         <Route path="/crm" component={OwnerPages.CustomerListPage} />
                         <Route

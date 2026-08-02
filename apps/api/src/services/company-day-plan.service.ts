@@ -2,7 +2,10 @@ import { and, count, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { canWriteCompanyMemory } from '@titan/auth';
 import type {
   CreateDayPlanRequest,
+  DayPlanApproveSuggestionsRequest,
   DayPlanMorningSuggestion,
+  DayPlanParseRequest,
+  DayPlanParseResponse,
   DayPlanSectionKey,
   DayPlanSummary,
   DayPlanTodayResponse,
@@ -12,6 +15,7 @@ import {
   DAY_PLAN_SECTION_LABELS,
   findDuplicateDayPlan,
   localPlanDateIso,
+  parseNaturalLanguageDayPlan,
   resolveDayPlanSection,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -205,9 +209,80 @@ export class CompanyDayPlanService {
       content,
       category: created.category,
       priority: created.priority,
+      source: created.source,
     });
 
     return toPlanSummary(created);
+  }
+
+  /**
+   * Parse Owner NL priorities into structured draft items.
+   * Does not persist — Owner must approve via approveParsedSuggestions.
+   */
+  async parseNaturalLanguagePriorities(
+    scope: TenantScope,
+    input: DayPlanParseRequest,
+  ): Promise<DayPlanParseResponse> {
+    assertDayPlanWrite(scope);
+
+    const planDate = parsePlanDate(input.planDate);
+    const parsed = parseNaturalLanguageDayPlan(input.text, planDate);
+    if (parsed.items.length === 0) {
+      throw new DayPlanError('VALIDATION_ERROR', 'Could not extract any plan items from that text');
+    }
+
+    await this.recordAudit(scope, 'day_plan_nl_parsed', planDate, {
+      planDate,
+      itemCount: parsed.items.length,
+      unsafeExecutionHints: parsed.unsafeExecutionHints,
+      rawTextPreview: parsed.rawText.slice(0, 240),
+    });
+
+    return parsed;
+  }
+
+  /** Persist Owner-approved parsed suggestions as aura_suggested day plan rows. */
+  async approveParsedSuggestions(
+    scope: TenantScope,
+    input: DayPlanApproveSuggestionsRequest,
+  ): Promise<{ plans: DayPlanSummary[]; skippedDuplicates: number }> {
+    assertDayPlanWrite(scope);
+
+    if (!input.items?.length) {
+      throw new DayPlanError('VALIDATION_ERROR', 'Select at least one suggestion to approve');
+    }
+
+    const plans: DayPlanSummary[] = [];
+    let skippedDuplicates = 0;
+
+    for (const item of input.items) {
+      try {
+        const plan = await this.createPlan(scope, {
+          content: item.content,
+          planDate: input.planDate,
+          category: item.category ?? undefined,
+          priority: item.priority ?? 'normal',
+          department: item.department ?? undefined,
+          approvalRequired: item.approvalRequired ?? false,
+          source: 'aura_suggested',
+        });
+        plans.push(plan);
+      } catch (error) {
+        if (error instanceof DayPlanError && error.code === 'DUPLICATE') {
+          skippedDuplicates += 1;
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    await this.recordAudit(scope, 'day_plan_nl_approved', input.planDate ?? localPlanDateIso(), {
+      approvedCount: plans.length,
+      skippedDuplicates,
+      planIds: plans.map((plan) => plan.id),
+    });
+
+    return { plans, skippedDuplicates };
   }
 
   async updatePlan(

@@ -1,4 +1,4 @@
-import { and, desc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
+import { and, desc, eq, ilike, inArray, isNull, or, sql } from 'drizzle-orm';
 import type {
   CreateCustomerActivityRequest,
   CreateCustomerPropertyRequest,
@@ -22,7 +22,12 @@ import {
 import type { DatabaseClient } from '@titan/db';
 import { customerActivities, customers, cxCustomerProperties, jobs } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateCrmListCaches,
+} from './api-read-cache.js';
 
 export class CrmError extends Error {
   constructor(
@@ -68,11 +73,26 @@ export class CrmService {
 
   async listCustomers(companyId: string, search?: string | null): Promise<CustomerSummary[]> {
     const q = search?.trim();
+    if (!q) {
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'crm/list', 'all'),
+        () => this.loadCustomerList(companyId, null),
+        CACHE_TTLS.list,
+      );
+    }
+    return this.loadCustomerList(companyId, q);
+  }
+
+  private async loadCustomerList(
+    companyId: string,
+    search: string | null,
+  ): Promise<CustomerSummary[]> {
+    const q = search?.trim();
     let customerRows: Array<typeof customers.$inferSelect>;
 
     if (!q) {
       customerRows = await this.db.query.customers.findMany({
-        where: eq(customers.companyId, companyId),
+        where: and(eq(customers.companyId, companyId), isNull(customers.mergedIntoCustomerId)),
         orderBy: [desc(customers.updatedAt)],
       });
     } else {
@@ -103,6 +123,7 @@ export class CrmService {
         .where(
           and(
             eq(customers.companyId, companyId),
+            isNull(customers.mergedIntoCustomerId),
             or(
               ilike(customers.name, pattern),
               ilike(customers.email, pattern),
@@ -333,6 +354,8 @@ export class CrmService {
       },
     });
 
+    invalidateCrmListCaches(companyId);
+
     return {
       ...toCustomerSummary(created),
       notes: created.notes,
@@ -445,6 +468,8 @@ export class CrmService {
       actorUserId: opts.actorUserId ?? undefined,
     });
 
+    invalidateCrmListCaches(companyId);
+
     return (await this.getCustomer(companyId, customerId))!;
   }
 
@@ -515,6 +540,8 @@ export class CrmService {
       payload: { customer: { id: customerId, name: existing.name } },
       actorUserId: opts.actorUserId,
     });
+
+    invalidateCrmListCaches(companyId);
   }
 
   async addActivity(

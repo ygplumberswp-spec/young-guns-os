@@ -86,8 +86,8 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 12vh;
-  background: rgba(7, 11, 20, 0.72);
-  backdrop-filter: blur(4px);
+  background: rgba(10, 10, 11, 0.72);
+  backdrop-filter: blur(6px);
 }
 
 .ux-command-palette {
@@ -301,16 +301,16 @@
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  background: rgba(8, 18, 36, 0.45);
+  background: rgba(10, 10, 11, 0.55);
 }
 
 .ux-guard-modal {
   width: min(28rem, 100%);
-  padding: 1.25rem;
+  padding: 1.375rem;
   border-radius: var(--titan-radius-lg);
-  border: 1px solid var(--titan-border-subtle);
-  background: var(--titan-surface);
-  box-shadow: var(--titan-shadow-lg, 0 16px 40px rgba(0, 0, 0, 0.18));
+  border: 1px solid var(--titan-border);
+  background: var(--titan-surface-raised);
+  box-shadow: var(--titan-shadow-md), var(--titan-shadow-glow);
 }
 
 .ux-guard-modal__title {

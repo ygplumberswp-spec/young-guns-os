@@ -184,13 +184,13 @@ export function CustomerList({
       },
       {
         id: 'duplicate-review',
-        label: 'Review duplicate',
-        onSelect: () => navigate(`/crm/${customer.id}#duplicate-review`),
+        label: 'Review duplicates',
+        onSelect: () => navigate('/crm/duplicates'),
       },
       {
         id: 'merge-duplicate',
         label: 'Merge duplicate',
-        onSelect: () => navigate(`/crm/${customer.id}#merge-duplicate`),
+        onSelect: () => navigate(`/crm/duplicates?left=${customer.id}`),
       },
       {
         id: 'archive',

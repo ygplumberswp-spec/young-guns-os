@@ -48,7 +48,7 @@ export function TodaysPlanPage() {
     <div className="page-shell todays-plan-page">
       <PageHeader
         title="Today&apos;s Plan"
-        description="Operational priorities and customer follow-ups for today."
+        description="Speak or type today’s priorities → Parse suggestions → Owner approve. No automatic payments or customer sends."
       />
 
       <AuraSectionNav />

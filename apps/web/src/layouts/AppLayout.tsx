@@ -156,7 +156,7 @@ export function AppLayout({ children }: AppLayoutProps) {
               aria-expanded={!sidebarCollapsed}
               onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
             >
-              {sidebarCollapsed ? '»' : '«'}
+              <span aria-hidden="true">{sidebarCollapsed ? '›' : '‹'}</span>
             </button>
           </div>
           <nav className="app-nav" aria-label="Main navigation">
@@ -171,7 +171,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                 key={group.id}
                 className={`app-nav__group${groupHasActive ? ' app-nav__group--expanded' : ''}`}
               >
-                {!sidebarCollapsed ? <p className="app-nav__group-label">{group.label}</p> : null}
+                {!sidebarCollapsed && group.label ? (
+                  <p className="app-nav__group-label">{group.label}</p>
+                ) : null}
                 {items.map((item) => {
                   const isActive =
                     activeLocation === item.href ||

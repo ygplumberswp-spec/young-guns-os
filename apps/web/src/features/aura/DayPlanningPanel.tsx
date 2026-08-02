@@ -1,12 +1,15 @@
 import {
+  approveDayPlanSuggestions,
   createDayPlan,
   fetchDayPlans,
+  parseDayPlanNaturalLanguage,
   updateDayPlan,
 } from '../../lib/intelligence-api';
 import { ApiClientError } from '../../lib/api-client';
 import { PrimaryAction } from '../../components/ux/PrimaryAction';
 import { StatusBadge, type StatusBadgeTone } from '../../components/ux/StatusBadge';
 import { MoreMenu } from '../../components/ux/MoreMenu';
+import { Button } from '@titan/ui';
 import {
   DAY_PLAN_CATEGORIES,
   DAY_PLAN_INPUT_PLACEHOLDERS,
@@ -14,6 +17,7 @@ import {
   formatDayPlanDisplayDate,
   localPlanDateIso,
   type DayPlanCategory,
+  type DayPlanParsedItem,
   type DayPlanPriority,
   type DayPlanStatus,
   type DayPlanSummary,
@@ -56,19 +60,29 @@ function statusTone(plan: DayPlanSummary): StatusBadgeTone {
 }
 
 export function DayPlanningPanel({ accessToken, canWrite, compact = false }: DayPlanningPanelProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const planDate = useMemo(() => localPlanDateIso(), []);
   const [draft, setDraft] = useState('');
   const [category, setCategory] = useState<DayPlanCategory | ''>('');
   const [priority, setPriority] = useState<DayPlanPriority>('normal');
   const [plans, setPlans] = useState<DayPlanSummary[]>([]);
+  const [suggestions, setSuggestions] = useState<DayPlanParsedItem[]>([]);
+  const [selectedIndexes, setSelectedIndexes] = useState<Set<number>>(new Set());
+  const [unsafeHints, setUnsafeHints] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [placeholderIndex] = useState(() =>
     Math.floor(Math.random() * DAY_PLAN_INPUT_PLACEHOLDERS.length),
   );
+
+  const speechSupported =
+    typeof window !== 'undefined' &&
+    ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
   const isSaving = saveStatus === 'saving';
   const activeCount = useMemo(
@@ -83,7 +97,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
       const result = await fetchDayPlans(accessToken, planDate);
       setPlans(result.plans);
     } catch (err) {
-      setLoadError(err instanceof ApiClientError ? err.message : 'Unable to load today\'s priorities');
+      setLoadError(err instanceof ApiClientError ? err.message : "Unable to load today's priorities");
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +119,69 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
     return () => window.clearTimeout(timer);
   }, [saveStatus]);
 
+  async function handleParse() {
+    const trimmed = draft.trim();
+    if (!trimmed || isParsing || !canWrite) {
+      return;
+    }
+
+    setIsParsing(true);
+    setActionError(null);
+    try {
+      const parsed = await parseDayPlanNaturalLanguage(accessToken, {
+        text: trimmed,
+        planDate,
+      });
+      setSuggestions(parsed.items);
+      setSelectedIndexes(new Set(parsed.items.map((_, index) => index)));
+      setUnsafeHints(parsed.unsafeExecutionHints);
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to parse priorities');
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
+  async function handleApproveSuggestions() {
+    if (!canWrite || isApproving || selectedIndexes.size === 0) {
+      return;
+    }
+
+    setIsApproving(true);
+    setActionError(null);
+    try {
+      const items = suggestions.filter((_, index) => selectedIndexes.has(index));
+      const result = await approveDayPlanSuggestions(accessToken, {
+        planDate,
+        items: items.map((item) => ({
+          content: item.content,
+          category: item.category,
+          priority: item.priority,
+          department: item.department,
+          approvalRequired: item.approvalRequired,
+        })),
+      });
+      setPlans((current) => {
+        const merged = [...result.plans, ...current];
+        const seen = new Set<string>();
+        return merged.filter((plan) => {
+          if (seen.has(plan.id)) return false;
+          seen.add(plan.id);
+          return true;
+        });
+      });
+      setSuggestions([]);
+      setSelectedIndexes(new Set());
+      setUnsafeHints([]);
+      setDraft('');
+      setSaveStatus('saved');
+    } catch (err) {
+      setActionError(err instanceof ApiClientError ? err.message : 'Unable to approve suggestions');
+    } finally {
+      setIsApproving(false);
+    }
+  }
+
   async function handleSave() {
     const trimmed = draft.trim();
     if (!trimmed || isSaving || !canWrite) {
@@ -125,12 +202,52 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
       setDraft('');
       setCategory('');
       setPriority('normal');
+      setSuggestions([]);
+      setUnsafeHints([]);
       setSaveStatus('saved');
       inputRef.current?.focus();
     } catch (err) {
       setSaveStatus('failed');
       setActionError(err instanceof ApiClientError ? err.message : 'Unable to save priority');
     }
+  }
+
+  function startListening() {
+    if (!speechSupported || !canWrite) return;
+    type SpeechRec = {
+      lang: string;
+      interimResults: boolean;
+      maxAlternatives: number;
+      onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript?: string }>> }) => void) | null;
+      onerror: (() => void) | null;
+      onend: (() => void) | null;
+      start: () => void;
+    };
+    const win = window as unknown as {
+      SpeechRecognition?: new () => SpeechRec;
+      webkitSpeechRecognition?: new () => SpeechRec;
+    };
+    const SpeechRecognitionCtor = win.SpeechRecognition || win.webkitSpeechRecognition;
+    if (!SpeechRecognitionCtor) return;
+
+    const recognition = new SpeechRecognitionCtor();
+    recognition.lang = 'en-ZA';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    setIsListening(true);
+    setActionError(null);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim();
+      if (transcript) {
+        setDraft((current) => (current ? `${current.trim()} ${transcript}` : transcript));
+      }
+    };
+    recognition.onerror = () => {
+      setActionError('Speech recognition failed — type priorities instead.');
+      setIsListening(false);
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.start();
   }
 
   async function handleStatusChange(
@@ -158,6 +275,15 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
     return DAY_PLAN_CATEGORIES.find((entry) => entry.value === value)?.label ?? value;
   }
 
+  function toggleSuggestion(index: number) {
+    setSelectedIndexes((current) => {
+      const next = new Set(current);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
   return (
     <section
       className={`day-planning${compact ? ' day-planning--compact' : ''}`}
@@ -175,51 +301,129 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
 
       {canWrite ? (
         <>
-          <div className="day-planning__composer">
-            <input
+          <div className="day-planning__composer day-planning__composer--nl">
+            <textarea
               ref={inputRef}
-              className="day-planning__input"
-              type="text"
+              className="day-planning__input day-planning__textarea"
               value={draft}
-              placeholder={DAY_PLAN_INPUT_PLACEHOLDERS[placeholderIndex]}
-              aria-label="Add a priority for today"
-              disabled={isSaving}
+              placeholder={`${DAY_PLAN_INPUT_PLACEHOLDERS[placeholderIndex]} (speak or type — Parse suggests items, Approve saves)`}
+              aria-label="Describe today's priorities in natural language"
+              disabled={isSaving || isParsing || isApproving}
+              rows={3}
               onChange={(event) => setDraft(event.target.value)}
             />
-            <select
-              className="titan-input day-planning__select"
-              value={priority}
-              aria-label="Priority"
-              disabled={isSaving}
-              onChange={(event) => setPriority(event.target.value as DayPlanPriority)}
-            >
-              <option value="normal">Normal</option>
-              <option value="high">High</option>
-            </select>
-            <select
-              className="titan-input day-planning__select"
-              value={category}
-              aria-label="Category"
-              disabled={isSaving}
-              onChange={(event) => setCategory(event.target.value as DayPlanCategory | '')}
-            >
-              <option value="">Optional category</option>
-              {DAY_PLAN_CATEGORIES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <PrimaryAction
-              type="button"
-              className="day-planning__save"
-              disabled={isSaving || !draft.trim()}
-              aria-label="Save"
-              onClick={() => void handleSave()}
-            >
-              {isSaving ? 'Saving…' : 'Save'}
-            </PrimaryAction>
+            <div className="day-planning__composer-actions">
+              {speechSupported ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isListening || isParsing || isApproving}
+                  onClick={startListening}
+                >
+                  {isListening ? 'Listening…' : 'Speak'}
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={isParsing || !draft.trim() || isApproving}
+                onClick={() => void handleParse()}
+              >
+                {isParsing ? 'Parsing…' : 'Parse suggestions'}
+              </Button>
+              <select
+                className="titan-input day-planning__select"
+                value={priority}
+                aria-label="Priority for quick save"
+                disabled={isSaving}
+                onChange={(event) => setPriority(event.target.value as DayPlanPriority)}
+              >
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+              </select>
+              <select
+                className="titan-input day-planning__select"
+                value={category}
+                aria-label="Category for quick save"
+                disabled={isSaving}
+                onChange={(event) => setCategory(event.target.value as DayPlanCategory | '')}
+              >
+                <option value="">Optional category</option>
+                {DAY_PLAN_CATEGORIES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <PrimaryAction
+                type="button"
+                className="day-planning__save"
+                disabled={isSaving || !draft.trim() || suggestions.length > 0}
+                aria-label="Quick save single priority"
+                onClick={() => void handleSave()}
+              >
+                {isSaving ? 'Saving…' : 'Quick save'}
+              </PrimaryAction>
+            </div>
           </div>
+
+          {suggestions.length > 0 ? (
+            <div className="day-planning__suggestions" aria-live="polite">
+              <p className="day-planning__suggestions-title">
+                Suggested plan items — review, then Owner approve. Nothing is saved until you approve.
+              </p>
+              {unsafeHints.length > 0 ? (
+                <p className="day-planning__status day-planning__status--failed" role="status">
+                  Safety: utterance mentions {unsafeHints.join(', ')}. TITAN will only create plan
+                  text — no payments, customer sends, or Xero writes.
+                </p>
+              ) : null}
+              <ul className="day-planning__suggestion-list">
+                {suggestions.map((item, index) => (
+                  <li key={`${item.content}-${index}`} className="day-planning__suggestion-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={selectedIndexes.has(index)}
+                        onChange={() => toggleSuggestion(index)}
+                      />{' '}
+                      <strong>{item.content}</strong>
+                      <span className="page-muted">
+                        {' '}
+                        · {item.category ?? 'uncategorised'} · {item.priority}
+                        {item.approvalRequired ? ' · approval flagged' : ''}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <div className="day-planning__composer-actions">
+                <PrimaryAction
+                  type="button"
+                  disabled={isApproving || selectedIndexes.size === 0}
+                  onClick={() => void handleApproveSuggestions()}
+                >
+                  {isApproving ? 'Approving…' : `Approve ${selectedIndexes.size} selected`}
+                </PrimaryAction>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isApproving}
+                  onClick={() => {
+                    setSuggestions([]);
+                    setSelectedIndexes(new Set());
+                    setUnsafeHints([]);
+                  }}
+                >
+                  Dismiss suggestions
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           {saveStatus === 'saving' ? (
             <p className="day-planning__status" aria-live="polite">
               Saving…
@@ -249,7 +453,7 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
       ) : plans.length === 0 ? (
         <p className="page-muted">
           {canWrite
-            ? 'No priorities set yet. Add today’s operational focus above.'
+            ? 'No priorities set yet. Speak or type today’s focus, then Parse → Approve.'
             : 'No priorities set for today.'}
         </p>
       ) : (
@@ -284,6 +488,9 @@ export function DayPlanningPanel({ accessToken, canWrite, compact = false }: Day
                     ) : null}
                     <StatusBadge label={displayStatus(plan)} tone={statusTone(plan)} />
                     {dept ? <StatusBadge label={dept} tone="info" /> : null}
+                    {plan.source === 'aura_suggested' ? (
+                      <StatusBadge label="Approved suggestion" tone="info" />
+                    ) : null}
                     <span className="page-muted">
                       Set {formatPriorityTimestamp(plan.createdAt)}
                     </span>

@@ -16,6 +16,8 @@ export const customers = pgTable('customers', {
   isSupplierOnly: boolean('is_supplier_only').notNull().default(false),
   doNotContact: boolean('do_not_contact').notNull().default(false),
   notes: text('notes'),
+  /** Set when this record was merged into another surviving customer (M7). */
+  mergedIntoCustomerId: uuid('merged_into_customer_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

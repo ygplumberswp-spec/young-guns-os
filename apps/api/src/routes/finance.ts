@@ -8,6 +8,7 @@ import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
+import { appendServerTiming } from '../lib/server-timing.js';
 
 const quoteStatusSchema = z.enum([
   'draft',
@@ -157,7 +158,13 @@ export function createFinanceRouter({
     requireAnyPermission('finance:read', 'finance:write'),
     async (req, res) => {
       const { companyId } = getAuth(req);
-      const invoices = await financeService.listInvoices(companyId, { q: stringQuery(req.query.q), status: stringQuery(req.query.status), overdueOnly: req.query.overdueOnly === 'true' });
+      const started = performance.now();
+      const invoices = await financeService.listInvoices(companyId, {
+        q: stringQuery(req.query.q),
+        status: stringQuery(req.query.status),
+        overdueOnly: req.query.overdueOnly === 'true',
+      });
+      appendServerTiming(res, 'invoices-list', performance.now() - started);
       res.json({ data: { invoices } });
     },
   );

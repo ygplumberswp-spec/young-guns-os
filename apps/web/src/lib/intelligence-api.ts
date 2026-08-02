@@ -5,8 +5,11 @@ import type {
   CreateBusinessRuleRequest,
   CreateDayPlanRequest,
   DashboardSummary,
+  DayPlanApproveSuggestionsRequest,
   DayPlanFollowUpItem,
   DayPlanMorningSuggestion,
+  DayPlanParseRequest,
+  DayPlanParseResponse,
   DayPlanSummary,
   DayPlanTodayResponse,
   IntelligenceDashboard,
@@ -155,6 +158,31 @@ export async function createDayPlan(
     body,
   });
   return data.plan;
+}
+
+export async function parseDayPlanNaturalLanguage(
+  accessToken: string,
+  body: DayPlanParseRequest,
+): Promise<DayPlanParseResponse> {
+  return request<DayPlanParseResponse>('/intelligence/day-plans/parse', {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+}
+
+export async function approveDayPlanSuggestions(
+  accessToken: string,
+  body: DayPlanApproveSuggestionsRequest,
+): Promise<{ plans: DayPlanSummary[]; skippedDuplicates: number }> {
+  return request<{ plans: DayPlanSummary[]; skippedDuplicates: number }>(
+    '/intelligence/day-plans/approve-suggestions',
+    {
+      method: 'POST',
+      accessToken,
+      body,
+    },
+  );
 }
 
 export async function updateDayPlan(

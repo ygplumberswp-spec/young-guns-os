@@ -6,6 +6,8 @@ type CacheEntry<T> = {
 const DEFAULT_TTL_MS = 30_000;
 const STATS_TTL_MS = 30_000;
 const DASHBOARD_TTL_MS = 45_000;
+/** Short TTL for unfiltered authenticated list pages (CRM/Jobs/Finance). */
+const LIST_TTL_MS = 20_000;
 
 class ApiReadCacheStore {
   private readonly entries = new Map<string, CacheEntry<unknown>>();
@@ -72,7 +74,23 @@ export async function cachedTenantRead<T>(
 export const CACHE_TTLS = {
   stats: STATS_TTL_MS,
   dashboard: DASHBOARD_TTL_MS,
+  list: LIST_TTL_MS,
 } as const;
+
+export function invalidateCrmListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:crm/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:crm/stats`);
+}
+
+export function invalidateJobsListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:jobs/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:jobs/stats`);
+}
+
+export function invalidateFinanceListCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:finance/list`);
+  apiReadCache.invalidatePrefix(`${companyId}:finance/stats`);
+}
 
 /** Clears integration hub and platform read caches for a tenant. */
 export function invalidateIntegrationReadCaches(companyId: string) {

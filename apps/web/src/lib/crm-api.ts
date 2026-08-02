@@ -4,6 +4,10 @@ import type {
   CreateCustomerRequest,
   CrmStats,
   CustomerDetail,
+  CustomerDuplicateCandidateSummary,
+  CustomerMergePreview,
+  CustomerMergeRequest,
+  CustomerMergeResult,
   CustomerPropertySummary,
   CustomerSummary,
   UpdateCustomerPropertyRequest,
@@ -123,4 +127,50 @@ export async function updateCustomerProperty(
     { method: 'PATCH', accessToken, body },
   );
   return data.property;
+}
+
+export async function fetchCustomerDuplicateCandidates(
+  accessToken: string,
+): Promise<CustomerDuplicateCandidateSummary[]> {
+  const data = await request<{ candidates: CustomerDuplicateCandidateSummary[] }>(
+    '/crm/customers/duplicates',
+    { accessToken },
+  );
+  return data.candidates;
+}
+
+export async function scanCustomerDuplicates(
+  accessToken: string,
+): Promise<CustomerDuplicateCandidateSummary[]> {
+  const data = await request<{ candidates: CustomerDuplicateCandidateSummary[] }>(
+    '/crm/customers/duplicates/scan',
+    { method: 'POST', accessToken, body: {} },
+  );
+  return data.candidates;
+}
+
+export async function previewCustomerDuplicateMerge(
+  accessToken: string,
+  body: {
+    leftCustomerId: string;
+    rightCustomerId: string;
+    candidateId?: string | null;
+  },
+): Promise<CustomerMergePreview> {
+  const data = await request<{ preview: CustomerMergePreview }>(
+    '/crm/customers/duplicates/preview',
+    { method: 'POST', accessToken, body },
+  );
+  return data.preview;
+}
+
+export async function decideCustomerDuplicate(
+  accessToken: string,
+  body: CustomerMergeRequest,
+): Promise<CustomerMergeResult> {
+  const data = await request<{ result: CustomerMergeResult }>(
+    '/crm/customers/duplicates/decide',
+    { method: 'POST', accessToken, body },
+  );
+  return data.result;
 }

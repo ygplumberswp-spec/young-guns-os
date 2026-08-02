@@ -31,7 +31,12 @@ import {
   users,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateJobsListCaches,
+} from './api-read-cache.js';
 import { upsertPrimaryCrewMember } from './job-execution.service.js';
 import { allocateJobNumber } from './job-number.js';
 
@@ -95,12 +100,18 @@ export class JobsService {
     const q = search?.trim();
 
     if (!q) {
-      const rows = await this.db.query.jobs.findMany({
-        where: eq(jobs.companyId, companyId),
-        with: { customer: true, assignedUser: true },
-        orderBy: [desc(jobs.updatedAt)],
-      });
-      return rows.map(toJobSummary);
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'jobs/list', 'all'),
+        async () => {
+          const rows = await this.db.query.jobs.findMany({
+            where: eq(jobs.companyId, companyId),
+            with: { customer: true, assignedUser: true },
+            orderBy: [desc(jobs.updatedAt)],
+          });
+          return rows.map(toJobSummary);
+        },
+        CACHE_TTLS.list,
+      );
     }
 
     const pattern = `%${escapeLike(q)}%`;
@@ -501,6 +512,7 @@ export class JobsService {
       });
     }
 
+    invalidateJobsListCaches(companyId);
     return jobDetail;
   }
 
@@ -671,6 +683,7 @@ export class JobsService {
       }
     }
 
+    invalidateJobsListCaches(companyId);
     return (await this.getJob(companyId, jobId))!;
   }
 
@@ -888,6 +901,8 @@ export class JobsService {
       payload: { job: { id: jobId, jobNumber: job.jobNumber } },
       actorUserId: scope.userId,
     });
+
+    invalidateJobsListCaches(scope.companyId);
   }
 }
 

@@ -15,6 +15,7 @@ import {
   createDenyTechnicianFromOwnerModules,
   createRequireAssignedJob,
 } from '../middleware/authorization-guards.js';
+import { appendServerTiming } from '../lib/server-timing.js';
 
 const jobStatusSchema = z.enum(['new', 'scheduled', 'in_progress', 'completed', 'cancelled']);
 const jobPrioritySchema = z.enum(['low', 'normal', 'high', 'urgent']);
@@ -220,7 +221,9 @@ export function createJobsRouter({
   router.get('/', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const search = typeof req.query.q === 'string' ? req.query.q : null;
+    const started = performance.now();
     const jobsList = await jobsService.listJobs(companyId, search);
+    appendServerTiming(res, 'jobs-list', performance.now() - started);
     res.json({ data: { jobs: jobsList } });
   });
 

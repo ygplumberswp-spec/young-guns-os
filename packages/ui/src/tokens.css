@@ -1,41 +1,43 @@
 /**
  * TITAN Brand Foundation — semantic design tokens
- * Premium command-centre: midnight navy, chrome wordmark, electric teal accents.
+ * Permanent visual direction: almost-black charcoal surfaces,
+ * white typography, electric accent (#22d3ee) for primary/active only.
+ * Premium enterprise SaaS — Linear / Stripe / Vercel / GitHub dark.
  */
 :root {
-  /* Backgrounds & surfaces */
-  --titan-bg: #070b14;
-  --titan-bg-elevated: #0b1220;
-  --titan-surface: #101a2e;
-  --titan-surface-raised: #152238;
-  --titan-surface-muted: #0e1729;
-  --titan-surface-hover: #1a2a44;
+  /* Backgrounds & surfaces — charcoal, not navy */
+  --titan-bg: #0a0a0b;
+  --titan-bg-elevated: #111113;
+  --titan-surface: #161618;
+  --titan-surface-raised: #1c1c1f;
+  --titan-surface-muted: #121214;
+  --titan-surface-hover: #232328;
 
   /* Borders */
-  --titan-border: #243554;
-  --titan-border-strong: #35507a;
-  --titan-border-subtle: rgba(148, 163, 184, 0.16);
+  --titan-border: #2a2a2e;
+  --titan-border-strong: #3f3f46;
+  --titan-border-subtle: rgba(255, 255, 255, 0.08);
 
-  /* Text */
+  /* Text — white / cool gray */
   --titan-text: #f8fafc;
-  --titan-text-secondary: #94a3b8;
-  --titan-text-muted: #64748b;
-  --titan-text-inverse: #070b14;
+  --titan-text-secondary: #a1a1aa;
+  --titan-text-muted: #71717a;
+  --titan-text-inverse: #0a0a0b;
 
-  /* Accent / illumination */
+  /* Accent — preserve exact active-menu bright blue/cyan */
   --titan-accent: #22d3ee;
   --titan-accent-strong: #06b6d4;
   --titan-accent-soft: rgba(34, 211, 238, 0.14);
-  --titan-accent-glow: rgba(34, 211, 238, 0.28);
-  --titan-chrome-hi: #f1f5f9;
-  --titan-chrome-mid: #94a3b8;
-  --titan-chrome-lo: #64748b;
+  --titan-accent-glow: rgba(34, 211, 238, 0.22);
+  --titan-chrome-hi: #f4f4f5;
+  --titan-chrome-mid: #a1a1aa;
+  --titan-chrome-lo: #71717a;
 
   /* Focus */
   --titan-focus: #22d3ee;
-  --titan-focus-ring: 0 0 0 2px #070b14, 0 0 0 4px #22d3ee;
+  --titan-focus-ring: 0 0 0 2px #0a0a0b, 0 0 0 4px rgba(34, 211, 238, 0.75);
 
-  /* Truthful status only */
+  /* Status — green success, orange warning, red critical only */
   --titan-success: #22c55e;
   --titan-success-soft: rgba(34, 197, 94, 0.14);
   --titan-warning: #f59e0b;
@@ -49,10 +51,11 @@
   --titan-radius-lg: 0.75rem;
   --titan-radius-xl: 1rem;
 
-  /* Shadow / depth */
-  --titan-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
-  --titan-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
-  --titan-shadow-glow: 0 0 40px rgba(34, 211, 238, 0.08);
+  /* Shadow / depth — restrained, not neon */
+  --titan-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --titan-shadow-md: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --titan-shadow-glow: 0 0 24px rgba(34, 211, 238, 0.08);
+  --titan-shadow-accent: 0 0 0 1px rgba(34, 211, 238, 0.28), 0 0 16px rgba(34, 211, 238, 0.12);
 
   /* Spacing scale (reference) */
   --titan-space-1: 0.25rem;
@@ -63,15 +66,19 @@
   --titan-space-6: 1.5rem;
   --titan-space-8: 2rem;
 
-  /* Motion */
-  --titan-motion-fast: 120ms;
-  --titan-motion-base: 180ms;
+  /* Motion — smooth, subtle */
+  --titan-motion-fast: 140ms;
+  --titan-motion-base: 200ms;
+  --titan-motion-slow: 280ms;
   --titan-ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   /* Typography */
   --titan-font-display: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --titan-font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --titan-font-tabular: 'Inter', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Iconography */
+  --titan-icon-size: 1.125rem;
 
   color-scheme: dark;
 }
@@ -80,5 +87,6 @@
   :root {
     --titan-motion-fast: 0ms;
     --titan-motion-base: 0ms;
+    --titan-motion-slow: 0ms;
   }
 }

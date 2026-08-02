@@ -40,7 +40,12 @@ import {
   securityAuditLogs,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
-import { buildTenantCacheKey, cachedTenantRead, CACHE_TTLS } from './api-read-cache.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+  invalidateFinanceListCaches,
+} from './api-read-cache.js';
 
 const OPEN_QUOTE_STATUSES = ['draft', 'sent'] as const;
 
@@ -113,6 +118,21 @@ export class FinanceService {
   }
 
   async listInvoices(companyId: string, query: FinanceListQuery = {}): Promise<InvoiceSummary[]> {
+    const unfiltered = !query.status && !query.overdueOnly && !query.q;
+    if (unfiltered) {
+      return cachedTenantRead(
+        buildTenantCacheKey(companyId, 'finance/list', 'invoices-all'),
+        () => this.loadInvoiceList(companyId, query),
+        CACHE_TTLS.list,
+      );
+    }
+    return this.loadInvoiceList(companyId, query);
+  }
+
+  private async loadInvoiceList(
+    companyId: string,
+    query: FinanceListQuery = {},
+  ): Promise<InvoiceSummary[]> {
     const rows = await this.db.query.invoices.findMany({
       where: and(eq(invoices.companyId, companyId), query.status ? eq(invoices.status, query.status as typeof invoices.status.enumValues[number]) : undefined, query.overdueOnly ? and(lte(invoices.dueDate, new Date()), inArray(invoices.status, ['sent', 'partial', 'overdue'])) : undefined, query.q ? or(ilike(invoices.invoiceNumber, `%${query.q}%`), ilike(invoices.internalNumber, `%${query.q}%`), ilike(invoices.xeroInvoiceNumber, `%${query.q}%`), ilike(invoices.title, `%${query.q}%`)) : undefined),
       with: { customer: true, job: true, quote: true },
@@ -268,6 +288,7 @@ export class FinanceService {
       },
     });
 
+    invalidateFinanceListCaches(companyId);
     return invoice;
   }
 

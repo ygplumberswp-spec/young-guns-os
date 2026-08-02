@@ -3,10 +3,13 @@ import { z } from 'zod';
 import type { CrmService } from '../services/crm.service.js';
 import { CrmError } from '../services/crm.service.js';
 import type { CustomerValueClassificationService } from '../services/customer-value-classification.service.js';
+import type { CustomerDuplicateMergeService } from '../services/customer-duplicate-merge.service.js';
+import { CustomerDuplicateMergeError } from '../services/customer-duplicate-merge.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { applyStaffOwnerGuards } from '../middleware/staff-owner-guard.js';
+import { appendServerTiming } from '../lib/server-timing.js';
 
 const customerStatusSchema = z.enum(['active', 'inactive', 'lead']);
 
@@ -51,8 +54,47 @@ const updatePropertySchema = propertyBodySchema.partial().extend({
   propertyName: z.string().trim().min(1).max(200).optional(),
 });
 
+const mergeDecisionSchema = z.enum([
+  'keep_left',
+  'keep_right',
+  'selective_fields',
+  'dismiss_not_duplicate',
+]);
+
+const mergeFieldKeySchema = z.enum([
+  'name',
+  'contactPerson',
+  'email',
+  'phone',
+  'notes',
+  'status',
+  'doNotContact',
+  'isSupplierOnly',
+]);
+
+const mergeDecideSchema = z.object({
+  leftCustomerId: z.string().uuid(),
+  rightCustomerId: z.string().uuid(),
+  decision: mergeDecisionSchema,
+  confirmConflicts: z.boolean().optional(),
+  fieldSelection: z
+    .record(mergeFieldKeySchema, z.enum(['left', 'right']))
+    .optional(),
+  survivorCustomerId: z.string().uuid().optional().nullable(),
+  keepXeroContactId: z.string().trim().min(1).max(200).optional().nullable(),
+  notes: z.string().trim().max(5000).optional().nullable(),
+  candidateId: z.string().uuid().optional().nullable(),
+});
+
+const mergePreviewSchema = z.object({
+  leftCustomerId: z.string().uuid(),
+  rightCustomerId: z.string().uuid(),
+  candidateId: z.string().uuid().optional().nullable(),
+});
+
 type CrmRouterDeps = {
   crmService: CrmService;
+  customerDuplicateMergeService: CustomerDuplicateMergeService;
   customerValueClassificationService: CustomerValueClassificationService;
   teamService: TeamService;
   db: import('@titan/db').DatabaseClient;
@@ -70,6 +112,7 @@ function getRouteParam(value: string | string[]): string {
 
 export function createCrmRouter({
   crmService,
+  customerDuplicateMergeService,
   customerValueClassificationService,
   teamService,
   db,
@@ -98,12 +141,122 @@ export function createCrmRouter({
   );
 
   router.get(
+    '/customers/duplicates',
+    requireAnyPermission('customers:read', 'customers:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const candidates = await customerDuplicateMergeService.listCandidates({
+          userId: auth.userId,
+          companyId: auth.companyId,
+          roleName: auth.roleName,
+          permissions: auth.permissions,
+        });
+        res.json({ data: { candidates } });
+      } catch (error) {
+        handleCrmError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/customers/duplicates/scan',
+    requireAnyPermission('customers:read', 'customers:write'),
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const candidates = await customerDuplicateMergeService.scanAndUpsertCandidates({
+          userId: auth.userId,
+          companyId: auth.companyId,
+          roleName: auth.roleName,
+          permissions: auth.permissions,
+        });
+        res.json({ data: { candidates } });
+      } catch (error) {
+        handleCrmError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/customers/duplicates/preview',
+    requireAnyPermission('customers:read', 'customers:write'),
+    async (req, res) => {
+      const parsed = mergePreviewSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid duplicate preview payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const auth = getAuth(req);
+        const preview = await customerDuplicateMergeService.previewMerge(
+          {
+            userId: auth.userId,
+            companyId: auth.companyId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          parsed.data.leftCustomerId,
+          parsed.data.rightCustomerId,
+          parsed.data.candidateId,
+        );
+        res.json({ data: { preview } });
+      } catch (error) {
+        handleCrmError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/customers/duplicates/decide',
+    requireAnyPermission('customers:write'),
+    async (req, res) => {
+      const parsed = mergeDecideSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid duplicate merge decision payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const auth = getAuth(req);
+        const result = await customerDuplicateMergeService.decide(
+          {
+            userId: auth.userId,
+            companyId: auth.companyId,
+            roleName: auth.roleName,
+            permissions: auth.permissions,
+          },
+          parsed.data,
+        );
+        res.json({ data: { result } });
+      } catch (error) {
+        handleCrmError(res, error);
+      }
+    },
+  );
+
+  router.get(
     '/customers',
     requireAnyPermission('customers:read', 'customers:write'),
     async (req, res) => {
       const { companyId } = getAuth(req);
       const search = typeof req.query.q === 'string' ? req.query.q : null;
+      const started = performance.now();
       const customers = await crmService.listCustomers(companyId, search);
+      appendServerTiming(res, 'crm-list', performance.now() - started);
       res.json({ data: { customers } });
     },
   );
@@ -342,6 +495,25 @@ function handleCrmError(res: import('express').Response, error: unknown) {
           ? 403
           : error.code === 'VALIDATION_ERROR'
             ? 400
+            : 400;
+
+    res.status(status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  if (error instanceof CustomerDuplicateMergeError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'CONFLICT'
+            ? 409
             : 400;
 
     res.status(status).json({

@@ -8,7 +8,8 @@ export type NavGroupDefinition = {
 };
 
 export const NAV_GROUP_ORDER: NavGroupDefinition[] = [
-  { id: 'core', label: 'Core' },
+  /** Core group has no section heading — items sit at the top of the sidebar. */
+  { id: 'core', label: '' },
   { id: 'finance', label: 'Finance' },
   { id: 'operations', label: 'Operations' },
   { id: 'intelligence', label: 'Intelligence' },

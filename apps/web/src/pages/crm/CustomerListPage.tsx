@@ -129,11 +129,16 @@ export function CustomerListPage() {
             : 'Search by name, phone, email or property address.'
         }
         actions={
-          canWrite ? (
-            <Link href="/crm/new">
-              <Button>Add customer</Button>
+          <>
+            <Link href="/crm/duplicates">
+              <Button variant="secondary">Duplicate merge</Button>
             </Link>
-          ) : undefined
+            {canWrite ? (
+              <Link href="/crm/new">
+                <Button>Add customer</Button>
+              </Link>
+            ) : null}
+          </>
         }
       />
 

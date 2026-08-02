@@ -12,6 +12,7 @@ export * from './analytics';
 export * from './mobile';
 export * from './user-invites';
 export * from './customers';
+export * from './customer-duplicate-merge';
 export * from './customer-activities';
 export * from './marketing-eligibility';
 export * from './job-execution-enums';

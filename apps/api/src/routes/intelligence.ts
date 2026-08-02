@@ -408,6 +408,89 @@ export function createIntelligenceRouter({
     },
   );
 
+  router.post(
+    '/day-plans/parse',
+    requireAnyPermission('intelligence:write', 'executive:write'),
+    requireCompanyMemoryWrite(),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = z
+        .object({
+          text: z.string().trim().min(1).max(4000),
+          planDate: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+        })
+        .safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid day plan parse payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const result = await dayPlanService.parseNaturalLanguagePriorities(auth, parsed.data);
+        res.json({ data: result });
+      } catch (error) {
+        handleDayPlanError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/day-plans/approve-suggestions',
+    requireAnyPermission('intelligence:write', 'executive:write'),
+    requireCompanyMemoryWrite(),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const parsed = z
+        .object({
+          planDate: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+          items: z
+            .array(
+              z.object({
+                content: z.string().trim().min(1).max(500),
+                category: dayPlanCategorySchema.nullish(),
+                priority: dayPlanPrioritySchema.optional(),
+                department: z.string().trim().max(120).nullish(),
+                approvalRequired: z.boolean().optional(),
+              }),
+            )
+            .min(1)
+            .max(40),
+        })
+        .safeParse(req.body);
+
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid day plan approval payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+
+      try {
+        const result = await dayPlanService.approveParsedSuggestions(auth, parsed.data);
+        res.status(201).json({ data: result });
+      } catch (error) {
+        handleDayPlanError(res, error);
+      }
+    },
+  );
+
   router.patch(
     '/day-plans/:id',
     requireAnyPermission('intelligence:write', 'executive:write'),

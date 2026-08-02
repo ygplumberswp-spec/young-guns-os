@@ -40,6 +40,7 @@ import { createMarketingEligibilityRouter } from './routes/marketing-eligibility
 import { createJobsRouter } from './routes/jobs.js';
 import { createSchedulingRouter } from './routes/scheduling.js';
 import { CrmService } from './services/crm.service.js';
+import { CustomerDuplicateMergeService } from './services/customer-duplicate-merge.service.js';
 import { CustomerValueClassificationService } from './services/customer-value-classification.service.js';
 import { DashboardExecutiveService } from './services/dashboard-executive.service.js';
 import { SupplierPriceIntelligenceService } from './services/supplier-price-intelligence.service.js';
@@ -380,6 +381,7 @@ const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   teamService,
 });
 const crmService = new CrmService(db);
+const customerDuplicateMergeService = new CustomerDuplicateMergeService(db);
 const customerValueClassificationService = new CustomerValueClassificationService(db);
 const supplierPriceIntelligenceService = new SupplierPriceIntelligenceService(db);
 const marketingEligibilityService = new MarketingEligibilityService(db);
@@ -1416,6 +1418,7 @@ app.use(
   '/api/v1/crm',
   createCrmRouter({
     crmService,
+    customerDuplicateMergeService,
     customerValueClassificationService,
     teamService,
     db,

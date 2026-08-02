@@ -29,6 +29,7 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
 
   // CRM & leads
   { match: /^\/crm\/new$/, fallback: '/crm' },
+  { match: /^\/crm\/duplicates$/, fallback: '/crm' },
   { match: /^\/crm\/[^/]+$/, fallback: '/crm' },
   { match: /^\/leads\/new$/, fallback: '/leads' },
   { match: /^\/leads\/[^/]+$/, fallback: '/leads' },

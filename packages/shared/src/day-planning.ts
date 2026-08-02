@@ -75,6 +75,40 @@ export type DayPlanMorningSuggestion = {
   evidence: string;
 };
 
+/** Owner NL utterance → structured draft items (not persisted until approve). */
+export type DayPlanParseRequest = {
+  text: string;
+  planDate?: string;
+};
+
+export type DayPlanParsedItem = {
+  content: string;
+  category: DayPlanCategory | null;
+  priority: DayPlanPriority;
+  department: string | null;
+  approvalRequired: boolean;
+  evidence: string;
+};
+
+export type DayPlanParseResponse = {
+  planDate: string;
+  rawText: string;
+  items: DayPlanParsedItem[];
+  /** True when utterance mentions payments/sends/payroll — still only creates plan text. */
+  unsafeExecutionHints: string[];
+};
+
+export type DayPlanApproveSuggestionsRequest = {
+  planDate?: string;
+  items: Array<{
+    content: string;
+    category?: DayPlanCategory | null;
+    priority?: DayPlanPriority;
+    department?: string | null;
+    approvalRequired?: boolean;
+  }>;
+};
+
 export type CreateDayPlanRequest = {
   content: string;
   planDate?: string;
@@ -320,4 +354,116 @@ export function displayDayPlanStatus(status: DayPlanStatus): string {
   if (status === 'active') return 'Planned';
   if (status === 'completed') return 'Completed';
   return 'Archived';
+}
+
+const UNSAFE_PLAN_HINTS: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\b(pay|payment|payroll|wage|salary)\b/i, label: 'payment_or_payroll' },
+  { pattern: /\b(send|blast|broadcast)\b.+\b(whatsapp|sms|email|invoice)\b/i, label: 'customer_send' },
+  { pattern: /\b(xero|bank transfer|eft)\b.+\b(push|sync|write|execute)\b/i, label: 'finance_write' },
+];
+
+/** More specific department cues first (marketing before generic "email"). */
+const CATEGORY_HINTS: Array<{ pattern: RegExp; category: DayPlanCategory; department: string }> = [
+  {
+    pattern: /\b(marketing|campaigns?|promos?|social)\b/i,
+    category: 'marketing',
+    department: 'Marketing',
+  },
+  {
+    pattern: /\b(invoices?|quotes?|payments?|xero|finance|overdue|cash)\b/i,
+    category: 'finance',
+    department: 'Finance',
+  },
+  {
+    pattern: /\b(jobs?|dispatch|schedule|technicians?|ops|site)\b/i,
+    category: 'operations',
+    department: 'Operations',
+  },
+  {
+    pattern: /\b(whatsapps?|emails?|sms|calls?|inbox|communications?)\b/i,
+    category: 'communications',
+    department: 'Communications',
+  },
+];
+
+function cleanPlanSegment(segment: string): string {
+  return segment
+    .replace(/^[-*•]\s+/, '')
+    .replace(/^\d+[\).\]]\s+/, '')
+    .replace(/^(today[,:]?\s*|please\s+|we (should|must|need to)\s+)/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function splitNaturalLanguagePriorities(text: string): string[] {
+  const lineParts = text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/;\s+/))
+    .map(cleanPlanSegment)
+    .filter((part) => part.length >= 3);
+
+  if (lineParts.length > 1) {
+    return lineParts;
+  }
+
+  const single = lineParts[0] ?? cleanPlanSegment(text);
+  if (!single) return [];
+
+  // Light split for spoken lists: "answer WhatsApps and then push marketing"
+  const thenParts = single
+    .split(/\band then\b|, then\b/i)
+    .map(cleanPlanSegment)
+    .filter((part) => part.length >= 3);
+  if (thenParts.length > 1) return thenParts;
+
+  return [single];
+}
+
+/**
+ * Deterministic NL → structured plan items.
+ * Splits on newlines / bullets / numbered lists / ";" / "and then".
+ * Never executes payments, sends, or provider writes — only structures text.
+ */
+export function parseNaturalLanguageDayPlan(
+  text: string,
+  planDate = localPlanDateIso(),
+): DayPlanParseResponse {
+  const rawText = text.trim();
+  if (!rawText) {
+    return { planDate, rawText, items: [], unsafeExecutionHints: [] };
+  }
+
+  const unsafeExecutionHints = UNSAFE_PLAN_HINTS.filter((hint) => hint.pattern.test(rawText)).map(
+    (hint) => hint.label,
+  );
+
+  const unique = new Map<string, DayPlanParsedItem>();
+  for (const segment of splitNaturalLanguagePriorities(rawText)) {
+    const content = segment.slice(0, 500);
+    const key = normalizeDayPlanText(content);
+    if (!key || unique.has(key)) continue;
+
+    const categoryHint = CATEGORY_HINTS.find((hint) => hint.pattern.test(content)) ?? null;
+    const high =
+      /\b(urgent|asap|must|critical|high priority)\b/i.test(content) ||
+      unsafeExecutionHints.length > 0;
+
+    unique.set(key, {
+      content,
+      category: categoryHint?.category ?? null,
+      priority: high ? 'high' : 'normal',
+      department: categoryHint?.department ?? null,
+      approvalRequired: unsafeExecutionHints.length > 0,
+      evidence: categoryHint
+        ? `Matched ${categoryHint.category} language in Owner utterance`
+        : 'Parsed from Owner natural-language priorities',
+    });
+  }
+
+  return {
+    planDate,
+    rawText,
+    items: Array.from(unique.values()),
+    unsafeExecutionHints,
+  };
 }
