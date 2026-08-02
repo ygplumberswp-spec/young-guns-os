@@ -1,0 +1,224 @@
+{
+  "schemaVersion": "orphan-route-cleanup-verify-v1",
+  "label": "252-orphan-route-cleanup-verify",
+  "generatedAt": "2026-08-02T12:22:11.852Z",
+  "headSha": "e7e748f2055246a199cdfda1d533e5dc2a14f139",
+  "startingSha": "fdc70d3",
+  "deployWebId": "5e49c5df-5496-4534-9545-e0a49e1f47d9",
+  "deployApiId": "da553cca-aeb0-4679-bc4e-eb9400d09d94",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "classificationCounts": {
+    "RETAIN_COMPLETE": 0,
+    "HIDE_REDIRECT": 48,
+    "REMOVE": 2
+  },
+  "orphanCountBefore": 113,
+  "orphanDeepLinkExposureAfter": 50,
+  "scopeConfirmation": {
+    "financeTouched": false,
+    "xeroTouched": false,
+    "productionTouched": false
+  },
+  "ownerOrphanRedirects": [
+    {
+      "from": "/ai-orchestration",
+      "expectPrefix": "/enterprise-modules",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/enterprise-modules",
+      "result": "pass"
+    },
+    {
+      "from": "/automation/new",
+      "expectPrefix": "/automation",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/automation",
+      "result": "pass"
+    },
+    {
+      "from": "/automation/wf-test-id",
+      "expectPrefix": "/automation",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/automation",
+      "result": "pass"
+    },
+    {
+      "from": "/developers",
+      "expectPrefix": "/enterprise-modules",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/enterprise-modules",
+      "result": "pass"
+    },
+    {
+      "from": "/marketing-intelligence",
+      "expectPrefix": "/marketing",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/marketing",
+      "result": "pass"
+    },
+    {
+      "from": "/fleet-intelligence",
+      "expectPrefix": "/fleet",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/fleet",
+      "result": "pass"
+    },
+    {
+      "from": "/procurement/purchase-orders/new",
+      "expectPrefix": "/procurement",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/procurement",
+      "result": "pass"
+    },
+    {
+      "from": "/workforce/manager",
+      "expectPrefix": "/scheduling",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?date=2026-08-02",
+      "result": "pass"
+    },
+    {
+      "from": "/security",
+      "expectPrefix": "/settings/security",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/settings/security",
+      "result": "pass"
+    },
+    {
+      "from": "/notifications",
+      "expectPrefix": "/",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+      "result": "pass"
+    }
+  ],
+  "ownerRetainRoutes": [
+    {
+      "path": "/",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+      "result": "pass"
+    },
+    {
+      "path": "/jobs",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/jobs",
+      "result": "pass"
+    },
+    {
+      "path": "/crm",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/crm",
+      "result": "pass"
+    },
+    {
+      "path": "/scheduling",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?date=2026-08-02",
+      "result": "pass"
+    },
+    {
+      "path": "/fleet/live-map",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/fleet/live-map",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/invoices",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/receivables",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+      "result": "pass"
+    },
+    {
+      "path": "/global-search",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/global-search",
+      "result": "pass"
+    },
+    {
+      "path": "/automation",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/automation",
+      "result": "pass"
+    },
+    {
+      "path": "/settings/team",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/settings/team",
+      "result": "pass"
+    }
+  ],
+  "financeUntouched": [
+    {
+      "path": "/finance/quotes",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/quotes",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/invoices",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/payments",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/payments",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/receivables",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/payables",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/payables",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/cashflow",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/cashflow",
+      "result": "pass"
+    },
+    {
+      "path": "/finance/boq",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/boq",
+      "result": "pass"
+    },
+    {
+      "path": "/integrations/xero",
+      "finalUrl": "https://comfortable-determination-staging.up.railway.app/integrations/xero",
+      "result": "pass"
+    }
+  ],
+  "rbacRegression": {
+    "accountant": [
+      {
+        "path": "/scheduling",
+        "expectPrefix": "/finance",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/invoices",
+        "result": "pass"
+      }
+    ],
+    "dispatcher": [
+      {
+        "path": "/finance/receivables",
+        "expectPrefix": "/",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+        "result": "pass"
+      },
+      {
+        "path": "/integrations",
+        "expectPrefix": "/",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+        "result": "pass"
+      }
+    ],
+    "technician": [
+      {
+        "path": "/",
+        "expectPrefix": "/mobile",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+        "result": "pass"
+      },
+      {
+        "path": "/finance/receivables",
+        "expectPrefix": "/mobile",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+        "result": "pass"
+      }
+    ]
+  },
+  "allRedirectPass": true,
+  "allRetainPass": true,
+  "allFinancePass": true,
+  "allRbacPass": true,
+  "verdict": "GO",
+  "overallOrphanCleanupVerdict": "GO"
+}

@@ -1,9 +1,9 @@
 {
   "schemaVersion": "final-consolidation-smoke-v1",
-  "generatedAt": "2026-08-02T11:05:16.143Z",
-  "headSha": "338d086a86e2e436116a847b8b1de4299af814ae",
-  "deployWebId": "33400ea4-95d9-40fe-866c-4105df40725d",
-  "deployApiId": "0400c5a7-3052-4e4c-8c7b-734903be0f7c",
+  "generatedAt": "2026-08-02T12:22:55.309Z",
+  "headSha": "e7e748f2055246a199cdfda1d533e5dc2a14f139",
+  "deployWebId": "5e49c5df-5496-4534-9545-e0a49e1f47d9",
+  "deployApiId": "da553cca-aeb0-4679-bc4e-eb9400d09d94",
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
   "apiResults": [
