@@ -94,6 +94,7 @@ export class LeadsService {
     return {
       totalLeadCount: leadRows.length,
       activeLeadCount: active.length,
+      openLeadCount: active.length,
       qualifiedLeadCount: leadRows.filter((row) =>
         ['qualified', 'contacted', 'opportunity', 'ready_to_book'].includes(row.status),
       ).length,

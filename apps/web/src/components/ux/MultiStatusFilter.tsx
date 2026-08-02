@@ -4,6 +4,7 @@ export type MultiStatusFilterOption = {
   id: string;
   label: string;
   tone?: StatusColorTone;
+  count?: number;
 };
 
 type MultiStatusFilterProps = {
@@ -54,6 +55,9 @@ export function MultiStatusFilter({
             onClick={() => toggle(option.id)}
           >
             {option.label}
+            {option.count != null ? (
+              <span className="ux-multi-status-filter__count">{option.count}</span>
+            ) : null}
           </button>
         );
       })}

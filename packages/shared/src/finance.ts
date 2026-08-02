@@ -50,9 +50,9 @@ export const INVOICE_STATUS_OPTIONS: Array<{ value: InvoiceStatus; label: string
   { value: 'draft', label: 'Draft' },
   { value: 'sent', label: 'Sent' },
   { value: 'paid', label: 'Paid' },
-  { value: 'partial', label: 'Partial' },
+  { value: 'partial', label: 'Partially Paid' },
   { value: 'overdue', label: 'Overdue' },
-  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'cancelled', label: 'Voided' },
 ];
 
 export const INVOICE_STAGE_OPTIONS: Array<{ value: InvoiceStage; label: string }> = [

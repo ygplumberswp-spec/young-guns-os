@@ -1,4 +1,5 @@
 import { PageHeader } from '../../components/ux';
+import { PropertyLocationPanel } from '../../features/properties/PropertyLocationPanel';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useRoute } from 'wouter';
 import { Button, Input, Panel } from '@titan/ui';
@@ -325,6 +326,7 @@ export function JobDetailPage() {
         purchaseOrders={purchaseOrders}
         canViewFinance={canViewFinance}
         overviewPanel={
+          <>
           <Panel title="Operational snapshot">
             <dl className="jobs-detail-list">
               <div>
@@ -360,7 +362,7 @@ export function JobDetailPage() {
                 </dd>
               </div>
               <div>
-                <dt>Site address (immutable)</dt>
+                <dt>Site Address</dt>
                 <dd>{job.address.display ?? '—'}</dd>
               </div>
               <div>
@@ -382,6 +384,8 @@ export function JobDetailPage() {
               </div>
             </dl>
           </Panel>
+          <PropertyLocationPanel addressDisplay={job.address.display} className="jobs-location-panel" />
+          </>
         }
         schedulePanel={
           canViewSchedule && accessToken ? (

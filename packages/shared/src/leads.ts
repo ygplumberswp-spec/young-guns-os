@@ -265,6 +265,7 @@ export type LeadAuraContext = {
 export type LeadStats = {
   totalLeadCount: number;
   activeLeadCount: number;
+  openLeadCount: number;
   qualifiedLeadCount: number;
   convertedLeadCount: number;
   sourceCount: number;

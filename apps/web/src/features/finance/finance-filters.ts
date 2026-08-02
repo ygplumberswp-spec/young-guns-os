@@ -18,11 +18,12 @@ export type QuoteListFilter =
 export type InvoiceListFilter =
   | 'all'
   | 'drafts'
+  | 'awaiting_approval'
   | 'awaiting_payment'
   | 'partially_paid'
   | 'paid'
   | 'overdue'
-  | 'cancelled'
+  | 'voided'
   | 'archived';
 
 export type BoqListFilter = 'all' | 'drafts' | 'approved' | 'archived';
@@ -46,12 +47,13 @@ export const QUOTE_LIST_FILTERS: CompactFilterOption<QuoteListFilter>[] = [
 
 export const INVOICE_LIST_FILTERS: CompactFilterOption<InvoiceListFilter>[] = [
   { id: 'all', label: 'All' },
-  { id: 'drafts', label: 'Drafts' },
-  { id: 'awaiting_payment', label: 'Awaiting payment' },
-  { id: 'partially_paid', label: 'Partially paid' },
+  { id: 'drafts', label: 'Draft' },
+  { id: 'awaiting_approval', label: 'Awaiting Approval' },
+  { id: 'awaiting_payment', label: 'Awaiting Payment' },
+  { id: 'partially_paid', label: 'Partially Paid' },
   { id: 'paid', label: 'Paid' },
   { id: 'overdue', label: 'Overdue' },
-  { id: 'cancelled', label: 'Cancelled' },
+  { id: 'voided', label: 'Voided' },
   { id: 'archived', label: 'Archived' },
 ];
 
@@ -122,15 +124,17 @@ export function invoiceMatchesFilter(invoice: InvoiceSummary, filter: InvoiceLis
       return invoice.status !== 'cancelled';
     case 'drafts':
       return isInvoiceDraft(invoice);
+    case 'awaiting_approval':
+      return invoice.status === 'draft' && !isInvoiceDraft(invoice) && invoice.totalCents > 0;
     case 'awaiting_payment':
-      return invoice.status === 'sent';
+      return invoice.status === 'sent' && !invoice.isOverdue;
     case 'partially_paid':
       return invoice.status === 'partial';
     case 'paid':
       return invoice.status === 'paid';
     case 'overdue':
       return invoice.status === 'overdue' || invoice.isOverdue;
-    case 'cancelled':
+    case 'voided':
       return invoice.status === 'cancelled';
     case 'archived':
       return invoice.status === 'cancelled';
@@ -209,12 +213,12 @@ export function quoteApiStatus(filter: QuoteListFilter): string | undefined {
 }
 
 export function invoiceApiStatus(filter: InvoiceListFilter): string | undefined {
-  if (filter === 'drafts') return 'draft';
+  if (filter === 'drafts' || filter === 'awaiting_approval') return 'draft';
   if (filter === 'awaiting_payment') return 'sent';
   if (filter === 'partially_paid') return 'partial';
   if (filter === 'paid') return 'paid';
   if (filter === 'overdue') return 'overdue';
-  if (filter === 'cancelled' || filter === 'archived') return 'cancelled';
+  if (filter === 'voided' || filter === 'archived') return 'cancelled';
   return undefined;
 }
 

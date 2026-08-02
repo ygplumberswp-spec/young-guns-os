@@ -2,6 +2,7 @@ import { PageHeader } from '../../components/ux';
 import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button } from '@titan/ui';
+import { UI_VOCABULARY } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { fetchLeads, fetchLeadStats } from '../../lib/leads-api';
@@ -45,7 +46,7 @@ export function LeadListPage() {
   if (!canView) {
     return (
       <div className="page-shell">
-        <PageHeader title="Leads" description="You do not have permission to view leads." />
+        <PageHeader title="Leads" description="You do not have permission to view leads." showAura={false} />
       </div>
     );
   }
@@ -59,7 +60,7 @@ export function LeadListPage() {
           canWrite ? (
             <Link href="/leads/new">
               <Button variant="primary" size="sm">
-                Add lead
+                Add Lead
               </Button>
             </Link>
           ) : null
@@ -67,17 +68,21 @@ export function LeadListPage() {
       />
 
       {stats ? (
-        <div className="stat-grid">
+        <div className="stat-grid stat-grid--leads">
           <div className="stat-card">
-            <span className="stat-card__label">Active</span>
-            <strong className="stat-card__value">{stats.activeLeadCount}</strong>
+            <span className="stat-card__label">{UI_VOCABULARY.allLeads}</span>
+            <strong className="stat-card__value">{stats.totalLeadCount}</strong>
           </div>
           <div className="stat-card">
-            <span className="stat-card__label">Overdue follow-ups</span>
+            <span className="stat-card__label">{UI_VOCABULARY.openLeads}</span>
+            <strong className="stat-card__value">{stats.openLeadCount ?? stats.activeLeadCount}</strong>
+          </div>
+          <div className="stat-card">
+            <span className="stat-card__label">{UI_VOCABULARY.overdueFollowUps}</span>
             <strong className="stat-card__value">{stats.overdueFollowUpCount}</strong>
           </div>
           <div className="stat-card">
-            <span className="stat-card__label">Converted</span>
+            <span className="stat-card__label">{UI_VOCABULARY.converted}</span>
             <strong className="stat-card__value">{stats.convertedLeadCount}</strong>
           </div>
         </div>
@@ -85,6 +90,7 @@ export function LeadListPage() {
 
       <LeadListTable
         leads={leads ?? []}
+        totalCount={stats?.totalLeadCount}
         isLoading={isLoading}
         error={error}
         canWrite={canWrite}

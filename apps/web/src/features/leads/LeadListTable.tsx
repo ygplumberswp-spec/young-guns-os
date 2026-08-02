@@ -29,6 +29,7 @@ import { useAuth } from '../../lib/auth-context';
 
 type LeadListTableProps = {
   leads: LeadSummary[];
+  totalCount?: number;
   isLoading: boolean;
   error: string | null;
   canWrite: boolean;
@@ -45,6 +46,7 @@ type RowSaveState = Record<string, InlineSaveState>;
 
 export function LeadListTable({
   leads,
+  totalCount,
   isLoading,
   error,
   canWrite,
@@ -288,11 +290,25 @@ export function LeadListTable({
     });
   }
 
-  const filterOptions = LEAD_STATUS_FILTER_GROUPS.map((group) => ({
-    id: group.id,
-    label: group.label,
-    tone: group.tone,
-  }));
+  const filterOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const group of LEAD_STATUS_FILTER_GROUPS) {
+      counts.set(group.id, 0);
+    }
+    for (const lead of leads) {
+      for (const group of LEAD_STATUS_FILTER_GROUPS) {
+        if (group.statuses.includes(lead.status)) {
+          counts.set(group.id, (counts.get(group.id) ?? 0) + 1);
+        }
+      }
+    }
+    return LEAD_STATUS_FILTER_GROUPS.map((group) => ({
+      id: group.id,
+      label: group.label,
+      tone: group.tone,
+      count: counts.get(group.id) ?? 0,
+    }));
+  }, [leads]);
 
   const bulkActions = canWrite
     ? [
@@ -348,7 +364,10 @@ export function LeadListTable({
 
   return (
     <>
-    <Panel title="Lead registry">
+    <Panel title="Lead Registry">
+      <p className="leads-summary-line">
+        Showing {filteredLeads.length} of {totalCount ?? leads.length} Leads
+      </p>
       <div className="leads-toolbar">
         <input
           className="input"
@@ -363,7 +382,7 @@ export function LeadListTable({
             checked={overdueOnly}
             onChange={(event) => onOverdueOnlyChange(event.target.checked)}
           />
-          Overdue only
+          Overdue Only
         </label>
       </div>
 

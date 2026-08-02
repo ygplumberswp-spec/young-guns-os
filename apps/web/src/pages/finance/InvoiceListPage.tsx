@@ -19,6 +19,7 @@ import {
 import { useFinanceSectionDrafts } from '../../features/finance/useFinanceSectionDrafts';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 import { CompactFilterTabs, PageHeader, StatusBadge } from '../../components/ux';
+import { InvoiceListRowActions } from '../../features/finance/InvoiceListRowActions';
 
 function formatStatus(status: InvoiceSummary['status']): string {
   return INVOICE_STATUS_OPTIONS.find((option) => option.value === status)?.label ?? status;
@@ -151,15 +152,8 @@ export function InvoiceListPage() {
                   <th>Status</th>
                   <th>Total</th>
                   <th>Outstanding</th>
-                  <th>
-                    <button
-                      type="button"
-                      className="finance-table__sort"
-                      onClick={() => setSortDesc((value) => !value)}
-                    >
-                      Due {sortDesc ? '↓' : '↑'}
-                    </button>
-                  </th>
+                  <th>Due</th>
+                  <th className="finance-table__actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,6 +216,9 @@ export function InvoiceListPage() {
                     </td>
                     <td>
                       {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
+                    </td>
+                    <td className="finance-table__actions-col">
+                      <InvoiceListRowActions invoice={invoice} canWrite={canWrite} />
                     </td>
                   </tr>
                 ))}
