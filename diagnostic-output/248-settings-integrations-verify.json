@@ -1,0 +1,223 @@
+{
+  "schemaVersion": "phase16-settings-integrations-v1",
+  "label": "248-settings-integrations-verify",
+  "generatedAt": "2026-08-02T09:05:54.773Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "653c8e2947c3a69664b1d104eba4eb87a3966190",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "hub": {
+      "status": 200,
+      "providerCount": 12
+    },
+    "autoSync": {
+      "status": 200,
+      "count": 12
+    },
+    "company": {
+      "status": 200,
+      "hasProfile": true,
+      "companyName": "Young Guns Plumbing"
+    },
+    "integrations": {
+      "xero": {
+        "status": "connected",
+        "hasCredentials": true,
+        "oauthConfigured": true,
+        "responseKeys": [
+          "provider",
+          "status",
+          "oauthConfigured",
+          "organisationName",
+          "organisationId",
+          "baseCurrency",
+          "hasCredentials",
+          "reconnectRequired",
+          "lastVerifiedAt",
+          "lastSyncAt",
+          "lastError",
+          "connectedAt"
+        ]
+      },
+      "cartrack": {
+        "status": "connected",
+        "hasCredentials": true,
+        "mappedVehicleCount": 2,
+        "responseKeys": [
+          "provider",
+          "status",
+          "baseUrl",
+          "usernameHint",
+          "hasCredentials",
+          "lastSyncAt",
+          "lastError",
+          "connectedAt",
+          "lastCredentialChangeAt",
+          "nextScheduledSyncAt",
+          "syncHealth",
+          "mappedVehicleCount",
+          "unmappedVehicleCount",
+          "positionCount"
+        ]
+      },
+      "whatsapp": 200,
+      "email": 200
+    },
+    "providers": [
+      {
+        "provider": "cartrack",
+        "capabilityState": "connected_usable",
+        "connectionStatus": "connected",
+        "lastSyncAt": "2026-08-02T09:00:07.110Z",
+        "hasLastError": false
+      },
+      {
+        "provider": "xero",
+        "capabilityState": "connected_usable",
+        "connectionStatus": "connected",
+        "lastSyncAt": "2026-08-02T07:44:59.178Z",
+        "hasLastError": false
+      },
+      {
+        "provider": "email",
+        "capabilityState": "configured_unverified",
+        "connectionStatus": "disconnected",
+        "lastSyncAt": null,
+        "hasLastError": false
+      },
+      {
+        "provider": "whatsapp",
+        "capabilityState": "not_configured",
+        "connectionStatus": "disconnected",
+        "lastSyncAt": null,
+        "hasLastError": false
+      }
+    ],
+    "autoSyncStatuses": [
+      {
+        "provider": "xero",
+        "uiState": "initial_sync_running",
+        "uiStateLabel": "Syncing",
+        "connectionStatus": "connected",
+        "syncInProgress": true,
+        "lastSuccessfulSyncAt": "2026-08-02T07:45:03.303Z",
+        "nextScheduledSyncAt": "2026-08-02T09:25:21.672Z",
+        "hasCorrectiveAction": true
+      },
+      {
+        "provider": "cartrack",
+        "uiState": "initial_sync_running",
+        "uiStateLabel": "Syncing",
+        "connectionStatus": "connected",
+        "syncInProgress": true,
+        "lastSuccessfulSyncAt": "2026-08-02T09:00:08.037Z",
+        "nextScheduledSyncAt": "2026-08-02T09:14:55.587Z",
+        "hasCorrectiveAction": true
+      },
+      {
+        "provider": "whatsapp",
+        "uiState": "not_configured",
+        "uiStateLabel": "Not configured",
+        "connectionStatus": "disconnected",
+        "syncInProgress": false,
+        "lastSuccessfulSyncAt": null,
+        "nextScheduledSyncAt": null,
+        "hasCorrectiveAction": true
+      },
+      {
+        "provider": "email",
+        "uiState": "not_configured",
+        "uiStateLabel": "Not configured",
+        "connectionStatus": "disconnected",
+        "syncInProgress": false,
+        "lastSuccessfulSyncAt": null,
+        "nextScheduledSyncAt": null,
+        "hasCorrectiveAction": true
+      }
+    ],
+    "secretLeaks": {
+      "hub": [],
+      "autoSync": [],
+      "xero": [],
+      "cartrack": [],
+      "whatsapp": [],
+      "email": []
+    }
+  },
+  "ui": {
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "company": {
+          "checks": {
+            "hasSettingsNav": true,
+            "settingsTabLabels": [
+              "Company",
+              "Team & Access",
+              "Finance & Pricing",
+              "Jobs & Scheduling",
+              "Fleet",
+              "Inventory",
+              "Communications",
+              "Integrations",
+              "Documents",
+              "AURA & Automations",
+              "Security",
+              "Platform Health",
+              "Company Setup"
+            ],
+            "hasCompanyForm": true
+          },
+          "screenshot": "diagnostic-output/phase16-settings-integrations-staging/phase16-settings-company-1440.png"
+        },
+        "integrations": {
+          "checks": {
+            "hasSettingsNav": true,
+            "settingsTabLabels": [
+              "Company",
+              "Team & Access",
+              "Finance & Pricing",
+              "Jobs & Scheduling",
+              "Fleet",
+              "Inventory",
+              "Communications",
+              "Integrations",
+              "Documents",
+              "AURA & Automations",
+              "Security",
+              "Platform Health",
+              "Company Setup"
+            ],
+            "hasIntegrationsTitle": true,
+            "hasXero": true,
+            "hasCartrack": true,
+            "hasWhatsApp": true,
+            "hasEmail": true,
+            "hasRecoverySyncLabel": true,
+            "usesPhase16Labels": true,
+            "noFalseConnectedWhileSyncing": true
+          },
+          "screenshot": "diagnostic-output/phase16-settings-integrations-staging/phase16-integrations-1440.png"
+        },
+        "companySetup": {
+          "checks": {
+            "hasSettingsNav": true,
+            "hasCompanySetup": true
+          },
+          "screenshot": "diagnostic-output/phase16-settings-integrations-staging/phase16-company-setup-1440.png"
+        }
+      }
+    ]
+  },
+  "blockers": [],
+  "holdItems": [],
+  "verdict": "GO"
+}
