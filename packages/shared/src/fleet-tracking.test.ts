@@ -63,4 +63,16 @@ describe('fleet tracking honesty', () => {
       'stale',
     );
   });
+
+  it('stale sync display must not be treated as fully connected', () => {
+    const now = Date.parse('2026-08-02T12:00:00.000Z');
+    const display = deriveFleetConnectionDisplayState({
+      connectionStatus: 'connected',
+      hasCredentials: true,
+      lastSyncAt: '2026-08-02T11:00:00.000Z',
+      nowMs: now,
+    });
+    assert.equal(display, 'stale');
+    assert.notEqual(display, 'connected');
+  });
 });

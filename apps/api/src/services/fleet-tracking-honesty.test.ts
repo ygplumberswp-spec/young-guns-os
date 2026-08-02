@@ -40,4 +40,17 @@ describe('M3 fleet tracking honesty (API contract)', () => {
     assert.equal(formatFleetConnectionDisplayLabel('error'), 'Error');
     assert.equal(formatFleetConnectionDisplayLabel('stale'), 'Stale sync');
   });
+
+  it('stale sync display blocks live-polling eligibility', () => {
+    const now = Date.parse('2026-08-02T12:00:00.000Z');
+    const display = deriveFleetConnectionDisplayState({
+      connectionStatus: 'connected',
+      hasCredentials: true,
+      lastSyncAt: '2026-08-02T11:00:00.000Z',
+      nowMs: now,
+    });
+    const livePollingAllowed = display === 'connected';
+    assert.equal(display, 'stale');
+    assert.equal(livePollingAllowed, false);
+  });
 });

@@ -446,7 +446,12 @@ export class IntegrationsService {
       lastError: connection.lastError,
     });
     const cartrackConnected = connection.status === 'connected' && hasCredentials;
-    const livePollingAllowed = cartrackConnected && capabilityState === 'connected_usable';
+    // Aggressive live polling only when display state is fully connected — never while
+    // sync is stale, credentials are missing, or the connection is degraded/error.
+    const livePollingAllowed =
+      cartrackConnected &&
+      capabilityState === 'connected_usable' &&
+      connectionDisplayState === 'connected';
 
     const [positionCountRow] = await this.db
       .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })

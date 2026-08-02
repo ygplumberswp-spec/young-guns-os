@@ -38,8 +38,9 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
 
   const connectionLabel = formatFleetConnectionDisplayLabel(tracking.connectionDisplayState);
   const canShowLivePoll = tracking.livePollingAllowed;
+  const showStoredPositions = tracking.cartrackConnected || tracking.latestPositions.length > 0;
 
-  if (!tracking.cartrackConnected || !tracking.livePollingAllowed) {
+  if (!tracking.cartrackConnected && tracking.latestPositions.length === 0) {
     return (
       <Panel title="Vehicle positions" description="Honest Cartrack connection state — no fake live GPS.">
         <dl className="integration-status-list">
@@ -56,6 +57,10 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
           <div>
             <dt>Credentials</dt>
             <dd>{tracking.hasCredentials ? 'Present' : 'Missing'}</dd>
+          </div>
+          <div>
+            <dt>Live polling</dt>
+            <dd>Disabled</dd>
           </div>
         </dl>
         {tracking.lastError ? <p className="form-error">{tracking.lastError}</p> : null}
@@ -74,7 +79,11 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
   return (
     <Panel
       title="Vehicle positions"
-      description="Real Cartrack GPS from the last successful sync. Polling uses the existing tracking endpoint while this board is open."
+      description={
+        canShowLivePoll
+          ? 'Real Cartrack GPS from the last successful sync. Polling uses the existing tracking endpoint while this board is open.'
+          : 'Stored Cartrack GPS only — live polling is disabled while sync is stale, degraded, disconnected, or credentials are missing. TITAN will not invent coordinates.'
+      }
     >
       <dl className="integration-status-list">
         <div>
@@ -103,7 +112,11 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
           <dd>{tracking.lastSyncAt ? new Date(tracking.lastSyncAt).toLocaleString() : 'Never'}</dd>
         </div>
         <div>
-          <dt>Position poll</dt>
+          <dt>Credentials</dt>
+          <dd>{tracking.hasCredentials ? 'Present' : 'Missing'}</dd>
+        </div>
+        <div>
+          <dt>Live polling</dt>
           <dd>
             {canShowLivePoll
               ? isPolling
@@ -119,7 +132,7 @@ export function LiveDispatchPositionsPanel({ accessToken }: LiveDispatchPosition
       {tracking.lastError ? <p className="form-error">{tracking.lastError}</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
-      {tracking.latestPositions.length === 0 ? (
+      {!showStoredPositions || tracking.latestPositions.length === 0 ? (
         <p className="page-muted">
           No GPS positions stored yet. Run a Cartrack sync to populate mapped vehicle positions —
           TITAN will not invent coordinates.
