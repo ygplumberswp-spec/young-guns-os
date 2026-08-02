@@ -21,9 +21,28 @@
 | **Cashflow API/UI parity** | **HOLD** (bank balance blocked) |
 | **`xero_invoice_mappings` synced** | **GO** — 5 synced, 0 failed |
 | **Xero payment sync pipeline** | **GO** — 511 pulled, 0 failed; skip gate working |
-| **Payment row import / allocation parity** | **HOLD** — 511 skipped (no Xero payments reference YGP's 5 TITAN invoices) |
-| **Partial / multiple payments per invoice** | **HOLD** (unproven — no overlapping payment rows) |
+| **Payment allocation parity (row-level)** | **DATA-DEPENDENT HOLD** — pipeline unblocked; 511 Xero payments pulled, **0 imported** (none reference YGP's 5 mapped invoice IDs) |
+| **Partial / multiple payments per invoice** | **DATA-DEPENDENT HOLD** — unprovable until a real overlapping paid invoice exists on staging/YGP |
 | **Overall finance payment phase** | **GO_WITH_HOLD** |
+
+
+## Payment allocation parity: **DATA-DEPENDENT HOLD**
+
+Payment-allocation parity remains **data-dependent** until staging/YGP has at least one **real** paid invoice whose Xero payment(s) overlap TITAN's mapped `xero_invoice_id` set.
+
+| Fact | Status |
+|------|--------|
+| Pipeline unblocked | **YES** — schema fixed (`xero_write_approvals`); **5/5** invoice mappings synced |
+| Xero payments pulled (read-only) | **511** |
+| Payment rows imported | **0** — every pulled payment references Xero invoice IDs **outside** YGP's 5 mapped invoices |
+| Partial / multiple allocation proven | **NO** — no overlapping paid-invoice data on YGP staging |
+| Code path for import + allocation | **READY** — awaiting natural data overlap or Owner-approved test invoice tied to a **real** Xero payment |
+
+**Condition for GO (row-level):** At least one YGP TITAN invoice (mapped in `xero_invoice_mappings`) with one or more **real** Xero payment(s) referencing that invoice ID, then re-run verify 250.
+
+**Explicit constraints:** Do **not** create fake payment records or synthetic overlap. Honest **HOLD** until real data exists. No Xero writes. No production.
+
+---
 
 Read-only Xero invoice sync **unblocked** after applying migration `0109_xero_two_way_sync_scaffolding` and deploying pull-only invoice sync (skip write-approval when `xero_invoice_id` already mapped). Invoice mappings: **5 synced, 0 failed**. Payment sync: **511 pulled, 511 skipped** — all skipped payments reference Xero invoices outside YGP's 5 TITAN invoice rows (honest empty; pipeline verified). **No Xero writes occurred.**
 
@@ -82,8 +101,8 @@ Read-only Xero invoice sync **unblocked** after applying migration `0109_xero_tw
 | False-zero paid amount when payments exist | **FIXED** (code) | 0 false-zero rows | Unproven with live payment rows (0 imported) |
 | `finance/stats` outstanding hardcoded zero | **FIXED** | `stats.outstandingCents=0` matches DB | GO |
 | Receivables aggregation | **FIXED** | API 200 | INV-0423/0424 preserved |
-| `xero_payment_mappings` populated | **PARTIAL** | 0 mappings; skip gate working | No overlapping Xero payments for YGP sample |
-| Partial / multiple payments per invoice | **HOLD** | 511 skipped; 0 TITAN payment rows | Needs invoice with Xero payments + TITAN mapping |
+| `xero_payment_mappings` populated | **DATA-DEPENDENT HOLD** | 0 mappings; skip gate working | 511 pulled; 0 import — no invoice ID overlap on YGP sample |
+| Partial / multiple payments per invoice | **DATA-DEPENDENT HOLD** | 511 skipped; 0 TITAN payment rows | Needs real overlapping paid invoice on staging/YGP |
 | Payables ACCPAY bills | **HOLD** | Honest HOLD UI | Owner approval for import migration |
 | Cashflow bank balance | **HOLD** | `bankBalanceCents=null` | No balance entity in sync |
 | Multi-invoice payment allocation | **HOLD** | Not modelled (single `invoice_id` FK) | Documented gap |
@@ -141,7 +160,7 @@ Read-only Xero invoice sync **unblocked** after applying migration `0109_xero_tw
 
 ## Owner actions to reach full GO
 
-1. **Seed or import invoices with Xero payment history** on staging (or use tenant slice where Xero payments reference mapped invoices) to prove partial/multiple allocation on real rows.
+1. **Reach row-level GO via real data only:** wait for natural overlap on staging/YGP, **or** Owner-approved test invoice linked to an existing **real** Xero payment (no fake records, no synthetic payments). Then re-run verify 250 to prove partial/multiple allocation.
 2. **ACCPAY import approval** (payables) — separate Owner gate.
 3. **Bank balance scope approval** (cashflow) — requires Xero bank account read scope.
 

@@ -138,13 +138,13 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 | Receivables Xero aggregation | API 200; outstanding uses `total_cents` + allocation @ `e3a46c7` | Same | **GO** | Verify 250; INV-0423/0424 preserved |
 | Payables / ACCPAY bills | Honest HOLD UI; no ACCPAY import | Blocked | **HOLD** | Owner approval required for ACCPAY migration |
 | Cashflow bank balance | Partial — tx count only, no balance entity | Blocked | **HOLD** | Invoiced vs cash separated; forecasts live |
-| Payment-mapping / false-zero edge case | Code FIXED @ `e3a46c7`; post-fix: 511 pulled, **511 skipped** (5 synced invoice mappings; no Xero payment overlap with YGP's 5 invoices) | Code fix deployed | **GO_WITH_HOLD** | Pipeline unblocked; need overlapping invoice/payment sample for row-level proof |
+| Payment allocation parity (row-level) | Pipeline **GO** post `7fa533b`; 511 Xero payments pulled, **0 imported** (no overlap with YGP's 5 mapped invoice IDs) | Code fix deployed | **DATA-DEPENDENT HOLD** | Code path ready; **GO** when ≥1 YGP invoice has real Xero payment(s) on mapped IDs — no fake records |
 | `xero_invoice_mappings` synced | **5 synced, 0 failed** on YGP staging (post 0109 + pull-only fix) | — | **GO** | `xero_write_approvals` applied; read-only pull path |
 | `xero_write_approvals` staging table | Applied via 0109 idempotent apply @ post-fix pass | — | **GO** | Journal entry inserted (115 entries; drift documented) |
 | `finance/stats` outstanding | FIXED — computed from open invoices @ `e3a46c7` | — | **GO** | Verify 250 DB/API match |
 | `conflict_metadata` on mapping tables | Aligned via 0109 IF NOT EXISTS on staging | Verify on prod cutover | **GO** (staging) | Phase 3 report |
 
-**Finance overall:** **GO_WITH_HOLD** — schema + invoice mapping sync unblocked; payment sync pipeline GO (511 pulled, 0 failed); 511 skipped honestly (no Xero payments for YGP's 5 TITAN invoices). Receivables GO. INV-0423/0424 preserved.
+**Finance overall:** **GO_WITH_HOLD** — schema + invoice mapping sync unblocked; payment sync pipeline GO (511 pulled, 0 failed). **Payment allocation parity: DATA-DEPENDENT HOLD** (0 imported — no Xero payment overlap with YGP's 5 mapped invoices; cannot prove partial/multiple allocation without real overlapping paid invoice data). Receivables GO. INV-0423/0424 preserved. No fake records; no Xero writes.
 
 ### RBAC blockers
 
@@ -223,7 +223,7 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 - [ ] **Production environment deploy** — not executed
 - [ ] **55 NO-GO / scaffold enterprise routes** — hide or implement before launch
 - [ ] **ACCPAY / payables Xero import** — Owner approval + migration
-- [ ] **Payment allocation parity (row-level)** — pipeline GO; need overlapping Xero payment + TITAN invoice sample on staging
+- [ ] **Payment allocation parity (row-level)** — **DATA-DEPENDENT HOLD**; condition for GO: ≥1 YGP invoice with real Xero payment(s) overlapping mapped invoice IDs (natural overlap or Owner-approved test invoice; **no fake records**)
 - [ ] **Accountant / Dispatcher / Client RBAC** — seed staging/prod users + verify
 - [ ] **Migration 0118 journal sync** — reconcile drizzle journal on target DB
 - [ ] **Bank balance / full cashflow** — new Xero scope + aggregation
@@ -238,7 +238,7 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 2. Owner approval for ACCPAY import migration + OAuth scope review.
 3. Reconcile staging `drizzle.__drizzle_migrations` journal drift (115 vs 116 repo tags; 0109 inserted; 0118 OOB).
 4. Decide production route surface — hide 55 NO-GO scaffolds or defer launch scope to sidebar 22.
-5. Seed staging invoice with Xero payment history overlapping a TITAN mapping to prove partial/multiple allocation on real rows.
+5. Payment allocation row-level GO: await natural staging/YGP data overlap **or** Owner-approved test invoice with **real** Xero payment — re-run verify 250; do not create fake payment records.
 6. Production cutover plan: deploy web+API together from tagged SHA after checklist complete.
 
 ---
