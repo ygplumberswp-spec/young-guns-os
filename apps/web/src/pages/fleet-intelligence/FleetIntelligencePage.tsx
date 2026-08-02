@@ -318,6 +318,13 @@ export function FleetIntelligencePage() {
               · Downtime: {dashboard.downtimePercent ?? '—'}%
             </p>
           </Panel>
+          <Panel title="Geofences">
+            <p className="page-muted">
+              Cartrack geofence records are not available in this release. TITAN will not invent
+              geofence events. Trip history and behaviour events below use existing GPS-derived
+              paths only.
+            </p>
+          </Panel>
         </div>
       ) : null}
 

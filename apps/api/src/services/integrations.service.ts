@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import type {
   CartrackConnectionSummary,
   CartrackSyncResult,
@@ -8,11 +8,16 @@ import type {
   SaveCartrackConnectionRequest,
   UpdateIntegrationVehicleMappingRequest,
 } from '@titan/shared';
+import {
+  deriveCartrackCapabilityState,
+  deriveFleetConnectionDisplayState,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   gpsPositions,
   integrationConnections,
   integrationVehicleMappings,
+  users,
   vehicles,
 } from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
@@ -426,10 +431,25 @@ export class IntegrationsService {
       return emptyTrackingContext();
     }
 
+    const hasCredentials = Boolean(connection.credentialsEncrypted);
     const counts = await this.getMappingCounts(companyId, connection.id);
+    const lastSyncAt = connection.lastSyncAt?.toISOString() ?? null;
+    const capabilityState = deriveCartrackCapabilityState({
+      connectionStatus: connection.status,
+      hasCredentials,
+      lastError: connection.lastError,
+    });
+    const connectionDisplayState = deriveFleetConnectionDisplayState({
+      connectionStatus: connection.status,
+      hasCredentials,
+      lastSyncAt,
+      lastError: connection.lastError,
+    });
+    const cartrackConnected = connection.status === 'connected' && hasCredentials;
+    const livePollingAllowed = cartrackConnected && capabilityState === 'connected_usable';
 
     const [positionCountRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
+      .select({ count: sql<number>`count(distinct ${gpsPositions.vehicleId})::int` })
       .from(gpsPositions)
       .where(eq(gpsPositions.companyId, companyId));
 
@@ -437,26 +457,88 @@ export class IntegrationsService {
       where: eq(gpsPositions.companyId, companyId),
       with: { vehicle: true },
       orderBy: [desc(gpsPositions.recordedAt)],
-      limit: 10,
+      limit: 80,
     });
+
+    const latestByVehicle = new Map<string, (typeof latestRows)[number]>();
+    for (const row of latestRows) {
+      const key = row.vehicleId ?? `ext:${row.externalVehicleId}`;
+      if (latestByVehicle.has(key)) continue;
+      latestByVehicle.set(key, row);
+    }
+
+    const assigneeIds = [
+      ...new Set(
+        [...latestByVehicle.values()]
+          .map((row) => row.vehicle?.assignedUserId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const assigneeRows =
+      assigneeIds.length > 0
+        ? await this.db.query.users.findMany({
+            where: and(eq(users.companyId, companyId), inArray(users.id, assigneeIds)),
+            columns: { id: true, firstName: true, lastName: true },
+          })
+        : [];
+    const assigneesById = new Map(
+      assigneeRows.map((user) => [
+        user.id,
+        `${user.firstName} ${user.lastName}`.trim() || null,
+      ]),
+    );
 
     return {
       cartrackStatus: connection.status,
-      cartrackConnected: connection.status === 'connected',
+      cartrackConnected,
+      hasCredentials,
+      capabilityState,
+      connectionDisplayState,
       mappedVehicleCount: counts.mapped,
       unmappedVehicleCount: counts.unmapped,
       positionCount: positionCountRow?.count ?? 0,
-      lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
-      latestPositions: latestRows.map((row) => ({
-        vehicleId: row.vehicleId,
-        vehicleName: row.vehicle?.name ?? null,
-        licensePlate: row.vehicle?.licensePlate ?? row.externalVehicleId,
-        externalVehicleId: row.externalVehicleId,
-        latitude: row.latitude,
-        longitude: row.longitude,
-        speedKmh: row.speedKmh,
-        recordedAt: row.recordedAt.toISOString(),
-      })),
+      lastSyncAt,
+      lastError: connection.lastError,
+      livePollingAllowed,
+      latestPositions: [...latestByVehicle.values()].map((row) => {
+        const raw =
+          row.rawPayload && typeof row.rawPayload === 'object'
+            ? (row.rawPayload as Record<string, unknown>)
+            : null;
+        const ignitionOn =
+          typeof raw?.ignition_on === 'boolean'
+            ? raw.ignition_on
+            : typeof raw?.ignitionOn === 'boolean'
+              ? raw.ignitionOn
+              : null;
+        const odometerRaw = raw?.odometer_km ?? raw?.odometerKm ?? raw?.odometer;
+        const odometerKm =
+          typeof odometerRaw === 'number' && Number.isFinite(odometerRaw) ? odometerRaw : null;
+        const driverName =
+          (typeof raw?.driver_name === 'string' ? raw.driver_name : null) ??
+          (typeof raw?.driverName === 'string' ? raw.driverName : null);
+        const assignedUserName = row.vehicle?.assignedUserId
+          ? (assigneesById.get(row.vehicle.assignedUserId) ?? null)
+          : null;
+
+        return {
+          vehicleId: row.vehicleId,
+          vehicleName: row.vehicle?.name ?? null,
+          licensePlate: row.vehicle?.licensePlate ?? row.externalVehicleId,
+          make: row.vehicle?.make ?? null,
+          model: row.vehicle?.model ?? null,
+          assignedUserName,
+          driverName,
+          externalVehicleId: row.externalVehicleId,
+          latitude: row.latitude,
+          longitude: row.longitude,
+          speedKmh: row.speedKmh,
+          heading: row.heading ?? null,
+          ignitionOn,
+          odometerKm,
+          recordedAt: row.recordedAt.toISOString(),
+        };
+      }),
     };
   }
 
@@ -660,10 +742,15 @@ function emptyTrackingContext(): FleetTrackingContext {
   return {
     cartrackStatus: 'disconnected',
     cartrackConnected: false,
+    hasCredentials: false,
+    capabilityState: 'not_configured',
+    connectionDisplayState: 'not_configured',
     mappedVehicleCount: 0,
     unmappedVehicleCount: 0,
     positionCount: 0,
     lastSyncAt: null,
+    lastError: null,
+    livePollingAllowed: false,
     latestPositions: [],
   };
 }

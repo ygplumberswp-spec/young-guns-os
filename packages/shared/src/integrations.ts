@@ -331,18 +331,34 @@ export type CartrackSyncResult = {
 export type FleetTrackingContext = {
   cartrackStatus: IntegrationConnectionStatus;
   cartrackConnected: boolean;
+  /** True when encrypted Cartrack credentials exist for this tenant. */
+  hasCredentials: boolean;
+  /** Honest capability state — never claim live/usable without a real connection. */
+  capabilityState: import('./integration-capability.js').IntegrationCapabilityState;
+  /** Operator-facing connection/sync state for fleet UI. */
+  connectionDisplayState: import('./fleet-tracking.js').FleetConnectionDisplayState;
   mappedVehicleCount: number;
   unmappedVehicleCount: number;
   positionCount: number;
   lastSyncAt: string | null;
+  lastError: string | null;
+  /** False when credentials missing or connection is not usable for live polling. */
+  livePollingAllowed: boolean;
   latestPositions: Array<{
     vehicleId: string | null;
     vehicleName: string | null;
     licensePlate: string | null;
+    make: string | null;
+    model: string | null;
+    assignedUserName: string | null;
+    driverName: string | null;
     externalVehicleId: string;
     latitude: number;
     longitude: number;
     speedKmh: number | null;
+    heading: number | null;
+    ignitionOn: boolean | null;
+    odometerKm: number | null;
     recordedAt: string;
   }>;
 };

@@ -37,7 +37,7 @@ export function VehicleListPage() {
     <div className="fleet-page">
       <PageHeader
         title="Fleet"
-        description="Manage company vehicles and today's dispatch board (stored data only — live Maps/Cartrack deferred)."
+        description="Company vehicles, driver assignments, and Cartrack positions when connected — never fake live GPS."
         actions={
           canWrite ? (
             <Link href="/fleet/new">

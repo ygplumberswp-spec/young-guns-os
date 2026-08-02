@@ -3,6 +3,8 @@ import { Link } from 'wouter';
 import { Button, Input, PageHeader, Panel } from '@titan/ui';
 import {
   INTEGRATION_CONNECTION_STATUS_OPTIONS,
+  deriveFleetConnectionDisplayState,
+  formatFleetConnectionDisplayLabel,
   type CartrackConnectionSummary,
   type IntegrationVehicleMappingSummary,
 } from '@titan/shared';
@@ -210,8 +212,23 @@ export function CartrackSettingsPage() {
       <Panel title="Connection status">
         <dl className="integration-status-list">
           <div>
-            <dt>Status</dt>
+            <dt>Provider status</dt>
             <dd>{connection ? formatConnectionStatus(connection.status) : 'Disconnected'}</dd>
+          </div>
+          <div>
+            <dt>Fleet health</dt>
+            <dd>
+              {connection
+                ? formatFleetConnectionDisplayLabel(
+                    deriveFleetConnectionDisplayState({
+                      connectionStatus: connection.status,
+                      hasCredentials: connection.hasCredentials,
+                      lastSyncAt: connection.lastSyncAt,
+                      lastError: connection.lastError,
+                    }),
+                  )
+                : 'Not configured'}
+            </dd>
           </div>
           <div>
             <dt>Base URL</dt>
@@ -222,10 +239,14 @@ export function CartrackSettingsPage() {
             <dd>{connection?.usernameHint ?? 'Not configured'}</dd>
           </div>
           <div>
-            <dt>Last sync</dt>
+            <dt>Last successful sync</dt>
             <dd>
               {connection?.lastSyncAt ? new Date(connection.lastSyncAt).toLocaleString() : 'Never'}
             </dd>
+          </div>
+          <div>
+            <dt>Credentials</dt>
+            <dd>{connection?.hasCredentials ? 'Present' : 'Missing'}</dd>
           </div>
           <div>
             <dt>Mapped vehicles</dt>
@@ -242,6 +263,10 @@ export function CartrackSettingsPage() {
             </div>
           ) : null}
         </dl>
+        <p className="page-muted">
+          Live positions on Fleet Dispatch never claim “live” when disconnected, credentials are
+          missing, sync is stale, or a position is older than two minutes.
+        </p>
       </Panel>
 
       {canManage ? (

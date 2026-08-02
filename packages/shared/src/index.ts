@@ -41,6 +41,7 @@ export * from './finance.js';
 export * from './job-payment-ledger.js';
 export * from './inventory.js';
 export * from './fleet.js';
+export * from './fleet-tracking.js';
 export * from './integrations.js';
 export * from './integration-capability.js';
 export * from './marketing-eligibility.js';

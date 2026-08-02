@@ -303,6 +303,16 @@ export function createIntegrationsRouter({
   });
 
   router.get(
+    '/cartrack/tracking',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'dispatch:read', 'fleet:read'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const tracking = await integrationsService.buildFleetTrackingContext(companyId);
+      res.json({ data: { tracking } });
+    },
+  );
+
+  router.get(
     '/xero',
     requireAnyPermission('integrations:read', 'integrations:manage'),
     async (req, res) => {

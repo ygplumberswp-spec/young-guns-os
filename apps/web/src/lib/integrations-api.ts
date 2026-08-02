@@ -3,6 +3,7 @@ import type {
   CartrackSyncResult,
   EmailConnectionSummary,
   EmailSyncResult,
+  FleetTrackingContext,
   IntegrationVehicleMappingSummary,
   SaveCartrackConnectionRequest,
   SaveEmailConnectionRequest,
@@ -82,6 +83,15 @@ export async function syncCartrack(accessToken: string): Promise<CartrackSyncRes
     accessToken,
   });
   return data.result;
+}
+
+/** Tenant-scoped Cartrack tracking snapshot for dispatch/fleet live panels (read-only). */
+export async function fetchCartrackTracking(accessToken: string): Promise<FleetTrackingContext> {
+  const data = await request<{ tracking: FleetTrackingContext }>(
+    '/integrations/cartrack/tracking',
+    { accessToken },
+  );
+  return data.tracking;
 }
 
 export async function fetchXeroConnection(accessToken: string): Promise<XeroConnectionSummary> {
