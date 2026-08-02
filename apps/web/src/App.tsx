@@ -120,6 +120,7 @@ import { XeroSettingsPage } from './pages/integrations/XeroSettingsPage';
 import { EmailSettingsPage } from './pages/integrations/EmailSettingsPage';
 import { YocoSettingsPage } from './pages/integrations/YocoSettingsPage';
 import { WhatsappSettingsPage } from './pages/integrations/WhatsappSettingsPage';
+import { GmailSettingsPage } from './pages/integrations/GmailSettingsPage';
 import { RecruitingPage } from './pages/recruiting/RecruitingPage';
 import { AnalyticsPage } from './pages/analytics/AnalyticsPage';
 import { QualityPage } from './pages/quality/QualityPage';
@@ -279,6 +280,7 @@ export function App() {
                 <Route path="/integrations/email" component={EmailSettingsPage} />
                 <Route path="/integrations/yoco" component={YocoSettingsPage} />
                 <Route path="/integrations/whatsapp" component={WhatsappSettingsPage} />
+                <Route path="/integrations/gmail" component={GmailSettingsPage} />
                 <Route path="/integrations/sync-jobs" component={SyncJobListPage} />
                 <Route path="/integrations/webhooks" component={WebhookFoundationPage} />
                 <Route path="/integrations" component={IntegrationsDashboardPage} />

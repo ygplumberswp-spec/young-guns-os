@@ -4,6 +4,7 @@ export type IntegrationProvider =
   | 'email'
   | 'yoco'
   | 'whatsapp'
+  | 'gmail'
   | 'google_calendar'
   | 'google_maps'
   | 'microsoft_365'
@@ -120,6 +121,16 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
     availability: 'available',
     settingsPath: '/integrations/whatsapp',
     supportsSync: false,
+    supportsWebhooks: true,
+  },
+  {
+    provider: 'gmail',
+    name: 'Business Gmail',
+    description: 'Business Gmail via official Google OAuth — Inbox, Sent, Drafts, Labels, sync, and approved sends.',
+    category: 'communications',
+    availability: 'available',
+    settingsPath: '/integrations/gmail',
+    supportsSync: true,
     supportsWebhooks: true,
   },
   {
@@ -414,4 +425,87 @@ export type YocoSyncResult = {
   environment: 'test' | 'live';
   syncedAt: string;
   syncJobId?: string;
+};
+
+export type GmailConnectionSummary = {
+  provider: 'gmail';
+  status: IntegrationConnectionStatus;
+  email: string | null;
+  hasCredentials: boolean;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+  inboxCount: number;
+  draftCount: number;
+  sentCount: number;
+  labelCount: number;
+};
+
+export type GmailAuthRequest = {
+  code: string;
+  redirectUri: string;
+};
+
+export type GmailSyncResult = {
+  email: string;
+  messagesImported: number;
+  labelsSynced: number;
+  syncedAt: string;
+  syncJobId?: string;
+};
+
+export type GmailMessageSummary = {
+  id: string;
+  externalMessageId: string;
+  direction: 'incoming' | 'outgoing';
+  status: 'draft' | 'pending' | 'sent' | 'received' | 'failed';
+  isDraft: boolean;
+  subject: string | null;
+  snippet: string | null;
+  fromEmail: string | null;
+  toEmail: string | null;
+  internalDate: string | null;
+  labelIds: string[];
+  createdAt: string;
+};
+
+export type GmailMessageDetail = GmailMessageSummary & {
+  ccEmail: string | null;
+  bccEmail: string | null;
+  bodyHtml: string | null;
+  bodyText: string | null;
+  customerId: string | null;
+  approvedByUserId: string | null;
+  sentAt: string | null;
+  receivedAt: string | null;
+};
+
+export type GmailLabelSummary = {
+  id: string;
+  externalLabelId: string;
+  name: string;
+  type: string;
+  messagesTotal: number | null;
+  messagesUnread: number | null;
+  threadsTotal: number | null;
+  threadsUnread: number | null;
+};
+
+export type SendGmailRequest = {
+  to: string;
+  subject: string;
+  bodyHtml?: string;
+  bodyText?: string;
+  cc?: string;
+  bcc?: string;
+  customerId?: string | null;
+  isDraft?: boolean;
+};
+
+export type GmailStats = {
+  totalMessages: number;
+  inboxMessages: number;
+  sentMessages: number;
+  draftMessages: number;
+  totalLabels: number;
 };

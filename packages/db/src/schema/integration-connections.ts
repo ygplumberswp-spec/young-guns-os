@@ -7,6 +7,7 @@ export const integrationProviderEnum = pgEnum('integration_provider', [
   'email',
   'yoco',
   'whatsapp',
+  'gmail',
   'google_calendar',
   'google_maps',
   'microsoft_365',

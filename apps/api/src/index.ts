@@ -34,9 +34,11 @@ import { IntegrationApiManagementService } from './services/integration-api-mana
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
+import { GmailService } from './services/gmail.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
+import { createGmailRouter } from './routes/gmail.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
 import { DocumentsService } from './services/documents.service.js';
@@ -245,6 +247,13 @@ const whatsappService = WhatsappService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   apiPublicUrl,
+  hubService: integrationHubService,
+});
+const gmailService = GmailService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
   hubService: integrationHubService,
 });
 const integrationApiManagementService = new IntegrationApiManagementService({
@@ -1116,6 +1125,15 @@ app.use(
   createWhatsappWebhookRouter({
     whatsappService,
     db,
+  }),
+);
+app.use(
+  '/api/v1/gmail',
+  createGmailRouter({
+    gmailService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(
