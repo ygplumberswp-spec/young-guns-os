@@ -2,7 +2,7 @@
 
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 16):** `c53bd1a`  
-**Final SHA:** `d2eb8d6`  
+**Final SHA:** `376e15d`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02  
 
@@ -19,7 +19,7 @@
 | **Accountant / Dispatcher / Client staging** | **HOLD** | No active YGP users for these roles — matrix rows marked hold |
 | **Performance (cold API)** | **HOLD** | `platform/tenants/provision` probe p95 ~60s (timeout before 403); median 1.2s |
 
-**Overall:** **GO** @ `d2eb8d6` — authenticated staging RBAC evidence for Owner + Technician; honest HOLD gaps for unavailable roles
+**Overall:** **GO** @ `376e15d` — authenticated staging RBAC evidence for Owner + Technician; honest HOLD gaps for unavailable roles
 
 ## Summary
 

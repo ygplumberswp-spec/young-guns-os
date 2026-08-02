@@ -1,0 +1,94 @@
+{
+  "schemaVersion": "final-consolidation-smoke-v1",
+  "generatedAt": "2026-08-02T11:05:16.143Z",
+  "headSha": "338d086a86e2e436116a847b8b1de4299af814ae",
+  "deployWebId": "33400ea4-95d9-40fe-866c-4105df40725d",
+  "deployApiId": "0400c5a7-3052-4e4c-8c7b-734903be0f7c",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "apiResults": [
+    {
+      "label": "health",
+      "route": "/api/v1/health/ready",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "finance_stats",
+      "route": "/api/v1/finance/stats",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "receivables",
+      "route": "/api/v1/finance-intelligence/receivables",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "payables",
+      "route": "/api/v1/finance-intelligence/payables",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "cashflow",
+      "route": "/api/v1/finance-intelligence/cashflow",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "jobs",
+      "route": "/api/v1/jobs",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "customers",
+      "route": "/api/v1/crm/customers",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "scheduling",
+      "route": "/api/v1/scheduling/calendar",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "fleet",
+      "route": "/api/v1/fleet/vehicles",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "integrations",
+      "route": "/api/v1/integrations/hub/dashboard",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "dept_tasks",
+      "route": "/api/v1/corporate-departments/finance_accounting/tasks",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "label": "settings_team",
+      "route": "/api/v1/team/members",
+      "status": 200,
+      "ok": true
+    }
+  ],
+  "webHealthz": {
+    "status": 200,
+    "ok": true
+  },
+  "verify231Reference": {
+    "verdict": "GO",
+    "blockers": 0,
+    "screenshotCount": 236
+  },
+  "allApiOk": true,
+  "verdict": "GO"
+}
