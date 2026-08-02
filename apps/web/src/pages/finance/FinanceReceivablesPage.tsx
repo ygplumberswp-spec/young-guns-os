@@ -7,7 +7,7 @@ import { fetchReceivablesIntelligence } from '../../lib/finance-intelligence-api
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { canAccessFinance } from '../../features/finance/utils';
+import { canAccessFinanceReceivables } from '../../features/finance/utils';
 import { PageHeader, SummaryCardGrid } from '../../components/ux';
 
 type DebtorRow = {
@@ -101,7 +101,16 @@ function countPartialInvoices(invoices: InvoiceSummary[]): number {
 export function FinanceReceivablesPage() {
   const { accessToken, user } = useAuth();
   const [q, setQ] = useState('');
-  const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
+  const canView = useMemo(
+    () =>
+      user
+        ? canAccessFinanceReceivables({
+            roleName: user.roleName,
+            permissions: user.permissions,
+          })
+        : false,
+    [user],
+  );
 
   const {
     data: bundle,

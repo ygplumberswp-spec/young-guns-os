@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import {
   canAccessTenant,
   hasUnrestrictedCompanyAccess,
+  isDispatcherRole,
   isPlatformOwnerRole,
   isTechnicianRole,
   type StaffIdentity,
@@ -87,6 +88,35 @@ export function createRequirePlatformOwner(db: DatabaseClient) {
         userAgent: req.headers['user-agent'],
       });
       forbidden(res, 'Platform Owner access required');
+      return;
+    }
+    next();
+  };
+}
+
+/** Blocks dispatcher from executive finance intelligence (receivables ageing, etc.). */
+export function createDenyDispatcherFromExecutiveFinance(db: DatabaseClient) {
+  return async (req: Request, res: Response, next: NextFunction) => {
+    const identity = getStaffIdentity(req);
+    if (!identity) {
+      res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'Authentication required' } });
+      return;
+    }
+    if (hasUnrestrictedCompanyAccess(identity)) {
+      next();
+      return;
+    }
+    if (isDispatcherRole(identity)) {
+      await recordAuthorizationFailure(db, {
+        companyId: identity.companyId,
+        userId: identity.userId,
+        sessionId: identity.sessionId,
+        action: 'dispatcher_executive_finance_denied',
+        metadata: { path: req.path, roleName: identity.roleName },
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+      forbidden(res, 'Dispatchers cannot access executive finance intelligence');
       return;
     }
     next();

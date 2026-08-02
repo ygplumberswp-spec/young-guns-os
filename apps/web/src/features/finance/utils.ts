@@ -1,7 +1,19 @@
-import { hasAnyPermission } from '@titan/auth/browser';
+import { hasAnyPermission, isDispatcherRole } from '@titan/auth/browser';
+import type { StaffIdentity } from '@titan/auth/browser';
 
 export function canAccessFinance(permissions: string[]): boolean {
   return hasAnyPermission(permissions, ['finance:read', 'finance:write', '*']);
+}
+
+/** Executive receivables ageing — excluded from dispatcher finance:read scope. */
+export function canAccessFinanceReceivables(identity: StaffIdentity): boolean {
+  if (isDispatcherRole(identity)) return false;
+  return hasAnyPermission(identity.permissions, [
+    'finance:read',
+    'finance:write',
+    'executive:read',
+    '*',
+  ]);
 }
 
 export function canManageFinance(permissions: string[]): boolean {

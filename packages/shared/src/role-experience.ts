@@ -120,6 +120,26 @@ export const GLOBAL_SEARCH_NAV_ITEM: NavItemConfig = {
 };
 
 /** Dispatcher operational navigation — no platform admin, AURA owner chat or SaaS controls. */
+/** True when `pathname` matches an allowed href or a nested route beneath it. */
+export function isPathInAllowedHrefSet(pathname: string, allowed: ReadonlySet<string>): boolean {
+  if (allowed.has(pathname)) return true;
+  for (const href of allowed) {
+    if (pathname.startsWith(`${href}/`)) return true;
+  }
+  return false;
+}
+
+/** Experience-scoped direct URL allowlist — mirrors sidebar `filterOwnerStaffNav` href gates. */
+export function isExperienceAllowedHref(experience: StaffExperience, pathname: string): boolean {
+  if (experience === 'dispatcher') {
+    return isPathInAllowedHrefSet(pathname, DISPATCHER_ALLOWED_HREFS);
+  }
+  if (experience === 'accountant') {
+    return isPathInAllowedHrefSet(pathname, ACCOUNTANT_ALLOWED_HREFS);
+  }
+  return true;
+}
+
 export const DISPATCHER_ALLOWED_HREFS = new Set([
   '/',
   '/crm',

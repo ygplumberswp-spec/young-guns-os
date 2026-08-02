@@ -104,8 +104,18 @@ describe('evaluateOwnerStaffDirectUrl (forbidden direct URL browser contract)', 
   });
 
   it('allows dispatcher operational modules via direct URL', () => {
-    for (const path of ['/', '/jobs', '/scheduling', '/crm']) {
+    for (const path of ['/', '/jobs', '/scheduling', '/crm', '/finance/invoices']) {
       assert.equal(evaluateOwnerStaffDirectUrl(dispatcher, path).allowed, true, path);
+    }
+  });
+
+  it('redirects dispatcher away from executive finance URL guesses', () => {
+    for (const path of ['/finance/receivables', '/finance/payables', '/finance/cashflow']) {
+      const decision = evaluateOwnerStaffDirectUrl(dispatcher, path);
+      assert.equal(decision.allowed, false, path);
+      if (!decision.allowed) {
+        assert.equal(decision.redirectPath, '/');
+      }
     }
   });
 

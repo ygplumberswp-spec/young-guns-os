@@ -8,6 +8,7 @@ import {
 import {
   ACCOUNTANT_BLOCKED_ROUTE_PREFIXES,
   DISPATCHER_BLOCKED_ROUTE_PREFIXES,
+  isExperienceAllowedHref,
   OWNER_ONLY_ROUTE_PREFIXES,
   TECHNICIAN_ALLOWED_ROUTE_PREFIXES,
 } from '@titan/shared';
@@ -50,8 +51,10 @@ export function evaluateOwnerStaffDirectUrl(
     return { allowed: false, redirectPath: getStaffHomePath(identity) };
   }
 
-  if (experience === 'dispatcher' && isDispatcherBlockedPath(pathname)) {
-    return { allowed: false, redirectPath: '/' };
+  if (experience === 'dispatcher') {
+    if (isDispatcherBlockedPath(pathname) || !isExperienceAllowedHref('dispatcher', pathname)) {
+      return { allowed: false, redirectPath: '/' };
+    }
   }
 
   if (experience === 'accountant' && isAccountantBlockedPath(pathname)) {

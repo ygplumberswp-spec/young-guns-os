@@ -1812,6 +1812,7 @@ app.use(
   createFinanceIntelligenceRouter({
     financeIntelligenceService,
     teamService,
+    db,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

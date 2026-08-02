@@ -4,7 +4,9 @@ import type { FinanceIntelligenceService } from '../services/finance-intelligenc
 import { FinanceIntelligenceError } from '../services/finance-intelligence.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
+import { createDenyDispatcherFromExecutiveFinance } from '../middleware/authorization-guards.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
+import type { DatabaseClient } from '@titan/db';
 
 const budgetPeriodTypeSchema = z.enum(['monthly', 'quarterly', 'yearly']);
 const budgetStatusSchema = z.enum(['draft', 'active', 'closed']);
@@ -59,6 +61,7 @@ const updateRecommendationSchema = z.object({
 type FinanceIntelligenceRouterDeps = {
   financeIntelligenceService: FinanceIntelligenceService;
   teamService: TeamService;
+  db: DatabaseClient;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -74,12 +77,14 @@ function getRouteParam(value: string | string[]): string {
 export function createFinanceIntelligenceRouter({
   financeIntelligenceService,
   teamService,
+  db,
   jwtSecret,
   authService,
 }: FinanceIntelligenceRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
   const requireRead = requireAnyPermission('finance:read', 'finance:write', 'intelligence:read');
+  const denyDispatcherExecutiveFinance = createDenyDispatcherFromExecutiveFinance(db);
   const requireWrite = requireAnyPermission('finance:write');
 
   router.use(requireAuth);
@@ -118,7 +123,7 @@ export function createFinanceIntelligenceRouter({
     res.json({ data: { profitability } });
   });
 
-  router.get('/receivables', requireRead, async (req, res) => {
+  router.get('/receivables', requireRead, denyDispatcherExecutiveFinance, async (req, res) => {
     const { companyId } = getAuth(req);
     const receivables = await financeIntelligenceService.getReceivablesIntelligence(companyId);
     res.json({ data: { receivables } });
