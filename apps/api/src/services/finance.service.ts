@@ -94,6 +94,18 @@ export type AuraFinanceContext = {
     currency: string;
     paidAt: string;
   }>;
+  draftContext?: {
+    recordType: 'quote' | 'invoice';
+    recordId: string;
+    serviceCustomerName: string;
+    billingCustomerName: string;
+    recipientName: string | null;
+    jobId: string | null;
+    jobTitle: string | null;
+    propertyId: string | null;
+    status: string;
+    editable: boolean;
+  } | null;
 };
 
 /** Auth context passed by finance routes. String company IDs remain supported for legacy callers. */
@@ -426,7 +438,7 @@ export class FinanceService {
   }
 
   async getQuoteDetail(companyId: string, quoteId: string, options: { includeProfit?: boolean } = {}): Promise<QuoteDetail | null> {
-    const row = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId)), with: { customer: true, job: true, lineItems: true, acceptances: true } });
+    const row = await this.db.query.quotes.findFirst({ where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId)), with: { customer: true, billingCustomer: true, job: true, lineItems: true, acceptances: true } });
     if (!row) return null;
     const profit = options.includeProfit ? profitFromQuote(row) : null;
     return {
@@ -532,7 +544,7 @@ export class FinanceService {
   }
 
   async getInvoiceDetail(companyId: string, invoiceId: string): Promise<InvoiceDetail | null> {
-    const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
+    const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, billingCustomer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
     return { ...toInvoiceSummary(row), subtotalCents: row.subtotalCents, vatCents: row.vatCents, paymentTerms: row.paymentTerms, billingName: row.billingName, billingEmail: row.billingEmail, billingPhone: row.billingPhone, notes: row.notes, lineItems: row.lineItems.map(line => ({ id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents })), payments: row.payments.map(toPaymentSummary) };
   }
@@ -801,7 +813,13 @@ export class FinanceService {
     );
   }
 
-  async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {
+  async buildAuraContext(
+    companyId: string,
+    pageContext?: Pick<
+      import('@titan/shared').AuraPageContext,
+      'quoteId' | 'invoiceId' | 'financeDraft' | 'recordType' | 'recordId'
+    >,
+  ): Promise<AuraFinanceContext> {
     const stats = await this.getStats(companyId);
 
     const quoteRows = await this.db.query.quotes.findMany({
@@ -833,6 +851,62 @@ export class FinanceService {
       .select({ count: sql<number>`count(*)::int` })
       .from(quotes)
       .where(eq(quotes.companyId, companyId));
+
+    let draftContext: AuraFinanceContext['draftContext'] = null;
+    if (pageContext?.quoteId) {
+      const quote = await this.db.query.quotes.findFirst({
+        where: and(eq(quotes.id, pageContext.quoteId), eq(quotes.companyId, companyId)),
+        with: { customer: true, billingCustomer: true, job: true },
+      });
+      if (quote) {
+        draftContext = {
+          recordType: 'quote',
+          recordId: quote.id,
+          serviceCustomerName: quote.customer?.name ?? 'Unknown',
+          billingCustomerName:
+            quote.billingCustomer?.name ?? quote.customer?.name ?? 'Same as service customer',
+          recipientName: quote.recipientName ?? quote.customer?.name ?? null,
+          jobId: quote.jobId,
+          jobTitle: quote.job?.title ?? null,
+          propertyId: quote.propertyId ?? null,
+          status: quote.status,
+          editable: !quote.isImmutable,
+        };
+      }
+    } else if (pageContext?.invoiceId) {
+      const invoice = await this.db.query.invoices.findFirst({
+        where: and(eq(invoices.id, pageContext.invoiceId), eq(invoices.companyId, companyId)),
+        with: { customer: true, billingCustomer: true, job: true },
+      });
+      if (invoice) {
+        draftContext = {
+          recordType: 'invoice',
+          recordId: invoice.id,
+          serviceCustomerName: invoice.customer?.name ?? 'Unknown',
+          billingCustomerName:
+            invoice.billingCustomer?.name ?? invoice.customer?.name ?? 'Same as service customer',
+          recipientName: invoice.recipientName ?? invoice.billingName ?? invoice.customer?.name ?? null,
+          jobId: invoice.jobId,
+          jobTitle: invoice.job?.title ?? null,
+          propertyId: invoice.propertyId ?? null,
+          status: invoice.status,
+          editable: invoice.status === 'draft',
+        };
+      }
+    } else if (pageContext?.financeDraft) {
+      draftContext = {
+        recordType: pageContext.recordType === 'invoice' ? 'invoice' : 'quote',
+        recordId: pageContext.recordId ?? 'draft',
+        serviceCustomerName: pageContext.financeDraft.serviceCustomerName,
+        billingCustomerName: pageContext.financeDraft.billingCustomerName,
+        recipientName: pageContext.financeDraft.recipientName,
+        jobId: null,
+        jobTitle: null,
+        propertyId: pageContext.financeDraft.propertyId,
+        status: 'draft',
+        editable: true,
+      };
+    }
 
     return {
       openQuoteCount: stats.openQuoteCount,
@@ -868,13 +942,14 @@ export class FinanceService {
         currency: row.currency,
         paidAt: row.paidAt.toISOString(),
       })),
+      draftContext,
     };
   }
 
   private async getQuote(companyId: string, quoteId: string): Promise<QuoteSummary | null> {
     const row = await this.db.query.quotes.findFirst({
       where: and(eq(quotes.id, quoteId), eq(quotes.companyId, companyId)),
-      with: { customer: true, job: true },
+      with: { customer: true, billingCustomer: true, job: true },
     });
 
     return row ? toQuoteSummary(row) : null;
@@ -883,7 +958,7 @@ export class FinanceService {
   private async getInvoice(companyId: string, invoiceId: string): Promise<InvoiceSummary | null> {
     const row = await this.db.query.invoices.findFirst({
       where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)),
-      with: { customer: true, job: true },
+      with: { customer: true, billingCustomer: true, job: true },
     });
 
     return row ? toInvoiceSummary(row) : null;
@@ -1120,11 +1195,13 @@ export class FinanceService {
 
 type QuoteWithRelations = typeof quotes.$inferSelect & {
   customer: { name: string } | null;
+  billingCustomer?: { name: string } | null;
   job: { title: string; jobNumber?: string | null } | null;
 };
 
 type InvoiceWithRelations = typeof invoices.$inferSelect & {
   customer: { name: string } | null;
+  billingCustomer?: { name: string } | null;
   job: { title: string; jobNumber?: string | null } | null;
   quote?: { quoteNumber: string } | null;
 };
@@ -1160,6 +1237,15 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    billingCustomerId: row.billingCustomerId ?? null,
+    billingCustomerName: row.billingCustomer?.name ?? null,
+    recipientName: row.recipientName ?? null,
+    recipientEmail: row.recipientEmail ?? null,
+    recipientPhone: row.recipientPhone ?? null,
+    billingAddress: row.billingAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
+    poReference: row.poReference ?? null,
+    attentionPerson: row.attentionPerson ?? null,
     ...(profit ? { profit } : {}),
   };
 }
@@ -1246,6 +1332,15 @@ function toInvoiceSummary(
     financialDataComplete,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    billingCustomerId: row.billingCustomerId ?? null,
+    billingCustomerName: row.billingCustomer?.name ?? null,
+    recipientName: row.recipientName ?? null,
+    recipientEmail: row.recipientEmail ?? null,
+    recipientPhone: row.recipientPhone ?? null,
+    billingAddress: row.billingAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
+    poReference: row.poReference ?? null,
+    attentionPerson: row.attentionPerson ?? null,
   };
 }
 

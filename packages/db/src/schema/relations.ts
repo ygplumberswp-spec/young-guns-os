@@ -512,8 +512,10 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   }),
   activities: many(customerActivities),
   jobs: many(jobs),
-  quotes: many(quotes),
-  invoices: many(invoices),
+  quotes: many(quotes, { relationName: 'quoteServiceCustomer' }),
+  billingQuotes: many(quotes, { relationName: 'quoteBillingCustomer' }),
+  invoices: many(invoices, { relationName: 'invoiceServiceCustomer' }),
+  billingInvoices: many(invoices, { relationName: 'invoiceBillingCustomer' }),
   communications: many(communications),
   whatsappMessages: many(whatsappMessages),
   documents: many(documents),
@@ -558,6 +560,12 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
   customer: one(customers, {
     fields: [quotes.customerId],
     references: [customers.id],
+    relationName: 'quoteServiceCustomer',
+  }),
+  billingCustomer: one(customers, {
+    fields: [quotes.billingCustomerId],
+    references: [customers.id],
+    relationName: 'quoteBillingCustomer',
   }),
   job: one(jobs, {
     fields: [quotes.jobId],
@@ -716,6 +724,12 @@ export const invoicesRelations = relations(invoices, ({ one, many }) => ({
   customer: one(customers, {
     fields: [invoices.customerId],
     references: [customers.id],
+    relationName: 'invoiceServiceCustomer',
+  }),
+  billingCustomer: one(customers, {
+    fields: [invoices.billingCustomerId],
+    references: [customers.id],
+    relationName: 'invoiceBillingCustomer',
   }),
   job: one(jobs, {
     fields: [invoices.jobId],

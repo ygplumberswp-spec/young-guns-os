@@ -232,6 +232,10 @@ function addPageContextDomains(
     domains.add('scheduling');
   }
 
+  if (pageContext.quoteId || pageContext.invoiceId || pageContext.financeDraft) {
+    domains.add('finance');
+  }
+
   if (pageContext.agentProfileId) {
     domains.add('agents');
   }

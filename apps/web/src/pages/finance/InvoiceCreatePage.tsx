@@ -5,7 +5,7 @@ import type { CustomerSummary, InvoiceStage, InvoiceStatus, JobSummary, QuoteSum
 import { parseMoneyInput, INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
-import { createInvoice, fetchQuotes } from '../../lib/finance-api';
+import { createInvoice, fetchQuotes, updateInvoiceBillingRecipient } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
@@ -15,6 +15,15 @@ import { canManageFinance, newFinanceClientActionId } from '../../features/finan
 import { AutosaveIndicator, PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
+import { BillingRecipientPanel } from '../../features/finance/BillingRecipientPanel';
+import {
+  defaultBillingRecipientValues,
+  hasCustomBillingRecipient,
+  resolveBillingCustomerName,
+  toBillingRecipientPatch,
+  type BillingRecipientFormValues,
+} from '../../features/finance/billing-recipient-state';
+import { useFinanceDraftAuraContext } from '../../features/finance/useFinanceDraftAuraContext';
 
 export function InvoiceCreatePage() {
   const { accessToken, user } = useAuth();
@@ -33,6 +42,9 @@ export function InvoiceCreatePage() {
   const [stage, setStage] = useState<InvoiceStage>('standard');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [billingRecipient, setBillingRecipient] = useState<BillingRecipientFormValues>(
+    defaultBillingRecipientValues(),
+  );
   const [clientActionId] = useState(() => newFinanceClientActionId('invoice'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -167,6 +179,27 @@ export function InvoiceCreatePage() {
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
   const customerQuotes = quotes.filter((quote) => quote.customerId === customerId);
+  const serviceCustomerName =
+    customers.find((customer) => customer.id === customerId)?.name ?? 'Customer';
+  const billingCustomerName = resolveBillingCustomerName(
+    billingRecipient.billingCustomerId,
+    customers,
+    serviceCustomerName,
+  );
+
+  useFinanceDraftAuraContext(
+    customerId
+      ? {
+          pageTitle: 'New invoice',
+          recordType: 'invoice',
+          serviceCustomerId: customerId,
+          serviceCustomerName,
+          billingCustomerName,
+          recipientName: billingRecipient.recipientName,
+          jobId: jobId || null,
+        }
+      : null,
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -194,6 +227,13 @@ export function InvoiceCreatePage() {
         notes: notes.trim() || null,
         clientActionId,
       });
+      if (hasCustomBillingRecipient(billingRecipient, customerId)) {
+        await updateInvoiceBillingRecipient(
+          accessToken,
+          invoice.id,
+          toBillingRecipientPatch(billingRecipient, 'Initial billing recipient on invoice create'),
+        );
+      }
       invalidateInvoices();
       draftShell.markSubmitted();
       notify({ variant: 'saved', message: 'Invoice created', dedupeKey: 'invoice-created' });
@@ -272,6 +312,19 @@ export function InvoiceCreatePage() {
               ))}
             </select>
           </label>
+
+          <BillingRecipientPanel
+            recipientLabel="Invoice Recipient"
+            serviceCustomerId={customerId}
+            serviceCustomerName={serviceCustomerName}
+            customers={customers}
+            values={billingRecipient}
+            editable={canWrite}
+            mode="local"
+            requireReason={false}
+            onChange={setBillingRecipient}
+          />
+
           <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <Input
             label="Amount"

@@ -73,6 +73,13 @@ export type CreateCustomerActivityRequest = {
   content: string;
 };
 
+export type AuraFinanceDraftContext = {
+  serviceCustomerName: string;
+  billingCustomerName: string;
+  recipientName: string | null;
+  propertyId: string | null;
+};
+
 export type AuraPageContext = {
   customerId?: string;
   jobId?: string;
@@ -81,4 +88,9 @@ export type AuraPageContext = {
   agentProfileId?: string;
   schedulingView?: boolean;
   mobileRole?: 'owner' | 'technician' | 'customer';
+  recordType?: string;
+  recordId?: string;
+  quoteId?: string;
+  invoiceId?: string;
+  financeDraft?: AuraFinanceDraftContext;
 };

@@ -28,11 +28,7 @@ export type AuraConversationDetail = AuraConversation & {
 
 export type SendAuraMessageRequest = {
   content: string;
-  pageContext?: {
-    customerId?: string;
-    jobId?: string;
-    schedulingView?: boolean;
-  };
+  pageContext?: import('./crm.js').AuraPageContext;
 };
 
 export type SendAuraMessageResponse = {

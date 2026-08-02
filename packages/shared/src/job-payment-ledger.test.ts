@@ -33,6 +33,15 @@ const baseQuote = (overrides: Partial<QuoteSummary>): QuoteSummary => ({
   acceptedAt: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
+  billingCustomerId: null,
+  billingCustomerName: null,
+  recipientName: null,
+  recipientEmail: null,
+  recipientPhone: null,
+  billingAddress: null,
+  vatNumber: null,
+  poReference: null,
+  attentionPerson: null,
   ...overrides,
 });
 
@@ -64,6 +73,15 @@ const baseInvoice = (overrides: Partial<InvoiceSummary>): InvoiceSummary => ({
   dueDate: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
+  billingCustomerId: null,
+  billingCustomerName: null,
+  recipientName: null,
+  recipientEmail: null,
+  recipientPhone: null,
+  billingAddress: null,
+  vatNumber: null,
+  poReference: null,
+  attentionPerson: null,
   ...overrides,
 });
 

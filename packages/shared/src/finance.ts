@@ -122,6 +122,32 @@ export type QuoteProfitSummary = {
   missingCostWarning: boolean;
 };
 
+export type BillingRecipientSummaryFields = {
+  billingCustomerId: string | null;
+  billingCustomerName: string | null;
+  recipientName: string | null;
+  recipientEmail: string | null;
+  recipientPhone: string | null;
+  billingAddress: string | null;
+  vatNumber: string | null;
+  poReference: string | null;
+  attentionPerson: string | null;
+};
+
+export function emptyBillingRecipientSummary(): BillingRecipientSummaryFields {
+  return {
+    billingCustomerId: null,
+    billingCustomerName: null,
+    recipientName: null,
+    recipientEmail: null,
+    recipientPhone: null,
+    billingAddress: null,
+    vatNumber: null,
+    poReference: null,
+    attentionPerson: null,
+  };
+}
+
 export type QuoteSummary = {
   id: string;
   quoteNumber: string;
@@ -149,6 +175,15 @@ export type QuoteSummary = {
   createdAt: string;
   updatedAt: string;
   profit?: QuoteProfitSummary | null;
+  billingCustomerId: string | null;
+  billingCustomerName: string | null;
+  recipientName: string | null;
+  recipientEmail: string | null;
+  recipientPhone: string | null;
+  billingAddress: string | null;
+  vatNumber: string | null;
+  poReference: string | null;
+  attentionPerson: string | null;
 };
 
 export type QuoteAcceptanceSummary = {
@@ -210,6 +245,15 @@ export type InvoiceSummary = {
   financialDataComplete?: boolean;
   createdAt: string;
   updatedAt: string;
+  billingCustomerId: string | null;
+  billingCustomerName: string | null;
+  recipientName: string | null;
+  recipientEmail: string | null;
+  recipientPhone: string | null;
+  billingAddress: string | null;
+  vatNumber: string | null;
+  poReference: string | null;
+  attentionPerson: string | null;
 };
 
 export type InvoiceLineItemSummary = {

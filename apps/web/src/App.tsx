@@ -373,6 +373,10 @@ export function App() {
                           component={OwnerPages.InvoiceCreatePage}
                         />
                         <Route
+                          path="/finance/invoices/:id/edit"
+                          component={OwnerPages.InvoiceEditPage}
+                        />
+                        <Route
                           path="/finance/invoices/:id"
                           component={OwnerPages.InvoiceDetailPage}
                         />

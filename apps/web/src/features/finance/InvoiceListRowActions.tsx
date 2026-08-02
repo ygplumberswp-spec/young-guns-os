@@ -109,7 +109,7 @@ export function InvoiceListRowActions({
         </Link>
         {canWrite && isDraft ? (
           <Link
-            href={`/finance/invoices/${invoice.id}#edit`}
+            href={`/finance/invoices/${invoice.id}/edit`}
             className="ux-row-actions__btn"
             aria-label="Edit draft invoice"
           >

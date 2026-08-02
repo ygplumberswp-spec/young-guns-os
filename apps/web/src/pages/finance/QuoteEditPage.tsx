@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { Button, Input } from '@titan/ui';
-import type { JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
-import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import type { CustomerSummary, JobSummary, QuoteLineCategory, QuoteStatus } from '@titan/shared';
+import { canEditQuote, parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchQuote, updateQuote } from '../../lib/finance-api';
+import { fetchCustomers } from '../../lib/crm-api';
+import { fetchQuote, updateQuote, updateQuoteBillingRecipient } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
@@ -13,6 +14,13 @@ import { canManageFinance } from '../../features/finance/utils';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
+import { BillingRecipientPanel } from '../../features/finance/BillingRecipientPanel';
+import {
+  billingValuesFromRecord,
+  defaultBillingRecipientValues,
+  resolveBillingCustomerName,
+} from '../../features/finance/billing-recipient-state';
+import { useFinanceDraftAuraContext } from '../../features/finance/useFinanceDraftAuraContext';
 
 type DraftLine = {
   key: string;
@@ -55,7 +63,11 @@ export function QuoteEditPage() {
   const [lines, setLines] = useState<DraftLine[]>([newDraftLine()]);
   const [belowFloorOverride, setBelowFloorOverride] = useState(false);
   const [belowFloorReason, setBelowFloorReason] = useState('');
+  const [quoteMeta, setQuoteMeta] = useState({ isImmutable: false, status: 'draft' as QuoteStatus });
   const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
+  const [billingValues, setBillingValues] = useState(defaultBillingRecipientValues());
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -105,9 +117,10 @@ export function QuoteEditPage() {
       }
 
       try {
-        const [quote, jobData] = await Promise.all([
+        const [quote, jobData, customerData] = await Promise.all([
           fetchQuote(accessToken, quoteId),
           fetchJobs(accessToken),
+          fetchCustomers(accessToken),
         ]);
 
         if (cancelled) return;
@@ -118,7 +131,11 @@ export function QuoteEditPage() {
         }
 
         setJobs(jobData);
+        setCustomers(customerData);
         setCustomerId(quote.customerId);
+        setCustomerName(quote.customerName);
+        setBillingValues(billingValuesFromRecord(quote));
+        setQuoteMeta({ isImmutable: quote.isImmutable, status: quote.status });
         setJobId(quote.jobId ?? '');
         setTitle(quote.title);
         setStatus(quote.status);
@@ -178,6 +195,28 @@ export function QuoteEditPage() {
   ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
+  const billingCustomerName = resolveBillingCustomerName(
+    billingValues.billingCustomerId,
+    customers,
+    customerName,
+  );
+  const quoteEditable = canEditQuote(quoteMeta);
+
+  useFinanceDraftAuraContext(
+    customerId
+      ? {
+          pageTitle: title || 'Edit quote',
+          recordType: 'quote',
+          recordId: quoteId,
+          serviceCustomerId: customerId,
+          serviceCustomerName: customerName,
+          billingCustomerName,
+          recipientName: billingValues.recipientName,
+          jobId: jobId || null,
+          propertyId: null,
+        }
+      : null,
+  );
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -272,6 +311,27 @@ export function QuoteEditPage() {
       {error ? <p className="form-error">{error}</p> : null}
 
       <form className="finance-form" onSubmit={(event) => void handleSubmit(event)}>
+        <BillingRecipientPanel
+          recipientLabel="Quote Recipient"
+          serviceCustomerId={customerId}
+          serviceCustomerName={customerName}
+          customers={customers}
+          values={billingValues}
+          editable={canWrite && quoteEditable}
+          blockedMessage={
+            !quoteEditable
+              ? 'Issued quotes cannot change billing recipient here. Create a new version or reissue.'
+              : null
+          }
+          requireReason={quoteMeta.status !== 'draft'}
+          onSave={async (input) => {
+            if (!accessToken) return;
+            const updated = await updateQuoteBillingRecipient(accessToken, quoteId, input);
+            setBillingValues(billingValuesFromRecord(updated));
+            invalidateQuotes();
+          }}
+        />
+
         <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
         <label className="titan-input-group">
           <span className="titan-input-label">Job (optional)</span>

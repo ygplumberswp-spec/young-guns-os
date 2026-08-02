@@ -163,7 +163,7 @@ export async function buildSelectedAuraContext(
       domain: 'finance',
       enabled: hasAnyPermission(permissions, ['finance:read', 'finance:write']),
       load: async () => ({
-        finance: await deps.financeService.buildAuraContext(companyId),
+        finance: await deps.financeService.buildAuraContext(companyId, pageContext),
       }),
     },
     {

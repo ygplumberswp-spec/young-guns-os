@@ -39,12 +39,7 @@ function isAbortError(error: unknown): boolean {
   );
 }
 
-export function useAuraChat(pageContext?: {
-  customerId?: string;
-  jobId?: string;
-  vehicleId?: string;
-  schedulingView?: boolean;
-}) {
+export function useAuraChat(pageContext?: import('@titan/shared').AuraPageContext) {
   const { accessToken } = useAuth();
   const [conversations, setConversations] = useState<AuraConversationSummary[]>(() =>
     accessToken ? (conversationsCache.get(accessToken) ?? []) : [],
@@ -71,7 +66,10 @@ export function useAuraChat(pageContext?: {
     pageContext?.customerId ||
       pageContext?.jobId ||
       pageContext?.vehicleId ||
-      pageContext?.schedulingView,
+      pageContext?.schedulingView ||
+      pageContext?.quoteId ||
+      pageContext?.invoiceId ||
+      pageContext?.financeDraft,
   );
 
   const loadConversations = useCallback(async () => {

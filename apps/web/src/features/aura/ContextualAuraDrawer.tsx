@@ -19,8 +19,23 @@ export function ContextualAuraDrawer() {
       jobId: pageContext.jobId,
       vehicleId: pageContext.vehicleId,
       schedulingView: pageContext.module === 'scheduling',
+      quoteId: pageContext.quoteId,
+      invoiceId: pageContext.invoiceId,
+      recordType: pageContext.recordType,
+      recordId: pageContext.recordId,
+      financeDraft: pageContext.financeDraft,
     }),
-    [pageContext.customerId, pageContext.jobId, pageContext.module, pageContext.vehicleId],
+    [
+      pageContext.customerId,
+      pageContext.financeDraft,
+      pageContext.invoiceId,
+      pageContext.jobId,
+      pageContext.module,
+      pageContext.quoteId,
+      pageContext.recordId,
+      pageContext.recordType,
+      pageContext.vehicleId,
+    ],
   );
 
   const {
@@ -36,8 +51,8 @@ export function ContextualAuraDrawer() {
   } = useAuraChat(chatContext);
 
   const suggestions = useMemo(
-    () => resolveAuraSuggestions(pageContext.module),
-    [pageContext.module],
+    () => pageContext.auraSuggestions ?? resolveAuraSuggestions(pageContext.module),
+    [pageContext.auraSuggestions, pageContext.module],
   );
 
   useEffect(() => {

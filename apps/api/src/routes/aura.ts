@@ -15,6 +15,18 @@ const sendMessageSchema = z.object({
       jobId: z.string().uuid().optional(),
       vehicleId: z.string().uuid().optional(),
       schedulingView: z.boolean().optional(),
+      quoteId: z.string().uuid().optional(),
+      invoiceId: z.string().uuid().optional(),
+      recordType: z.string().trim().max(80).optional(),
+      recordId: z.string().uuid().optional(),
+      financeDraft: z
+        .object({
+          serviceCustomerName: z.string().trim().max(200),
+          billingCustomerName: z.string().trim().max(200),
+          recipientName: z.string().trim().max(200).nullable(),
+          propertyId: z.string().uuid().nullable(),
+        })
+        .optional(),
     })
     .optional(),
 });

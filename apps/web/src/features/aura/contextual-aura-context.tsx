@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useLocation } from 'wouter';
-import { inferAuraModuleFromPath } from './aura-page-suggestions';
+import { inferAuraModuleFromPath, type AuraSuggestionChip } from './aura-page-suggestions';
 
 export type AuraPageContextModule =
   | 'dashboard'
@@ -27,6 +27,13 @@ export type AuraPageContextModule =
   | 'aura'
   | 'other';
 
+export type AuraFinanceDraftContext = {
+  serviceCustomerName: string;
+  billingCustomerName: string;
+  recipientName: string | null;
+  propertyId: string | null;
+};
+
 export type AuraPageContext = {
   module: AuraPageContextModule;
   route: string;
@@ -36,6 +43,10 @@ export type AuraPageContext = {
   customerId?: string;
   jobId?: string;
   vehicleId?: string;
+  quoteId?: string;
+  invoiceId?: string;
+  financeDraft?: AuraFinanceDraftContext;
+  auraSuggestions?: AuraSuggestionChip[];
   filters?: Record<string, string | boolean | number | null | undefined>;
 };
 

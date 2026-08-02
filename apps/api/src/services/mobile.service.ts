@@ -18,6 +18,7 @@ import type {
   MobileTechnicianDashboard,
   MobileTechnicianFleetInfo,
   MobileTechnicianSchedule,
+  emptyBillingRecipientSummary,
 } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -410,6 +411,15 @@ export class MobileService {
           dueDate: row.dueDate?.toISOString() ?? null,
           createdAt: row.createdAt.toISOString(),
           updatedAt: row.updatedAt.toISOString(),
+          ...emptyBillingRecipientSummary(),
+          billingCustomerId: row.billingCustomerId ?? null,
+          recipientName: row.recipientName ?? null,
+          recipientEmail: row.recipientEmail ?? null,
+          recipientPhone: row.recipientPhone ?? null,
+          billingAddress: row.billingAddress ?? null,
+          vatNumber: row.vatNumber ?? null,
+          poReference: row.poReference ?? null,
+          attentionPerson: row.attentionPerson ?? null,
         };
       }),
     };

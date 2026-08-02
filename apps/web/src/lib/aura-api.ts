@@ -41,12 +41,7 @@ export async function sendAuraMessage(
   accessToken: string,
   conversationId: string,
   content: string,
-  pageContext?: {
-    customerId?: string;
-    jobId?: string;
-    vehicleId?: string;
-    schedulingView?: boolean;
-  },
+  pageContext?: import('@titan/shared').AuraPageContext,
   options?: { signal?: AbortSignal; timeoutMs?: number; idempotencyKey?: string },
 ): Promise<SendAuraMessageResponse> {
   const headers: Record<string, string> = {};

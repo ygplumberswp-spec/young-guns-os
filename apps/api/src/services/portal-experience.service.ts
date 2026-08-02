@@ -14,6 +14,7 @@ import type {
   PortalKnowledgeArticleSummary,
   PortalKnowledgeSearchRequest,
   PortalQuoteDetail,
+  emptyBillingRecipientSummary,
 } from '@titan/shared';
 import type { PortalAccessPermission } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -967,6 +968,15 @@ function toQuoteSummary(
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    ...emptyBillingRecipientSummary(),
+    billingCustomerId: row.billingCustomerId ?? null,
+    recipientName: row.recipientName ?? null,
+    recipientEmail: row.recipientEmail ?? null,
+    recipientPhone: row.recipientPhone ?? null,
+    billingAddress: row.billingAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
+    poReference: row.poReference ?? null,
+    attentionPerson: row.attentionPerson ?? null,
   };
 }
 
@@ -1016,6 +1026,15 @@ function toInvoiceSummary(
     dueDate: row.dueDate?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    ...emptyBillingRecipientSummary(),
+    billingCustomerId: row.billingCustomerId ?? null,
+    recipientName: row.recipientName ?? null,
+    recipientEmail: row.recipientEmail ?? null,
+    recipientPhone: row.recipientPhone ?? null,
+    billingAddress: row.billingAddress ?? null,
+    vatNumber: row.vatNumber ?? null,
+    poReference: row.poReference ?? null,
+    attentionPerson: row.attentionPerson ?? null,
   };
 }
 

@@ -55,14 +55,17 @@
 
 ## Task 3 — Billing Recipient
 
-**Result: GO (API); partial UI**
+**Result: GO (API + UI wired — Phase 257)**
 
 - Schema: `billing_customer_id`, recipient fields on `quotes` and `invoices`
 - API: `PATCH /finance/quotes/:id/billing-recipient`, `PATCH /finance/invoices/:id/billing-recipient` with audit
-- UI: `BillingRecipientPanel` component + finance API client helpers
-- **Gap:** Panel not yet mounted on `QuoteEditPage` / invoice draft pages (API ready)
+- UI: `BillingRecipientPanel` mounted on quote/invoice create + draft edit pages
+- Route: `/finance/invoices/:id/edit` (new `InvoiceEditPage`)
+- AURA: finance draft context + billing suggestion chips on draft pages
 
 Rules enforced: draft editable; issued invoice silent replace blocked; service customer never replaced.
+
+**Evidence:** `diagnostic-output/257-billing-recipient-wiring-verify.json`, `TITAN_BILLING_RECIPIENT_WIRING_REPORT.md`
 
 ---
 
@@ -138,9 +141,8 @@ No full CRUD rebuild; gaps are low-traffic only.
 ## Remaining blockers
 
 1. **Payment allocation** — DATA-DEPENDENT HOLD (preserved; no fabricated records)
-2. **Billing recipient UI** — mount `BillingRecipientPanel` on quote/invoice draft pages
-3. **Xero provider writes** — Owner must set `TITAN_XERO_PROVIDER_WRITES_AUTHORIZED=true` for live void/credit execution
-4. **Production** — not deployed (by design)
+2. **Xero provider writes** — Owner must set `TITAN_XERO_PROVIDER_WRITES_AUTHORIZED=true` for live void/credit execution
+3. **Production** — not deployed (by design)
 
 ---
 

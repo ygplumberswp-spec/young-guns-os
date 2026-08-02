@@ -5,7 +5,7 @@ import type { CustomerSummary, JobSummary, QuoteLineCategory, QuoteStatus } from
 import { parseMoneyInput, QUOTE_LINE_CATEGORY_OPTIONS, QUOTE_STATUS_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomers } from '../../lib/crm-api';
-import { createQuote } from '../../lib/finance-api';
+import { createQuote, updateQuoteBillingRecipient } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
@@ -15,6 +15,15 @@ import { canManageFinance, newFinanceClientActionId } from '../../features/finan
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
+import { BillingRecipientPanel } from '../../features/finance/BillingRecipientPanel';
+import {
+  defaultBillingRecipientValues,
+  hasCustomBillingRecipient,
+  resolveBillingCustomerName,
+  toBillingRecipientPatch,
+  type BillingRecipientFormValues,
+} from '../../features/finance/billing-recipient-state';
+import { useFinanceDraftAuraContext } from '../../features/finance/useFinanceDraftAuraContext';
 
 type DraftLine = {
   key: string;
@@ -61,6 +70,10 @@ export function QuoteCreatePage() {
 
   const [belowFloorOverride, setBelowFloorOverride] = useState(false);
   const [belowFloorReason, setBelowFloorReason] = useState('');
+
+  const [billingRecipient, setBillingRecipient] = useState<BillingRecipientFormValues>(
+    defaultBillingRecipientValues(),
+  );
 
   const [clientActionId] = useState(() => newFinanceClientActionId('quote'));
   const [isLoading, setIsLoading] = useState(true);
@@ -212,6 +225,27 @@ export function QuoteCreatePage() {
   ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
+  const serviceCustomerName =
+    customers.find((customer) => customer.id === customerId)?.name ?? 'Customer';
+  const billingCustomerName = resolveBillingCustomerName(
+    billingRecipient.billingCustomerId,
+    customers,
+    serviceCustomerName,
+  );
+
+  useFinanceDraftAuraContext(
+    customerId
+      ? {
+          pageTitle: 'New quote',
+          recordType: 'quote',
+          serviceCustomerId: customerId,
+          serviceCustomerName,
+          billingCustomerName,
+          recipientName: billingRecipient.recipientName,
+          jobId: jobId || null,
+        }
+      : null,
+  );
 
   function updateLine(key: string, patch: Partial<DraftLine>) {
     setLines((prev) => prev.map((line) => (line.key === key ? { ...line, ...patch } : line)));
@@ -297,6 +331,13 @@ export function QuoteCreatePage() {
         belowFloorReason: belowFloorOverride ? belowFloorReason.trim() : null,
         clientActionId,
       });
+      if (hasCustomBillingRecipient(billingRecipient, customerId)) {
+        await updateQuoteBillingRecipient(
+          accessToken,
+          quote.id,
+          toBillingRecipientPatch(billingRecipient, 'Initial billing recipient on quote create'),
+        );
+      }
       invalidateQuotes();
       draftShell.markSubmitted();
       notify({ variant: 'saved', message: 'Quote created', dedupeKey: 'quote-created' });
@@ -361,6 +402,19 @@ export function QuoteCreatePage() {
               ))}
             </select>
           </label>
+
+          <BillingRecipientPanel
+            recipientLabel="Quote Recipient"
+            serviceCustomerId={customerId}
+            serviceCustomerName={serviceCustomerName}
+            customers={customers}
+            values={billingRecipient}
+            editable={canWrite}
+            mode="local"
+            requireReason={false}
+            onChange={setBillingRecipient}
+          />
+
           <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
           <label className="titan-input-group">
             <span className="titan-input-label">Status</span>

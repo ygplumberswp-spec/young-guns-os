@@ -112,6 +112,10 @@ export const InvoiceCreatePage = lazyNamed(
   () => import('../pages/finance/InvoiceCreatePage'),
   'InvoiceCreatePage',
 );
+export const InvoiceEditPage = lazyNamed(
+  () => import('../pages/finance/InvoiceEditPage'),
+  'InvoiceEditPage',
+);
 export const InvoiceDetailPage = lazyNamed(
   () => import('../pages/finance/InvoiceDetailPage'),
   'InvoiceDetailPage',
