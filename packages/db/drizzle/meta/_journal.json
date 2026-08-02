@@ -806,6 +806,13 @@
       "when": 1754186400000,
       "tag": "0116_company_day_plan_follow_ups",
       "breakpoints": true
+    },
+    {
+      "idx": 115,
+      "version": "7",
+      "when": 1754190000000,
+      "tag": "0118_department_routine_tasks",
+      "breakpoints": true
     }
   ]
 }

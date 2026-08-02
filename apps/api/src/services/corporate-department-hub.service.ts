@@ -11,29 +11,37 @@ import {
   CORPORATE_DEPARTMENT_DISCLAIMER,
   CORPORATE_DEPARTMENTS,
   EXPECTED_CORPORATE_DEPARTMENT_COUNT,
+  canAccessDepartment,
   getCorporateDepartmentById,
   mapActionQueueItemToDepartments,
 } from '@titan/shared';
 import type { DashboardExecutiveService } from './dashboard-executive.service.js';
 import type { EnterpriseMissionControlService } from './enterprise-mission-control.service.js';
+import type { DepartmentRoutineTaskService } from './department-routine-task.service.js';
 
 type CorporateDepartmentHubServiceDeps = {
   dashboardExecutiveService: DashboardExecutiveService;
   enterpriseMissionControlService: EnterpriseMissionControlService;
+  departmentRoutineTaskService?: DepartmentRoutineTaskService;
   companyLabel?: string;
 };
 
 export class CorporateDepartmentHubService {
   constructor(private readonly deps: CorporateDepartmentHubServiceDeps) {}
 
-  async getHub(companyId: string): Promise<CorporateDepartmentHubResponse> {
+  async getHub(
+    companyId: string,
+    permissions: string[] = ['*'],
+  ): Promise<CorporateDepartmentHubResponse> {
     const [executiveSummary, moduleSnapshots] = await Promise.all([
       this.deps.dashboardExecutiveService.getExecutiveSummary(companyId),
       this.deps.enterpriseMissionControlService.getMissionControlModuleSnapshots(companyId),
     ]);
 
-    const departments = CORPORATE_DEPARTMENTS.map((definition) =>
-      this.buildHubEntry(definition.id, executiveSummary, moduleSnapshots),
+    const departments = await Promise.all(
+      CORPORATE_DEPARTMENTS.map(async (definition) =>
+        this.buildHubEntry(definition.id, executiveSummary, moduleSnapshots, companyId, permissions),
+      ),
     );
 
     const actionQueueTotal = executiveSummary.priorities.actionQueue.length;
@@ -51,6 +59,7 @@ export class CorporateDepartmentHubService {
   async getDepartmentDetail(
     companyId: string,
     departmentId: CorporateDepartmentId,
+    permissions: string[] = ['*'],
   ): Promise<CorporateDepartmentDetailResponse | null> {
     const definition = getCorporateDepartmentById(departmentId);
     if (!definition) return null;
@@ -60,7 +69,13 @@ export class CorporateDepartmentHubService {
       this.deps.enterpriseMissionControlService.getMissionControlModuleSnapshots(companyId),
     ]);
 
-    const hubEntry = this.buildHubEntry(departmentId, executiveSummary, moduleSnapshots);
+    const hubEntry = await this.buildHubEntry(
+      departmentId,
+      executiveSummary,
+      moduleSnapshots,
+      companyId,
+      permissions,
+    );
 
     return {
       ...hubEntry,
@@ -74,13 +89,21 @@ export class CorporateDepartmentHubService {
     };
   }
 
-  private buildHubEntry(
+  private async buildHubEntry(
     departmentId: CorporateDepartmentId,
     executiveSummary: ExecutiveDashboardSummary,
     moduleSnapshots: MissionControlModuleSnapshot[],
-  ): DepartmentHubEntry {
+    companyId: string,
+    permissions: string[],
+  ): Promise<DepartmentHubEntry> {
     const definition = getCorporateDepartmentById(departmentId)!;
-    const todayQueue = this.buildTodayQueue(departmentId, executiveSummary, moduleSnapshots);
+    const todayQueue = await this.buildTodayQueue(
+      departmentId,
+      executiveSummary,
+      moduleSnapshots,
+      companyId,
+      permissions,
+    );
     const moduleMatch = this.resolveModuleHealth(definition.missionControlModules, moduleSnapshots);
 
     return {
@@ -94,7 +117,7 @@ export class CorporateDepartmentHubService {
       todayQueueEmpty: todayQueue.length === 0,
       queueSourceNote:
         todayQueue.length > 0
-          ? 'Items from dashboard executive-summary and mission control — real records only.'
+          ? 'Items from live APIs and persisted department routine tasks — real records only.'
           : 'No actionable items in Today queue — check manage routes for operational context.',
       moduleHealthStatus: moduleMatch?.status ?? null,
       moduleHealthSummary: moduleMatch?.summary ?? null,
@@ -104,13 +127,35 @@ export class CorporateDepartmentHubService {
     };
   }
 
-  private buildTodayQueue(
+  private async buildTodayQueue(
     departmentId: CorporateDepartmentId,
     executiveSummary: ExecutiveDashboardSummary,
     moduleSnapshots: MissionControlModuleSnapshot[],
-  ): DepartmentTodayQueueItem[] {
+    companyId: string,
+    permissions: string[],
+  ): Promise<DepartmentTodayQueueItem[]> {
     const items: DepartmentTodayQueueItem[] = [];
     const seen = new Set<string>();
+
+    if (
+      this.deps.departmentRoutineTaskService &&
+      canAccessDepartment(permissions, departmentId)
+    ) {
+      try {
+        const routineTasks = await this.deps.departmentRoutineTaskService.listTodayTasksForDepartment(
+          { companyId, userId: '', permissions },
+          departmentId,
+        );
+        for (const task of routineTasks) {
+          const queueItem = this.deps.departmentRoutineTaskService.toTodayQueueItem(task);
+          if (seen.has(queueItem.id)) continue;
+          seen.add(queueItem.id);
+          items.push(queueItem);
+        }
+      } catch {
+        /* RBAC or migration not ready — skip routine tasks */
+      }
+    }
 
     for (const action of executiveSummary.priorities.actionQueue) {
       const targets = mapActionQueueItemToDepartments(action);

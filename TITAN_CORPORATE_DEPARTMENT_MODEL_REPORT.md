@@ -180,6 +180,18 @@ API permission gate: `executive:read`, `analytics:read`, `ops:read`, or `*`.
 Every Today queue item must trace to:
 1. `priorities.actionQueue[]` on executive-summary, or
 2. A labelled `todayAtAGlance` count with count > 0, or
-3. A mission control module with status `attention_required` or `critical`.
+3. A mission control module with status `attention_required` or `critical`, or
+4. A persisted **department routine task instance** generated from documented routines (`department_routine_tasks` table) with audit trail.
 
 If none apply, the department shows an **honest empty queue**.
+
+---
+
+## Phase 13 extension — recurring task persistence
+
+| Element | Implementation |
+|---|---|
+| Schema | `department_routine_tasks`, `department_routine_task_audit_logs` (migration 0118) |
+| Definitions | 59 routines from `department-routine-tasks.ts` |
+| Generation | Idempotent per company/routine/period; triggered on fetch or `POST /tasks/generate` |
+| RBAC | Department `requiredPermissions`; finance tasks hidden from technician roles |

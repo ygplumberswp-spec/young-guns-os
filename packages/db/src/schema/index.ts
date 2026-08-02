@@ -7,6 +7,7 @@ export * from './aura-messages';
 export * from './aura-memory';
 export * from './company-day-plans';
 export * from './company-day-plan-follow-ups';
+export * from './department-routine-tasks';
 export * from './company-business-rules';
 export * from './analytics';
 export * from './mobile';

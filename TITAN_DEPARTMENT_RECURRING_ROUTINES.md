@@ -105,4 +105,18 @@ Daily routines pull from the same APIs as Today queues; no separate notification
 
 ## Implementation note
 
-Phase 13 surfaces routines in each department workspace UI (`/departments/:id`) as navigable links. Automated scheduling of reminders is **out of scope** — prevents fake task injection.
+Phase 13 extension implements **persisted recurring department task instances** generated from the routine definitions in `packages/shared/src/department-routine-tasks.ts` (derived from `corporate-departments.ts` weekly/monthly routines and the daily routines table above).
+
+Each instance includes:
+- **Accountable owner** from department definition
+- **Due date** computed from cadence (daily / weekly end-of-week / month-end)
+- **Status** lifecycle: `pending`, `in_progress`, `completed`, `overdue`, `blocked`, `awaiting_approval`, `skipped`
+- **Approval gate** when routine href matches a department approval definition
+- **Handoff target** from department handoff matrix (first target)
+- **Audit history** on create and every mutation
+
+Tasks surface in department workspace Today queues alongside live executive-summary and mission control signals. Generation is idempotent per `(company_id, routine_key, period_start)`.
+
+API: `GET /api/v1/corporate-departments/:id/tasks`, `POST /api/v1/corporate-departments/tasks/generate`, mutation routes under `/tasks/:id/*`.
+
+Migration: `0118_department_routine_tasks.sql` (staging only, additive).

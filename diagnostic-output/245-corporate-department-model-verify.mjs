@@ -107,6 +107,31 @@ async function fetchDepartment(token, departmentId) {
   return { departmentId, status: res.status, detail: json?.data ?? null };
 }
 
+async function fetchDepartmentTasks(token, departmentId) {
+  const res = await fetch(`${API}/api/v1/corporate-departments/${departmentId}/tasks`, {
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  const json = res.ok ? await res.json() : null;
+  return { departmentId, status: res.status, payload: json?.data ?? null };
+}
+
+async function generateTasks(token) {
+  const res = await fetch(`${API}/api/v1/corporate-departments/tasks/generate`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  const json = res.ok ? await res.json() : null;
+  return { status: res.status, payload: json?.data ?? null };
+}
+
+async function fetchTaskAudit(token, taskId) {
+  const res = await fetch(`${API}/api/v1/corporate-departments/tasks/${taskId}/audit`, {
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  const json = res.ok ? await res.json() : null;
+  return { status: res.status, audit: json?.data ?? null };
+}
+
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -192,6 +217,64 @@ async function main() {
     if (detail.status !== 200) {
       report.blockers.push(`GET /corporate-departments/${departmentId} returned ${detail.status}`);
     }
+  }
+
+  // Phase 13 extension — recurring department routine tasks (245b)
+  report.routineTasks = {};
+  const generateResult = await generateTasks(session.accessToken);
+  report.routineTasks.generate = {
+    status: generateResult.status,
+    created: generateResult.payload?.created ?? null,
+    total: generateResult.payload?.total ?? null,
+  };
+  if (generateResult.status !== 200) {
+    report.blockers.push(`POST /corporate-departments/tasks/generate returned ${generateResult.status}`);
+  }
+  if ((generateResult.payload?.total ?? 0) < 50) {
+    report.blockers.push(
+      `Expected >= 50 routine task instances on staging, got ${generateResult.payload?.total ?? 0}`,
+    );
+  }
+
+  const financeTasks = await fetchDepartmentTasks(session.accessToken, 'finance_accounting');
+  report.routineTasks.finance = {
+    status: financeTasks.status,
+    taskCount: financeTasks.payload?.tasks?.length ?? 0,
+  };
+  if (financeTasks.status !== 200) {
+    report.blockers.push('GET /corporate-departments/finance_accounting/tasks failed');
+  }
+  const sampleTask = financeTasks.payload?.tasks?.[0];
+  if (!sampleTask?.id || !sampleTask?.dueDate || !sampleTask?.accountableOwner || !sampleTask?.status) {
+    report.blockers.push('Finance routine task missing owner, due date, or status');
+  } else {
+    report.routineTasks.sampleTask = {
+      idPrefix: sampleTask.id.slice(0, 8),
+      dueDate: sampleTask.dueDate,
+      accountableOwner: sampleTask.accountableOwner,
+      status: sampleTask.status,
+      cadence: sampleTask.cadence,
+    };
+    const auditResult = await fetchTaskAudit(session.accessToken, sampleTask.id);
+    report.routineTasks.audit = {
+      status: auditResult.status,
+      eventCount: Array.isArray(auditResult.audit) ? auditResult.audit.length : 0,
+      hasCreatedEvent: Array.isArray(auditResult.audit)
+        ? auditResult.audit.some((row) => row.eventType === 'created')
+        : false,
+    };
+    if (auditResult.status !== 200 || !report.routineTasks.audit.hasCreatedEvent) {
+      report.blockers.push('Routine task audit trail missing created event');
+    }
+  }
+
+  const financeDetail = await fetchDepartment(session.accessToken, 'finance_accounting');
+  const routineInTodayQueue = financeDetail.detail?.todayQueue?.some(
+    (item) => item.source === 'department_routine_task',
+  );
+  report.routineTasks.todayQueueIntegration = { routineInTodayQueue: Boolean(routineInTodayQueue) };
+  if (!routineInTodayQueue) {
+    report.blockers.push('Finance Today queue missing department_routine_task items');
   }
 
   const browser = await chromium.launch({ headless: true, channel: 'chrome' });

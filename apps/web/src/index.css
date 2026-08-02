@@ -8094,6 +8094,34 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   color: var(--titan-text-tertiary, var(--titan-text-secondary));
 }
 
+.department-today-queue__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.department-routine-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.department-routine-task-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--titan-border-subtle);
+}
+
+.department-routine-task-list__item p {
+  margin: 0.25rem 0;
+  font-size: 0.875rem;
+  color: var(--titan-text-secondary);
+}
+
 .department-routine-list,
 .department-approval-list,
 .department-kpi-list,

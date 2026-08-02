@@ -88,7 +88,18 @@ export type DepartmentTodayQueueItem = {
   count: number | null;
   href: string;
   priority: ExecutiveOwnerActionItem['priority'];
-  source: 'executive_action_queue' | 'executive_glance' | 'mission_control';
+  source:
+    | 'executive_action_queue'
+    | 'executive_glance'
+    | 'mission_control'
+    | 'department_routine_task';
+  /** Present when source is department_routine_task. */
+  taskId?: string;
+  taskStatus?: string;
+  dueDate?: string;
+  accountableOwner?: DepartmentAccountableOwner;
+  cadence?: 'daily' | 'weekly' | 'monthly';
+  requiresApproval?: boolean;
 };
 
 export type DepartmentHubEntry = {

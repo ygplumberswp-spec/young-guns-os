@@ -44,6 +44,7 @@ import { CrmService } from './services/crm.service.js';
 import { CustomerValueClassificationService } from './services/customer-value-classification.service.js';
 import { DashboardExecutiveService } from './services/dashboard-executive.service.js';
 import { CorporateDepartmentHubService } from './services/corporate-department-hub.service.js';
+import { DepartmentRoutineTaskService } from './services/department-routine-task.service.js';
 import { SupplierPriceIntelligenceService } from './services/supplier-price-intelligence.service.js';
 import { MarketingEligibilityService } from './services/marketing-eligibility.service.js';
 import { JobsService } from './services/jobs.service.js';
@@ -752,9 +753,11 @@ const enterpriseMissionControlService = new EnterpriseMissionControlService({
   aiOperationsService,
   tenantCapabilityBuilderService,
 });
+const departmentRoutineTaskService = new DepartmentRoutineTaskService(db);
 const corporateDepartmentHubService = new CorporateDepartmentHubService({
   dashboardExecutiveService,
   enterpriseMissionControlService,
+  departmentRoutineTaskService,
   companyLabel: 'Young Guns Plumbing',
 });
 const enterpriseProductionReadinessService = new EnterpriseProductionReadinessService({
@@ -1446,6 +1449,7 @@ app.use(
   '/api/v1/corporate-departments',
   createCorporateDepartmentsRouter({
     corporateDepartmentHubService,
+    departmentRoutineTaskService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
