@@ -1,19 +1,30 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState, Panel } from '@titan/ui';
-import { formatMapsEtaCapabilityLabel, buildAddressMapsDeepLink } from '@titan/shared';
+import {
+  formatMapsEtaCapabilityLabel,
+  buildGoogleMapsNavigateUrl,
+  type MapsEtaCapabilityState,
+} from '@titan/shared';
 import { fetchTodaysJobs } from '../../lib/jobs-api';
 import { fetchVehicles } from '../../lib/fleet-api';
+import { fetchGoogleMapsConnection } from '../../lib/google-maps-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { LiveDispatchPositionsPanel } from '../dispatch/LiveDispatchPositionsPanel';
+import { GoogleMapView } from '../maps/GoogleMapView';
+import { useCartrackLivePositions } from '../dispatch/useCartrackLivePositions';
+import { useMemo } from 'react';
 
 /**
  * UX-024 / M3 FLT-001 — operational dispatch surface from stored job/vehicle data,
- * plus honest Cartrack positions when connected (never invent GPS/routes/ETA).
+ * Cartrack GPS when connected, Google Maps tiles/navigate when configured.
  */
 export function FleetDispatchBoard() {
   const { accessToken } = useAuth();
-  const mapsLabel = formatMapsEtaCapabilityLabel('not_implemented');
+  const { tracking } = useCartrackLivePositions({
+    accessToken,
+    enabled: Boolean(accessToken),
+  });
 
   const jobsQuery = useStaffCachedQuery({
     queryKey: 'fleet/dispatch-today-jobs',
@@ -25,11 +36,38 @@ export function FleetDispatchBoard() {
     enabled: Boolean(accessToken),
     fetcher: async () => fetchVehicles(accessToken!),
   });
+  const mapsQuery = useStaffCachedQuery({
+    queryKey: 'fleet/google-maps-connection',
+    enabled: Boolean(accessToken),
+    fetcher: async () => fetchGoogleMapsConnection(accessToken!),
+  });
 
   const jobs = jobsQuery.data ?? [];
   const vehicles = vehiclesQuery.data ?? [];
+  const mapsConnected = Boolean(mapsQuery.data?.connected);
+  const mapsState: MapsEtaCapabilityState = mapsConnected
+    ? 'connected'
+    : mapsQuery.data
+      ? 'not_configured'
+      : 'not_configured';
+  const mapsLabel = formatMapsEtaCapabilityLabel(mapsState);
   const loading =
     (jobsQuery.isLoading && !jobsQuery.data) || (vehiclesQuery.isLoading && !vehiclesQuery.data);
+
+  const mapMarkers = useMemo(
+    () =>
+      (tracking?.latestPositions ?? [])
+        .filter((p) => Number.isFinite(p.latitude) && Number.isFinite(p.longitude))
+        .slice(0, 16)
+        .map((position) => ({
+          id: `${position.externalVehicleId}-${position.recordedAt}`,
+          latitude: position.latitude,
+          longitude: position.longitude,
+          label: position.vehicleName ?? position.licensePlate ?? 'Vehicle',
+          tone: 'vehicle' as const,
+        })),
+    [tracking?.latestPositions],
+  );
 
   return (
     <div className="customer-360__stack">
@@ -37,16 +75,27 @@ export function FleetDispatchBoard() {
 
       <Panel
         title="Today's dispatch board"
-        description="Job sites and assigned vehicles from TITAN records. Map tiles / turn-by-turn ETA remain unavailable."
+        description="Job sites from TITAN records. Live vehicle GPS from Cartrack. Routing/navigate via Google Maps when connected."
       >
         <p className="status-pill status-pill--disabled" style={{ display: 'inline-block' }}>
           {mapsLabel}
         </p>
         <p className="page-muted" style={{ marginTop: '0.5rem' }}>
           Planned times and stored addresses are shown below. Live vehicle GPS uses Cartrack only
-          when connected — see the positions panel above. Open an address deep-link only when a site
-          address exists.
+          when connected. Google Maps provides map tiles and navigate links when configured — TITAN
+          never invents GPS, routes, or ETA.
         </p>
+
+        {mapMarkers.length > 0 ? (
+          <div style={{ marginTop: '0.75rem' }}>
+            <GoogleMapView
+              markers={mapMarkers}
+              height={260}
+              emptyTitle="Live map unavailable"
+              emptyDescription="Cartrack positions exist, but Google Maps browser key is not configured."
+            />
+          </div>
+        ) : null}
 
         {loading ? <LoadingState label="Loading today's dispatch…" /> : null}
 
@@ -114,7 +163,9 @@ export function FleetDispatchBoard() {
             ) : (
               <ul className="portal-list">
                 {jobs.map((job) => {
-                  const deepLink = buildAddressMapsDeepLink(job.addressDisplay);
+                  const navigateUrl = buildGoogleMapsNavigateUrl({
+                    address: job.addressDisplay,
+                  });
                   return (
                     <li key={job.id}>
                       <Link href={`/jobs/${job.id}`}>
@@ -138,11 +189,14 @@ export function FleetDispatchBoard() {
                           ? `Site: ${job.addressDisplay}`
                           : 'Site address missing on job snapshot'}
                       </span>
-                      {deepLink ? (
-                        <a href={deepLink} target="_blank" rel="noreferrer">
-                          Open address in Maps (deep-link — TITAN does not call Google)
+                      {navigateUrl ? (
+                        <a href={navigateUrl} target="_blank" rel="noreferrer">
+                          {mapsConnected
+                            ? 'Navigate in Google Maps'
+                            : 'Open address in Maps (deep-link)'}
                         </a>
                       ) : null}
+                      <Link href={`/jobs/${job.id}#property-map`}>Property map & ETA</Link>
                     </li>
                   );
                 })}

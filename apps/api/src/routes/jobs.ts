@@ -29,6 +29,14 @@ const addressSchema = z.object({
   unit: z.string().trim().max(50).optional().nullable(),
 });
 
+const geoFieldsSchema = z.object({
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  placeId: z.string().trim().max(300).optional().nullable(),
+  formattedAddress: z.string().trim().max(500).optional().nullable(),
+  geocodeStatus: z.enum(['unverified', 'verified', 'failed']).optional().nullable(),
+});
+
 const siteContactSchema = z.object({
   name: z.string().trim().min(1).max(200),
   mobile: z.string().trim().min(1).max(30),
@@ -40,13 +48,14 @@ const createJobSchema = z
     customerId: z.string().uuid(),
     propertyId: z.string().uuid().optional().nullable(),
     newProperty: addressSchema
+      .merge(geoFieldsSchema)
       .extend({
         propertyName: z.string().trim().max(200).optional().nullable(),
         isPrimary: z.boolean().optional(),
       })
       .optional()
       .nullable(),
-    address: addressSchema.optional().nullable(),
+    address: addressSchema.merge(geoFieldsSchema).optional().nullable(),
     siteContact: siteContactSchema,
     siteContactDiffersFromCustomer: z.boolean().optional(),
     jobType: z.string().trim().min(1).max(120),

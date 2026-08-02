@@ -240,12 +240,25 @@ export class JobsService {
 
     let propertyId: string | null = input.propertyId ?? null;
     let address = input.address ? requireJobAddressSafe(input.address) : null;
+    let propertyGeo: {
+      latitude: number | null;
+      longitude: number | null;
+      placeId: string | null;
+      formattedAddress: string | null;
+    } | null = null;
 
     if (input.newProperty) {
       const newAddr = requireJobAddressSafe(input.newProperty);
       const propertyName =
         input.newProperty.propertyName?.trim() ||
         `${newAddr.suburb} — ${newAddr.street}`.slice(0, 200);
+      const geoLat = input.newProperty.latitude ?? null;
+      const geoLng = input.newProperty.longitude ?? null;
+      const hasVerifiedGeo =
+        typeof geoLat === 'number' &&
+        typeof geoLng === 'number' &&
+        Number.isFinite(geoLat) &&
+        Number.isFinite(geoLng);
 
       const [createdProperty] = await this.db
         .insert(cxCustomerProperties)
@@ -261,6 +274,14 @@ export class JobsService {
           postalCode: newAddr.postalCode,
           unitNumber: newAddr.unit,
           isPrimary: input.newProperty.isPrimary ?? false,
+          latitude: hasVerifiedGeo ? geoLat : null,
+          longitude: hasVerifiedGeo ? geoLng : null,
+          placeId: input.newProperty.placeId?.trim() || null,
+          formattedAddress: input.newProperty.formattedAddress?.trim() || null,
+          geocodeStatus: hasVerifiedGeo
+            ? (input.newProperty.geocodeStatus ?? 'verified')
+            : (input.newProperty.geocodeStatus ?? 'unverified'),
+          geocodedAt: hasVerifiedGeo ? new Date() : null,
         })
         .returning();
 
@@ -270,6 +291,12 @@ export class JobsService {
 
       propertyId = createdProperty.id;
       address = newAddr;
+      propertyGeo = {
+        latitude: createdProperty.latitude ?? null,
+        longitude: createdProperty.longitude ?? null,
+        placeId: createdProperty.placeId ?? null,
+        formattedAddress: createdProperty.formattedAddress ?? null,
+      };
     } else if (propertyId) {
       const property = await this.db.query.cxCustomerProperties.findFirst({
         where: and(
@@ -293,6 +320,13 @@ export class JobsService {
           unit: property.unitNumber ?? property.addressLine2,
         });
       }
+
+      propertyGeo = {
+        latitude: property.latitude ?? null,
+        longitude: property.longitude ?? null,
+        placeId: property.placeId ?? null,
+        formattedAddress: property.formattedAddress ?? null,
+      };
 
       if (input.updateVerifiedPropertyDetails) {
         await this.db
@@ -413,6 +447,10 @@ export class JobsService {
           snapshotProvince: address.province,
           snapshotPostalCode: address.postalCode,
           snapshotUnit: address.unit,
+          snapshotLatitude: propertyGeo?.latitude ?? null,
+          snapshotLongitude: propertyGeo?.longitude ?? null,
+          snapshotPlaceId: propertyGeo?.placeId ?? null,
+          snapshotFormattedAddress: propertyGeo?.formattedAddress ?? null,
           snapshotSiteContactName: siteContactName,
           snapshotSiteContactMobile: siteMobile,
           snapshotSiteContactEmail: siteEmailRaw,
@@ -964,6 +1002,10 @@ function toJobDetail(job: JobWithRelations, docs: JobDocumentLink[]): JobDetail 
       postalCode: job.snapshotPostalCode ?? null,
       unit: job.snapshotUnit ?? null,
       display: summary.addressDisplay,
+      latitude: job.snapshotLatitude ?? null,
+      longitude: job.snapshotLongitude ?? null,
+      placeId: job.snapshotPlaceId ?? null,
+      formattedAddress: job.snapshotFormattedAddress ?? null,
     },
     siteContact: {
       name: job.snapshotSiteContactName ?? null,

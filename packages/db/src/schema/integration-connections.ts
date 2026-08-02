@@ -38,6 +38,17 @@ export type IntegrationConnectionConfig = {
   businessId?: string;
   environment?: 'test' | 'live';
   lastCredentialChangeAt?: string;
+  /** Google Maps Platform — tenant service flags and defaults. */
+  services?: {
+    places?: boolean;
+    geocoding?: boolean;
+    directions?: boolean;
+    distanceMatrix?: boolean;
+    mapsJavascript?: boolean;
+  };
+  defaultRegion?: string;
+  defaultLanguage?: string;
+  lastValidatedAt?: string | null;
 };
 
 export const integrationConnections = pgTable('integration_connections', {

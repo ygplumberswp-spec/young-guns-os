@@ -66,23 +66,50 @@ export function OutstandingInvoicesPanel({
               {data.invoiceCount} open invoice{data.invoiceCount === 1 ? '' : 's'}
             </p>
           </div>
-          {data.oldestOverdue ? (
-            <div className="exec-outstanding__overdue">
-              <span className="exec-outstanding__overdue-label">Oldest overdue</span>
-              <Link href={`/finance/invoices/${data.oldestOverdue.id}`} className="exec-outstanding__overdue-link">
-                <strong>{data.oldestOverdue.invoiceNumber}</strong>
-                <span>
-                  {data.oldestOverdue.customerName}
-                  {' · '}
-                  {formatDueDate(data.oldestOverdue.dueDate)}
-                  {' · '}
-                  {formatMoney(data.oldestOverdue.outstandingCents, data.currency)}
-                </span>
-              </Link>
+
+          <div className="exec-outstanding__stats">
+            <div className="exec-outstanding__stat">
+              <span>Oldest overdue</span>
+              {data.oldestOverdue ? (
+                <Link
+                  href={`/finance/invoices/${data.oldestOverdue.id}`}
+                  className="exec-outstanding__overdue-link"
+                >
+                  <strong>{data.oldestOverdue.invoiceNumber}</strong>
+                  <span>
+                    {data.oldestOverdue.customerName}
+                    {' · '}
+                    {formatDueDate(data.oldestOverdue.dueDate)}
+                    {' · '}
+                    {formatMoney(data.oldestOverdue.outstandingCents, data.currency)}
+                  </span>
+                </Link>
+              ) : (
+                <p className="page-muted exec-outstanding__none-overdue">None overdue</p>
+              )}
             </div>
-          ) : (
-            <p className="page-muted exec-outstanding__none-overdue">No overdue invoices in the open set.</p>
-          )}
+            <div className="exec-outstanding__stat">
+              <span>Largest outstanding</span>
+              {data.largestOutstanding ? (
+                <Link
+                  href={`/finance/invoices/${data.largestOutstanding.id}`}
+                  className="exec-outstanding__overdue-link"
+                >
+                  <strong>{data.largestOutstanding.invoiceNumber}</strong>
+                  <span>
+                    {data.largestOutstanding.customerName}
+                    {' · '}
+                    {formatMoney(data.largestOutstanding.outstandingCents, data.currency)}
+                  </span>
+                </Link>
+              ) : (
+                <p className="page-muted exec-outstanding__none-overdue">
+                  Largest balance unavailable
+                </p>
+              )}
+            </div>
+          </div>
+
           <Link href="/finance/invoices">
             <Button size="sm" variant="secondary">
               View invoices

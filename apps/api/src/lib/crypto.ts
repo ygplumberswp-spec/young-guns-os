@@ -246,3 +246,31 @@ export function decryptN8nCredentials(
   }
   return parsed;
 }
+
+export type GoogleMapsStoredCredentials = {
+  /** Server key for Places / Geocoding / Directions / Distance Matrix. Never returned to browser. */
+  apiKey: string;
+  /** Optional HTTP-referrer-restricted key for Maps JavaScript API. */
+  browserApiKey?: string;
+};
+
+export function encryptGoogleMapsCredentials(
+  credentials: GoogleMapsStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGoogleMapsCredentials(
+  payload: string,
+  encryptionKey: string,
+): GoogleMapsStoredCredentials {
+  const parsed = decryptJsonCredentials<GoogleMapsStoredCredentials>(payload, encryptionKey);
+  if (!parsed.apiKey?.trim()) {
+    throw new Error('Invalid stored Google Maps credentials');
+  }
+  return {
+    apiKey: parsed.apiKey.trim(),
+    browserApiKey: parsed.browserApiKey?.trim() || undefined,
+  };
+}

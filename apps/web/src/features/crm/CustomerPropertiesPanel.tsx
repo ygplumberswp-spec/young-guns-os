@@ -1,10 +1,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Input, LoadingState, Panel } from '@titan/ui';
-import type { CustomerPropertySummary } from '@titan/shared';
+import type { CustomerPropertySummary, GoogleGeocodedAddress } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { createCustomerProperty, fetchCustomerProperties } from '../../lib/crm-api';
 import { canManageJobs } from '../jobs/JobList';
+import { AddressAutocomplete } from '../maps/AddressAutocomplete';
 
 type CustomerPropertiesPanelProps = {
   accessToken: string;
@@ -31,6 +32,7 @@ export function CustomerPropertiesPanel({
   const [province, setProvince] = useState('Western Cape');
   const [postalCode, setPostalCode] = useState('');
   const [isPrimary, setIsPrimary] = useState(false);
+  const [geo, setGeo] = useState<GoogleGeocodedAddress | null>(null);
 
   async function loadProperties() {
     setIsLoading(true);
@@ -50,6 +52,15 @@ export function CustomerPropertiesPanel({
     void loadProperties();
   }, [accessToken, customerId]);
 
+  function applyGeocoded(address: GoogleGeocodedAddress) {
+    setGeo(address);
+    if (address.street) setStreet(address.street);
+    if (address.suburb) setSuburb(address.suburb);
+    if (address.city) setCity(address.city);
+    if (address.province) setProvince(address.province);
+    if (address.postalCode) setPostalCode(address.postalCode);
+  }
+
   async function handleCreateProperty(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canWrite || !propertyName.trim()) return;
@@ -65,6 +76,11 @@ export function CustomerPropertiesPanel({
         province: province.trim() || null,
         postalCode: postalCode.trim() || null,
         isPrimary,
+        latitude: geo?.latitude ?? null,
+        longitude: geo?.longitude ?? null,
+        placeId: geo?.placeId ?? null,
+        formattedAddress: geo?.formattedAddress ?? null,
+        geocodeStatus: geo ? 'verified' : null,
       });
       setPropertyName('');
       setStreet('');
@@ -73,6 +89,7 @@ export function CustomerPropertiesPanel({
       setProvince('Western Cape');
       setPostalCode('');
       setIsPrimary(false);
+      setGeo(null);
       setShowForm(false);
       await loadProperties();
     } catch (err) {
@@ -112,10 +129,21 @@ export function CustomerPropertiesPanel({
                 {property.isPrimary ? (
                   <span className="crm-property-item__badge">Primary</span>
                 ) : null}
+                {property.geocodeStatus === 'verified' ? (
+                  <span className="crm-property-item__badge">Verified map</span>
+                ) : null}
               </div>
               <p className="crm-property-item__address">
-                {property.addressDisplay ?? 'Address not complete'}
+                {property.formattedAddress ?? property.addressDisplay ?? 'Address not complete'}
               </p>
+              {property.latitude != null && property.longitude != null ? (
+                <p className="page-muted">
+                  {property.latitude.toFixed(5)}, {property.longitude.toFixed(5)}
+                  {property.placeId ? ` · Place ID stored` : ''}
+                </p>
+              ) : (
+                <p className="page-muted">Coordinates not verified</p>
+              )}
               {canCreateJob ? (
                 <Link
                   href={`/jobs/new?customerId=${encodeURIComponent(customerId)}&propertyId=${encodeURIComponent(property.id)}`}
@@ -146,10 +174,22 @@ export function CustomerPropertiesPanel({
             placeholder="e.g. Main residence, Block A unit 4"
             required
           />
+          <AddressAutocomplete
+            label="Search address (Google Places)"
+            value={street}
+            onChange={(value) => {
+              setStreet(value);
+              setGeo(null);
+            }}
+            onResolved={applyGeocoded}
+          />
           <Input
             label="Street"
             value={street}
-            onChange={(event) => setStreet(event.target.value)}
+            onChange={(event) => {
+              setStreet(event.target.value);
+              setGeo(null);
+            }}
           />
           <Input label="Suburb" value={suburb} onChange={(event) => setSuburb(event.target.value)} />
           <Input label="City" value={city} onChange={(event) => setCity(event.target.value)} />
@@ -163,6 +203,17 @@ export function CustomerPropertiesPanel({
             value={postalCode}
             onChange={(event) => setPostalCode(event.target.value)}
           />
+          {geo ? (
+            <p className="page-muted">
+              Verified: {geo.latitude.toFixed(5)}, {geo.longitude.toFixed(5)}
+              {geo.placeId ? ` · ${geo.placeId}` : ''}
+            </p>
+          ) : (
+            <p className="page-muted">
+              Verify with Google Maps to store latitude, longitude, and Place ID. TITAN will not invent
+              coordinates.
+            </p>
+          )}
           <label className="titan-checkbox">
             <input
               type="checkbox"

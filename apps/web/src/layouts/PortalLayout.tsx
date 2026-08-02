@@ -37,7 +37,10 @@ export function PortalLayout({ children }: PortalLayoutProps) {
           <span className="brand-sub">
             Powered by <span className="brand-sub__accent">{AI_NAME}</span>
           </span>
-          <span className="brand-credit">Built by Young Guns Plumbing</span>
+          <span className="brand-credit">
+            <span className="brand-credit__by">Built by</span>{' '}
+            <span className="brand-credit__org">Young Guns Plumbing</span>
+          </span>
           {user ? <span className="portal-brand-sub">{user.companyName}</span> : null}
         </div>
         <div className="portal-header__user">

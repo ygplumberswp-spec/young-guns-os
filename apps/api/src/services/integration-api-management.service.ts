@@ -75,7 +75,7 @@ const PROVIDER_AUTH_TYPES: Record<string, IntegrationAuthType> = {
   custom: 'api_key',
 };
 
-const LIVE_PROVIDERS = new Set(['cartrack', 'xero', 'email', 'yoco', 'whatsapp']);
+const LIVE_PROVIDERS = new Set(['cartrack', 'xero', 'email', 'yoco', 'whatsapp', 'google_maps']);
 
 export class IntegrationApiManagementService {
   constructor(private readonly deps: IntegrationApiManagementDeps) {}

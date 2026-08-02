@@ -143,10 +143,11 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
   {
     provider: 'google_maps',
     name: 'Google Maps',
-    description: 'Maps and geocoding for fleet routing and location services.',
+    description:
+      'Google Maps Platform — Places, Geocoding, Directions, Distance Matrix, and Maps JavaScript.',
     category: 'fleet',
-    availability: 'planned',
-    settingsPath: null,
+    availability: 'available',
+    settingsPath: '/integrations/google-maps',
     supportsSync: false,
     supportsWebhooks: false,
   },

@@ -1,5 +1,6 @@
 export type Job360TabId =
   | 'overview'
+  | 'property-map'
   | 'schedule'
   | 'job-card'
   | 'checklist'
@@ -18,6 +19,7 @@ export type Job360TabId =
 
 export const JOB_360_TABS: Array<{ id: Job360TabId; label: string }> = [
   { id: 'overview', label: 'Overview' },
+  { id: 'property-map', label: 'Property Map' },
   { id: 'schedule', label: 'Schedule' },
   { id: 'job-card', label: 'Job Card' },
   { id: 'checklist', label: 'Checklist' },

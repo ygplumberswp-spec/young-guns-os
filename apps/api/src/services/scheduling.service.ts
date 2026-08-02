@@ -50,8 +50,11 @@ export type AuraSchedulingContext = {
 export class SchedulingService {
   private readonly conflictService: SchedulingConflictService;
 
-  constructor(private readonly db: DatabaseClient) {
-    this.conflictService = new SchedulingConflictService(db);
+  constructor(
+    private readonly db: DatabaseClient,
+    googleMapsService?: import('./google-maps.service.js').GoogleMapsService,
+  ) {
+    this.conflictService = new SchedulingConflictService(db, googleMapsService);
   }
 
   async listAssignees(companyId: string): Promise<JobAssignee[]> {

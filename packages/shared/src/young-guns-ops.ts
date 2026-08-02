@@ -91,15 +91,18 @@ export const DEFAULT_YG_COC_SETTINGS: YoungGunsCocSettings = {
   documentLabel: 'Certificate of Compliance (COC)',
 };
 
-/** Honest Maps capability — UX-I never calls Google Directions / live Maps SDK. */
+/** Honest Maps capability — live Google Maps when connected; never invent routes. */
 export type MapsEtaCapabilityState =
   | 'not_implemented'
   | 'not_configured'
   | 'schedule_only'
-  | 'provider_unavailable';
+  | 'provider_unavailable'
+  | 'connected';
 
 export function formatMapsEtaCapabilityLabel(state: MapsEtaCapabilityState): string {
   switch (state) {
+    case 'connected':
+      return 'GOOGLE MAPS CONNECTED';
     case 'schedule_only':
       return 'SCHEDULE ONLY — live Maps/routing not connected';
     case 'not_configured':

@@ -67,8 +67,11 @@ export function isOutsideBusinessHours(
 export class SchedulingConflictService {
   private readonly travelTimeService: TravelTimeService;
 
-  constructor(private readonly db: DatabaseClient) {
-    this.travelTimeService = new TravelTimeService(db);
+  constructor(
+    private readonly db: DatabaseClient,
+    googleMapsService?: import('./google-maps.service.js').GoogleMapsService,
+  ) {
+    this.travelTimeService = new TravelTimeService(db, googleMapsService);
   }
 
   async loadSettings(companyId: string): Promise<ResolvedSchedulingSettings> {
@@ -89,11 +92,19 @@ export class SchedulingConflictService {
   async buildSettingsSummary(companyId: string): Promise<SchedulingSettingsSummary> {
     const settings = await this.loadSettings(companyId);
     const cartrackConnected = await this.travelTimeService.isCartrackConnected(companyId);
+    const estimate = await this.travelTimeService.estimateTravelMinutes({
+      companyId,
+      defaultMinutes: settings.defaultTravelMinutes,
+    });
 
     return {
       ...settings,
       cartrackConnected,
-      travelTimeSource: cartrackConnected ? 'cartrack' : 'default',
+      travelTimeSource: estimate.googleMapsConnected
+        ? 'google_maps'
+        : cartrackConnected
+          ? 'cartrack'
+          : 'default',
     };
   }
 
@@ -325,16 +336,27 @@ export class SchedulingConflictService {
 
     if (!prior?.scheduledAt) return null;
 
-    const priorEnd = resolveEffectiveEnd(
-      prior.scheduledAt,
-      prior.scheduledEndAt,
-      settings.defaultTravelMinutes,
-      settings.schedulingBufferMinutes,
-    );
+    const travel = await this.travelTimeService.estimateTravelMinutes({
+      companyId,
+      fromJobId: prior.id,
+      toJobId: excludeJobId,
+      defaultMinutes: settings.defaultTravelMinutes,
+    });
 
+    const priorEnd =
+      prior.scheduledEndAt ??
+      new Date(prior.scheduledAt.getTime() + 60 * 60_000);
     const gapMinutes = (start.getTime() - priorEnd.getTime()) / 60_000;
-    if (gapMinutes < settings.defaultTravelMinutes) {
-      return `Only ${Math.round(gapMinutes)} minutes after previous job — default travel allowance is ${settings.defaultTravelMinutes} minutes.`;
+    const requiredMinutes = travel.minutes + settings.schedulingBufferMinutes;
+
+    if (gapMinutes < requiredMinutes) {
+      const distanceNote = travel.distanceText ? ` · ${travel.distanceText}` : '';
+      const sourceLabel =
+        travel.source === 'google_maps'
+          ? `Google Maps travel ${travel.minutes} min${distanceNote}`
+          : `default travel allowance ${travel.minutes} min`;
+      const warningNote = travel.warning ? ` ${travel.warning}` : '';
+      return `Only ${Math.round(gapMinutes)} minutes after previous job — ${sourceLabel} + ${settings.schedulingBufferMinutes} min buffer required.${warningNote}`;
     }
 
     return null;

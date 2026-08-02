@@ -406,8 +406,12 @@ export function SchedulingCalendar({
       {calendar?.settings ? (
         <p className="page-muted cal-shell__travel-note">
           Working hours {calendar.settings.workDayStartHour}:00–{calendar.settings.workDayEndHour}:00
-          · Travel {calendar.settings.defaultTravelMinutes} min
-          {calendar.settings.cartrackConnected ? ' · Cartrack connected (stub ETA)' : ''}
+          · Travel {calendar.settings.defaultTravelMinutes} min default
+          {calendar.settings.travelTimeSource === 'google_maps'
+            ? ' · Google Maps routing when coordinates verified'
+            : calendar.settings.cartrackConnected
+              ? ' · Cartrack GPS connected (routing uses Google Maps when configured)'
+              : ''}
         </p>
       ) : null}
 

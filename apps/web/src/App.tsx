@@ -411,6 +411,10 @@ export function App() {
                           path="/integrations/cartrack"
                           component={OwnerPages.CartrackSettingsPage}
                         />
+                        <Route
+                          path="/integrations/google-maps"
+                          component={OwnerPages.GoogleMapsSettingsPage}
+                        />
                         <Route path="/integrations/xero" component={OwnerPages.XeroSettingsPage} />
                         <Route
                           path="/integrations/xero/write-approvals"

@@ -152,7 +152,7 @@ export type MobileRouteIntelligence = {
   /** UX-I — never claim live Maps/Cartrack when provider path is absent. */
   mapsCapabilityState: import('./young-guns-ops.js').MapsEtaCapabilityState;
   mapsCapabilityLabel: string;
-  etaSource: 'none' | 'schedule_only';
+  etaSource: 'none' | 'schedule_only' | 'google_maps';
   liveTrackingAvailable: boolean;
 };
 

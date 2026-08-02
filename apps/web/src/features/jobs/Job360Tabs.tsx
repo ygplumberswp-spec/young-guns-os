@@ -15,6 +15,7 @@ import {
   formatMoney,
 } from '@titan/shared';
 import { JOB_360_TABS, type Job360TabId } from './job-360-tabs';
+import { PropertyMapPanel } from './PropertyMapPanel';
 
 export type { Job360TabId };
 export { JOB_360_TABS };
@@ -211,6 +212,17 @@ export function Job360Tabs({
             </Panel>
           ) : null}
         </div>
+      ) : null}
+
+      {activeTab === 'property-map' ? (
+        <PropertyMapPanel
+          streetAddress={job.address.display}
+          latitude={job.address.latitude}
+          longitude={job.address.longitude}
+          placeId={job.address.placeId}
+          formattedAddress={job.address.formattedAddress}
+          assignedUserName={job.assignedUserName}
+        />
       ) : null}
 
       {activeTab === 'schedule' ? schedulePanel : null}

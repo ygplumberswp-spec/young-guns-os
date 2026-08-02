@@ -74,6 +74,8 @@ import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
 import { createIntegrationsRouter } from './routes/integrations.js';
+import { createGoogleMapsRouter } from './routes/google-maps.js';
+import { GoogleMapsService } from './services/google-maps.service.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
@@ -225,6 +227,7 @@ import { CommunicationsIntelligenceService } from './services/communications-int
 import { AssetEquipmentIntelligenceService } from './services/asset-equipment-intelligence.service.js';
 import { AiOrchestrationService } from './services/ai-orchestration.service.js';
 import { DispatchIntelligenceService } from './services/dispatch-intelligence.service.js';
+import { OpsIntelligenceService } from './services/ops-intelligence.service.js';
 import { FleetIntelligenceService } from './services/fleet-intelligence.service.js';
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
@@ -242,6 +245,7 @@ import { createCommunicationsIntelligenceRouter } from './routes/communications-
 import { createAssetEquipmentRouter } from './routes/asset-equipment.js';
 import { createAiOrchestrationRouter } from './routes/ai-orchestration.js';
 import { createDispatchIntelligenceRouter } from './routes/dispatch-intelligence.js';
+import { createOpsIntelligenceRouter } from './routes/ops-intelligence.js';
 import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
@@ -386,7 +390,11 @@ const customerValueClassificationService = new CustomerValueClassificationServic
 const supplierPriceIntelligenceService = new SupplierPriceIntelligenceService(db);
 const marketingEligibilityService = new MarketingEligibilityService(db);
 const jobsService = new JobsService(db);
-const schedulingService = new SchedulingService(db);
+const googleMapsService = GoogleMapsService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+});
+const schedulingService = new SchedulingService(db, googleMapsService);
 const financeService = new FinanceService(db);
 const boqService = new BoqService(db, financeService);
 const draftAutosaveService = new DraftAutosaveService(db);
@@ -715,6 +723,12 @@ const dispatchIntelligenceService = new DispatchIntelligenceService(
   communicationsIntelligenceService,
   schedulingService,
   qualityAssuranceService,
+);
+const opsIntelligenceService = new OpsIntelligenceService(
+  db,
+  googleMapsService,
+  integrationsService,
+  notificationService,
 );
 const fleetIntelligenceService = new FleetIntelligenceService(
   db,
@@ -1558,6 +1572,15 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/integrations',
+  createGoogleMapsRouter({
+    googleMapsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/whatsapp',
   createWhatsappRouter({
     whatsappService,
@@ -2205,6 +2228,15 @@ app.use(
   '/api/v1/dispatch-intelligence',
   createDispatchIntelligenceRouter({
     dispatchIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/ops-intelligence',
+  createOpsIntelligenceRouter({
+    opsIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

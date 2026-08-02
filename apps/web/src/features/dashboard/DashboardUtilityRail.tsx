@@ -84,9 +84,8 @@ function TodayAtAGlanceRailPanel({
     : null;
   const activeJobs = glance?.jobs.inProgress ?? null;
   const completedJobs = glance?.jobs.completed ?? null;
-  const teamOnDuty = glance
-    ? glance.team.onSite + glance.team.travelling + glance.team.available
-    : null;
+  const techniciansWorking = summary?.header.teamWorking ?? null;
+  const outstandingCount = outstanding?.invoiceCount ?? null;
   const outstandingAmount =
     outstanding && outstanding.invoiceCount > 0
       ? formatMoney(outstanding.outstandingCents, outstanding.currency)
@@ -95,7 +94,7 @@ function TodayAtAGlanceRailPanel({
         : null;
 
   return (
-    <Panel title="Today at a glance" description="Live business snapshot — no invented figures">
+    <Panel title="Today at a glance" description="Executive snapshot — live values only">
       {isLoading && !glance ? (
         <DashboardSectionSkeleton rows={5} />
       ) : error && !glance ? (
@@ -113,23 +112,38 @@ function TodayAtAGlanceRailPanel({
         <ul className="exec-utility-glance">
           <li>
             <span>Jobs today</span>
-            <strong>{jobsToday}</strong>
+            <strong>
+              {jobsToday}
+              <em>
+                {glance.jobs.scheduled} scheduled
+              </em>
+            </strong>
           </li>
           <li>
             <span>Active jobs</span>
-            <strong>{activeJobs}</strong>
+            <strong>
+              {activeJobs}
+              <em>{activeJobs === 0 ? 'None in progress' : 'In progress'}</em>
+            </strong>
           </li>
           <li>
-            <span>Completed jobs</span>
+            <span>Completed today</span>
             <strong>{completedJobs}</strong>
           </li>
           <li>
-            <span>Outstanding invoices</span>
-            <strong>{outstandingAmount ?? '—'}</strong>
+            <span>Outstanding</span>
+            <strong>
+              {outstandingAmount ?? '—'}
+              <em>
+                {outstandingCount != null
+                  ? `${outstandingCount} invoice${outstandingCount === 1 ? '' : 's'}`
+                  : 'Open AR'}
+              </em>
+            </strong>
           </li>
           <li>
-            <span>Team on duty</span>
-            <strong>{teamOnDuty}</strong>
+            <span>Technicians working</span>
+            <strong>{techniciansWorking ?? 0}</strong>
           </li>
         </ul>
       )}

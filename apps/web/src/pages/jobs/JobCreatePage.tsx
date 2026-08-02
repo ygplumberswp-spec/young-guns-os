@@ -5,6 +5,7 @@ import type {
   CreateJobDocumentInput,
   CustomerPropertySummary,
   CustomerSummary,
+  GoogleGeocodedAddress,
   JobPriority,
   TeamMember,
 } from '@titan/shared';
@@ -34,6 +35,7 @@ import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { fetchDraft } from '../../lib/drafts-api';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
 import { Link } from 'wouter';
+import { AddressAutocomplete } from '../../features/maps/AddressAutocomplete';
 
 type SiteMode = 'existing' | 'new';
 
@@ -67,6 +69,19 @@ export function JobCreatePage() {
   const [postalCode, setPostalCode] = useState('');
   const [unit, setUnit] = useState('');
   const [propertyName, setPropertyName] = useState('');
+  const [geo, setGeo] = useState<{
+    latitude: number | null;
+    longitude: number | null;
+    placeId: string | null;
+    formattedAddress: string | null;
+    geocodeStatus: 'unverified' | 'verified' | 'failed' | null;
+  }>({
+    latitude: null,
+    longitude: null,
+    placeId: null,
+    formattedAddress: null,
+    geocodeStatus: null,
+  });
   const [siteContactName, setSiteContactName] = useState('');
   const [siteContactMobile, setSiteContactMobile] = useState('');
   const [siteContactEmail, setSiteContactEmail] = useState('');
@@ -359,6 +374,28 @@ export function JobCreatePage() {
     setPostalCode(property.postalCode ?? '');
     setUnit(property.unit ?? '');
     setPropertyName(property.propertyName);
+    setGeo({
+      latitude: property.latitude ?? null,
+      longitude: property.longitude ?? null,
+      placeId: property.placeId ?? null,
+      formattedAddress: property.formattedAddress ?? null,
+      geocodeStatus: property.geocodeStatus ?? null,
+    });
+  }
+
+  function applyGeocodedAddress(resolved: GoogleGeocodedAddress) {
+    if (resolved.street) setStreet(resolved.street);
+    if (resolved.suburb) setSuburb(resolved.suburb);
+    if (resolved.city) setCity(resolved.city);
+    if (resolved.province) setProvince(resolved.province);
+    if (resolved.postalCode) setPostalCode(resolved.postalCode);
+    setGeo({
+      latitude: resolved.latitude,
+      longitude: resolved.longitude,
+      placeId: resolved.placeId,
+      formattedAddress: resolved.formattedAddress,
+      geocodeStatus: 'verified',
+    });
   }
 
   function validate(): boolean {
@@ -413,6 +450,11 @@ export function JobCreatePage() {
                 province: province.trim(),
                 postalCode: postalCode.trim(),
                 unit: unit.trim() || null,
+                latitude: geo.latitude,
+                longitude: geo.longitude,
+                placeId: geo.placeId,
+                formattedAddress: geo.formattedAddress,
+                geocodeStatus: geo.geocodeStatus,
               }
             : null,
         address:
@@ -612,13 +654,38 @@ export function JobCreatePage() {
               )}
 
               <div className="jobs-form__grid">
-                <Input
-                  label="Street"
-                  value={street}
-                  onChange={(event) => setStreet(event.target.value)}
-                  required
-                  error={fieldErrors.street}
-                />
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <AddressAutocomplete
+                    label="Street / search address"
+                    value={street}
+                    onChange={(value) => {
+                      setStreet(value);
+                      setGeo((prev) => ({
+                        ...prev,
+                        latitude: null,
+                        longitude: null,
+                        placeId: null,
+                        formattedAddress: null,
+                        geocodeStatus: null,
+                      }));
+                    }}
+                    onResolved={applyGeocodedAddress}
+                    placeholder="Start typing a street address…"
+                  />
+                  {fieldErrors.street ? (
+                    <span className="form-error">{fieldErrors.street}</span>
+                  ) : null}
+                  {geo.latitude != null && geo.longitude != null ? (
+                    <p className="page-muted">
+                      Verified: {geo.latitude.toFixed(5)}, {geo.longitude.toFixed(5)}
+                      {geo.placeId ? ' · Place ID stored' : ''}
+                    </p>
+                  ) : (
+                    <p className="page-muted">
+                      Verify with Google Maps to store coordinates. TITAN will not invent a pin.
+                    </p>
+                  )}
+                </div>
                 <Input
                   label="Unit / apartment"
                   value={unit}

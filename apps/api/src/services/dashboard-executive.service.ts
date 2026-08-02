@@ -195,7 +195,28 @@ export class DashboardExecutiveService {
     }
 
     const teamToday = this.buildTeamToday(teamMembers, jobsByAssignee, activeTimeEntries, delayedJobs);
-    const liveOperations = this.buildLiveOperations(todayJobs, delayedJobs, calendar.events);
+    const liveJobIds = todayJobs
+      .filter((job) => ['scheduled', 'in_progress'].includes(job.status))
+      .slice(0, 12)
+      .map((job) => job.id);
+    const liveJobCoords =
+      liveJobIds.length === 0
+        ? []
+        : await this.deps.db.query.jobs.findMany({
+            where: and(eq(jobs.companyId, companyId), inArray(jobs.id, liveJobIds)),
+            columns: {
+              id: true,
+              snapshotLatitude: true,
+              snapshotLongitude: true,
+            },
+          });
+    const liveOperations = this.buildLiveOperations(
+      todayJobs,
+      delayedJobs,
+      calendar.events,
+      activeTimeEntries,
+      liveJobCoords,
+    );
     const completedToday = await this.buildCompletedToday(companyId, completedJobs);
 
     const needsAttention = activePlans.length;
@@ -211,6 +232,21 @@ export class DashboardExecutiveService {
     if (blockedCount > 0) {
       summaryParts.push(`${blockedCount} blocked`);
     }
+
+    const priorityItems = activePlans.slice(0, 8).map((plan) => {
+      const reason = (plan.content || plan.task || '').trim() || 'Priority from Today’s Plan';
+      const suggestedAction = (plan.task || plan.content || '').trim() || reason;
+      return {
+        id: plan.id,
+        priority: plan.priority,
+        reason,
+        suggestedAction,
+        approvalState: plan.approvalRequired
+          ? ('awaiting_owner' as const)
+          : ('not_required' as const),
+        href: '/aura/todays-plan',
+      };
+    });
 
     const criticalIssues = intelligenceDashboard.automationFailures.items
       .slice(0, 2)
@@ -233,9 +269,17 @@ export class DashboardExecutiveService {
     }
 
     const outstandingItems = intelligenceDashboard.outstandingInvoices.items;
-    const overdueSorted = outstandingItems
+    const withBalance = outstandingItems.map((invoice) => ({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      customerName: invoice.customerName,
+      dueDate: invoice.dueDate,
+      outstandingCents: Math.max(0, invoice.amountCents - invoice.amountPaidCents),
+    }));
+    const overdueSorted = withBalance
       .filter((invoice) => {
-        if (!invoice.dueDate) return invoice.status === 'overdue';
+        const source = outstandingItems.find((row) => row.id === invoice.id);
+        if (!invoice.dueDate) return source?.status === 'overdue';
         return new Date(invoice.dueDate).getTime() < now.getTime();
       })
       .slice()
@@ -244,18 +288,12 @@ export class DashboardExecutiveService {
         const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
         return aDue - bDue;
       });
-    const oldestOverdue = overdueSorted[0]
-      ? {
-          id: overdueSorted[0].id,
-          invoiceNumber: overdueSorted[0].invoiceNumber,
-          customerName: overdueSorted[0].customerName,
-          dueDate: overdueSorted[0].dueDate,
-          outstandingCents: Math.max(
-            0,
-            overdueSorted[0].amountCents - overdueSorted[0].amountPaidCents,
-          ),
-        }
-      : null;
+    const oldestOverdue = overdueSorted[0] ?? null;
+    const largestOutstanding =
+      withBalance
+        .filter((invoice) => invoice.outstandingCents > 0)
+        .slice()
+        .sort((a, b) => b.outstandingCents - a.outstandingCents)[0] ?? null;
 
     return {
       generatedAt: now.toISOString(),
@@ -300,6 +338,7 @@ export class DashboardExecutiveService {
         waitingApproval,
         blocked: blockedCount,
         summaryLine: summaryParts.length > 0 ? summaryParts.join(' · ') : 'All clear for today',
+        items: priorityItems,
         criticalIssues,
       },
       outstandingInvoices: {
@@ -307,6 +346,7 @@ export class DashboardExecutiveService {
         invoiceCount: intelligenceDashboard.outstandingInvoices.count,
         currency: intelligenceDashboard.outstandingInvoices.currency,
         oldestOverdue,
+        largestOutstanding,
       },
       teamToday,
     };
@@ -318,9 +358,27 @@ export class DashboardExecutiveService {
       id: string;
       scheduledEndAt: Date | null;
     }>,
-    events: Array<{ id: string; title: string; scheduledAt: string | null }>,
+    events: Array<{
+      id: string;
+      title: string;
+      scheduledAt: string | null;
+      assignedUserId?: string | null;
+    }>,
+    timeEntries: Array<{
+      userId: string;
+      jobId: string | null;
+      entryType: string;
+      startedAt: Date;
+      endedAt: Date | null;
+    }>,
+    coords: Array<{
+      id: string;
+      snapshotLatitude: number | null;
+      snapshotLongitude: number | null;
+    }>,
   ): ExecutiveLiveJob[] {
     const delayedIds = new Set(delayedJobs.map((job) => job.id));
+    const coordsById = new Map(coords.map((row) => [row.id, row]));
     const now = Date.now();
 
     return todayJobs
@@ -328,7 +386,13 @@ export class DashboardExecutiveService {
       .slice(0, 12)
       .map((job) => {
         const next = events
-          .filter((event) => event.id !== job.id && event.scheduledAt)
+          .filter((event) => {
+            if (event.id === job.id || !event.scheduledAt) return false;
+            if (job.assignedUserId && event.assignedUserId) {
+              return event.assignedUserId === job.assignedUserId;
+            }
+            return true;
+          })
           .sort((a, b) => (a.scheduledAt ?? '').localeCompare(b.scheduledAt ?? ''))
           .find((event) => {
             if (!job.scheduledEndAt) return true;
@@ -341,6 +405,23 @@ export class DashboardExecutiveService {
             ? new Date(job.scheduledAt).getTime() < now && job.status === 'scheduled'
             : false);
 
+        const onSiteEntry = timeEntries.find(
+          (entry) =>
+            entry.jobId === job.id &&
+            entry.entryType === 'job_time' &&
+            entry.endedAt == null,
+        );
+
+        const geo = coordsById.get(job.id);
+        const latitude =
+          geo?.snapshotLatitude != null && Number.isFinite(geo.snapshotLatitude)
+            ? geo.snapshotLatitude
+            : null;
+        const longitude =
+          geo?.snapshotLongitude != null && Number.isFinite(geo.snapshotLongitude)
+            ? geo.snapshotLongitude
+            : null;
+
         return {
           id: job.id,
           jobNumber: job.jobNumber,
@@ -349,10 +430,15 @@ export class DashboardExecutiveService {
           suburb: job.addressDisplay?.split(',').pop()?.trim() ?? null,
           status: job.status,
           technicianName: job.assignedUserName,
+          assignedUserId: job.assignedUserId,
           scheduledAt: job.scheduledAt,
           scheduledEndAt: job.scheduledEndAt,
+          etaAt: job.etaAt,
+          timeOnSiteStartedAt: onSiteEntry?.startedAt.toISOString() ?? null,
           nextJobTitle: next?.title ?? null,
           isDelayed,
+          latitude,
+          longitude,
         };
       });
   }

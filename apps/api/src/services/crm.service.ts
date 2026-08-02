@@ -234,6 +234,12 @@ export class CrmService {
         postalCode: normalizeOptionalText(input.postalCode),
         unitNumber: normalizeOptionalText(input.unit),
         isPrimary: input.isPrimary ?? false,
+        latitude: input.latitude ?? null,
+        longitude: input.longitude ?? null,
+        placeId: normalizeOptionalText(input.placeId),
+        formattedAddress: normalizeOptionalText(input.formattedAddress),
+        geocodeStatus: input.geocodeStatus ?? (input.latitude != null ? 'verified' : null),
+        geocodedAt: input.latitude != null && input.longitude != null ? new Date() : null,
       })
       .returning();
 
@@ -288,6 +294,22 @@ export class CrmService {
       updates.postalCode = normalizeOptionalText(input.postalCode);
     }
     if (input.isPrimary !== undefined) updates.isPrimary = input.isPrimary;
+    if (input.latitude !== undefined) updates.latitude = input.latitude;
+    if (input.longitude !== undefined) updates.longitude = input.longitude;
+    if (input.placeId !== undefined) updates.placeId = normalizeOptionalText(input.placeId);
+    if (input.formattedAddress !== undefined) {
+      updates.formattedAddress = normalizeOptionalText(input.formattedAddress);
+    }
+    if (input.geocodeStatus !== undefined) updates.geocodeStatus = input.geocodeStatus;
+    if (
+      input.latitude !== undefined ||
+      input.longitude !== undefined ||
+      input.placeId !== undefined ||
+      input.geocodeStatus !== undefined
+    ) {
+      updates.geocodedAt =
+        input.latitude != null && input.longitude != null ? new Date() : existing.geocodedAt;
+    }
 
     const [updated] = await this.db
       .update(cxCustomerProperties)
@@ -676,6 +698,13 @@ function toCustomerSummary(
 }
 
 function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): CustomerPropertySummary {
+  const geocodeStatus =
+    row.geocodeStatus === 'verified' ||
+    row.geocodeStatus === 'unverified' ||
+    row.geocodeStatus === 'failed'
+      ? row.geocodeStatus
+      : null;
+
   return {
     id: row.id,
     customerId: row.customerId,
@@ -695,6 +724,12 @@ function toPropertySummary(row: typeof cxCustomerProperties.$inferSelect): Custo
       unit: row.unitNumber ?? row.addressLine2,
     }),
     isPrimary: row.isPrimary,
+    latitude: row.latitude ?? null,
+    longitude: row.longitude ?? null,
+    placeId: row.placeId ?? null,
+    formattedAddress: row.formattedAddress ?? null,
+    geocodedAt: row.geocodedAt?.toISOString() ?? null,
+    geocodeStatus,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

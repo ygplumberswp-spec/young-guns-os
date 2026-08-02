@@ -33,11 +33,12 @@ import type {
   SubmitMobileJobDocumentationRequest,
   UploadJobEvidenceRequest,
 } from '@titan/shared';
-import { formatMapsEtaCapabilityLabel } from '@titan/shared';
+import { buildGoogleMapsNavigateUrl, formatMapsEtaCapabilityLabel } from '@titan/shared';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
+  integrationConnections,
   inventoryItems,
   inventoryLocations,
   jobs,
@@ -303,9 +304,12 @@ export class MobileWorkforceService {
       },
       internalNotes: job.notes,
       customerVisibleNotes: job.customerVisibleNotes,
-      navigationUrl: job.addressDisplay
-        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.addressDisplay)}`
-        : null,
+      navigationUrl: buildGoogleMapsNavigateUrl({
+        latitude: job.address.latitude,
+        longitude: job.address.longitude,
+        placeId: job.address.placeId,
+        address: job.address.formattedAddress ?? job.address.display ?? job.addressDisplay,
+      }),
       crew,
       vehicle,
       variations: pendingVariations,
@@ -341,8 +345,25 @@ export class MobileWorkforceService {
           : null;
 
     const hasSchedule = route.stops.some((stop) => Boolean(stop.scheduledAt));
-    const mapsCapabilityState = 'not_implemented' as const;
-    const etaSource = hasSchedule ? ('schedule_only' as const) : ('none' as const);
+    const googleMapsConnected = await this.db.query.integrationConnections
+      .findFirst({
+        where: and(
+          eq(integrationConnections.companyId, scope.companyId),
+          eq(integrationConnections.provider, 'google_maps'),
+          eq(integrationConnections.status, 'connected'),
+        ),
+        columns: { id: true },
+      })
+      .then((row) => Boolean(row))
+      .catch(() => false);
+    const mapsCapabilityState = googleMapsConnected
+      ? ('connected' as const)
+      : ('not_configured' as const);
+    const etaSource = googleMapsConnected
+      ? ('google_maps' as const)
+      : hasSchedule
+        ? ('schedule_only' as const)
+        : ('none' as const);
 
     return {
       route,

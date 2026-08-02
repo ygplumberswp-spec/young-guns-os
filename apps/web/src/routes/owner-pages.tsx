@@ -505,6 +505,10 @@ export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),
   'CartrackSettingsPage',
 );
+export const GoogleMapsSettingsPage = lazyNamed(
+  () => import('../pages/integrations/GoogleMapsSettingsPage'),
+  'GoogleMapsSettingsPage',
+);
 export const PortalSettingsPage = lazyNamed(
   () => import('../pages/settings/PortalSettingsPage'),
   'PortalSettingsPage',

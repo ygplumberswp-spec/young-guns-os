@@ -19,6 +19,10 @@ export type JobAddressSnapshot = {
   postalCode: string | null;
   unit: string | null;
   display: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
+  formattedAddress: string | null;
 };
 
 export type JobSiteContactSnapshot = {
@@ -85,6 +89,11 @@ export type CreateJobPropertyInput = {
   postalCode: string;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };
 
 export type CreateJobDocumentInput = {
@@ -153,6 +162,12 @@ export type CustomerPropertySummary = {
   unit: string | null;
   addressDisplay: string | null;
   isPrimary: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  placeId: string | null;
+  formattedAddress: string | null;
+  geocodedAt: string | null;
+  geocodeStatus: 'unverified' | 'verified' | 'failed' | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -166,6 +181,11 @@ export type CreateCustomerPropertyRequest = {
   postalCode?: string | null;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };
 
 export type UpdateCustomerPropertyRequest = {
@@ -177,4 +197,9 @@ export type UpdateCustomerPropertyRequest = {
   postalCode?: string | null;
   unit?: string | null;
   isPrimary?: boolean;
+  latitude?: number | null;
+  longitude?: number | null;
+  placeId?: string | null;
+  formattedAddress?: string | null;
+  geocodeStatus?: 'unverified' | 'verified' | 'failed' | null;
 };

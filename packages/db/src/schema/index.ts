@@ -99,6 +99,7 @@ export * from './communications-intelligence';
 export * from './asset-equipment';
 export * from './ai-orchestration';
 export * from './dispatch-intelligence';
+export * from './ops-intelligence';
 export * from './fleet-intelligence';
 export * from './personal-communications-intelligence';
 export * from './enterprise-security';

@@ -5,6 +5,7 @@ const providerLinks = [
   { href: '/integrations/whatsapp', label: 'WhatsApp' },
   { href: '/integrations/email', label: 'Email (SMTP)' },
   { href: '/integrations/cartrack', label: 'Cartrack' },
+  { href: '/integrations/google-maps', label: 'Google Maps' },
   { href: '/integrations/yoco', label: 'Yoco' },
 ];
 

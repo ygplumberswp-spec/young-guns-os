@@ -66,7 +66,7 @@ export type SchedulingSettingsSummary = {
   workDayStartHour: number;
   workDayEndHour: number;
   cartrackConnected: boolean;
-  travelTimeSource: 'default' | 'cartrack';
+  travelTimeSource: 'default' | 'cartrack' | 'google_maps';
 };
 
 export type SchedulingConflictType =

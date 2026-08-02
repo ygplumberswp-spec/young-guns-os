@@ -1,11 +1,14 @@
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
+import { fetchOpsIntelligenceSnapshot } from '../../lib/ops-intelligence-api-client';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { SectionErrorBoundary } from '../../components/ux';
+import { ActiveJobsPanel } from './ActiveJobsPanel';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
 import { DashboardUtilityRail } from './DashboardUtilityRail';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
+import { OpsIntelligenceAlerts } from './OpsIntelligenceAlerts';
 import { OutstandingInvoicesPanel } from './OutstandingInvoicesPanel';
 import { PrioritiesSummaryPanel } from './PrioritiesSummaryPanel';
 import { QuickLinksPanel } from './QuickLinksPanel';
@@ -21,10 +24,19 @@ export function ExecutiveDashboard() {
     fetcher: async () => fetchExecutiveDashboardSummary(accessToken!),
   });
 
+  const opsQuery = useStaffCachedQuery({
+    queryKey: 'ops-intelligence/snapshot',
+    enabled: Boolean(accessToken),
+    fetcher: async () => fetchOpsIntelligenceSnapshot(accessToken!),
+  });
+
   const summary = summaryQuery.data;
   const isLoading = summaryQuery.isLoading && !summary;
   const loadError = summaryQuery.error;
   const liveJobs = summary?.liveOperations ?? [];
+  const opsSnapshot = opsQuery.data;
+  const opsLoading = opsQuery.isLoading && !opsSnapshot;
+  const opsEvents = opsSnapshot?.events ?? [];
 
   return (
     <div className="exec-dashboard">
@@ -48,13 +60,40 @@ export function ExecutiveDashboard() {
             />
           </SectionErrorBoundary>
 
+          <SectionErrorBoundary
+            sectionName="Operations intelligence"
+            onRetry={() => void opsQuery.refetch()}
+          >
+            <OpsIntelligenceAlerts
+              events={opsEvents}
+              isLoading={opsLoading}
+              error={opsQuery.error}
+              onRetry={() => void opsQuery.refetch()}
+              onDismissed={() => void opsQuery.refetch()}
+            />
+          </SectionErrorBoundary>
+
           <div className="exec-dashboard-row exec-dashboard-row--primary">
-            <div className="exec-dashboard-row__wide">
+            <div className="exec-dashboard-row__wide exec-dashboard-row__stack">
               <SectionErrorBoundary
                 sectionName="Live operations"
                 onRetry={() => void summaryQuery.refetch()}
               >
                 <LiveOperationsPanel
+                  jobs={liveJobs}
+                  isLoading={isLoading}
+                  error={loadError}
+                  onRetry={() => void summaryQuery.refetch()}
+                  opsStrip={opsSnapshot?.liveStrip ?? null}
+                  opsStripLoading={opsLoading}
+                  opsStripError={opsQuery.error}
+                />
+              </SectionErrorBoundary>
+              <SectionErrorBoundary
+                sectionName="Active jobs"
+                onRetry={() => void summaryQuery.refetch()}
+              >
+                <ActiveJobsPanel
                   jobs={liveJobs}
                   isLoading={isLoading}
                   error={loadError}

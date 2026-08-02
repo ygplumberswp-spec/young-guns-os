@@ -24,12 +24,12 @@ type QuickLink = {
 };
 
 const ICON_PROPS = {
-  width: 22,
-  height: 22,
+  width: 26,
+  height: 26,
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.6,
+  strokeWidth: 1.55,
   strokeLinecap: 'round' as const,
   strokeLinejoin: 'round' as const,
   'aria-hidden': true as const,
