@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearch } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import type { CalendarViewMode } from '@titan/shared';
 import { readNavState, useTitanNavigationHistory, writeNavState } from '../../hooks/useTitanNavigationHistory';
-import { mergeSearchString, readSearchParam } from '../../lib/url-nav-state';
+import { buildSearchString, readSearchParam } from '../../lib/url-nav-state';
 import {
   calendarStateKey,
   defaultCalendarView,
@@ -84,7 +84,11 @@ function readCalendarState(pathname: string): CalendarPersistedState {
   }
 }
 
-function writeCalendarState(pathname: string, state: CalendarPersistedState): void {
+function calendarUrl(pathname: string, state: CalendarPersistedState): string {
+  return `${pathname}${buildSearchString(calendarSearchEntries(state, pathname))}`;
+}
+
+function writeCalendarPersistence(pathname: string, state: CalendarPersistedState): void {
   if (typeof window === 'undefined') return;
   try {
     sessionStorage.setItem(calendarStateKey(pathname), JSON.stringify(state));
@@ -100,14 +104,16 @@ function writeCalendarState(pathname: string, state: CalendarPersistedState): vo
         jobType: state.filters?.jobType ?? '',
       },
     });
-    mergeSearchString(pathname, calendarSearchEntries(state, pathname), 'replace');
   } catch {
     // ignore quota errors
   }
 }
 
+export type CalendarStateController = ReturnType<typeof useCalendarState>;
+
 export function useCalendarState(pathname = '/scheduling') {
   const search = useSearch();
+  const [, navigate] = useLocation();
   const { saveListState } = useTitanNavigationHistory();
   const initial = useMemo(() => readCalendarState(pathname), [pathname]);
   const [view, setViewState] = useState<CalendarViewMode>(initial.view);
@@ -133,14 +139,18 @@ export function useCalendarState(pathname = '/scheduling') {
     return () => window.removeEventListener('popstate', onPopState);
   }, [syncFromUrl]);
 
-  const persist = useCallback(
-    (patch: Partial<CalendarPersistedState>) => {
-      const next: CalendarPersistedState = {
-        view: patch.view ?? view,
-        anchorDate: patch.anchorDate ?? anchorDate.toISOString(),
-        filters: patch.filters ?? filters,
-      };
-      writeCalendarState(pathname, next);
+  const snapshot = useCallback(
+    (patch: Partial<CalendarPersistedState> = {}): CalendarPersistedState => ({
+      view: patch.view ?? view,
+      anchorDate: patch.anchorDate ?? anchorDate.toISOString(),
+      filters: patch.filters ?? filters,
+    }),
+    [anchorDate, filters, view],
+  );
+
+  const persistNavMeta = useCallback(
+    (next: CalendarPersistedState) => {
+      writeCalendarPersistence(pathname, next);
       saveListState({
         calendarDate: next.anchorDate,
         filters: {
@@ -154,23 +164,29 @@ export function useCalendarState(pathname = '/scheduling') {
         },
       });
     },
-    [anchorDate, filters, pathname, saveListState, view],
+    [pathname, saveListState],
+  );
+
+  const syncUrl = useCallback(
+    (next: CalendarPersistedState, mode: 'push' | 'replace') => {
+      persistNavMeta(next);
+      const url = calendarUrl(pathname, next);
+      const current = `${window.location.pathname}${window.location.search}`;
+      if (current === url) return;
+      navigate(url, { replace: mode === 'replace' });
+    },
+    [navigate, pathname, persistNavMeta],
   );
 
   useEffect(() => {
-    persist({});
-  }, [view, anchorDate, filters, persist]);
+    syncUrl(snapshot(), 'replace');
+  }, [view, anchorDate, filters, snapshot, syncUrl]);
 
   const pushHistory = useCallback(
     (patch: Partial<CalendarPersistedState>) => {
-      const next: CalendarPersistedState = {
-        view: patch.view ?? view,
-        anchorDate: patch.anchorDate ?? anchorDate.toISOString(),
-        filters: patch.filters ?? filters,
-      };
-      mergeSearchString(pathname, calendarSearchEntries(next, pathname), 'push');
+      syncUrl(snapshot(patch), 'push');
     },
-    [anchorDate, filters, pathname, view],
+    [snapshot, syncUrl],
   );
 
   return {
@@ -189,6 +205,6 @@ export function useCalendarState(pathname = '/scheduling') {
       pushHistory({ filters: next ?? {} });
       setFiltersState(next ?? {});
     },
-    persist,
+    persist: syncUrl,
   };
 }

@@ -11,15 +11,15 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessScheduling } from '../../features/scheduling/utils';
-import { SchedulingCalendar, resolveRange } from '../../components/calendar';
-import { useCalendarState } from '../../components/calendar/useCalendarState';
+import { SchedulingCalendar, resolveRange, useCalendarState } from '../../components/calendar';
 import { StatusBadge } from '../../components/ux';
 import { formatTimeRange } from '../../components/calendar/calendar-utils';
 
 /** CAL-001 — technician own-calendar view (mobile route). */
 export function MobileSchedulePage() {
   const { accessToken, user } = useAuth();
-  const { view, anchorDate } = useCalendarState('/mobile/schedule');
+  const calendarState = useCalendarState('/mobile/schedule');
+  const { view, anchorDate } = calendarState;
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const range = useMemo(() => resolveRange(view, anchorDate), [view, anchorDate]);
@@ -139,6 +139,7 @@ export function MobileSchedulePage() {
         canWrite={false}
         showTechnicianFilter={false}
         pathname="/mobile/schedule"
+        calendarState={calendarState}
         actions={actions}
         compactHeader
         onRefresh={() => void reload()}

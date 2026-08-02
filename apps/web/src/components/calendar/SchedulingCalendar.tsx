@@ -23,7 +23,7 @@ import { OverrideReasonModal } from './OverrideReasonModal';
 import { ScheduleSlotModal } from './ScheduleSlotModal';
 import { UnscheduledJobsTray } from './UnscheduledJobsTray';
 import { eventDurationMs, resolveRange, startOfDay } from './calendar-utils';
-import { useCalendarState } from './useCalendarState';
+import type { CalendarStateController } from './useCalendarState';
 
 export type SchedulingCalendarActions = {
   checkConflicts: (body: {
@@ -63,6 +63,7 @@ type SchedulingCalendarProps = {
   canWrite: boolean;
   showTechnicianFilter?: boolean;
   pathname?: string;
+  calendarState: CalendarStateController;
   actions: SchedulingCalendarActions;
   onRefresh: () => void;
   accessToken?: string | null;
@@ -85,14 +86,13 @@ export function SchedulingCalendar({
   error,
   canWrite,
   showTechnicianFilter = true,
-  pathname = '/scheduling',
+  calendarState,
   actions,
   onRefresh,
   accessToken,
   compactHeader = false,
 }: SchedulingCalendarProps) {
-  const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
-    useCalendarState(pathname);
+  const { view, setView, anchorDate, setAnchorDate, filters, setFilters } = calendarState;
   const [slotDate, setSlotDate] = useState<Date | null>(null);
   const [slotTechnicianId, setSlotTechnicianId] = useState<string | null>(null);
   const [previewEvent, setPreviewEvent] = useState<ScheduledJobEvent | null>(null);
@@ -242,10 +242,29 @@ export function SchedulingCalendar({
     setView('day');
   }
 
-  const showEmptyState = !isLoading && events.length === 0 && view === 'month';
+  const showEmptyState = !isLoading && events.length === 0;
+
+  const emptyStateCopy =
+    view === 'day'
+      ? {
+          title: 'No jobs scheduled today',
+          description: 'Pick another day or drag unscheduled jobs from the tray below.',
+        }
+      : view === 'week'
+        ? {
+            title: 'No jobs scheduled this week',
+            description: 'Switch to day view to schedule jobs, or drag from the tray below.',
+          }
+        : {
+            title: 'No scheduled jobs this month',
+            description: 'Use week or day view to schedule jobs, or drag from the tray below.',
+          };
 
   return (
-    <div className={`cal-shell${compactHeader ? ' cal-shell--compact' : ''}`}>
+    <div
+      className={`cal-shell${compactHeader ? ' cal-shell--compact' : ''}`}
+      data-view={view}
+    >
       <div className="cal-shell__header">
         <CalendarToolbar
           view={view}
@@ -277,13 +296,12 @@ export function SchedulingCalendar({
           <LoadingState label="Loading calendar…" />
         ) : view === 'month' ? (
           showEmptyState ? (
-            <EmptyState
-              title="No scheduled jobs this month"
-              description="Use week or day view to schedule jobs, or drag from the tray below."
-            />
+            <EmptyState title={emptyStateCopy.title} description={emptyStateCopy.description} />
           ) : (
             <CalendarMonthGrid anchorDate={anchorDate} events={events} onDayClick={switchToDay} />
           )
+        ) : showEmptyState ? (
+          <EmptyState title={emptyStateCopy.title} description={emptyStateCopy.description} />
         ) : (
           <CalendarTimeGrid
             mode={view}

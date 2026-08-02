@@ -8,5 +8,6 @@ export { UnscheduledJobsTray } from './UnscheduledJobsTray';
 export { JobPreviewDrawer } from './JobPreviewDrawer';
 export { ConflictWarningModal } from './ConflictWarningModal';
 export { OverrideReasonModal } from './OverrideReasonModal';
+export type { CalendarStateController } from './useCalendarState';
 export { useCalendarState } from './useCalendarState';
 export * from './calendar-utils';

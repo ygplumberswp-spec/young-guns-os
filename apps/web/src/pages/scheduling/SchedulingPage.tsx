@@ -17,12 +17,12 @@ import {
   canAccessScheduling,
   canManageScheduling,
 } from '../../features/scheduling/utils';
-import { SchedulingCalendar, resolveRange } from '../../components/calendar';
-import { useCalendarState } from '../../components/calendar/useCalendarState';
+import { SchedulingCalendar, resolveRange, useCalendarState } from '../../components/calendar';
 
 export function SchedulingPage() {
   const { accessToken, user } = useAuth();
-  const { view, anchorDate, filters } = useCalendarState('/scheduling');
+  const calendarState = useCalendarState('/scheduling');
+  const { view, anchorDate, filters } = calendarState;
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageScheduling(user.permissions) : false), [user]);
@@ -116,6 +116,7 @@ export function SchedulingPage() {
         error={calendarError}
         canWrite={canWrite}
         showTechnicianFilter={calendar?.viewScope !== 'own'}
+        calendarState={calendarState}
         actions={actions}
         accessToken={accessToken}
         onRefresh={() => void reloadCalendar()}
