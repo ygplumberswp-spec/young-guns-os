@@ -92,6 +92,7 @@ import { CompanyDayPlanFollowUpsService } from './services/company-day-plan-foll
 import { CompanyBusinessRulesService } from './services/company-business-rules.service.js';
 import { IntelligenceService } from './services/intelligence.service.js';
 import { RecommendationsService } from './services/recommendations.service.js';
+import { AuraOperationsService } from './services/aura-operations.service.js';
 import { createIntelligenceRouter } from './routes/intelligence.js';
 import { AnalyticsService } from './services/analytics.service.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
@@ -759,6 +760,14 @@ const corporateDepartmentHubService = new CorporateDepartmentHubService({
   enterpriseMissionControlService,
   departmentRoutineTaskService,
   companyLabel: 'Young Guns Plumbing',
+});
+const auraOperationsService = new AuraOperationsService({
+  db,
+  dashboardExecutiveService,
+  financeIntelligenceService,
+  enterpriseMissionControlService,
+  documentsComplianceService,
+  recommendationsService,
 });
 const enterpriseProductionReadinessService = new EnterpriseProductionReadinessService({
   db,
@@ -1823,6 +1832,7 @@ app.use(
   createIntelligenceRouter({
     intelligenceService,
     recommendationsService,
+    auraOperationsService,
     memoryService,
     businessRulesService,
     dayPlanService,

@@ -77,6 +77,7 @@ export * from './recruiting.js';
 export * from './intelligence.js';
 export * from './aura-memory-utils.js';
 export * from './day-planning.js';
+export * from './aura-operations.js';
 export * from './business-rules.js';
 export * from './mobile.js';
 export * from './analytics.js';

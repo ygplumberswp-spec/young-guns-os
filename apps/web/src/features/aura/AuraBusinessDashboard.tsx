@@ -1,9 +1,10 @@
 import { Link } from 'wouter';
 import { Button, EmptyState, LoadingState } from '@titan/ui';
 import { buildDashboardSummaryLine } from '@titan/shared';
-import { buildGreetingSalutation, fetchDashboardSummary } from '../../lib/intelligence-api';
+import { buildGreetingSalutation, fetchDashboardSummary, fetchAuraOperationsSummary } from '../../lib/intelligence-api';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { AuraQuickMemoryInput } from './AuraQuickMemoryInput';
+import { AuraOperationsManagerPanel } from './AuraOperationsManagerPanel';
 import { useAuth } from '../../lib/auth-context';
 
 type AuraBusinessDashboardProps = {
@@ -23,6 +24,14 @@ export function AuraBusinessDashboard({
     enabled: Boolean(accessToken),
     staleTimeMs: 60_000,
     fetcher: async () => fetchDashboardSummary(accessToken),
+  });
+
+  const operationsQuery = useCachedQuery({
+    queryKey: 'intelligence/operations-summary',
+    accessToken,
+    enabled: Boolean(accessToken),
+    staleTimeMs: 60_000,
+    fetcher: async () => fetchAuraOperationsSummary(accessToken),
   });
 
   const summary = summaryQuery.data ?? null;
@@ -91,7 +100,19 @@ export function AuraBusinessDashboard({
         <Link href="/aura/todays-plan">
           <Button className="aura-intelligence__plan-link">Open Today&apos;s Plan</Button>
         </Link>
+        <Link href="/aura/operations">
+          <Button variant="secondary" className="aura-intelligence__plan-link">
+            Operations Manager
+          </Button>
+        </Link>
       </div>
+
+      <AuraOperationsManagerPanel
+        summary={operationsQuery.data ?? null}
+        isLoading={operationsQuery.isLoading}
+        error={operationsQuery.error}
+        compact
+      />
 
       {summary.urgentItems.length > 0 ? (
         <ul className="aura-intelligence__urgent-list">

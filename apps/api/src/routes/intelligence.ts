@@ -10,6 +10,7 @@ import { DayPlanError } from '../services/company-day-plan.service.js';
 import { DayPlanFollowUpError } from '../services/company-day-plan-follow-ups.service.js';
 import { BusinessRuleError } from '../services/company-business-rules.service.js';
 import type { RecommendationsService } from '../services/recommendations.service.js';
+import type { AuraOperationsService } from '../services/aura-operations.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission, requireCompanyMemoryWrite } from '../middleware/rbac.js';
@@ -112,6 +113,7 @@ const updateBusinessRuleSchema = createBusinessRuleSchema.partial().extend({
 type IntelligenceRouterDeps = {
   intelligenceService: IntelligenceService;
   recommendationsService: RecommendationsService;
+  auraOperationsService: AuraOperationsService;
   memoryService: MemoryService;
   dayPlanService: CompanyDayPlanService;
   dayPlanFollowUpsService: CompanyDayPlanFollowUpsService;
@@ -134,6 +136,7 @@ function parseOptionalPlanDate(queryDate: unknown): string | undefined {
 export function createIntelligenceRouter({
   intelligenceService,
   recommendationsService,
+  auraOperationsService,
   memoryService,
   dayPlanService,
   dayPlanFollowUpsService,
@@ -182,6 +185,21 @@ export function createIntelligenceRouter({
       const { companyId } = getAuth(req);
       const result = await recommendationsService.getRecommendations(companyId);
       res.json({ data: result });
+    },
+  );
+
+  router.get(
+    '/operations-summary',
+    requireAnyPermission('intelligence:read', 'intelligence:write', 'agents:read', 'executive:read'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const summary = await auraOperationsService.getOperationsSummary({
+        companyId: auth.companyId,
+        userId: auth.userId,
+        roleName: auth.roleName,
+        permissions: auth.permissions,
+      });
+      res.json({ data: { summary } });
     },
   );
 

@@ -421,6 +421,7 @@ export function App() {
                         />
                         <Route path="/aura/agents" component={OwnerPages.AgentDashboardPage} />
                         <Route path="/aura/business-rules" component={OwnerPages.BusinessRulesPage} />
+                        <Route path="/aura/operations" component={OwnerPages.AuraOperationsPage} />
                         <Route path="/aura/todays-plan" component={OwnerPages.TodaysPlanPage} />
                         <Route path="/aura" component={OwnerPages.AuraPage} />
                         <Route path="/analytics" component={OwnerPages.AnalyticsPage} />

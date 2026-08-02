@@ -1569,6 +1569,130 @@ a:focus-visible {
   margin-bottom: 0.375rem;
 }
 
+.aura-operations {
+  display: grid;
+  gap: 1.25rem;
+  margin-block: 1rem 1.5rem;
+}
+
+.aura-operations--compact .aura-operations__recommendations {
+  display: none;
+}
+
+.aura-operations__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.aura-operations__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.125rem;
+}
+
+.aura-operations__subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.aura-operations__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.aura-operations__panel {
+  padding: 1rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.75rem;
+  background: var(--titan-surface-elevated);
+}
+
+.aura-operations__panel-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.aura-operations__metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.625rem 1rem;
+  margin: 0;
+}
+
+.aura-operations__metric dt {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.aura-operations__metric dd {
+  margin: 0.125rem 0 0;
+  font-weight: 600;
+}
+
+.aura-operations__actions,
+.aura-operations__risks {
+  margin-top: 1rem;
+}
+
+.aura-operations__actions ul,
+.aura-operations__risks ul,
+.aura-operations__rec-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.aura-operations__actions-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.aura-operations__note {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.aura-operations__rec-card {
+  padding: 0.875rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 18%, var(--titan-border));
+  border-radius: 0.75rem;
+  background: var(--titan-surface);
+}
+
+.aura-operations__rec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.375rem;
+}
+
+.aura-operations__rec-sources {
+  font-size: 0.8125rem;
+  margin: 0.375rem 0;
+}
+
+.aura-operations__rec-link {
+  margin-top: 0.375rem;
+}
+
+.aura-operations--error {
+  padding: 1rem;
+  border: 1px solid var(--titan-border);
+  border-radius: 0.75rem;
+}
+
+.aura-operations__error {
+  margin: 0;
+  color: var(--titan-danger, #c0392b);
+}
+
 .todays-plan-page__grid {
   display: grid;
   gap: 1.25rem;

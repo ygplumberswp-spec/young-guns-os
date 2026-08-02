@@ -70,6 +70,7 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/aura\/agents\/executions$/, fallback: '/aura/agents' },
   { match: /^\/aura\/agents\/[^/]+$/, fallback: '/aura/agents' },
   { match: /^\/aura\/business-rules$/, fallback: '/aura' },
+  { match: /^\/aura\/operations$/, fallback: '/aura' },
   { match: /^\/aura\/todays-plan$/, fallback: '/aura' },
 
   // Settings (hub is company profile — `/settings` redirects there)

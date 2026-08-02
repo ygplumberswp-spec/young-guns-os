@@ -1,5 +1,6 @@
 import type {
   AuraMemorySummary,
+  AuraOperationsSummary,
   BusinessRuleSummary,
   CreateAuraMemoryRequest,
   CreateBusinessRuleRequest,
@@ -34,6 +35,16 @@ export async function fetchDashboardSummary(
   const query = planDate ? `?date=${encodeURIComponent(planDate)}` : '';
   const data = await request<{ summary: DashboardSummary }>(
     `/intelligence/dashboard-summary${query}`,
+    { accessToken },
+  );
+  return data.summary;
+}
+
+export async function fetchAuraOperationsSummary(
+  accessToken: string,
+): Promise<AuraOperationsSummary> {
+  const data = await request<{ summary: AuraOperationsSummary }>(
+    '/intelligence/operations-summary',
     { accessToken },
   );
   return data.summary;
