@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'wouter';
+import { NavIcon } from '../NavIcon';
 
 export type CompactTabItem = {
   href: string;
   label: string;
+  icon?: string;
   hidden?: boolean;
 };
 
@@ -37,7 +39,10 @@ export function CompactTabs({
               className={`ux-compact-tabs__tab${isActive ? ' ux-compact-tabs__tab--active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
             >
-              {tab.label}
+              {tab.icon ? (
+                <NavIcon name={tab.icon} className="ux-compact-tabs__icon" />
+              ) : null}
+              <span>{tab.label}</span>
             </Link>
           );
         })}
@@ -53,7 +58,10 @@ export function CompactTabs({
                     href={tab.href}
                     className={`ux-compact-tabs__overflow-item${isActive ? ' ux-compact-tabs__overflow-item--active' : ''}`}
                   >
-                    {tab.label}
+                    {tab.icon ? (
+                      <NavIcon name={tab.icon} className="ux-compact-tabs__icon" />
+                    ) : null}
+                    <span>{tab.label}</span>
                   </Link>
                 );
               })}

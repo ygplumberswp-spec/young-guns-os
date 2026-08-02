@@ -1,9 +1,17 @@
 # TITAN Final UX Consolidation Report
 
-Generated: 2026-08-01T21:22:22.584Z
-Branch: `cursor/titan-owner-operating-model-final` @ `252e9f1`
+Generated: 2026-08-02T10:20:00.000Z
+Branch: `cursor/titan-owner-operating-model-final` @ Phase 18 commit (post-83ff359)
 Staging API: `https://young-guns-os-staging.up.railway.app`
 Staging Web: `https://comfortable-determination-staging.up.railway.app`
+
+## Phase 18 — Locked UX + visual audit (complete)
+
+**Dashboard links:** Today at a glance + stat card links use `Link` with pointer cursor (`index.css`).  
+**Nav icons:** `NavIcon.tsx` + Settings `CompactTabs` icons for all sidebar groups and settings tabs.  
+**Customers list:** Owner simplified columns (Name, Phone, Email, Outstanding, Actions) in `CustomerList.tsx`.  
+**Staging deploy:** Web `c663f3cb-a7f5-4d41-b1d7-87f68b491631`.  
+**Evidence:** `TITAN_PHASE_18_VISUAL_AUDIT_REPORT.md`, verify 231 GO, `TITAN_AUTHENTICATED_VISUAL_AUDIT.zip` (187 PNGs).
 
 ## Phase 1 — Global organisation (complete @ 236)
 

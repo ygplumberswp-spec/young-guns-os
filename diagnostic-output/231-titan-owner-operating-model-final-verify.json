@@ -1,0 +1,2663 @@
+{
+  "schemaVersion": "phase18-visual-audit-v1",
+  "label": "231-titan-owner-operating-model-final-verify",
+  "generatedAt": "2026-08-02T10:01:48.213Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "83ff359fb5f19febd7bfe8673989111835a5fdce",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session_route_intercept",
+    "secretsInOutput": false
+  },
+  "uxFixes": {
+    "dashboardClickableCounters": {
+      "required": true,
+      "verified": true
+    },
+    "navIconsAllItems": {
+      "required": true,
+      "verified": true
+    },
+    "customerListSimplified": {
+      "required": true,
+      "verified": true
+    }
+  },
+  "routes": [
+    {
+      "path": "/",
+      "label": "dashboard",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/dashboard-1440-top.png"
+          ],
+          "ux": {
+            "dashboardGlanceLinkCount": 4,
+            "dashboardGlancePointerCursor": true,
+            "dashboardGlanceHasHref": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/dashboard-1280-top.png"
+          ],
+          "ux": {
+            "dashboardGlanceLinkCount": 4,
+            "dashboardGlancePointerCursor": true,
+            "dashboardGlanceHasHref": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/dashboard-1024-top.png"
+          ],
+          "ux": {
+            "dashboardGlanceLinkCount": 4,
+            "dashboardGlancePointerCursor": true,
+            "dashboardGlanceHasHref": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/dashboard-768-top.png"
+          ],
+          "ux": {
+            "dashboardGlanceLinkCount": 4,
+            "dashboardGlancePointerCursor": true,
+            "dashboardGlanceHasHref": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/dashboard-375-top.png"
+          ],
+          "ux": {
+            "dashboardGlanceLinkCount": 4,
+            "dashboardGlancePointerCursor": true,
+            "dashboardGlanceHasHref": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/crm",
+      "label": "customers",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customers-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false,
+            "customerOwnerColumns": [
+              "Name",
+              "Phone",
+              "Email",
+              "Outstanding",
+              "Actions"
+            ],
+            "customerOwnerColumnsOk": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customers-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false,
+            "customerOwnerColumns": [
+              "Name",
+              "Phone",
+              "Email",
+              "Outstanding",
+              "Actions"
+            ],
+            "customerOwnerColumnsOk": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customers-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false,
+            "customerOwnerColumns": [
+              "Name",
+              "Phone",
+              "Email",
+              "Outstanding",
+              "Actions"
+            ],
+            "customerOwnerColumnsOk": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customers-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false,
+            "customerOwnerColumns": [
+              "Name",
+              "Phone",
+              "Email",
+              "Outstanding",
+              "Actions"
+            ],
+            "customerOwnerColumnsOk": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customers-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false,
+            "customerOwnerColumns": [
+              "Name",
+              "Phone",
+              "Email",
+              "Outstanding",
+              "Actions"
+            ],
+            "customerOwnerColumnsOk": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/leads",
+      "label": "leads",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/leads-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/leads-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/leads-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/leads-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/leads-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs",
+      "label": "jobs",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/jobs-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/jobs-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/jobs-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/jobs-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/jobs-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/scheduling",
+      "label": "scheduling",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-bottom.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-bottom.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-bottom.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-768-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-768-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-768-bottom.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/scheduling-375-bottom.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/quotes",
+      "label": "quotes",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/quotes-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/quotes-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/quotes-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/quotes-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/quotes-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/invoices",
+      "label": "invoices",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoices-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoices-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoices-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoices-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoices-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/payments",
+      "label": "payments",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payments-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payments-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payments-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payments-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payments-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/receivables",
+      "label": "receivables",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/receivables-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/receivables-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/receivables-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/receivables-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/receivables-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/payables",
+      "label": "payables",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payables-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payables-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payables-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payables-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payables-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/cashflow",
+      "label": "cashflow",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/cashflow-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/cashflow-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/cashflow-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/cashflow-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/cashflow-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/inventory/products",
+      "label": "inventory",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/inventory-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/inventory-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/inventory-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/inventory-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/inventory-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/procurement",
+      "label": "procurement",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/procurement-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/fleet",
+      "label": "fleet",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/fleet/live-map",
+      "label": "fleet_live_map",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/mobile-platform/dispatcher",
+      "label": "live_dispatch",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/live_dispatch-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/live_dispatch-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/communications/messages",
+      "label": "communications",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/communications-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/communications-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/communications-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/communications-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/communications-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/documents",
+      "label": "documents",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/documents-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/documents-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/documents-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/documents-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/documents-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/analytics",
+      "label": "analytics",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/analytics-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/analytics-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/analytics-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/analytics-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/analytics-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/marketing",
+      "label": "marketing",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/marketing-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/marketing-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/marketing-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/marketing-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/marketing-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/aura/agents",
+      "label": "aura_team",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_team-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_team-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_team-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_team-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_team-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/automation",
+      "label": "automation",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/automation-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/automation-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/automation-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/automation-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/automation-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/mission-control",
+      "label": "company_health",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/company_health-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/company_health-1280-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/company_health-1024-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/company_health-768-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/company_health-375-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/departments",
+      "label": "departments",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/departments-1440-top.png"
+          ],
+          "ux": {
+            "sidebarNavIconCount": 23,
+            "sidebarHasClearIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/settings/company",
+      "label": "settings_company",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_company-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_company-1280-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_company-1024-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_company-768-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_company-375-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/settings/team",
+      "label": "settings_team",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_team-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/settings/billing",
+      "label": "settings_billing",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_billing-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/integrations",
+      "label": "integrations",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/integrations-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/integrations-1280-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/integrations-1024-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/integrations-768-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/integrations-375-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/settings/security",
+      "label": "settings_security",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/settings_security-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 13,
+            "settingsHasIcons": true
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/aura",
+      "label": "aura_chat",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1280-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_chat-1024-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_chat-768-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_chat-375-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/aura/todays-plan",
+      "label": "aura_todays_plan",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1280-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1024-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-768-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-375-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/aura/business-rules",
+      "label": "aura_business_rules",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/aura_business_rules-1440-top.png"
+          ],
+          "ux": {
+            "settingsTabIconCount": 0,
+            "settingsHasIcons": false
+          },
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/mobile",
+      "label": "technician_mobile",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1280-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1024-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-768-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_mobile-375-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/mobile/jobs",
+      "label": "technician_jobs",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1280-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1024-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-768-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_jobs-375-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/mobile/route",
+      "label": "technician_route",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/technician_route-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/crm/new",
+      "label": "customer_create",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_create-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs/new",
+      "label": "job_create",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_create-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/scheduling?view=week",
+      "label": "scheduling_week",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling_week-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/scheduling?view=month",
+      "label": "scheduling_month",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/scheduling_month-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/crm/00000000-0000-4000-8000-000000000001",
+      "label": "customer_360",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_360-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_360-1280-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_360-1024-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_360-768-top.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_360-375-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/crm/00000000-0000-4000-8000-000000000001#communications",
+      "label": "customer_communications",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/customer_communications-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs/00000000-0000-4000-8000-000000000001",
+      "label": "job_360",
+      "primary": true,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1440-bottom.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1280",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1280-bottom.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "1024",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-1024-bottom.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "768",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_360-768-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-768-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-768-bottom.png"
+          ],
+          "ux": {},
+          "error": null
+        },
+        {
+          "viewport": "375",
+          "captured": true,
+          "shotCount": 3,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_360-375-top.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-375-mid.png",
+            "diagnostic-output/phase18-visual-audit-staging/job_360-375-bottom.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs/00000000-0000-4000-8000-000000000001#payments",
+      "label": "job_payment_ledger",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_payment_ledger-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs/00000000-0000-4000-8000-000000000001#documents",
+      "label": "job_documents",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_documents-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/jobs/00000000-0000-4000-8000-000000000001#checklist",
+      "label": "job_checklist",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/job_checklist-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/invoices/00000000-0000-4000-8000-000000000001",
+      "label": "invoice_detail",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/invoice_detail-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    },
+    {
+      "path": "/finance/payments/00000000-0000-4000-8000-000000000001",
+      "label": "payment_detail",
+      "primary": false,
+      "captures": [
+        {
+          "viewport": "1440",
+          "captured": true,
+          "shotCount": 1,
+          "screenshots": [
+            "diagnostic-output/phase18-visual-audit-staging/payment_detail-1440-top.png"
+          ],
+          "ux": {},
+          "error": null
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    "diagnostic-output/phase18-visual-audit-staging/dashboard-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/dashboard-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/dashboard-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/dashboard-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/dashboard-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customers-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customers-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customers-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customers-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customers-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/leads-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/leads-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/leads-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/leads-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/leads-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/jobs-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/jobs-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/jobs-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/jobs-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/jobs-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1440-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1280-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-1024-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-768-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-768-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling-375-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/quotes-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/quotes-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/quotes-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/quotes-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/quotes-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoices-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoices-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoices-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoices-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoices-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payments-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payments-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payments-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payments-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payments-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/receivables-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/receivables-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/receivables-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/receivables-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/receivables-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payables-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payables-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payables-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payables-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payables-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/cashflow-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/cashflow-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/cashflow-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/cashflow-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/cashflow-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/inventory-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/inventory-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/inventory-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/inventory-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/inventory-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/procurement-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/fleet_live_map-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/live_dispatch-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/live_dispatch-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/live_dispatch-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/communications-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/communications-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/communications-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/communications-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/communications-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/documents-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/documents-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/documents-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/documents-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/documents-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/analytics-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/analytics-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/analytics-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/analytics-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/analytics-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/marketing-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/marketing-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/marketing-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/marketing-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/marketing-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_team-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_team-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_team-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_team-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_team-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/automation-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/automation-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/automation-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/automation-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/automation-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/company_health-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/company_health-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/company_health-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/company_health-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/company_health-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/departments-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_company-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_company-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_company-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_company-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_company-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_team-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_billing-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/integrations-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/integrations-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/integrations-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/integrations-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/integrations-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/settings_security-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_chat-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_chat-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_chat-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_todays_plan-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/aura_business_rules-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_mobile-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_jobs-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/technician_route-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_create-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_create-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling_week-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/scheduling_month-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_360-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_360-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_360-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_360-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_360-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/customer_communications-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1440-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1280-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-1024-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-768-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-768-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-768-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-375-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-375-mid.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_360-375-bottom.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_payment_ledger-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_documents-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/job_checklist-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/invoice_detail-1440-top.png",
+    "diagnostic-output/phase18-visual-audit-staging/payment_detail-1440-top.png"
+  ],
+  "screenshotCount": 187,
+  "blockers": [],
+  "verdict": "GO"
+}

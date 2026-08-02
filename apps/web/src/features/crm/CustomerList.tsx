@@ -391,13 +391,15 @@ export function CustomerList({
         ariaLabel="Filter customers by status"
       />
 
-      <BulkActionBar
-        selectedCount={selectedIds.size}
-        totalCount={filteredRows.length}
-        onSelectAll={toggleSelectAll}
-        allSelected={allSelected}
-        actions={bulkActions}
-      />
+      {!isOwner ? (
+        <BulkActionBar
+          selectedCount={selectedIds.size}
+          totalCount={filteredRows.length}
+          onSelectAll={toggleSelectAll}
+          allSelected={allSelected}
+          actions={bulkActions}
+        />
+      ) : null}
 
       {bulkResult ? (
         <p className="page-muted">
@@ -424,19 +426,31 @@ export function CustomerList({
         />
       ) : (
         <div className="crm-table-wrap leads-list">
-          <table className="crm-table crm-table--compact crm-table--phase4">
+          <table
+            className={`crm-table crm-table--compact crm-table--phase4${isOwner ? ' crm-table--owner-simple' : ''}`}
+          >
             <thead>
               <tr>
-                <th className="leads-table__check-col" aria-label="Select" />
-                <th>Customer</th>
-                <th className="leads-table__hide-mobile">Contact</th>
-                <th className="leads-table__hide-mobile">Property / suburb</th>
-                <th className="leads-table__hide-mobile">Type / value</th>
-                <th className="leads-table__hide-mobile">Last job</th>
-                <th className="leads-table__hide-mobile">Outstanding</th>
-                <th className="leads-table__hide-mobile">Overdue</th>
-                <th className="leads-table__hide-mobile">Last activity</th>
-                <th className="leads-table__hide-mobile">Next action</th>
+                {!isOwner ? <th className="leads-table__check-col" aria-label="Select" /> : null}
+                <th>{isOwner ? 'Name' : 'Customer'}</th>
+                {isOwner ? (
+                  <>
+                    <th className="leads-table__hide-mobile">Phone</th>
+                    <th className="leads-table__hide-mobile">Email</th>
+                    <th className="leads-table__hide-mobile">Outstanding</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="leads-table__hide-mobile">Contact</th>
+                    <th className="leads-table__hide-mobile">Property / suburb</th>
+                    <th className="leads-table__hide-mobile">Type / value</th>
+                    <th className="leads-table__hide-mobile">Last job</th>
+                    <th className="leads-table__hide-mobile">Outstanding</th>
+                    <th className="leads-table__hide-mobile">Overdue</th>
+                    <th className="leads-table__hide-mobile">Last activity</th>
+                    <th className="leads-table__hide-mobile">Next action</th>
+                  </>
+                )}
                 <th className="leads-table__actions-col leads-table__actions-col--wide">Actions</th>
               </tr>
             </thead>
@@ -464,69 +478,99 @@ export function CustomerList({
 
                 return (
                   <StatusRowAccent key={customer.id} tone={tone} className="crm-table__row">
-                    <td className="leads-table__check-col">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(customer.id)}
-                        onChange={(event) => toggleRow(customer.id, event.target.checked)}
-                        aria-label={`Select ${customer.name}`}
-                      />
-                    </td>
+                    {!isOwner ? (
+                      <td className="leads-table__check-col">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(customer.id)}
+                          onChange={(event) => toggleRow(customer.id, event.target.checked)}
+                          aria-label={`Select ${customer.name}`}
+                        />
+                      </td>
+                    ) : null}
                     <td className="leads-table__primary">
                       <div className="leads-table__name-line">
                         <Link href={`/crm/${customer.id}`} className="crm-link">
                           {customer.name}
                         </Link>
-                        <StatusBadgeDropdown
-                          label={formatUiStatusLabel(uiStatus)}
-                          tone={tone}
-                          canChange={canWrite && saveState !== 'saving'}
-                          saveState={saveState}
-                          options={dropdownOptions}
-                          onSelect={(statusId) =>
-                            void changeCustomerStatus(
-                              customer,
-                              statusId as CustomerUiStatus,
-                              classification,
-                            )
-                          }
-                        />
+                        {!isOwner ? (
+                          <StatusBadgeDropdown
+                            label={formatUiStatusLabel(uiStatus)}
+                            tone={tone}
+                            canChange={canWrite && saveState !== 'saving'}
+                            saveState={saveState}
+                            options={dropdownOptions}
+                            onSelect={(statusId) =>
+                              void changeCustomerStatus(
+                                customer,
+                                statusId as CustomerUiStatus,
+                                classification,
+                              )
+                            }
+                          />
+                        ) : null}
                       </div>
-                      <div className="leads-table__mobile-meta">
-                        <span>{customer.phone ?? customer.email ?? '—'}</span>
-                        <span>{customer.primaryAddressDisplay ?? '—'}</span>
-                      </div>
+                      {isOwner ? (
+                        <div className="leads-table__mobile-meta">
+                          <span>{customer.phone ?? '—'}</span>
+                          <span>{customer.email ?? '—'}</span>
+                          <span>
+                            {classification
+                              ? formatListMoney(classification.outstandingCents)
+                              : '—'}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="leads-table__mobile-meta">
+                          <span>{customer.phone ?? customer.email ?? '—'}</span>
+                          <span>{customer.primaryAddressDisplay ?? '—'}</span>
+                        </div>
+                      )}
                     </td>
-                    <td className="leads-table__hide-mobile">
-                      <div>{customer.phone ?? '—'}</div>
-                      <div className="muted-text">{customer.email ?? '—'}</div>
-                    </td>
-                    <td className="leads-table__hide-mobile">
-                      <div>{customer.primaryAddressDisplay ?? '—'}</div>
-                      <div className="muted-text">{customer.primarySuburb ?? '—'}</div>
-                    </td>
-                    <td className="leads-table__hide-mobile">{valueLabel}</td>
-                    <td className="leads-table__hide-mobile">
-                      {customer.lastJobAt
-                        ? `${customer.lastJobNumber ?? 'Job'} · ${new Date(customer.lastJobAt).toLocaleDateString()}`
-                        : '—'}
-                    </td>
-                    <td className="leads-table__hide-mobile">
-                      {classification
-                        ? formatListMoney(classification.outstandingCents)
-                        : '—'}
-                    </td>
-                    <td className="leads-table__hide-mobile">
-                      {classification && classification.overdueOutstandingCents > 0
-                        ? formatListMoney(classification.overdueOutstandingCents)
-                        : '—'}
-                    </td>
-                    <td className="leads-table__hide-mobile">
-                      {customer.lastActivityAt
-                        ? new Date(customer.lastActivityAt).toLocaleDateString()
-                        : new Date(customer.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td className="leads-table__hide-mobile">{customer.nextAction ?? '—'}</td>
+                    {isOwner ? (
+                      <>
+                        <td className="leads-table__hide-mobile">{customer.phone ?? '—'}</td>
+                        <td className="leads-table__hide-mobile">{customer.email ?? '—'}</td>
+                        <td className="leads-table__hide-mobile">
+                          {classification
+                            ? formatListMoney(classification.outstandingCents)
+                            : '—'}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="leads-table__hide-mobile">
+                          <div>{customer.phone ?? '—'}</div>
+                          <div className="muted-text">{customer.email ?? '—'}</div>
+                        </td>
+                        <td className="leads-table__hide-mobile">
+                          <div>{customer.primaryAddressDisplay ?? '—'}</div>
+                          <div className="muted-text">{customer.primarySuburb ?? '—'}</div>
+                        </td>
+                        <td className="leads-table__hide-mobile">{valueLabel}</td>
+                        <td className="leads-table__hide-mobile">
+                          {customer.lastJobAt
+                            ? `${customer.lastJobNumber ?? 'Job'} · ${new Date(customer.lastJobAt).toLocaleDateString()}`
+                            : '—'}
+                        </td>
+                        <td className="leads-table__hide-mobile">
+                          {classification
+                            ? formatListMoney(classification.outstandingCents)
+                            : '—'}
+                        </td>
+                        <td className="leads-table__hide-mobile">
+                          {classification && classification.overdueOutstandingCents > 0
+                            ? formatListMoney(classification.overdueOutstandingCents)
+                            : '—'}
+                        </td>
+                        <td className="leads-table__hide-mobile">
+                          {customer.lastActivityAt
+                            ? new Date(customer.lastActivityAt).toLocaleDateString()
+                            : new Date(customer.updatedAt).toLocaleDateString()}
+                        </td>
+                        <td className="leads-table__hide-mobile">{customer.nextAction ?? '—'}</td>
+                      </>
+                    )}
                     <td className="leads-table__actions-col leads-table__actions-col--wide">
                       <RowActionsCell
                         editHref={`/crm/${customer.id}#edit`}

@@ -924,6 +924,7 @@ a:focus-visible {
   color: inherit;
   text-decoration: none;
   border-radius: var(--titan-radius-lg);
+  cursor: pointer;
 }
 
 .dashboard-stat-card__link:focus-visible {
@@ -1178,9 +1179,11 @@ a:focus-visible {
 }
 
 .exec-dashboard-glance__link {
+  display: block;
   text-decoration: none;
   color: inherit;
   border-radius: var(--titan-radius-md);
+  cursor: pointer;
 }
 
 .exec-dashboard-glance__link:hover .titan-stat-card,
@@ -7797,11 +7800,19 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 .ux-compact-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   padding: 0.4rem 0.75rem;
   border-radius: var(--titan-radius-sm);
   font-size: 0.8125rem;
   color: var(--titan-text-secondary);
   border: 1px solid transparent;
+}
+
+.ux-compact-tabs__icon {
+  flex-shrink: 0;
+  opacity: 0.85;
 }
 
 .ux-compact-tabs__tab:hover {

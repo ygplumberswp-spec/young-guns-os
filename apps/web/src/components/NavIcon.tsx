@@ -219,6 +219,88 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </>
   ),
+  Receivables: (
+    <>
+      <path d="M4 2h16v20l-4-3-4 3-4-3-4 3z" />
+      <path d="M8 7h8" />
+      <path d="M8 11h5" />
+      <path d="M16 16l2 2 4-4" />
+    </>
+  ),
+  'Bills & Payables': (
+    <>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="M8 13h8" />
+      <path d="M8 17h5" />
+    </>
+  ),
+  Cashflow: (
+    <>
+      <path d="M12 2v20" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
+    </>
+  ),
+  Procurement: (
+    <>
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </>
+  ),
+  Departments: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h7v7h-7z" />
+    </>
+  ),
+  Company: (
+    <>
+      <path d="M3 21h18" />
+      <path d="M5 21V7l8-4v18" />
+      <path d="M19 21V11l-6-4" />
+      <path d="M9 9v0" />
+      <path d="M9 12v0" />
+      <path d="M9 15v0" />
+      <path d="M9 18v0" />
+    </>
+  ),
+  'Finance & Pricing': (
+    <>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <path d="M2 10h20" />
+      <path d="M6 15h2" />
+      <path d="M10 15h4" />
+    </>
+  ),
+  'Jobs & Scheduling': (
+    <>
+      <rect x="3" y="4" width="18" height="18" rx="2" />
+      <path d="M16 2v4" />
+      <path d="M8 2v4" />
+      <path d="M3 10h18" />
+      <path d="M8 14h.01" />
+      <path d="M12 14h.01" />
+      <path d="M16 14h.01" />
+    </>
+  ),
+  'AURA & Automations': (
+    <>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="M4.93 4.93l1.41 1.41" />
+      <path d="M17.66 17.66l1.41 1.41" />
+    </>
+  ),
+  'Company Setup': (
+    <>
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      <path d="M9 12l2 2 4-4" />
+    </>
+  ),
   default: (
     <>
       <circle cx="12" cy="12" r="2" />
