@@ -239,3 +239,52 @@ export type CreateSupplierActivityRequest = {
 export type UpdateProcurementRecommendationRequest = {
   status: ProcurementRecommendationStatus;
 };
+
+export type SupplierWorkspaceRow = SupplierSummary & {
+  priceListCount: number;
+  avgLeadTimeDays: number | null;
+  lastOrderAt: string | null;
+  lastOrderReference: string | null;
+  lastOrderTotalCents: number | null;
+  communicationCount: number;
+  /** Categories taxonomy — schema not wired; honest null. */
+  categories: string[] | null;
+  /** Xero ACCPAY bills — not imported on staging. */
+  billCount: number | null;
+  /** Preferred supplier flag — derived from highest completed PO count when present. */
+  isPreferred: boolean;
+  /** Document vault — not wired per supplier. */
+  documentCount: number | null;
+};
+
+export type ProcureToPayStageId =
+  | 'need'
+  | 'request'
+  | 'compare'
+  | 'approve'
+  | 'order'
+  | 'receive'
+  | 'inspect'
+  | 'match'
+  | 'bill'
+  | 'payment_approval'
+  | 'reconciliation';
+
+export type ProcureToPayStageStatus = 'live' | 'partial' | 'hold';
+
+export type ProcureToPayStage = {
+  id: ProcureToPayStageId;
+  label: string;
+  status: ProcureToPayStageStatus;
+  count: number;
+  description: string;
+  handoffHref: string | null;
+  holdReason: string | null;
+};
+
+export type ProcureToPayPipeline = {
+  stages: ProcureToPayStage[];
+  pendingApprovalCount: number;
+  openOrderCount: number;
+  lowStockCount: number;
+};

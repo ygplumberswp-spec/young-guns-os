@@ -314,6 +314,7 @@ export function App() {
                           path="/inventory/products/new"
                           component={OwnerPages.ProductCreatePage}
                         />
+                        <Route path="/inventory/overview" component={OwnerPages.InventoryWorkspacePage} />
                         <Route path="/inventory/products" component={OwnerPages.ProductListPage} />
                         <Route path="/inventory/stock" component={OwnerPages.StockOverviewPage} />
                         <Route
@@ -333,6 +334,11 @@ export function App() {
                           component={OwnerPages.SupplierDetailPage}
                         />
                         <Route path="/procurement/suppliers" component={OwnerPages.SupplierListPage} />
+                        <Route path="/procurement/flow" component={OwnerPages.ProcureToPayPage} />
+                        <Route
+                          path="/procurement/price-lists"
+                          component={OwnerPages.SupplierPriceListsPage}
+                        />
                         <Route
                           path="/procurement/parts-requests"
                           component={OwnerPages.PartsRequestsPage}

@@ -6,6 +6,7 @@ import type {
   InventoryStats,
   InventoryStockLevelSummary,
   InventoryStockMovementSummary,
+  InventoryWorkspaceRow,
   SetInventoryStockRequest,
 } from '@titan/shared';
 import { request } from './api-client';
@@ -77,6 +78,15 @@ export async function fetchInventoryStockMovements(
     { accessToken },
   );
   return data.movements;
+}
+
+export async function fetchInventoryWorkspace(
+  accessToken: string,
+): Promise<InventoryWorkspaceRow[]> {
+  const data = await request<{ rows: InventoryWorkspaceRow[] }>('/inventory/workspace', {
+    accessToken,
+  });
+  return data.rows;
 }
 
 export async function setInventoryStock(

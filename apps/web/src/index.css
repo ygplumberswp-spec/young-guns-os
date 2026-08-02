@@ -4699,6 +4699,93 @@ a:focus-visible {
   min-height: 6rem;
 }
 
+.inventory-hold-panel__badge-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.inventory-hold-panel__reason {
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.inventory-hold-panel__actions {
+  margin-top: 0.5rem;
+}
+
+.inventory-workspace-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.inventory-workspace-stat {
+  font-size: 0.875rem;
+  color: var(--titan-muted, #64748b);
+}
+
+.inventory-workspace-table th,
+.inventory-workspace-table td {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+}
+
+.procure-pipeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.procure-pipeline__stage {
+  border: 1px solid var(--titan-border, #e2e8f0);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+}
+
+.procure-pipeline__stage--hold {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.procure-pipeline__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.procure-pipeline__label {
+  font-weight: 600;
+}
+
+.procure-pipeline__count {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--titan-muted, #64748b);
+}
+
+.procure-pipeline__description {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+}
+
+.procure-pipeline__hold {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+}
+
+.procure-pipeline__link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-size: 0.8125rem;
+}
+
 .fleet-page {
   display: flex;
   flex-direction: column;

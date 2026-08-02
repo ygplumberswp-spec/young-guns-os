@@ -173,6 +173,20 @@ export function createInventoryRouter({
     },
   );
 
+  router.get(
+    '/workspace',
+    requireAnyPermission('inventory:read', 'inventory:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const includeCost =
+        auth.permissions.includes('*') ||
+        auth.permissions.includes('inventory:write') ||
+        auth.permissions.includes('finance:write');
+      const rows = await inventoryService.buildInventoryWorkspace(auth.companyId, { includeCost });
+      res.json({ data: { rows } });
+    },
+  );
+
   router.post('/stock', requireAnyPermission('inventory:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const parsed = setStockSchema.safeParse(req.body);

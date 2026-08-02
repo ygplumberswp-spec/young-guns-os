@@ -136,6 +136,10 @@ export const ProductListPage = lazyNamed(
   () => import('../pages/inventory/ProductListPage'),
   'ProductListPage',
 );
+export const InventoryWorkspacePage = lazyNamed(
+  () => import('../pages/inventory/InventoryWorkspacePage'),
+  'InventoryWorkspacePage',
+);
 export const ProductCreatePage = lazyNamed(
   () => import('../pages/inventory/ProductCreatePage'),
   'ProductCreatePage',
@@ -171,6 +175,14 @@ export const PurchaseOrderDetailPage = lazyNamed(
 export const PartsRequestsPage = lazyNamed(
   () => import('../pages/procurement/PartsRequestsPage'),
   'PartsRequestsPage',
+);
+export const ProcureToPayPage = lazyNamed(
+  () => import('../pages/procurement/ProcureToPayPage'),
+  'ProcureToPayPage',
+);
+export const SupplierPriceListsPage = lazyNamed(
+  () => import('../pages/procurement/SupplierPriceListsPage'),
+  'SupplierPriceListsPage',
 );
 export const VehicleListPage = lazyNamed(
   () => import('../pages/fleet/VehicleListPage'),

@@ -135,3 +135,27 @@ export type SetInventoryStockRequest = {
   clientActionId?: string | null;
   reason?: string | null;
 };
+
+/** Owner inventory workspace row — aggregated from stock, materials and supplier links. */
+export type InventoryWorkspaceRow = {
+  itemId: string;
+  sku: string;
+  name: string;
+  unit: string;
+  warehouseStock: number;
+  vanStock: number;
+  reservedQuantity: number;
+  usedQuantity: number;
+  totalOnHand: number;
+  reorderLevel: number;
+  reorderAmount: number;
+  isLowStock: boolean;
+  isOutOfStock: boolean;
+  purchaseRequired: boolean;
+  preferredSupplierId: string | null;
+  preferredSupplierName: string | null;
+  latestPriceCents: number | null;
+  priceChangeDirection: 'up' | 'down' | 'stable' | null;
+  unmatchedUsageCount: number;
+  status: InventoryItemStatus;
+};

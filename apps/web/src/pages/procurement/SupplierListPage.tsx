@@ -3,7 +3,7 @@ import { FormEvent, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, Input, PageLoadState, Panel } from '@titan/ui';
 import { ApiClientError } from '../../lib/api-client';
-import { createSupplier, fetchSuppliers } from '../../lib/procurement-api';
+import { createSupplier, fetchSupplierWorkspace } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { ProcurementNav } from '../../features/procurement/ProcurementNav';
@@ -32,7 +32,7 @@ export function SupplierListPage() {
     accessToken,
     enabled: canView,
     staleTimeMs: 30_000,
-    fetcher: async () => fetchSuppliers(accessToken!),
+    fetcher: async () => fetchSupplierWorkspace(accessToken!),
   });
 
   async function handleCreate(event: FormEvent<HTMLFormElement>) {
@@ -112,16 +112,22 @@ export function SupplierListPage() {
         emptyDescription="Add a supplier to start creating purchase orders."
         loadingLabel="Loading suppliers…"
       >
-        <Panel title="Suppliers">
+        <Panel title="Suppliers workspace">
           <div className="inventory-table-wrap">
             <table className="inventory-table">
               <thead>
                 <tr>
                   <th>Name</th>
                   <th>Contact</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Purchase orders</th>
+                  <th>Categories</th>
+                  <th>Price lists</th>
+                  <th>Lead time</th>
+                  <th>Last order</th>
+                  <th>Bills</th>
+                  <th>Preferred</th>
+                  <th>Comms</th>
+                  <th>Docs</th>
+                  <th>PO count</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -133,9 +139,34 @@ export function SupplierListPage() {
                         {supplier.name}
                       </Link>
                     </td>
-                    <td>{supplier.contactName ?? '—'}</td>
-                    <td>{supplier.email ?? '—'}</td>
-                    <td>{supplier.phone ?? '—'}</td>
+                    <td>
+                      {supplier.contactName ?? '—'}
+                      {supplier.email ? (
+                        <span className="page-muted"> · {supplier.email}</span>
+                      ) : null}
+                    </td>
+                    <td>{supplier.categories ? supplier.categories.join(', ') : 'HOLD'}</td>
+                    <td>{supplier.priceListCount}</td>
+                    <td>{supplier.avgLeadTimeDays != null ? `${supplier.avgLeadTimeDays}d` : '—'}</td>
+                    <td>
+                      {supplier.lastOrderReference ? (
+                        <>
+                          {supplier.lastOrderReference}
+                          {supplier.lastOrderAt ? (
+                            <span className="page-muted">
+                              {' '}
+                              · {new Date(supplier.lastOrderAt).toLocaleDateString()}
+                            </span>
+                          ) : null}
+                        </>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{supplier.billCount != null ? supplier.billCount : 'HOLD'}</td>
+                    <td>{supplier.isPreferred ? 'Yes' : '—'}</td>
+                    <td>{supplier.communicationCount}</td>
+                    <td>{supplier.documentCount != null ? supplier.documentCount : 'HOLD'}</td>
                     <td>{supplier.purchaseOrderCount}</td>
                     <td>
                       <span className="inventory-status">{supplier.status}</span>

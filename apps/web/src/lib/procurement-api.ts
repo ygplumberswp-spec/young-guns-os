@@ -2,12 +2,14 @@ import type {
   CreatePurchaseOrderRequest,
   CreateSupplierActivityRequest,
   CreateSupplierRequest,
+  ProcureToPayPipeline,
   ProcurementStats,
   PurchaseOrderDetail,
   PurchaseOrderSummary,
   ReceivePurchaseOrderRequest,
   SupplierActivitySummary,
   SupplierSummary,
+  SupplierWorkspaceRow,
   UpdatePurchaseOrderRequest,
   UpdatePurchaseOrderStatusRequest,
   UpdateSupplierRequest,
@@ -24,6 +26,26 @@ export async function fetchSuppliers(accessToken: string): Promise<SupplierSumma
     accessToken,
   });
   return data.suppliers;
+}
+
+export async function fetchSupplierWorkspace(
+  accessToken: string,
+): Promise<SupplierWorkspaceRow[]> {
+  const data = await request<{ suppliers: SupplierWorkspaceRow[] }>(
+    '/procurement/workspace/suppliers',
+    { accessToken },
+  );
+  return data.suppliers;
+}
+
+export async function fetchProcureToPayPipeline(
+  accessToken: string,
+): Promise<ProcureToPayPipeline> {
+  const data = await request<{ pipeline: ProcureToPayPipeline }>(
+    '/procurement/workspace/procure-to-pay',
+    { accessToken },
+  );
+  return data.pipeline;
 }
 
 export async function createSupplier(

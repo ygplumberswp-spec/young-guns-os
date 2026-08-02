@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'wouter';
 
 const tabs = [
+  { href: '/procurement/flow', label: 'Procure-to-pay' },
   { href: '/procurement', label: 'Purchase orders' },
   { href: '/procurement/suppliers', label: 'Suppliers' },
+  { href: '/procurement/price-lists', label: 'Price lists' },
   { href: '/procurement/parts-requests', label: 'Parts requests' },
 ];
 

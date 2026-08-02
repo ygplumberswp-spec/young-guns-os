@@ -21,10 +21,13 @@ import type {
   UpdatePurchaseOrderStatusRequest,
   UpdateSupplierProductRequest,
   UpdateSupplierRequest,
+  ProcureToPayPipeline,
+  SupplierWorkspaceRow,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   inventoryStockMovements,
+  jobMaterialLines,
   jobs,
   procurementRecommendations,
   purchaseOrderItems,
@@ -93,6 +96,196 @@ export class ProcurementService {
     });
 
     return rows.map(toSupplierSummary);
+  }
+
+  async listSupplierWorkspace(companyId: string): Promise<SupplierWorkspaceRow[]> {
+    const rows = await this.deps.db.query.suppliers.findMany({
+      where: eq(suppliers.companyId, companyId),
+      with: {
+        products: true,
+        purchaseOrders: true,
+        activities: true,
+      },
+      orderBy: [desc(suppliers.updatedAt)],
+    });
+
+    const maxCompletedOrders = Math.max(
+      0,
+      ...rows.map(
+        (row) => row.purchaseOrders.filter((order) => order.status === 'completed').length,
+      ),
+    );
+
+    return rows.map((row) => {
+      const summary = toSupplierSummary(row);
+      const leadTimes = row.products
+        .map((product) => product.leadTimeDays)
+        .filter((value): value is number => value !== null && value > 0);
+      const avgLeadTimeDays = leadTimes.length
+        ? Math.round(leadTimes.reduce((sum, value) => sum + value, 0) / leadTimes.length)
+        : null;
+
+      const sortedOrders = [...row.purchaseOrders].sort(
+        (a, b) =>
+          (b.orderedAt ?? b.createdAt).getTime() - (a.orderedAt ?? a.createdAt).getTime(),
+      );
+      const lastOrder = sortedOrders[0] ?? null;
+      const completedCount = row.purchaseOrders.filter((order) => order.status === 'completed')
+        .length;
+
+      return {
+        ...summary,
+        priceListCount: row.products.length,
+        avgLeadTimeDays,
+        lastOrderAt: lastOrder
+          ? (lastOrder.orderedAt ?? lastOrder.createdAt).toISOString()
+          : null,
+        lastOrderReference: lastOrder?.referenceNumber ?? null,
+        lastOrderTotalCents: lastOrder?.totalCostCents ?? null,
+        communicationCount: row.activities.length,
+        categories: null,
+        billCount: null,
+        isPreferred: maxCompletedOrders > 0 && completedCount === maxCompletedOrders,
+        documentCount: null,
+      };
+    });
+  }
+
+  async getProcureToPayPipeline(companyId: string): Promise<ProcureToPayPipeline> {
+    const [stats, orders, recommendations, materialPending] = await Promise.all([
+      this.getStats(companyId),
+      this.deps.db.query.purchaseOrders.findMany({
+        where: eq(purchaseOrders.companyId, companyId),
+      }),
+      this.listRecommendations(companyId),
+      this.deps.db.query.jobMaterialLines.findMany({
+        where: and(
+          eq(jobMaterialLines.companyId, companyId),
+          inArray(jobMaterialLines.status, ['requested']),
+        ),
+      }),
+    ]);
+
+    const draftCount = orders.filter((row) => row.status === 'draft').length;
+    const pendingApprovalCount = orders.filter((row) => row.status === 'pending_approval').length;
+    const approvedCount = orders.filter((row) => row.status === 'approved').length;
+    const receivingCount = orders.filter(
+      (row) =>
+        row.status === 'ordered' ||
+        (row.status === 'received' && row.deliveryStatus !== 'delivered'),
+    ).length;
+    const receivedCount = orders.filter((row) => row.status === 'received').length;
+
+    const needCount = stats.lowStockCount + recommendations.filter((r) => r.status === 'pending').length;
+
+    const stages: ProcureToPayPipeline['stages'] = [
+      {
+        id: 'need',
+        label: 'Need',
+        status: 'live',
+        count: needCount,
+        description: 'Low-stock signals and procurement recommendations.',
+        handoffHref: '/inventory/overview',
+        holdReason: null,
+      },
+      {
+        id: 'request',
+        label: 'Request',
+        status: 'live',
+        count: materialPending.length + draftCount,
+        description: 'Technician parts requests and draft purchase orders.',
+        handoffHref: '/procurement/parts-requests',
+        holdReason: null,
+      },
+      {
+        id: 'compare',
+        label: 'Compare',
+        status: 'partial',
+        count: 0,
+        description: 'Supplier price lists and catalogue comparison.',
+        handoffHref: '/procurement/price-lists',
+        holdReason: 'Supplier price intelligence UI partial — import review queue on HOLD.',
+      },
+      {
+        id: 'approve',
+        label: 'Approve',
+        status: 'live',
+        count: pendingApprovalCount,
+        description: 'Purchase orders awaiting approval before spend.',
+        handoffHref: '/procurement',
+        holdReason: null,
+      },
+      {
+        id: 'order',
+        label: 'Order',
+        status: 'live',
+        count: approvedCount,
+        description: 'Approved POs ready to send to supplier.',
+        handoffHref: '/procurement',
+        holdReason: null,
+      },
+      {
+        id: 'receive',
+        label: 'Receive',
+        status: 'live',
+        count: receivingCount + receivedCount,
+        description: 'Goods receipt updates stock ledger.',
+        handoffHref: '/procurement',
+        holdReason: null,
+      },
+      {
+        id: 'inspect',
+        label: 'Inspect',
+        status: 'hold',
+        count: 0,
+        description: 'Quality inspection on receipt.',
+        handoffHref: null,
+        holdReason: 'QC inspection workflow not mounted — receipt only.',
+      },
+      {
+        id: 'match',
+        label: 'Match',
+        status: 'hold',
+        count: 0,
+        description: 'Three-way match PO ↔ receipt ↔ bill.',
+        handoffHref: null,
+        holdReason: 'Xero ACCPAY bill match not connected on staging.',
+      },
+      {
+        id: 'bill',
+        label: 'Bill',
+        status: 'hold',
+        count: 0,
+        description: 'Supplier bills (ACCPAY).',
+        handoffHref: '/finance/payables',
+        holdReason: 'Xero ACCPAY import on HOLD — PO commitments shown in Finance payables.',
+      },
+      {
+        id: 'payment_approval',
+        label: 'Payment approval',
+        status: 'hold',
+        count: 0,
+        description: 'Payment run approval before disbursement.',
+        handoffHref: '/finance/payments',
+        holdReason: 'Payment approval chain partial — job payment ledger live; supplier AP on HOLD.',
+      },
+      {
+        id: 'reconciliation',
+        label: 'Reconciliation',
+        status: 'hold',
+        count: 0,
+        description: 'Bank and ledger reconciliation.',
+        handoffHref: '/finance/cashflow',
+        holdReason: 'Full bank reconciliation on HOLD — sync logs only.',
+      },
+    ];
+
+    return {
+      stages,
+      pendingApprovalCount,
+      openOrderCount: stats.openOrderCount,
+      lowStockCount: stats.lowStockCount,
+    };
   }
 
   async getSupplier(companyId: string, supplierId: string): Promise<SupplierSummary | null> {

@@ -139,6 +139,18 @@ export function createProcurementRouter({
     res.json({ data: { stats } });
   });
 
+  router.get('/workspace/suppliers', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const suppliers = await procurementService.listSupplierWorkspace(companyId);
+    res.json({ data: { suppliers } });
+  });
+
+  router.get('/workspace/procure-to-pay', requireRead, async (req, res) => {
+    const { companyId } = getAuth(req);
+    const pipeline = await procurementService.getProcureToPayPipeline(companyId);
+    res.json({ data: { pipeline } });
+  });
+
   router.get('/insights', requireRead, async (req, res) => {
     const { companyId } = getAuth(req);
     const [stockIntelligence, supplierInsights] = await Promise.all([

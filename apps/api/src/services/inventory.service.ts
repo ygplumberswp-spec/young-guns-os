@@ -6,10 +6,19 @@ import type {
   InventoryLocationSummary,
   InventoryStats,
   InventoryStockLevelSummary,
+  InventoryWorkspaceRow,
   SetInventoryStockRequest,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
-import { inventoryItems, inventoryLocations, inventoryStockLevels, vehicles } from '@titan/db';
+import {
+  inventoryItems,
+  inventoryLocations,
+  inventoryStockLevels,
+  inventoryStockMovements,
+  jobMaterialLines,
+  supplierProducts,
+  vehicles,
+} from '@titan/db';
 import { emitBusinessEvent } from '../lib/automation-events.js';
 
 export class InventoryError extends Error {
@@ -340,6 +349,155 @@ export class InventoryService {
       lowStockCount,
       totalUnitsOnHand: totalUnitsRow?.total ?? 0,
     };
+  }
+
+  async buildInventoryWorkspace(
+    companyId: string,
+    options: ListItemsOptions = {},
+  ): Promise<InventoryWorkspaceRow[]> {
+    const includeCost = options.includeCost !== false;
+
+    const [itemRows, stockRows, materialRows, issueMovements, supplierProductRows] =
+      await Promise.all([
+        this.db.query.inventoryItems.findMany({
+          where: eq(inventoryItems.companyId, companyId),
+          with: { stockLevels: { with: { location: true } } },
+          orderBy: [desc(inventoryItems.updatedAt)],
+        }),
+        this.db.query.inventoryStockLevels.findMany({
+          where: eq(inventoryStockLevels.companyId, companyId),
+          with: { location: true },
+        }),
+        this.db.query.jobMaterialLines.findMany({
+          where: eq(jobMaterialLines.companyId, companyId),
+        }),
+        this.db.query.inventoryStockMovements.findMany({
+          where: and(
+            eq(inventoryStockMovements.companyId, companyId),
+            eq(inventoryStockMovements.movementType, 'issue'),
+          ),
+        }),
+        this.db.query.supplierProducts.findMany({
+          where: eq(supplierProducts.companyId, companyId),
+          with: { supplier: true },
+        }),
+      ]);
+
+    const stockByItem = new Map<string, { warehouse: number; van: number; total: number }>();
+    for (const level of stockRows) {
+      const bucket = stockByItem.get(level.itemId) ?? { warehouse: 0, van: 0, total: 0 };
+      const qty = level.quantityOnHand;
+      bucket.total += qty;
+      if (level.location?.locationType === 'van') {
+        bucket.van += qty;
+      } else if (level.location?.locationType === 'warehouse') {
+        bucket.warehouse += qty;
+      } else {
+        bucket.warehouse += qty;
+      }
+      stockByItem.set(level.itemId, bucket);
+    }
+
+    const reservedByItem = new Map<string, number>();
+    const usedByItem = new Map<string, number>();
+
+    for (const line of materialRows) {
+      const qty = Number(line.quantity);
+      if (!line.inventoryItemId) {
+        continue;
+      }
+
+      if (line.status === 'requested' || line.status === 'approved') {
+        reservedByItem.set(
+          line.inventoryItemId,
+          (reservedByItem.get(line.inventoryItemId) ?? 0) + qty,
+        );
+      }
+      if (line.status === 'used' || line.status === 'partially_fulfilled') {
+        usedByItem.set(line.inventoryItemId, (usedByItem.get(line.inventoryItemId) ?? 0) + qty);
+      }
+    }
+
+    for (const movement of issueMovements) {
+      usedByItem.set(
+        movement.itemId,
+        (usedByItem.get(movement.itemId) ?? 0) + Math.abs(movement.quantityDelta),
+      );
+    }
+
+    const supplierLinksByItem = new Map<
+      string,
+      Array<{ supplierId: string; supplierName: string; unitCostCents: number }>
+    >();
+    for (const product of supplierProductRows) {
+      if (!product.inventoryItemId) continue;
+      const list = supplierLinksByItem.get(product.inventoryItemId) ?? [];
+      list.push({
+        supplierId: product.supplierId,
+        supplierName: product.supplier?.name ?? 'Unknown',
+        unitCostCents: product.unitCostCents,
+      });
+      supplierLinksByItem.set(product.inventoryItemId, list);
+    }
+
+    return itemRows.map((item) => {
+      const stock = stockByItem.get(item.id) ?? { warehouse: 0, van: 0, total: 0 };
+      const totalOnHand = stock.total;
+      const isOutOfStock = item.status === 'active' && totalOnHand === 0;
+      const isLowStock =
+        item.status === 'active' && item.reorderLevel > 0 && totalOnHand <= item.reorderLevel;
+      const reorderAmount =
+        item.reorderLevel > 0 ? Math.max(0, item.reorderLevel - totalOnHand) : 0;
+
+      const links = supplierLinksByItem.get(item.id) ?? [];
+      const preferred = links.length
+        ? [...links].sort((a, b) => a.unitCostCents - b.unitCostCents)[0]
+        : null;
+
+      const itemCost = includeCost ? item.unitCostCents : null;
+      const latestPriceCents = preferred?.unitCostCents ?? itemCost;
+      let priceChangeDirection: InventoryWorkspaceRow['priceChangeDirection'] = null;
+      if (preferred && itemCost != null && preferred.unitCostCents !== itemCost) {
+        priceChangeDirection =
+          preferred.unitCostCents > itemCost
+            ? 'up'
+            : preferred.unitCostCents < itemCost
+              ? 'down'
+              : 'stable';
+      } else if (preferred && itemCost != null) {
+        priceChangeDirection = 'stable';
+      }
+
+      const unmatchedForItem = materialRows.filter(
+        (line) =>
+          line.inventoryItemId === item.id &&
+          line.status === 'used' &&
+          !line.stockMovementId,
+      ).length;
+
+      return {
+        itemId: item.id,
+        sku: item.sku,
+        name: item.name,
+        unit: item.unit,
+        warehouseStock: stock.warehouse,
+        vanStock: stock.van,
+        reservedQuantity: Math.round((reservedByItem.get(item.id) ?? 0) * 1000) / 1000,
+        usedQuantity: Math.round((usedByItem.get(item.id) ?? 0) * 1000) / 1000,
+        totalOnHand,
+        reorderLevel: item.reorderLevel,
+        reorderAmount,
+        isLowStock,
+        isOutOfStock,
+        purchaseRequired: isLowStock || isOutOfStock,
+        preferredSupplierId: preferred?.supplierId ?? null,
+        preferredSupplierName: preferred?.supplierName ?? null,
+        latestPriceCents,
+        priceChangeDirection,
+        unmatchedUsageCount: unmatchedForItem,
+        status: item.status,
+      };
+    });
   }
 
   async buildAuraContext(companyId: string): Promise<AuraInventoryContext> {
