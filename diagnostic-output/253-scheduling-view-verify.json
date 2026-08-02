@@ -1,0 +1,74 @@
+{
+  "phase": 253,
+  "generatedAt": "2026-08-02T12:39:29.612Z",
+  "gitSha": "8de56a1624911e792d925e8b9f2491e3c0dc368b",
+  "web": "https://comfortable-determination-staging.up.railway.app",
+  "blockers": [],
+  "viewClicks": [
+    {
+      "viewport": "1440",
+      "view": "day",
+      "dataView": "day",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?view=day&date=2026-08-02",
+      "activeTab": "Day",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-day-1440.png"
+    },
+    {
+      "viewport": "1440",
+      "view": "week",
+      "dataView": "week",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?date=2026-08-02",
+      "activeTab": "Week",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-week-1440.png"
+    },
+    {
+      "viewport": "1440",
+      "view": "month",
+      "dataView": "month",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month&date=2026-08-02",
+      "activeTab": "Month",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-month-1440.png"
+    },
+    {
+      "viewport": "375",
+      "view": "day",
+      "dataView": "day",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?view=day&date=2026-08-02",
+      "activeTab": "Day",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-day-375.png"
+    },
+    {
+      "viewport": "375",
+      "view": "week",
+      "dataView": "week",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?date=2026-08-02",
+      "activeTab": "Week",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-week-375.png"
+    },
+    {
+      "viewport": "375",
+      "view": "month",
+      "dataView": "month",
+      "url": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month&date=2026-08-02",
+      "activeTab": "Month",
+      "layout": "empty-state",
+      "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-month-375.png"
+    }
+  ],
+  "backNavigation": {
+    "monthUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month&date=2026-08-02",
+    "afterBackUrl": "https://comfortable-determination-staging.up.railway.app/scheduling?view=month&date=2026-08-02",
+    "viewRestored": true
+  },
+  "emptyState": {
+    "hasMessage": true,
+    "layout": "empty-state",
+    "screenshot": "diagnostic-output/phase253-scheduling-views-staging/scheduling-empty-day-1440.png"
+  },
+  "verdict": "GO"
+}

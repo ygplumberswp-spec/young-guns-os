@@ -1,10 +1,10 @@
 # TITAN Final Release Readiness Report
 
-**Phase:** Final Production-Readiness Gate (post Phase 252 orphan cleanup)  
-**Generated (UTC):** 2026-08-02T12:30:00.000Z  
+**Phase:** Final Production-Readiness Gate (post Phase 253 scheduling views fix)  
+**Generated (UTC):** 2026-08-02T12:40:00.000Z  
 **Branch:** `cursor/titan-owner-operating-model-final`  
-**HEAD SHA:** `c58455b73ab7635fdb9f3c3c31e17c6454d3fc30`  
-**Origin sync:** `origin/cursor/titan-owner-operating-model-final` @ `c58455b` — **0 ahead / 0 behind** (confirmed post-push)  
+**HEAD SHA:** `8de56a1624911e792d925e8b9f2491e3c0dc368b`  
+**Origin sync:** pending push — Phase 253 fix + evidence  
 **Environment assessed:** Staging only — **production NOT deployed or touched**
 
 ---
@@ -13,11 +13,22 @@
 
 | Gate | Verdict | Rationale |
 |------|---------|-----------|
-| **Staging owner daily ops** | **GO** | Consolidation smoke 12/12 API probes + web healthz; verify 231 GO (236 screenshots, 0 blockers) |
+| **Staging owner daily ops** | **GO** | Consolidation smoke 12/12; verify 231 GO; **verify 253 scheduling views GO** (Day/Week/Month desktop + mobile) |
 | **Staging release candidate** | **HOLD** | Finance DATA-DEPENDENT HOLD (payment allocation parity); payables/cashflow pre-existing HOLD |
 | **Production launch** | **NO-GO** | Finance blockers, production cutover unverified, ACCPAY/payables HOLD, no production smoke |
 
 **Overall:** **Staging GO** for owner daily ops · **Staging HOLD** as release candidate · **Production NO-GO**
+
+---
+
+## Push confirmation (Phase 253)
+
+| Commit | Message |
+|--------|---------|
+| `adf310b` | fix(scheduling): unify calendar view state and URL sync (Phase 253) |
+| `8de56a1` | fix(scheduling): stop view URL replace loop on tab click |
+
+**Staging web redeploy:** `06628399-7844-4638-a978-a0b0e7e46ce0` @ `8de56a1` — scheduling view fix live
 
 ---
 
@@ -38,9 +49,9 @@
 | Item | Value |
 |------|-------|
 | Authoritative branch | `cursor/titan-owner-operating-model-final` |
-| HEAD | `c58455b` — docs(routes): correct Phase 252 disposition counts |
-| Functional deploy SHA (staging) | `e7e748f` — orphan redirect guard (Phase 252 code) |
-| Commits `e7e748f..c58455b` | Evidence/docs only — no additional app code |
+| HEAD | `8de56a1` — scheduling Day/Week/Month view fix |
+| Functional deploy SHA (staging) | `8de56a1` — calendar view state + URL sync fix (Phase 253) |
+| Prior staging SHA | `e7e748f` — orphan redirect guard (Phase 252) |
 | Remote tracking | `origin/cursor/titan-owner-operating-model-final` @ `c58455b` (synced) |
 
 ---
@@ -49,7 +60,7 @@
 
 | Service | URL | Deployment ID | Deploy time (UTC) | Logical SHA |
 |---------|-----|---------------|-------------------|-------------|
-| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `5e49c5df-5496-4534-9545-e0a49e1f47d9` | 2026-08-02T12:15Z | `e7e748f` (Phase 252 orphan guard) |
+| Web (`comfortable-determination`) | https://comfortable-determination-staging.up.railway.app | `06628399-7844-4638-a978-a0b0e7e46ce0` | 2026-08-02T12:38Z | `8de56a1` (Phase 253 scheduling views) |
 | API (`young-guns-os`) | https://young-guns-os-staging.up.railway.app | `da553cca-aeb0-4679-bc4e-eb9400d09d94` | 2026-08-02T12:15Z | `e7e748f` (Phase 252 orphan guard) |
 
 Prior deploy (RBAC verify 251 @ `7f6763f`): web `11e738ef-5180-422b-a12e-48956eb36c2f`, API `9c6e60d8-3bf7-4a53-9262-39cf6b0dd3ba`.
@@ -58,10 +69,10 @@ Prior deploy (RBAC verify 251 @ `7f6763f`): web `11e738ef-5180-422b-a12e-48956eb
 
 | Check | Result |
 |-------|--------|
-| Code diff `e7e748f..c58455b` | Evidence/docs only (verify 252 JSON, disposition count corrections) — no app code |
-| Staging functional SHA | **`e7e748f`** — orphan redirect guard live |
-| HEAD `c58455b` vs staging | Aligned functionally; HEAD adds post-deploy evidence metadata |
-| Redeploy required? | **No** — services aligned with Phase 252 code |
+| Code diff `e7e748f..8de56a1` | Phase 253 scheduling calendar view fix (web only) |
+| Staging functional SHA (web) | **`8de56a1`** — Day/Week/Month view buttons + URL sync |
+| Staging functional SHA (API) | **`e7e748f`** — unchanged since Phase 252 |
+| Redeploy required? | **Web only** — deployed @ `06628399` |
 | Web healthz | **200** `ok` |
 | API `/api/v1/health/ready` | **200** — database connected |
 
@@ -111,7 +122,25 @@ Re-run @ `2026-08-02T12:26:07Z` on HEAD `c58455b`.
 | **231** | Phase 18 visual audit + correction | **GO** | 236 screenshots, 0 blockers; commit `08cb0f9` (functional web deploy SHA) |
 | **250** | Finance payment reconciliation | **GO_WITH_HOLD** | 511 payments pulled, 0 failed, 0 imported (511 skipped — no overlap with 5 mapped YGP invoices); INV-0423/0424 preserved |
 | **251** | RBAC all 5 roles | **GO** | Owner, Technician, Accountant, Dispatcher, Client — 0 blockers; commit `7f6763f` |
-| **252** | Orphan route cleanup | **GO** | 50 cleanup rules (48 HIDE_REDIRECT + 2 REMOVE); 10 owner redirect probes pass; finance/Xero/production untouched; commit `e7e748f` |
+| **252** | Orphan route cleanup | **GO** | 50 cleanup rules (48 HIDE_REDIRECT + 2 REMOVE); 10 owner redirect probes pass |
+| **253** | Scheduling Day/Week/Month views | **GO** | Desktop 1440 + mobile 375; URL `?view=` sync; Back restores month; empty state confirmed |
+
+### Phase 253 — Scheduling views fix (@ `8de56a1`)
+
+**Broken:** Duplicate `useCalendarState` hooks (page + calendar) desynced fetch range from visible layout; view tab clicks triggered push+replace URL loop causing stuck loading; day/week had no empty state.
+
+**Fixed:** Single shared calendar state passed into `SchedulingCalendar`; wouter `navigate` for URL sync; push-only on view changes; local YMD date params; day/week/month empty states with `data-view` attribute.
+
+| Check | Desktop 1440 | Mobile 375 |
+|-------|--------------|------------|
+| Day tab → time grid or empty | **PASS** | **PASS** |
+| Week tab → time grid or empty | **PASS** | **PASS** |
+| Month tab → month grid or empty | **PASS** | **PASS** |
+| URL `?view=day\|month` | **PASS** | **PASS** |
+| Back restores `?view=month` | **PASS** | — |
+| Empty state message | **PASS** (`2099-01-15`) | — |
+
+Evidence: `diagnostic-output/253-scheduling-view-verify.json` · screenshots: `diagnostic-output/phase253-scheduling-views-staging/`
 
 ---
 
@@ -185,7 +214,7 @@ Re-run @ `2026-08-02T12:26:07Z` on HEAD `c58455b`.
 | 4 | CRM actions | **GO** | Verify 234 |
 | 5 | Job payment ledger | **GO** + Xero HOLD | Verify 232 |
 | 6 | Technician mobile | **GO** | Verify 238 |
-| 7 | Scheduling / dispatch | **GO** | Verify 239 |
+| 7 | Scheduling / dispatch | **GO** | Verify 239 + **253** (view buttons) |
 | 8 | Fleet / Cartrack | **GO** | Verify 240 |
 | 9 | Inventory / procurement | **GO** | Verify 241 |
 | 10 | Communications | **GO** | Verify 242 |
@@ -202,6 +231,7 @@ Re-run @ `2026-08-02T12:26:07Z` on HEAD `c58455b`.
 | 250 | Finance payment reconciliation | **GO_WITH_HOLD** | 511 pulled, 0 overlap; DATA-DEPENDENT payment parity |
 | 251 | Missing-role RBAC (all 5 roles) | **GO** | Verify 251 @ `7f6763f` |
 | 252 | Orphan route cleanup | **GO** | Verify 252 @ `e7e748f` — 50 redirect rules |
+| 253 | Scheduling view buttons | **GO** | Verify 253 @ `8de56a1` — Day/Week/Month desktop + mobile |
 
 ---
 
@@ -238,12 +268,14 @@ Re-run @ `2026-08-02T12:26:07Z` on HEAD `c58455b`.
 | Finance payment verify | `diagnostic-output/250-finance-payment-reconciliation-verify.json` |
 | RBAC verify | `diagnostic-output/251-rbac-missing-roles-verify.json` |
 | Orphan cleanup verify | `diagnostic-output/252-orphan-route-cleanup-verify.json` |
+| Scheduling views verify | `diagnostic-output/253-scheduling-view-verify.json` + `phase253-scheduling-views-staging/` |
 | Route matrix | `TITAN_FINAL_ROUTE_AND_GAP_MATRIX.md` |
 | Phase reports | `TITAN_PHASE_*_REPORT.md` (0–18 + correction) |
 | Migration 0118 | `packages/db/drizzle/0118_department_routine_tasks.sql` |
 
 ---
 
-**Final production-readiness gate SHA:** `c58455b73ab7635fdb9f3c3c31e17c6454d3fc30`  
-**Staging functional SHA:** `e7e748f2055246a199cdfda1d533e5dc2a14f139`  
+**Final production-readiness gate SHA:** `8de56a1624911e792d925e8b9f2491e3c0dc368b`  
+**Staging functional SHA (web):** `8de56a1624911e792d925e8b9f2491e3c0dc368b`  
+**Staging functional SHA (API):** `e7e748f2055246a199cdfda1d533e5dc2a14f139`  
 **Production deployed:** **NO** — explicitly not executed.
