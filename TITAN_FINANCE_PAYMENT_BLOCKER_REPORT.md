@@ -2,8 +2,8 @@
 
 **Phase:** Finance/Payment Blocker (post-schema-fix verification)  
 **Branch:** `cursor/titan-owner-operating-model-final`  
-**Code SHA:** `e89c939` (+ uncommitted: migration apply scripts, pull-only invoice sync fix)  
-**Evidence commit:** pending  
+**Code SHA:** `7fa533b`  
+**Evidence commit:** `fix(finance): unblock staging Xero invoice sync and verify 250 post-fix`  
 **Generated:** 2026-08-02  
 **Production touched:** NO  
 **Xero writes:** NO  
