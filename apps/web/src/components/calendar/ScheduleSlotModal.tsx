@@ -10,6 +10,7 @@ type ScheduleSlotModalProps = {
   assignees: JobAssignee[];
   canWrite: boolean;
   defaultTechnicianId?: string | null;
+  preferredJobId?: string | null;
   onClose: () => void;
   onSchedule: (
     jobId: string,
@@ -27,11 +28,17 @@ export function ScheduleSlotModal({
   assignees,
   canWrite,
   defaultTechnicianId = null,
+  preferredJobId = null,
   onClose,
   onSchedule,
 }: ScheduleSlotModalProps) {
   const unscheduled = jobs.filter((job) => !job.scheduledAt);
-  const [jobId, setJobId] = useState(unscheduled[0]?.id ?? '');
+  const [jobId, setJobId] = useState(
+    () =>
+      (preferredJobId && unscheduled.some((job) => job.id === preferredJobId)
+        ? preferredJobId
+        : unscheduled[0]?.id) ?? '',
+  );
   const [startLocal, setStartLocal] = useState(() => {
     const start = new Date(slotDate);
     if (start.getHours() === 0 && start.getMinutes() === 0) {

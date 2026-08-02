@@ -1,6 +1,6 @@
 import { PageHeader } from '../../components/ux';
 import { useCallback, useMemo } from 'react';
-import { Link } from 'wouter';
+import { Link, useSearch } from 'wouter';
 import { Button } from '@titan/ui';
 import { AI_NAME } from '@titan/shared';
 import { fetchJobs } from '../../lib/jobs-api';
@@ -13,6 +13,7 @@ import {
 } from '../../lib/scheduling-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import {
   canAccessScheduling,
   canManageScheduling,
@@ -22,10 +23,24 @@ import { useCalendarState } from '../../components/calendar/useCalendarState';
 
 export function SchedulingPage() {
   const { accessToken, user } = useAuth();
+  const search = useSearch();
+  const { invalidateScheduling } = useStaffMutationInvalidation();
   const { view, anchorDate, filters } = useCalendarState('/scheduling');
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageScheduling(user.permissions) : false), [user]);
+  const canAssignCrew = useMemo(
+    () => Boolean(user?.permissions.includes('jobs:write')),
+    [user],
+  );
+
+  const deepLink = useMemo(() => {
+    const params = new URLSearchParams(search);
+    return {
+      jobId: params.get('jobId'),
+      mode: params.get('mode'),
+    };
+  }, [search]);
 
   const range = useMemo(() => resolveRange(view, anchorDate), [view, anchorDate]);
   const rangeKey = `${range.from.toISOString()}:${range.to.toISOString()}:${JSON.stringify(filters)}`;
@@ -66,8 +81,9 @@ export function SchedulingPage() {
   });
 
   const reloadCalendar = useCallback(async () => {
+    invalidateScheduling();
     await refetchCalendar();
-  }, [refetchCalendar]);
+  }, [invalidateScheduling, refetchCalendar]);
 
   const actions = useMemo(
     () => ({
@@ -115,9 +131,12 @@ export function SchedulingPage() {
         isLoading={isCalendarLoading}
         error={calendarError}
         canWrite={canWrite}
+        canAssignCrew={canAssignCrew}
         showTechnicianFilter={calendar?.viewScope !== 'own'}
         actions={actions}
         accessToken={accessToken}
+        focusJobId={deepLink.jobId}
+        focusMode={deepLink.mode}
         onRefresh={() => void reloadCalendar()}
       />
     </div>

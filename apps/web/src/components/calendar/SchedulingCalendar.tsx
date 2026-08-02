@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EmptyState, LoadingState } from '@titan/ui';
 import type {
   JobAssignee,
@@ -6,8 +6,10 @@ import type {
   ScheduledJobEvent,
   SchedulingCalendarResponse,
   SchedulingConflictCheckResponse,
+  VehicleSummary,
 } from '@titan/shared';
-import { updateJob } from '../../lib/jobs-api';
+import { assignJobCrew, fetchJobExecution, updateJob } from '../../lib/jobs-api';
+import { fetchVehicles } from '../../lib/fleet-api';
 import { updateJobSchedule } from '../../lib/scheduling-api';
 import {
   applyClientCalendarFilters,
@@ -61,12 +63,15 @@ type SchedulingCalendarProps = {
   isLoading: boolean;
   error: string | null;
   canWrite: boolean;
+  canAssignCrew?: boolean;
   showTechnicianFilter?: boolean;
   pathname?: string;
   actions: SchedulingCalendarActions;
   onRefresh: () => void;
   accessToken?: string | null;
   compactHeader?: boolean;
+  focusJobId?: string | null;
+  focusMode?: string | null;
 };
 
 type PendingMove = {
@@ -84,17 +89,21 @@ export function SchedulingCalendar({
   isLoading,
   error,
   canWrite,
+  canAssignCrew = false,
   showTechnicianFilter = true,
   pathname = '/scheduling',
   actions,
   onRefresh,
   accessToken,
   compactHeader = false,
+  focusJobId = null,
+  focusMode = null,
 }: SchedulingCalendarProps) {
   const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
     useCalendarState(pathname);
   const [slotDate, setSlotDate] = useState<Date | null>(null);
   const [slotTechnicianId, setSlotTechnicianId] = useState<string | null>(null);
+  const [preferredSlotJobId, setPreferredSlotJobId] = useState<string | null>(null);
   const [previewEvent, setPreviewEvent] = useState<ScheduledJobEvent | null>(null);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [conflicts, setConflicts] = useState<SchedulingConflictCheckResponse | null>(null);
@@ -102,11 +111,76 @@ export function SchedulingCalendar({
   const [draggingEvent, setDraggingEvent] = useState<ScheduledJobEvent | null>(null);
   const [draggingJob, setDraggingJob] = useState<JobSummary | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [vehicles, setVehicles] = useState<VehicleSummary[]>([]);
+  const [deepLinkConsumed, setDeepLinkConsumed] = useState(false);
 
   const events = useMemo(
     () => applyClientCalendarFilters(calendar?.events ?? [], filters as CalendarFilterState, assignees),
     [calendar?.events, filters, assignees],
   );
+
+  useEffect(() => {
+    if (!accessToken || !canAssignCrew) {
+      setVehicles([]);
+      return;
+    }
+
+    let cancelled = false;
+    void fetchVehicles(accessToken)
+      .then((data) => {
+        if (!cancelled) setVehicles(data);
+      })
+      .catch(() => {
+        if (!cancelled) setVehicles([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessToken, canAssignCrew]);
+
+  useEffect(() => {
+    if (!focusJobId || deepLinkConsumed || isLoading) return;
+
+    const scheduled = events.find((event) => event.id === focusJobId);
+    if (scheduled) {
+      setAnchorDate(startOfDay(new Date(scheduled.scheduledAt)));
+      if (focusMode === 'reschedule' || view === 'month') {
+        setView('day');
+      }
+      setPreviewEvent(scheduled);
+      setDeepLinkConsumed(true);
+      return;
+    }
+
+    const linkedJob = jobs.find((job) => job.id === focusJobId);
+    if (!linkedJob) return;
+
+    if (linkedJob.scheduledAt) {
+      setAnchorDate(startOfDay(new Date(linkedJob.scheduledAt)));
+      setView('day');
+      return;
+    }
+
+    if (canWrite) {
+      setPreferredSlotJobId(linkedJob.id);
+      setSlotDate(startOfDay(anchorDate));
+      setSlotTechnicianId(linkedJob.assignedUserId);
+      setDeepLinkConsumed(true);
+    }
+  }, [
+    focusJobId,
+    focusMode,
+    deepLinkConsumed,
+    isLoading,
+    events,
+    jobs,
+    canWrite,
+    view,
+    anchorDate,
+    setAnchorDate,
+    setView,
+  ]);
 
   const jobTypes = useMemo(() => {
     const values = new Set<string>();
@@ -231,6 +305,54 @@ export function SchedulingCalendar({
     }
   }
 
+  async function handleReassignTechnician(assignedUserId: string | null) {
+    if (!previewEvent) return;
+    await attemptMove(
+      previewEvent.id,
+      previewEvent.scheduledAt,
+      previewEvent.scheduledEndAt,
+      assignedUserId,
+      'patch',
+    );
+  }
+
+  async function handleAssignVehicle(vehicleId: string) {
+    if (!previewEvent || !accessToken) return;
+    setIsSaving(true);
+    try {
+      const execution = await fetchJobExecution(accessToken, previewEvent.id);
+      const members =
+        execution.crew.length > 0
+          ? execution.crew.map((member) => ({
+              userId: member.userId,
+              crewRole: member.crewRole,
+              isPrimary: member.isPrimary,
+            }))
+          : previewEvent.assignedUserId
+            ? [
+                {
+                  userId: previewEvent.assignedUserId,
+                  crewRole: 'crew_leader' as const,
+                  isPrimary: true,
+                },
+              ]
+            : [];
+
+      if (members.length === 0) {
+        throw new Error('Assign a technician before selecting a vehicle.');
+      }
+
+      await assignJobCrew(accessToken, previewEvent.id, {
+        members,
+        vehicleId,
+        primaryUserId: members.find((member) => member.isPrimary)?.userId ?? members[0]!.userId,
+      });
+      onRefresh();
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   function openSlot(slot: Date, technicianId?: string | null) {
     if (!canWrite) return;
     setSlotDate(slot);
@@ -322,9 +444,11 @@ export function SchedulingCalendar({
           assignees={assignees}
           canWrite={canWrite}
           defaultTechnicianId={slotTechnicianId}
+          preferredJobId={preferredSlotJobId}
           onClose={() => {
             setSlotDate(null);
             setSlotTechnicianId(null);
+            setPreferredSlotJobId(null);
           }}
           onSchedule={async (jobId, body) => {
             await attemptMove(
@@ -340,11 +464,16 @@ export function SchedulingCalendar({
 
       <JobPreviewDrawer
         event={previewEvent}
+        assignees={assignees}
+        vehicles={vehicles}
         canWrite={canWrite}
+        canAssignCrew={canAssignCrew}
         isSaving={isSaving}
         onClose={() => setPreviewEvent(null)}
         onUnschedule={() => void handleUnschedule()}
         onCancel={() => void handleCancelJob()}
+        onReassignTechnician={handleReassignTechnician}
+        onAssignVehicle={handleAssignVehicle}
       />
 
       <ConflictWarningModal

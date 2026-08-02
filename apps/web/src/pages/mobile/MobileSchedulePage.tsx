@@ -10,6 +10,7 @@ import {
 } from '../../lib/scheduling-api';
 import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { canAccessScheduling } from '../../features/scheduling/utils';
 import { SchedulingCalendar, resolveRange } from '../../components/calendar';
 import { useCalendarState } from '../../components/calendar/useCalendarState';
@@ -19,6 +20,7 @@ import { formatTimeRange } from '../../components/calendar/calendar-utils';
 /** CAL-001 — technician own-calendar view (mobile route). */
 export function MobileSchedulePage() {
   const { accessToken, user } = useAuth();
+  const { invalidateScheduling } = useStaffMutationInvalidation();
   const { view, anchorDate } = useCalendarState('/mobile/schedule');
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
@@ -48,8 +50,9 @@ export function MobileSchedulePage() {
   });
 
   const reload = useCallback(async () => {
+    invalidateScheduling();
     await refetch();
-  }, [refetch]);
+  }, [invalidateScheduling, refetch]);
 
   const actions = useMemo(
     () => ({
