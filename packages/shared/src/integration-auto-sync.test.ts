@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  AUTO_SYNC_UI_STATE_LABELS,
   deriveIntegrationAutoSyncUiState,
   formatAutoSyncCorrectiveAction,
 } from './integration-auto-sync.js';
@@ -31,6 +32,21 @@ test('deriveIntegrationAutoSyncUiState returns initial_sync_running when connect
     }),
     'initial_sync_running',
   );
+});
+
+test('deriveIntegrationAutoSyncUiState returns syncing when incremental sync is in progress', () => {
+  assert.equal(
+    deriveIntegrationAutoSyncUiState({
+      implementation: 'full',
+      connectionStatus: 'connected',
+      syncInProgress: true,
+      hasSuccessfulSync: true,
+      consecutiveFailures: 0,
+      lastError: null,
+    }),
+    'initial_sync_running',
+  );
+  assert.equal(AUTO_SYNC_UI_STATE_LABELS.initial_sync_running, 'Syncing');
 });
 
 test('deriveIntegrationAutoSyncUiState returns synced after successful sync', () => {

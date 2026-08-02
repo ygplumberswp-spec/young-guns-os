@@ -1,11 +1,13 @@
 import { Link } from 'wouter';
 import { Button, Panel } from '@titan/ui';
 import { PageHeader } from '../../components/ux';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 /** Scaffold — section visibility defaults work without configuration. */
 export function DashboardSettingsPage() {
   return (
     <div className="page-shell owner-page-content">
+      <SettingsNav />
       <PageHeader
         title="Dashboard settings"
         description="Configure section visibility, order, date view, and quick actions."

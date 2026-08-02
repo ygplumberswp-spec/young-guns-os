@@ -36,6 +36,43 @@ export function formatProviderCategory(category: string): string {
     .join(' ');
 }
 
+/** Phase 16 — user-facing capability pill label when auto-sync status is unavailable. */
+export function formatCapabilityStateUserLabel(state: IntegrationCapabilityState): string {
+  switch (state) {
+    case 'connected_usable':
+      return 'Connected';
+    case 'configured_unverified':
+      return 'Not configured';
+    case 'disconnected':
+    case 'not_configured':
+      return 'Not configured';
+    case 'failed_degraded':
+      return 'Connected with attention';
+    case 'temporarily_unavailable':
+      return 'Temporarily unavailable';
+    case 'not_implemented':
+      return 'Provider feature unavailable';
+    default:
+      return 'Not configured';
+  }
+}
+
+export function resolveIntegrationProviderDisplayLabel(input: {
+  capabilityState: IntegrationCapabilityState;
+  autoSync?: {
+    syncInProgress: boolean;
+    uiStateLabel: string;
+  } | null;
+}): string {
+  if (input.autoSync?.syncInProgress) {
+    return 'Syncing';
+  }
+  if (input.autoSync?.uiStateLabel) {
+    return input.autoSync.uiStateLabel;
+  }
+  return formatCapabilityStateUserLabel(input.capabilityState);
+}
+
 /** Decision 4 / UX-G — CSS-safe modifier for the capability-state status pill. */
 export function capabilityStateToPillModifier(state: IntegrationCapabilityState): string {
   switch (state) {

@@ -18,11 +18,13 @@ import { useStaffCachedQuery, useStaffCacheScope } from '../../lib/use-scoped-ca
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { SimpleAdvancedToggle } from '../../components/SimpleAdvancedToggle';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 import {
   capabilityStateToPillModifier,
   formatProviderCategory,
   formatSyncJobStatus,
   formatWebhookEventStatus,
+  resolveIntegrationProviderDisplayLabel,
 } from '../../features/integrations/formatters';
 
 const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }> = [
@@ -52,6 +54,10 @@ function SimpleProviderRow({
       : provider.capabilityState === 'failed_degraded'
         ? 'Reconnect'
         : 'Connect';
+  const displayLabel = resolveIntegrationProviderDisplayLabel({
+    capabilityState: provider.capabilityState,
+    autoSync,
+  });
 
   return (
     <article className="integrations-simple-row">
@@ -77,7 +83,7 @@ function SimpleProviderRow({
         <span
           className={`status-pill status-pill--${capabilityStateToPillModifier(provider.capabilityState)}`}
         >
-          {autoSync?.uiStateLabel ?? provider.capabilityLabel}
+          {displayLabel}
         </span>
         {provider.canConnect && provider.settingsPath ? (
           <Link href={provider.settingsPath}>
@@ -287,6 +293,7 @@ export function IntegrationsDashboardPage() {
 
   return (
     <div className="integrations-page page-shell">
+      <SettingsNav />
       <PageHeader
         title="Integrations"
         description="Connect the services your business already uses."

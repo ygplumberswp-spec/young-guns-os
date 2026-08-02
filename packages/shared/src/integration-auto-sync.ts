@@ -70,18 +70,19 @@ export type IntegrationAutoSyncRunResult = {
   details?: Record<string, unknown> | null;
 };
 
+/** Phase 16 — owner-facing integration status labels (truthful, never fake Connected). */
 export const AUTO_SYNC_UI_STATE_LABELS: Record<IntegrationAutoSyncUiState, string> = {
   not_configured: 'Not configured',
-  connecting: 'Connecting',
+  connecting: 'Syncing',
   connected: 'Connected',
-  initial_sync_running: 'Initial sync running',
-  synced: 'Synced',
-  degraded: 'Degraded',
-  authentication_expired: 'Authentication expired',
-  permission_incomplete: 'Permission incomplete',
-  provider_unavailable: 'Provider unavailable',
-  sync_failed: 'Sync failed',
-  reconnect_required: 'Reconnect required',
+  initial_sync_running: 'Syncing',
+  synced: 'Connected',
+  degraded: 'Connected with attention',
+  authentication_expired: 'Connected with attention',
+  permission_incomplete: 'Waiting for permission',
+  provider_unavailable: 'Temporarily unavailable',
+  sync_failed: 'Connected with attention',
+  reconnect_required: 'Connected with attention',
 };
 
 /** Default incremental polling intervals (minutes) per provider. */
@@ -184,7 +185,7 @@ export function deriveIntegrationAutoSyncUiState(
   }
 
   if (input.syncInProgress) {
-    return input.hasSuccessfulSync ? 'connected' : 'initial_sync_running';
+    return 'initial_sync_running';
   }
 
   if (input.connectionStatus === 'connected') {

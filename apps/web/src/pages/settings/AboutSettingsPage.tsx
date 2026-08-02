@@ -1,10 +1,12 @@
 import { PageHeader } from '../../components/ux';
 import { Panel } from '@titan/ui';
 import { APP_NAME } from '@titan/shared';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 export function AboutSettingsPage() {
   return (
     <>
+      <SettingsNav />
       <PageHeader title="About" description={`${APP_NAME} workspace platform`} />
       <Panel title="Product">
         <p className="page-muted">

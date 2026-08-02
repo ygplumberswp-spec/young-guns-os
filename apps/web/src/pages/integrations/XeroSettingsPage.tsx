@@ -10,7 +10,6 @@ import {
   testXeroConnection,
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
-import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
 import { XeroSyncPanel } from '../../features/integrations/XeroSyncPanel';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
 import { formatConnectionStatus } from '../../features/integrations/formatters';
@@ -172,8 +171,12 @@ export function XeroSettingsPage() {
       <PageHeader
         title="Xero"
         description="Connect your Xero organisation so TITAN can verify accounting access before future invoice and payment sync."
+        breadcrumbs={[
+          { label: 'Settings', href: '/settings/company' },
+          { label: 'Integrations', href: '/integrations' },
+          { label: 'Xero' },
+        ]}
       />
-      <IntegrationsNav />
 
       {isLoading ? <p className="page-muted">Loading Xero settings…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}

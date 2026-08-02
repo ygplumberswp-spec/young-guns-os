@@ -9,6 +9,7 @@ import {
   revokeMySession,
 } from '../../lib/api-client';
 import { useCachedQuery } from '../../lib/use-cached-query';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 function formatWhen(value: string | null): string {
   if (!value) return '—';
@@ -88,6 +89,7 @@ export function SecuritySettingsPage() {
 
   return (
     <div className="page-stack">
+      <SettingsNav />
       <PageHeader
         title="Security & sessions"
         description="Manage active sign-ins on your account. Tab inactivity alone does not sign you out."

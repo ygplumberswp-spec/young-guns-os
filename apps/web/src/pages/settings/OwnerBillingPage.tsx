@@ -16,6 +16,7 @@ import {
   formatCurrency,
   formatStatus,
 } from '../../features/saas-management/utils';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 export function OwnerBillingPage() {
   const { accessToken, user } = useAuth();
@@ -88,6 +89,7 @@ export function OwnerBillingPage() {
 
   return (
     <div className="automation-page">
+      <SettingsNav />
       <PageHeader
         title="Subscription & Billing"
         description="View your subscription, usage, invoices, and add-ons. Built on the existing SaaS platform — no fake billing data."

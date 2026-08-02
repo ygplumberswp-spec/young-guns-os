@@ -1,6 +1,6 @@
 import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { Panel } from '@titan/ui';
 import { isCompanyOwnerRole } from '@titan/auth/browser';
 import {
@@ -20,9 +20,9 @@ import {
 } from '../../lib/integrations-api';
 import { useAuth } from '../../lib/auth-context';
 import { canAccessIntegrations, canManageIntegrations } from '../../features/integrations/utils';
-import { IntegrationsNav } from '../../features/integrations/IntegrationsNav';
 import { IntegrationConnectionLock } from '../../features/integrations/IntegrationConnectionLock';
 import { CartrackSyncPanel } from '../../features/integrations/CartrackSyncPanel';
+import { SettingsNav } from '../../features/settings/SettingsNav';
 
 const CONNECT_FIELD_KEYS = ['baseUrl', 'username', 'password'] as const;
 
@@ -41,6 +41,8 @@ function reviewCategoryModifier(category: IntegrationVehicleMappingSummary['revi
 
 export function CartrackSettingsPage() {
   const { accessToken, user } = useAuth();
+  const [location] = useLocation();
+  const isSettingsFleetRoute = location === '/settings/cartrack';
   const [connection, setConnection] = useState<CartrackConnectionSummary | null>(null);
   const [mappings, setMappings] = useState<IntegrationVehicleMappingSummary[]>([]);
   const [vehicles, setVehicles] = useState<Awaited<ReturnType<typeof fetchVehicles>>>([]);
@@ -233,6 +235,16 @@ export function CartrackSettingsPage() {
 
   const reviewMappings = mappings.filter((mapping) => mapping.reviewCategory !== 'auto_matched');
   const autoMappedMappings = mappings.filter((mapping) => mapping.reviewCategory === 'auto_matched');
+  const workspaceNav = isSettingsFleetRoute ? <SettingsNav /> : null;
+  const integrationBreadcrumbs = isSettingsFleetRoute
+    ? undefined
+    : [
+        { label: 'Settings', href: '/settings/company' },
+        { label: 'Integrations', href: '/integrations' },
+        { label: 'Cartrack' },
+      ];
+  const pageDescription =
+    'Connect Cartrack once — vehicles, GPS positions, and fleet data sync automatically in the background.';
 
   if (!canView) {
     return (
@@ -248,11 +260,12 @@ export function CartrackSettingsPage() {
   if (isLoading) {
     return (
       <div className="integrations-page">
+        {workspaceNav}
         <PageHeader
           title="Cartrack GPS"
-          description="Connect Cartrack once — vehicles, GPS positions, and fleet data sync automatically in the background."
+          description={pageDescription}
+          breadcrumbs={integrationBreadcrumbs}
         />
-        <IntegrationsNav />
         <p className="page-muted">Loading Cartrack settings…</p>
       </div>
     );
@@ -260,11 +273,12 @@ export function CartrackSettingsPage() {
 
   return (
     <div className="integrations-page">
+      {workspaceNav}
       <PageHeader
         title="Cartrack GPS"
-        description="Connect Cartrack once — vehicles, GPS positions, and fleet data sync automatically in the background."
+        description={pageDescription}
+        breadcrumbs={integrationBreadcrumbs}
       />
-      <IntegrationsNav />
 
       {connection ? (
         <IntegrationConnectionLock
