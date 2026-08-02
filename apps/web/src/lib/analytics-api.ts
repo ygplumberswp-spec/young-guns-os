@@ -2,6 +2,7 @@ import type {
   AnalyticsDashboard,
   AnalyticsDashboardQuery,
   AnalyticsPeriod,
+  AnalyticsReportingWorkspace,
   AnalyticsTrends,
   CustomerAnalytics,
   FinanceAnalytics,
@@ -35,6 +36,18 @@ function requestOptions(options?: AnalyticsRequestOptions) {
     signal: options?.signal,
     timeoutMs: options?.timeoutMs ?? ANALYTICS_REQUEST_TIMEOUT_MS,
   };
+}
+
+export async function fetchReportingWorkspace(
+  accessToken: string,
+  query: AnalyticsDashboardQuery = {},
+  options?: AnalyticsRequestOptions,
+): Promise<AnalyticsReportingWorkspace> {
+  const data = await request<{ workspace: AnalyticsReportingWorkspace }>(
+    `/analytics/reporting-workspace${buildQuery(query)}`,
+    { accessToken, ...requestOptions(options) },
+  );
+  return data.workspace;
 }
 
 export async function fetchAnalyticsDashboard(

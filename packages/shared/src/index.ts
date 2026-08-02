@@ -81,6 +81,7 @@ export * from './aura-operations.js';
 export * from './business-rules.js';
 export * from './mobile.js';
 export * from './analytics.js';
+export * from './analytics-reporting.js';
 export * from './agent-orchestration.js';
 export * from './sales.js';
 export * from './marketing.js';

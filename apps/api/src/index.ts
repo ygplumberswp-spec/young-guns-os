@@ -95,6 +95,7 @@ import { RecommendationsService } from './services/recommendations.service.js';
 import { AuraOperationsService } from './services/aura-operations.service.js';
 import { createIntelligenceRouter } from './routes/intelligence.js';
 import { AnalyticsService } from './services/analytics.service.js';
+import { AnalyticsReportingService } from './services/analytics-reporting.service.js';
 import { createAnalyticsRouter } from './routes/analytics.js';
 import { createMobileRouter } from './routes/mobile.js';
 import { MobileService } from './services/mobile.service.js';
@@ -591,6 +592,12 @@ const financeIntelligenceService = new FinanceIntelligenceService({
   financeService,
   analyticsService,
   procurementService,
+});
+const analyticsReportingService = new AnalyticsReportingService({
+  db,
+  analyticsService,
+  financeIntelligenceService,
+  fleetService,
 });
 const knowledgeService = new KnowledgeService({ db });
 const enterpriseKnowledgeGraphService = new EnterpriseKnowledgeGraphService({
@@ -1863,6 +1870,7 @@ app.use(
   '/api/v1/analytics',
   createAnalyticsRouter({
     analyticsService,
+    analyticsReportingService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

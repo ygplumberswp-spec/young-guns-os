@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { AnalyticsService } from '../services/analytics.service.js';
 import { AnalyticsError } from '../services/analytics.service.js';
+import type { AnalyticsReportingService } from '../services/analytics-reporting.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -32,6 +33,7 @@ const generateReportSchema = z.object({
 
 type AnalyticsRouterDeps = {
   analyticsService: AnalyticsService;
+  analyticsReportingService: AnalyticsReportingService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -43,6 +45,7 @@ function getAuth(req: import('express').Request) {
 
 export function createAnalyticsRouter({
   analyticsService,
+  analyticsReportingService,
   teamService,
   jwtSecret,
   authService,
@@ -72,6 +75,27 @@ export function createAnalyticsRouter({
       const { companyId } = getAuth(req);
       const dashboard = await analyticsService.getDashboard(companyId, parsed.data);
       res.json({ data: { dashboard } });
+    } catch (error) {
+      handleAnalyticsError(res, error);
+    }
+  });
+
+  router.get('/reporting-workspace', requireRead, async (req, res) => {
+    const parsed = rangeQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      res
+        .status(400)
+        .json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid query parameters' } });
+      return;
+    }
+
+    try {
+      const { companyId } = getAuth(req);
+      const workspace = await analyticsReportingService.getReportingWorkspace(
+        companyId,
+        parsed.data,
+      );
+      res.json({ data: { workspace } });
     } catch (error) {
       handleAnalyticsError(res, error);
     }
