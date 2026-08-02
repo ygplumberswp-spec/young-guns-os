@@ -154,62 +154,72 @@ export function LiveOperationsPanel({
       </div>
 
       <h3 className="exec-live-ops-jobs-title">Active jobs</h3>
-      {isLoading ? (
-        <DashboardSectionSkeleton rows={3} />
-      ) : error ? (
-        <EmptyState
-          title="Unable to load live operations"
-          description={error}
-          action={
-            onRetry ? (
-              <Button size="sm" variant="secondary" onClick={onRetry}>
-                Retry
-              </Button>
-            ) : undefined
-          }
-        />
-      ) : jobs.length === 0 ? (
-        <EmptyState
-          title="No active jobs right now"
-          description="Scheduled and in-progress jobs will appear here throughout the day."
-          action={
-            <Link href="/scheduling">
-              <Button size="sm" variant="secondary">
-                Open schedule
-              </Button>
-            </Link>
-          }
-        />
-      ) : (
-        <ul className="exec-live-ops">
-          {jobs.map((job) => (
-            <li key={job.id} className="exec-live-ops__card">
-              <div className="exec-live-ops__head">
-                <Link href={`/jobs/${job.id}`}>
-                  <strong>
-                    {job.jobNumber ? `${job.jobNumber} · ` : ''}
-                    {job.title}
-                  </strong>
+      {(() => {
+        const activeJobs = jobs.filter((job) => job.status === 'in_progress');
+        if (isLoading) return <DashboardSectionSkeleton rows={3} />;
+        if (error) {
+          return (
+            <EmptyState
+              title="Unable to load active jobs"
+              description={error}
+              action={
+                onRetry ? (
+                  <Button size="sm" variant="secondary" onClick={onRetry}>
+                    Retry
+                  </Button>
+                ) : undefined
+              }
+            />
+          );
+        }
+        if (activeJobs.length === 0) {
+          return (
+            <EmptyState
+              title="No jobs in progress"
+              description="Jobs move here when technicians start work. TITAN will not invent active jobs."
+              action={
+                <Link href="/scheduling">
+                  <Button size="sm" variant="secondary">
+                    Open schedule
+                  </Button>
                 </Link>
-                <StatusBadge
-                  tone={job.isDelayed ? 'warning' : job.status === 'in_progress' ? 'info' : 'neutral'}
-                  label={job.isDelayed ? 'Delayed' : job.status.replace(/_/g, ' ')}
-                />
-              </div>
-              <p className="exec-live-ops__meta">
-                {job.customerName}
-                {job.suburb ? ` · ${job.suburb}` : ''}
-                {job.technicianName ? ` · ${job.technicianName}` : ''}
-              </p>
-              <p className="exec-live-ops__times">
-                {formatTime(job.scheduledAt)}
-                {job.scheduledEndAt ? ` – ${formatTime(job.scheduledEndAt)}` : ''}
-                {job.nextJobTitle ? ` · Next: ${job.nextJobTitle}` : ''}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+              }
+            />
+          );
+        }
+        return (
+          <ul className="exec-live-ops">
+            {activeJobs.map((job) => (
+              <li key={job.id} className="exec-live-ops__card">
+                <div className="exec-live-ops__head">
+                  <Link href={`/jobs/${job.id}`}>
+                    <strong>
+                      {job.jobNumber ? `${job.jobNumber} · ` : ''}
+                      {job.title}
+                    </strong>
+                  </Link>
+                  <StatusBadge
+                    tone={job.isDelayed ? 'warning' : 'info'}
+                    label={job.isDelayed ? 'Delayed' : 'In progress'}
+                  />
+                </div>
+                <p className="exec-live-ops__meta">
+                  {job.customerName}
+                  {job.suburb ? ` · ${job.suburb}` : ''}
+                  {job.technicianName ? ` · ${job.technicianName}` : ' · Unassigned'}
+                </p>
+                <p className="exec-live-ops__times">
+                  {formatTime(job.scheduledAt)}
+                  {job.scheduledEndAt ? ` – ${formatTime(job.scheduledEndAt)}` : ''}
+                </p>
+                <Link href={`/jobs/${job.id}`} className="exec-live-ops__job360">
+                  Open Job 360
+                </Link>
+              </li>
+            ))}
+          </ul>
+        );
+      })()}
     </Panel>
   );
 }

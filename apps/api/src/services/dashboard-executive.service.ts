@@ -232,6 +232,31 @@ export class DashboardExecutiveService {
       }
     }
 
+    const outstandingItems = intelligenceDashboard.outstandingInvoices.items;
+    const overdueSorted = outstandingItems
+      .filter((invoice) => {
+        if (!invoice.dueDate) return invoice.status === 'overdue';
+        return new Date(invoice.dueDate).getTime() < now.getTime();
+      })
+      .slice()
+      .sort((a, b) => {
+        const aDue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+        const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+        return aDue - bDue;
+      });
+    const oldestOverdue = overdueSorted[0]
+      ? {
+          id: overdueSorted[0].id,
+          invoiceNumber: overdueSorted[0].invoiceNumber,
+          customerName: overdueSorted[0].customerName,
+          dueDate: overdueSorted[0].dueDate,
+          outstandingCents: Math.max(
+            0,
+            overdueSorted[0].amountCents - overdueSorted[0].amountPaidCents,
+          ),
+        }
+      : null;
+
     return {
       generatedAt: now.toISOString(),
       header: {
@@ -276,6 +301,12 @@ export class DashboardExecutiveService {
         blocked: blockedCount,
         summaryLine: summaryParts.length > 0 ? summaryParts.join(' · ') : 'All clear for today',
         criticalIssues,
+      },
+      outstandingInvoices: {
+        outstandingCents: intelligenceDashboard.outstandingInvoices.totalOutstandingCents,
+        invoiceCount: intelligenceDashboard.outstandingInvoices.count,
+        currency: intelligenceDashboard.outstandingInvoices.currency,
+        oldestOverdue,
       },
       teamToday,
     };

@@ -1,14 +1,15 @@
 import { Link } from 'wouter';
 import { Button, Panel } from '@titan/ui';
-import { hasAnyPermission } from '@titan/auth/browser';
+import type { ExecutiveDashboardSummary } from '@titan/shared';
 import { AuraComposer } from '../aura/AuraComposer';
 import { AuraMessageList } from '../aura/AuraMessageList';
 import { useAuraChat } from '../aura/useAuraChat';
 import { useAuth } from '../../lib/auth-context';
-import { fetchSecurityDashboard } from '../../lib/enterprise-security-api-client';
+import { useCompanyLocale } from '../../lib/company-locale-context';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { useEffect, useState } from 'react';
+import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 
 type HealthPayload = {
   status?: string;
@@ -16,9 +17,12 @@ type HealthPayload = {
   redis?: string;
 };
 
-function formatAuditTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
+type DashboardUtilityRailProps = {
+  summary: ExecutiveDashboardSummary | null;
+  isLoading?: boolean;
+  error?: string | null;
+  onRetry?: () => void;
+};
 
 function AskAuraRailPanel() {
   const {
@@ -65,64 +69,70 @@ function AskAuraRailPanel() {
   );
 }
 
-function RecentActivityRailPanel() {
-  const { accessToken, user } = useAuth();
-  const canReadSecurity = Boolean(
-    user &&
-      hasAnyPermission(user.permissions, [
-        'security:read',
-        'security:write',
-        'settings:manage',
-        'agents:read',
-        '*',
-      ]),
-  );
+function TodayAtAGlanceRailPanel({
+  summary,
+  isLoading = false,
+  error = null,
+  onRetry,
+}: DashboardUtilityRailProps) {
+  const { formatMoney } = useCompanyLocale();
+  const glance = summary?.todayAtAGlance ?? null;
+  const outstanding = summary?.outstandingInvoices ?? null;
 
-  const auditQuery = useStaffCachedQuery({
-    queryKey: 'enterprise-security/dashboard-recent-audit',
-    enabled: Boolean(accessToken && canReadSecurity),
-    fetcher: async () => fetchSecurityDashboard(accessToken!),
-  });
-
-  const logs = auditQuery.data?.recentAuditLogs ?? [];
+  const jobsToday = glance
+    ? glance.jobs.scheduled + glance.jobs.inProgress + glance.jobs.completed
+    : null;
+  const activeJobs = glance?.jobs.inProgress ?? null;
+  const completedJobs = glance?.jobs.completed ?? null;
+  const teamOnDuty = glance
+    ? glance.team.onSite + glance.team.travelling + glance.team.available
+    : null;
+  const outstandingAmount =
+    outstanding && outstanding.invoiceCount > 0
+      ? formatMoney(outstanding.outstandingCents, outstanding.currency)
+      : glance
+        ? formatMoney(glance.money.outstandingCents, glance.money.currency)
+        : null;
 
   return (
-    <Panel title="Recent activity" description="Live security audit feed">
-      {!canReadSecurity ? (
-        <p className="exec-utility-empty">
-          Audit activity requires security permissions. Ask an Owner to grant access — TITAN will
-          not invent activity.
-        </p>
-      ) : auditQuery.isLoading && !auditQuery.data ? (
-        <p className="page-muted">Loading audit activity…</p>
-      ) : auditQuery.error ? (
+    <Panel title="Today at a glance" description="Live business snapshot — no invented figures">
+      {isLoading && !glance ? (
+        <DashboardSectionSkeleton rows={5} />
+      ) : error && !glance ? (
         <div>
-          <p className="form-error">{auditQuery.error}</p>
-          <Button size="sm" variant="secondary" onClick={() => void auditQuery.refetch()}>
-            Retry
-          </Button>
+          <p className="form-error">{error}</p>
+          {onRetry ? (
+            <Button size="sm" variant="secondary" onClick={onRetry}>
+              Retry
+            </Button>
+          ) : null}
         </div>
-      ) : logs.length === 0 ? (
-        <p className="exec-utility-empty">No audit events in the recent window.</p>
+      ) : !glance ? (
+        <p className="exec-utility-empty">Snapshot unavailable.</p>
       ) : (
-        <ul className="exec-utility-activity">
-          {logs.slice(0, 8).map((log) => (
-            <li key={log.id} className="exec-utility-activity__item exec-utility-activity__item--info">
-              <strong>{log.action}</strong>
-              <span>
-                {log.category}
-                {log.userName ? ` · ${log.userName}` : ''}
-                {` · ${formatAuditTime(log.occurredAt)}`}
-              </span>
-            </li>
-          ))}
+        <ul className="exec-utility-glance">
+          <li>
+            <span>Jobs today</span>
+            <strong>{jobsToday}</strong>
+          </li>
+          <li>
+            <span>Active jobs</span>
+            <strong>{activeJobs}</strong>
+          </li>
+          <li>
+            <span>Completed jobs</span>
+            <strong>{completedJobs}</strong>
+          </li>
+          <li>
+            <span>Outstanding invoices</span>
+            <strong>{outstandingAmount ?? '—'}</strong>
+          </li>
+          <li>
+            <span>Team on duty</span>
+            <strong>{teamOnDuty}</strong>
+          </li>
         </ul>
       )}
-      {canReadSecurity ? (
-        <Link href="/security" className="exec-utility-ask__link">
-          Open security centre
-        </Link>
-      ) : null}
     </Panel>
   );
 }
@@ -144,9 +154,10 @@ function SystemStatusRailPanel() {
       try {
         const res = await fetch('/api/v1/health/ready', {
           headers: { Accept: 'application/json' },
-          signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
-            ? AbortSignal.timeout(10_000)
-            : undefined,
+          signal:
+            typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal
+              ? AbortSignal.timeout(10_000)
+              : undefined,
         });
         const json = (await res.json().catch(() => null)) as { data?: HealthPayload } | null;
         if (cancelled) return;
@@ -194,7 +205,9 @@ function SystemStatusRailPanel() {
           ? 'Connected'
           : needsAttention
             ? 'Attention needed'
-            : focusProviders.map((provider) => `${provider.name}: ${provider.capabilityLabel}`).join(' · ');
+            : focusProviders
+                .map((provider) => `${provider.name}: ${provider.capabilityLabel}`)
+                .join(' · ');
 
   const integrationTone =
     hubQuery.error || needsAttention || integrationSummary !== 'Connected' ? 'is-warn' : 'is-ok';
@@ -237,11 +250,21 @@ function SystemStatusRailPanel() {
   );
 }
 
-export function DashboardUtilityRail() {
+export function DashboardUtilityRail({
+  summary,
+  isLoading = false,
+  error = null,
+  onRetry,
+}: DashboardUtilityRailProps) {
   return (
     <aside className="exec-dashboard-rail" aria-label="Dashboard utilities">
       <AskAuraRailPanel />
-      <RecentActivityRailPanel />
+      <TodayAtAGlanceRailPanel
+        summary={summary}
+        isLoading={isLoading}
+        error={error}
+        onRetry={onRetry}
+      />
       <SystemStatusRailPanel />
     </aside>
   );

@@ -1,16 +1,15 @@
 import { useAuth } from '../../lib/auth-context';
 import { fetchExecutiveDashboardSummary } from '../../lib/dashboard-api-client';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
-import { CustomerValueMetricsPanel } from '../crm/CustomerValueMetricsPanel';
 import { SectionErrorBoundary } from '../../components/ux';
 import { CompletedTodayPanel } from './CompletedTodayPanel';
 import { DashboardUtilityRail } from './DashboardUtilityRail';
 import { ExecutiveDashboardHeader } from './ExecutiveDashboardHeader';
 import { LiveOperationsPanel } from './LiveOperationsPanel';
+import { OutstandingInvoicesPanel } from './OutstandingInvoicesPanel';
 import { PrioritiesSummaryPanel } from './PrioritiesSummaryPanel';
 import { QuickLinksPanel } from './QuickLinksPanel';
 import { ScheduleOverviewPanel } from './ScheduleOverviewPanel';
-import { TeamTodayPanel } from './TeamTodayPanel';
 import { TodayAtAGlanceGrid } from './TodayAtAGlanceGrid';
 
 export function ExecutiveDashboard() {
@@ -38,7 +37,7 @@ export function ExecutiveDashboard() {
       <div className="exec-dashboard-body">
         <div className="exec-dashboard-main">
           <SectionErrorBoundary
-            sectionName="Today at a glance"
+            sectionName="KPI row"
             onRetry={() => void summaryQuery.refetch()}
           >
             <TodayAtAGlanceGrid
@@ -89,11 +88,11 @@ export function ExecutiveDashboard() {
               </SectionErrorBoundary>
             </div>
             <SectionErrorBoundary
-              sectionName="Team today"
+              sectionName="Outstanding invoices"
               onRetry={() => void summaryQuery.refetch()}
             >
-              <TeamTodayPanel
-                members={summary?.teamToday ?? []}
+              <OutstandingInvoicesPanel
+                data={summary?.outstandingInvoices ?? null}
                 isLoading={isLoading}
                 error={loadError}
                 onRetry={() => void summaryQuery.refetch()}
@@ -103,15 +102,14 @@ export function ExecutiveDashboard() {
               <QuickLinksPanel />
             </SectionErrorBoundary>
           </div>
-
-          <section className="exec-dashboard-customer-value">
-            <SectionErrorBoundary sectionName="Customer value">
-              <CustomerValueMetricsPanel />
-            </SectionErrorBoundary>
-          </section>
         </div>
 
-        <DashboardUtilityRail />
+        <DashboardUtilityRail
+          summary={summary ?? null}
+          isLoading={isLoading}
+          error={loadError}
+          onRetry={() => void summaryQuery.refetch()}
+        />
       </div>
     </div>
   );

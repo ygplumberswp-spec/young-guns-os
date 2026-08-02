@@ -92,6 +92,20 @@ export type ExecutiveTeamMember = {
   isLate: boolean;
 };
 
+/** Outstanding AR snapshot for Dashboard V1.1 — real invoice aggregates only. */
+export type ExecutiveOutstandingInvoices = {
+  outstandingCents: number;
+  invoiceCount: number;
+  currency: string;
+  oldestOverdue: {
+    id: string;
+    invoiceNumber: string;
+    customerName: string;
+    dueDate: string | null;
+    outstandingCents: number;
+  } | null;
+};
+
 export type ExecutiveDashboardSummary = {
   generatedAt: string;
   header: ExecutiveHeaderCounts;
@@ -99,5 +113,7 @@ export type ExecutiveDashboardSummary = {
   liveOperations: ExecutiveLiveJob[];
   completedToday: ExecutiveCompletedJob[];
   priorities: ExecutivePrioritiesSummary;
+  outstandingInvoices: ExecutiveOutstandingInvoices;
+  /** @deprecated V1.1 — retained for compatibility; UI no longer renders Team Today. */
   teamToday: ExecutiveTeamMember[];
 };
