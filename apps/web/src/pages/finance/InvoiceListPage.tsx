@@ -47,6 +47,10 @@ export function InvoiceListPage() {
 
   const canView = useMemo(() => (user ? canAccessFinance(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageFinance(user.permissions) : false), [user]);
+  const isOwner = useMemo(
+    () => user?.permissions.includes('*') || user?.roleName === 'Company Owner',
+    [user],
+  );
 
   const includeArchivedDrafts = filter === 'archived';
 
@@ -61,6 +65,7 @@ export function InvoiceListPage() {
     data: invoices,
     error,
     isLoading,
+    refetch,
   } = useStaffCachedQuery({
     queryKey: `finance/invoices:${q.trim()}:${filter}`,
     enabled: canView,
@@ -218,7 +223,13 @@ export function InvoiceListPage() {
                       {invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '—'}
                     </td>
                     <td className="finance-table__actions-col">
-                      <InvoiceListRowActions invoice={invoice} canWrite={canWrite} />
+                      <InvoiceListRowActions
+                        invoice={invoice}
+                        canWrite={canWrite}
+                        accessToken={accessToken ?? undefined}
+                        isOwner={isOwner}
+                        onActionComplete={() => void refetch()}
+                      />
                     </td>
                   </tr>
                 ))}

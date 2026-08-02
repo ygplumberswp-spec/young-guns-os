@@ -40,6 +40,7 @@ export * from './job-execution.js';
 export * from './jobs.js';
 export * from './scheduling.js';
 export * from './finance.js';
+export * from './invoice-write-approval.js';
 export * from './inventory.js';
 export * from './job-costing.js';
 export * from './job-document-pack.js';

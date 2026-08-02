@@ -3,11 +3,14 @@ import { z } from 'zod';
 import { hasAnyPermission } from '@titan/auth';
 import type { FinanceService } from '../services/finance.service.js';
 import { FinanceError } from '../services/finance.service.js';
+import type { InvoiceWriteApprovalService } from '../services/invoice-write-approval.service.js';
+import { mapInvoiceWriteApprovalError } from '../services/invoice-write-approval.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { DatabaseClient } from '@titan/db';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
+import { createStepUpMiddleware } from '../middleware/step-up-auth.js';
 
 const quoteStatusSchema = z.enum([
   'draft',
@@ -88,6 +91,7 @@ const createPaymentSchema = z.object({
 
 type FinanceRouterDeps = {
   financeService: FinanceService;
+  invoiceWriteApprovalService: InvoiceWriteApprovalService;
   teamService: TeamService;
   db: DatabaseClient;
   jwtSecret: string;
@@ -100,6 +104,7 @@ function getAuth(req: import('express').Request) {
 
 export function createFinanceRouter({
   financeService,
+  invoiceWriteApprovalService,
   teamService,
   db,
   jwtSecret,
@@ -107,6 +112,7 @@ export function createFinanceRouter({
 }: FinanceRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+  const requireStepUp = createStepUpMiddleware({ jwtSecret });
   const denyTechnician = createDenyTechnicianFromOwnerModules(db);
 
   router.use(requireAuth);
@@ -326,13 +332,143 @@ export function createFinanceRouter({
     res.json({ data: { summary: await financeService.getJobFinanceSummary(auth.companyId, routeParam(req.params.jobId), { includeProfit: canViewProfit(auth) }) } });
   });
 
+  router.get('/write-approvals', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const approvals = await invoiceWriteApprovalService.listPending(companyId);
+    res.json({ data: { approvals } });
+  });
+
+  router.get('/write-approvals/:id', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const approval = await invoiceWriteApprovalService.getApproval(companyId, routeParam(req.params.id));
+    if (!approval) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Write approval not found' } });
+      return;
+    }
+    res.json({ data: { approval } });
+  });
+
+  router.post('/invoices/:id/write-approvals', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = z
+      .object({
+        operation: z.enum(['invoice_void', 'credit_note_create']),
+        reason: z.string().trim().min(3).max(2000),
+        clientActionId: z.string().trim().min(1).max(200),
+        creditAmountCents: z.number().int().positive().optional(),
+        lineItems: z
+          .array(
+            z.object({
+              description: z.string().trim().min(1),
+              quantity: z.number().positive().optional(),
+              unitPriceCents: z.number().int(),
+              vatRateBps: z.number().int().min(0).max(10000).optional(),
+            }),
+          )
+          .optional(),
+      })
+      .safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid write approval payload', details: parsed.error.flatten() } });
+      return;
+    }
+
+    try {
+      const approval = await invoiceWriteApprovalService.createRequest(
+        toWriteApprovalActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data,
+      );
+      res.status(201).json({ data: { approval } });
+    } catch (error) {
+      handleWriteApprovalError(res, error);
+    }
+  });
+
+  router.post('/write-approvals/:id/approve', requireAnyPermission('finance:write'), async (req, res) => {
+    try {
+      const approval = await invoiceWriteApprovalService.approveRequest(
+        toWriteApprovalActor(getAuth(req)),
+        routeParam(req.params.id),
+      );
+      res.json({ data: { approval } });
+    } catch (error) {
+      handleWriteApprovalError(res, error);
+    }
+  });
+
+  router.post('/write-approvals/:id/reject', requireAnyPermission('finance:write'), async (req, res) => {
+    const parsed = z.object({ reason: z.string().trim().max(2000).optional() }).safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'Invalid reject payload' } });
+      return;
+    }
+    try {
+      const approval = await invoiceWriteApprovalService.rejectRequest(
+        toWriteApprovalActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data.reason,
+      );
+      res.json({ data: { approval } });
+    } catch (error) {
+      handleWriteApprovalError(res, error);
+    }
+  });
+
+  router.post('/write-approvals/:id/execute', requireAnyPermission('finance:write'), requireStepUp, async (req, res) => {
+    const parsed = z.object({ clientActionId: z.string().trim().min(1).max(200) }).safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'clientActionId is required' } });
+      return;
+    }
+    try {
+      const result = await invoiceWriteApprovalService.executeRequest(
+        toWriteApprovalActor(getAuth(req)),
+        routeParam(req.params.id),
+        parsed.data.clientActionId,
+      );
+      res.json({ data: result });
+    } catch (error) {
+      handleWriteApprovalError(res, error);
+    }
+  });
+
   return router;
 }
 
 function stringQuery(value: unknown): string | undefined { return typeof value === 'string' && value.trim() ? value.trim() : undefined; }
 function routeParam(value: string | string[]): string { return Array.isArray(value) ? value[0]! : value; }
 function toFinanceActor(auth: ReturnType<typeof getAuth>) { return { companyId: auth.companyId, userId: auth.userId, permissions: auth.permissions, roleName: auth.roleName, canWrite: hasAnyPermission(auth.permissions, ['finance:write', '*']) }; }
+function toWriteApprovalActor(auth: ReturnType<typeof getAuth>) {
+  if (!auth.userId) {
+    throw new FinanceError('FORBIDDEN', 'Authenticated user required');
+  }
+  return {
+    companyId: auth.companyId,
+    userId: auth.userId,
+    permissions: auth.permissions,
+    roleName: auth.roleName,
+    canWrite: hasAnyPermission(auth.permissions, ['finance:write', '*']),
+  };
+}
 function canViewProfit(auth: ReturnType<typeof getAuth>) { return hasAnyPermission(auth.permissions, ['finance:write', '*']) || ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? ''); }
+
+function handleWriteApprovalError(res: import('express').Response, error: unknown) {
+  try {
+    const mapped = mapInvoiceWriteApprovalError(error);
+    const status =
+      mapped.code === 'NOT_FOUND'
+        ? 404
+        : mapped.code === 'FORBIDDEN'
+          ? 403
+          : mapped.code === 'ALREADY_VOID' || mapped.code === 'ALREADY_EXECUTED'
+            ? 409
+            : 400;
+    res.status(status).json({ error: { code: mapped.code, message: mapped.message } });
+  } catch {
+    throw error;
+  }
+}
 
 function handleFinanceError(res: import('express').Response, error: unknown) {
   if (error instanceof FinanceError) {

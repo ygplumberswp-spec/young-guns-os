@@ -1,15 +1,25 @@
+import { useState } from 'react';
 import { Link } from 'wouter';
 import type { InvoiceSummary } from '@titan/shared';
 import { buildPaymentRecordHref } from '@titan/shared';
 import { MoreMenu, type MoreMenuItem } from '../../components/ux';
 import { isInvoiceDraft } from '../finance/finance-filters';
+import { InvoiceWriteApprovalModal } from './InvoiceWriteApprovalModal';
 
 type InvoiceListRowActionsProps = {
   invoice: InvoiceSummary;
   canWrite: boolean;
+  accessToken?: string;
+  isOwner?: boolean;
+  onActionComplete?: () => void;
 };
 
-function buildInvoiceMoreItems(invoice: InvoiceSummary, canWrite: boolean): MoreMenuItem[] {
+function buildInvoiceMoreItems(
+  invoice: InvoiceSummary,
+  canWrite: boolean,
+  onVoid?: () => void,
+  onCredit?: () => void,
+): MoreMenuItem[] {
   const items: MoreMenuItem[] = [];
   const isDraft = isInvoiceDraft(invoice);
   const isCancelled = invoice.status === 'cancelled';
@@ -49,9 +59,20 @@ function buildInvoiceMoreItems(invoice: InvoiceSummary, canWrite: boolean): More
   }
 
   const destructive: MoreMenuItem[] = [];
-  if (canWrite && !isDraft && !isCancelled) {
-    destructive.push({ id: 'void', label: 'Void', disabled: true, destructive: true });
-    destructive.push({ id: 'credit', label: 'Create Credit Note', disabled: true, destructive: true });
+  const voidEligible = ['sent', 'partial', 'overdue', 'paid'].includes(invoice.status);
+  if (canWrite && !isDraft && !isCancelled && voidEligible) {
+    destructive.push({
+      id: 'void',
+      label: 'Void',
+      destructive: true,
+      onSelect: onVoid,
+    });
+    destructive.push({
+      id: 'credit',
+      label: 'Create Credit Note',
+      destructive: true,
+      onSelect: onCredit,
+    });
   }
   if (canWrite && isCancelled) {
     destructive.push({ id: 'archive', label: 'Archive', disabled: true, destructive: true });
@@ -61,25 +82,56 @@ function buildInvoiceMoreItems(invoice: InvoiceSummary, canWrite: boolean): More
 }
 
 /** Invoice list row actions — View, Edit (draft only), More menu. */
-export function InvoiceListRowActions({ invoice, canWrite }: InvoiceListRowActionsProps) {
+export function InvoiceListRowActions({
+  invoice,
+  canWrite,
+  accessToken,
+  isOwner = false,
+  onActionComplete,
+}: InvoiceListRowActionsProps) {
   const isDraft = isInvoiceDraft(invoice);
-  const moreItems = buildInvoiceMoreItems(invoice, canWrite);
+  const [modalOperation, setModalOperation] = useState<'invoice_void' | 'credit_note_create' | null>(
+    null,
+  );
+
+  const moreItems = buildInvoiceMoreItems(
+    invoice,
+    canWrite,
+    accessToken ? () => setModalOperation('invoice_void') : undefined,
+    accessToken ? () => setModalOperation('credit_note_create') : undefined,
+  );
 
   return (
-    <div className="ux-row-actions ux-row-actions--desktop">
-      <Link href={`/finance/invoices/${invoice.id}`} className="ux-row-actions__btn" aria-label="View invoice">
-        View
-      </Link>
-      {canWrite && isDraft ? (
-        <Link
-          href={`/finance/invoices/${invoice.id}#edit`}
-          className="ux-row-actions__btn"
-          aria-label="Edit draft invoice"
-        >
-          Edit
+    <>
+      <div className="ux-row-actions ux-row-actions--desktop">
+        <Link href={`/finance/invoices/${invoice.id}`} className="ux-row-actions__btn" aria-label="View invoice">
+          View
         </Link>
+        {canWrite && isDraft ? (
+          <Link
+            href={`/finance/invoices/${invoice.id}#edit`}
+            className="ux-row-actions__btn"
+            aria-label="Edit draft invoice"
+          >
+            Edit
+          </Link>
+        ) : null}
+        <MoreMenu label="More" items={moreItems} align="end" />
+      </div>
+      {accessToken && modalOperation ? (
+        <InvoiceWriteApprovalModal
+          open
+          invoice={invoice}
+          operation={modalOperation}
+          accessToken={accessToken}
+          isOwner={isOwner}
+          onClose={() => setModalOperation(null)}
+          onComplete={() => {
+            setModalOperation(null);
+            onActionComplete?.();
+          }}
+        />
       ) : null}
-      <MoreMenu label="More" items={moreItems} align="end" />
-    </div>
+    </>
   );
 }

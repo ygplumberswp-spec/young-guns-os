@@ -70,6 +70,7 @@ import { BusinessIntegrationsService } from './services/business-integrations.se
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
+import { InvoiceWriteApprovalService } from './services/invoice-write-approval.service.js';
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
@@ -414,6 +415,7 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   xeroOAuthService,
 });
 const xeroWriteApprovalGate = new XeroWriteApprovalGate(db);
+const invoiceWriteApprovalService = new InvoiceWriteApprovalService(db, xeroWriteApprovalGate);
 const xeroMappingConflictService = new XeroMappingConflictService(db);
 const xeroSyncService = XeroSyncService.create({
   db,
@@ -1514,6 +1516,7 @@ app.use(
   '/api/v1/finance',
   createFinanceRouter({
     financeService,
+    invoiceWriteApprovalService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,
