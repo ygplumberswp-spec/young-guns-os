@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "phase14-aura-operations-v1",
+  "label": "246-aura-operations-verify",
+  "generatedAt": "2026-08-02T08:30:17.317Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "5a6a7b23c728df0a559f91026ddde0275b84a90e",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "status": 200,
+    "hasSummary": true,
+    "hasMorning": true,
+    "hasEndOfDay": true,
+    "hasRecommendations": true,
+    "recommendationCount": 7,
+    "dataSources": [
+      "dashboard/executive-summary",
+      "finance-intelligence/receivables",
+      "finance-intelligence/payables",
+      "mission-control/summary",
+      "mission-control/modules",
+      "documents/compliance-workspace",
+      "intelligence/recommendations",
+      "department-routine-tasks",
+      "mobile-time-entries"
+    ],
+    "morningJobsToday": 0,
+    "morningUnassigned": 0,
+    "endOfDayCompleted": 0,
+    "recommendationContractValid": true
+  },
+  "ui": {
+    "viewports": [
+      {
+        "route": "/aura/operations",
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "checks": {
+          "hasOperationsManager": true,
+          "hasMorningSummary": true,
+          "hasEndOfDaySummary": true,
+          "hasRecommendationsOrEmpty": true,
+          "noFakeZeroDash": false
+        },
+        "screenshot": "diagnostic-output/phase14-aura-operations-staging/phase14-aura-operations-1440.png"
+      },
+      {
+        "route": "/aura/operations",
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "checks": {
+          "hasOperationsManager": true,
+          "hasMorningSummary": true,
+          "hasEndOfDaySummary": true,
+          "hasRecommendationsOrEmpty": true,
+          "noFakeZeroDash": false
+        },
+        "screenshot": "diagnostic-output/phase14-aura-operations-staging/phase14-aura-operations-768.png"
+      },
+      {
+        "route": "/aura",
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "checks": {
+          "hasOperationsManager": true,
+          "hasMorningSummary": true,
+          "hasEndOfDaySummary": true,
+          "hasRecommendationsOrEmpty": false,
+          "noFakeZeroDash": false
+        },
+        "screenshot": "diagnostic-output/phase14-aura-operations-staging/phase14-aura-1440.png"
+      },
+      {
+        "route": "/aura",
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "checks": {
+          "hasOperationsManager": true,
+          "hasMorningSummary": true,
+          "hasEndOfDaySummary": true,
+          "hasRecommendationsOrEmpty": false,
+          "noFakeZeroDash": false
+        },
+        "screenshot": "diagnostic-output/phase14-aura-operations-staging/phase14-aura-768.png"
+      }
+    ]
+  },
+  "blockers": [],
+  "verdict": "GO"
+}
