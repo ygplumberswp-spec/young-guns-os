@@ -212,9 +212,17 @@ async function main() {
   await seedSession(context, page, token, session.roleName, TECHNICIAN_PERMISSIONS);
 
   const routes = [
-    { path: '/mobile', label: 'today', checks: ['Today', 'Current job', 'Missing close-out'] },
+    {
+      path: '/mobile',
+      label: 'today',
+      checks: ['Today', 'No job in progress right now', 'Missing close-out'],
+    },
     { path: '/mobile/jobs', label: 'jobs-list', checks: ['My jobs'] },
-    { path: '/mobile/schedule', label: 'schedule', checks: ['My schedule', 'Current job'] },
+    {
+      path: '/mobile/schedule',
+      label: 'schedule',
+      checks: ['My schedule', 'No job in progress right now'],
+    },
     { path: '/mobile/route', label: 'route-map', checks: ['Route', 'Maps'] },
   ];
 
@@ -234,7 +242,11 @@ async function main() {
       await page.waitForTimeout(1500);
       const bodyText = await page.locator('body').innerText();
       const checks = Object.fromEntries(
-        route.checks.map((label) => [label.replace(/\s+/g, '_').toLowerCase(), bodyText.includes(label)]),
+        route.checks.map((label) => {
+          const key = label.replace(/\s+/g, '_').toLowerCase();
+          const ok = bodyText.toLowerCase().includes(label.toLowerCase());
+          return [key, ok];
+        }),
       );
       const shot = path.join(OUT_DIR, `phase6-${route.label}-${vp.id}.png`);
       await page.screenshot({ path: shot, fullPage: true });

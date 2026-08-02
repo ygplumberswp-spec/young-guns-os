@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "phase6-technician-mobile-v1",
+  "label": "238-technician-mobile-verify",
+  "generatedAt": "2026-08-02T05:44:32.763Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "dc28cd0c5ebf4ed171a04650e0e0086879e5cfe7",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "roleName": "Technician",
+    "secretsInOutput": false
+  },
+  "api": {
+    "dashboardStatus": 200,
+    "hasDashboard": true,
+    "hasCurrentJobField": true,
+    "hasNextJobField": true,
+    "hasJobsRequiringCompletion": true,
+    "hasMissingCloseOutItems": true,
+    "assignedJobCount": 1,
+    "jobsListStatus": 200,
+    "financeReceivablesBlocked": true,
+    "paymentCollection": {
+      "hasContext": true,
+      "yocoConfigured": false,
+      "canCollectPayment": false,
+      "storesCardData": false
+    },
+    "uiFinanceRedirect": true
+  },
+  "ui": {
+    "routes": [
+      {
+        "path": "/mobile",
+        "viewport": "375",
+        "checks": {
+          "today": true,
+          "no_job_in_progress_right_now": true,
+          "missing_close-out": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-today-375.png"
+      },
+      {
+        "path": "/mobile",
+        "viewport": "1440",
+        "checks": {
+          "today": true,
+          "no_job_in_progress_right_now": true,
+          "missing_close-out": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-today-1440.png"
+      },
+      {
+        "path": "/mobile/jobs",
+        "viewport": "375",
+        "checks": {
+          "my_jobs": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-jobs-list-375.png"
+      },
+      {
+        "path": "/mobile/schedule",
+        "viewport": "375",
+        "checks": {
+          "my_schedule": true,
+          "no_job_in_progress_right_now": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-schedule-375.png"
+      },
+      {
+        "path": "/mobile/route",
+        "viewport": "375",
+        "checks": {
+          "route": true,
+          "maps": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-route-map-375.png"
+      },
+      {
+        "path": "/mobile/jobs/ef4468a7-db62-4147-be73-301f8c5e508a",
+        "viewport": "375",
+        "checks": {
+          "workflow": true,
+          "completion_gate": true,
+          "payment_collection": true,
+          "field_support": true
+        },
+        "screenshot": "diagnostic-output/phase6-technician-mobile-staging/phase6-job-detail-375.png"
+      }
+    ]
+  },
+  "blockers": [],
+  "verdict": "GO"
+}
