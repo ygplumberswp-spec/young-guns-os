@@ -3,17 +3,17 @@
 **Phase:** 254 — Product design, functional workflow, speed & contextual AURA audit  
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Starting SHA:** `0a2db16`  
-**Final SHA:** _(see git log after commit)_  
-**Generated (UTC):** 2026-08-02T13:45:00.000Z  
+**Final SHA:** `0e01208`  
+**Generated (UTC):** 2026-08-02T13:15:00.000Z  
 **Staging Web:** https://comfortable-determination-staging.up.railway.app  
 **Staging API:** https://young-guns-os-staging.up.railway.app  
 **Production deployed:** **NO**
 
 ---
 
-## Executive verdict: **HOLD**
+## Executive verdict: **HOLD** (staging functional **GO** · production **NO-GO**)
 
-Functional UX defects in sections 10.1–10.10 are **fixed in code**. Final **GO** requires staging deploy + verify 254 PASS on deployed SHA.
+Section 10 defects fixed and **verify 254 GO** on deployed staging @ `0e01208`. Production blocked by payment allocation DATA-DEPENDENT HOLD and explicit Owner approval requirement.
 
 ---
 
@@ -72,11 +72,21 @@ Functional UX defects in sections 10.1–10.10 are **fixed in code**. Final **GO
 
 ---
 
-## Remaining blockers (HOLD)
+## Verify 254
 
-1. **Payment allocation E2E** — DATA-DEPENDENT; no overlapping paid invoice on staging
-2. **Verify 254 on staging** — requires deploy of Phase 254 web build
-3. **Invoice destructive actions** (Void/Credit Note) — disabled pending Xero write approval workflow
+| Check | Result |
+|-------|--------|
+| Verdict | **GO** |
+| Blockers | 0 |
+| JSON | `diagnostic-output/254-titan-full-functional-aura-audit-verify.json` |
+| Screenshots | `diagnostic-output/phase254-functional-audit-staging/` |
+
+## Staging deploy IDs
+
+| Service | Deployment ID |
+|---------|---------------|
+| Web (`comfortable-determination`) | `8f517222-8e54-498c-9442-705d2e11b528` |
+| API (`young-guns-os`) | `f4dc78c7-147a-4f93-8e4a-ad49a3c98210` |
 
 ---
 

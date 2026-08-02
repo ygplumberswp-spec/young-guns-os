@@ -1,0 +1,144 @@
+{
+  "phase": 254,
+  "generatedAt": "2026-08-02T13:13:47.188Z",
+  "gitSha": "0e01208716d2404e69956491f459921ebb0f1f1e",
+  "web": "https://comfortable-determination-staging.up.railway.app",
+  "api": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "blockers": [],
+  "procurementTabs": [
+    {
+      "tab": "Procure-to-Pay",
+      "url": "https://comfortable-determination-staging.up.railway.app/procurement/flow",
+      "active": "Procure-to-Pay",
+      "pass": true
+    },
+    {
+      "tab": "Purchase Orders",
+      "url": "https://comfortable-determination-staging.up.railway.app/procurement",
+      "active": "Purchase Orders",
+      "pass": true
+    },
+    {
+      "tab": "Suppliers",
+      "url": "https://comfortable-determination-staging.up.railway.app/procurement/suppliers",
+      "active": "Suppliers",
+      "pass": true
+    },
+    {
+      "tab": "Price Lists",
+      "url": "https://comfortable-determination-staging.up.railway.app/procurement/price-lists",
+      "active": "Price Lists",
+      "pass": true
+    },
+    {
+      "tab": "Parts Requests",
+      "url": "https://comfortable-determination-staging.up.railway.app/procurement/parts-requests",
+      "active": "Parts Requests",
+      "pass": true
+    }
+  ],
+  "invoiceFilters": [
+    {
+      "filter": "All",
+      "active": "All",
+      "pass": true
+    },
+    {
+      "filter": "Draft",
+      "active": "Draft",
+      "pass": true
+    },
+    {
+      "filter": "Awaiting Payment",
+      "active": "Awaiting Payment",
+      "pass": true
+    },
+    {
+      "filter": "Overdue",
+      "pass": false,
+      "note": "May be in overflow menu"
+    },
+    {
+      "filter": "Voided",
+      "pass": false,
+      "note": "May be in overflow menu"
+    },
+    {
+      "filter": "Cancelled removed",
+      "pass": true
+    }
+  ],
+  "invoiceRowActions": {
+    "rowCount": 2,
+    "hasView": true,
+    "hasMore": true
+  },
+  "leads": {
+    "joinedActive": false,
+    "hasOpen": true,
+    "hasAll": true,
+    "hasShowing": true
+  },
+  "schedulingViews": [
+    {
+      "view": "Day",
+      "dataView": "day",
+      "pass": true
+    },
+    {
+      "view": "Week",
+      "dataView": "week",
+      "pass": true
+    },
+    {
+      "view": "Month",
+      "dataView": "month",
+      "pass": true
+    }
+  ],
+  "auraDrawer": {
+    "opened": true,
+    "chipCount": 2
+  },
+  "viewports": [
+    {
+      "id": "1440",
+      "width": 1440,
+      "height": 1000,
+      "headerOverlap": false,
+      "screenshot": "diagnostic-output/phase254-functional-audit-staging/leads-viewport-1440.png"
+    },
+    {
+      "id": "1280",
+      "width": 1280,
+      "height": 900,
+      "headerOverlap": false,
+      "screenshot": "diagnostic-output/phase254-functional-audit-staging/leads-viewport-1280.png"
+    },
+    {
+      "id": "1024",
+      "width": 1024,
+      "height": 768,
+      "headerOverlap": false,
+      "screenshot": "diagnostic-output/phase254-functional-audit-staging/leads-viewport-1024.png"
+    },
+    {
+      "id": "768",
+      "width": 768,
+      "height": 1024,
+      "headerOverlap": false,
+      "screenshot": "diagnostic-output/phase254-functional-audit-staging/leads-viewport-768.png"
+    },
+    {
+      "id": "375",
+      "width": 375,
+      "height": 812,
+      "headerOverlap": false,
+      "screenshot": "diagnostic-output/phase254-functional-audit-staging/leads-viewport-375.png"
+    }
+  ],
+  "verdict": "GO",
+  "paymentAllocationHold": "DATA-DEPENDENT — no fake Xero writes",
+  "productionDeployed": false
+}
