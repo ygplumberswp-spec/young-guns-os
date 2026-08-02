@@ -1,0 +1,275 @@
+{
+  "generatedAt": "2026-08-02T07:56:36.913Z",
+  "label": "245-corporate-department-model-verify",
+  "phase": 13,
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "d1e67bf",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "companyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false,
+    "userIdPrefix": "d8e6be83"
+  },
+  "api": {
+    "hub": {
+      "status": 200,
+      "departmentCount": 19,
+      "actionQueueTotal": 1,
+      "hasDisclaimer": true
+    },
+    "sampleDepartments": [
+      {
+        "departmentId": "executive_strategy",
+        "status": 200,
+        "hasWeeklyRoutine": true,
+        "hasApprovals": true,
+        "hasKpis": true,
+        "todayQueueCount": 0
+      },
+      {
+        "departmentId": "finance_accounting",
+        "status": 200,
+        "hasWeeklyRoutine": true,
+        "hasApprovals": true,
+        "hasKpis": true,
+        "todayQueueCount": 1
+      },
+      {
+        "departmentId": "scheduling_dispatch",
+        "status": 200,
+        "hasWeeklyRoutine": true,
+        "hasApprovals": true,
+        "hasKpis": true,
+        "todayQueueCount": 0
+      },
+      {
+        "departmentId": "hr_workforce",
+        "status": 200,
+        "hasWeeklyRoutine": true,
+        "hasApprovals": true,
+        "hasKpis": true,
+        "todayQueueCount": 0
+      },
+      {
+        "departmentId": "aura_digital_workforce",
+        "status": 200,
+        "hasWeeklyRoutine": true,
+        "hasApprovals": true,
+        "hasKpis": true,
+        "todayQueueCount": 0
+      }
+    ]
+  },
+  "ui": {
+    "routes": [
+      {
+        "href": "/departments",
+        "label": "Departments hub",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/departments",
+        "hasDepartmentsContent": true,
+        "screenshot": "diagnostic-output/phase13-corporate-departments-staging/phase13-departments-1440.png"
+      },
+      {
+        "href": "/departments/finance_accounting",
+        "label": "Finance workspace",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/departments/finance_accounting",
+        "hasDepartmentsContent": true,
+        "screenshot": "diagnostic-output/phase13-corporate-departments-staging/phase13-departments_finance_accounting-1440.png"
+      },
+      {
+        "href": "/departments/hr_workforce",
+        "label": "HR workspace",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/departments/hr_workforce",
+        "hasDepartmentsContent": true,
+        "screenshot": "diagnostic-output/phase13-corporate-departments-staging/phase13-departments_hr_workforce-1440.png"
+      },
+      {
+        "href": "/company-health/departments",
+        "label": "Company health alias",
+        "finalUrl": "https://comfortable-determination-staging.up.railway.app/departments",
+        "hasDepartmentsContent": true,
+        "screenshot": "diagnostic-output/phase13-corporate-departments-staging/phase13-company-health_departments-1440.png"
+      }
+    ],
+    "screenshots": []
+  },
+  "departmentChecks": [
+    {
+      "id": "executive_strategy",
+      "label": "Executive & Strategy",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "finance_accounting",
+      "label": "Finance & Accounting",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "sales_business_development",
+      "label": "Sales & Business Development",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "marketing_growth",
+      "label": "Marketing & Growth",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "customer_experience",
+      "label": "Customer Experience",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "operations",
+      "label": "Operations",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "scheduling_dispatch",
+      "label": "Scheduling & Dispatch",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "projects_construction",
+      "label": "Projects & Construction",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "hr_workforce",
+      "label": "HR & Workforce",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "procurement",
+      "label": "Procurement",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "fleet_assets",
+      "label": "Fleet & Assets",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "quality",
+      "label": "Quality",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "health_safety_compliance",
+      "label": "Health Safety & Compliance",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "legal_risk_internal_control",
+      "label": "Legal Risk & Internal Control",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "it_cybersecurity",
+      "label": "IT & Cybersecurity",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "data_analytics",
+      "label": "Data & Analytics",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "administration",
+      "label": "Administration",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    },
+    {
+      "id": "aura_digital_workforce",
+      "label": "AURA Digital Workforce",
+      "inHub": true,
+      "hasMandate": true,
+      "hasOwner": true,
+      "todayQueueIsArray": true,
+      "emptyQueueHonest": true
+    }
+  ],
+  "consoleErrors": [],
+  "verdict": "GO",
+  "blockers": [],
+  "holdItems": []
+}
