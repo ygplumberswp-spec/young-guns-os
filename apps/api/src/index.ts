@@ -68,6 +68,7 @@ import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
 import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
+import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval-workflow.service.js';
 import { XeroTwoWayVerifyService } from './services/xero-two-way-verify.service.js';
 import { WhatsappService } from './services/whatsapp.service.js';
 import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-enrichment.service.js';
@@ -417,6 +418,11 @@ const xeroSyncService = XeroSyncService.create({
   writeApprovalGate: xeroWriteApprovalGate,
   mappingConflictService: xeroMappingConflictService,
 });
+const xeroWriteApprovalWorkflowService = new XeroWriteApprovalWorkflowService(
+  db,
+  xeroWriteApprovalGate,
+  xeroSyncService,
+);
 const integrationsService = IntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -1537,6 +1543,7 @@ app.use(
     integrationsService,
     businessIntegrationsService,
     xeroSyncService,
+    xeroWriteApprovalWorkflowService,
     integrationHubService,
     integrationApiManagementService,
     whatsappService,

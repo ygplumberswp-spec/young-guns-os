@@ -147,7 +147,14 @@ export function PurchaseOrderDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading purchase order…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Purchase order" description="Purchase order detail" />
+        <p className="page-muted">Loading purchase order…</p>
+      </div>
+    );
+  }
 
   if (!purchaseOrder) {
     return (

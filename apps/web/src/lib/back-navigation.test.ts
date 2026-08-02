@@ -25,6 +25,20 @@ describe('resolveSmartBackFallback', () => {
     assert.equal(resolveSmartBackFallback('/finance/invoices/inv-1'), '/finance/invoices');
   });
 
+  it('maps CRM / job / lead detail to their list parents', () => {
+    assert.equal(resolveSmartBackFallback('/crm/cust-1'), '/crm');
+    assert.equal(resolveSmartBackFallback('/jobs/job-1'), '/jobs');
+    assert.equal(resolveSmartBackFallback('/leads/lead-1'), '/leads');
+  });
+
+  it('maps nested integration pages to their parent integration', () => {
+    assert.equal(
+      resolveSmartBackFallback('/integrations/xero/write-approvals'),
+      '/integrations/xero',
+    );
+    assert.equal(resolveSmartBackFallback('/integrations/xero'), '/integrations');
+  });
+
   it('maps settings sub-page to company profile hub', () => {
     assert.equal(resolveSmartBackFallback('/settings/team'), '/settings/company');
   });

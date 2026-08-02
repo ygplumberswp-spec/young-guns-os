@@ -1,5 +1,6 @@
 import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'wouter';
 import { Button, Panel } from '@titan/ui';
 import type { XeroConnectionSummary } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
@@ -174,6 +175,9 @@ export function XeroSettingsPage() {
         description="Connect your Xero organisation so TITAN can verify accounting access before future invoice and payment sync."
       />
       <IntegrationsNav />
+      <p>
+        <Link href="/integrations/xero/write-approvals">Open Xero write approval queue</Link>
+      </p>
 
       {isLoading ? <p className="page-muted">Loading Xero settings…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}

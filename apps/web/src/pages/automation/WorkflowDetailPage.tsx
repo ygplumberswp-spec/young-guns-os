@@ -292,7 +292,14 @@ export function WorkflowDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading workflow…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Workflow" description="Workflow detail" />
+        <p className="page-muted">Loading workflow…</p>
+      </div>
+    );
+  }
 
   if (!workflow) {
     return (

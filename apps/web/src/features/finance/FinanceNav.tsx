@@ -13,6 +13,7 @@ const secondaryItems = [
   { id: 'numbering-rules', label: 'Numbering rules', href: '/settings/company' },
   { id: 'archived-records', label: 'Archived records', href: '/drafts?status=archived' },
   { id: 'xero-sync', label: 'Xero sync status', href: '/integrations/xero' },
+  { id: 'xero-writes', label: 'Xero write approvals', href: '/integrations/xero/write-approvals' },
   { id: 'advanced-reports', label: 'Advanced reports', href: '/analytics' },
 ];
 

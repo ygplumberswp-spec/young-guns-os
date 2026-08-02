@@ -101,6 +101,7 @@ export class XeroClient {
   private readonly requestTimeoutMs: number;
   private cachedAccessToken: string | null = null;
   private cachedSalesAccountCode: string | null = null;
+  private cachedBankAccountCode: string | null = null;
 
   constructor({ tenantId, getAccessToken, requestTimeoutMs }: XeroClientOptions) {
     this.tenantId = tenantId.trim();
@@ -229,14 +230,22 @@ export class XeroClient {
     return quotes[0]!;
   }
 
+  /**
+   * Create ACCREC invoice in Xero as DRAFT.
+   * Do NOT send TITAN-invented InvoiceNumber — Xero assigns the official number.
+   * `reference` should be the TITAN job number when available.
+   */
   async createInvoice(input: {
     contactId: string;
-    invoiceNumber: string;
     title: string;
     amountCents: number;
     currency: string;
     dueDate?: string | null;
     issueDate?: string | null;
+    reference?: string | null;
+    /** @deprecated TITAN must not invent Xero invoice numbers — ignored when present. */
+    invoiceNumber?: string | null;
+    status?: 'DRAFT' | 'AUTHORISED';
   }): Promise<XeroInvoiceRecord> {
     const accountCode = await this.getDefaultSalesAccountCode();
     const payload = await this.apiRequest('POST', '/Invoices', {
@@ -244,8 +253,8 @@ export class XeroClient {
         {
           Type: 'ACCREC',
           Contact: { ContactID: input.contactId },
-          InvoiceNumber: input.invoiceNumber,
-          Reference: input.title,
+          // Intentionally omit InvoiceNumber so Xero assigns the official number.
+          Reference: input.reference?.trim() || input.title,
           Date: input.issueDate ?? formatXeroDate(new Date()),
           DueDate: input.dueDate ?? undefined,
           CurrencyCode: input.currency,
@@ -257,7 +266,7 @@ export class XeroClient {
               AccountCode: accountCode,
             },
           ],
-          Status: 'AUTHORISED',
+          Status: input.status ?? 'DRAFT',
         },
       ],
     });
@@ -269,6 +278,34 @@ export class XeroClient {
     }
 
     return invoices[0]!;
+  }
+
+  async createPayment(input: {
+    invoiceId: string;
+    amountCents: number;
+    date?: string | null;
+    reference?: string | null;
+  }): Promise<XeroPaymentRecord> {
+    const accountCode = await this.getDefaultBankAccountCode();
+    const payload = await this.apiRequest('POST', '/Payments', {
+      Payments: [
+        {
+          Invoice: { InvoiceID: input.invoiceId },
+          Account: { Code: accountCode },
+          Amount: centsToAmount(input.amountCents),
+          Date: input.date ?? formatXeroDate(new Date()),
+          Reference: input.reference ?? undefined,
+        },
+      ],
+    });
+
+    const payments = extractPayments(payload);
+
+    if (payments.length === 0) {
+      throw new XeroError('API_ERROR', 'Xero did not return a created payment');
+    }
+
+    return payments[0]!;
   }
 
   async fetchInvoice(invoiceId: string): Promise<XeroInvoiceRecord> {
@@ -404,6 +441,24 @@ export class XeroClient {
     const accounts = extractAccounts(payload);
     const accountCode = accounts[0]?.code ?? '200';
     this.cachedSalesAccountCode = accountCode;
+    return accountCode;
+  }
+
+  private async getDefaultBankAccountCode(): Promise<string> {
+    if (this.cachedBankAccountCode) {
+      return this.cachedBankAccountCode;
+    }
+
+    const payload = await this.apiRequest('GET', '/Accounts?where=Type=="BANK"');
+    const accounts = extractAccounts(payload);
+    const accountCode = accounts[0]?.code;
+    if (!accountCode) {
+      throw new XeroError(
+        'CONFIG_ERROR',
+        'No Xero BANK account found — configure a bank account before payment push',
+      );
+    }
+    this.cachedBankAccountCode = accountCode;
     return accountCode;
   }
 

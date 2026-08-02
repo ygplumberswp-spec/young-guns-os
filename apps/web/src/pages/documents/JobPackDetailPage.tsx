@@ -139,7 +139,14 @@ export function JobPackDetailPage() {
     );
   }
 
-  if (isLoading) return <LoadingState label="Loading job pack…" />;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Job pack" />
+        <LoadingState label="Loading job pack…" />
+      </div>
+    );
+  }
 
   if (error && !pack) {
     return (

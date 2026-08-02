@@ -11,12 +11,14 @@ import type {
   XeroSyncStatusResponse,
   IntegrationSyncTrigger,
 } from '@titan/shared';
+import { resolveOfficialXeroInvoiceNumber } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
   integrationConnections,
   integrationSyncJobs,
   invoices,
+  jobs,
   payments,
   quotes,
   securityAuditLogs,
@@ -1264,7 +1266,7 @@ export class XeroSyncService {
 
       for (const invoice of rows) {
         try {
-          await this.assertEntityWriteApproved({
+          const approval = await this.assertEntityWriteApproved({
             companyId,
             entityType: 'invoice',
             entityId: invoice.id,
@@ -1295,14 +1297,22 @@ export class XeroSyncService {
 
           let remote;
           if (!xeroInvoiceId) {
+            let jobNumber: string | null = null;
+            if (invoice.jobId) {
+              const job = await this.db.query.jobs.findFirst({
+                where: and(eq(jobs.companyId, companyId), eq(jobs.id, invoice.jobId)),
+              });
+              jobNumber = job?.jobNumber ?? null;
+            }
             remote = await ctx.client.createInvoice({
               contactId: customerMapping.xeroContactId,
-              invoiceNumber: invoice.invoiceNumber,
               title: invoice.title,
               amountCents: invoice.amountCents,
               currency: invoice.currency,
               dueDate: invoice.dueDate?.toISOString().slice(0, 10) ?? null,
               issueDate: invoice.issuedAt?.toISOString().slice(0, 10) ?? null,
+              reference: jobNumber,
+              status: 'DRAFT',
             });
             xeroInvoiceId = remote.invoiceId;
             createdCount += 1;
@@ -1318,23 +1328,31 @@ export class XeroSyncService {
             total: remote.total,
           });
 
+          const officialNumber = resolveOfficialXeroInvoiceNumber({
+            xeroAssignedNumber: remote.invoiceNumber,
+            xeroInvoiceId,
+          });
+
           await this.db
             .update(invoices)
             .set({
               status: nextStatus,
               amountPaidCents: amountToCents(remote.amountPaid),
+              ...(officialNumber
+                ? { xeroInvoiceNumber: officialNumber, numberAuthority: 'xero' }
+                : {}),
               updatedAt: new Date(),
             })
             .where(eq(invoices.id, invoice.id));
 
           updatedCount += existingMapping?.xeroInvoiceId ? 1 : 0;
-          const officialNumber = resolveImportedInvoiceNumber(
-            remote.invoiceNumber,
-            xeroInvoiceId,
-          );
           await this.upsertInvoiceMapping(ctx, invoice.id, xeroInvoiceId, 'synced', null, {
             xeroInvoiceNumber: officialNumber,
           });
+
+          if (approval.approvalId !== 'mock-approval' && this.writeApprovalGate) {
+            await this.writeApprovalGate.markExecuted(companyId, approval.approvalId);
+          }
 
           await this.writeLog(ctx, {
             entityType: 'invoice',
@@ -1887,6 +1905,48 @@ export class XeroSyncService {
     });
   }
 
+  private async upsertPaymentMapping(
+    ctx: SyncContext,
+    paymentId: string,
+    xeroPaymentId: string | null,
+    syncStatus: 'synced' | 'failed' | 'pending' | 'out_of_sync',
+    lastError?: string | null,
+  ) {
+    const now = new Date();
+    const existing = await this.db.query.xeroPaymentMappings.findFirst({
+      where: and(
+        eq(xeroPaymentMappings.companyId, ctx.companyId),
+        eq(xeroPaymentMappings.paymentId, paymentId),
+      ),
+    });
+
+    if (existing) {
+      await this.db
+        .update(xeroPaymentMappings)
+        .set({
+          xeroPaymentId: xeroPaymentId ?? existing.xeroPaymentId,
+          syncStatus,
+          lastSyncedAt: now,
+          lastSuccessfulSyncAt: syncStatus === 'synced' ? now : existing.lastSuccessfulSyncAt,
+          lastError: lastError ?? null,
+          updatedAt: now,
+        })
+        .where(eq(xeroPaymentMappings.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(xeroPaymentMappings).values({
+      companyId: ctx.companyId,
+      integrationConnectionId: ctx.connection.id,
+      paymentId,
+      xeroPaymentId,
+      syncStatus,
+      lastSyncedAt: now,
+      lastSuccessfulSyncAt: syncStatus === 'synced' ? now : null,
+      lastError: lastError ?? null,
+    });
+  }
+
   private async importContactBatch(
     ctx: SyncContext,
     remoteContacts: Awaited<ReturnType<XeroClient['listContactsPage']>>,
@@ -2370,7 +2430,8 @@ export class XeroSyncService {
     entityType: string;
     entityId: string;
     operation: import('@titan/shared').XeroWriteOperation;
-  }): Promise<void> {
+    payloadVersion?: string;
+  }): Promise<{ approvalId: string; idempotencyKey: string }> {
     if (!this.writeApprovalGate) {
       throw new XeroSyncError(
         'WRITE_NOT_APPROVED',
@@ -2378,12 +2439,341 @@ export class XeroSyncService {
       );
     }
 
-    await this.writeApprovalGate.assertWriteApproved({
+    return this.writeApprovalGate.assertWriteApproved({
       companyId: input.companyId,
       entityType: input.entityType,
       entityId: input.entityId,
       operation: input.operation,
+      payloadVersion: input.payloadVersion,
     });
+  }
+
+  /**
+   * Owner-approved single invoice push. Idempotent when mapping already has xeroInvoiceId.
+   * Does not invent TITAN invoice numbers; stores Xero-assigned official number.
+   */
+  async executeApprovedInvoicePush(input: {
+    companyId: string;
+    invoiceId: string;
+    approvalId: string;
+    actorUserId: string;
+  }): Promise<Record<string, unknown>> {
+    const ctx = await this.createSyncContext(input.companyId);
+    const invoice = await this.db.query.invoices.findFirst({
+      where: and(eq(invoices.companyId, input.companyId), eq(invoices.id, input.invoiceId)),
+    });
+    if (!invoice) {
+      throw new XeroSyncError('NOT_FOUND', 'Invoice not found');
+    }
+
+    const existingMapping = await this.db.query.xeroInvoiceMappings.findFirst({
+      where: and(
+        eq(xeroInvoiceMappings.companyId, input.companyId),
+        eq(xeroInvoiceMappings.invoiceId, input.invoiceId),
+      ),
+    });
+
+    if (existingMapping?.xeroInvoiceId) {
+      const remote = await ctx.client.fetchInvoice(existingMapping.xeroInvoiceId);
+      const officialNumber = resolveOfficialXeroInvoiceNumber({
+        xeroAssignedNumber: remote.invoiceNumber,
+        xeroInvoiceId: existingMapping.xeroInvoiceId,
+      });
+      await this.upsertInvoiceMapping(
+        ctx,
+        invoice.id,
+        existingMapping.xeroInvoiceId,
+        'synced',
+        null,
+        { xeroInvoiceNumber: officialNumber },
+      );
+      if (officialNumber) {
+        await this.db
+          .update(invoices)
+          .set({
+            xeroInvoiceNumber: officialNumber,
+            numberAuthority: 'xero',
+            updatedAt: new Date(),
+          })
+          .where(eq(invoices.id, invoice.id));
+      }
+      await this.writeLog(ctx, {
+        entityType: 'invoice',
+        entityId: invoice.id,
+        xeroEntityId: existingMapping.xeroInvoiceId,
+        action: 'push',
+        status: 'success',
+        message: 'Idempotent invoice push — existing Xero mapping reused',
+      });
+      return {
+        idempotent: true,
+        xeroInvoiceId: existingMapping.xeroInvoiceId,
+        xeroInvoiceNumber: officialNumber,
+      };
+    }
+
+    if (existingMapping?.conflictMetadata) {
+      throw new XeroSyncError(
+        'CONFLICT',
+        'Invoice has unresolved conflict_metadata — Owner must resolve before push',
+      );
+    }
+
+    const customerMapping = await this.db.query.xeroCustomerMappings.findFirst({
+      where: and(
+        eq(xeroCustomerMappings.companyId, input.companyId),
+        eq(xeroCustomerMappings.customerId, invoice.customerId),
+        eq(xeroCustomerMappings.syncStatus, 'synced'),
+      ),
+    });
+    if (!customerMapping?.xeroContactId) {
+      throw new XeroSyncError(
+        'VALIDATION',
+        'Customer must be mapped to a Xero contact before invoice push',
+      );
+    }
+
+    let jobNumber: string | null = null;
+    if (invoice.jobId) {
+      const job = await this.db.query.jobs.findFirst({
+        where: and(eq(jobs.companyId, input.companyId), eq(jobs.id, invoice.jobId)),
+      });
+      jobNumber = job?.jobNumber ?? null;
+    }
+
+    const remote = await ctx.client.createInvoice({
+      contactId: customerMapping.xeroContactId,
+      title: invoice.title,
+      amountCents: invoice.amountCents,
+      currency: invoice.currency,
+      dueDate: invoice.dueDate?.toISOString().slice(0, 10) ?? null,
+      issueDate: invoice.issuedAt?.toISOString().slice(0, 10) ?? null,
+      reference: jobNumber,
+      status: 'DRAFT',
+    });
+
+    const officialNumber = resolveOfficialXeroInvoiceNumber({
+      xeroAssignedNumber: remote.invoiceNumber,
+      xeroInvoiceId: remote.invoiceId,
+    });
+
+    await this.db
+      .update(invoices)
+      .set({
+        ...(officialNumber
+          ? { xeroInvoiceNumber: officialNumber, numberAuthority: 'xero' }
+          : {}),
+        xeroReference: jobNumber,
+        updatedAt: new Date(),
+      })
+      .where(eq(invoices.id, invoice.id));
+
+    await this.upsertInvoiceMapping(ctx, invoice.id, remote.invoiceId, 'synced', null, {
+      xeroInvoiceNumber: officialNumber,
+      xeroReference: jobNumber,
+    });
+
+    await this.writeLog(ctx, {
+      entityType: 'invoice',
+      entityId: invoice.id,
+      xeroEntityId: remote.invoiceId,
+      action: 'push',
+      status: 'success',
+      message: `Pushed invoice draft to Xero (approval ${input.approvalId})`,
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: input.companyId,
+      userId: input.actorUserId,
+      category: 'integrations',
+      action: 'xero_invoice_push_executed',
+      entityType: 'invoice',
+      entityId: invoice.id,
+      metadata: {
+        approvalId: input.approvalId,
+        xeroInvoiceId: remote.invoiceId,
+        xeroInvoiceNumber: officialNumber,
+      },
+    });
+
+    invalidateIntegrationReadCaches(input.companyId);
+    return {
+      idempotent: false,
+      xeroInvoiceId: remote.invoiceId,
+      xeroInvoiceNumber: officialNumber,
+      status: remote.status,
+    };
+  }
+
+  async executeApprovedPaymentPush(input: {
+    companyId: string;
+    paymentId: string;
+    approvalId: string;
+    actorUserId: string;
+  }): Promise<Record<string, unknown>> {
+    const ctx = await this.createSyncContext(input.companyId);
+    const payment = await this.db.query.payments.findFirst({
+      where: and(eq(payments.companyId, input.companyId), eq(payments.id, input.paymentId)),
+    });
+    if (!payment) {
+      throw new XeroSyncError('NOT_FOUND', 'Payment not found');
+    }
+    if (payment.amountCents <= 0) {
+      throw new XeroSyncError('VALIDATION', 'Payment amount must be positive');
+    }
+
+    const existingMapping = await this.db.query.xeroPaymentMappings.findFirst({
+      where: and(
+        eq(xeroPaymentMappings.companyId, input.companyId),
+        eq(xeroPaymentMappings.paymentId, input.paymentId),
+      ),
+    });
+    if (existingMapping?.xeroPaymentId || payment.xeroPaymentId) {
+      const xeroPaymentId = existingMapping?.xeroPaymentId ?? payment.xeroPaymentId!;
+      return { idempotent: true, xeroPaymentId };
+    }
+
+    const invoiceMapping = await this.db.query.xeroInvoiceMappings.findFirst({
+      where: and(
+        eq(xeroInvoiceMappings.companyId, input.companyId),
+        eq(xeroInvoiceMappings.invoiceId, payment.invoiceId),
+        eq(xeroInvoiceMappings.syncStatus, 'synced'),
+      ),
+    });
+    if (!invoiceMapping?.xeroInvoiceId) {
+      throw new XeroSyncError(
+        'VALIDATION',
+        'Linked invoice must be pushed/mapped to Xero before payment push',
+      );
+    }
+
+    const remote = await ctx.client.createPayment({
+      invoiceId: invoiceMapping.xeroInvoiceId,
+      amountCents: payment.amountCents,
+      date: payment.paidAt?.toISOString().slice(0, 10) ?? null,
+      reference: payment.reference,
+    });
+
+    await this.db
+      .update(payments)
+      .set({ xeroPaymentId: remote.paymentId })
+      .where(eq(payments.id, payment.id));
+
+    await this.upsertPaymentMapping(ctx, payment.id, remote.paymentId, 'synced');
+
+    await this.writeLog(ctx, {
+      entityType: 'payment',
+      entityId: payment.id,
+      xeroEntityId: remote.paymentId,
+      action: 'push',
+      status: 'success',
+      message: `Pushed payment to Xero (approval ${input.approvalId})`,
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: input.companyId,
+      userId: input.actorUserId,
+      category: 'integrations',
+      action: 'xero_payment_push_executed',
+      entityType: 'payment',
+      entityId: payment.id,
+      metadata: {
+        approvalId: input.approvalId,
+        xeroPaymentId: remote.paymentId,
+        xeroInvoiceId: invoiceMapping.xeroInvoiceId,
+        amountCents: payment.amountCents,
+      },
+    });
+
+    invalidateIntegrationReadCaches(input.companyId);
+    return {
+      idempotent: false,
+      xeroPaymentId: remote.paymentId,
+      xeroInvoiceId: invoiceMapping.xeroInvoiceId,
+      amountCents: payment.amountCents,
+    };
+  }
+
+  async executeApprovedContactPush(input: {
+    companyId: string;
+    customerId: string;
+    approvalId: string;
+    actorUserId: string;
+  }): Promise<Record<string, unknown>> {
+    const ctx = await this.createSyncContext(input.companyId);
+    const customer = await this.db.query.customers.findFirst({
+      where: and(eq(customers.companyId, input.companyId), eq(customers.id, input.customerId)),
+    });
+    if (!customer) {
+      throw new XeroSyncError('NOT_FOUND', 'Customer not found');
+    }
+
+    const existingMapping = await this.db.query.xeroCustomerMappings.findFirst({
+      where: and(
+        eq(xeroCustomerMappings.companyId, input.companyId),
+        eq(xeroCustomerMappings.customerId, input.customerId),
+      ),
+    });
+
+    if (existingMapping?.conflictMetadata) {
+      throw new XeroSyncError(
+        'CONFLICT',
+        'Contact has unresolved conflict_metadata — Owner must resolve before push',
+      );
+    }
+
+    let xeroContactId = existingMapping?.xeroContactId ?? null;
+    let linkedExisting = false;
+
+    if (!xeroContactId && customer.email) {
+      const existingContact = await ctx.client.findContactByEmail(customer.email);
+      if (existingContact) {
+        xeroContactId = existingContact.contactId;
+        linkedExisting = true;
+      }
+    }
+
+    const contactInput = {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+    };
+
+    const contact = xeroContactId
+      ? await ctx.client.updateContact(xeroContactId, contactInput)
+      : await ctx.client.createContact(contactInput);
+
+    await this.upsertCustomerMapping(ctx, customer.id, contact.contactId, 'synced');
+
+    await this.writeLog(ctx, {
+      entityType: 'customer',
+      entityId: customer.id,
+      xeroEntityId: contact.contactId,
+      action: existingMapping?.xeroContactId ? 'update' : linkedExisting ? 'link' : 'push',
+      status: 'success',
+      message: `Synced contact ${customer.name} (approval ${input.approvalId})`,
+    });
+
+    await this.db.insert(securityAuditLogs).values({
+      companyId: input.companyId,
+      userId: input.actorUserId,
+      category: 'integrations',
+      action: 'xero_contact_push_executed',
+      entityType: 'customer',
+      entityId: customer.id,
+      metadata: {
+        approvalId: input.approvalId,
+        xeroContactId: contact.contactId,
+        linkedExisting,
+      },
+    });
+
+    invalidateIntegrationReadCaches(input.companyId);
+    return {
+      idempotent: Boolean(existingMapping?.xeroContactId),
+      xeroContactId: contact.contactId,
+      linkedExisting,
+    };
   }
 
   private ensureEncryptionKey() {

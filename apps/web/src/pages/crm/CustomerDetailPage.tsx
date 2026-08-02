@@ -218,6 +218,12 @@ export function CustomerDetailPage() {
     };
   }, [accessToken, canWrite, customerId, search]);
 
+  useEffect(() => {
+    if (window.location.hash === '#edit' && canWrite && customer) {
+      setIsEditing(true);
+    }
+  }, [canWrite, customer]);
+
   async function handleInvitePortal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!accessToken || !customerId || !canManagePortal || !inviteEmail.trim()) {
@@ -407,7 +413,12 @@ export function CustomerDetailPage() {
   }
 
   if (isLoading) {
-    return <p className="page-muted">Loading customer…</p>;
+    return (
+      <div className="crm-page">
+        <PageHeader title="Customer" description="Customer record" />
+        <p className="page-muted">Loading customer…</p>
+      </div>
+    );
   }
 
   if (error && !customer) {

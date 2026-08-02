@@ -61,7 +61,12 @@ export function PaymentDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading payment…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Payment" description="Payment detail" />
+        <LoadingState label="Loading payment…" />
+      </div>
+    );
   }
 
   if (error && !payment) {

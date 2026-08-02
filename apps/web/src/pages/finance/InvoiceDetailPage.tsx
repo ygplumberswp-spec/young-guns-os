@@ -66,7 +66,12 @@ export function InvoiceDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading invoice…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Invoice" description="Invoice detail" />
+        <LoadingState label="Loading invoice…" />
+      </div>
+    );
   }
 
   if (error && !invoice) {

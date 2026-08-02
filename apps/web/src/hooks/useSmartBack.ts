@@ -18,12 +18,11 @@ export function useSmartBack(explicitFallback?: string) {
   const goBack = useCallback(() => {
     stageNavStateForFallback(fallback);
 
+    // Prefer real history so list → detail → Back restores filters/tabs/scroll.
+    // Do not gate on document.referrer — SPA navigations do not update it.
     if (typeof window !== 'undefined' && window.history.length > 1) {
-      const referrer = document.referrer;
-      if (referrer && referrer.includes(window.location.origin)) {
-        window.history.back();
-        return;
-      }
+      window.history.back();
+      return;
     }
     navigate(fallback);
   }, [fallback, navigate]);

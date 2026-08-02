@@ -74,7 +74,15 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/settings\/company$/, fallback: '/' },
   { match: /^\/settings\/[^/]+$/, fallback: '/settings/company' },
 
-  // Integrations sub-pages
+  // Integrations sub-pages (nested routes before single-segment)
+  { match: /^\/integrations\/xero\/write-approvals$/, fallback: '/integrations/xero' },
+  {
+    match: /^\/integrations\/[^/]+\/[^/]+$/,
+    fallback: (path) => {
+      const parts = path.split('/').filter(Boolean);
+      return parts.length >= 2 ? `/${parts[0]}/${parts[1]}` : '/integrations';
+    },
+  },
   { match: /^\/integrations\/[^/]+$/, fallback: '/integrations' },
 
   // Workforce sub-pages

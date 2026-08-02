@@ -382,7 +382,12 @@ export function LeadDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading lead…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Lead" description="Lead record" />
+        <LoadingState label="Loading lead…" />
+      </div>
+    );
   }
 
   if (error || !lead) {

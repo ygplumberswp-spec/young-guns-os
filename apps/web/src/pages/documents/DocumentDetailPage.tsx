@@ -201,7 +201,14 @@ export function DocumentDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading document…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Document" description="Document detail" />
+        <p className="page-muted">Loading document…</p>
+      </div>
+    );
+  }
 
   if (!document) {
     return (

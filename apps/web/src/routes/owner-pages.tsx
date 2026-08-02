@@ -442,6 +442,10 @@ export const XeroSettingsPage = lazyNamed(
   () => import('../pages/integrations/XeroSettingsPage'),
   'XeroSettingsPage',
 );
+export const XeroWriteApprovalsPage = lazyNamed(
+  () => import('../pages/integrations/XeroWriteApprovalsPage'),
+  'XeroWriteApprovalsPage',
+);
 export const EmailSettingsPage = lazyNamed(
   () => import('../pages/integrations/EmailSettingsPage'),
   'EmailSettingsPage',
@@ -517,4 +521,3 @@ export const DataProtectionSettingsPage = lazyNamed(
   () => import('../pages/settings/DataProtectionSettingsPage'),
   'DataProtectionSettingsPage',
 );
-export const DraftsPage = lazyNamed(() => import('../pages/drafts/DraftsPage'), 'DraftsPage');

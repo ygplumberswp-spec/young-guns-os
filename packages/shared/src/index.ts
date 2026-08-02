@@ -96,7 +96,6 @@ export * from './portal-experience.js';
 export * from './mobile-workforce.js';
 export * from './business-day-timeline.js';
 export * from './boq.js';
-export * from './drafts.js';
 export * from './job-evidence.js';
 export * from './quality-assurance.js';
 export * from './communications-intelligence.js';

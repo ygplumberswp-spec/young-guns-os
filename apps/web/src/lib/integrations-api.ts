@@ -268,6 +268,80 @@ export async function retryXeroSyncJob(
   return data.result;
 }
 
+export async function fetchXeroWriteApprovals(
+  accessToken: string,
+  status?: string,
+): Promise<import('@titan/shared').XeroWriteApprovalQueueItem[]> {
+  const suffix = status ? `?status=${encodeURIComponent(status)}` : '';
+  const data = await request<{ items: import('@titan/shared').XeroWriteApprovalQueueItem[] }>(
+    `/integrations/xero/write-approvals${suffix}`,
+    { accessToken },
+  );
+  return data.items;
+}
+
+export async function requestXeroWriteApproval(
+  accessToken: string,
+  input: {
+    writeOperation: 'invoice_create' | 'payment_create' | 'contact_update';
+    entityId: string;
+    notes?: string;
+  },
+): Promise<import('@titan/shared').XeroWriteApprovalQueueItem> {
+  const data = await request<{ item: import('@titan/shared').XeroWriteApprovalQueueItem }>(
+    '/integrations/xero/write-approvals',
+    { method: 'POST', accessToken, body: input },
+  );
+  return data.item;
+}
+
+export async function approveXeroWriteApproval(
+  accessToken: string,
+  approvalId: string,
+): Promise<import('@titan/shared').XeroWriteApprovalQueueItem> {
+  const data = await request<{ item: import('@titan/shared').XeroWriteApprovalQueueItem }>(
+    `/integrations/xero/write-approvals/${approvalId}/approve`,
+    { method: 'POST', accessToken },
+  );
+  return data.item;
+}
+
+export async function rejectXeroWriteApproval(
+  accessToken: string,
+  approvalId: string,
+  reason?: string,
+): Promise<import('@titan/shared').XeroWriteApprovalQueueItem> {
+  const data = await request<{ item: import('@titan/shared').XeroWriteApprovalQueueItem }>(
+    `/integrations/xero/write-approvals/${approvalId}/reject`,
+    { method: 'POST', accessToken, body: { reason } },
+  );
+  return data.item;
+}
+
+export async function cancelXeroWriteApproval(
+  accessToken: string,
+  approvalId: string,
+): Promise<import('@titan/shared').XeroWriteApprovalQueueItem> {
+  const data = await request<{ item: import('@titan/shared').XeroWriteApprovalQueueItem }>(
+    `/integrations/xero/write-approvals/${approvalId}/cancel`,
+    { method: 'POST', accessToken },
+  );
+  return data.item;
+}
+
+export async function executeXeroWriteApproval(
+  accessToken: string,
+  approvalId: string,
+): Promise<{
+  approval: import('@titan/shared').XeroWriteApprovalQueueItem;
+  result: Record<string, unknown>;
+}> {
+  return request(`/integrations/xero/write-approvals/${approvalId}/execute`, {
+    method: 'POST',
+    accessToken,
+  });
+}
+
 export async function fetchEmailConnection(accessToken: string): Promise<EmailConnectionSummary> {
   const data = await request<{ connection: EmailConnectionSummary }>('/integrations/email', {
     accessToken,

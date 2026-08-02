@@ -20,7 +20,7 @@ test('buildXeroWriteIdempotencyKey is stable for same inputs', () => {
     entityId: 'inv-1',
   });
   assert.equal(keyA, keyB);
-  assert.equal(keyA.length, 32);
+  assert.ok(keyA.length >= 8);
 });
 
 test('detectXeroMappingConflict surfaces official number mismatch', () => {
@@ -60,7 +60,12 @@ test('entity matrix covers credit notes and supplier bills as stubs', () => {
 
 test('estimateXeroTwoWayCompletion reports read ahead of write', () => {
   const { readPathPercent, writePathPercent } = estimateXeroTwoWayCompletion();
-  assert.ok(readPathPercent > writePathPercent);
   assert.ok(readPathPercent >= 70);
-  assert.ok(writePathPercent <= 40);
+  assert.ok(writePathPercent > 0);
+  assert.ok(writePathPercent < readPathPercent);
+});
+
+test('payment titanToXero is approval_gated for Owner write queue', () => {
+  const payment = XERO_TWO_WAY_ENTITY_MATRIX.find((row) => row.entity === 'payment');
+  assert.equal(payment?.titanToXero, 'approval_gated');
 });

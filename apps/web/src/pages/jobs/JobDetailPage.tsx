@@ -350,7 +350,12 @@ export function JobDetailPage() {
   }
 
   if (isLoading) {
-    return <p className="page-muted">Loading job…</p>;
+    return (
+      <div className="jobs-page">
+        <PageHeader title="Job" description="Job record" />
+        <p className="page-muted">Loading job…</p>
+      </div>
+    );
   }
 
   if (error && !job) {

@@ -194,7 +194,14 @@ export function SupplierDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading supplier…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Supplier" description="Supplier record" />
+        <p className="page-muted">Loading supplier…</p>
+      </div>
+    );
+  }
 
   if (!supplier) {
     return (

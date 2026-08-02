@@ -116,7 +116,14 @@ export function VehicleDetailPage() {
     }
   }
 
-  if (isLoading) return <p className="page-muted">Loading vehicle…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Vehicle" description="Vehicle record" />
+        <p className="page-muted">Loading vehicle…</p>
+      </div>
+    );
+  }
 
   if (!vehicle) {
     return (

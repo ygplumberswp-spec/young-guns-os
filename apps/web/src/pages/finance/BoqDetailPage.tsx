@@ -69,7 +69,14 @@ export function BoqDetailPage() {
     );
   }
 
-  if (isLoading) return <LoadingState label="Loading BOQ…" />;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="BOQ" />
+        <LoadingState label="Loading BOQ…" />
+      </div>
+    );
+  }
 
   if (error && !document) {
     return (

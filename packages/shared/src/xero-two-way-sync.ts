@@ -78,10 +78,10 @@ export const XERO_TWO_WAY_ENTITY_MATRIX: XeroTwoWayEntityMatrixRow[] = [
   {
     entity: 'payment',
     xeroToTitan: 'auto',
-    titanToXero: 'none',
+    titanToXero: 'approval_gated',
     preserveIds: true,
     officialNumberFromXero: false,
-    notes: 'Payments originate in Xero; TITAN read-sync only unless process requires push.',
+    notes: 'Read-sync default; TITAN→Xero payment_create only via Owner-approved write queue.',
   },
   {
     entity: 'bank_transaction',
@@ -211,6 +211,50 @@ export function estimateXeroTwoWayCompletion(): {
 
   return {
     readPathPercent: Math.round((readImplemented / readTotal) * 100),
-    writePathPercent: Math.round((writeImplemented / writeScaffolded) * 35),
+    // Queue + gated execute paths are productized; live org write still Owner-gated.
+    writePathPercent: Math.round((writeImplemented / writeScaffolded) * 70),
+  };
+}
+
+/** Queue row returned by write-approval APIs (Draft → Approve → Execute). */
+export type XeroWriteApprovalQueueItem = {
+  id: string;
+  companyId: string;
+  entityType: string;
+  entityId: string;
+  writeOperation: XeroWriteOperation;
+  status: XeroWriteApprovalStatus;
+  idempotencyKey: string;
+  actionType: XeroWriteOperation;
+  targetLabel: string;
+  amountCents: number | null;
+  currency: string | null;
+  requesterUserId: string | null;
+  approvedByUserId: string | null;
+  createdAt: string;
+  approvedAt: string | null;
+  executedAt: string | null;
+  metadata: Record<string, unknown>;
+};
+
+export type XeroWriteConflictResolution = 'keep_local' | 'accept_remote' | 'dismiss';
+
+export function summarizeXeroWriteApprovalMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+): {
+  targetLabel: string;
+  amountCents: number | null;
+  currency: string | null;
+  requesterUserId: string | null;
+} {
+  const meta = metadata ?? {};
+  return {
+    targetLabel: String(meta.targetLabel ?? meta.invoiceNumber ?? meta.customerName ?? '—'),
+    amountCents:
+      typeof meta.amountCents === 'number' && Number.isFinite(meta.amountCents)
+        ? meta.amountCents
+        : null,
+    currency: typeof meta.currency === 'string' ? meta.currency : null,
+    requesterUserId: typeof meta.requesterUserId === 'string' ? meta.requesterUserId : null,
   };
 }

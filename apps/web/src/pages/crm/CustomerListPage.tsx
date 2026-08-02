@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearch } from 'wouter';
 import { Button, PageLoadState } from '@titan/ui';
 import { CUSTOMER_VALUE_CLASSIFICATION_LABELS, isCustomerValueClassificationFilterKey } from '@titan/shared';
+import type { CustomerSummary, CustomerValueClassificationSummary } from '@titan/shared';
 import { fetchCustomersByClassification, fetchCustomersWithClassification } from '../../lib/customer-value-api-client';
 import { fetchCustomers } from '../../lib/crm-api';
 import { useAuth } from '../../lib/auth-context';
@@ -14,6 +15,31 @@ import {
   CustomerList,
 } from '../../features/crm/CustomerList';
 import { CustomerValueMetricsPanel } from '../../features/crm/CustomerValueMetricsPanel';
+
+function defaultValueClassification(customer: CustomerSummary): CustomerValueClassificationSummary {
+  return {
+    customerId: customer.id,
+    customerName: customer.name,
+    primaryClassification: 'prospect_contact',
+    isVerifiedInvoiced: false,
+    isPayingCustomer: false,
+    isFullyPaid: false,
+    isPartiallyPaid: false,
+    isUnpaidDebtor: false,
+    isOverdueDebtor: false,
+    isProspect: true,
+    isSupplierOnly: false,
+    qualifyingInvoiceCount: 0,
+    totalInvoicedCents: 0,
+    cashReceivedCents: 0,
+    outstandingCents: 0,
+    overdueOutstandingCents: 0,
+    xeroContactId: null,
+    evidence: [],
+    reason: 'Classification unavailable — using CRM list fallback.',
+    computedAt: new Date().toISOString(),
+  };
+}
 
 export function CustomerListPage() {
   const { accessToken, user } = useAuth();
@@ -58,15 +84,7 @@ export function CustomerListPage() {
       } catch {
         return baseCustomers.map((customer) => ({
           ...customer,
-          valueClassification: {
-            isVerifiedInvoiced: false,
-            isPayingCustomer: false,
-            isFullyPaid: false,
-            isOverdueDebtor: false,
-            isUnpaidDebtor: false,
-            isPartiallyPaid: false,
-            isProspect: false,
-          },
+          valueClassification: defaultValueClassification(customer),
         }));
       }
     },

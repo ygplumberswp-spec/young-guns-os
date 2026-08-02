@@ -5,6 +5,8 @@ import type { IntegrationsService } from '../services/integrations.service.js';
 import { IntegrationsError } from '../services/integrations.service.js';
 import type { XeroSyncService } from '../services/xero-sync.service.js';
 import { XeroSyncError } from '../services/xero-sync.service.js';
+import type { XeroWriteApprovalWorkflowService } from '../services/xero-write-approval-workflow.service.js';
+import { XeroWriteApprovalWorkflowError } from '../services/xero-write-approval-workflow.service.js';
 import type { BusinessIntegrationsService } from '../services/business-integrations.service.js';
 import { BusinessIntegrationsError } from '../services/business-integrations.service.js';
 import type { IntegrationHubService } from '../services/integration-hub.service.js';
@@ -115,10 +117,28 @@ const createOutboundWebhookDeliverySchema = z.object({
   payloadSummary: z.string().trim().max(500).optional().nullable(),
 });
 
+const requestXeroWriteSchema = z.object({
+  writeOperation: z.enum(['invoice_create', 'payment_create', 'contact_update']),
+  entityId: z.string().uuid(),
+  payloadVersion: z.string().trim().max(200).optional(),
+  notes: z.string().trim().max(1000).optional(),
+});
+
+const rejectXeroWriteSchema = z.object({
+  reason: z.string().trim().max(1000).optional(),
+});
+
+const resolveXeroConflictSchema = z.object({
+  entityType: z.enum(['invoice', 'contact', 'payment']),
+  entityId: z.string().uuid(),
+  resolution: z.enum(['keep_local', 'accept_remote', 'dismiss']),
+});
+
 type IntegrationsRouterDeps = {
   integrationsService: IntegrationsService;
   businessIntegrationsService: BusinessIntegrationsService;
   xeroSyncService: XeroSyncService;
+  xeroWriteApprovalWorkflowService?: XeroWriteApprovalWorkflowService;
   integrationHubService: IntegrationHubService;
   integrationApiManagementService: IntegrationApiManagementService;
   whatsappService: WhatsappService;
@@ -153,6 +173,7 @@ export function createIntegrationsRouter({
   integrationsService,
   businessIntegrationsService,
   xeroSyncService,
+  xeroWriteApprovalWorkflowService,
   integrationHubService,
   integrationApiManagementService,
   whatsappService,
@@ -164,6 +185,30 @@ export function createIntegrationsRouter({
 }: IntegrationsRouterDeps): Router {
   const router = Router();
   const requireAuth = createAuthMiddleware({ jwtSecret, authService });
+
+  function requireWriteWorkflow(
+    res: Response,
+  ): XeroWriteApprovalWorkflowService | null {
+    if (!xeroWriteApprovalWorkflowService) {
+      res.status(503).json({
+        error: {
+          code: 'NOT_CONFIGURED',
+          message: 'Xero write approval workflow is not configured',
+        },
+      });
+      return null;
+    }
+    return xeroWriteApprovalWorkflowService;
+  }
+
+  function actorFromAuth(auth: ReturnType<typeof getAuth>) {
+    return {
+      userId: auth.userId,
+      companyId: auth.companyId,
+      roleName: auth.roleName,
+      permissions: auth.permissions,
+    };
+  }
 
   router.get('/xero/oauth/callback', async (req, res) => {
     try {
@@ -568,6 +613,173 @@ export function createIntegrationsRouter({
         res.json({ data: { result } });
       } catch (error) {
         handleXeroSyncError(res, error);
+      }
+    },
+  );
+
+  // --- Xero two-way write approval queue (Draft → Approve → Execute) ---
+  router.get(
+    '/xero/write-approvals',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'finance:read', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      try {
+        const statusParam = normalizeQueryValue(req.query.status);
+        const status =
+          typeof statusParam === 'string'
+            ? (statusParam as 'pending' | 'approved' | 'rejected' | 'executed' | 'expired')
+            : undefined;
+        const items = await workflow.listApprovals(actorFromAuth(getAuth(req)), { status });
+        res.json({ data: { items } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/xero/write-approvals/:approvalId',
+    requireAnyPermission('integrations:read', 'integrations:manage', 'finance:read', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      try {
+        const item = await workflow.getApproval(
+          actorFromAuth(getAuth(req)),
+          getRouteParam(req.params.approvalId),
+        );
+        res.json({ data: { item } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      const parsed = requestXeroWriteSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid Xero write approval request',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+      try {
+        const item = await workflow.requestApproval(actorFromAuth(getAuth(req)), parsed.data);
+        res.status(201).json({ data: { item } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals/:approvalId/approve',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      try {
+        const item = await workflow.approve(
+          actorFromAuth(getAuth(req)),
+          getRouteParam(req.params.approvalId),
+        );
+        res.json({ data: { item } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals/:approvalId/reject',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      const parsed = rejectXeroWriteSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid reject payload' },
+        });
+        return;
+      }
+      try {
+        const item = await workflow.reject(
+          actorFromAuth(getAuth(req)),
+          getRouteParam(req.params.approvalId),
+          parsed.data.reason,
+        );
+        res.json({ data: { item } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals/:approvalId/cancel',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      try {
+        const item = await workflow.cancel(
+          actorFromAuth(getAuth(req)),
+          getRouteParam(req.params.approvalId),
+        );
+        res.json({ data: { item } });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals/:approvalId/execute',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      try {
+        const result = await workflow.execute(
+          actorFromAuth(getAuth(req)),
+          getRouteParam(req.params.approvalId),
+        );
+        res.json({ data: result });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
+      }
+    },
+  );
+
+  router.post(
+    '/xero/write-approvals/conflicts/resolve',
+    requireAnyPermission('integrations:manage', 'finance:write'),
+    async (req, res) => {
+      const workflow = requireWriteWorkflow(res);
+      if (!workflow) return;
+      const parsed = resolveXeroConflictSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid conflict resolution payload' },
+        });
+        return;
+      }
+      try {
+        const result = await workflow.resolveConflict(actorFromAuth(getAuth(req)), parsed.data);
+        res.json({ data: result });
+      } catch (error) {
+        handleXeroWriteWorkflowError(res, error);
       }
     },
   );
@@ -1393,6 +1605,35 @@ function handleXeroSyncError(res: import('express').Response, error: unknown) {
         message: error.message,
       },
     });
+    return;
+  }
+
+  throw error;
+}
+
+function handleXeroWriteWorkflowError(res: import('express').Response, error: unknown) {
+  if (error instanceof XeroWriteApprovalWorkflowError) {
+    const status =
+      error.code === 'NOT_FOUND'
+        ? 404
+        : error.code === 'FORBIDDEN'
+          ? 403
+          : error.code === 'ALREADY_EXECUTED'
+            ? 409
+            : error.code === 'AUTH'
+              ? 401
+              : 400;
+    res.status(status).json({
+      error: {
+        code: error.code,
+        message: error.message,
+      },
+    });
+    return;
+  }
+
+  if (error instanceof XeroSyncError) {
+    handleXeroSyncError(res, error);
     return;
   }
 

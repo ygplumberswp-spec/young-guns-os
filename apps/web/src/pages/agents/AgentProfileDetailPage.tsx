@@ -176,7 +176,14 @@ export function AgentProfileDetailPage() {
     );
   }
 
-  if (isLoading) return <p className="page-muted">Loading agent profile…</p>;
+  if (isLoading) {
+    return (
+      <div className="page-shell">
+        <PageHeader title="Agent" description="Agent profile" />
+        <p className="page-muted">Loading agent profile…</p>
+      </div>
+    );
+  }
 
   if (!profile) {
     return (

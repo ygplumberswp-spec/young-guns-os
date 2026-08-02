@@ -409,6 +409,10 @@ export function App() {
                         />
                         <Route path="/integrations/xero" component={OwnerPages.XeroSettingsPage} />
                         <Route
+                          path="/integrations/xero/write-approvals"
+                          component={OwnerPages.XeroWriteApprovalsPage}
+                        />
+                        <Route
                           path="/integrations/email"
                           component={OwnerPages.EmailSettingsPage}
                         />

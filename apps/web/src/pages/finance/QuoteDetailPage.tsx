@@ -106,7 +106,12 @@ export function QuoteDetailPage() {
   }
 
   if (isLoading) {
-    return <LoadingState label="Loading quote…" />;
+    return (
+      <div className="page-shell">
+        <PageHeader title="Quote" description="Quote detail" />
+        <LoadingState label="Loading quote…" />
+      </div>
+    );
   }
 
   if (error && !quote) {
