@@ -1,0 +1,590 @@
+{
+  "schemaVersion": "phase17-rbac-security-v1",
+  "label": "249-rbac-security-gate-verify",
+  "generatedAt": "2026-08-02T09:12:36.795Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "c53bd1a2888df45d5e4c8612da43fae2f69879b0",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
+  "roleDiscovery": {
+    "roles": [
+      {
+        "name": "Accountant",
+        "user_count": 0
+      },
+      {
+        "name": "Admin",
+        "user_count": 0
+      },
+      {
+        "name": "Company Owner",
+        "user_count": 1
+      },
+      {
+        "name": "Dispatcher",
+        "user_count": 0
+      },
+      {
+        "name": "Manager",
+        "user_count": 0
+      },
+      {
+        "name": "Member",
+        "user_count": 0
+      },
+      {
+        "name": "Owner",
+        "user_count": 0
+      },
+      {
+        "name": "Platform Owner",
+        "user_count": 0
+      },
+      {
+        "name": "Technician",
+        "user_count": 0
+      }
+    ],
+    "clientCount": 0
+  },
+  "sessions": {
+    "owner": {
+      "available": true,
+      "roleName": "Company Owner",
+      "method": "railway_programmatic_session",
+      "permissionsCount": 1
+    },
+    "technician": {
+      "available": true,
+      "roleName": "Technician",
+      "method": "railway_programmatic_session",
+      "permissionsCount": 4
+    },
+    "accountant": {
+      "available": false,
+      "roleNames": [
+        "Accountant"
+      ]
+    },
+    "dispatcher": {
+      "available": false,
+      "roleNames": [
+        "Dispatcher"
+      ]
+    },
+    "client": {
+      "available": false,
+      "roleNames": [
+        "Client",
+        "Customer"
+      ]
+    }
+  },
+  "security": {
+    "headers": {
+      "x-content-type-options": "nosniff",
+      "x-frame-options": "DENY",
+      "referrer-policy": "no-referrer",
+      "cross-origin-resource-policy": "cross-origin"
+    },
+    "missing": [],
+    "status": 200,
+    "refreshMissingCookie": true
+  },
+  "apiProbes": [
+    {
+      "label": "finance_receivables",
+      "path": "/api/v1/finance-intelligence/receivables",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 2676
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 991
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "finance_quotes",
+      "path": "/api/v1/finance/quotes",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 1229
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 899
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "fleet_vehicles",
+      "path": "/api/v1/fleet/vehicles",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 1207
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 898
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "integrations_hub",
+      "path": "/api/v1/integrations/hub/dashboard?simple=true",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 1477
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 892
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "staff_jobs",
+      "path": "/api/v1/jobs",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 1787
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 899
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "crm_customers",
+      "path": "/api/v1/crm/customers",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 2961
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 887
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "team_members",
+      "path": "/api/v1/team/members",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 1195
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403
+          ],
+          "ms": 598
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "platform_provision",
+      "path": "/api/v1/platform/tenants/provision",
+      "roles": {
+        "owner": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ],
+          "ms": 60202
+        },
+        "technician": {
+          "status": 403,
+          "result": "pass",
+          "expected": [
+            401,
+            403,
+            404
+          ],
+          "ms": 913
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    },
+    {
+      "label": "mobile_dashboard",
+      "path": "/api/v1/mobile/technician/workforce/dashboard",
+      "roles": {
+        "owner": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200,
+            401,
+            403
+          ],
+          "ms": 5413
+        },
+        "technician": {
+          "status": 200,
+          "result": "pass",
+          "expected": [
+            200
+          ],
+          "ms": 5172
+        },
+        "accountant": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "dispatcher": {
+          "result": "hold",
+          "reason": "no staging user"
+        },
+        "client": {
+          "result": "hold",
+          "reason": "no staging user"
+        }
+      }
+    }
+  ],
+  "roleRouteMatrix": [
+    {
+      "route": "finance_receivables",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "finance_quotes",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "fleet_vehicles",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "integrations_hub",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "staff_jobs",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "crm_customers",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "team_members",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "platform_provision",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    },
+    {
+      "route": "mobile_dashboard",
+      "owner": "pass",
+      "technician": "pass",
+      "accountant": "hold",
+      "dispatcher": "hold",
+      "client": "hold"
+    }
+  ],
+  "performance": {
+    "apiProbeMedianMs": 1201,
+    "apiProbeP95Ms": 60202,
+    "apiProbeMaxMs": 60202
+  },
+  "browser": {
+    "owner": {
+      "routeResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/",
+          "loadMs": 23033,
+          "consoleErrorCount": 0,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-owner-owner_dashboard-1440.png"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/finance/receivables",
+          "loadMs": 5698,
+          "consoleErrorCount": 0,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-owner-finance_receivables-1440.png"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/jobs",
+          "loadMs": 4470,
+          "consoleErrorCount": 0,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-owner-jobs-1440.png"
+        },
+        {
+          "path": "/mobile",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 7167,
+          "consoleErrorCount": 0,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-owner-mobile-1440.png"
+        },
+        {
+          "path": "/fleet/live-map",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/fleet/live-map",
+          "loadMs": 6649,
+          "consoleErrorCount": 0,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-owner-fleet_live_map-1440.png"
+        }
+      ],
+      "consoleErrors": [],
+      "pageErrors": []
+    },
+    "technician": {
+      "routeResults": [
+        {
+          "path": "/",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 8250,
+          "consoleErrorCount": 2,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-technician-owner_dashboard-1440.png"
+        },
+        {
+          "path": "/finance/receivables",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 7887,
+          "consoleErrorCount": 4,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-technician-finance_receivables-1440.png"
+        },
+        {
+          "path": "/jobs",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 7131,
+          "consoleErrorCount": 6,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-technician-jobs-1440.png"
+        },
+        {
+          "path": "/mobile",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 7076,
+          "consoleErrorCount": 8,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-technician-mobile-1440.png"
+        },
+        {
+          "path": "/fleet/live-map",
+          "finalUrl": "https://comfortable-determination-staging.up.railway.app/mobile",
+          "loadMs": 7417,
+          "consoleErrorCount": 10,
+          "screenshot": "diagnostic-output/phase17-rbac-security-staging/phase17-technician-fleet_live_map-1440.png"
+        }
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 ()"
+      ],
+      "pageErrors": []
+    }
+  },
+  "blockers": [],
+  "holdItems": [
+    "API p95 latency 60202ms exceeds 8s threshold",
+    "technician console errors: 1",
+    "No staging Accountant user on YGP — matrix row marked hold",
+    "No staging Dispatcher user on YGP — matrix row marked hold",
+    "No staging Client user on YGP — matrix row marked hold"
+  ],
+  "verdict": "GO"
+}
