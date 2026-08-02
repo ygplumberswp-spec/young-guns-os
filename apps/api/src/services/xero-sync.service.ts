@@ -1265,13 +1265,6 @@ export class XeroSyncService {
 
       for (const invoice of rows) {
         try {
-          await this.assertEntityWriteApproved({
-            companyId,
-            entityType: 'invoice',
-            entityId: invoice.id,
-            operation: 'invoice_create',
-          });
-
           const customerMapping = await this.db.query.xeroCustomerMappings.findFirst({
             where: and(
               eq(xeroCustomerMappings.companyId, companyId),
@@ -1293,6 +1286,16 @@ export class XeroSyncService {
           });
 
           let xeroInvoiceId = existingMapping?.xeroInvoiceId ?? null;
+
+          // Pull-only path: existing Xero invoice ID — fetch remote state without write approval.
+          if (!xeroInvoiceId) {
+            await this.assertEntityWriteApproved({
+              companyId,
+              entityType: 'invoice',
+              entityId: invoice.id,
+              operation: 'invoice_create',
+            });
+          }
 
           let remote;
           if (!xeroInvoiceId) {

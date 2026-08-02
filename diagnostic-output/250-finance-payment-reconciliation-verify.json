@@ -1,13 +1,27 @@
 {
   "label": "250-finance-payment-reconciliation-verify",
-  "generatedAt": "2026-08-02T11:22:06.500Z",
+  "generatedAt": "2026-08-02T11:32:05.519Z",
   "branch": "cursor/titan-owner-operating-model-final",
-  "headSha": "e92e495903dde1b897ebbf6b03d4095d32381c1a",
+  "headSha": "e89c939c18022541a25af0d51be64bc9a66c528a",
   "apiOrigin": "https://young-guns-os-staging.up.railway.app",
   "webOrigin": "https://comfortable-determination-staging.up.railway.app",
   "youngGunsCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
-  "verdict": "HOLD",
+  "verdict": "GO_WITH_HOLD",
   "checks": [
+    {
+      "name": "xero_invoices_sync",
+      "pass": true,
+      "detail": {
+        "scope": "invoices",
+        "createdCount": 0,
+        "updatedCount": 5,
+        "pulledCount": 5,
+        "failedCount": 0,
+        "skippedCount": 0,
+        "syncedAt": "2026-08-02T11:32:23.447Z",
+        "syncJobId": "d51958d6-3fbc-49e9-9c2f-734fab1e0eb6"
+      }
+    },
     {
       "name": "xero_payments_sync",
       "pass": true,
@@ -18,8 +32,8 @@
         "pulledCount": 511,
         "failedCount": 0,
         "skippedCount": 511,
-        "syncedAt": "2026-08-02T11:22:23.294Z",
-        "syncJobId": "886f66f8-a0de-44bc-a1a2-e7a238df439a"
+        "syncedAt": "2026-08-02T11:32:27.787Z",
+        "syncJobId": "6cc2620a-4dd9-4b75-8c10-59567739009c"
       }
     },
     {
@@ -77,6 +91,19 @@
       "note": "Rows where payments exist but amount_paid_cents=0 — API should reconcile via allocated sum"
     },
     {
+      "name": "xero_write_approvals_table",
+      "pass": true,
+      "journalCount": 115
+    },
+    {
+      "name": "invoice_mapping_synced",
+      "pass": true,
+      "synced": 5,
+      "failed": 0,
+      "invoiceSyncPulled": 5,
+      "invoiceSyncFailed": 0
+    },
+    {
       "name": "payment_mapping_populated",
       "pass": false,
       "paymentMappings": 0,
@@ -84,7 +111,7 @@
       "xeroLinkedPayments": 0,
       "syncCreated": 0,
       "syncSkipped": 511,
-      "syncedInvoiceMappings": 0
+      "syncedInvoiceMappings": 5
     },
     {
       "name": "finance_ui_screenshots",
@@ -112,8 +139,8 @@
   ],
   "blockers": {
     "xeroPaymentMappings": {
-      "status": "BLOCKED",
-      "detail": "0 mappings, 0 payments; synced invoices=0, failed=5"
+      "status": "PARTIAL",
+      "detail": "0 mappings, 0 payments; synced invoices=5, failed=0"
     },
     "falseZeroEdgeCase": {
       "status": "FIXED",
@@ -144,12 +171,12 @@
       "result": {
         "scope": "invoices",
         "createdCount": 0,
-        "updatedCount": 0,
-        "pulledCount": 0,
-        "failedCount": 5,
+        "updatedCount": 5,
+        "pulledCount": 5,
+        "failedCount": 0,
         "skippedCount": 0,
-        "syncedAt": "2026-08-02T11:22:18.990Z",
-        "syncJobId": "a2858cdb-b0e5-45d1-8972-a8d3e12d9008"
+        "syncedAt": "2026-08-02T11:32:23.447Z",
+        "syncJobId": "d51958d6-3fbc-49e9-9c2f-734fab1e0eb6"
       },
       "error": null
     },
@@ -162,8 +189,8 @@
         "pulledCount": 511,
         "failedCount": 0,
         "skippedCount": 511,
-        "syncedAt": "2026-08-02T11:22:23.294Z",
-        "syncJobId": "886f66f8-a0de-44bc-a1a2-e7a238df439a"
+        "syncedAt": "2026-08-02T11:32:27.787Z",
+        "syncJobId": "6cc2620a-4dd9-4b75-8c10-59567739009c"
       },
       "error": null
     }
@@ -186,10 +213,14 @@
     }
   ],
   "database": {
+    "schemaProbe": {
+      "xero_write_approvals_exists": true
+    },
+    "journalCount": 115,
     "mappingCounts": {
       "payment_mappings": 0,
-      "synced_invoice_mappings": 0,
-      "failed_invoice_mappings": 5
+      "synced_invoice_mappings": 5,
+      "failed_invoice_mappings": 0
     },
     "entityCounts": {
       "titan_payments": 0,

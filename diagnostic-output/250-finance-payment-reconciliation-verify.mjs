@@ -78,6 +78,12 @@ const postgres = require('postgres');
 const YGP = '${YGP}';
 const sql = postgres(process.env.DATABASE_URL, { max: 1, prepare: false });
 try {
+  const [schemaProbe] = await sql\`
+    SELECT EXISTS (
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'public' AND table_name = 'xero_write_approvals'
+    ) AS xero_write_approvals_exists\`;
+  const [journalProbe] = await sql\`select count(*)::int as n from drizzle.__drizzle_migrations\`;
   const [mappingCounts] = await sql\`
     SELECT
       (SELECT count(*)::int FROM xero_payment_mappings WHERE company_id=\${YGP}::uuid) AS payment_mappings,
@@ -141,6 +147,8 @@ try {
     LIMIT 5
   \`;
   process.stdout.write(JSON.stringify({
+    schemaProbe: schemaProbe ?? {},
+    journalCount: journalProbe?.n ?? 0,
     mappingCounts: mappingCounts ?? {},
     entityCounts: entityCounts ?? {},
     falseZeroRows,
@@ -182,9 +190,10 @@ async function apiPost(pathname, token) {
   return { status: res.status, json };
 }
 
-/** Read-only Xero pull: invoices (mapping context) then payments. No Xero writes. */
+/** Read-only Xero pull: invoices first (mapping context), then payments. No Xero writes. */
 async function runReadOnlyXeroSync(token) {
   const invoicesSync = await apiPost('/api/v1/integrations/xero/sync/invoices', token);
+  // Re-probe after invoice sync so payment gate sees synced mappings
   const paymentsSync = await apiPost('/api/v1/integrations/xero/sync/payments', token);
   return {
     readOnly: true,
@@ -313,6 +322,11 @@ async function main() {
   const { accessToken: token, roleName, permissions } = await mintOwnerSession();
   report.syncResponse = await runReadOnlyXeroSync(token);
   report.checks.push({
+    name: 'xero_invoices_sync',
+    pass: report.syncResponse.invoicesSync.status === 200,
+    detail: report.syncResponse.invoicesSync.result,
+  });
+  report.checks.push({
     name: 'xero_payments_sync',
     pass: report.syncResponse.paymentsSync.status === 200,
     detail: report.syncResponse.paymentsSync.result,
@@ -382,6 +396,21 @@ async function main() {
 
   const syncCreated = report.syncResponse?.paymentsSync?.result?.createdCount ?? 0;
   const syncSkipped = report.syncResponse?.paymentsSync?.result?.skippedCount ?? 0;
+  const invoiceSynced = report.syncResponse?.invoicesSync?.result?.pulledCount ?? 0;
+  const invoiceFailed = report.syncResponse?.invoicesSync?.result?.failedCount ?? 0;
+  report.checks.push({
+    name: 'xero_write_approvals_table',
+    pass: db.schemaProbe?.xero_write_approvals_exists === true,
+    journalCount: db.journalCount ?? null,
+  });
+  report.checks.push({
+    name: 'invoice_mapping_synced',
+    pass: (db.mappingCounts?.synced_invoice_mappings ?? 0) > 0,
+    synced: db.mappingCounts?.synced_invoice_mappings ?? 0,
+    failed: db.mappingCounts?.failed_invoice_mappings ?? 0,
+    invoiceSyncPulled: invoiceSynced,
+    invoiceSyncFailed: invoiceFailed,
+  });
   report.checks.push({
     name: 'payment_mapping_populated',
     pass: (db.mappingCounts?.payment_mappings ?? 0) > 0,
