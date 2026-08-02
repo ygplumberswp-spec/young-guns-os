@@ -1,10 +1,12 @@
 # TITAN Finance / Payment Blocker Report
 
-**Phase:** Finance/Payment Blocker (post `162fda7`)  
+**Phase:** Finance/Payment Blocker (post-sync verification)  
 **Branch:** `cursor/titan-owner-operating-model-final`  
-**Final SHA:** `e3a46c7`  
+**Code SHA:** `e92e495`  
+**Evidence commit:** `docs(finance): post-sync payment verify 250 evidence (511 skipped)`  
 **Generated:** 2026-08-02  
 **Production touched:** NO  
+**Xero writes:** NO  
 
 ---
 
@@ -16,10 +18,29 @@
 | **Receivables API/UI parity** | **GO** |
 | **Payables API/UI parity** | **HOLD** (ACCPAY import blocked) |
 | **Cashflow API/UI parity** | **HOLD** (bank balance blocked) |
-| **Xero payment mapping / allocation parity** | **HOLD** (0 mappings on staging) |
+| **Xero payment mapping / allocation parity** | **HOLD** (511 pulled, 511 skipped — 0 synced invoice mappings) |
+| **Partial / multiple payments per invoice** | **HOLD** (unproven — no payment rows imported) |
 | **Overall finance payment phase** | **HOLD** |
 
-Staging has **5 synced invoice mappings** and **0 payments / 0 payment mappings** on YGP. This is an honest empty state — not a false-zero bug — but full Xero → TITAN payment allocation parity cannot be proven until read-only payment sync populates data.
+Read-only Xero payment sync **ran successfully** (HTTP 200) and pulled **511 payments** from Xero, but **all 511 were skipped** because `xero_invoice_mappings.sync_status='synced'` count is **0** (5 mappings exist, all `failed`). Payment import requires synced invoice context; invoice sync failed on all 5 YGP invoices. **No Xero writes occurred** — invoice push attempts failed locally (missing `xero_write_approvals` table on staging DB).
+
+---
+
+## Post-sync read-only Xero sync results
+
+| Step | Endpoint | Status | Result |
+|------|----------|--------|--------|
+| Invoice sync (mapping context) | `POST /api/v1/integrations/xero/sync/invoices` | 200 | pulled=0, failed=5, created=0, updated=0 |
+| Payment sync | `POST /api/v1/integrations/xero/sync/payments` | 200 | pulled=**511**, skipped=**511**, created=0, failed=0 |
+
+**Root cause chain:**
+
+1. Invoice sync attempts **push** to Xero and fails — staging DB missing `xero_write_approvals` table (migration gap).
+2. All 5 `xero_invoice_mappings` rows marked `sync_status='failed'` (was 5 `synced` pre-sync).
+3. Payment sync loads only `sync_status='synced'` invoice mappings → lookup empty → every payment skipped.
+4. Prior pull failures also logged `Invalid time value` on invoice date parsing.
+
+**Evidence:** `diagnostic-output/250-finance-payment-reconciliation-verify.json` → `syncResponse`
 
 ---
 
@@ -41,15 +62,16 @@ Staging has **5 synced invoice mappings** and **0 payments / 0 payment mappings*
 
 ## Blocker matrix
 
-| Blocker | Status | Staging evidence | Notes |
+| Blocker | Status | Post-sync evidence | Notes |
 |---------|--------|-------------------|-------|
-| False-zero paid amount when payments exist | **FIXED** | 0 false-zero rows; code reconciles allocated sum | Proven when payments exist; staging has 0 payments |
-| `finance/stats` outstanding hardcoded zero | **FIXED** | `stats.outstandingCents=0` matches DB reconciled `0` | Was bug; now computed |
+| False-zero paid amount when payments exist | **FIXED** | 0 false-zero rows; code reconciles allocated sum | Unproven with live payment rows (0 imported) |
+| `finance/stats` outstanding hardcoded zero | **FIXED** | `stats.outstandingCents=0` matches DB reconciled `0` | GO |
 | Receivables aggregation (`total_cents` vs `amount_cents`) | **FIXED** | API 200; ageing uses `InvoiceSummary.outstandingCents` | INV-0423/0424 preserved |
-| Partial / multiple payments per invoice | **FIXED** (code) | Allocation sum in `listInvoices`; Xero import accumulates `amountPaidCents` | Unproven on staging (0 payments) |
+| Partial / multiple payments per invoice | **HOLD** | 511 Xero payments skipped; 0 TITAN payment rows | Code path ready; blocked by invoice mapping |
 | Deposit invoice stage handling | **PARTIAL** | Job ledger `stage=deposit` logic unchanged (GO from Phase 5) | No deposit invoices on staging sample |
-| `xero_payment_mappings` populated | **BLOCKED** | 0 mappings, 0 payments, 0 xero-linked | Requires read-only Xero payment sync run |
-| `payments.xero_payment_id` linkage | **FIXED** (code) | Import path sets field; staging 0 rows | Future sync will populate |
+| `xero_payment_mappings` populated | **BLOCKED** | 0 mappings, 0 payments; synced invoices=0, failed=5 | Requires invoice sync fix first |
+| `xero_invoice_mappings` synced status | **BLOCKED** | 0 synced, 5 failed (INV-0241, INV-0267, INV-0289, INV-0423, INV-0424) | Push fails: missing `xero_write_approvals` table |
+| `payments.xero_payment_id` linkage | **FIXED** (code) | Import path sets field; staging 0 rows | Blocked upstream |
 | `conflict_metadata` on mapping tables | **GO** | Column exists (0109); queries use narrow select | No breakage observed |
 | Payables ACCPAY bills | **HOLD** | Honest HOLD UI; `accpayAvailable=false` | Owner approval for import migration |
 | Cashflow bank balance | **HOLD** | `bankBalanceCents=null`; tx count only | No balance entity in sync |
@@ -57,14 +79,15 @@ Staging has **5 synced invoice mappings** and **0 payments / 0 payment mappings*
 
 ---
 
-## Reconciliation matrix (YGP staging @ verify 250)
+## Reconciliation matrix (YGP staging @ verify 250 post-sync)
 
 | Layer | Key metric | Value | Parity |
 |-------|-----------|-------|--------|
-| **Xero (sync tables)** | `xero_payment_mappings` | 0 | N/A — no payments pulled |
-| **Xero (sync tables)** | `xero_invoice_mappings` synced | 5 | GO |
-| **Database** | `payments` count | 0 | Honest empty |
-| **Database** | Reconciled outstanding (open invoices) | R0 | Matches open invoice set (all draft/paid) |
+| **Xero (remote)** | Payments available | 511 pulled | Read-only fetch OK |
+| **Xero (sync tables)** | `xero_payment_mappings` | 0 | **BLOCKED** — all payments skipped |
+| **Xero (sync tables)** | `xero_invoice_mappings` synced | 0 (5 failed) | **BLOCKED** — was 5 synced pre-sync |
+| **Database** | `payments` count | 0 | Honest empty (skip gate) |
+| **Database** | Reconciled outstanding (open invoices) | R0 | Matches open invoice set |
 | **Database** | INV-0423 | R2 472,50 · draft · 0 paid | **Preserved** |
 | **Database** | INV-0424 | R2 266,39 · draft · 0 paid | **Preserved** |
 | **API** | `/finance/stats` outstandingCents | 0 | **Matches DB** |
@@ -85,9 +108,12 @@ Staging has **5 synced invoice mappings** and **0 payments / 0 payment mappings*
 | `pnpm test` | PASS |
 | `pnpm --filter @titan/api build` | PASS |
 | `pnpm --filter @titan/web build` | PASS |
-| `250-finance-payment-reconciliation-verify.mjs` | **HOLD** (payment mapping empty) |
+| Read-only Xero payment sync | **PASS** (200, 511 pulled) |
+| Payment mapping population | **FAIL** (511 skipped, 0 created) |
+| `250-finance-payment-reconciliation-verify.mjs` | **HOLD** |
 
 **Evidence:** `diagnostic-output/250-finance-payment-reconciliation-verify.json`  
+**Sync response:** embedded in verify JSON `syncResponse`  
 **Screenshots:** `diagnostic-output/phase250-finance-payment-staging/`
 
 ---
@@ -103,13 +129,15 @@ Staging has **5 synced invoice mappings** and **0 payments / 0 payment mappings*
 
 ## Owner actions to reach GO
 
-1. **Run read-only Xero payment sync** on staging (`POST /api/v1/integrations/xero/sync/payments` or full import) — no Xero writes; populates `payments` + `xero_payment_mappings`.
-2. **Re-run verify 250** to prove allocation parity on real payment rows.
-3. **ACCPAY import approval** (payables) — separate Owner gate; not in this phase scope.
-4. **Bank balance scope approval** (cashflow) — requires Xero bank account read scope.
+1. **Apply missing staging migration** — `xero_write_approvals` table (or disable invoice push during read-only import sync).
+2. **Re-run invoice sync** until `xero_invoice_mappings.sync_status='synced'` > 0 for YGP invoices.
+3. **Re-run read-only payment sync** — expect `createdCount > 0` when synced invoice mappings exist.
+4. **Re-run verify 250** to prove partial/multiple payment allocation parity on real rows.
+5. **ACCPAY import approval** (payables) — separate Owner gate.
+6. **Bank balance scope approval** (cashflow) — requires Xero bank account read scope.
 
 ---
 
 ## STOP
 
-Finance/payment blocker phase complete. RBAC and orphan routes **not touched**. Production **not touched**.
+Finance/payment blocker phase complete (post-sync). RBAC and orphan routes **not touched**. Production **not touched**. Xero **not written**.

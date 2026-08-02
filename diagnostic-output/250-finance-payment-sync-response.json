@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-08-02T11:20:57.778Z",
+  "readOnly": true,
+  "xeroWrites": false,
+  "xeroConnection": {
+    "status": 200,
+    "connected": "connected",
+    "lastSyncAt": "2026-08-02T09:55:19.083Z"
+  },
+  "invoicesSync": {
+    "status": 200,
+    "result": {
+      "scope": "invoices",
+      "createdCount": 0,
+      "updatedCount": 0,
+      "pulledCount": 0,
+      "failedCount": 5,
+      "skippedCount": 0,
+      "syncedAt": "2026-08-02T11:20:52.958Z",
+      "syncJobId": "6d4a16a6-dc4d-401d-9bcd-21d2608ec0ed"
+    },
+    "error": null
+  },
+  "paymentsSync": {
+    "status": 200,
+    "result": {
+      "scope": "payments",
+      "createdCount": 0,
+      "updatedCount": 0,
+      "pulledCount": 511,
+      "failedCount": 0,
+      "skippedCount": 511,
+      "syncedAt": "2026-08-02T11:20:57.292Z",
+      "syncJobId": "4af1176e-7490-44b2-9cdc-786467429299"
+    },
+    "error": null
+  }
+}

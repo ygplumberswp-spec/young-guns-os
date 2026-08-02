@@ -81,7 +81,8 @@ try {
   const [mappingCounts] = await sql\`
     SELECT
       (SELECT count(*)::int FROM xero_payment_mappings WHERE company_id=\${YGP}::uuid) AS payment_mappings,
-      (SELECT count(*)::int FROM xero_invoice_mappings WHERE company_id=\${YGP}::uuid AND sync_status='synced') AS synced_invoice_mappings
+      (SELECT count(*)::int FROM xero_invoice_mappings WHERE company_id=\${YGP}::uuid AND sync_status='synced') AS synced_invoice_mappings,
+      (SELECT count(*)::int FROM xero_invoice_mappings WHERE company_id=\${YGP}::uuid AND sync_status='failed') AS failed_invoice_mappings
   \`;
   const [entityCounts] = await sql\`
     SELECT
@@ -170,6 +171,35 @@ async function apiGet(pathname, token) {
   });
   const json = await res.json().catch(() => null);
   return { status: res.status, json };
+}
+
+async function apiPost(pathname, token) {
+  const res = await fetch(`${API}${pathname}`, {
+    method: 'POST',
+    headers: { Accept: 'application/json', Authorization: `Bearer ${token}` },
+  });
+  const json = await res.json().catch(() => null);
+  return { status: res.status, json };
+}
+
+/** Read-only Xero pull: invoices (mapping context) then payments. No Xero writes. */
+async function runReadOnlyXeroSync(token) {
+  const invoicesSync = await apiPost('/api/v1/integrations/xero/sync/invoices', token);
+  const paymentsSync = await apiPost('/api/v1/integrations/xero/sync/payments', token);
+  return {
+    readOnly: true,
+    xeroWrites: false,
+    invoicesSync: {
+      status: invoicesSync.status,
+      result: invoicesSync.json?.data?.result ?? null,
+      error: invoicesSync.json?.error ?? null,
+    },
+    paymentsSync: {
+      status: paymentsSync.status,
+      result: paymentsSync.json?.data?.result ?? null,
+      error: paymentsSync.json?.error ?? null,
+    },
+  };
 }
 
 async function fetchAuthPayload(token, roleName, permissions) {
@@ -281,6 +311,12 @@ async function main() {
   };
 
   const { accessToken: token, roleName, permissions } = await mintOwnerSession();
+  report.syncResponse = await runReadOnlyXeroSync(token);
+  report.checks.push({
+    name: 'xero_payments_sync',
+    pass: report.syncResponse.paymentsSync.status === 200,
+    detail: report.syncResponse.paymentsSync.result,
+  });
   const db = await probeDatabase();
 
   const endpoints = [
@@ -344,12 +380,17 @@ async function main() {
     note: 'Rows where payments exist but amount_paid_cents=0 — API should reconcile via allocated sum',
   });
 
+  const syncCreated = report.syncResponse?.paymentsSync?.result?.createdCount ?? 0;
+  const syncSkipped = report.syncResponse?.paymentsSync?.result?.skippedCount ?? 0;
   report.checks.push({
     name: 'payment_mapping_populated',
-    pass: (db.mappingCounts?.payment_mappings ?? 0) > 0 || (db.entityCounts?.titan_payments ?? 0) === 0,
+    pass: (db.mappingCounts?.payment_mappings ?? 0) > 0,
     paymentMappings: db.mappingCounts?.payment_mappings ?? 0,
     titanPayments: db.entityCounts?.titan_payments ?? 0,
     xeroLinkedPayments: db.entityCounts?.xero_linked_payments ?? 0,
+    syncCreated,
+    syncSkipped,
+    syncedInvoiceMappings: db.mappingCounts?.synced_invoice_mappings ?? 0,
   });
 
   report.blockers = {
@@ -357,10 +398,10 @@ async function main() {
       status:
         (db.mappingCounts?.payment_mappings ?? 0) > 0
           ? 'FIXED'
-          : (db.entityCounts?.titan_payments ?? 0) > 0
-            ? 'PARTIAL'
-            : 'BLOCKED',
-      detail: `${db.mappingCounts?.payment_mappings ?? 0} mappings, ${db.entityCounts?.titan_payments ?? 0} payments`,
+          : (db.mappingCounts?.synced_invoice_mappings ?? 0) === 0
+            ? 'BLOCKED'
+            : 'PARTIAL',
+      detail: `${db.mappingCounts?.payment_mappings ?? 0} mappings, ${db.entityCounts?.titan_payments ?? 0} payments; synced invoices=${db.mappingCounts?.synced_invoice_mappings ?? 0}, failed=${db.mappingCounts?.failed_invoice_mappings ?? 0}`,
     },
     falseZeroEdgeCase: {
       status: (db.falseZeroRows ?? []).length === 0 ? 'FIXED' : 'PARTIAL',

@@ -138,11 +138,12 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 | Receivables Xero aggregation | API 200; outstanding uses `total_cents` + allocation @ `e3a46c7` | Same | **GO** | Verify 250; INV-0423/0424 preserved |
 | Payables / ACCPAY bills | Honest HOLD UI; no ACCPAY import | Blocked | **HOLD** | Owner approval required for ACCPAY migration |
 | Cashflow bank balance | Partial — tx count only, no balance entity | Blocked | **HOLD** | Invoiced vs cash separated; forecasts live |
-| Payment-mapping / false-zero edge case | Code FIXED @ `e3a46c7`; 0 mappings on YGP (honest empty) | Code fix deployed | **HOLD** | Run read-only Xero payment sync to prove allocation |
+| Payment-mapping / false-zero edge case | Code FIXED @ `e3a46c7`; post-sync: 511 Xero payments pulled, **511 skipped** (0 synced invoice mappings) | Code fix deployed | **HOLD** | Fix invoice mapping sync (`xero_write_approvals` migration) then re-run payment sync |
+| `xero_invoice_mappings` synced | 0 synced, 5 failed on YGP staging (post-sync) | — | **BLOCKED** | Invoice push fails: missing `xero_write_approvals` table |
 | `finance/stats` outstanding | FIXED — computed from open invoices @ `e3a46c7` | — | **GO** | Verify 250 DB/API match |
 | `conflict_metadata` on mapping tables | Aligned via 0109 IF NOT EXISTS on staging | Verify on prod cutover | **GO** (staging) | Phase 3 report |
 
-**Finance overall:** **HOLD** — code parity GO; Xero payment sync data empty on staging (0 payments/mappings). Receivables daily view GO.
+**Finance overall:** **HOLD** — code parity GO; post-sync read-only payment pull returned 511 skipped (0 synced invoice mappings). Receivables daily view GO. Anchor invoices INV-0423/0424 preserved.
 
 ### RBAC blockers
 
@@ -236,7 +237,7 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 2. Owner approval for ACCPAY import migration + OAuth scope review.
 3. Reconcile staging `drizzle.__drizzle_migrations` journal for 0118 (non-destructive INSERT if hashes match).
 4. Decide production route surface — hide 55 NO-GO scaffolds or defer launch scope to sidebar 22.
-5. Populate Xero payment mappings on staging to prove allocation parity.
+5. Fix YGP invoice mapping sync on staging (`xero_write_approvals` migration), then re-run read-only payment sync to prove allocation parity.
 6. Production cutover plan: deploy web+API together from tagged SHA after checklist complete.
 
 ---
