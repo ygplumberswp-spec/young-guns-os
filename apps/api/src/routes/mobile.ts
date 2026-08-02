@@ -443,6 +443,23 @@ export function createMobileRouter({
     }
   });
 
+  technicianRouter.get(
+    '/workforce/jobs/:jobId/payment-collection',
+    requireTechnicianAccess,
+    async (req, res) => {
+      try {
+        const auth = getAuth(req);
+        const context = await mobileWorkforceService.getJobPaymentCollectionContext(
+          auth,
+          getRouteParam(req.params.jobId),
+        );
+        res.json({ data: { context } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
+    },
+  );
+
   technicianRouter.get('/workforce/route', requireTechnicianAccess, async (req, res) => {
     const auth = getAuth(req);
     const route = await mobileWorkforceService.getRouteIntelligence(auth);

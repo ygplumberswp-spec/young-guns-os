@@ -11,6 +11,7 @@ import type {
   JobWorkflowTransitionRequest,
   MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
+  MobileJobPaymentCollectionContext,
   MobileRouteIntelligence,
   MobileWorkforceDashboard,
   MobileWorkforceInventoryCentre,
@@ -61,6 +62,14 @@ export async function fetchMobileJobWorkspace(accessToken: string, jobId: string
     { accessToken },
   );
   return data.workspace;
+}
+
+export async function fetchMobileJobPaymentCollection(accessToken: string, jobId: string) {
+  const data = await request<{ context: MobileJobPaymentCollectionContext }>(
+    `/mobile/technician/workforce/jobs/${jobId}/payment-collection`,
+    { accessToken },
+  );
+  return data.context;
 }
 
 export async function fetchMobileRoute(accessToken: string) {

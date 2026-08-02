@@ -156,12 +156,40 @@ export type MobileRouteIntelligence = {
   liveTrackingAvailable: boolean;
 };
 
+/** Compact job card for technician mobile home highlights. */
+export type MobileDashboardJobHighlight = {
+  id: string;
+  jobNumber: string | null;
+  title: string;
+  customerName: string;
+  status: string;
+  executionPhase: JobExecutionPhase | null;
+  scheduledAt: string | null;
+  scheduledEndAt: string | null;
+};
+
+/** Job with outstanding close-out gate items (assigned scope only). */
+export type MobileCloseOutItem = {
+  jobId: string;
+  jobNumber: string | null;
+  title: string;
+  missingItems: string[];
+};
+
 export type MobileWorkforceDashboard = {
   greeting: IntelligenceGreeting;
   assignedJobs: JobSummary[];
   todaysSchedule: ScheduledJobEvent[];
   upcomingSchedule: ScheduledJobEvent[];
   routeSummary: MobileRouteSummary;
+  /** Job in progress now (from today's schedule window). */
+  currentJob: MobileDashboardJobHighlight | null;
+  /** Next scheduled job after now. */
+  nextJob: MobileDashboardJobHighlight | null;
+  /** Active assigned jobs ready or awaiting completion workflow. */
+  jobsRequiringCompletion: MobileDashboardJobHighlight[];
+  /** Assigned jobs with completion gate blockers. */
+  missingCloseOutItems: MobileCloseOutItem[];
   outstandingTaskCount: number;
   pendingRequestCount: number;
   inventoryAlerts: MobileInventoryAlert[];
@@ -170,6 +198,20 @@ export type MobileWorkforceDashboard = {
   recommendations: Recommendation[];
   notifications: NotificationSummary[];
   unreadNotificationCount: number;
+};
+
+/** Technician-scoped payment collection context — never includes raw card data. */
+export type MobileJobPaymentCollectionContext = {
+  jobId: string;
+  yocoConfigured: boolean;
+  yocoConnected: boolean;
+  canCollectPayment: boolean;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  balanceDueCents: number | null;
+  currency: string;
+  collectionMethod: 'yoco_terminal' | 'record_offsite' | 'none';
+  message: string;
 };
 
 export type MobileJobWorkspacePropertyHistoryEntry = {

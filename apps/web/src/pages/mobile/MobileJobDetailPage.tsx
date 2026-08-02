@@ -2,13 +2,15 @@ import { PageHeader } from '../../components/ux';
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'wouter';
 import { Button, EmptyState, Input, Panel } from '@titan/ui';
-import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
+import type { JobWorkflowAction, MobileJobExecutionWorkspace, MobileJobPaymentCollectionContext } from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
   createMobileJobVariation,
+  createMobileRequest,
   createMobileTimeEntry,
+  fetchMobileJobPaymentCollection,
   fetchMobileJobWorkspace,
   newClientActionId,
   recordMobileMaterialLine,
@@ -100,6 +102,12 @@ export function MobileJobDetailPage() {
     typeof navigator === 'undefined' ? true : navigator.onLine,
   );
   const [offlineActions, setOfflineActions] = useState<OfflineQueuedAction[]>([]);
+  const [paymentContext, setPaymentContext] = useState<MobileJobPaymentCollectionContext | null>(
+    null,
+  );
+  const [helpMessage, setHelpMessage] = useState('');
+  const [partsMessage, setPartsMessage] = useState('');
+  const [returnVisitReason, setReturnVisitReason] = useState('');
   const [completionClientActionId] = useState(() =>
     newStableCompletionClientActionId(jobId ?? 'unknown'),
   );
@@ -129,6 +137,12 @@ export function MobileJobDetailPage() {
         (d) => d.documentationType === 'customer_signature' && d.hasBinary,
       );
       if (existingSig) setSignatureDocId(existingSig.id);
+      try {
+        const payment = await fetchMobileJobPaymentCollection(accessToken, jobId);
+        setPaymentContext(payment);
+      } catch {
+        setPaymentContext(null);
+      }
     } catch (err) {
       if (!navigator.onLine) {
         const cached = await readCachedMobileWorkspace(jobId);
@@ -433,6 +447,33 @@ export function MobileJobDetailPage() {
       setMessage('Material recorded (stock decrement deferred to INV-008)');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to record material');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleWorkforceRequest(
+    requestType: 'general_request' | 'inventory_request' | 'schedule_change',
+    subject: string,
+    message: string,
+  ) {
+    if (!accessToken || !jobId || busy || !message.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await createMobileRequest(accessToken, {
+        requestType,
+        subject,
+        message: message.trim(),
+        entityType: 'job',
+        entityId: jobId,
+      });
+      setMessage(`${subject} submitted for office approval`);
+      if (requestType === 'general_request') setHelpMessage('');
+      if (requestType === 'inventory_request') setPartsMessage('');
+      if (requestType === 'schedule_change') setReturnVisitReason('');
+    } catch (err) {
+      setError(err instanceof MobileApiClientError ? err.message : 'Unable to submit request');
     } finally {
       setBusy(false);
     }
@@ -842,6 +883,109 @@ export function MobileJobDetailPage() {
             </li>
           ))}
         </ul>
+      </Panel>
+
+      <Panel title="Field support">
+        <p className="page-muted">
+          Request help, parts, or a return visit — all routes require dispatcher/owner approval.
+        </p>
+        <label className="titan-input-group">
+          <span className="titan-input-label">Request help</span>
+          <textarea
+            className="titan-input jobs-textarea"
+            rows={2}
+            value={helpMessage}
+            onChange={(e) => setHelpMessage(e.target.value)}
+            placeholder="Describe what assistance you need on site"
+          />
+        </label>
+        <Button
+          type="button"
+          disabled={busy || !helpMessage.trim()}
+          onClick={() =>
+            void handleWorkforceRequest('general_request', 'Help requested on site', helpMessage)
+          }
+        >
+          Request help
+        </Button>
+        <label className="titan-input-group" style={{ marginTop: '0.75rem' }}>
+          <span className="titan-input-label">Request parts</span>
+          <textarea
+            className="titan-input jobs-textarea"
+            rows={2}
+            value={partsMessage}
+            onChange={(e) => setPartsMessage(e.target.value)}
+            placeholder="Part numbers, quantities, urgency"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={busy || !partsMessage.trim()}
+          onClick={() =>
+            void handleWorkforceRequest('inventory_request', 'Parts required on job', partsMessage)
+          }
+        >
+          Request parts
+        </Button>
+        <label className="titan-input-group" style={{ marginTop: '0.75rem' }}>
+          <span className="titan-input-label">Return visit</span>
+          <textarea
+            className="titan-input jobs-textarea"
+            rows={2}
+            value={returnVisitReason}
+            onChange={(e) => setReturnVisitReason(e.target.value)}
+            placeholder="Why is a follow-up visit required?"
+          />
+        </label>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={busy || !returnVisitReason.trim()}
+          onClick={() =>
+            void handleWorkforceRequest(
+              'schedule_change',
+              'Return visit requested',
+              returnVisitReason,
+            )
+          }
+        >
+          Request return visit
+        </Button>
+      </Panel>
+
+      <Panel title="Payment collection">
+        {paymentContext ? (
+          <>
+            <p className="page-muted">{paymentContext.message}</p>
+            {paymentContext.balanceDueCents != null && paymentContext.balanceDueCents > 0 ? (
+              <p>
+                <strong>Balance due:</strong>{' '}
+                {(paymentContext.balanceDueCents / 100).toLocaleString(undefined, {
+                  style: 'currency',
+                  currency: paymentContext.currency,
+                })}
+                {paymentContext.invoiceNumber ? ` · Invoice ${paymentContext.invoiceNumber}` : ''}
+              </p>
+            ) : null}
+            <p className="page-muted">
+              Yoco:{' '}
+              {paymentContext.yocoConnected
+                ? 'Connected — use terminal (no card data stored in TITAN)'
+                : paymentContext.yocoConfigured
+                  ? 'Configured but not connected'
+                  : 'Not configured'}
+            </p>
+            {paymentContext.canCollectPayment ? (
+              <p className="page-success">
+                Collect on Yoco terminal, then ask office to record payment in Finance if not
+                auto-synced.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <p className="page-muted">Payment collection context unavailable for this job.</p>
+        )}
       </Panel>
 
       <Panel title="Completion gate">

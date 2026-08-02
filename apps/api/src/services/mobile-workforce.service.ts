@@ -8,10 +8,13 @@ import type {
   JobExecutionPhase,
   JobWorkflowAction,
   MobileCompanyAnnouncementSummary,
+  MobileCloseOutItem,
+  MobileDashboardJobHighlight,
   MobileInventoryAlert,
   MobileJobDocumentationSummary,
   MobileJobExecutionWorkspace,
   MobileJobInventoryUsageSummary,
+  MobileJobPaymentCollectionContext,
   MobileJobWorkspacePropertyHistoryEntry,
   MobileOfflineBundle,
   MobileRouteIntelligence,
@@ -33,6 +36,8 @@ import type {
   SubmitMobileJobDocumentationRequest,
   UploadJobEvidenceRequest,
 } from '@titan/shared';
+import type { JobSummary } from '@titan/shared';
+import type { ScheduledJobEvent } from '@titan/shared';
 import { formatMapsEtaCapabilityLabel } from '@titan/shared';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
@@ -49,6 +54,9 @@ import {
   mobileSyncQueue,
   mobileTimeEntries,
   mobileWorkforceRequests,
+  integrationConnections,
+  invoices,
+  companies,
 } from '@titan/db';
 import type { IntegrationsService } from './integrations.service.js';
 import type { InventoryService } from './inventory.service.js';
@@ -132,12 +140,31 @@ export class MobileWorkforceService {
       (item) => !item.isRead,
     ).length;
 
+    const activeJobs = baseDashboard.assignedJobs.filter(
+      (job) => !['completed', 'cancelled'].includes(job.status),
+    );
+    const scheduleHighlights = deriveScheduleHighlights(todaySchedule.events, activeJobs);
+    const jobsRequiringCompletion = activeJobs
+      .filter((job) =>
+        ['ready_to_complete', 'in_progress', 'on_site', 'awaiting_approval'].includes(
+          job.executionPhase ?? '',
+        ),
+      )
+      .slice(0, 10)
+      .map(toDashboardJobHighlight);
+
+    const missingCloseOutItems = await this.listMissingCloseOutItems(scope, activeJobs.slice(0, 8));
+
     return {
       greeting: baseDashboard.greeting,
       assignedJobs: baseDashboard.assignedJobs,
       todaysSchedule: todaySchedule.events,
       upcomingSchedule: baseDashboard.upcomingSchedule.items,
       routeSummary: route,
+      currentJob: scheduleHighlights.currentJob,
+      nextJob: scheduleHighlights.nextJob,
+      jobsRequiringCompletion,
+      missingCloseOutItems,
       outstandingTaskCount: pendingActions.length,
       pendingRequestCount: pendingRequests.filter((item) => item.status === 'pending_approval')
         .length,
@@ -148,6 +175,106 @@ export class MobileWorkforceService {
       notifications: baseDashboard.notifications,
       unreadNotificationCount,
     };
+  }
+
+  async getJobPaymentCollectionContext(
+    scope: TechnicianScope,
+    jobId: string,
+  ): Promise<MobileJobPaymentCollectionContext> {
+    await this.requireAssignedJob(scope, jobId);
+
+    const [yocoConnection, invoiceRows, companyRow] = await Promise.all([
+      this.db.query.integrationConnections.findFirst({
+        where: and(
+          eq(integrationConnections.companyId, scope.companyId),
+          eq(integrationConnections.provider, 'yoco'),
+        ),
+      }),
+      this.db.query.invoices.findMany({
+        where: and(eq(invoices.companyId, scope.companyId), eq(invoices.jobId, jobId)),
+        orderBy: [desc(invoices.updatedAt)],
+        limit: 5,
+        with: { payments: true },
+      }),
+      this.db.query.companies.findFirst({
+        where: eq(companies.id, scope.companyId),
+        columns: { preferences: true },
+      }),
+    ]);
+
+    const currency = companyRow?.preferences?.currency ?? 'ZAR';
+    const yocoConfigured = Boolean(yocoConnection?.credentialsEncrypted);
+    const yocoConnected = yocoConnection?.status === 'connected';
+    const openInvoice =
+      invoiceRows.find((row) => {
+        const paid = row.payments.reduce((sum, payment) => sum + payment.amountCents, 0);
+        return row.totalCents > paid;
+      }) ?? null;
+
+    const balanceDueCents = openInvoice
+      ? Math.max(
+          0,
+          openInvoice.totalCents -
+            openInvoice.payments.reduce((sum, payment) => sum + payment.amountCents, 0),
+        )
+      : null;
+
+    let collectionMethod: MobileJobPaymentCollectionContext['collectionMethod'] = 'none';
+    let canCollectPayment = false;
+    let message = 'No outstanding invoice on this job — payment collection not applicable.';
+
+    if (balanceDueCents != null && balanceDueCents > 0) {
+      if (yocoConnected) {
+        collectionMethod = 'yoco_terminal';
+        canCollectPayment = true;
+        message =
+          'Collect payment on your Yoco terminal or card reader. TITAN never stores card numbers — record the payment in Finance after the terminal confirms success.';
+      } else if (yocoConfigured) {
+        message =
+          'Yoco is configured but not connected — ask the office to reconnect Yoco before collecting card payments on site.';
+      } else {
+        collectionMethod = 'record_offsite';
+        message =
+          'No approved card provider configured — collect payment off-site (EFT/cash) and ask the office to record it in Finance.';
+      }
+    }
+
+    return {
+      jobId,
+      yocoConfigured,
+      yocoConnected,
+      canCollectPayment,
+      invoiceId: openInvoice?.id ?? null,
+      invoiceNumber: openInvoice?.invoiceNumber ?? null,
+      balanceDueCents,
+      currency,
+      collectionMethod,
+      message,
+    };
+  }
+
+  private async listMissingCloseOutItems(
+    scope: TechnicianScope,
+    activeJobs: JobSummary[],
+  ): Promise<MobileCloseOutItem[]> {
+    const items: MobileCloseOutItem[] = [];
+    for (const job of activeJobs) {
+      if (['completed', 'cancelled'].includes(job.status)) continue;
+      try {
+        const gate = await this.jobExecutionService.getCompletionGate(scope, job.id);
+        if (!gate.canComplete && gate.missing.length > 0) {
+          items.push({
+            jobId: job.id,
+            jobNumber: job.jobNumber,
+            title: job.title,
+            missingItems: gate.missing,
+          });
+        }
+      } catch {
+        // skip jobs the technician cannot gate-check
+      }
+    }
+    return items.slice(0, 10);
   }
 
   async listWorkforceJobs(scope: TechnicianScope): Promise<MobileWorkforceJobList> {
@@ -1324,4 +1451,61 @@ function toDocumentationSummary(
       : null,
     createdAt: row.createdAt.toISOString(),
   };
+}
+
+function toDashboardJobHighlight(job: JobSummary): MobileDashboardJobHighlight {
+  return {
+    id: job.id,
+    jobNumber: job.jobNumber,
+    title: job.title,
+    customerName: job.customerName,
+    status: job.status,
+    executionPhase: job.executionPhase ?? null,
+    scheduledAt: job.scheduledAt,
+    scheduledEndAt: job.scheduledEndAt,
+  };
+}
+
+function deriveScheduleHighlights(
+  todayEvents: ScheduledJobEvent[],
+  activeJobs: JobSummary[],
+): { currentJob: MobileDashboardJobHighlight | null; nextJob: MobileDashboardJobHighlight | null } {
+  const now = Date.now();
+  const sorted = [...todayEvents].sort(
+    (a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+  );
+
+  const jobById = new Map(activeJobs.map((job) => [job.id, job]));
+
+  let currentEvent: ScheduledJobEvent | undefined;
+  let nextEvent: ScheduledJobEvent | undefined;
+
+  for (const event of sorted) {
+    const start = new Date(event.scheduledAt).getTime();
+    const end = event.scheduledEndAt
+      ? new Date(event.scheduledEndAt).getTime()
+      : start + 60 * 60_000;
+    if (start <= now && now <= end) {
+      currentEvent = event;
+      break;
+    }
+    if (start > now && !nextEvent) {
+      nextEvent = event;
+    }
+  }
+
+  if (!nextEvent) {
+    nextEvent = sorted.find((event) => new Date(event.scheduledAt).getTime() > now);
+  }
+
+  const currentJob =
+    currentEvent && jobById.has(currentEvent.id)
+      ? toDashboardJobHighlight(jobById.get(currentEvent.id)!)
+      : null;
+  const nextJob =
+    nextEvent && jobById.has(nextEvent.id)
+      ? toDashboardJobHighlight(jobById.get(nextEvent.id)!)
+      : null;
+
+  return { currentJob, nextJob };
 }
