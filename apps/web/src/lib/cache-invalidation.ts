@@ -40,6 +40,15 @@ const JOB_MUTATION_PREFIXES = [
   'mobile/jobs',
   'mobile/workforce-dashboard',
 ] as const;
+const SCHEDULING_MUTATION_PREFIXES = [
+  'scheduling/calendar',
+  'scheduling/assignees',
+  'mobile/scheduling',
+  'jobs/list',
+  'jobs/stats',
+  'mobile/jobs',
+  'mobile/workforce-dashboard',
+] as const;
 const QUOTE_MUTATION_PREFIXES = [
   'finance/quotes',
   'finance/stats',
@@ -77,6 +86,13 @@ export function invalidateAfterJobMutation(
   accessToken: string | null,
 ): void {
   invalidateStaffQueryPrefixes(scope, accessToken, [...JOB_MUTATION_PREFIXES]);
+}
+
+export function invalidateAfterScheduleMutation(
+  scope: QueryCacheScope,
+  accessToken: string | null,
+): void {
+  invalidateStaffQueryPrefixes(scope, accessToken, [...SCHEDULING_MUTATION_PREFIXES]);
 }
 
 export function invalidateAfterQuoteMutation(
@@ -128,6 +144,11 @@ export function useStaffMutationInvalidation() {
     invalidateAfterJobMutation(scope, accessToken);
   }, [accessToken, scope]);
 
+  const invalidateScheduling = useCallback(() => {
+    if (!scope) return;
+    invalidateAfterScheduleMutation(scope, accessToken);
+  }, [accessToken, scope]);
+
   const invalidateQuotes = useCallback(() => {
     if (!scope) return;
     invalidateAfterQuoteMutation(scope, accessToken);
@@ -151,6 +172,7 @@ export function useStaffMutationInvalidation() {
   return {
     invalidateCustomers,
     invalidateJobs,
+    invalidateScheduling,
     invalidateQuotes,
     invalidateInvoices,
     invalidatePayments,

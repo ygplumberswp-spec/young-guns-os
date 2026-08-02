@@ -50,6 +50,7 @@ import { MobileInventoryPage } from './pages/mobile/MobileInventoryPage';
 import { MobileTimePage } from './pages/mobile/MobileTimePage';
 import { MobileNotificationsPage } from './pages/mobile/MobileNotificationsPage';
 import { MobileSyncPage } from './pages/mobile/MobileSyncPage';
+import { MobileSchedulePage } from './pages/mobile/MobileSchedulePage';
 import { DevErrorBoundaryTestPage } from './pages/dev/DevErrorBoundaryTestPage';
 
 export function App() {
@@ -125,6 +126,7 @@ export function App() {
                     <Route path="/inventory" component={MobileInventoryPage} />
                     <Route path="/time" component={MobileTimePage} />
                     <Route path="/notifications" component={MobileNotificationsPage} />
+                    <Route path="/schedule" component={MobileSchedulePage} />
                     <Route path="/sync" component={MobileSyncPage} />
                     <Route path="/" component={MobileDashboardPage} />
                   </Switch>

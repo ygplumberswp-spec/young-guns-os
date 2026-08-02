@@ -36,7 +36,7 @@ function handleError(error: unknown, res: import('express').Response) {
 
   const message =
     error instanceof Error && /xero|sync|import/i.test(error.message)
-      ? 'Customer value is updating from Xero'
+      ? 'Updating customer value from Xero…'
       : 'Customer value metrics are temporarily unavailable';
 
   res.status(503).json({
