@@ -3,7 +3,7 @@
 **Branch:** `cursor/titan-owner-operating-model-final`  
 **Base (Phase 8):** `bc816cc`  
 **Code SHA:** `f380460`  
-**Final SHA:** `f380460`  
+**Final SHA:** `c505ad6`  
 **Environment:** Staging only — production not touched  
 **Generated:** 2026-08-02
 
@@ -16,7 +16,7 @@
 | **Procure-to-pay pipeline** | **GO** | `/procurement/flow` — 11 stages; 5 LIVE + 5 HOLD + 1 PARTIAL; approve gate before order |
 | **Approval gates** | **GO** | PO status transitions enforced in API (`draft→pending_approval→approved→ordered→received`); no skip-to-spend |
 
-**Overall:** **GO** @ `f380460` — authenticated staging verification 241 (0 blockers)
+**Overall:** **GO** @ `c505ad6` — authenticated staging verification 241 (0 blockers)
 
 ## Summary
 
