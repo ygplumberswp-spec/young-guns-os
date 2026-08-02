@@ -23,6 +23,7 @@ import {
   displayInvoiceNumber,
   formatInternalInvoiceNumber,
   formatMoney,
+  deriveJobPaymentLedger,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -514,7 +515,19 @@ export class FinanceService {
         });
       }
     }
-    return { jobId, quotes: quotesOut, invoices: invoicesOut, payments: paymentsOut, chips };
+    return {
+      jobId,
+      quotes: quotesOut,
+      invoices: invoicesOut,
+      payments: paymentsOut,
+      chips,
+      ledger: deriveJobPaymentLedger({
+        quotes: quotesOut,
+        invoices: invoicesOut,
+        payments: paymentsOut,
+        currency,
+      }),
+    };
   }
 
   async getStats(companyId: string): Promise<FinanceStats> {
@@ -801,6 +814,7 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     totalCents: row.totalCents ?? row.amountCents,
     currency: row.currency,
     validUntil: row.validUntil ? row.validUntil.toISOString() : null,
+    depositPercent: row.depositPercent ?? null,
     issuedAt: row.issuedAt?.toISOString() ?? null,
     acceptedAt: row.acceptedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),

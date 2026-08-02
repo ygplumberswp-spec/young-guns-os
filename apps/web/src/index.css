@@ -4794,3 +4794,53 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   outline: 2px solid var(--titan-accent, #0f766e);
   outline-offset: 2px;
 }
+
+/* Job 360 workspace tabs (office Job File) */
+.customer-360__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--titan-border-subtle);
+  overflow-x: auto;
+}
+
+.customer-360__tab {
+  border: 1px solid var(--titan-border-subtle);
+  background: var(--titan-surface);
+  color: var(--titan-text-secondary);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.customer-360__tab--active {
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+  background: color-mix(in srgb, var(--titan-surface) 88%, var(--titan-accent) 12%);
+}
+
+.customer-360__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.job-360 .job-finance-ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.75rem 1.25rem;
+}
+
+.job-360__banner {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-left: 3px solid var(--titan-accent);
+  background: color-mix(in srgb, var(--titan-surface) 92%, var(--titan-accent) 8%);
+  font-size: 0.875rem;
+}
+

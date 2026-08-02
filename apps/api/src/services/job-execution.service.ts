@@ -12,6 +12,7 @@ import type {
   JobVariationStatus,
   JobVariationSummary,
   JobVehicleAssignmentSummary,
+  JobTimelineEventSummary,
   JobWorkflowAction,
   JobWorkflowTransitionRequest,
   RecordJobMaterialLineRequest,
@@ -1204,29 +1205,55 @@ export class JobExecutionService {
   async getExecutionSummary(scope: ExecutionScope, jobId: string): Promise<JobExecutionSummary> {
     const job = await this.requireJob(scope.companyId, jobId);
 
-    const [crew, vehicle, pendingVariations, completionGate, docs] = await Promise.all([
-      this.getCrew(scope.companyId, jobId),
-      this.getActiveVehicle(scope.companyId, jobId),
-      this.listVariations(scope.companyId, jobId, 'pending'),
-      this.getCompletionGate(scope, jobId),
-      this.db.query.mobileJobDocumentation.findMany({
-        where: and(
-          eq(mobileJobDocumentation.companyId, scope.companyId),
-          eq(mobileJobDocumentation.jobId, jobId),
-        ),
-        orderBy: [desc(mobileJobDocumentation.createdAt)],
-        columns: {
-          id: true,
-          documentationType: true,
-          title: true,
-          evidencePhase: true,
-          storageKey: true,
-          mimeType: true,
-          sizeBytes: true,
-          createdAt: true,
-        },
-      }),
-    ]);
+    const [crew, vehicle, pendingVariations, completionGate, completionSnapshotRow, docs, labourRows] =
+      await Promise.all([
+        this.getCrew(scope.companyId, jobId),
+        this.getActiveVehicle(scope.companyId, jobId),
+        this.listVariations(scope.companyId, jobId, 'pending'),
+        this.getCompletionGate(scope, jobId),
+        this.db.query.jobCompletionSnapshots.findFirst({
+          where: and(
+            eq(jobCompletionSnapshots.companyId, scope.companyId),
+            eq(jobCompletionSnapshots.jobId, jobId),
+          ),
+          columns: {
+            id: true,
+            jobId: true,
+            completedByUserId: true,
+            createdAt: true,
+            snapshot: true,
+          },
+        }),
+        this.db.query.mobileJobDocumentation.findMany({
+          where: and(
+            eq(mobileJobDocumentation.companyId, scope.companyId),
+            eq(mobileJobDocumentation.jobId, jobId),
+          ),
+          orderBy: [desc(mobileJobDocumentation.createdAt)],
+          columns: {
+            id: true,
+            documentationType: true,
+            title: true,
+            evidencePhase: true,
+            storageKey: true,
+            mimeType: true,
+            sizeBytes: true,
+            createdAt: true,
+          },
+        }),
+        this.db.query.mobileTimeEntries.findMany({
+          where: and(
+            eq(mobileTimeEntries.companyId, scope.companyId),
+            eq(mobileTimeEntries.jobId, jobId),
+          ),
+          columns: { durationMinutes: true },
+        }),
+      ]);
+
+    const labourTotalMinutes = labourRows.reduce(
+      (sum, row) => sum + (row.durationMinutes ?? 0),
+      0,
+    );
 
     return {
       jobId,
@@ -1236,6 +1263,19 @@ export class JobExecutionService {
       vehicle,
       pendingVariations,
       completionGate,
+      completionSnapshot: completionSnapshotRow
+        ? {
+            id: completionSnapshotRow.id,
+            jobId: completionSnapshotRow.jobId,
+            completedByUserId: completionSnapshotRow.completedByUserId,
+            createdAt: completionSnapshotRow.createdAt.toISOString(),
+            snapshot: completionSnapshotRow.snapshot as Record<string, unknown>,
+          }
+        : null,
+      labour: {
+        entryCount: labourRows.length,
+        totalMinutes: labourTotalMinutes,
+      },
       evidence: docs.map((doc) => {
         const hasBinary = Boolean(doc.storageKey);
         return {
@@ -1253,6 +1293,44 @@ export class JobExecutionService {
         };
       }),
     };
+  }
+
+  /** Job 360 operational timeline from existing workflow events (tenant-scoped). */
+  async listTimeline(scope: ExecutionScope, jobId: string): Promise<JobTimelineEventSummary[]> {
+    await this.requireJob(scope.companyId, jobId);
+
+    const rows = await this.db.query.jobWorkflowEvents.findMany({
+      where: and(eq(jobWorkflowEvents.companyId, scope.companyId), eq(jobWorkflowEvents.jobId, jobId)),
+      orderBy: [desc(jobWorkflowEvents.createdAt)],
+      limit: 200,
+    });
+
+    const userIds = [...new Set(rows.map((row) => row.userId))];
+    const userRows =
+      userIds.length > 0
+        ? await this.db.query.users.findMany({
+            where: and(eq(users.companyId, scope.companyId), inArray(users.id, userIds)),
+            columns: { id: true, firstName: true, lastName: true },
+          })
+        : [];
+    const usersById = new Map(userRows.map((user) => [user.id, user]));
+
+    return rows.map((row) => {
+      const user = usersById.get(row.userId);
+      return {
+        id: row.id,
+        action: row.action,
+        fromPhase: row.fromPhase,
+        toPhase: row.toPhase,
+        fromStatus: row.fromStatus,
+        toStatus: row.toStatus,
+        reason: row.reason,
+        userId: row.userId,
+        userName: user ? `${user.firstName} ${user.lastName}`.trim() : null,
+        metadata: (row.metadata ?? {}) as Record<string, unknown>,
+        createdAt: row.createdAt.toISOString(),
+      };
+    });
   }
 
   async getCompletionGate(scope: ExecutionScope, jobId: string): Promise<JobCompletionGateResult> {
