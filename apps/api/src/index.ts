@@ -1578,6 +1578,8 @@ app.use(
   '/api/v1/communications',
   createCommunicationsRouter({
     communicationsService,
+    communicationsIntelligenceService,
+    integrationHubService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

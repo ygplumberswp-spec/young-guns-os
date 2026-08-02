@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { z } from 'zod';
 import type { CommunicationsService } from '../services/communications.service.js';
 import { CommunicationsError } from '../services/communications.service.js';
+import type { CommunicationsIntelligenceService } from '../services/communications-intelligence.service.js';
+import type { IntegrationHubService } from '../services/integration-hub.service.js';
 import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import { requireAnyPermission } from '../middleware/rbac.js';
@@ -32,6 +34,8 @@ const createMessageSchema = z.object({
 
 type CommunicationsRouterDeps = {
   communicationsService: CommunicationsService;
+  communicationsIntelligenceService: CommunicationsIntelligenceService;
+  integrationHubService: IntegrationHubService;
   teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
@@ -43,6 +47,8 @@ function getAuth(req: import('express').Request) {
 
 export function createCommunicationsRouter({
   communicationsService,
+  communicationsIntelligenceService,
+  integrationHubService,
   teamService,
   jwtSecret,
   authService,
@@ -64,6 +70,28 @@ export function createCommunicationsRouter({
       const { companyId } = getAuth(req);
       const stats = await communicationsService.getStats(companyId);
       res.json({ data: stats });
+    },
+  );
+
+  router.get(
+    '/workspace',
+    requireAnyPermission('communications:read', 'communications:write'),
+    async (req, res) => {
+      const auth = getAuth(req);
+      const [providerStatuses, personalWhatsappAccountCount] = await Promise.all([
+        integrationHubService.listProviderStatuses(auth.companyId),
+        communicationsIntelligenceService.countPersonalWhatsappAccounts(auth.companyId),
+      ]);
+      const workspace = await communicationsIntelligenceService.buildCommunicationsWorkspace(
+        {
+          companyId: auth.companyId,
+          userId: auth.userId,
+          roleName: auth.roleName,
+          permissions: auth.permissions,
+        },
+        { providerStatuses, personalWhatsappAccountCount },
+      );
+      res.json({ data: workspace });
     },
   );
 

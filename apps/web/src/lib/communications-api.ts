@@ -1,11 +1,18 @@
 import type {
   CommunicationSummary,
   CommunicationsStats,
+  CommunicationsWorkspaceResponse,
   CreateCommunicationRequest,
   CreateMessageTemplateRequest,
   MessageTemplateSummary,
 } from '@titan/shared';
 import { request } from './api-client';
+
+export async function fetchCommunicationsWorkspace(
+  accessToken: string,
+): Promise<CommunicationsWorkspaceResponse> {
+  return request<CommunicationsWorkspaceResponse>('/communications/workspace', { accessToken });
+}
 
 export async function fetchCommunicationsStats(accessToken: string): Promise<CommunicationsStats> {
   return request<CommunicationsStats>('/communications/stats', { accessToken });

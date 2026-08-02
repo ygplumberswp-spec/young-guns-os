@@ -285,6 +285,10 @@ export function App() {
                           component={OwnerPages.MessageCreatePage}
                         />
                         <Route
+                          path="/communications/inbox"
+                          component={OwnerPages.CommunicationsWorkspacePage}
+                        />
+                        <Route
                           path="/communications/messages"
                           component={OwnerPages.MessageListPage}
                         />

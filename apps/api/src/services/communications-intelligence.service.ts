@@ -1,4 +1,4 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
 import type {
   CommIntelAnalyticsDashboard,
   CommIntelAuraContext,
@@ -11,12 +11,23 @@ import type {
   CommIntelSmsRecordSummary,
   CommIntelTimelineEntry,
   CommIntelUnifiedDashboard,
+  CommunicationsChannelIntegration,
+  CommunicationsIntegrationState,
+  CommunicationsWorkspaceChannel,
+  CommunicationsWorkspaceConversation,
+  CommunicationsWorkspaceEntityLinks,
+  CommunicationsWorkspaceQueue,
+  CommunicationsWorkspaceResponse,
   CreateCommIntelCallIntelligenceRequest,
   CreateCommIntelConversationInsightRequest,
   CreateCommIntelDraftActionRequest,
   CreateCommIntelEmailThreadRequest,
   CreateCommIntelRecordingRequest,
   CreateCommIntelSmsRecordRequest,
+} from '@titan/shared';
+import {
+  COMMUNICATIONS_WORKSPACE_CHANNEL_OPTIONS,
+  COMMUNICATIONS_WORKSPACE_QUEUE_OPTIONS,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -27,7 +38,13 @@ import {
   commIntelRecordings,
   commIntelSmsRecords,
   communications,
+  invoices,
+  jobs,
+  leads,
+  personalCommAccounts,
   portalCustomerRequests,
+  quotes,
+  ucDispatchNotifications,
 } from '@titan/db';
 import type { CommunicationsService } from './communications.service.js';
 import type { CustomerSupportService } from './customer-support.service.js';
@@ -48,6 +65,14 @@ export class CommunicationsIntelligenceError extends Error {
 type StaffScope = {
   companyId: string;
   userId: string;
+  roleName?: string;
+  permissions?: string[];
+};
+
+type ProviderStatusRow = {
+  provider: string;
+  connectionStatus: string;
+  syncStatus?: string | null;
 };
 
 export class CommunicationsIntelligenceService {
@@ -701,6 +726,510 @@ export class CommunicationsIntelligenceService {
       topChannel,
     };
   }
+
+  async buildCommunicationsWorkspace(
+    scope: StaffScope,
+    options: {
+      providerStatuses: ProviderStatusRow[];
+      personalWhatsappAccountCount: number;
+    },
+  ): Promise<CommunicationsWorkspaceResponse> {
+    const messageScope = {
+      companyId: scope.companyId,
+      userId: scope.userId,
+      roleName: scope.roleName,
+      permissions: scope.permissions,
+    };
+
+    const [
+      timeline,
+      insights,
+      callHistory,
+      commRows,
+      dispatchRows,
+      pendingDraftRows,
+      supportEscalations,
+    ] = await Promise.all([
+      this.buildTimeline(scope.companyId, { limit: 200 }),
+      this.listConversationInsights(scope.companyId),
+      this.getCallHistory(scope.companyId),
+      this.communicationsService.listMessages(messageScope),
+      this.db.query.ucDispatchNotifications.findMany({
+        where: eq(ucDispatchNotifications.companyId, scope.companyId),
+        orderBy: [desc(ucDispatchNotifications.createdAt)],
+        limit: 50,
+      }),
+      this.db.query.commIntelDraftActions.findMany({
+        where: and(
+          eq(commIntelDraftActions.companyId, scope.companyId),
+          eq(commIntelDraftActions.status, 'pending_approval'),
+        ),
+        with: { customer: true },
+        orderBy: [desc(commIntelDraftActions.createdAt)],
+        limit: 100,
+      }),
+      this.customerSupportService.listEscalations(scope.companyId),
+    ]);
+
+    const insightBySource = new Map(
+      insights.map((row) => [`${row.sourceType}:${row.sourceId}`, row]),
+    );
+    const callBySession = new Map(callHistory.map((row) => [row.voiceSessionId, row]));
+    const commById = new Map(commRows.map((row) => [row.id, row]));
+
+    const customerIds = Array.from(
+      new Set(
+        [
+          ...timeline.map((entry) => entry.customerId),
+          ...pendingDraftRows.map((draft) => draft.customerId),
+        ].filter(Boolean),
+      ),
+    ) as string[];
+
+    const jobIds = Array.from(
+      new Set(
+        [
+          ...commRows.map((row) => row.jobId),
+          ...pendingDraftRows.map((row) => row.jobId),
+          ...dispatchRows.map((row) => row.jobId),
+        ].filter(Boolean),
+      ),
+    ) as string[];
+
+    const entityIndex = await this.loadWorkspaceEntityIndex(scope.companyId, customerIds, jobIds);
+
+    const conversations: CommunicationsWorkspaceConversation[] = [];
+
+    for (const entry of timeline) {
+      const workspaceChannel = mapTimelineToWorkspaceChannel(entry);
+      const insight = insightBySource.get(`${entry.entityType}:${entry.entityId}`);
+      const entityId = entry.entityId;
+      const commRow =
+        entry.entityType === 'communication' && entityId ? commById.get(entityId) : null;
+      const callRow =
+        entry.entityType === 'voice_session' && entityId ? callBySession.get(entityId) : null;
+      const queues = classifyWorkspaceQueues(entry, {
+        hasComplaint: insight?.hasComplaint ?? false,
+        escalationRisk: insight?.escalationRisk ?? false,
+      });
+
+      conversations.push({
+        id: entry.id,
+        channel: workspaceChannel,
+        queues,
+        direction: entry.direction,
+        subject: entry.title,
+        preview: entry.preview,
+        isUnread: isWorkspaceUnread(entry),
+        occurredAt: entry.occurredAt,
+        sourceType: entry.entityType ?? 'timeline',
+        sourceId: entry.entityId ?? entry.id,
+        entities: resolveWorkspaceEntities({
+          customerId: entry.customerId,
+          customerName: entry.customerName,
+          jobId: commRow?.jobId ?? null,
+          jobNumber: commRow?.jobNumber ?? null,
+          staffId: callRow?.assignedStaffId ?? commRow?.authorUserId ?? null,
+          staffName: callRow?.assignedStaffName ?? commRow?.authorName ?? null,
+          entityIndex,
+        }),
+      });
+    }
+
+    for (const draft of pendingDraftRows) {
+      conversations.push({
+        id: `draft-${draft.id}`,
+        channel: mapCommIntelToWorkspaceChannel(draft.channel),
+        queues: ['needs_reply'],
+        direction: 'outbound',
+        subject: draft.subject ?? 'Draft awaiting approval',
+        preview: draft.body,
+        isUnread: true,
+        occurredAt: draft.createdAt.toISOString(),
+        sourceType: 'draft_action',
+        sourceId: draft.id,
+        entities: resolveWorkspaceEntities({
+          customerId: draft.customerId,
+          customerName: draft.customer?.name ?? null,
+          jobId: draft.jobId,
+          jobNumber: draft.jobId ? (entityIndex.jobsById.get(draft.jobId)?.number ?? null) : null,
+          staffId: draft.staffUserId ?? draft.technicianId,
+          staffName: null,
+          entityIndex,
+          draftLeadId: draft.leadId,
+          draftQuoteId: draft.quoteId,
+          draftInvoiceId: draft.invoiceId,
+        }),
+      });
+    }
+
+    for (const notification of dispatchRows) {
+      const preview = notification.notificationType.replace(/_/g, ' ');
+      conversations.push({
+        id: `dispatch-${notification.id}`,
+        channel: mapDispatchChannel(notification.channel),
+        queues: classifyDispatchQueues(notification.notificationType),
+        direction: 'outbound',
+        subject: preview,
+        preview: notification.status,
+        isUnread: false,
+        occurredAt: notification.sentAt?.toISOString() ?? notification.createdAt.toISOString(),
+        sourceType: 'dispatch_notification',
+        sourceId: notification.id,
+        entities: resolveWorkspaceEntities({
+          customerId: notification.customerId,
+          customerName: null,
+          jobId: notification.jobId,
+          jobNumber: null,
+          staffId: null,
+          staffName: null,
+          entityIndex,
+        }),
+      });
+    }
+
+    for (const escalation of supportEscalations.filter((row) =>
+      ['pending', 'assigned', 'in_progress'].includes(row.status),
+    )) {
+      conversations.push({
+        id: `escalation-${escalation.id}`,
+        channel: 'system',
+        queues: ['escalated'],
+        direction: 'inbound',
+        subject: escalation.reason ?? 'Support escalation',
+        preview: escalation.status,
+        isUnread: true,
+        occurredAt: escalation.createdAt,
+        sourceType: 'support_escalation',
+        sourceId: escalation.id,
+        entities: resolveWorkspaceEntities({
+          customerId: escalation.customerId ?? null,
+          customerName: escalation.customerName ?? null,
+          jobId: null,
+          jobNumber: null,
+          staffId: escalation.assignedUserId ?? null,
+          staffName: escalation.assignedUserName ?? null,
+          entityIndex,
+        }),
+      });
+    }
+
+    conversations.sort(
+      (a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+    );
+
+    const queueSummaries = COMMUNICATIONS_WORKSPACE_QUEUE_OPTIONS.map((option) => ({
+      queue: option.value,
+      label: option.label,
+      count: conversations.filter((row) => row.queues.includes(option.value)).length,
+    }));
+
+    const integrations = buildWorkspaceIntegrations(
+      options.providerStatuses,
+      options.personalWhatsappAccountCount,
+    );
+
+    return {
+      summary: `${conversations.length} conversation(s) across ${integrations.filter((row) => row.state === 'connected').length} connected channel(s).`,
+      integrations,
+      queueSummaries,
+      conversations,
+    };
+  }
+
+  private async loadWorkspaceEntityIndex(
+    companyId: string,
+    customerIds: string[],
+    jobIds: string[],
+  ) {
+    if (customerIds.length === 0) {
+      return {
+        leadsByCustomer: new Map<string, { id: string; name: string }>(),
+        quotesByCustomer: new Map<string, { id: string; number: string }>(),
+        invoicesByCustomer: new Map<string, { id: string; number: string }>(),
+        jobsById: new Map<string, { id: string; number: string | null }>(),
+      };
+    }
+
+    const [leadRows, quoteRows, invoiceRows] = await Promise.all([
+      this.db.query.leads.findMany({
+        where: and(eq(leads.companyId, companyId), inArray(leads.customerId, customerIds)),
+        columns: { id: true, customerId: true, title: true, contactName: true },
+        orderBy: [desc(leads.updatedAt)],
+      }),
+      this.db.query.quotes.findMany({
+        where: and(eq(quotes.companyId, companyId), inArray(quotes.customerId, customerIds)),
+        columns: { id: true, customerId: true, quoteNumber: true },
+        orderBy: [desc(quotes.updatedAt)],
+      }),
+      this.db.query.invoices.findMany({
+        where: and(eq(invoices.companyId, companyId), inArray(invoices.customerId, customerIds)),
+        columns: { id: true, customerId: true, invoiceNumber: true },
+        orderBy: [desc(invoices.updatedAt)],
+      }),
+    ]);
+
+    const leadsByCustomer = new Map<string, { id: string; name: string }>();
+    for (const row of leadRows) {
+      if (!row.customerId || leadsByCustomer.has(row.customerId)) continue;
+      leadsByCustomer.set(row.customerId, {
+        id: row.id,
+        name: row.title || row.contactName,
+      });
+    }
+
+    const quotesByCustomer = new Map<string, { id: string; number: string }>();
+    for (const row of quoteRows) {
+      if (quotesByCustomer.has(row.customerId)) continue;
+      quotesByCustomer.set(row.customerId, { id: row.id, number: row.quoteNumber });
+    }
+
+    const invoicesByCustomer = new Map<string, { id: string; number: string }>();
+    for (const row of invoiceRows) {
+      if (invoicesByCustomer.has(row.customerId)) continue;
+      invoicesByCustomer.set(row.customerId, { id: row.id, number: row.invoiceNumber });
+    }
+
+    const jobRows =
+      jobIds.length > 0
+        ? await this.db.query.jobs.findMany({
+            where: and(eq(jobs.companyId, companyId), inArray(jobs.id, jobIds)),
+            columns: { id: true, jobNumber: true },
+          })
+        : [];
+
+    const jobsById = new Map(jobRows.map((row) => [row.id, { id: row.id, number: row.jobNumber }]));
+
+    return { leadsByCustomer, quotesByCustomer, invoicesByCustomer, jobsById };
+  }
+
+  async countPersonalWhatsappAccounts(companyId: string): Promise<number> {
+    const rows = await this.db.query.personalCommAccounts.findMany({
+      where: and(
+        eq(personalCommAccounts.companyId, companyId),
+        eq(personalCommAccounts.accountType, 'personal'),
+      ),
+      columns: { id: true },
+    });
+    return rows.length;
+  }
+}
+
+function mapTimelineToWorkspaceChannel(entry: CommIntelTimelineEntry): CommunicationsWorkspaceChannel {
+  if (entry.metadata?.accountType === 'personal' || entry.metadata?.source === 'personal_whatsapp') {
+    return 'personal_whatsapp';
+  }
+  if (entry.channel === 'whatsapp') return 'whatsapp_business';
+  if (entry.channel === 'phone') return 'calls';
+  if (entry.channel === 'email') return 'email';
+  if (entry.channel === 'sms') return 'sms';
+  return 'system';
+}
+
+function mapCommIntelToWorkspaceChannel(channel: CommIntelChannel): CommunicationsWorkspaceChannel {
+  if (channel === 'whatsapp') return 'whatsapp_business';
+  if (channel === 'phone') return 'calls';
+  if (channel === 'email') return 'email';
+  if (channel === 'sms') return 'sms';
+  return 'system';
+}
+
+function mapDispatchChannel(channel: string | null): CommunicationsWorkspaceChannel {
+  if (channel === 'whatsapp') return 'whatsapp_business';
+  if (channel === 'sms') return 'sms';
+  if (channel === 'email') return 'email';
+  if (channel === 'voice') return 'calls';
+  return 'system';
+}
+
+function isWorkspaceUnread(entry: CommIntelTimelineEntry): boolean {
+  const meta = entry.metadata ?? {};
+  if (entry.direction !== 'inbound') return false;
+  if (meta.deliveryStatus && meta.deliveryStatus !== 'read') return true;
+  if (meta.status === 'open' || meta.status === 'in_progress') return true;
+  return false;
+}
+
+function classifyWorkspaceQueues(
+  entry: CommIntelTimelineEntry,
+  flags: { hasComplaint: boolean; escalationRisk: boolean },
+): CommunicationsWorkspaceQueue[] {
+  const queues: CommunicationsWorkspaceQueue[] = [];
+  const meta = entry.metadata ?? {};
+  const haystack = `${entry.title} ${entry.preview}`.toLowerCase();
+
+  if (isWorkspaceUnread(entry)) queues.push('unread');
+  if (
+    entry.direction === 'inbound' &&
+    (meta.followUpStatus === 'pending' ||
+      meta.status === 'open' ||
+      meta.status === 'in_progress' ||
+      meta.status === 'escalated')
+  ) {
+    queues.push('needs_reply');
+  }
+  if (entry.direction === 'outbound' && meta.status === 'waiting_customer') {
+    queues.push('waiting_for_customer');
+  }
+  if (/book|appointment|schedule/.test(haystack) || meta.requestType === 'booking') {
+    queues.push('booking');
+  }
+  if (/eta|delay|en route|en_route|technician/.test(haystack)) {
+    queues.push('eta_delay');
+  }
+  if (/quote|estimate|proposal/.test(haystack)) queues.push('quote_followup');
+  if (/payment|invoice|pay|overdue/.test(haystack)) queues.push('payment_followup');
+  if (flags.hasComplaint || /complaint|unhappy|refund/.test(haystack)) queues.push('complaint');
+  if (meta.source === 'supplier' || /supplier|procurement|purchase order/.test(haystack)) {
+    queues.push('supplier');
+  }
+  if (/cv|resume|recruit|job application/.test(haystack)) queues.push('cv_recruitment');
+  if (/opt.?out|unsubscribe|stop messaging/.test(haystack)) queues.push('marketing_opt_out');
+  if (meta.status === 'escalated' || flags.escalationRisk) queues.push('escalated');
+
+  return queues;
+}
+
+function classifyDispatchQueues(
+  notificationType: string,
+): CommunicationsWorkspaceQueue[] {
+  if (notificationType.includes('eta') || notificationType.includes('en_route')) {
+    return ['eta_delay'];
+  }
+  if (notificationType.includes('appointment') || notificationType.includes('confirmation')) {
+    return ['booking'];
+  }
+  if (notificationType.includes('invoice') || notificationType.includes('payment')) {
+    return ['payment_followup'];
+  }
+  return ['waiting_for_customer'];
+}
+
+function resolveWorkspaceEntities(input: {
+  customerId: string | null;
+  customerName: string | null;
+  jobId: string | null;
+  jobNumber: string | null;
+  staffId: string | null;
+  staffName: string | null;
+  entityIndex: {
+    leadsByCustomer: Map<string, { id: string; name: string }>;
+    quotesByCustomer: Map<string, { id: string; number: string }>;
+    invoicesByCustomer: Map<string, { id: string; number: string }>;
+    jobsById: Map<string, { id: string; number: string | null }>;
+  };
+  draftLeadId?: string | null;
+  draftQuoteId?: string | null;
+  draftInvoiceId?: string | null;
+}): CommunicationsWorkspaceEntityLinks {
+  const customerId = input.customerId;
+  const lead = customerId ? input.entityIndex.leadsByCustomer.get(customerId) : null;
+  const quote = customerId ? input.entityIndex.quotesByCustomer.get(customerId) : null;
+  const invoice = customerId ? input.entityIndex.invoicesByCustomer.get(customerId) : null;
+  const resolvedJobNumber =
+    input.jobNumber ??
+    (input.jobId ? (input.entityIndex.jobsById.get(input.jobId)?.number ?? null) : null);
+
+  return {
+    leadId: input.draftLeadId ?? lead?.id ?? null,
+    leadName: lead?.name ?? null,
+    customerId,
+    customerName: input.customerName,
+    jobId: input.jobId,
+    jobNumber: resolvedJobNumber,
+    quoteId: input.draftQuoteId ?? quote?.id ?? null,
+    quoteNumber: quote?.number ?? null,
+    invoiceId: input.draftInvoiceId ?? invoice?.id ?? null,
+    invoiceNumber: invoice?.number ?? null,
+    supplierId: null,
+    supplierName: null,
+    staffId: input.staffId,
+    staffName: input.staffName,
+  };
+}
+
+function buildWorkspaceIntegrations(
+  providerStatuses: ProviderStatusRow[],
+  personalAccountCount: number,
+): CommunicationsChannelIntegration[] {
+  const whatsapp = providerStatuses.find((row) => row.provider === 'whatsapp');
+  const email = providerStatuses.find((row) => row.provider === 'email');
+  const sms = providerStatuses.find((row) => row.provider === 'sms');
+
+  const mapState = (row: ProviderStatusRow | undefined): CommunicationsIntegrationState => {
+    if (!row) return 'not_configured';
+    if (row.connectionStatus === 'connected') {
+      return row.syncStatus === 'running' ? 'syncing' : 'connected';
+    }
+    if (row.connectionStatus === 'error') return 'error';
+    return 'not_configured';
+  };
+
+  return COMMUNICATIONS_WORKSPACE_CHANNEL_OPTIONS.map((option) => {
+    if (option.value === 'whatsapp_business') {
+      const state = mapState(whatsapp);
+      return {
+        channel: option.value,
+        label: option.label,
+        state,
+        detail:
+          state === 'connected' || state === 'syncing'
+            ? 'WhatsApp Business provider connected on staging.'
+            : 'WhatsApp Business not configured — connect Meta credentials in Integrations.',
+      };
+    }
+    if (option.value === 'personal_whatsapp') {
+      if (personalAccountCount === 0) {
+        return {
+          channel: option.value,
+          label: option.label,
+          state: 'provider_unavailable',
+          detail: 'Provider feature unavailable — personal WhatsApp is not connected.',
+        };
+      }
+      return {
+        channel: option.value,
+        label: option.label,
+        state: 'not_configured',
+        detail: 'Personal account registered but no live personal WhatsApp sync on staging.',
+      };
+    }
+    if (option.value === 'email') {
+      const state = mapState(email);
+      return {
+        channel: option.value,
+        label: option.label,
+        state,
+        detail:
+          state === 'connected' || state === 'syncing'
+            ? 'Email provider connected.'
+            : 'Email SMTP/IMAP not configured on staging.',
+      };
+    }
+    if (option.value === 'sms') {
+      const state = mapState(sms);
+      return {
+        channel: option.value,
+        label: option.label,
+        state: state === 'not_configured' ? 'provider_unavailable' : state,
+        detail: 'SMS provider not integrated on staging.',
+      };
+    }
+    if (option.value === 'calls') {
+      return {
+        channel: option.value,
+        label: option.label,
+        state: 'not_configured',
+        detail: 'Voice/calls adapter present — no live telephony provider on staging.',
+      };
+    }
+    return {
+      channel: option.value,
+      label: option.label,
+      state: 'connected',
+      detail: 'Internal system messages, portal requests, and support escalations.',
+    };
+  });
 }
 
 function toRecordingSummary(

@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'wouter';
 
 const tabs = [
+  { href: '/communications/inbox', label: 'Inbox' },
   { href: '/communications/messages', label: 'History' },
   { href: '/communications/templates', label: 'Templates' },
 ];

@@ -104,3 +104,114 @@ export type CreateCommunicationRequest = {
   occurredAt?: string;
   clientActionId?: string | null;
 };
+
+/** Phase 10 — unified communications workspace channels. */
+export type CommunicationsWorkspaceChannel =
+  | 'whatsapp_business'
+  | 'personal_whatsapp'
+  | 'email'
+  | 'sms'
+  | 'calls'
+  | 'system';
+
+export type CommunicationsWorkspaceQueue =
+  | 'unread'
+  | 'needs_reply'
+  | 'waiting_for_customer'
+  | 'booking'
+  | 'eta_delay'
+  | 'quote_followup'
+  | 'payment_followup'
+  | 'complaint'
+  | 'supplier'
+  | 'cv_recruitment'
+  | 'marketing_opt_out'
+  | 'escalated';
+
+export type CommunicationsIntegrationState =
+  | 'connected'
+  | 'syncing'
+  | 'not_configured'
+  | 'provider_unavailable'
+  | 'error';
+
+export const COMMUNICATIONS_WORKSPACE_QUEUE_OPTIONS: Array<{
+  value: CommunicationsWorkspaceQueue;
+  label: string;
+}> = [
+  { value: 'unread', label: 'Unread' },
+  { value: 'needs_reply', label: 'Needs Reply' },
+  { value: 'waiting_for_customer', label: 'Waiting for Customer' },
+  { value: 'booking', label: 'Booking' },
+  { value: 'eta_delay', label: 'ETA / Delay' },
+  { value: 'quote_followup', label: 'Quote Follow-up' },
+  { value: 'payment_followup', label: 'Payment Follow-up' },
+  { value: 'complaint', label: 'Complaint' },
+  { value: 'supplier', label: 'Supplier' },
+  { value: 'cv_recruitment', label: 'CV / Recruitment' },
+  { value: 'marketing_opt_out', label: 'Marketing Opt-out' },
+  { value: 'escalated', label: 'Escalated' },
+];
+
+export const COMMUNICATIONS_WORKSPACE_CHANNEL_OPTIONS: Array<{
+  value: CommunicationsWorkspaceChannel;
+  label: string;
+}> = [
+  { value: 'whatsapp_business', label: 'WhatsApp Business' },
+  { value: 'personal_whatsapp', label: 'Personal WhatsApp' },
+  { value: 'email', label: 'Email' },
+  { value: 'sms', label: 'SMS' },
+  { value: 'calls', label: 'Calls' },
+  { value: 'system', label: 'System messages' },
+];
+
+export type CommunicationsChannelIntegration = {
+  channel: CommunicationsWorkspaceChannel;
+  label: string;
+  state: CommunicationsIntegrationState;
+  detail: string | null;
+};
+
+export type CommunicationsWorkspaceEntityLinks = {
+  leadId: string | null;
+  leadName: string | null;
+  customerId: string | null;
+  customerName: string | null;
+  jobId: string | null;
+  jobNumber: string | null;
+  quoteId: string | null;
+  quoteNumber: string | null;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  supplierId: string | null;
+  supplierName: string | null;
+  staffId: string | null;
+  staffName: string | null;
+};
+
+export type CommunicationsWorkspaceConversation = {
+  id: string;
+  channel: CommunicationsWorkspaceChannel;
+  queues: CommunicationsWorkspaceQueue[];
+  direction: 'inbound' | 'outbound' | 'internal';
+  subject: string;
+  preview: string;
+  isUnread: boolean;
+  occurredAt: string;
+  sourceType: string;
+  sourceId: string;
+  entities: CommunicationsWorkspaceEntityLinks;
+};
+
+export type CommunicationsWorkspaceQueueSummary = {
+  queue: CommunicationsWorkspaceQueue;
+  label: string;
+  count: number;
+};
+
+export type CommunicationsWorkspaceResponse = {
+  summary: string;
+  integrations: CommunicationsChannelIntegration[];
+  queueSummaries: CommunicationsWorkspaceQueueSummary[];
+  conversations: CommunicationsWorkspaceConversation[];
+};

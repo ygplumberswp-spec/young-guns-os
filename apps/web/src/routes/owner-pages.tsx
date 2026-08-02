@@ -228,6 +228,11 @@ export const MessageListPage = lazyNamed(
   () => import('../pages/communications/MessageListPage'),
   'MessageListPage',
 );
+
+export const CommunicationsWorkspacePage = lazyNamed(
+  () => import('../pages/communications/CommunicationsWorkspacePage'),
+  'CommunicationsWorkspacePage',
+);
 export const MessageCreatePage = lazyNamed(
   () => import('../pages/communications/MessageCreatePage'),
   'MessageCreatePage',
