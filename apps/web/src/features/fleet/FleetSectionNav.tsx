@@ -6,9 +6,7 @@ const tabs = [
   { href: '/fleet/trips', label: 'Trips' },
   { href: '/fleet/alerts', label: 'Alerts' },
   { href: '/fleet/drivers', label: 'Drivers' },
-  { href: '/fleet/geofences', label: 'Geofences' },
-  { href: '/fleet/route-history', label: 'Route History' },
-  { href: '/fleet/events', label: 'Events' },
+  { href: '/fleet/geofences', label: 'Places' },
   { href: '/fleet/maintenance', label: 'Maintenance' },
   { href: '/fleet/reports', label: 'Reports' },
 ];

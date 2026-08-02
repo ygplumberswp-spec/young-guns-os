@@ -188,6 +188,30 @@ export const FleetLiveMapPage = lazyNamed(
   () => import('../pages/fleet/FleetLiveMapPage'),
   'FleetLiveMapPage',
 );
+export const FleetTripsPage = lazyNamed(
+  () => import('../pages/fleet/FleetTripsPage'),
+  'FleetTripsPage',
+);
+export const FleetAlertsPage = lazyNamed(
+  () => import('../pages/fleet/FleetAlertsPage'),
+  'FleetAlertsPage',
+);
+export const FleetDriversPage = lazyNamed(
+  () => import('../pages/fleet/FleetDriversPage'),
+  'FleetDriversPage',
+);
+export const FleetGeofencesPage = lazyNamed(
+  () => import('../pages/fleet/FleetGeofencesPage'),
+  'FleetGeofencesPage',
+);
+export const FleetMaintenancePage = lazyNamed(
+  () => import('../pages/fleet/FleetMaintenancePage'),
+  'FleetMaintenancePage',
+);
+export const FleetReportsPage = lazyNamed(
+  () => import('../pages/fleet/FleetReportsPage'),
+  'FleetReportsPage',
+);
 export const MessageListPage = lazyNamed(
   () => import('../pages/communications/MessageListPage'),
   'MessageListPage',

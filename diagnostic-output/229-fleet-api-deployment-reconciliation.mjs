@@ -152,7 +152,7 @@ async function main() {
   const report = {
     generatedAt: new Date().toISOString(),
     label: '229-fleet-api-deployment-reconciliation',
-    branch: 'cursor/titan-final-product-consolidation',
+    branch: 'cursor/titan-owner-operating-model-final',
     consolidationCommitSha: consolidationSha,
     consolidationCommitShort: consolidationShort,
     merge: {

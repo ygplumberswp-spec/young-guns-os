@@ -2,10 +2,9 @@ import { useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { FLEET_MOVEMENT_LABELS } from '@titan/shared';
 import { Button, Panel } from '@titan/ui';
-import { PageHeader } from '../../components/ux';
 import { useAuth } from '../../lib/auth-context';
 import { canAccessFleet } from '../../features/fleet/VehicleList';
-import { FleetSectionNav } from '../../features/fleet/FleetSectionNav';
+import { FleetWorkspaceShell } from '../../features/fleet/FleetWorkspaceShell';
 import { FleetLiveMapCanvas } from '../../features/fleet/FleetLiveMapCanvas';
 import { FleetVehicleSidePanel } from '../../features/fleet/FleetVehicleSidePanel';
 import { useFleetLiveMap } from '../../features/fleet/useFleetLiveMap';
@@ -40,30 +39,28 @@ export function FleetLiveMapPage() {
 
   if (!canView) {
     return (
-      <div className="page-stack fleet-page">
-        <FleetSectionNav />
-        <PageHeader title="Fleet Live Map" description="You do not have permission to view fleet." />
-      </div>
+      <FleetWorkspaceShell title="Live Map" description="You do not have permission to view fleet.">
+        <p className="page-muted">Fleet read permission required.</p>
+      </FleetWorkspaceShell>
     );
   }
 
   return (
-    <div className="page-stack fleet-page fleet-live-map-page">
-      <FleetSectionNav />
-      <PageHeader
-        title="Fleet Live Map"
-        description="Live Cartrack positions from TITAN cache — UI refreshes every 3 seconds while visible."
-        actions={
-          <div className="page-header-actions">
-            <Link href="/mobile-platform/dispatcher">
-              <Button variant="secondary">Live Dispatch</Button>
-            </Link>
-            <Button variant="secondary" onClick={() => void refresh()} disabled={isPolling}>
-              {isPolling ? 'Refreshing…' : 'Refresh now'}
-            </Button>
-          </div>
-        }
-      />
+    <FleetWorkspaceShell
+      title="Live Map"
+      description="Live Cartrack positions from TITAN cache — UI refreshes every 3 seconds while visible."
+      actions={
+        <div className="page-header-actions">
+          <Link href="/mobile-platform/dispatcher">
+            <Button variant="secondary">Live Dispatch</Button>
+          </Link>
+          <Button variant="secondary" onClick={() => void refresh()} disabled={isPolling}>
+            {isPolling ? 'Refreshing…' : 'Refresh now'}
+          </Button>
+        </div>
+      }
+    >
+      <div className="fleet-live-map-page">
 
       <Panel title="Fleet sync status">
         <dl className="integration-status-list">
@@ -187,6 +184,7 @@ export function FleetLiveMapPage() {
           </div>
         ) : null}
       </div>
-    </div>
+      </div>
+    </FleetWorkspaceShell>
   );
 }

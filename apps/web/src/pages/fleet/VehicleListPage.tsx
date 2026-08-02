@@ -1,4 +1,3 @@
-import { PageHeader } from '../../components/ux';
 import { useMemo } from 'react';
 import { Link } from 'wouter';
 import { Button, PageLoadState } from '@titan/ui';
@@ -7,6 +6,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { canAccessFleet, canManageFleet, VehicleList } from '../../features/fleet/VehicleList';
 import { FleetDispatchBoard } from '../../features/fleet/FleetDispatchBoard';
+import { FleetWorkspaceShell } from '../../features/fleet/FleetWorkspaceShell';
 
 export function VehicleListPage() {
   const { accessToken, user } = useAuth();
@@ -28,31 +28,29 @@ export function VehicleListPage() {
 
   if (!canView) {
     return (
-      <div className="fleet-page">
-        <PageHeader title="Fleet" description="You do not have permission to view fleet." />
-      </div>
+      <FleetWorkspaceShell title="Vehicles" description="You do not have permission to view fleet.">
+        <p className="page-muted">Fleet read permission required.</p>
+      </FleetWorkspaceShell>
     );
   }
 
   return (
-    <div className="fleet-page">
-      <PageHeader
-        title="Fleet"
-        description="Manage company vehicles, live GPS map, and today's dispatch board."
-        actions={
-          <div className="page-header-actions">
-            <Link href="/fleet/live-map">
-              <Button variant="secondary">Live Map</Button>
+    <FleetWorkspaceShell
+      title="Vehicles"
+      description="TITAN vehicle registry — live GPS on Live Map tab (Cartrack cache)."
+      actions={
+        <div className="page-header-actions">
+          <Link href="/fleet/live-map">
+            <Button variant="secondary">Live Map</Button>
+          </Link>
+          {canWrite ? (
+            <Link href="/fleet/new">
+              <Button>Add vehicle</Button>
             </Link>
-            {canWrite ? (
-              <Link href="/fleet/new">
-                <Button>Add vehicle</Button>
-              </Link>
-            ) : null}
-          </div>
-        }
-      />
-
+          ) : null}
+        </div>
+      }
+    >
       <FleetDispatchBoard />
 
       <PageLoadState
@@ -65,6 +63,6 @@ export function VehicleListPage() {
       >
         <VehicleList vehicles={vehicles ?? []} canWrite={canWrite} />
       </PageLoadState>
-    </div>
+    </FleetWorkspaceShell>
   );
 }
