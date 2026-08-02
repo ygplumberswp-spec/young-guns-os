@@ -3,7 +3,7 @@
   "label": "231-titan-owner-operating-model-final-verify",
   "generatedAt": "2026-08-02T10:44:24.749Z",
   "branch": "cursor/titan-owner-operating-model-final",
-  "commitSha": "37038d2",
+  "commitSha": "08cb0f9c42db3e425740b4f09860c5c4f0234a56",
   "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
   "stagingApi": "https://young-guns-os-staging.up.railway.app",
   "auth": {
