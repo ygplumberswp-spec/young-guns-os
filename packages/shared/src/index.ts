@@ -96,6 +96,8 @@ export * from './integration-api-management.js';
 export * from './portal-experience.js';
 export * from './mobile-workforce.js';
 export * from './business-day-timeline.js';
+export * from './young-guns-payroll.js';
+export * from './owner-workforce.js';
 export * from './boq.js';
 export * from './drafts.js';
 export * from './job-evidence.js';

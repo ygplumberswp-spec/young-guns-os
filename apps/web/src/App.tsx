@@ -196,6 +196,10 @@ export function App() {
                         <Route path="/app-builder" component={OwnerPages.AppBuilderPage} />
                         <Route path="/industry-packs" component={OwnerPages.IndustryPacksPage} />
                         <Route
+                          path="/workforce/owner"
+                          component={OwnerPages.OwnerWorkforcePage}
+                        />
+                        <Route
                           path="/workforce/manager"
                           component={OwnerPages.ManagerWorkspacePage}
                         />

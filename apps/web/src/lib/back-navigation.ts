@@ -81,6 +81,7 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/integrations\/[^/]+$/, fallback: '/integrations' },
 
   // Workforce sub-pages
+  { match: /^\/workforce\/owner$/, fallback: '/workforce-intelligence' },
   { match: /^\/workforce\/manager$/, fallback: '/workforce-intelligence' },
   { match: /^\/workforce\/self-service$/, fallback: '/workforce-intelligence' },
 

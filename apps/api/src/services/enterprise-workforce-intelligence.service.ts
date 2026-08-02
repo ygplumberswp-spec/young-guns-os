@@ -1,4 +1,4 @@
-import { and, count, desc, eq, gte, lte, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNotNull, lt, lte, sql } from 'drizzle-orm';
 import type {
   CreateWiHrActionDraftRequest,
   CreateWiLeaveApplicationRequest,
@@ -12,6 +12,9 @@ import type {
   CorrectWiTimesheetRequest,
   EnterpriseWorkforceIntelligenceAuraContext,
   EnterpriseWorkforceIntelligenceDashboard,
+  OwnerWorkforceMember,
+  OwnerWorkforceMemberStatus,
+  OwnerWorkforceView,
   UpdateWiPlatformConfigRequest,
   WiAnalyticsSummary,
   WiCustomerTechnicianProfileSummary,
@@ -35,9 +38,16 @@ import type {
   WiWorkforceCategorySummary,
   WiWorkforceProfileSummary,
 } from '@titan/shared';
+import {
+  YOUNG_GUNS_PAYROLL_RULES,
+  aggregateYoungGunsHoursFromPairs,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
+  jobs,
+  mobileTimeEntries,
   users,
+  vehicles,
   wiAnalyticsSnapshots,
   wiAuditLogs,
   wiHrActionDrafts,
@@ -298,6 +308,265 @@ export class EnterpriseWorkforceIntelligenceService {
       certificationGapCount,
       standbyCoverageGaps:
         overtimeWarningCount > 0 ? ['High workload detected — review standby roster'] : [],
+    };
+  }
+
+  async getOwnerWorkforceView(companyId: string, dateIso?: string): Promise<OwnerWorkforceView> {
+    const date = dateIso ?? new Date().toISOString().slice(0, 10);
+    const start = new Date(`${date}T00:00:00.000Z`);
+    const end = new Date(`${date}T23:59:59.999Z`);
+    const now = Date.now();
+
+    const [
+      teamMembers,
+      todayJobs,
+      completedToday,
+      delayedJobs,
+      timeEntries,
+      vehiclesRows,
+      timesheets,
+      leaveApplications,
+      certifications,
+      calendar,
+    ] = await Promise.all([
+      this.deps.db.query.users.findMany({
+        where: and(eq(users.companyId, companyId), eq(users.isActive, true)),
+        with: { role: true },
+        orderBy: [users.firstName, users.lastName],
+      }),
+      this.deps.db.query.jobs.findMany({
+        where: and(
+          eq(jobs.companyId, companyId),
+          gte(jobs.scheduledAt, start),
+          lte(jobs.scheduledAt, end),
+          inArray(jobs.status, ['scheduled', 'in_progress']),
+        ),
+        columns: { id: true, title: true, jobNumber: true, status: true, assignedUserId: true, scheduledAt: true },
+        orderBy: [jobs.scheduledAt],
+      }),
+      this.deps.db.query.jobs.findMany({
+        where: and(
+          eq(jobs.companyId, companyId),
+          eq(jobs.status, 'completed'),
+          gte(jobs.updatedAt, start),
+          lte(jobs.updatedAt, end),
+        ),
+        columns: { id: true, assignedUserId: true },
+      }),
+      this.deps.db.query.jobs.findMany({
+        where: and(
+          eq(jobs.companyId, companyId),
+          isNotNull(jobs.scheduledAt),
+          lt(jobs.scheduledAt, new Date(now)),
+          inArray(jobs.status, ['scheduled', 'in_progress']),
+        ),
+        columns: { assignedUserId: true, scheduledAt: true },
+      }),
+      this.deps.db.query.mobileTimeEntries.findMany({
+        where: and(
+          eq(mobileTimeEntries.companyId, companyId),
+          gte(mobileTimeEntries.startedAt, start),
+          lte(mobileTimeEntries.startedAt, end),
+        ),
+        orderBy: [mobileTimeEntries.startedAt],
+      }),
+      this.deps.db.query.vehicles.findMany({
+        where: eq(vehicles.companyId, companyId),
+        columns: { id: true, name: true, licensePlate: true, assignedUserId: true },
+      }),
+      this.deps.db.query.wiTimesheets.findMany({
+        where: and(
+          eq(wiTimesheets.companyId, companyId),
+          lte(wiTimesheets.periodStart, date),
+          gte(wiTimesheets.periodEnd, date),
+        ),
+      }),
+      this.deps.db.query.wiLeaveApplications.findMany({
+        where: and(
+          eq(wiLeaveApplications.companyId, companyId),
+          inArray(wiLeaveApplications.status, ['approved', 'pending']),
+          lte(wiLeaveApplications.startDate, date),
+          gte(wiLeaveApplications.endDate, date),
+        ),
+      }),
+      this.deps.workforceService.listCertifications(companyId),
+      this.deps.schedulingService.getCalendar(companyId, start, end),
+    ]);
+
+    const fieldMembers = teamMembers.filter((member) => {
+      const role = member.role?.name?.toLowerCase() ?? '';
+      return (
+        role.includes('technician') ||
+        role.includes('installer') ||
+        role.includes('field') ||
+        role.includes('dispatcher')
+      );
+    });
+    const roster = fieldMembers.length > 0 ? fieldMembers : teamMembers.slice(0, 20);
+
+    const jobsByAssignee = new Map<string, typeof todayJobs>();
+    for (const job of todayJobs) {
+      if (!job.assignedUserId) continue;
+      const list = jobsByAssignee.get(job.assignedUserId) ?? [];
+      list.push(job);
+      jobsByAssignee.set(job.assignedUserId, list);
+    }
+
+    const completedByUser = new Map<string, number>();
+    for (const job of completedToday) {
+      if (!job.assignedUserId) continue;
+      completedByUser.set(job.assignedUserId, (completedByUser.get(job.assignedUserId) ?? 0) + 1);
+    }
+
+    const vehicleByUser = new Map(
+      vehiclesRows
+        .filter((row) => row.assignedUserId)
+        .map((row) => [row.assignedUserId!, row]),
+    );
+
+    const timesheetsByUser = new Set(timesheets.map((row) => row.userId));
+    const leaveUserIds = new Set(leaveApplications.map((row) => row.userId));
+
+    const certsByUser = new Map<string, typeof certifications>();
+    for (const cert of certifications) {
+      const list = certsByUser.get(cert.userId) ?? [];
+      list.push(cert);
+      certsByUser.set(cert.userId, list);
+    }
+
+    const members: OwnerWorkforceMember[] = roster.map((member) => {
+      const assigned = jobsByAssignee.get(member.id) ?? [];
+      const inProgress = assigned.find((job) => job.status === 'in_progress');
+      const next = assigned.find((job) => job.status === 'scheduled');
+      const userTimeEntries = timeEntries.filter((entry) => entry.userId === member.id);
+      const openEntry = userTimeEntries.find((entry) => !entry.endedAt);
+      const clockInEntry = userTimeEntries.find((entry) => entry.entryType === 'clock_in');
+      const hasScheduledToday = calendar.events.some(
+        (event) => event.assignedUserId === member.id && event.status === 'scheduled',
+      );
+
+      let status: OwnerWorkforceMemberStatus = 'available';
+      if (leaveUserIds.has(member.id)) {
+        status = 'leave';
+      } else if (openEntry?.entryType === 'travel') {
+        status = 'travelling';
+      } else if (openEntry?.entryType === 'job_time' || inProgress) {
+        status = 'on_site';
+      } else if (assigned.length === 0 && !hasScheduledToday) {
+        status = 'off_duty';
+      } else if (inProgress || assigned.length > 0) {
+        status = 'working';
+      }
+
+      const clockPairs: Array<{ clockInAt: Date; clockOutAt: Date }> = [];
+      let pendingClockIn: Date | null = null;
+      for (const entry of userTimeEntries) {
+        if (entry.entryType === 'clock_in') {
+          pendingClockIn = entry.startedAt;
+        } else if (entry.entryType === 'clock_out' && pendingClockIn) {
+          clockPairs.push({
+            clockInAt: pendingClockIn,
+            clockOutAt: entry.endedAt ?? entry.startedAt,
+          });
+          pendingClockIn = null;
+        }
+      }
+      if (pendingClockIn && openEntry?.entryType === 'clock_out') {
+        clockPairs.push({
+          clockInAt: pendingClockIn,
+          clockOutAt: openEntry.endedAt ?? openEntry.startedAt,
+        });
+      }
+
+      const hoursResult =
+        clockPairs.length > 0
+          ? aggregateYoungGunsHoursFromPairs(clockPairs)
+          : {
+              standardHours: 0,
+              overtimeHours: 0,
+              breakHours: 0,
+              saturdayOvertime: false,
+              grossMinutes: 0,
+              netMinutes: 0,
+            };
+
+      const missingCheckIn =
+        hasScheduledToday &&
+        !clockInEntry &&
+        !inProgress &&
+        assigned.some((job) => job.status === 'scheduled');
+
+      const isDelayed = delayedJobs.some(
+        (job) =>
+          job.assignedUserId === member.id &&
+          job.scheduledAt &&
+          job.scheduledAt.getTime() < now,
+      );
+
+      const vehicle = vehicleByUser.get(member.id);
+      const memberCerts = (certsByUser.get(member.id) ?? []).slice(0, 5).map((cert) => ({
+        name: cert.name,
+        expiresAt: cert.expiresAt,
+        isExpiringSoon:
+          cert.expiresAt != null &&
+          new Date(cert.expiresAt).getTime() <= now + 30 * 86_400_000,
+      }));
+
+      const missingTimesheet =
+        hasScheduledToday && !timesheetsByUser.has(member.id) && userTimeEntries.length > 0;
+
+      return {
+        userId: member.id,
+        name: `${member.firstName ?? ''} ${member.lastName ?? ''}`.trim() || member.email,
+        roleName: member.role?.name ?? null,
+        status,
+        attendance: {
+          checkedIn: Boolean(clockInEntry),
+          checkInAt: clockInEntry?.startedAt.toISOString() ?? null,
+          missingCheckIn,
+        },
+        currentJob: inProgress
+          ? { id: inProgress.id, title: inProgress.title, jobNumber: inProgress.jobNumber }
+          : null,
+        nextJob: next
+          ? { id: next.id, title: next.title, jobNumber: next.jobNumber }
+          : null,
+        vehicle: vehicle
+          ? { id: vehicle.id, name: vehicle.name, licensePlate: vehicle.licensePlate }
+          : null,
+        hoursToday: {
+          standardHours: hoursResult.standardHours,
+          overtimeHours: hoursResult.overtimeHours,
+          totalHours: hoursResult.standardHours + hoursResult.overtimeHours,
+          breakHours: hoursResult.breakHours,
+          saturdayOvertime: hoursResult.saturdayOvertime,
+        },
+        jobsCompletedToday: completedByUser.get(member.id) ?? 0,
+        isDelayed,
+        missingTimesheet,
+        onLeave: leaveUserIds.has(member.id),
+        certifications: memberCerts,
+      };
+    });
+
+    const summary = {
+      teamCount: members.length,
+      checkedInCount: members.filter((member) => member.attendance.checkedIn).length,
+      missingCheckInCount: members.filter((member) => member.attendance.missingCheckIn).length,
+      overtimeHoursTotal: members.reduce((sum, member) => sum + member.hoursToday.overtimeHours, 0),
+      missingTimesheetsCount: members.filter((member) => member.missingTimesheet).length,
+      onLeaveCount: members.filter((member) => member.onLeave).length,
+      delayedCount: members.filter((member) => member.isDelayed).length,
+      jobsCompletedToday: completedToday.length,
+    };
+
+    return {
+      date,
+      payrollRules: YOUNG_GUNS_PAYROLL_RULES,
+      summary,
+      members,
+      disclaimer:
+        'Owner workforce view uses real attendance, jobs, vehicles, and timesheet records only. Payroll preparation requires approval; corrections are audited. No demo payroll data is shown.',
     };
   }
 

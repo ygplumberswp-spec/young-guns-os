@@ -256,6 +256,25 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     'workforce_intelligence:manage',
   );
   const requireManage = requireAnyPermission('workforce_intelligence:manage', 'platform:manage');
+  const requireOwnerWorkforce = requireAnyPermission(
+    'workforce:write',
+    'workforce_intelligence:manage',
+    'executive:read',
+  );
+
+  router.get('/owner-workforce', requireStaffAuth, requireOwnerWorkforce, async (req, res) => {
+    try {
+      const auth = getAuth(req);
+      const dateParam = typeof req.query.date === 'string' ? req.query.date : undefined;
+      const view = await deps.enterpriseWorkforceIntelligenceService.getOwnerWorkforceView(
+        auth.companyId,
+        dateParam,
+      );
+      res.json({ data: { view } });
+    } catch (error) {
+      handleError(error, res);
+    }
+  });
 
   router.get('/dashboard', requireStaffAuth, requireRead, async (req, res) => {
     try {
@@ -489,6 +508,39 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
       const auth = getAuth(req);
       const status = typeof req.query.status === 'string' ? req.query.status : undefined;
       const userId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+
+      if (!userId) {
+        const canViewAll =
+          auth.permissions.includes('*') ||
+          auth.permissions.includes('workforce:write') ||
+          auth.permissions.includes('workforce_intelligence:manage') ||
+          auth.permissions.includes('workforce_intelligence:write');
+        if (!canViewAll) {
+          res.status(403).json({
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Workforce-wide timesheets require manager or owner permissions',
+            },
+          });
+          return;
+        }
+      } else if (userId !== auth.userId) {
+        const canViewOthers =
+          auth.permissions.includes('*') ||
+          auth.permissions.includes('workforce:write') ||
+          auth.permissions.includes('workforce_intelligence:manage') ||
+          auth.permissions.includes('workforce_intelligence:write');
+        if (!canViewOthers) {
+          res.status(403).json({
+            error: {
+              code: 'FORBIDDEN',
+              message: 'You may only view your own timesheets',
+            },
+          });
+          return;
+        }
+      }
+
       const timesheets = await deps.enterpriseWorkforceIntelligenceService.listTimesheets(
         auth.companyId,
         {
@@ -706,7 +758,7 @@ export function createEnterpriseWorkforceIntelligenceRouter(deps: RouterDeps): R
     },
   );
 
-  router.get('/payroll/preparations', requireStaffAuth, requireRead, async (req, res) => {
+  router.get('/payroll/preparations', requireStaffAuth, requireWrite, async (req, res) => {
     try {
       const auth = getAuth(req);
       const preparations =

@@ -140,6 +140,9 @@ export function WorkforceIntelligencePage() {
         description="Enterprise workforce registry, HR, payroll preparation, and technician performance. Real operational data only."
         actions={
           <div className="page-header-actions">
+            <Link href="/workforce/owner">
+              <Button variant="secondary">Owner Workforce</Button>
+            </Link>
             <Link href="/workforce/manager">
               <Button variant="secondary">Manager Workspace</Button>
             </Link>

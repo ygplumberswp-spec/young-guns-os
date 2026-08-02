@@ -18,6 +18,15 @@ export function canManageWorkforceIntelligence(permissions: string[]) {
   );
 }
 
+export function canAccessOwnerWorkforce(permissions: string[]) {
+  return (
+    permissions.includes('workforce:write') ||
+    permissions.includes('workforce_intelligence:manage') ||
+    permissions.includes('executive:read') ||
+    permissions.includes('*')
+  );
+}
+
 export function formatLifecycleStage(stage: string) {
   return stage.replace(/_/g, ' ');
 }

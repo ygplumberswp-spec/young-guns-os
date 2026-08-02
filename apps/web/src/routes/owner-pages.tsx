@@ -71,6 +71,10 @@ export const BusinessDayTimelinePage = lazyNamed(
   () => import('../pages/workforce/BusinessDayTimelinePage'),
   'BusinessDayTimelinePage',
 );
+export const OwnerWorkforcePage = lazyNamed(
+  () => import('../pages/workforce/OwnerWorkforcePage'),
+  'OwnerWorkforcePage',
+);
 export const QuoteListPage = lazyNamed(
   () => import('../pages/finance/QuoteListPage'),
   'QuoteListPage',
