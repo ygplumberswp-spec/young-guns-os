@@ -164,9 +164,9 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 
 | Metric | Before | After | Staging impact |
 |--------|-------:|------:|----------------|
-| Orphan/hidden staff routes | 113 | **61** | Operational deep links retained |
-| NO-GO scaffolds exposed via deep link | 55 | **3** | 52 gated (redirect, not blank page) |
-| Disposition: HIDE_REDIRECT | — | 50 | Parent or `/enterprise-modules` |
+| Orphan/hidden staff routes | 113 | **63** | Operational deep links retained |
+| NO-GO scaffolds exposed via deep link | 55 | **1** | 54 gated via 50 rules (redirect, not blank page) |
+| Disposition: HIDE_REDIRECT | — | 48 | Parent or `/enterprise-modules` |
 | Disposition: REMOVE (alias) | — | 2 | `/developers`, `/marketing-intelligence` |
 | Disposition: RETAIN_COMPLETE | — | 111 | GO/HOLD ops + `/global-search` |
 

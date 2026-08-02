@@ -21,8 +21,8 @@
 | Auth routes | 7 |
 | **Total inventoried routes** | **163** |
 | Sidebar-linked staff routes | 22 |
-| Orphan/hidden staff routes | **61** (post-252; was 113) |
-| Scaffold deep links gated | **52** (50 HIDE_REDIRECT + 2 REMOVE aliases) |
+| Orphan/hidden staff routes | **63** (post-252; was 113) |
+| Scaffold deep links gated | **50** rules (48 HIDE_REDIRECT + 2 REMOVE aliases) |
 | Missing Back button (excl. design) | 0 |
 | Missing PageHeader | 1 |
 
@@ -32,14 +32,14 @@
 |---------|------:|---------|
 | **GO** | 62 | Route exists, staging evidence or DB truth, usable for daily ops (may still have Phase 1–18 enhancement gaps) |
 | **HOLD** | 46 | Partial implementation, missing Phase requirements, or re-verification needed |
-| **NO-GO** | 55 | Decorative, orphan enterprise, scaffold, or blocked — **52 gated @ Phase 252** |
+| **NO-GO** | 55 | Decorative, orphan enterprise, scaffold, or blocked — **54 gated @ Phase 252** |
 
 ### Phase 252 orphan cleanup disposition
 
 | Disposition | Count | Action |
 |-------------|------:|--------|
 | **RETAIN_COMPLETE** | 111 | GO/HOLD operational deep links + `/global-search` override |
-| **HIDE_REDIRECT** | 50 | Redirect to parent module or `/enterprise-modules` |
+| **HIDE_REDIRECT** | 48 | Redirect to parent module or `/enterprise-modules` |
 | **REMOVE** | 2 | Duplicate aliases `/developers`, `/marketing-intelligence` |
 
 See `TITAN_ORPHAN_ROUTE_CLEANUP_REPORT.md` for per-route table.
@@ -77,7 +77,7 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`, group
 | Flag | Count / detail |
 |------|----------------|
 | Duplicated modules | `/marketing` vs `/marketing-intelligence`; `/sales-intelligence`; `/leads` vs intelligence pages |
-| Unfinished routes | ~~90 orphan enterprise routes not in sidebar~~ → **52 scaffolds gated @ Phase 252** |
+| Unfinished routes | ~~90 orphan enterprise routes not in sidebar~~ → **50 scaffold rules gated @ Phase 252** |
 | Placeholder / foundation copy | Enterprise modules, AI orchestration, asset intelligence |
 | False zeroes | Dashboard mitigated (UX-I); payment_mappings=0 may show $0 paid incorrectly |
 | Missing Back buttons | 1 by design (`/`); `/settings` redirect lacks PageHeader |

@@ -15,8 +15,8 @@
 | Metric | Before | After |
 |--------|-------:|------:|
 | Inventoried staff routes | 138 | 138 (unchanged — conservative redirect, not delete) |
-| Orphan/hidden staff routes | 113 | **61** (52 scaffolds gated) |
-| NO-GO routes exposed via deep link | 55 | **3** (`/global-search` retained + 2 alias redirects chain) |
+| Orphan/hidden staff routes | 113 | **63** (50 scaffold paths gated via 50 rules) |
+| NO-GO routes exposed via deep link | 55 | **1** (`/global-search` retained intentionally) |
 | Sidebar-linked routes | 22 | 22 (no orphan leaks) |
 
 ### Disposition counts (52 cleanup rules)
@@ -24,8 +24,9 @@
 | Disposition | Count | Action |
 |-------------|------:|--------|
 | **RETAIN_COMPLETE** | 111 | Keep route — GO/HOLD operational or intentional deep links |
-| **HIDE_REDIRECT** | 50 | Guard redirects to parent or `/enterprise-modules` |
+| **HIDE_REDIRECT** | 48 | Guard redirects to parent or `/enterprise-modules` |
 | **REMOVE** | 2 | Duplicate aliases redirect (`/developers`, `/marketing-intelligence`) |
+| **Cleanup rules (total)** | **50** | Prefix rules collapse multi-path scaffolds (e.g. `/automation/*`) |
 
 **Overall orphan cleanup verdict:** **GO** (post-staging verify 252)  
 **Finance / Xero / production:** **UNTOUCHED**

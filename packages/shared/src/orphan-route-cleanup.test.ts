@@ -114,6 +114,6 @@ describe('resolveOrphanRouteCleanup', () => {
       assert.notEqual(d.disposition, 'RETAIN_COMPLETE', `expected cleanup for ${path}`);
     }
     assert.equal(resolveOrphanRouteCleanup('/global-search').disposition, 'RETAIN_COMPLETE');
-    assert.equal(ORPHAN_ROUTE_ENTRIES.length, 52);
+    assert.equal(ORPHAN_ROUTE_ENTRIES.length, 50);
   });
 });
