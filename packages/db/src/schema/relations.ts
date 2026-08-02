@@ -274,7 +274,7 @@ import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
 import { userInvites } from './user-invites';
-import { draftWorkspace } from './draft-workspace';
+import { companySchedulingSettings, schedulingOverrideAudits } from './scheduling';
 import { users } from './users';
 
 export const companiesRelations = relations(companies, ({ many }) => ({
@@ -1870,23 +1870,33 @@ export const agentOrchestrationLogsRelations = relations(agentOrchestrationLogs,
   }),
 }));
 
+export const companySchedulingSettingsRelations = relations(
+  companySchedulingSettings,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [companySchedulingSettings.companyId],
+      references: [companies.id],
+    }),
+  }),
+);
 
-export const draftWorkspaceRelations = relations(draftWorkspace, ({ one }) => ({
-  company: one(companies, {
-    fields: [draftWorkspace.companyId],
-    references: [companies.id],
+export const schedulingOverrideAuditsRelations = relations(
+  schedulingOverrideAudits,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [schedulingOverrideAudits.companyId],
+      references: [companies.id],
+    }),
+    job: one(jobs, {
+      fields: [schedulingOverrideAudits.jobId],
+      references: [jobs.id],
+    }),
+    user: one(users, {
+      fields: [schedulingOverrideAudits.userId],
+      references: [users.id],
+    }),
   }),
-  user: one(users, {
-    fields: [draftWorkspace.userId],
-    references: [users.id],
-    relationName: 'draftWorkspaceOwner',
-  }),
-  lastEditedBy: one(users, {
-    fields: [draftWorkspace.lastEditedByUserId],
-    references: [users.id],
-    relationName: 'draftWorkspaceLastEditor',
-  }),
-}));
+);
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, {
