@@ -1,7 +1,7 @@
 {
   "phase": 255,
-  "generatedAt": "2026-08-02T13:39:24.432Z",
-  "gitSha": "fa8ed18a6b55f292d34855520e706df532ec4027",
+  "generatedAt": "2026-08-02T13:56:24.976Z",
+  "gitSha": "053c51fe73f8d3fd6c7c267d5eac29ea8e3dbc82",
   "web": "https://comfortable-determination-staging.up.railway.app",
   "api": "https://young-guns-os-staging.up.railway.app",
   "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -211,9 +211,11 @@
     }
   ],
   "aura": {
-    "buttonPresent": false,
-    "drawerOpened": false,
-    "note": "Portal AURA not surfaced on /my — RBAC isolation still verified"
+    "buttonPresent": true,
+    "drawerOpened": true,
+    "contextIncludesMy": true,
+    "chipCount": 2,
+    "contextLine": "Welcome, RBAC · /my · Client"
   },
   "internalLeakScan": [
     {
@@ -249,7 +251,6 @@
       "leaked": false
     }
   ],
-  "verdict": "HOLD",
-  "productionDeployed": false,
-  "auraHold": "Client portal AURA not yet exposed on /my; staff AURA remains separate"
+  "verdict": "GO",
+  "productionDeployed": false
 }

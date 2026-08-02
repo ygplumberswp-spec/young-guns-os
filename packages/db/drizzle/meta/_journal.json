@@ -813,6 +813,13 @@
       "when": 1754190000000,
       "tag": "0118_department_routine_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 116,
+      "version": "7",
+      "when": 1754193600000,
+      "tag": "0119_credit_notes_billing_recipient",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "phase": 254,
-  "generatedAt": "2026-08-02T13:36:09.680Z",
-  "gitSha": "fa8ed18a6b55f292d34855520e706df532ec4027",
+  "generatedAt": "2026-08-02T13:52:45.746Z",
+  "gitSha": "053c51fe73f8d3fd6c7c267d5eac29ea8e3dbc82",
   "web": "https://comfortable-determination-staging.up.railway.app",
   "api": "https://young-guns-os-staging.up.railway.app",
   "ygpCompanyId": "095aef76-fef5-4139-af37-a42f2d7e2faf",
@@ -70,9 +70,10 @@
     }
   ],
   "invoiceRowActions": {
-    "rowCount": 2,
-    "hasView": true,
-    "hasMore": true
+    "rowCount": 0,
+    "hasView": false,
+    "hasMore": false,
+    "note": "No invoice rows — actions not applicable"
   },
   "leads": {
     "joinedActive": false,
