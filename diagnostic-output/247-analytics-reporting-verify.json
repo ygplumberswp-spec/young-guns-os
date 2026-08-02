@@ -1,0 +1,129 @@
+{
+  "schemaVersion": "phase15-analytics-reporting-v1",
+  "label": "247-analytics-reporting-verify",
+  "generatedAt": "2026-08-02T08:43:48.748Z",
+  "branch": "cursor/titan-owner-operating-model-final",
+  "commitSha": "845fa9cef3ed302b23bbc24b5aea0d26858ea7ec",
+  "stagingWeb": "https://comfortable-determination-staging.up.railway.app",
+  "stagingApi": "https://young-guns-os-staging.up.railway.app",
+  "auth": {
+    "method": "railway_programmatic_session",
+    "secretsInOutput": false
+  },
+  "api": {
+    "status": 200,
+    "hasWorkspace": true,
+    "sectionIds": [
+      "executive",
+      "operational",
+      "financial",
+      "sales"
+    ],
+    "dataSourceCount": 12,
+    "hasRange": true,
+    "hasGeneratedAt": true,
+    "invoicedRevenueKind": "money",
+    "cashReceivedKind": "money",
+    "invoicedSeparateFromCash": true,
+    "metricContractValid": true
+  },
+  "ui": {
+    "viewports": [
+      {
+        "id": "1440",
+        "width": 1440,
+        "height": 1000,
+        "checks": {
+          "hasReportingTitle": true,
+          "hasExecutiveTab": true,
+          "hasOperationalTab": true,
+          "hasFinancialTab": true,
+          "hasSalesTab": true,
+          "hasInvoicedRevenue": true,
+          "hasCashReceived": true,
+          "hasDateRange": true,
+          "hasSourceLabel": true,
+          "separatesInvoicedAndCash": true
+        },
+        "screenshot": "diagnostic-output/phase15-analytics-reporting-staging/phase15-analytics-1440.png"
+      },
+      {
+        "id": "768",
+        "width": 768,
+        "height": 1024,
+        "checks": {
+          "hasReportingTitle": true,
+          "hasExecutiveTab": true,
+          "hasOperationalTab": true,
+          "hasFinancialTab": true,
+          "hasSalesTab": true,
+          "hasInvoicedRevenue": true,
+          "hasCashReceived": true,
+          "hasDateRange": true,
+          "hasSourceLabel": true,
+          "separatesInvoicedAndCash": true
+        },
+        "screenshot": "diagnostic-output/phase15-analytics-reporting-staging/phase15-analytics-768.png"
+      }
+    ]
+  },
+  "blockers": [],
+  "holdMetrics": [
+    {
+      "section": "executive",
+      "id": "average_job_value",
+      "reason": "No completed jobs in period"
+    },
+    {
+      "section": "executive",
+      "id": "quote_conversion",
+      "reason": "No quotes sent in period"
+    },
+    {
+      "section": "executive",
+      "id": "first_time_completion",
+      "reason": "No completed jobs in period"
+    },
+    {
+      "section": "executive",
+      "id": "customer_retention",
+      "reason": "No verified customers"
+    },
+    {
+      "section": "executive",
+      "id": "workforce_utilisation",
+      "reason": "No mobile time entries in period"
+    },
+    {
+      "section": "operational",
+      "id": "travel",
+      "reason": "No travel entries in period"
+    },
+    {
+      "section": "operational",
+      "id": "estimated_vs_actual",
+      "reason": "No jobs with both schedule and logged time"
+    },
+    {
+      "section": "financial",
+      "id": "customer_value",
+      "reason": "No customer payments in period"
+    },
+    {
+      "section": "sales",
+      "id": "response_time",
+      "reason": "No lead activities in period"
+    },
+    {
+      "section": "sales",
+      "id": "quote_value",
+      "reason": "No quotes in period"
+    },
+    {
+      "section": "sales",
+      "id": "follow_up_performance",
+      "reason": "No scheduled follow-ups in period"
+    }
+  ],
+  "verdict": "GO"
+}
