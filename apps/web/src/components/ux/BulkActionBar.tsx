@@ -35,14 +35,14 @@ export function BulkActionBar({
 
   return (
     <div className="ux-bulk-bar" role="toolbar" aria-label="Bulk actions">
-      <label className="ux-bulk-bar__select">
+      <label className="titan-checkbox ux-bulk-bar__select">
         <input
           type="checkbox"
           checked={allSelected}
           onChange={(event) => onSelectAll(event.target.checked)}
           aria-label="Select all rows"
         />
-        <span>
+        <span className="ux-bulk-bar__count">
           {selectedCount > 0 ? `${selectedCount} selected` : `${totalCount} items`}
         </span>
       </label>

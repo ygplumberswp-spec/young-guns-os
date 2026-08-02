@@ -12,8 +12,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useCachedQuery } from '../../lib/use-cached-query';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { canAccessScheduling } from '../../features/scheduling/utils';
-import { SchedulingCalendar, resolveRange } from '../../components/calendar';
-import { useCalendarState } from '../../components/calendar/useCalendarState';
+import { SchedulingCalendar, resolveRange, useCalendarState } from '../../components/calendar';
 import { StatusBadge } from '../../components/ux';
 import { formatTimeRange } from '../../components/calendar/calendar-utils';
 
@@ -21,7 +20,8 @@ import { formatTimeRange } from '../../components/calendar/calendar-utils';
 export function MobileSchedulePage() {
   const { accessToken, user } = useAuth();
   const { invalidateScheduling } = useStaffMutationInvalidation();
-  const { view, anchorDate } = useCalendarState('/mobile/schedule');
+  const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
+    useCalendarState('/mobile/schedule');
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const range = useMemo(() => resolveRange(view, anchorDate), [view, anchorDate]);
@@ -141,7 +141,12 @@ export function MobileSchedulePage() {
         error={calendarError}
         canWrite={false}
         showTechnicianFilter={false}
-        pathname="/mobile/schedule"
+        view={view}
+        anchorDate={anchorDate}
+        filters={filters}
+        onViewChange={setView}
+        onAnchorChange={setAnchorDate}
+        onFiltersChange={setFilters}
         actions={actions}
         compactHeader
         onRefresh={() => void reload()}

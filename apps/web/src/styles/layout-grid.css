@@ -1,29 +1,53 @@
-/* TITAN app-wide layout grid — content width, padding, vertical rhythm */
+/* TITAN V1 responsive layout system — content width, padding, vertical rhythm */
 
 :root {
-  --titan-content-max-width: 87.5rem; /* 1400px */
-  --titan-content-max-width-narrow: 80rem; /* 1280px */
-  --titan-page-padding: clamp(0.75rem, 2vw, 1.5rem);
-  --titan-section-gap: 1.25rem;
+  /* Operational pages use the full main column; forms keep their own readable max-width. */
+  --titan-content-max-width: none;
+  --titan-content-max-width-narrow: min(72rem, 100%);
+  --titan-content-max-width-readable: min(48rem, 100%);
+
+  /* Fluid page / section spacing */
+  --titan-page-padding: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-x: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-y: clamp(0.75rem, 1.25vw, 1.5rem);
+  --titan-section-gap: clamp(1rem, 1.2vw, 1.5rem);
+  --titan-card-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-grid-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-table-gap: clamp(1rem, 1.1vw, 1.25rem);
+
+  /* Form / modal readability caps (not page shells) */
+  --titan-form-max-width: 40rem;
+  --titan-form-max-width-lg: 56rem;
+  --titan-modal-max-width: min(40rem, calc(100vw - 2rem));
+  --titan-modal-max-width-lg: min(56rem, calc(100vw - 2rem));
+
   --titan-rhythm-title: 0;
   --titan-rhythm-subtitle: 0.375rem;
   --titan-rhythm-tabs: 1rem;
   --titan-rhythm-filters: 0.875rem;
-  --titan-rhythm-cards: 1rem;
-  --titan-rhythm-tables: 1.25rem;
+  --titan-rhythm-cards: var(--titan-card-gap);
+  --titan-rhythm-tables: var(--titan-table-gap);
+
   --titan-bp-mobile: 48rem; /* 768px */
   --titan-bp-tablet: 64rem; /* 1024px */
   --titan-bp-desktop-sm: 75rem; /* 1200px */
   --titan-bp-desktop: 90rem; /* 1440px */
+  --titan-bp-desktop-lg: 120rem; /* 1920px */
+
   --titan-summary-card-min: 16rem;
   --titan-summary-grid-gap: var(--titan-rhythm-cards);
   --titan-touch-target-min: 2.75rem; /* 44px */
 }
 
+/* Shell main padding — fluid with monitor size */
+.titan-shell__main {
+  padding: var(--titan-page-pad-y) var(--titan-page-pad-x);
+}
+
 .app-content-container {
   width: 100%;
   max-width: var(--titan-content-max-width);
-  margin-inline: auto;
+  margin-inline: 0;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -33,10 +57,12 @@
 
 .app-content-container--narrow {
   max-width: var(--titan-content-max-width-narrow);
+  margin-inline: auto;
 }
 
 .app-content-container--wide {
   max-width: none;
+  margin-inline: 0;
 }
 
 .page-shell,
@@ -45,12 +71,19 @@
 .scheduling-page,
 .dashboard,
 .settings-page,
-.integrations-page {
+.integrations-page,
+.crm-page,
+.fleet-page,
+.analytics-page,
+.inventory-page,
+.aura-page,
+.leads-page {
   display: flex;
   flex-direction: column;
   gap: var(--titan-section-gap);
   min-width: 0;
   width: 100%;
+  max-width: none;
 }
 
 .ux-page-header {
@@ -60,6 +93,39 @@
 .page-shell .titan-tab-nav,
 .automation-page .titan-tab-nav {
   margin-bottom: var(--titan-rhythm-tabs);
+}
+
+/* Tables / panels expand with the shell */
+.crm-table-wrap,
+.finance-table-wrap,
+.fleet-table-wrap,
+.jobs-table-wrap,
+.inventory-table-wrap,
+.analytics-page__table-wrap,
+.table-scroll {
+  width: 100%;
+  min-width: 0;
+}
+
+.crm-table,
+.finance-table,
+.fleet-table,
+.inventory-table,
+.analytics-page__table,
+.leads-table {
+  width: 100%;
+}
+
+/* Form readability — page shells stay full width */
+.crm-form,
+.fleet-form,
+.inventory-form,
+.jobs-form,
+.leads-form,
+.scheduling-form,
+.settings-form {
+  max-width: var(--titan-form-max-width);
+  width: 100%;
 }
 
 .mission-control-dashboard {
@@ -225,5 +291,80 @@
 @media (max-width: 1023px) {
   .company-health-areas {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Large-desktop / ultrawide — denser auto-fit grids without stretching cards */
+@media (min-width: 1600px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+
+  .analytics-page__stats {
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .analytics-page__grid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+}
+
+/* Scheduling calendar grows with available height/width */
+@media (min-width: 1440px) {
+  .cal-shell {
+    min-height: min(70vh, 44rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(62vh, 38rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 7rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 10rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .cal-shell {
+    min-height: min(74vh, 52rem);
+  }
+
+  .cal-shell__main {
+    min-height: min(66vh, 46rem);
+  }
+
+  .cal-month-grid__cell {
+    min-height: 8.5rem;
+  }
+
+  .scheduling-calendar__day {
+    min-height: 12rem;
+  }
+}
+
+/* Fleet / dispatch boards — map and boards fill the column */
+.fleet-page .titan-panel,
+.fleet-dispatch-board,
+.dispatch-board {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1440px) {
+  .exec-live-ops-fleet,
+  .exec-dashboard-row__wide .titan-panel {
+    min-height: 20rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .exec-dashboard-row__wide .titan-panel {
+    min-height: 24rem;
   }
 }

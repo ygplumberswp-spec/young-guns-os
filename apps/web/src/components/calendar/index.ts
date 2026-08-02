@@ -1,4 +1,5 @@
 export { SchedulingCalendar, resolveRange } from './SchedulingCalendar';
+export { BookJobModal } from './BookJobModal';
 export { CalendarJobCard } from './CalendarJobCard';
 export { CalendarToolbar } from './CalendarToolbar';
 export { CalendarFilters } from './CalendarFilters';

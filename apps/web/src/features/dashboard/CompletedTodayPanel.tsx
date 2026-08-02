@@ -41,6 +41,13 @@ export function CompletedTodayPanel({
         <EmptyState
           title="No jobs completed yet today"
           description="Completed jobs will appear here as technicians finish work."
+          action={
+            <Link href="/jobs?status=completed">
+              <Button size="sm" variant="secondary">
+                View completed jobs
+              </Button>
+            </Link>
+          }
         />
       ) : (
         <ul className="exec-completed-today">

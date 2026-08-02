@@ -193,7 +193,9 @@ export function AppLayout({ children }: AppLayoutProps) {
                       onFocus={() => handleNavIntent(item.href)}
                       onTouchStart={() => handleNavIntent(item.href)}
                     >
-                      <NavIcon name={item.label} />
+                      <span className="app-nav__icon-slot">
+                        <NavIcon name={item.label} />
+                      </span>
                       <span className="app-nav__label">{item.label}</span>
                     </Link>
                   );

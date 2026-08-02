@@ -3,6 +3,11 @@ import { isApiError } from '@titan/shared';
 import { resolveApiBase } from './runtime-env';
 import { publishStaffSessionEvent, withCrossTabRefreshLock } from './session-sync';
 
+/** Default bound so list/detail pages fail into error UI instead of spinning forever. */
+export const DEFAULT_REQUEST_TIMEOUT_MS = 20_000;
+/** Session restore/refresh must fail fast — ProtectedRoute blocks the whole shell on this. */
+export const AUTH_REFRESH_TIMEOUT_MS = 15_000;
+
 /** Resolve per-call so `/runtime-config.js` can force same-origin `/api/v1`. */
 function apiBase(): string {
   return resolveApiBase();
@@ -14,9 +19,20 @@ type RequestOptions = {
   accessToken?: string | null;
   skipAuthRefresh?: boolean;
   signal?: AbortSignal | null;
+  /**
+   * Request timeout in ms. Defaults to DEFAULT_REQUEST_TIMEOUT_MS.
+   * Pass 0 to disable the default timeout (caller still may pass `signal`).
+   */
   timeoutMs?: number;
   headers?: Record<string, string>;
 };
+
+function isAbortError(error: unknown): boolean {
+  return (
+    (error instanceof DOMException && (error.name === 'AbortError' || error.name === 'TimeoutError')) ||
+    (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError'))
+  );
+}
 
 function combineSignals(signals: Array<AbortSignal | null | undefined>): AbortSignal | undefined {
   const active = signals.filter((signal): signal is AbortSignal => signal != null);
@@ -98,10 +114,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     Object.assign(headers, options.headers);
   }
 
-  const signal = combineSignals([
-    options.signal,
-    options.timeoutMs ? timeoutSignal(options.timeoutMs) : undefined,
-  ]);
+  const resolvedTimeoutMs =
+    options.timeoutMs === 0 ? undefined : (options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS);
+  const timeoutAbort = resolvedTimeoutMs ? timeoutSignal(resolvedTimeoutMs) : undefined;
+  const signal = combineSignals([options.signal, timeoutAbort]);
 
   const base = apiBase();
   const url = `${base}${path}`;
@@ -115,11 +131,15 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       signal,
     });
   } catch (error) {
-    const aborted =
-      (error instanceof DOMException && error.name === 'AbortError') ||
-      (error instanceof Error && error.name === 'AbortError');
-    if (aborted) {
-      throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+    if (isAbortError(error)) {
+      const timedOut = Boolean(timeoutAbort?.aborted) && !options.signal?.aborted;
+      if (timedOut) {
+        throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+      }
+      // Preserve cancellation from navigation / query-cache abort so hooks can exit cleanly.
+      throw error instanceof Error
+        ? error
+        : new DOMException('The operation was aborted.', 'AbortError');
     }
     throw new ApiClientError(
       base.startsWith('/')
@@ -161,6 +181,7 @@ async function executeRefreshRequest(): Promise<RefreshOutcome> {
     const response = await fetch(`${apiBase()}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
+      signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
     });
 
     if (response.status === 401) {
@@ -211,13 +232,24 @@ export async function proactiveRefreshSession(): Promise<RefreshOutcome> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       try {
+        let holderOutcome: RefreshOutcome | null = null;
         const session = await withCrossTabRefreshLock(async () => {
           const outcome = await executeRefreshRequest();
+          holderOutcome = outcome;
           return outcome.status === 'refreshed' ? outcome.session : null;
         });
+
+        // Lock holder: return the real outcome (including expired/unreachable) — never re-hit refresh.
+        if (holderOutcome) {
+          return holderOutcome;
+        }
+
+        // Waiter: another tab published a fresh access token.
         if (session) {
           return { status: 'refreshed' as const, session, user: {} as AuthUser };
         }
+
+        // Waiter timed out with no published result — one bounded retry.
         return executeRefreshRequest();
       } finally {
         refreshPromise = null;
@@ -350,6 +382,7 @@ export async function restoreSession(): Promise<RestoreSessionResult> {
     response = await fetch(`${apiBase()}/auth/refresh`, {
       method: 'POST',
       credentials: 'include',
+      signal: timeoutSignal(AUTH_REFRESH_TIMEOUT_MS),
     });
   } catch {
     return { status: 'unreachable' };

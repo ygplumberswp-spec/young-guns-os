@@ -107,7 +107,11 @@ export async function fetchCartrackMappings(
 export async function fetchCartrackTracking(accessToken: string): Promise<FleetTrackingContext> {
   const data = await request<{ tracking: FleetTrackingContext }>(
     '/integrations/cartrack/tracking',
-    { accessToken },
+    {
+      accessToken,
+      // Provider-backed — never block Fleet/Live Ops shells indefinitely.
+      timeoutMs: 15_000,
+    },
   );
   return data.tracking;
 }

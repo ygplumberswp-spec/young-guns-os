@@ -20,6 +20,11 @@ import type { FinanceService } from './finance.service.js';
 import type { IntelligenceService } from './intelligence.service.js';
 import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import {
+  buildTenantCacheKey,
+  cachedTenantRead,
+  CACHE_TTLS,
+} from './api-read-cache.js';
 
 type DashboardExecutiveDeps = {
   db: DatabaseClient;
@@ -55,6 +60,14 @@ export class DashboardExecutiveService {
   constructor(private readonly deps: DashboardExecutiveDeps) {}
 
   async getExecutiveSummary(companyId: string): Promise<ExecutiveDashboardSummary> {
+    return cachedTenantRead(
+      buildTenantCacheKey(companyId, 'dashboard/executive-summary'),
+      () => this.loadExecutiveSummary(companyId),
+      CACHE_TTLS.dashboard,
+    );
+  }
+
+  private async loadExecutiveSummary(companyId: string): Promise<ExecutiveDashboardSummary> {
     const start = startOfLocalDay();
     const end = endOfLocalDay();
     const now = new Date();

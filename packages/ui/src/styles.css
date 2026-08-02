@@ -213,7 +213,7 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
-  padding: var(--titan-space-6) var(--titan-space-8);
+  padding: var(--titan-page-pad-y, var(--titan-space-6)) var(--titan-page-pad-x, var(--titan-space-8));
   overflow-y: auto;
   overflow-x: hidden;
   background:

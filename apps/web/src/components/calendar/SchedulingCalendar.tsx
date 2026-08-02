@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { EmptyState, LoadingState } from '@titan/ui';
+import { LoadingState } from '@titan/ui';
 import type {
+  CalendarViewMode,
   JobAssignee,
   JobSummary,
   ScheduledJobEvent,
@@ -16,6 +17,7 @@ import {
   CalendarFilters,
   type CalendarFilterState,
 } from './CalendarFilters';
+import { BookJobModal } from './BookJobModal';
 import { CalendarMonthGrid } from './CalendarMonthGrid';
 import { CalendarTimeGrid } from './CalendarTimeGrid';
 import { CalendarToolbar } from './CalendarToolbar';
@@ -25,7 +27,6 @@ import { OverrideReasonModal } from './OverrideReasonModal';
 import { ScheduleSlotModal } from './ScheduleSlotModal';
 import { UnscheduledJobsTray } from './UnscheduledJobsTray';
 import { eventDurationMs, resolveRange, startOfDay } from './calendar-utils';
-import { useCalendarState } from './useCalendarState';
 
 export type SchedulingCalendarActions = {
   checkConflicts: (body: {
@@ -64,11 +65,18 @@ type SchedulingCalendarProps = {
   error: string | null;
   canWrite: boolean;
   canAssignCrew?: boolean;
+  canCreateJobs?: boolean;
   showTechnicianFilter?: boolean;
-  pathname?: string;
+  view: CalendarViewMode;
+  anchorDate: Date;
+  filters: CalendarFilterState;
+  onViewChange: (view: CalendarViewMode) => void;
+  onAnchorChange: (date: Date) => void;
+  onFiltersChange: (filters: CalendarFilterState) => void;
   actions: SchedulingCalendarActions;
   onRefresh: () => void;
   accessToken?: string | null;
+  userId?: string;
   compactHeader?: boolean;
   focusJobId?: string | null;
   focusMode?: string | null;
@@ -90,20 +98,24 @@ export function SchedulingCalendar({
   error,
   canWrite,
   canAssignCrew = false,
+  canCreateJobs = false,
   showTechnicianFilter = true,
-  pathname = '/scheduling',
+  view,
+  anchorDate,
+  filters,
+  onViewChange,
+  onAnchorChange,
+  onFiltersChange,
   actions,
   onRefresh,
   accessToken,
+  userId,
   compactHeader = false,
   focusJobId = null,
   focusMode = null,
 }: SchedulingCalendarProps) {
-  const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
-    useCalendarState(pathname);
   const [slotDate, setSlotDate] = useState<Date | null>(null);
   const [slotTechnicianId, setSlotTechnicianId] = useState<string | null>(null);
-  const [preferredSlotJobId, setPreferredSlotJobId] = useState<string | null>(null);
   const [previewEvent, setPreviewEvent] = useState<ScheduledJobEvent | null>(null);
   const [pendingMove, setPendingMove] = useState<PendingMove | null>(null);
   const [conflicts, setConflicts] = useState<SchedulingConflictCheckResponse | null>(null);
@@ -115,12 +127,12 @@ export function SchedulingCalendar({
   const [deepLinkConsumed, setDeepLinkConsumed] = useState(false);
 
   const events = useMemo(
-    () => applyClientCalendarFilters(calendar?.events ?? [], filters as CalendarFilterState, assignees),
+    () => applyClientCalendarFilters(calendar?.events ?? [], filters, assignees),
     [calendar?.events, filters, assignees],
   );
 
   useEffect(() => {
-    if (!accessToken || !canAssignCrew) {
+    if (!accessToken || !(canAssignCrew || canCreateJobs)) {
       setVehicles([]);
       return;
     }
@@ -137,16 +149,16 @@ export function SchedulingCalendar({
     return () => {
       cancelled = true;
     };
-  }, [accessToken, canAssignCrew]);
+  }, [accessToken, canAssignCrew, canCreateJobs]);
 
   useEffect(() => {
     if (!focusJobId || deepLinkConsumed || isLoading) return;
 
     const scheduled = events.find((event) => event.id === focusJobId);
     if (scheduled) {
-      setAnchorDate(startOfDay(new Date(scheduled.scheduledAt)));
+      onAnchorChange(startOfDay(new Date(scheduled.scheduledAt)));
       if (focusMode === 'reschedule' || view === 'month') {
-        setView('day');
+        onViewChange('day');
       }
       setPreviewEvent(scheduled);
       setDeepLinkConsumed(true);
@@ -157,15 +169,15 @@ export function SchedulingCalendar({
     if (!linkedJob) return;
 
     if (linkedJob.scheduledAt) {
-      setAnchorDate(startOfDay(new Date(linkedJob.scheduledAt)));
-      setView('day');
+      onAnchorChange(startOfDay(new Date(linkedJob.scheduledAt)));
+      onViewChange('day');
+      setDeepLinkConsumed(true);
       return;
     }
 
-    if (canWrite) {
-      setPreferredSlotJobId(linkedJob.id);
-      setSlotDate(startOfDay(anchorDate));
+    if (canWrite || canCreateJobs) {
       setSlotTechnicianId(linkedJob.assignedUserId);
+      setSlotDate(startOfDay(anchorDate));
       setDeepLinkConsumed(true);
     }
   }, [
@@ -176,10 +188,11 @@ export function SchedulingCalendar({
     events,
     jobs,
     canWrite,
+    canCreateJobs,
     view,
     anchorDate,
-    setAnchorDate,
-    setView,
+    onAnchorChange,
+    onViewChange,
   ]);
 
   const jobTypes = useMemo(() => {
@@ -353,18 +366,22 @@ export function SchedulingCalendar({
     }
   }
 
-  function openSlot(slot: Date, technicianId?: string | null) {
-    if (!canWrite) return;
+  function openBooking(slot: Date, technicianId?: string | null) {
+    if (!canWrite && !canCreateJobs) return;
     setSlotDate(slot);
     setSlotTechnicianId(technicianId ?? null);
   }
 
-  function switchToDay(date: Date) {
-    setAnchorDate(startOfDay(date));
-    setView('day');
+  function handleMonthDayClick(date: Date) {
+    if (canCreateJobs || canWrite) {
+      const slot = startOfDay(date);
+      slot.setHours(8, 0, 0, 0);
+      openBooking(slot, null);
+      return;
+    }
+    onAnchorChange(startOfDay(date));
+    onViewChange('day');
   }
-
-  const showEmptyState = !isLoading && events.length === 0 && view === 'month';
 
   return (
     <div className={`cal-shell${compactHeader ? ' cal-shell--compact' : ''}`}>
@@ -372,15 +389,17 @@ export function SchedulingCalendar({
         <CalendarToolbar
           view={view}
           anchorDate={anchorDate}
-          onViewChange={setView}
-          onAnchorChange={setAnchorDate}
+          onViewChange={onViewChange}
+          onAnchorChange={onAnchorChange}
         />
         <CalendarFilters
           assignees={assignees}
-          filters={filters as CalendarFilterState}
+          filters={filters}
           jobTypes={jobTypes}
-          onChange={(next) => setFilters(next)}
+          onChange={onFiltersChange}
           showTechnicianFilter={showTechnicianFilter}
+          collapsible
+          defaultExpanded={false}
         />
       </div>
 
@@ -398,14 +417,11 @@ export function SchedulingCalendar({
         {isLoading ? (
           <LoadingState label="Loading calendar…" />
         ) : view === 'month' ? (
-          showEmptyState ? (
-            <EmptyState
-              title="No scheduled jobs this month"
-              description="Use week or day view to schedule jobs, or drag from the tray below."
-            />
-          ) : (
-            <CalendarMonthGrid anchorDate={anchorDate} events={events} onDayClick={switchToDay} />
-          )
+          <CalendarMonthGrid
+            anchorDate={anchorDate}
+            events={events}
+            onDayClick={handleMonthDayClick}
+          />
         ) : (
           <CalendarTimeGrid
             mode={view}
@@ -414,8 +430,8 @@ export function SchedulingCalendar({
             assignees={assignees}
             settings={calendar?.settings}
             technicianFilter={filters.technicianId}
-            canWrite={canWrite}
-            onSlotClick={openSlot}
+            canWrite={canWrite || canCreateJobs}
+            onSlotClick={openBooking}
             onEventClick={setPreviewEvent}
             onEventDragStart={setDraggingEvent}
             onDrop={(slot, technicianId) => void handleDrop(slot, technicianId)}
@@ -432,23 +448,38 @@ export function SchedulingCalendar({
           onJobClick={(job) => {
             const event = events.find((item) => item.id === job.id);
             if (event) setPreviewEvent(event);
-            else openSlot(startOfDay(anchorDate), job.assignedUserId);
+            else openBooking(startOfDay(anchorDate), job.assignedUserId);
           }}
         />
       ) : null}
 
-      {slotDate ? (
+      {slotDate && accessToken && canCreateJobs ? (
+        <BookJobModal
+          slotDate={slotDate}
+          accessToken={accessToken}
+          userId={userId}
+          assignees={assignees}
+          vehicles={vehicles}
+          defaultTechnicianId={slotTechnicianId}
+          canWrite={canCreateJobs}
+          onClose={() => {
+            setSlotDate(null);
+            setSlotTechnicianId(null);
+          }}
+          onCreated={onRefresh}
+        />
+      ) : null}
+
+      {slotDate && canWrite && !canCreateJobs ? (
         <ScheduleSlotModal
           slotDate={slotDate}
           jobs={jobs}
           assignees={assignees}
           canWrite={canWrite}
           defaultTechnicianId={slotTechnicianId}
-          preferredJobId={preferredSlotJobId}
           onClose={() => {
             setSlotDate(null);
             setSlotTechnicianId(null);
-            setPreferredSlotJobId(null);
           }}
           onSchedule={async (jobId, body) => {
             await attemptMove(

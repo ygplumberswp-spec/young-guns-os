@@ -65,6 +65,19 @@
   --titan-space-5: 1.25rem;
   --titan-space-6: 1.5rem;
   --titan-space-8: 2rem;
+  --titan-space-10: 2.5rem;
+  --titan-space-12: 3rem;
+
+  /* V1 fluid layout spacing — pages expand; forms stay readable */
+  --titan-page-pad-x: clamp(0.75rem, 1.5vw, 2rem);
+  --titan-page-pad-y: clamp(0.75rem, 1.25vw, 1.5rem);
+  --titan-section-gap: clamp(1rem, 1.2vw, 1.5rem);
+  --titan-card-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-grid-gap: clamp(0.75rem, 1vw, 1.25rem);
+  --titan-form-max-width: 40rem;
+  --titan-form-max-width-lg: 56rem;
+  --titan-modal-max-width: min(40rem, calc(100vw - 2rem));
+  --titan-modal-max-width-lg: min(56rem, calc(100vw - 2rem));
 
   /* Motion — smooth, subtle */
   --titan-motion-fast: 140ms;
@@ -77,8 +90,10 @@
   --titan-font-ui: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --titan-font-tabular: 'Inter', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Iconography */
+  /* Iconography — Lucide-style outline; sidebar uses 18px in a 20px slot */
   --titan-icon-size: 1.125rem;
+  --titan-icon-slot: 1.25rem;
+  --titan-icon-stroke: 1.6;
 
   color-scheme: dark;
 }

@@ -19,14 +19,14 @@ import {
   canAssignCrewFromCalendar,
   canManageScheduling,
 } from '../../features/scheduling/utils';
-import { SchedulingCalendar, resolveRange } from '../../components/calendar';
-import { useCalendarState } from '../../components/calendar/useCalendarState';
+import { SchedulingCalendar, resolveRange, useCalendarState } from '../../components/calendar';
 
 export function SchedulingPage() {
   const { accessToken, user } = useAuth();
   const search = useSearch();
   const { invalidateScheduling } = useStaffMutationInvalidation();
-  const { view, anchorDate, filters } = useCalendarState('/scheduling');
+  const { view, setView, anchorDate, setAnchorDate, filters, setFilters } =
+    useCalendarState('/scheduling');
 
   const canView = useMemo(() => (user ? canAccessScheduling(user.permissions) : false), [user]);
   const canWrite = useMemo(() => (user ? canManageScheduling(user.permissions) : false), [user]);
@@ -34,6 +34,7 @@ export function SchedulingPage() {
     () => (user ? canAssignCrewFromCalendar(user.permissions) : false),
     [user],
   );
+  const canCreateJobs = canAssignCrew;
 
   const deepLink = useMemo(() => {
     const params = new URLSearchParams(search);
@@ -68,7 +69,7 @@ export function SchedulingPage() {
   const { data: jobs } = useCachedQuery({
     queryKey: 'jobs/list',
     accessToken,
-    enabled: canView && canWrite,
+    enabled: canView && (canWrite || canCreateJobs),
     staleTimeMs: 30_000,
     fetcher: async () => fetchJobs(accessToken!),
   });
@@ -112,7 +113,7 @@ export function SchedulingPage() {
     <div className="scheduling-page scheduling-page--calendar-first">
       <PageHeader
         title="Schedule"
-        description="Dispatch calendar — week view opens by default."
+        description="Click an empty slot to book a job."
         actions={
           <div className="scheduling-page__actions">
             <Link href="/workforce/day-timeline">
@@ -133,9 +134,17 @@ export function SchedulingPage() {
         error={calendarError}
         canWrite={canWrite}
         canAssignCrew={canAssignCrew}
+        canCreateJobs={canCreateJobs}
         showTechnicianFilter={calendar?.viewScope !== 'own'}
+        view={view}
+        anchorDate={anchorDate}
+        filters={filters}
+        onViewChange={setView}
+        onAnchorChange={setAnchorDate}
+        onFiltersChange={setFilters}
         actions={actions}
         accessToken={accessToken}
+        userId={user?.id}
         focusJobId={deepLink.jobId}
         focusMode={deepLink.mode}
         onRefresh={() => void reloadCalendar()}
