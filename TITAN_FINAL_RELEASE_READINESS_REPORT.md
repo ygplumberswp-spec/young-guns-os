@@ -14,7 +14,7 @@
 | Gate | Verdict | Rationale |
 |------|---------|-----------|
 | **Staging owner daily ops** | **GO** | Consolidation smoke 12/12 API probes + web healthz; verify 231 GO (236 screenshots, 0 blockers) |
-| **Staging release candidate** | **HOLD** | 46 HOLD + 55 NO-GO routes; finance Xero aggregation gaps; orphan enterprise routes; RBAC verify 251 **GO** (Dispatcher receivables fixed @ `7f6763f`) |
+| **Staging release candidate** | **HOLD** | 46 HOLD routes; finance Xero aggregation gaps; **orphan scaffolds gated @ Phase 252**; RBAC verify 251 **GO** |
 | **Production launch** | **NO-GO** | Scaffold routes, incomplete integrations, unverified production cutover, finance/RBAC blockers |
 
 **Overall consolidation verdict:** **Staging GO** for owner daily ops · **Staging HOLD** as release candidate · **Production NO-GO**
@@ -160,18 +160,17 @@ Key owner flows covered visually: dashboard, customers, jobs, scheduling, fleet,
 
 **RBAC overall:** **GO** — Owner, Technician, Accountant, Dispatcher, Client all pass verify 251 on staging · See `TITAN_RBAC_MISSING_ROLES_REPORT.md`
 
-### Orphan routes
+### Orphan routes (Phase 252 @ starting SHA `fdc70d3`)
 
-| Metric | Count | Staging impact | Production impact |
-|--------|------:|----------------|-------------------|
-| Total inventoried routes | 163 | — | — |
-| Sidebar-linked | 22 | Daily ops covered | Same |
-| Orphan/hidden staff routes | ~113 | Not in nav | **NO-GO** if exposed |
-| GO routes | 62 | Usable | — |
-| HOLD routes | 46 | Partial / re-verify | **HOLD** |
-| NO-GO / scaffold routes | 55 | Decorative only | **NO-GO** |
+| Metric | Before | After | Staging impact |
+|--------|-------:|------:|----------------|
+| Orphan/hidden staff routes | 113 | **61** | Operational deep links retained |
+| NO-GO scaffolds exposed via deep link | 55 | **3** | 52 gated (redirect, not blank page) |
+| Disposition: HIDE_REDIRECT | — | 50 | Parent or `/enterprise-modules` |
+| Disposition: REMOVE (alias) | — | 2 | `/developers`, `/marketing-intelligence` |
+| Disposition: RETAIN_COMPLETE | — | 111 | GO/HOLD ops + `/global-search` |
 
-**Orphans overall:** **HOLD** (documented) — not staging-blocking for owner sidebar flows; **production-blocking** if launch includes full route surface.
+**Orphans overall:** **GO** @ verify 252 — scaffolds gated; finance/Xero/production **untouched** · See `TITAN_ORPHAN_ROUTE_CLEANUP_REPORT.md`
 
 ---
 

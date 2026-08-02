@@ -32,7 +32,7 @@ export function EnterpriseModulesPage() {
     <div className="automation-page">
       <PageHeader
         title="Enterprise modules"
-        description="These Owner modules are reachable in TITAN. They are listed here deliberately so they are not hidden orphans from primary navigation."
+        description="Operational modules reachable outside the primary sidebar. Decorative scaffolds redirect here automatically until their phase ships."
       />
 
       {ENTERPRISE_MODULE_LINKS.length === 0 ? (

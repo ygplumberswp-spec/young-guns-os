@@ -61,6 +61,7 @@ export * from './documents-compliance.js';
 export * from './automation.js';
 export * from './n8n-orchestration.js';
 export * from './enterprise-modules.js';
+export * from './orphan-route-cleanup.js';
 export * from './agents.js';
 export * from './tenant-capabilities.js';
 export * from './tenant-capability-routing.js';

@@ -34,11 +34,13 @@ describe('nav honesty (UX-K)', () => {
     assert.ok(item?.experiences?.includes('dispatcher'));
   });
 
-  it('UX-048 — enterprise modules index is platform-owner only (direct URL, not sidebar)', () => {
+  it('UX-048 / Phase 252 — enterprise modules index lists RETAIN_COMPLETE orphans only', () => {
     const item = OWNER_STAFF_NAV_ITEMS.find((entry) => entry.href === '/enterprise-modules');
     assert.equal(item, undefined);
-    assert.ok(ENTERPRISE_MODULE_LINKS.length >= 10);
+    assert.ok(ENTERPRISE_MODULE_LINKS.length >= 1);
+    assert.ok(ENTERPRISE_MODULE_LINKS.length <= 5);
     assert.ok(ENTERPRISE_MODULE_LINKS.every((link) => link.href.startsWith('/')));
+    assert.ok(!ENTERPRISE_MODULE_LINKS.some((link) => link.href === '/ai-orchestration'));
   });
 
   it('Phase 1 — global search is header-only, not duplicated in sidebar', () => {

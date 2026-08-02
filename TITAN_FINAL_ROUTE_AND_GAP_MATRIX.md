@@ -1,8 +1,8 @@
 # TITAN Final Route and Gap Matrix
 
-**Phase:** 0 reconciled + Phase 1 global organisation complete  
-**Generated (UTC):** 2026-08-01T21:05:00.000Z  
-**Branch:** `cursor/titan-owner-operating-model-final` @ Phase 1 commit (post-235)  
+**Phase:** 0 reconciled + Phase 1 global organisation + **Phase 252 orphan cleanup**  
+**Generated (UTC):** 2026-08-02T12:15:00.000Z  
+**Branch:** `cursor/titan-owner-operating-model-final` @ Phase 252 orphan cleanup  
 **Base:** `cursor/titan-final-product-consolidation` (includes Fleet API @ 8fe0109, MapLibre fix @ 45b41ca)  
 **Generator:** `scripts/generate-route-matrix.mjs` + Phase 0 enrichment  
 **Staging API:** `https://young-guns-os-staging.up.railway.app`  
@@ -21,7 +21,8 @@
 | Auth routes | 7 |
 | **Total inventoried routes** | **163** |
 | Sidebar-linked staff routes | 22 |
-| Orphan/hidden staff routes | 113 |
+| Orphan/hidden staff routes | **61** (post-252; was 113) |
+| Scaffold deep links gated | **52** (50 HIDE_REDIRECT + 2 REMOVE aliases) |
 | Missing Back button (excl. design) | 0 |
 | Missing PageHeader | 1 |
 
@@ -31,7 +32,17 @@
 |---------|------:|---------|
 | **GO** | 62 | Route exists, staging evidence or DB truth, usable for daily ops (may still have Phase 1–18 enhancement gaps) |
 | **HOLD** | 46 | Partial implementation, missing Phase requirements, or re-verification needed |
-| **NO-GO** | 55 | Decorative, orphan enterprise, scaffold, or blocked |
+| **NO-GO** | 55 | Decorative, orphan enterprise, scaffold, or blocked — **52 gated @ Phase 252** |
+
+### Phase 252 orphan cleanup disposition
+
+| Disposition | Count | Action |
+|-------------|------:|--------|
+| **RETAIN_COMPLETE** | 111 | GO/HOLD operational deep links + `/global-search` override |
+| **HIDE_REDIRECT** | 50 | Redirect to parent module or `/enterprise-modules` |
+| **REMOVE** | 2 | Duplicate aliases `/developers`, `/marketing-intelligence` |
+
+See `TITAN_ORPHAN_ROUTE_CLEANUP_REPORT.md` for per-route table.
 
 ---
 
@@ -66,7 +77,7 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`, group
 | Flag | Count / detail |
 |------|----------------|
 | Duplicated modules | `/marketing` vs `/marketing-intelligence`; `/sales-intelligence`; `/leads` vs intelligence pages |
-| Unfinished routes | 90 orphan enterprise routes not in sidebar |
+| Unfinished routes | ~~90 orphan enterprise routes not in sidebar~~ → **52 scaffolds gated @ Phase 252** |
 | Placeholder / foundation copy | Enterprise modules, AI orchestration, asset intelligence |
 | False zeroes | Dashboard mitigated (UX-I); payment_mappings=0 may show $0 paid incorrectly |
 | Missing Back buttons | 1 by design (`/`); `/settings` redirect lacks PageHeader |
@@ -302,7 +313,7 @@ From `packages/shared/src/role-experience.ts` → `OWNER_STAFF_NAV_ITEMS`, group
 - `diagnostic-output/229-fleet-api-deployment-reconciliation.json` — Fleet live-map API GO
 - `diagnostic-output/224-crm-final-staging-acceptance.json` — CRM 57/57 GO
 - `diagnostic-output/225-final-consolidation-status.json` — typecheck/tests/build PASS
-- `diagnostic-output/titan-final-visual-audit-run.log` — **FAILED** (playwright not installed)
+- `diagnostic-output/252-orphan-route-cleanup-verify.json` — orphan redirect + RBAC regression GO
 
 ---
 

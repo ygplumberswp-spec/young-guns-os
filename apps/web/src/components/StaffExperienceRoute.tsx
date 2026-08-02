@@ -3,6 +3,7 @@ import { useLocation } from 'wouter';
 import { resolveStaffExperience, type StaffIdentity } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { toAppAbsoluteHref, useAppPathname } from '../lib/nested-routing';
+import { resolveOrphanRouteCleanup } from '@titan/shared';
 import {
   evaluateOwnerStaffDirectUrl,
   evaluateTechnicianDirectUrl,
@@ -29,6 +30,11 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
+    const orphanDecision = resolveOrphanRouteCleanup(pathname);
+    if (orphanDecision.disposition !== 'RETAIN_COMPLETE') {
+      setLocation(toAppAbsoluteHref(orphanDecision.redirectTo));
+      return;
+    }
     const decision = evaluateOwnerStaffDirectUrl(toStaffIdentity(user), pathname);
     if (!decision.allowed) {
       setLocation(toAppAbsoluteHref(decision.redirectPath));
@@ -40,6 +46,11 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
   }
 
   if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  const orphanDecision = resolveOrphanRouteCleanup(pathname);
+  if (orphanDecision.disposition !== 'RETAIN_COMPLETE') {
     return null;
   }
 
