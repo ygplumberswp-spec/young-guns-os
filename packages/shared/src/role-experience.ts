@@ -224,6 +224,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     ],
   },
   {
+    href: '/customer-engagement-intelligence',
+    label: 'Customer Engagement Intelligence',
+    permissions: ['customers:read', 'customers:write', 'portal:read', 'communications:read', 'agents:read', '*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/mission-control',
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],

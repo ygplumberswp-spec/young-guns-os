@@ -544,6 +544,10 @@ export const HomeshieldExperiencePage = lazyNamed(
   () => import('../pages/homeshield-experience/HomeshieldExperiencePage'),
   'HomeshieldExperiencePage',
 );
+export const CustomerEngagementIntelligencePage = lazyNamed(
+  () => import('../pages/customer-engagement-intelligence/CustomerEngagementIntelligencePage'),
+  'CustomerEngagementIntelligencePage',
+);
 export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',

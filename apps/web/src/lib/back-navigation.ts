@@ -153,6 +153,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/workflow-automation',
   '/recurring-maintenance',
   '/homeshield-experience',
+  '/customer-engagement-intelligence',
   '/fleet-intelligence',
   '/fleet-ai-recommendations',
   '/vehicle-intelligence',

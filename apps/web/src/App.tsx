@@ -451,6 +451,10 @@ export function App() {
                           component={OwnerPages.HomeshieldExperiencePage}
                         />
                         <Route
+                          path="/customer-engagement-intelligence"
+                          component={OwnerPages.CustomerEngagementIntelligencePage}
+                        />
+                        <Route
                           path="/fleet-intelligence"
                           component={OwnerPages.FleetIntelligencePage}
                         />

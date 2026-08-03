@@ -272,6 +272,7 @@ import { TechnicianIntelligenceService } from './services/technician-intelligenc
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
 import { HomeshieldExperienceService } from './services/homeshield-experience.service.js';
+import { CustomerEngagementIntelligenceService } from './services/customer-engagement-intelligence.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
@@ -314,6 +315,7 @@ import { createTechnicianIntelligenceRouter } from './routes/technician-intellig
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
 import { createHomeshieldExperienceRouter } from './routes/homeshield-experience.js';
+import { createCustomerEngagementIntelligenceRouter } from './routes/customer-engagement-intelligence.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
@@ -978,6 +980,7 @@ const recurringMaintenanceService = new RecurringMaintenanceService({
   emailCentreService,
 });
 const homeshieldExperienceService = new HomeshieldExperienceService(db);
+const customerEngagementIntelligenceService = new CustomerEngagementIntelligenceService(db);
 const enterpriseWorkforceIntelligenceService = new EnterpriseWorkforceIntelligenceService({
   db,
   enterpriseSaasPlatformService,
@@ -2701,6 +2704,16 @@ app.use(
     jwtSecret: env.JWT_SECRET,
     authService,
     portalAuthService,
+  }),
+);
+
+app.use(
+  '/api/v1/customer-engagement-intelligence',
+  createCustomerEngagementIntelligenceRouter({
+    customerEngagementIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 

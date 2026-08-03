@@ -130,6 +130,7 @@ export * from './recruitment-performance-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';
 export * from './homeshield-experience';
+export * from './customer-engagement-intelligence';
 export * from './enterprise-security';
 export * from './integration-platform';
 export * from './enterprise-analytics';

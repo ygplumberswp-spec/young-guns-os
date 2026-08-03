@@ -245,6 +245,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     priority: 2,
     safeToPreload: true,
   },
+  {
+    path: '/customer-engagement-intelligence',
+    load: () => import('../pages/customer-engagement-intelligence/CustomerEngagementIntelligencePage'),
+    permissions: ['customers:read', 'customers:write', 'portal:read', 'communications:read', 'agents:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
 
   {
     path: '/inventory-intelligence',
