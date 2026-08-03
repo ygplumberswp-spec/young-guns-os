@@ -248,6 +248,20 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {
+    href: '/property-intelligence',
+    label: 'Property Intelligence',
+    permissions: [
+      'customers:read',
+      'customers:write',
+      'jobs:read',
+      'documents:read',
+      'ops:read',
+      'agents:read',
+      '*',
+    ],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

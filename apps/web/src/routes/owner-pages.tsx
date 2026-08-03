@@ -328,6 +328,10 @@ export const Customer360IntelligencePage = lazyNamed(
   () => import('../pages/customer-360-intelligence/Customer360IntelligencePage'),
   'Customer360IntelligencePage',
 );
+export const PropertyIntelligencePage = lazyNamed(
+  () => import('../pages/property-intelligence/PropertyIntelligencePage'),
+  'PropertyIntelligencePage',
+);
 export const DocumentAiPage = lazyNamed(
   () => import('../pages/document-ai/DocumentAiPage'),
   'DocumentAiPage',

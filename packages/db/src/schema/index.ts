@@ -124,6 +124,7 @@ export * from './sales-intelligence-agent';
 export * from './sales-followup-intelligence';
 export * from './sales-analytics-intelligence';
 export * from './customer-360-intelligence';
+export * from './property-intelligence';
 export * from './finance-reporting-forecast';
 export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';

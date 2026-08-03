@@ -240,6 +240,10 @@ export function App() {
                           path="/customer-360-intelligence"
                           component={OwnerPages.Customer360IntelligencePage}
                         />
+                        <Route
+                          path="/property-intelligence"
+                          component={OwnerPages.PropertyIntelligencePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

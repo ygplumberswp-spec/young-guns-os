@@ -1114,6 +1114,13 @@
       "when": 1754393000160,
       "tag": "0160_customer_360_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 159,
+      "version": "7",
+      "when": 1754394000161,
+      "tag": "0161_property_intelligence",
+      "breakpoints": true
     }
   ]
 }
