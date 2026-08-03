@@ -316,6 +316,10 @@ export const SalesIntelligenceAgentPage = lazyNamed(
   () => import('../pages/sales-intelligence-agent/SalesIntelligenceAgentPage'),
   'SalesIntelligenceAgentPage',
 );
+export const SalesFollowupIntelligencePage = lazyNamed(
+  () => import('../pages/sales-followup-intelligence/SalesFollowupIntelligencePage'),
+  'SalesFollowupIntelligencePage',
+);
 export const DocumentAiPage = lazyNamed(
   () => import('../pages/document-ai/DocumentAiPage'),
   'DocumentAiPage',

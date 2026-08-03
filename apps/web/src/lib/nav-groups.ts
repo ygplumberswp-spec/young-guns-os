@@ -55,6 +55,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/voice-ai-receptionist': 'intelligence',
   '/call-intelligence': 'intelligence',
   '/sales-intelligence-agent': 'intelligence',
+  '/sales-followup-intelligence': 'intelligence',
   '/aura/agents': 'intelligence',
   '/aura/command-centre': 'intelligence',
   '/aura/evolution': 'intelligence',
