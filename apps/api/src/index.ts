@@ -247,6 +247,7 @@ import { FleetIntelligenceService } from './services/fleet-intelligence.service.
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
 import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
+import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
@@ -267,6 +268,7 @@ import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
 import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
+import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
@@ -575,12 +577,19 @@ const marketingService = new MarketingService(db);
 const leadsService = new LeadsService(db);
 const voiceService = new VoiceService(db);
 const customerSupportService = new CustomerSupportService(db);
+const notificationService = new NotificationService(db);
 const workflowEngineService = new WorkflowEngineService({
   db,
   crmService,
   jobsService,
   whatsappService,
   communicationsService,
+  notificationService,
+});
+const workflowAutomationService = new WorkflowAutomationService({
+  db,
+  automationService,
+  workflowEngineService,
 });
 const workflowStudioService = new WorkflowStudioService({
   db,
@@ -684,7 +693,6 @@ const enterpriseAnalyticsService = new EnterpriseAnalyticsService({
   db,
   businessIntelligenceService,
 });
-const notificationService = new NotificationService(db);
 const leadConversionService = new LeadConversionService(db, notificationService, (companyId, leadId) =>
   leadsService.getLead(companyId, leadId),
 );
@@ -2397,6 +2405,16 @@ app.use(
   '/api/v1/technician-intelligence',
   createTechnicianIntelligenceRouter({
     technicianIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/workflow-automation',
+  createWorkflowAutomationRouter({
+    workflowAutomationService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

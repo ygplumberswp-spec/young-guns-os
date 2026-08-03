@@ -83,6 +83,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   },
   { href: '/automation', label: NAV_LABELS.automationCommandCentre, permissions: ['automation:read', '*'] },
   {
+    href: '/workflow-automation',
+    label: NAV_LABELS.workflowAutomation,
+    permissions: ['automation:read', 'ops:read', 'ops:manage', '*'],
+  },
+  {
     href: '/mission-control',
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
@@ -255,6 +260,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/settings',
   '/aura',
   '/automation',
+  '/workflow-automation',
   '/release',
   '/go-live',
   '/release-center',

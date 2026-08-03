@@ -417,6 +417,10 @@ export function App() {
                           component={OwnerPages.TechnicianIntelligencePage}
                         />
                         <Route
+                          path="/workflow-automation"
+                          component={OwnerPages.WorkflowAutomationPage}
+                        />
+                        <Route
                           path="/fleet-intelligence"
                           component={OwnerPages.FleetIntelligencePage}
                         />

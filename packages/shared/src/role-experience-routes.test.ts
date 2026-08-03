@@ -18,6 +18,7 @@ describe('technician route protection', () => {
       '/documents',
       '/dispatch',
       '/technician-intelligence',
+      '/workflow-automation',
     ]) {
       assert.equal(isBlocked(OWNER_ONLY_ROUTE_PREFIXES, prefix), true, `expected ${prefix}`);
     }

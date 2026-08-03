@@ -18,6 +18,7 @@ import {
   users,
   vehicles,
 } from '@titan/db';
+import { emitBusinessEvent } from '../lib/automation-events.js';
 import { resolveCalendarViewScope, type SchedulingAuthContext } from './scheduling-access.js';
 import { JobsError } from './jobs.service.js';
 import { upsertPrimaryCrewMember } from './job-execution.service.js';
@@ -358,6 +359,46 @@ export class SchedulingService {
         jobId,
         userId: nextAssignee,
         assignedByUserId: identity.userId,
+      });
+    }
+
+    const schedulePayload = {
+      job: {
+        id: jobId,
+        status: updated.status,
+        customerId: updated.customerId,
+        scheduledAt: updated.scheduledAt?.toISOString() ?? null,
+        assignedUserId: updated.assignedUserId,
+      },
+      customerId: updated.customerId,
+    };
+
+    emitBusinessEvent({
+      companyId,
+      eventType: 'job.scheduled',
+      entityType: 'job',
+      entityId: jobId,
+      payload: schedulePayload,
+    });
+    emitBusinessEvent({
+      companyId,
+      eventType: 'job.booked',
+      entityType: 'job',
+      entityId: jobId,
+      payload: schedulePayload,
+    });
+
+    if (nextAssignee && nextAssignee !== job.assignedUserId) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: jobId,
+        payload: {
+          ...schedulePayload,
+          assignedUserId: nextAssignee,
+          previousAssignedUserId: job.assignedUserId,
+        },
       });
     }
 

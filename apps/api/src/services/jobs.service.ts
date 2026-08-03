@@ -516,21 +516,24 @@ export class JobsService {
 
     const jobDetail = (await this.getJob(companyId, created.id))!;
 
+    const createdPayload = {
+      job: {
+        id: created.id,
+        jobNumber: created.jobNumber,
+        status: created.status,
+        customerId: created.customerId,
+        scheduledAt: created.scheduledAt?.toISOString() ?? null,
+        assignedUserId: created.assignedUserId,
+      },
+      customerId: created.customerId,
+    };
+
     emitBusinessEvent({
       companyId,
       eventType: 'job.created',
       entityType: 'job',
       entityId: created.id,
-      payload: {
-        job: {
-          id: created.id,
-          jobNumber: created.jobNumber,
-          status: created.status,
-          customerId: created.customerId,
-          scheduledAt: created.scheduledAt?.toISOString() ?? null,
-        },
-        customerId: created.customerId,
-      },
+      payload: createdPayload,
     });
 
     if (created.scheduledAt) {
@@ -539,13 +542,26 @@ export class JobsService {
         eventType: 'job.scheduled',
         entityType: 'job',
         entityId: created.id,
+        payload: createdPayload,
+      });
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.booked',
+        entityType: 'job',
+        entityId: created.id,
+        payload: createdPayload,
+      });
+    }
+
+    if (created.assignedUserId) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: created.id,
         payload: {
-          job: {
-            id: created.id,
-            status: created.status,
-            customerId: created.customerId,
-          },
-          customerId: created.customerId,
+          ...createdPayload,
+          assignedUserId: created.assignedUserId,
         },
       });
     }
@@ -687,6 +703,7 @@ export class JobsService {
         status: updated.status,
         customerId: updated.customerId,
         scheduledAt: updated.scheduledAt?.toISOString() ?? null,
+        assignedUserId: updated.assignedUserId,
       },
       customerId: updated.customerId,
     };
@@ -718,7 +735,61 @@ export class JobsService {
           entityId: jobId,
           payload: jobPayload,
         });
+        emitBusinessEvent({
+          companyId,
+          eventType: 'job.booked',
+          entityType: 'job',
+          entityId: jobId,
+          payload: jobPayload,
+        });
       }
+    }
+
+    const previousScheduledMs = existing.scheduledAt
+      ? new Date(existing.scheduledAt).getTime()
+      : null;
+    const nextScheduledMs = updated.scheduledAt ? updated.scheduledAt.getTime() : null;
+    const scheduleBecameSet =
+      nextScheduledMs !== null && previousScheduledMs !== nextScheduledMs;
+    const alreadyEmittedBookedForStatus =
+      input.status !== undefined &&
+      input.status !== existing.status &&
+      updated.status === 'scheduled';
+    if (scheduleBecameSet && !alreadyEmittedBookedForStatus) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.booked',
+        entityType: 'job',
+        entityId: jobId,
+        payload: jobPayload,
+      });
+      if (input.scheduledAt !== undefined) {
+        emitBusinessEvent({
+          companyId,
+          eventType: 'job.scheduled',
+          entityType: 'job',
+          entityId: jobId,
+          payload: jobPayload,
+        });
+      }
+    }
+
+    const assigneeChanged =
+      input.assignedUserId !== undefined &&
+      input.assignedUserId !== existing.assignedUserId &&
+      Boolean(updated.assignedUserId);
+    if (assigneeChanged) {
+      emitBusinessEvent({
+        companyId,
+        eventType: 'job.assigned',
+        entityType: 'job',
+        entityId: jobId,
+        payload: {
+          ...jobPayload,
+          assignedUserId: updated.assignedUserId,
+          previousAssignedUserId: existing.assignedUserId,
+        },
+      });
     }
 
     invalidateJobsListCaches(companyId);

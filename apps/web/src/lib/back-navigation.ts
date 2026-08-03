@@ -139,6 +139,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/global-search',
   '/dispatch-intelligence',
   '/technician-intelligence',
+  '/workflow-automation',
   '/fleet-intelligence',
   '/sales-intelligence',
   '/workforce-intelligence',

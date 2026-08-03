@@ -13,6 +13,8 @@ export type BusinessEventType =
   | 'customer.status_changed'
   | 'job.created'
   | 'job.scheduled'
+  | 'job.booked'
+  | 'job.assigned'
   | 'job.status_changed'
   | 'job.updated'
   | 'job.completed'
@@ -39,6 +41,7 @@ export type BusinessEventType =
   | 'voice.call.completed'
   | 'support.escalated'
   | 'marketing.campaign.completed'
+  | 'maintenance.due'
   | 'scheduled.time'
   | 'webhook.received';
 
@@ -47,6 +50,8 @@ export type WorkflowTriggerType =
   | 'job_created'
   | 'job_status_changed'
   | 'job_scheduled'
+  | 'job_booked'
+  | 'job_assigned'
   | 'job_completed'
   | 'job_material_used'
   | 'customer_created'
@@ -67,6 +72,7 @@ export type WorkflowTriggerType =
   | 'voice_call_completed'
   | 'support_escalated'
   | 'marketing_campaign_completed'
+  | 'maintenance_due'
   | 'scheduled_time'
   | 'webhook';
 
@@ -75,7 +81,9 @@ export const WORKFLOW_TRIGGER_TYPE_OPTIONS: Array<{ value: WorkflowTriggerType; 
   { value: 'customer_created', label: 'Customer Created' },
   { value: 'customer_updated', label: 'Customer Updated' },
   { value: 'job_created', label: 'Job Created' },
+  { value: 'job_booked', label: 'Job Booked' },
   { value: 'job_scheduled', label: 'Job Scheduled' },
+  { value: 'job_assigned', label: 'Job Assigned' },
   { value: 'job_status_changed', label: 'Job Status Changed' },
   { value: 'job_completed', label: 'Job Completed' },
   { value: 'job_material_used', label: 'Job Material Used (For Future Stock Decrement)' },
@@ -95,6 +103,7 @@ export const WORKFLOW_TRIGGER_TYPE_OPTIONS: Array<{ value: WorkflowTriggerType; 
   { value: 'voice_call_completed', label: 'Voice Call Completed' },
   { value: 'support_escalated', label: 'Customer Support Escalated' },
   { value: 'marketing_campaign_completed', label: 'Marketing Campaign Completed' },
+  { value: 'maintenance_due', label: 'Maintenance Due' },
   { value: 'scheduled_time', label: 'Scheduled Time Trigger' },
   { value: 'webhook', label: 'Webhook Trigger' },
 ];
@@ -121,6 +130,7 @@ export type WorkflowActionType =
   | 'create_purchase_order_draft'
   | 'generate_report'
   | 'create_follow_up'
+  | 'trigger_aura_suggestion'
   | 'run_ai_agent'
   | 'update_record'
   | 'create_approval_request'
@@ -140,14 +150,15 @@ export const WORKFLOW_ACTION_TYPE_OPTIONS: Array<{ value: WorkflowActionType; la
   { value: 'generate_summary', label: 'Generate Summary' },
   { value: 'create_task', label: 'Create Task' },
   { value: 'assign_user', label: 'Assign User (Approval Required)' },
-  { value: 'notify_user', label: 'Notify User' },
-  { value: 'send_internal_notification', label: 'Send Internal Notification' },
+  { value: 'notify_user', label: 'Notify User (In-App)' },
+  { value: 'send_internal_notification', label: 'Send Internal Notification (In-App)' },
   { value: 'create_draft_sms', label: 'Create Draft SMS' },
   { value: 'create_draft_customer_response', label: 'Create Draft Customer Response' },
   { value: 'generate_recommendation', label: 'Generate Recommendation' },
   { value: 'create_purchase_order_draft', label: 'Create Purchase Order Draft' },
   { value: 'generate_report', label: 'Generate Report (Approval Required)' },
   { value: 'create_follow_up', label: 'Create Follow-Up Draft' },
+  { value: 'trigger_aura_suggestion', label: 'Trigger AURA Suggestion (Draft)' },
   { value: 'run_ai_agent', label: 'Run AI Agent (Approval Required)' },
   { value: 'update_record', label: 'Update Record (Approval Required)' },
   { value: 'create_approval_request', label: 'Create Approval Request' },
@@ -502,6 +513,8 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'customer.status_changed': 'customer_updated',
   'job.created': 'job_created',
   'job.scheduled': 'job_scheduled',
+  'job.booked': 'job_booked',
+  'job.assigned': 'job_assigned',
   'job.status_changed': 'job_status_changed',
   'job.updated': 'job_status_changed',
   'job.completed': 'job_completed',
@@ -528,6 +541,7 @@ export const BUSINESS_EVENT_TO_TRIGGER: Record<BusinessEventType, WorkflowTrigge
   'voice.call.completed': 'voice_call_completed',
   'support.escalated': 'support_escalated',
   'marketing.campaign.completed': 'marketing_campaign_completed',
+  'maintenance.due': 'maintenance_due',
   'scheduled.time': 'scheduled_time',
   'webhook.received': 'webhook',
 };
