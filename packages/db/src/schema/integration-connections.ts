@@ -37,6 +37,10 @@ export type IntegrationConnectionConfig = {
   fromName?: string;
   businessName?: string;
   businessId?: string;
+  /** SHA-256 prefix of the Yoco secret key (safe identifier; not the secret). */
+  keyFingerprint?: string;
+  /** Optional Checkout API webhook-list probe result (unknown when list endpoint fails). */
+  webhookCapability?: 'available' | 'unavailable' | 'unknown';
   environment?: 'test' | 'live';
   lastCredentialChangeAt?: string;
   /** Google Maps Platform — tenant service flags and defaults. */

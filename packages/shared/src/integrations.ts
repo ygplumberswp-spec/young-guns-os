@@ -461,13 +461,24 @@ export type EmailSyncResult = {
   syncJobId?: string;
 };
 
+export type YocoWebhookCapability = 'available' | 'unavailable' | 'unknown';
+
 export type YocoConnectionSummary = {
   provider: 'yoco';
   status: IntegrationConnectionStatus;
   environment: 'test' | 'live';
   secretKeyHint: string | null;
+  /**
+   * Display label for the connected Checkout account (not a Yoco business-profile name).
+   * Example: "Yoco Checkout (test)".
+   */
   businessName: string | null;
+  /**
+   * Safe key fingerprint used as a stable account identifier (not a Yoco business id).
+   */
   businessId: string | null;
+  keyFingerprint: string | null;
+  webhookCapability: YocoWebhookCapability | null;
   hasCredentials: boolean;
   lastSyncAt: string | null;
   lastError: string | null;
@@ -482,6 +493,8 @@ export type SaveYocoConnectionRequest = {
 export type YocoSyncResult = {
   businessName: string;
   businessId: string;
+  keyFingerprint: string;
+  webhookCapability: YocoWebhookCapability;
   environment: 'test' | 'live';
   syncedAt: string;
   syncJobId?: string;

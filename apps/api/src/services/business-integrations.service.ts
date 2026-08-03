@@ -368,14 +368,18 @@ export class BusinessIntegrationsService {
   async getYocoConnection(companyId: string): Promise<YocoConnectionSummary> {
     const connection = await this.getOrCreateConnection(companyId, 'yoco');
     const credentials = this.tryDecryptYocoCredentials(connection.credentialsEncrypted);
+    const keyFingerprint = connection.config.keyFingerprint ?? connection.config.businessId ?? null;
 
     return {
       provider: 'yoco',
       status: connection.status,
       environment: connection.config.environment ?? 'test',
       secretKeyHint: credentials?.secretKey ? maskSecret(credentials.secretKey) : null,
+      // Honest Checkout labels (not a Yoco /business profile).
       businessName: connection.config.businessName ?? null,
-      businessId: connection.config.businessId ?? null,
+      businessId: keyFingerprint,
+      keyFingerprint,
+      webhookCapability: connection.config.webhookCapability ?? null,
       hasCredentials: Boolean(connection.credentialsEncrypted),
       lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
       lastError: connection.lastError,
@@ -389,8 +393,8 @@ export class BusinessIntegrationsService {
   ): Promise<YocoConnectionSummary> {
     this.ensureEncryptionKey();
 
-    const secretKey = input.secretKey.trim();
-    const environment = input.environment ?? 'test';
+    const secretKey = input.secretKey.trim().replace(/^Bearer\s+/i, '').trim();
+    const environment = input.environment ?? inferYocoEnvironment(secretKey);
 
     if (!secretKey) {
       throw new BusinessIntegrationsError('VALIDATION_ERROR', 'Yoco secret key is required');
@@ -410,7 +414,7 @@ export class BusinessIntegrationsService {
       .where(eq(integrationConnections.id, connection.id));
 
     try {
-      const business = await client.testConnection();
+      const verification = await client.verifyConnection();
 
       await this.db
         .update(integrationConnections)
@@ -418,9 +422,13 @@ export class BusinessIntegrationsService {
           status: 'connected',
           credentialsEncrypted: encryptYocoCredentials({ secretKey }, this.encryptionKey!),
           config: {
-            environment,
-            businessName: business.name,
-            businessId: business.businessId,
+            environment: verification.environment,
+            // Legacy UI fields mapped from verification (not a Yoco business profile).
+            businessName: verification.displayName,
+            businessId: verification.keyFingerprint,
+            keyFingerprint: verification.keyFingerprint,
+            webhookCapability: verification.webhookCapability,
+            lastVerifiedAt: new Date().toISOString(),
           },
           connectedAt: new Date(),
           lastError: null,
@@ -467,7 +475,7 @@ export class BusinessIntegrationsService {
 
     try {
       const client = new YocoClient({ secretKey: credentials.secretKey, environment });
-      const business = await client.fetchBusiness();
+      const verification = await client.verifyConnection();
       const syncedAt = new Date();
 
       await this.db
@@ -475,9 +483,12 @@ export class BusinessIntegrationsService {
         .set({
           config: {
             ...connection.config,
-            environment,
-            businessName: business.name,
-            businessId: business.businessId,
+            environment: verification.environment,
+            businessName: verification.displayName,
+            businessId: verification.keyFingerprint,
+            keyFingerprint: verification.keyFingerprint,
+            webhookCapability: verification.webhookCapability,
+            lastVerifiedAt: syncedAt.toISOString(),
           },
           lastSyncAt: syncedAt,
           lastError: null,
@@ -486,9 +497,11 @@ export class BusinessIntegrationsService {
         .where(eq(integrationConnections.id, connection.id));
 
       const result: YocoSyncResult = {
-        businessName: business.name,
-        businessId: business.businessId,
-        environment,
+        businessName: verification.displayName,
+        businessId: verification.keyFingerprint,
+        keyFingerprint: verification.keyFingerprint,
+        webhookCapability: verification.webhookCapability,
+        environment: verification.environment,
         syncedAt: syncedAt.toISOString(),
         syncJobId,
       };
@@ -653,4 +666,9 @@ function mapYocoError(error: unknown): string {
   }
 
   return error instanceof Error ? error.message : 'Yoco request failed';
+}
+
+function inferYocoEnvironment(secretKey: string): 'test' | 'live' {
+  if (secretKey.startsWith('sk_live_')) return 'live';
+  return 'test';
 }

@@ -59,10 +59,25 @@ const saveEmailSchema = z.object({
   fromName: z.string().trim().max(200).optional().nullable(),
 });
 
-const saveYocoSchema = z.object({
-  secretKey: z.string().trim().min(1).max(500),
+const saveYocoSchema = z.preprocess((raw) => {
+  if (!raw || typeof raw !== 'object') return raw;
+  const body = raw as Record<string, unknown>;
+  const secretKey = body.secretKey ?? body.secret_key ?? body.apiKey ?? body.api_key;
+  let environment = body.environment ?? body.mode;
+  if (environment === '' || environment === null) {
+    environment = undefined;
+  }
+  return { secretKey, environment };
+}, z.object({
+  secretKey: z
+    .string()
+    .trim()
+    .min(1)
+    .max(2000)
+    .transform((value) => value.replace(/^Bearer\s+/i, '').trim())
+    .refine((value) => value.length > 0, 'Secret key is required'),
   environment: z.enum(['test', 'live']).optional(),
-});
+}));
 
 const saveWhatsappSchema = z.object({
   accessToken: z.string().trim().max(2000).optional(),
