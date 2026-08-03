@@ -421,6 +421,10 @@ export function App() {
                           component={OwnerPages.WorkflowAutomationPage}
                         />
                         <Route
+                          path="/recurring-maintenance"
+                          component={OwnerPages.RecurringMaintenancePage}
+                        />
+                        <Route
                           path="/fleet-intelligence"
                           component={OwnerPages.FleetIntelligencePage}
                         />

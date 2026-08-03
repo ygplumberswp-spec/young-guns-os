@@ -39,6 +39,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/aura/agents': 'intelligence',
   '/automation': 'intelligence',
   '/workflow-automation': 'operations',
+  '/recurring-maintenance': 'operations',
   '/mission-control': 'intelligence',
   '/integrations': 'platform',
   '/security': 'platform',

@@ -88,6 +88,17 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['automation:read', 'ops:read', 'ops:manage', '*'],
   },
   {
+    href: '/recurring-maintenance',
+    label: NAV_LABELS.recurringMaintenance,
+    permissions: [
+      'asset_equipment:read',
+      'asset_lifecycle:read',
+      'ops:read',
+      'ops:manage',
+      '*',
+    ],
+  },
+  {
     href: '/mission-control',
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
@@ -261,6 +272,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/aura',
   '/automation',
   '/workflow-automation',
+  '/recurring-maintenance',
   '/release',
   '/go-live',
   '/release-center',

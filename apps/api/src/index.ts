@@ -248,6 +248,7 @@ import { PersonalCommunicationsIntelligenceService } from './services/personal-c
 import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
+import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
@@ -269,6 +270,7 @@ import { createPersonalCommunicationsIntelligenceRouter } from './routes/persona
 import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
+import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
@@ -900,6 +902,11 @@ const enterpriseAssetLifecycleService = new EnterpriseAssetLifecycleService({
   enterpriseSaasPlatformService,
   assetEquipmentIntelligenceService,
   enterpriseDigitalTwinService,
+});
+const recurringMaintenanceService = new RecurringMaintenanceService({
+  db,
+  enterpriseAssetLifecycleService,
+  emailCentreService,
 });
 const enterpriseWorkforceIntelligenceService = new EnterpriseWorkforceIntelligenceService({
   db,
@@ -2415,6 +2422,16 @@ app.use(
   '/api/v1/workflow-automation',
   createWorkflowAutomationRouter({
     workflowAutomationService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/recurring-maintenance',
+  createRecurringMaintenanceRouter({
+    recurringMaintenanceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

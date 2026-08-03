@@ -6,6 +6,7 @@ export const NAV_LABELS = {
   auraExecutiveChat: 'AURA Executive Chat',
   automationCommandCentre: 'Automation Command Centre',
   workflowAutomation: 'Workflow Automation',
+  recurringMaintenance: 'Recurring Maintenance',
   companyHealth: 'Company Health',
   teamAndAccess: 'Team & Access',
 } as const;

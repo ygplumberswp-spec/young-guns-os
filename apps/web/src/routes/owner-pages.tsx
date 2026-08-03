@@ -515,6 +515,10 @@ export const WorkflowAutomationPage = lazyNamed(
   () => import('../pages/workflow-automation/WorkflowAutomationPage'),
   'WorkflowAutomationPage',
 );
+export const RecurringMaintenancePage = lazyNamed(
+  () => import('../pages/recurring-maintenance/RecurringMaintenancePage'),
+  'RecurringMaintenancePage',
+);
 export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',

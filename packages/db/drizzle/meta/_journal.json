@@ -890,6 +890,13 @@
       "when": 1754308800000,
       "tag": "0129_workflow_automation_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 127,
+      "version": "7",
+      "when": 1754312400000,
+      "tag": "0130_recurring_maintenance_engine",
+      "breakpoints": true
     }
   ]
 }

@@ -63,6 +63,7 @@ export * from './documents.js';
 export * from './drafts.js';
 export * from './automation.js';
 export * from './workflow-automation.js';
+export * from './recurring-maintenance.js';
 export * from './n8n-orchestration.js';
 export * from './enterprise-modules.js';
 export * from './agents.js';
