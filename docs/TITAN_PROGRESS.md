@@ -47,11 +47,11 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 | Module | Status |
 |--------|--------|
-| AURA Chat | ⬜ Remaining |
-| Command Centre | ⬜ Remaining |
-| Agent coordination | ⬜ Remaining |
-| Business memory | ⬜ Remaining |
-| Executive assistant mode | ⬜ Remaining |
+| AURA Chat | 🟡 Built / testing |
+| Command Centre | 🟢 Completed |
+| Agent coordination | 🟢 Completed |
+| Business memory | 🟢 Completed |
+| Executive assistant mode | 🟢 Completed |
 | Morning Business Briefing | ⬜ Remaining |
 | Agent-to-agent communication | ⬜ Remaining |
 | AURA Evolution / Learning Agent | ⬜ Remaining |
@@ -156,5 +156,6 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 - Recurring Maintenance Engine committed (`a11160e`) — marked **🟢 Completed**.
 - Personal WhatsApp Connection Layer extends Communications Platform `personal_whatsapp` + owner gates; live Meta Graph / device-link pairing remains additive (honest testing matrix in Owner UI).
 - Communication AURA Intelligence extends Email Centre / Communications Platform business inbox — prioritisation, honest sentiment (unavailable when no signal), smart-reply & follow-up drafts (approval only, never auto-send), scoring, customer insights, CRM/timeline link proposals. Does not source Personal WhatsApp.
+- AURA Command Centre (Department 2.1, migration `0133`) — Owner command dashboard, business memory foundation, executive assistant mode, and agent coordination registry/handoffs. Extends existing AURA chat / `aura_memory` / agent tasks; specialist agents remain foundation-only; no demo analytics; Personal WA private never sourced. AURA Chat marked 🟡 (existing chat surfaces; Global AURA FAB / route-context WIP may remain uncommitted).
 - Do not mark modules complete until owner-accepted and production-safe for that milestone.
 - Keep department work isolated; see [`TITAN_DEVELOPMENT_RULES.md`](./TITAN_DEVELOPMENT_RULES.md).

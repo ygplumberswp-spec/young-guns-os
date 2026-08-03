@@ -151,6 +151,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['agents:read', 'intelligence:read', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
+  {
+    href: '/aura/command-centre',
+    label: NAV_LABELS.auraCommandCentre,
+    permissions: ['agents:read', 'intelligence:read', 'agents:write', 'intelligence:write', '*'],
+    experiences: [...COMPANY_BUSINESS_EXPERIENCES],
+  },
 ];
 
 /** Dispatcher operational navigation — no platform admin, AURA owner chat or SaaS controls. */

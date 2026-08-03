@@ -248,6 +248,7 @@ import { PersonalCommunicationsIntelligenceService } from './services/personal-c
 import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
 import { PersonalWhatsappConnectionService } from './services/personal-whatsapp-connection.service.js';
 import { CommunicationAuraIntelligenceService } from './services/communication-aura-intelligence.service.js';
+import { AuraCommandCentreService } from './services/aura-command-centre.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -272,6 +273,7 @@ import { createPersonalCommunicationsIntelligenceRouter } from './routes/persona
 import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
 import { createPersonalWhatsappConnectionRouter } from './routes/personal-whatsapp-connection.js';
 import { createCommunicationAuraIntelligenceRouter } from './routes/communication-aura-intelligence.js';
+import { createAuraCommandCentreRouter } from './routes/aura-command-centre.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -463,13 +465,6 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   xeroOAuthService,
   apiPublicUrl,
   emailSendingEnabled: env.runtime.emailSendingEnabled,
-});
-  db,
-  financeService,
-  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
-  hubService: integrationHubService,
-  webhooksEnabled: env.runtime.webhooksEnabled,
-  paymentProcessingEnabled: env.runtime.paymentProcessingEnabled,
 });
 const resendEmailService = ResendEmailService.create({
   db,
@@ -823,6 +818,7 @@ const personalWhatsappConnectionService = new PersonalWhatsappConnectionService(
   env.INTEGRATIONS_ENCRYPTION_KEY,
 );
 const communicationAuraIntelligenceService = new CommunicationAuraIntelligenceService(db);
+const auraCommandCentreService = new AuraCommandCentreService({ db });
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2433,6 +2429,15 @@ app.use(
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
+  }),
+);
+app.use(
+  '/api/v1/aura-command-centre',
+  createAuraCommandCentreRouter({
+    auraCommandCentreService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
   }),
 );
 app.use(

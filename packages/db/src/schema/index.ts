@@ -107,6 +107,7 @@ export * from './personal-communications-intelligence';
 export * from './personal-whatsapp-intelligence';
 export * from './personal-whatsapp-connection';
 export * from './communication-aura-intelligence';
+export * from './aura-command-centre';
 export * from './technician-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';
