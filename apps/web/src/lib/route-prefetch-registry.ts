@@ -278,6 +278,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/customer-360-intelligence',
+    load: () => import('../pages/customer-360-intelligence/Customer360IntelligencePage'),
+    permissions: ['customers:read', 'customers:write', 'customer_experience:read', 'customer_experience:write', 'communications:read', 'communications:write', 'communications:manage', '*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],

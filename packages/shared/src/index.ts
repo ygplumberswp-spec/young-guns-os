@@ -132,6 +132,7 @@ export * from './finance-aura-agent.js';
 export * from './sales-intelligence-agent.js';
 export * from './sales-followup-intelligence.js';
 export * from './sales-analytics-intelligence.js';
+export * from './customer-360-intelligence.js';
 export * from './finance-cashflow-profit.js';
 export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';

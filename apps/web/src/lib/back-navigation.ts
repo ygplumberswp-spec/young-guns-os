@@ -202,6 +202,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/sales-intelligence-agent',
   '/sales-followup-intelligence',
   '/sales-analytics-intelligence',
+  '/customer-360-intelligence',
   '/document-ai',
   '/business-continuity',
   '/communications-intelligence',

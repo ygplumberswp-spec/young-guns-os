@@ -233,6 +233,21 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {
+    href: '/customer-360-intelligence',
+    label: 'Customer 360 Intelligence',
+    permissions: [
+      'customers:read',
+      'customers:write',
+      'customer_experience:read',
+      'customer_experience:write',
+      'communications:read',
+      'communications:write',
+      'communications:manage',
+      '*',
+    ],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],
