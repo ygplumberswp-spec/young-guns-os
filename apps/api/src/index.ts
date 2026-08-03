@@ -263,6 +263,7 @@ import { FinanceCashflowProfitService } from './services/finance-cashflow-profit
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
 import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
 import { FleetAiRecommendationsService } from './services/fleet-ai-recommendations.service.js';
+import { DriverIntelligenceService } from './services/driver-intelligence.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { RecruitmentPerformanceIntelligenceService } from './services/recruitment-performance-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
@@ -306,6 +307,7 @@ import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-pro
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
 import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
 import { createFleetAiRecommendationsRouter } from './routes/fleet-ai-recommendations.js';
+import { createDriverIntelligenceRouter } from './routes/driver-intelligence.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createRecruitmentPerformanceIntelligenceRouter } from './routes/recruitment-performance-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
@@ -883,6 +885,7 @@ const stockForecastingService = new StockForecastingService({
 });
 const vehicleIntelligenceService = new VehicleIntelligenceService(db);
 const fleetAiRecommendationsService = new FleetAiRecommendationsService(db);
+const driverIntelligenceService = new DriverIntelligenceService(db, fleetIntelligenceService);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
 const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
@@ -2642,6 +2645,16 @@ app.use(
   '/api/v1/fleet-ai-recommendations',
   createFleetAiRecommendationsRouter({
     fleetAiRecommendationsService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/driver-intelligence',
+  createDriverIntelligenceRouter({
+    driverIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

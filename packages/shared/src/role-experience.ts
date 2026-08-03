@@ -102,6 +102,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
       '*',
     ],
   },
+  {
+    href: '/driver-intelligence',
+    label: 'Driver Intelligence',
+    permissions: ['fleet:read', 'fleet_intelligence:read', 'agents:read', '*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
 
   {
     href: '/mobile-platform/dispatcher',

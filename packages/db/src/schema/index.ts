@@ -108,6 +108,7 @@ export * from './ops-intelligence';
 export * from './fleet-intelligence';
 export * from './vehicle-intelligence';
 export * from './fleet-ai-recommendations';
+export * from './driver-intelligence';
 export * from './personal-communications-intelligence';
 export * from './personal-whatsapp-intelligence';
 export * from './personal-whatsapp-connection';

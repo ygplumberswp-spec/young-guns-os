@@ -560,6 +560,10 @@ export const FleetAiRecommendationsPage = lazyNamed(
   () => import('../pages/fleet-ai-recommendations/FleetAiRecommendationsPage'),
   'FleetAiRecommendationsPage',
 );
+export const DriverIntelligencePage = lazyNamed(
+  () => import('../pages/driver-intelligence/DriverIntelligencePage'),
+  'DriverIntelligencePage',
+);
 export const EnterpriseSecurityPage = lazyNamed(
   () => import('../pages/enterprise-security/EnterpriseSecurityPage'),
   'EnterpriseSecurityPage',
