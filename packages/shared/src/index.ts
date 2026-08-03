@@ -130,6 +130,7 @@ export * from './social-media-integrations.js';
 export * from './content-reputation-intelligence.js';
 export * from './finance-aura-agent.js';
 export * from './sales-intelligence-agent.js';
+export * from './sales-followup-intelligence.js';
 export * from './finance-cashflow-profit.js';
 export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';
