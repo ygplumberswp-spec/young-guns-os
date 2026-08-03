@@ -16,6 +16,8 @@ import {
   renderLiveOpsFutureSections,
   type LiveOpsFutureModules,
 } from './live-operations-extensions';
+import { resolveFleetCardHonesty } from './dashboard-honesty';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { OpsIntelligenceLiveStrip } from './OpsIntelligenceLiveStrip';
 
 type LiveOperationsPanelProps = {
@@ -129,6 +131,14 @@ export function LiveOperationsPanel({
 
   const hasStoredPositions = (tracking?.latestPositions.length ?? 0) > 0;
   const showMapSurface = hasStoredPositions || mapMarkers.length > 0;
+
+  const { state: fleetState, note: fleetNote } = resolveFleetCardHonesty({
+    hasTracking: Boolean(tracking),
+    cartrackConnected: Boolean(tracking?.cartrackConnected),
+    connectionDisplayState: tracking?.connectionDisplayState ?? null,
+    hasStoredPositions,
+    error: fleetError,
+  });
 
   return (
     <Panel title="Live Operations" description="Cartrack GPS and verified job sites — no invented positions">
@@ -284,6 +294,14 @@ export function LiveOperationsPanel({
               ) : null}
             </>
           )}
+          <DashboardSourceMeta
+            source="Cartrack GPS positions · Jobs"
+            updatedAt={lastFetchedAt}
+            state={fleetState}
+            href="/fleet"
+            linkLabel="Open fleet"
+            note={fleetNote}
+          />
         </div>
       </div>
     </Panel>

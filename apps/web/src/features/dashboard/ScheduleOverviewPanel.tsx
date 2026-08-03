@@ -15,6 +15,7 @@ import { useAuth } from '../../lib/auth-context';
 import { fetchAssignees, fetchSchedulingCalendar } from '../../lib/scheduling-api';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta, useReceivedAt } from './DashboardSourceMeta';
 
 function rangeForView(view: CalendarViewMode, anchor: Date): { from: Date; to: Date } {
   if (view === 'week') {
@@ -63,6 +64,7 @@ export function ScheduleOverviewPanel() {
   const events = calendarQuery.data?.events ?? [];
   const settings = calendarQuery.data?.settings;
   const assignees = assigneesQuery.data ?? [];
+  const receivedAt = useReceivedAt(calendarQuery.data);
 
   const upcoming = useMemo(() => {
     const now = Date.now();
@@ -221,7 +223,7 @@ export function ScheduleOverviewPanel() {
 
             <div className="exec-schedule-overview__footer">
               <span className="page-muted">
-                {events.length} scheduled · source `/scheduling/calendar`
+                {events.length} scheduled
                 {settings?.cartrackConnected ? ' · Cartrack travel available' : ''}
               </span>
               <Link href="/scheduling">
@@ -232,6 +234,18 @@ export function ScheduleOverviewPanel() {
             </div>
           </>
         )}
+        <DashboardSourceMeta
+          source="Scheduling calendar · Assignees"
+          updatedAt={receivedAt}
+          state={error ? 'unavailable' : 'live'}
+          href="/scheduling"
+          linkLabel="Open scheduling"
+          note={
+            settings?.cartrackConnected
+              ? null
+              : 'Cartrack travel times are unavailable — schedule risk is based on booked times only.'
+          }
+        />
       </div>
     </Panel>
   );

@@ -1,8 +1,9 @@
-import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
 import type {
   ExecutiveCompletedJob,
   ExecutiveDashboardSummary,
   ExecutiveLiveJob,
+  ExecutiveOutstandingInvoiceRef,
   ExecutiveTeamMember,
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
@@ -11,7 +12,9 @@ import { buildFinanceDashboardSnapshot } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   communications,
+  customers,
   invoices,
+  jobCompletionSnapshots,
   jobs,
   leads,
   mobileTimeEntries,
@@ -68,6 +71,16 @@ function displayName(row: {
   return full || row.email;
 }
 
+/** Invoice statuses that still carry an open balance. */
+const OPEN_INVOICE_STATUSES = ['sent', 'partial', 'overdue'] as const;
+
+type OutstandingSnapshot = {
+  outstandingCents: number;
+  invoiceCount: number;
+  oldestOverdue: ExecutiveOutstandingInvoiceRef | null;
+  largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
+};
+
 export class DashboardExecutiveService {
   constructor(private readonly deps: DashboardExecutiveDeps) {}
 
@@ -100,6 +113,8 @@ export class DashboardExecutiveService {
       draftInvoices,
       leadCount,
       messageCount,
+      returningCustomerCount,
+      outstanding,
       xeroStatus,
     ] = await Promise.all([
       this.deps.jobsService.getStats(companyId),
@@ -181,6 +196,8 @@ export class DashboardExecutiveService {
             lt(communications.createdAt, end),
           ),
         ),
+      this.countReturningCustomers(companyId, start, end),
+      this.loadOutstandingSnapshot(companyId),
       this.loadXeroFinance(companyId),
     ]);
 
@@ -282,33 +299,6 @@ export class DashboardExecutiveService {
       }
     }
 
-    const outstandingItems = intelligenceDashboard.outstandingInvoices.items;
-    const withBalance = outstandingItems.map((invoice) => ({
-      id: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      customerName: invoice.customerName,
-      dueDate: invoice.dueDate,
-      outstandingCents: Math.max(0, invoice.amountCents - invoice.amountPaidCents),
-    }));
-    const overdueSorted = withBalance
-      .filter((invoice) => {
-        const source = outstandingItems.find((row) => row.id === invoice.id);
-        if (!invoice.dueDate) return source?.status === 'overdue';
-        return new Date(invoice.dueDate).getTime() < now.getTime();
-      })
-      .slice()
-      .sort((a, b) => {
-        const aDue = a.dueDate ? new Date(a.dueDate).getTime() : 0;
-        const bDue = b.dueDate ? new Date(b.dueDate).getTime() : 0;
-        return aDue - bDue;
-      });
-    const oldestOverdue = overdueSorted[0] ?? null;
-    const largestOutstanding =
-      withBalance
-        .filter((invoice) => invoice.outstandingCents > 0)
-        .slice()
-        .sort((a, b) => b.outstandingCents - a.outstandingCents)[0] ?? null;
-
     return {
       generatedAt: now.toISOString(),
       header: {
@@ -334,7 +324,7 @@ export class DashboardExecutiveService {
         money: {
           invoicedTodayCents: todayInvoices[0]?.total ?? 0,
           paymentsTodayCents: todayPayments[0]?.total ?? 0,
-          outstandingCents: intelligenceDashboard.outstandingInvoices.totalOutstandingCents,
+          outstandingCents: outstanding.outstandingCents,
           draftCount: draftInvoices[0]?.count ?? 0,
           currency: financeStats.currency,
         },
@@ -342,7 +332,7 @@ export class DashboardExecutiveService {
           leads: leadCount[0]?.count ?? 0,
           followUps: intelligenceDashboard.customerFollowUps.count,
           messages: messageCount[0]?.count ?? 0,
-          returning: 0,
+          returning: returningCustomerCount,
         },
       },
       liveOperations,
@@ -356,15 +346,117 @@ export class DashboardExecutiveService {
         criticalIssues,
       },
       outstandingInvoices: {
-        outstandingCents: intelligenceDashboard.outstandingInvoices.totalOutstandingCents,
-        invoiceCount: intelligenceDashboard.outstandingInvoices.count,
+        outstandingCents: outstanding.outstandingCents,
+        invoiceCount: outstanding.invoiceCount,
         currency: intelligenceDashboard.outstandingInvoices.currency,
-        oldestOverdue,
-        largestOutstanding,
+        oldestOverdue: outstanding.oldestOverdue,
+        largestOutstanding: outstanding.largestOutstanding,
       },
       xeroFinance: xeroStatus,
       teamToday,
     };
+  }
+
+  /**
+   * Open AR across every unpaid invoice in the tenant.
+   * Aggregated in SQL so the dashboard total is not capped by any preview row limit.
+   */
+  private async loadOutstandingSnapshot(companyId: string): Promise<OutstandingSnapshot> {
+    const balance = sql`${invoices.amountCents} - ${invoices.amountPaidCents}`;
+    const isOpen = and(
+      eq(invoices.companyId, companyId),
+      inArray(invoices.status, [...OPEN_INVOICE_STATUSES]),
+      sql`${balance} > 0`,
+    );
+    const refColumns = {
+      id: invoices.id,
+      invoiceNumber: invoices.invoiceNumber,
+      customerName: customers.name,
+      dueDate: invoices.dueDate,
+      outstandingCents: sql<number>`(${balance})::int`,
+    };
+
+    const [totals, oldestRows, largestRows] = await Promise.all([
+      this.deps.db
+        .select({
+          count: sql<number>`count(*)::int`,
+          total: sql<string>`coalesce(sum(${balance}), 0)::text`,
+        })
+        .from(invoices)
+        .where(isOpen),
+      this.deps.db
+        .select(refColumns)
+        .from(invoices)
+        .leftJoin(customers, eq(customers.id, invoices.customerId))
+        .where(
+          and(
+            isOpen,
+            or(
+              lt(invoices.dueDate, new Date()),
+              and(isNull(invoices.dueDate), eq(invoices.status, 'overdue')),
+            ),
+          ),
+        )
+        .orderBy(sql`${invoices.dueDate} asc nulls last`)
+        .limit(1),
+      this.deps.db
+        .select(refColumns)
+        .from(invoices)
+        .leftJoin(customers, eq(customers.id, invoices.customerId))
+        .where(isOpen)
+        .orderBy(sql`${balance} desc`)
+        .limit(1),
+    ]);
+
+    const toRef = (
+      row: (typeof oldestRows)[number] | undefined,
+    ): ExecutiveOutstandingInvoiceRef | null =>
+      row
+        ? {
+            id: row.id,
+            invoiceNumber: row.invoiceNumber,
+            customerName: row.customerName ?? 'Unknown customer',
+            dueDate: row.dueDate ? row.dueDate.toISOString() : null,
+            outstandingCents: Number(row.outstandingCents ?? 0),
+          }
+        : null;
+
+    return {
+      outstandingCents: Number(totals[0]?.total ?? 0),
+      invoiceCount: totals[0]?.count ?? 0,
+      oldestOverdue: toRef(oldestRows[0]),
+      largestOutstanding: toRef(largestRows[0]),
+    };
+  }
+
+  /**
+   * Customers who booked work today and had already booked with us before today.
+   * Counted from real job records — no estimate when there is no repeat history.
+   */
+  private async countReturningCustomers(
+    companyId: string,
+    start: Date,
+    end: Date,
+  ): Promise<number> {
+    const [row] = await this.deps.db
+      .select({ count: sql<number>`count(distinct ${jobs.customerId})::int` })
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.companyId, companyId),
+          isNotNull(jobs.customerId),
+          gte(jobs.createdAt, start),
+          lt(jobs.createdAt, end),
+          sql`exists (
+            select 1 from ${jobs} prior
+            where prior.company_id = ${companyId}::uuid
+              and prior.customer_id = ${jobs.customerId}
+              and prior.created_at < ${start}::timestamptz
+          )`,
+        ),
+      );
+
+    return row?.count ?? 0;
   }
 
   private async loadXeroFinance(companyId: string): Promise<ExecutiveXeroFinance> {
@@ -608,23 +700,37 @@ export class DashboardExecutiveService {
     if (completedJobs.length === 0) return [];
 
     const jobIds = completedJobs.map((job) => job.id);
-    const invoiceRows = await this.deps.db.query.invoices.findMany({
-      where: and(eq(invoices.companyId, companyId), inArray(invoices.jobId, jobIds)),
-      columns: { jobId: true, status: true },
-    });
+    const [invoiceRows, snapshotRows] = await Promise.all([
+      this.deps.db.query.invoices.findMany({
+        where: and(eq(invoices.companyId, companyId), inArray(invoices.jobId, jobIds)),
+        columns: { jobId: true, status: true },
+      }),
+      this.deps.db.query.jobCompletionSnapshots.findMany({
+        where: and(
+          eq(jobCompletionSnapshots.companyId, companyId),
+          inArray(jobCompletionSnapshots.jobId, jobIds),
+        ),
+        columns: { jobId: true, snapshot: true },
+      }),
+    ]);
     const invoiceByJob = new Map(invoiceRows.map((row) => [row.jobId, row.status]));
+    const snapshotByJob = new Map(snapshotRows.map((row) => [row.jobId, row.snapshot]));
 
-    return completedJobs.map((job) => ({
-      id: job.id,
-      jobNumber: job.jobNumber,
-      title: job.title,
-      customerName: job.customer?.name ?? 'Unknown customer',
-      technicianName: job.assignedUser ? displayName(job.assignedUser) : null,
-      completedAt: job.updatedAt.toISOString(),
-      invoiceStatus: invoiceByJob.get(job.id) ?? null,
-      docsRequired: false,
-      cocRequired: false,
-    }));
+    return completedJobs.map((job) => {
+      const snapshot = snapshotByJob.get(job.id);
+      return {
+        id: job.id,
+        jobNumber: job.jobNumber,
+        title: job.title,
+        customerName: job.customer?.name ?? 'Unknown customer',
+        technicianName: job.assignedUser ? displayName(job.assignedUser) : null,
+        completedAt: job.updatedAt.toISOString(),
+        invoiceStatus: invoiceByJob.get(job.id) ?? null,
+        // No completion snapshot means the technician never captured the closeout pack.
+        docsRequired: !snapshot,
+        cocRequired: snapshot?.cocRequired === 'required',
+      };
+    });
   }
 
   private buildTeamToday(

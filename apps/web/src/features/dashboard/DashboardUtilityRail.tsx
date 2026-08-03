@@ -9,6 +9,7 @@ import { useCompanyLocale } from '../../lib/company-locale-context';
 import { fetchIntegrationHubDashboard } from '../../lib/integration-hub-api';
 import { useStaffCachedQuery } from '../../lib/use-scoped-cached-query';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta, useReceivedAt } from './DashboardSourceMeta';
 import {
   formatOwnerIntegrationHonesty,
   ownerHonestyCtaLabel,
@@ -142,10 +143,20 @@ function TodayAtAGlanceRailPanel({
           </li>
           <li>
             <span>Technicians working</span>
-            <strong>{techniciansWorking ?? 0}</strong>
+            <strong>
+              {techniciansWorking ?? '—'}
+              {techniciansWorking == null ? <em>Unavailable</em> : null}
+            </strong>
           </li>
         </ul>
       )}
+      <DashboardSourceMeta
+        source="Dashboard executive summary"
+        updatedAt={summary?.generatedAt ?? null}
+        state={glance ? 'live' : 'unavailable'}
+        href="/reports"
+        linkLabel="Open reports"
+      />
     </Panel>
   );
 }
@@ -160,6 +171,10 @@ function IntegrationConnectionsRailPanel() {
   });
 
   const coreProviders = pickOwnerDashboardProviders(hubQuery.data?.providers ?? []);
+  const receivedAt = useReceivedAt(hubQuery.data);
+  const disconnectedCount = coreProviders.filter(
+    (provider) => toOwnerIntegrationHonesty(provider.capabilityState) !== 'connected',
+  ).length;
 
   return (
     <Panel
@@ -220,6 +235,20 @@ function IntegrationConnectionsRailPanel() {
       <Link href="/integrations" className="exec-utility-ask__link">
         Open integrations
       </Link>
+      <DashboardSourceMeta
+        source="Integration hub connection records"
+        updatedAt={receivedAt}
+        state={
+          coreProviders.length === 0 ? 'unavailable' : disconnectedCount > 0 ? 'partial' : 'live'
+        }
+        href="/integrations"
+        linkLabel="Open integrations"
+        note={
+          disconnectedCount > 0
+            ? `${disconnectedCount} of ${coreProviders.length} core providers are not fully connected.`
+            : null
+        }
+      />
     </Panel>
   );
 }

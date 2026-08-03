@@ -4,9 +4,11 @@ import { StatCard } from '@titan/ui';
 import { SummaryCardGrid } from '../../components/ux';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type TodayAtAGlanceGridProps = {
   data: ExecutiveTodayAtAGlance | null;
+  generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -14,6 +16,7 @@ type TodayAtAGlanceGridProps = {
 
 export function TodayAtAGlanceGrid({
   data,
+  generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
@@ -38,6 +41,13 @@ export function TodayAtAGlanceGrid({
               Retry
             </button>
           ) : null}
+          <DashboardSourceMeta
+            source="Dashboard executive summary"
+            updatedAt={generatedAt}
+            state="unavailable"
+            href="/jobs"
+            linkLabel="Open jobs"
+          />
         </div>
       </section>
     );
@@ -85,6 +95,12 @@ export function TodayAtAGlanceGrid({
           </Link>
         ))}
       </SummaryCardGrid>
+      <DashboardSourceMeta
+        source="Jobs · Scheduling · Finance · CRM (executive summary)"
+        updatedAt={generatedAt}
+        href="/reports"
+        linkLabel="Open reports"
+      />
     </section>
   );
 }

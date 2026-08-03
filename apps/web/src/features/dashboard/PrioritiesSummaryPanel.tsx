@@ -3,9 +3,11 @@ import { Link } from 'wouter';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type PrioritiesSummaryPanelProps = {
   priorities: ExecutivePrioritiesSummary | null;
+  generatedAt?: string | null;
   isLoading?: boolean;
 };
 
@@ -15,6 +17,7 @@ function approvalLabel(state: 'awaiting_owner' | 'not_required'): string {
 
 export function PrioritiesSummaryPanel({
   priorities,
+  generatedAt = null,
   isLoading = false,
 }: PrioritiesSummaryPanelProps) {
   return (
@@ -86,6 +89,13 @@ export function PrioritiesSummaryPanel({
             ) : null}
           </>
         )}
+        <DashboardSourceMeta
+          source="Today&apos;s Plan · Automation runs · Invoices"
+          updatedAt={generatedAt}
+          state={priorities ? 'live' : 'unavailable'}
+          href="/aura/todays-plan"
+          linkLabel="Open Today&apos;s Plan"
+        />
       </div>
     </Panel>
   );

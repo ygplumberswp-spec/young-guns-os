@@ -3,9 +3,11 @@ import type { ExecutiveLiveJob } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type ActiveJobsPanelProps = {
   jobs: ExecutiveLiveJob[];
+  generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -27,6 +29,7 @@ function formatTimeOnSite(startedAt: string | null): string {
 
 export function ActiveJobsPanel({
   jobs,
+  generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
@@ -103,6 +106,13 @@ export function ActiveJobsPanel({
             ))}
           </ul>
         )}
+        <DashboardSourceMeta
+          source="Jobs (executive summary)"
+          updatedAt={generatedAt}
+          state={error ? 'unavailable' : 'live'}
+          href="/jobs?status=in_progress"
+          linkLabel="Open jobs"
+        />
       </div>
     </Panel>
   );

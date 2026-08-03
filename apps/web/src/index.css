@@ -1955,6 +1955,40 @@ a:focus-visible {
   color: var(--titan-text-muted);
 }
 
+.exec-source-meta {
+  margin: 0.75rem 0 0;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+  color: var(--titan-text-muted);
+}
+
+.exec-source-meta__state {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.exec-source-meta__state.is-ok {
+  color: var(--titan-success, #15803d);
+}
+
+.exec-source-meta__state.is-warn {
+  color: var(--titan-warning, #b45309);
+}
+
+.exec-source-meta__state.is-muted {
+  color: var(--titan-text-muted);
+}
+
+.exec-source-meta__link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.exec-source-meta__note {
+  display: block;
+}
+
 .exec-utility-glance {
   list-style: none;
   margin: 0;

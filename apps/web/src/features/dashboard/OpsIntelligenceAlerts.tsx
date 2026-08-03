@@ -6,9 +6,11 @@ import { StatusBadge } from '../../components/ux';
 import { useAuth } from '../../lib/auth-context';
 import { ackOpsReminder } from '../../lib/ops-intelligence-api-client';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type OpsIntelligenceAlertsProps = {
   events: OpsIntelligenceEvent[];
+  generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -66,6 +68,7 @@ function ActionButton({
 
 export function OpsIntelligenceAlerts({
   events,
+  generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
@@ -144,6 +147,13 @@ export function OpsIntelligenceAlerts({
           ))}
         </ul>
       ) : null}
+      <DashboardSourceMeta
+        source="Schedule · GPS positions · Ops intelligence snapshot"
+        updatedAt={generatedAt}
+        state={error ? 'unavailable' : 'live'}
+        href="/scheduling"
+        linkLabel="Open scheduling"
+      />
     </Panel>
   );
 }

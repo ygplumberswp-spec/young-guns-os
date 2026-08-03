@@ -54,6 +54,7 @@ export function ExecutiveDashboard() {
           >
             <TodayAtAGlanceGrid
               data={summary?.todayAtAGlance ?? null}
+              generatedAt={summary?.generatedAt ?? null}
               isLoading={isLoading}
               error={loadError}
               onRetry={() => void summaryQuery.refetch()}
@@ -66,6 +67,7 @@ export function ExecutiveDashboard() {
           >
             <OpsIntelligenceAlerts
               events={opsEvents}
+              generatedAt={opsSnapshot?.generatedAt ?? null}
               isLoading={opsLoading}
               error={opsQuery.error}
               onRetry={() => void opsQuery.refetch()}
@@ -95,6 +97,7 @@ export function ExecutiveDashboard() {
               >
                 <ActiveJobsPanel
                   jobs={liveJobs}
+                  generatedAt={summary?.generatedAt ?? null}
                   isLoading={isLoading}
                   error={loadError}
                   onRetry={() => void summaryQuery.refetch()}
@@ -107,6 +110,7 @@ export function ExecutiveDashboard() {
             >
               <CompletedTodayPanel
                 jobs={summary?.completedToday ?? []}
+                generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
                 error={loadError}
                 onRetry={() => void summaryQuery.refetch()}
@@ -115,6 +119,7 @@ export function ExecutiveDashboard() {
             <SectionErrorBoundary sectionName="Priorities">
               <PrioritiesSummaryPanel
                 priorities={summary?.priorities ?? null}
+                generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
               />
             </SectionErrorBoundary>
@@ -133,6 +138,7 @@ export function ExecutiveDashboard() {
               <OutstandingInvoicesPanel
                 data={summary?.outstandingInvoices ?? null}
                 xeroFinance={summary?.xeroFinance ?? null}
+                generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
                 error={loadError}
                 onRetry={() => void summaryQuery.refetch()}

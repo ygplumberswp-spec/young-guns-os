@@ -3,9 +3,11 @@ import type { ExecutiveCompletedJob } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type CompletedTodayPanelProps = {
   jobs: ExecutiveCompletedJob[];
+  generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -17,6 +19,7 @@ function formatCompletedTime(iso: string): string {
 
 export function CompletedTodayPanel({
   jobs,
+  generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
@@ -82,6 +85,13 @@ export function CompletedTodayPanel({
             ))}
           </ol>
         )}
+        <DashboardSourceMeta
+          source="Jobs · Invoices · Job completion snapshots"
+          updatedAt={generatedAt}
+          state={error ? 'unavailable' : 'live'}
+          href="/jobs?status=completed"
+          linkLabel="Open completed jobs"
+        />
       </div>
     </Panel>
   );

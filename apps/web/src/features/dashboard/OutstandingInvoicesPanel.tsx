@@ -2,11 +2,14 @@ import { Link } from 'wouter';
 import type { ExecutiveOutstandingInvoices, ExecutiveXeroFinance } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
+import { resolveFinanceCardHonesty } from './dashboard-honesty';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
+import { DashboardSourceMeta } from './DashboardSourceMeta';
 
 type OutstandingInvoicesPanelProps = {
   data: ExecutiveOutstandingInvoices | null;
   xeroFinance?: ExecutiveXeroFinance | null;
+  generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -53,12 +56,14 @@ function buildEmptyDescription(xero: ExecutiveXeroFinance | null | undefined): s
 export function OutstandingInvoicesPanel({
   data,
   xeroFinance = null,
+  generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
 }: OutstandingInvoicesPanelProps) {
   const { formatMoney } = useCompanyLocale();
   const hasOutstanding = Boolean(data && data.invoiceCount > 0 && data.outstandingCents > 0);
+  const finance = resolveFinanceCardHonesty(xeroFinance, error);
 
   return (
     <Panel title="Outstanding Invoices" description="Open AR from synced TITAN finance records">
@@ -157,6 +162,15 @@ export function OutstandingInvoicesPanel({
             : 'Xero not connected — figures are TITAN finance records only'}
         </p>
       ) : null}
+
+      <DashboardSourceMeta
+        source="TITAN invoices (all open balances)"
+        updatedAt={generatedAt}
+        state={finance.state}
+        href="/finance/invoices"
+        linkLabel="Open finance"
+        note={finance.note}
+      />
     </Panel>
   );
 }
