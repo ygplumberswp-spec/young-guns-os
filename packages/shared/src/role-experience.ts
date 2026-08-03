@@ -201,7 +201,7 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   {
     href: '/sales-intelligence-agent',
     label: 'Sales Intelligence Agent',
-    permissions: ['crm:read', 'crm:write', 'quotes:read', 'sales:read', 'agents:read', '*'],
+    permissions: ['sales:read', 'sales:write', 'sales_intelligence:read', 'leads:read', 'agents:read', '*'],
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {

@@ -256,7 +256,7 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   {
     path: '/sales-intelligence-agent',
     load: () => import('../pages/sales-intelligence-agent/SalesIntelligenceAgentPage'),
-    permissions: ['crm:read', 'crm:write', 'quotes:read', 'sales:read', 'agents:read', '*'],
+    permissions: ['sales:read', 'sales:write', 'sales_intelligence:read', 'leads:read', 'agents:read', '*'],
     experiences: ['platform_owner', 'company_owner', 'staff'],
     priority: 2,
     safeToPreload: true,
