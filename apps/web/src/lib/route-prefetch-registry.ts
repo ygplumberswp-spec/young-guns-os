@@ -167,6 +167,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/finance-aura-agent',
+    load: () => import('../pages/finance-aura-agent/FinanceAuraAgentPage'),
+    permissions: ['finance:read', 'finance:write', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/social-media-integrations',
     load: () =>
       import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),

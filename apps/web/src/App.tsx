@@ -466,6 +466,10 @@ export function App() {
                           component={OwnerPages.MarketingAgentPage}
                         />
                         <Route
+                          path="/finance-aura-agent"
+                          component={OwnerPages.FinanceAuraAgentPage}
+                        />
+                        <Route
                           path="/social-media-integrations"
                           component={OwnerPages.SocialMediaIntegrationsPage}
                         />

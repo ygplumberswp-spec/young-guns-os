@@ -563,6 +563,10 @@ export const MarketingAgentPage = lazyNamed(
   () => import('../pages/marketing-agent/MarketingAgentPage'),
   'MarketingAgentPage',
 );
+export const FinanceAuraAgentPage = lazyNamed(
+  () => import('../pages/finance-aura-agent/FinanceAuraAgentPage'),
+  'FinanceAuraAgentPage',
+);
 export const SocialMediaIntegrationsPage = lazyNamed(
   () =>
     import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),

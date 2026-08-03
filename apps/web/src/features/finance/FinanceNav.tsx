@@ -9,6 +9,7 @@ const sectionTabs = [
 ];
 
 const secondaryItems = [
+  { id: 'finance-aura-agent', label: 'Finance AURA Agent', href: '/finance-aura-agent' },
   { id: 'finance-settings', label: 'Finance Settings', href: '/settings/company' },
   { id: 'numbering-rules', label: 'Numbering Rules', href: '/settings/company' },
   { id: 'archived-records', label: 'Archived Records', href: '/drafts?status=archived' },
