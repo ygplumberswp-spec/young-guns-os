@@ -260,6 +260,10 @@ export function App() {
                           path="/smart-notifications"
                           component={OwnerPages.SmartNotificationsPage}
                         />
+                        <Route
+                          path="/market-intelligence"
+                          component={OwnerPages.MarketIntelligencePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

@@ -344,6 +344,10 @@ export const SmartNotificationsPage = lazyNamed(
   () => import('../pages/smart-notifications/SmartNotificationsPage'),
   'SmartNotificationsPage',
 );
+export const MarketIntelligencePage = lazyNamed(
+  () => import('../pages/market-intelligence/MarketIntelligencePage'),
+  'MarketIntelligencePage',
+);
 export const ExecutiveCommandCentrePage = lazyNamed(
   () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
   'ExecutiveCommandCentrePage',

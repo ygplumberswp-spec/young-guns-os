@@ -330,6 +330,17 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    // The API decides what a marketing user may read, and pricing, supplier
+    // cost and strategy topics never leave it for a non-Owner, so the chunk
+    // itself carries nothing sensitive.
+    path: '/market-intelligence',
+    load: () => import('../pages/market-intelligence/MarketIntelligencePage'),
+    permissions: ['marketing:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 3,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],
