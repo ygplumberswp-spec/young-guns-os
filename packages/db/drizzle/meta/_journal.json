@@ -1177,6 +1177,13 @@
       "when": 1754573400171,
       "tag": "0171_xero_complete_historical_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 168,
+      "version": "7",
+      "when": 1754659800172,
+      "tag": "0172_payments_yoco_payment_id",
+      "breakpoints": true
     }
   ]
 }
