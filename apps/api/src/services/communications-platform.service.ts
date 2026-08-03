@@ -1514,24 +1514,33 @@ export class CommunicationsPlatformService {
     },
   ): CommPlatformConnectionHealth {
     const oauthConfigured = options?.oauthConfigured;
+    const oauthAppMissing =
+      options?.preferNotConfiguredWhenOAuthMissing && oauthConfigured === false;
+    const oauthAppReady = oauthConfigured === true;
+
     if (!row) {
       return {
         ...empty,
         oauthConfigured: oauthConfigured ?? empty.oauthConfigured,
-        emptyStateMessage:
-          options?.preferNotConfiguredWhenOAuthMissing && oauthConfigured === false
-            ? 'Not configured — Google OAuth client credentials are missing on the API host.'
+        // Platform OAuth app ready → tenant is disconnected (not "not_configured").
+        status: oauthAppReady ? 'disconnected' : empty.status,
+        emptyStateMessage: oauthAppMissing
+          ? 'Not configured — Google OAuth client credentials are missing on the API host.'
+          : oauthAppReady
+            ? 'Google OAuth is configured on the API. Connect Business Gmail to store encrypted tenant tokens — no messages are invented.'
             : empty.emptyStateMessage,
       };
     }
 
     let status = row.status;
-    if (
-      options?.preferNotConfiguredWhenOAuthMissing &&
-      oauthConfigured === false &&
-      !row.credentialsEncrypted
-    ) {
+    if (oauthAppMissing && !row.credentialsEncrypted) {
       status = 'not_configured';
+    } else if (
+      oauthAppReady &&
+      !row.credentialsEncrypted &&
+      (status === 'not_configured' || status === 'disconnected')
+    ) {
+      status = 'disconnected';
     }
 
     const connected = status === 'connected';
@@ -1555,9 +1564,11 @@ export class CommunicationsPlatformService {
       lastSyncStatus: typeof meta.lastSyncStatus === 'string' ? meta.lastSyncStatus : null,
       emptyStateMessage: connected
         ? `${row.label} connected${row.externalAddress ? ` (${row.externalAddress})` : ''} — showing real indexed traffic only.`
-        : oauthConfigured === false
+        : oauthAppMissing
           ? 'Not configured — set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET, then connect via Google OAuth.'
-          : empty.emptyStateMessage,
+          : oauthAppReady
+            ? 'Google OAuth is configured on the API. Connect Business Gmail to store encrypted tenant tokens — no messages are invented.'
+            : empty.emptyStateMessage,
     };
   }
 

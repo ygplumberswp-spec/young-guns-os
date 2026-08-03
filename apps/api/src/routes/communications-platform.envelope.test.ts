@@ -71,8 +71,20 @@ describe('communications platform API envelope & safety', () => {
     assert.ok(serviceSource.includes('AURA never auto-sends'));
   });
 
-  it('restricts Business Gmail Connect to Platform Owner', () => {
-    assert.ok(routeSource.includes('Only Platform Owner can connect Business Gmail'));
+  it('restricts Business Gmail Connect to Platform Owner and Company Owner', () => {
+    assert.ok(
+      routeSource.includes(
+        'Only Platform Owner or Company Owner can connect Business Gmail',
+      ),
+    );
+    assert.ok(routeSource.includes('canConnectBusinessGmail(actor)'));
+    assert.ok(
+      routeSource.includes(
+        'Only Platform Owner or Company Owner can disconnect Business Gmail',
+      ),
+    );
+    // Personal WhatsApp remains Platform Owner only
     assert.ok(routeSource.includes('isPlatformOwnerRole(actor)'));
+    assert.ok(routeSource.includes('Personal WhatsApp Assistant is Platform Owner only'));
   });
 });

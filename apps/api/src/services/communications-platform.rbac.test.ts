@@ -2,12 +2,39 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   canAccessPersonalWhatsappAssistant,
+  canConnectBusinessGmail,
   personalAllowedInBusinessSearch,
 } from '@titan/shared';
 import { CommunicationsPlatformService } from './communications-platform.service.js';
 
 describe('communications platform service RBAC guards', () => {
   const service = new CommunicationsPlatformService({} as never, undefined);
+
+  it('canConnectBusinessGmail allows Platform Owner and Company Owner; blocks staff/client', () => {
+    assert.equal(
+      canConnectBusinessGmail({
+        roleName: 'Platform Owner',
+        permissions: ['*'],
+      }),
+      true,
+    );
+    assert.equal(
+      canConnectBusinessGmail({
+        roleName: 'Company Owner',
+        permissions: ['*'],
+      }),
+      true,
+    );
+    for (const roleName of ['Admin', 'Office Staff', 'Technician', 'Client', 'Manager']) {
+      assert.equal(
+        canConnectBusinessGmail({
+          roleName,
+          permissions: ['*', 'communications:manage'],
+        }),
+        false,
+      );
+    }
+  });
 
   it('assertPersonalAccess rejects Admin / Office / Tech / Developer / Support and staff roles', () => {
     for (const roleName of [

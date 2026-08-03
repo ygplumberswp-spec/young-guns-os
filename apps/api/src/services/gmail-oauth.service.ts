@@ -99,7 +99,14 @@ export class GmailOAuthService {
     }
 
     const connected = account?.status === 'connected' && Boolean(account.credentialsEncrypted);
-    const status: CommPlatformCapabilityState = account?.status ?? 'not_configured';
+    // OAuth app configured ≠ tenant connected. Unconnected tenants are disconnected, not not_configured.
+    const status: CommPlatformCapabilityState = connected
+      ? 'connected'
+      : account?.status === 'error' ||
+          account?.status === 'pending' ||
+          account?.status === 'degraded'
+        ? account.status
+        : 'disconnected';
 
     return {
       oauthConfigured: true,
@@ -110,7 +117,7 @@ export class GmailOAuthService {
       scopes: this.getScopes(),
       emptyStateMessage: connected
         ? `Business Gmail connected (${account?.externalAddress ?? 'account'}). Sync pulls real messages only.`
-        : 'Google OAuth is configured. Connect Business Gmail to index Inbox, Sent, Drafts, and Labels.',
+        : 'Google OAuth is configured on the API. Connect Business Gmail to store encrypted tenant tokens — Inbox stays empty until Sync.',
     };
   }
 

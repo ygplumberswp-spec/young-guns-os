@@ -69,6 +69,46 @@ describe('Gmail OAuth foundation', () => {
     }
   });
 
+  it('resolveGmailOAuthConfig prefers explicit GOOGLE_REDIRECT_URI', () => {
+    const result = resolveGmailOAuthConfig(
+      {
+        GOOGLE_CLIENT_ID: 'client-id.apps.googleusercontent.com',
+        GOOGLE_CLIENT_SECRET: 'client-secret',
+        GOOGLE_REDIRECT_URI:
+          'https://young-guns-os-staging.up.railway.app/api/v1/communications-platform/gmail/oauth/callback',
+      } as never,
+      'http://localhost:3000',
+    );
+    assert.equal(result.configured, true);
+    if (result.configured) {
+      assert.equal(
+        result.redirectUri,
+        'https://young-guns-os-staging.up.railway.app/api/v1/communications-platform/gmail/oauth/callback',
+      );
+    }
+  });
+
+  it('oauth status honesty: app-configured without tenant tokens is disconnected not not_configured', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { fileURLToPath } = await import('node:url');
+    const { dirname, join } = await import('node:path');
+    const here = dirname(fileURLToPath(import.meta.url));
+    const oauthSource = readFileSync(join(here, 'gmail-oauth.service.ts'), 'utf8');
+    const healthSource = readFileSync(join(here, 'communications-platform.service.ts'), 'utf8');
+    assert.ok(
+      oauthSource.includes(": 'disconnected'") || oauthSource.includes(': "disconnected"'),
+      'getOAuthStatus must use disconnected when OAuth app is configured but tenant is not connected',
+    );
+    assert.ok(
+      healthSource.includes("oauthAppReady ? 'disconnected'"),
+      'toHealth must map OAuth-app-ready empty tenant to disconnected',
+    );
+    assert.ok(
+      !oauthSource.includes("account?.status ?? 'not_configured'"),
+      'must not default tenant status to not_configured when OAuth app exists',
+    );
+  });
+
   it('Gmail scopes include readonly, compose, send, and modify', () => {
     assert.ok(GMAIL_OAUTH_SCOPES.some((s) => s.endsWith('gmail.readonly')));
     assert.ok(GMAIL_OAUTH_SCOPES.some((s) => s.endsWith('gmail.compose')));

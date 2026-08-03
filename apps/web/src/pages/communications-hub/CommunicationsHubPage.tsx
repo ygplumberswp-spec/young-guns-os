@@ -2,8 +2,10 @@ import { PageHeader } from '../../components/ux';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
-import { isPlatformOwnerRole } from '@titan/auth/browser';
-import type { EnterpriseUnifiedCommunicationsDashboard } from '@titan/shared';
+import {
+  canConnectBusinessGmail,
+  type EnterpriseUnifiedCommunicationsDashboard,
+} from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   captureCommunicationsAnalytics,
@@ -92,10 +94,10 @@ export function CommunicationsHubPage() {
     () => (user ? canManageCommunicationsHub(user.permissions) : false),
     [user],
   );
-  const isPlatformOwner = useMemo(
+  const canManageGmailConnection = useMemo(
     () =>
       user
-        ? isPlatformOwnerRole({ roleName: user.roleName, permissions: user.permissions })
+        ? canConnectBusinessGmail({ roleName: user.roleName, permissions: user.permissions })
         : false,
     [user],
   );
@@ -391,7 +393,7 @@ export function CommunicationsHubPage() {
                           {provider.emailAddress ? ` · ${provider.emailAddress}` : ''}
                           {provider.lastTestMessage ? ` · ${provider.lastTestMessage}` : ''}
                         </p>
-                        {isGmail && isPlatformOwner ? (
+                        {isGmail && canManageGmailConnection ? (
                           <div className="page-header-actions" style={{ marginTop: '0.5rem' }}>
                             {gmailConnected ? (
                               <Button

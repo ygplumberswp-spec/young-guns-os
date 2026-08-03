@@ -283,6 +283,9 @@ bootLog('process starting', {
   hasAppUrl: Boolean(process.env.APP_URL),
   hasApiPublicUrl: Boolean(process.env.API_PUBLIC_URL),
   hasRedisUrl: Boolean(process.env.REDIS_URL),
+  hasGoogleClientId: Boolean(process.env.GOOGLE_CLIENT_ID?.trim()),
+  hasGoogleClientSecret: Boolean(process.env.GOOGLE_CLIENT_SECRET?.trim()),
+  hasGoogleRedirectUri: Boolean(process.env.GOOGLE_REDIRECT_URI?.trim()),
 });
 
 let env: Env;
@@ -421,6 +424,12 @@ const xeroOAuthService = XeroOAuthService.create({
   oauthConfig: xeroOAuthConfig,
 });
 const gmailOAuthConfig = resolveGmailOAuthConfig(env, apiPublicUrl);
+bootLog('gmail oauth resolved', {
+  oauthConfigured: gmailOAuthConfig.configured,
+  hasClientId: Boolean(env.GOOGLE_CLIENT_ID?.trim()),
+  hasClientSecret: Boolean(env.GOOGLE_CLIENT_SECRET),
+  hasRedirectUri: Boolean(env.GOOGLE_REDIRECT_URI?.trim()),
+});
 const gmailOAuthService = GmailOAuthService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,

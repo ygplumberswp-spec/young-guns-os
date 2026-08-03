@@ -2,11 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'wouter';
 import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import { isPlatformOwnerRole } from '@titan/auth/browser';
-import type {
-  CommPlatformGmailOAuthStatus,
-  CommPlatformHubDashboard,
-  CommPlatformInboxResult,
-  CommPlatformSettingsSummary,
+import {
+  canConnectBusinessGmail,
+  formatBusinessGmailUserStatus,
+  formatCommPlatformCapabilityState,
+  type CommPlatformGmailOAuthStatus,
+  type CommPlatformHubDashboard,
+  type CommPlatformInboxResult,
+  type CommPlatformSettingsSummary,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
@@ -52,10 +55,19 @@ export function CommunicationsPlatformPanel({
   const [manageGmail, setManageGmail] = useState(false);
   const [manageBusinessWhatsapp, setManageBusinessWhatsapp] = useState(false);
 
+  /** Personal WhatsApp — Platform Owner only (unchanged). */
   const isOwner = useMemo(
     () =>
       user
         ? isPlatformOwnerRole({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
+  /** Business Gmail Connect — Platform Owner and Company Owner. */
+  const canManageGmailConnection = useMemo(
+    () =>
+      user
+        ? canConnectBusinessGmail({ roleName: user.roleName, permissions: user.permissions })
         : false,
     [user],
   );
@@ -210,8 +222,8 @@ export function CommunicationsPlatformPanel({
 
   async function connectGmail() {
     if (!accessToken) return;
-    if (!isOwner) {
-      setError('Only Platform Owner can connect Business Gmail');
+    if (!canManageGmailConnection) {
+      setError('Only Platform Owner or Company Owner can connect Business Gmail');
       return;
     }
     setIsWorking(true);
@@ -277,6 +289,12 @@ export function CommunicationsPlatformPanel({
   const gmailOauthReady = Boolean(
     gmailOAuth?.oauthConfigured ?? settings?.businessGmail.oauthConfigured,
   );
+  const gmailStatusLabel = settings
+    ? formatBusinessGmailUserStatus({
+        oauthConfigured: gmailOauthReady,
+        status: settings.businessGmail.status,
+      })
+    : 'Disconnected';
   const gmailNotConfiguredReason =
     'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API, then reload.';
 
@@ -418,12 +436,15 @@ export function CommunicationsPlatformPanel({
       {view === 'channels' && settings ? (
         <>
           <div className="stat-grid">
-            <StatCard label="Business Gmail" value={settings.businessGmail.status} />
-            <StatCard label="Business WhatsApp" value={settings.businessWhatsapp.status} />
+            <StatCard label="Business Gmail" value={gmailStatusLabel} />
+            <StatCard
+              label="Business WhatsApp"
+              value={formatCommPlatformCapabilityState(settings.businessWhatsapp.status)}
+            />
             {settings.personalWhatsapp ? (
               <StatCard
                 label="Personal WhatsApp (Owner only)"
-                value={settings.personalWhatsapp.status}
+                value={formatCommPlatformCapabilityState(settings.personalWhatsapp.status)}
               />
             ) : (
               <StatCard label="Personal WhatsApp (Owner only)" value="Owner only" />
@@ -447,15 +468,23 @@ export function CommunicationsPlatformPanel({
                   : ' · Last Sync: never'}
               </p>
             ) : (
-              <p>{settings.businessGmail.emptyStateMessage}</p>
+              <EmptyState
+                title="Disconnected"
+                description={
+                  settings.businessGmail.emptyStateMessage ||
+                  'Google OAuth is configured on the API. Connect Business Gmail to store encrypted tenant tokens — Inbox stays empty until Sync.'
+                }
+              />
             )}
             <p>
-              Status: {!gmailOauthReady ? 'Not Configured' : settings.businessGmail.status}
+              Status: {gmailStatusLabel}
               {' · '}
-              Credentials:{' '}
+              OAuth app: {gmailOauthReady ? 'configured' : 'missing'}
+              {' · '}
+              Tenant credentials:{' '}
               {settings.businessGmail.hasCredentials ? 'stored (encrypted)' : 'none'}
             </p>
-            {isOwner ? (
+            {canManageGmailConnection ? (
               <>
                 <div className="page-header-actions">
                   {gmailConnected ? (
@@ -525,8 +554,8 @@ export function CommunicationsPlatformPanel({
               </>
             ) : (
               <p className="muted">
-                Connection is managed by Platform Owner. Authorized business users can use the
-                inbox when connected.
+                Connection is managed by Platform Owner or Company Owner. Authorized business
+                users can use the inbox when connected.
               </p>
             )}
             <p className="muted" style={{ marginTop: '0.75rem' }}>

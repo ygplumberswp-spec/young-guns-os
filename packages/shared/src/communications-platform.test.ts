@@ -3,6 +3,9 @@ import { describe, it } from 'node:test';
 import {
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
+  canConnectBusinessGmail,
+  formatBusinessGmailUserStatus,
+  formatCommPlatformCapabilityState,
   isBusinessAccountKind,
   isPersonalAccountKind,
   personalAllowedInBusinessSearch,
@@ -10,6 +13,73 @@ import {
 } from './communications-platform.js';
 
 describe('communications platform RBAC & privacy', () => {
+  it('Business Gmail Connect allows Platform Owner and Company Owner only', () => {
+    assert.equal(
+      canConnectBusinessGmail({
+        roleName: 'Platform Owner',
+        permissions: ['*', 'platform:cross_tenant'],
+      }),
+      true,
+    );
+    assert.equal(
+      canConnectBusinessGmail({
+        roleName: 'Company Owner',
+        permissions: ['*'],
+      }),
+      true,
+    );
+    assert.equal(
+      canConnectBusinessGmail({
+        roleName: 'Owner',
+        permissions: ['*'],
+      }),
+      true,
+    );
+    for (const roleName of [
+      'Admin',
+      'Office',
+      'Office Staff',
+      'Technician',
+      'Tech',
+      'Client',
+      'Manager',
+      'Dispatcher',
+      'Developer',
+      'Support',
+    ]) {
+      assert.equal(
+        canConnectBusinessGmail({
+          roleName,
+          permissions: ['*', 'communications:manage', 'integrations:manage'],
+        }),
+        false,
+        `${roleName} must not Connect Business Gmail`,
+      );
+    }
+  });
+
+  it('Business Gmail user status is Disconnected when OAuth app ready but tenant not connected', () => {
+    assert.equal(
+      formatBusinessGmailUserStatus({ oauthConfigured: true, status: 'disconnected' }),
+      'Disconnected',
+    );
+    assert.equal(
+      formatBusinessGmailUserStatus({ oauthConfigured: true, status: 'not_configured' }),
+      'Disconnected',
+    );
+    assert.equal(
+      formatBusinessGmailUserStatus({ oauthConfigured: false, status: 'not_configured' }),
+      'Not Configured',
+    );
+    assert.equal(
+      formatBusinessGmailUserStatus({ oauthConfigured: false, status: 'disconnected' }),
+      'Not Configured',
+    );
+    assert.equal(formatCommPlatformCapabilityState('connected'), 'Connected');
+    assert.equal(formatCommPlatformCapabilityState('disconnected'), 'Disconnected');
+    assert.equal(formatCommPlatformCapabilityState('not_configured'), 'Not Configured');
+  });
+
   it('personal WhatsApp assistant is Platform Owner only', () => {
     assert.equal(
       canAccessPersonalWhatsappAssistant({

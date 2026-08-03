@@ -251,16 +251,25 @@ export class IntegrationHubService {
         }
 
         const backendImplemented = entry.availability === 'available';
+        // Distinguish platform OAuth app (GOOGLE_*) from tenant Gmail connection.
+        // App ready + tenant not connected → disconnected (Connect available), not not_configured.
         const capabilityState =
           isGmail && !gmailAppConfigured
             ? 'not_configured'
-            : deriveIntegrationCapabilityState({
-                availability: entry.availability,
-                connectionStatus,
-                isConfigured,
-                backendImplemented,
-                lastError,
-              });
+            : isGmail &&
+                gmailAppConfigured &&
+                !isConfigured &&
+                (connectionStatus === 'disconnected' || connectionStatus === 'pending')
+              ? connectionStatus === 'pending'
+                ? 'configured_unverified'
+                : 'disconnected'
+              : deriveIntegrationCapabilityState({
+                  availability: entry.availability,
+                  connectionStatus,
+                  isConfigured,
+                  backendImplemented,
+                  lastError,
+                });
         const capabilityLabel = formatCapabilityStateLabel(capabilityState);
         const canConnect =
           capabilityState !== 'not_implemented' &&

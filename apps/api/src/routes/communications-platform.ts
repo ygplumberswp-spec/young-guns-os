@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { isPlatformOwnerRole } from '@titan/auth';
+import { canConnectBusinessGmail } from '@titan/shared';
 import type { TeamService } from '../services/team.service.js';
 import {
   CommunicationsPlatformService,
@@ -276,11 +277,11 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
   router.post('/gmail/oauth/start', requireWrite, async (req, res) => {
     try {
       const actor = getActor(req as AuthenticatedRequest);
-      if (!isPlatformOwnerRole(actor)) {
+      if (!canConnectBusinessGmail(actor)) {
         res.status(403).json({
           error: {
             code: 'FORBIDDEN',
-            message: 'Only Platform Owner can connect Business Gmail',
+            message: 'Only Platform Owner or Company Owner can connect Business Gmail',
           },
         });
         return;
@@ -459,11 +460,11 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
   router.put('/connections/gmail', requireWrite, async (req, res) => {
     try {
       const actor = getActor(req as AuthenticatedRequest);
-      if (!isPlatformOwnerRole(actor)) {
+      if (!canConnectBusinessGmail(actor)) {
         res.status(403).json({
           error: {
             code: 'FORBIDDEN',
-            message: 'Only Platform Owner can connect Business Gmail',
+            message: 'Only Platform Owner or Company Owner can connect Business Gmail',
           },
         });
         return;
@@ -493,11 +494,11 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
   router.delete('/connections/gmail', requireWrite, async (req, res) => {
     try {
       const actor = getActor(req as AuthenticatedRequest);
-      if (!isPlatformOwnerRole(actor)) {
+      if (!canConnectBusinessGmail(actor)) {
         res.status(403).json({
           error: {
             code: 'FORBIDDEN',
-            message: 'Only Platform Owner can disconnect Business Gmail',
+            message: 'Only Platform Owner or Company Owner can disconnect Business Gmail',
           },
         });
         return;

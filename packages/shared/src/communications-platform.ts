@@ -372,6 +372,58 @@ export function canAccessPersonalWhatsappAssistant(identity: {
   return identity.roleName === 'Platform Owner';
 }
 
+/**
+ * Business Gmail Connect / Disconnect / Reconnect — Platform Owner and Company Owner only.
+ * Admin, Office Staff, Technician, Client remain restricted. Wildcards on other roles do not grant it.
+ * Personal WhatsApp stays Platform Owner only (see canAccessPersonalWhatsappAssistant).
+ */
+export function canConnectBusinessGmail(identity: {
+  roleName: string;
+  permissions: string[];
+}): boolean {
+  return (
+    identity.roleName === 'Platform Owner' ||
+    identity.roleName === 'Company Owner' ||
+    identity.roleName === 'Owner'
+  );
+}
+
+/** User-facing labels for capability status (internal enum values stay unchanged for APIs). */
+export function formatCommPlatformCapabilityState(
+  status: CommPlatformCapabilityState,
+): string {
+  switch (status) {
+    case 'not_configured':
+      return 'Not Configured';
+    case 'disconnected':
+      return 'Disconnected';
+    case 'pending':
+      return 'Pending';
+    case 'connected':
+      return 'Connected';
+    case 'error':
+      return 'Error';
+    case 'degraded':
+      return 'Degraded';
+    default:
+      return status;
+  }
+}
+
+/**
+ * Honest Business Gmail status for UI:
+ * - OAuth app missing → Not Configured
+ * - OAuth app ready but tenant not connected → Disconnected (never "Not Configured")
+ */
+export function formatBusinessGmailUserStatus(input: {
+  oauthConfigured: boolean;
+  status: CommPlatformCapabilityState;
+}): string {
+  if (!input.oauthConfigured) return 'Not Configured';
+  if (input.status === 'not_configured') return 'Disconnected';
+  return formatCommPlatformCapabilityState(input.status);
+}
+
 export function canAccessBusinessCommunications(identity: {
   roleName: string;
   permissions: string[];
