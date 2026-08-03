@@ -11,6 +11,7 @@ import {
   XERO_PAGE_RUNAWAY_LIMIT,
   XERO_PAGE_SIZE,
   hasMoreXeroPages,
+  normalizeXeroDate,
   resolveRateLimitDelayMs,
 } from '../lib/xero.client.js';
 import {
@@ -186,6 +187,45 @@ test('OAuth requests the attachment scope', () => {
     'offline_access',
   ]) {
     assert.ok(OAUTH_SCOPES.includes(scope), `${scope} is required`);
+  }
+});
+
+// --- Provider date format: Xero serialises dates as MS-JSON, not ISO ---
+
+test('MS-JSON provider dates parse instead of throwing Invalid time value', () => {
+  // Staging import of a real organisation failed on 17,674 invoices and 747 quotes with
+  // "Invalid time value" because `/Date(...)/` reached `new Date(...)` unparsed.
+  const normalized = normalizeXeroDate('/Date(1518652800000+0000)/');
+
+  assert.equal(normalized, '2018-02-15T00:00:00.000Z');
+  assert.doesNotThrow(() => new Date(normalized!).toISOString());
+  assert.equal(new Date(normalized!).toISOString().slice(0, 10), '2018-02-15');
+});
+
+test('date-only and offset-less provider values stay on their Xero calendar day', () => {
+  // Parsed in local time these would slide a day backwards east of UTC.
+  assert.equal(normalizeXeroDate('2018-02-15')?.slice(0, 10), '2018-02-15');
+  assert.equal(normalizeXeroDate('2018-02-15T00:00:00')?.slice(0, 10), '2018-02-15');
+});
+
+test('unparseable or absent provider dates become null rather than an invalid Date', () => {
+  for (const value of [null, undefined, '', '   ', 'not-a-date', '/Date()/']) {
+    assert.equal(normalizeXeroDate(value), null, `${String(value)} must normalise to null`);
+  }
+});
+
+test('every provider date field is normalised before it reaches the database', () => {
+  for (const field of [
+    'issueDate: pickDate(quote',
+    'expiryDate: pickDate(quote',
+    'issueDate: pickDate(invoice',
+    'dueDate: pickDate(invoice',
+    'date: pickDate(transaction',
+    'date: pickDate(payment',
+    'date: pickDate(creditNote',
+    'date: pickDate(allocation',
+  ]) {
+    assert.ok(CLIENT_SOURCE.includes(field), `${field} must go through the Xero date parser`);
   }
 });
 

@@ -855,8 +855,8 @@ function extractQuotes(payload: unknown): XeroQuoteRecord[] {
         totalTax: pickNumber(quote, ['TotalTax', 'totalTax']) ?? 0,
         total: pickNumber(quote, ['Total', 'total']) ?? 0,
         currencyCode: pickString(quote, ['CurrencyCode', 'currencyCode']),
-        issueDate: pickString(quote, ['Date', 'date']),
-        expiryDate: pickString(quote, ['ExpiryDate', 'expiryDate']),
+        issueDate: pickDate(quote, ['Date', 'date']),
+        expiryDate: pickDate(quote, ['ExpiryDate', 'expiryDate']),
         title: pickString(quote, ['Title', 'title']),
         raw: quote,
       } satisfies XeroQuoteRecord;
@@ -902,8 +902,8 @@ function extractInvoices(payload: unknown): XeroInvoiceRecord[] {
         totalTax: pickNumber(invoice, ['TotalTax', 'totalTax']) ?? 0,
         total: pickNumber(invoice, ['Total', 'total']) ?? 0,
         currencyCode: pickString(invoice, ['CurrencyCode', 'currencyCode']),
-        issueDate: pickString(invoice, ['Date', 'date']),
-        dueDate: pickString(invoice, ['DueDate', 'dueDate']),
+        issueDate: pickDate(invoice, ['Date', 'date']),
+        dueDate: pickDate(invoice, ['DueDate', 'dueDate']),
         reference: pickString(invoice, ['Reference', 'reference']),
         raw: invoice,
       } satisfies XeroInvoiceRecord;
@@ -954,7 +954,7 @@ function extractBankTransactions(payload: unknown): XeroBankTransactionRecord[] 
         bankTransactionId,
         amount: pickNumber(transaction, ['Total', 'total']) ?? 0,
         currencyCode: pickString(transaction, ['CurrencyCode', 'currencyCode']),
-        date: pickString(transaction, ['Date', 'date']),
+        date: pickDate(transaction, ['Date', 'date']),
         reference: pickString(transaction, ['Reference', 'reference']),
         description:
           pickString(transaction, ['Reference', 'reference']) ??
@@ -1002,7 +1002,7 @@ function extractPayments(payload: unknown): XeroPaymentRecord[] {
         invoiceId: invoice ? pickString(invoice, ['InvoiceID', 'invoiceID', 'invoiceId']) : null,
         amount: pickNumber(payment, ['Amount', 'amount']) ?? 0,
         currencyCode: pickString(payment, ['CurrencyCode', 'currencyCode']),
-        date: pickString(payment, ['Date', 'date']),
+        date: pickDate(payment, ['Date', 'date']),
         reference: pickString(payment, ['Reference', 'reference']),
         status: pickString(payment, ['Status', 'status']),
         raw: payment,
@@ -1037,7 +1037,7 @@ function extractCreditNotes(payload: unknown): XeroCreditNoteRecord[] {
       total: pickNumber(creditNote, ['Total', 'total']) ?? 0,
       remainingCredit: pickNumber(creditNote, ['RemainingCredit', 'remainingCredit']) ?? 0,
       currencyCode: pickString(creditNote, ['CurrencyCode', 'currencyCode']),
-      date: pickString(creditNote, ['Date', 'date']),
+      date: pickDate(creditNote, ['Date', 'date']),
       reference: pickString(creditNote, ['Reference', 'reference']),
       allocations: allocationRows
         .map((row) => {
@@ -1050,7 +1050,7 @@ function extractCreditNotes(payload: unknown): XeroCreditNoteRecord[] {
           return {
             invoiceId: invoice ? pickString(invoice, ['InvoiceID', 'invoiceID']) : null,
             amount: pickNumber(allocation, ['Amount', 'amount']) ?? 0,
-            date: pickString(allocation, ['Date', 'date']),
+            date: pickDate(allocation, ['Date', 'date']),
           };
         })
         .filter((row): row is { invoiceId: string | null; amount: number; date: string | null } =>
@@ -1199,6 +1199,46 @@ function pickString(record: Record<string, unknown>, keys: string[]): string | n
   }
 
   return null;
+}
+
+/**
+ * Xero's Accounting API serialises dates as MS-JSON (`/Date(1518652800000+0000)/`), which
+ * `new Date(...)` cannot read. Normalise to ISO 8601 so callers can parse or slice safely.
+ * Date-only and offset-less values are UTC in Xero — without the explicit suffix the host
+ * timezone would shift them across a day boundary.
+ */
+export function normalizeXeroDate(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const msJson = /^\/?Date\((-?\d+)(?:[+-]\d{4})?\)\/?$/.exec(trimmed);
+
+  if (msJson) {
+    const epochMs = Number(msJson[1]);
+    return Number.isFinite(epochMs) ? new Date(epochMs).toISOString() : null;
+  }
+
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed);
+  const offsetLess = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?$/.test(trimmed);
+  const candidate = dateOnly
+    ? `${trimmed}T00:00:00Z`
+    : offsetLess
+      ? `${trimmed.replace(' ', 'T')}Z`
+      : trimmed;
+  const parsed = new Date(candidate);
+
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function pickDate(record: Record<string, unknown>, keys: string[]): string | null {
+  return normalizeXeroDate(pickString(record, keys));
 }
 
 function pickNumber(record: Record<string, unknown>, keys: string[]): number | null {
