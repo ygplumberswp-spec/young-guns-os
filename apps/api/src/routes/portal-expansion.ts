@@ -3,7 +3,6 @@ import { z } from 'zod';
 import type { PortalExpansionService } from '../services/portal-expansion.service.js';
 import { PortalExpansionError } from '../services/portal-expansion.service.js';
 import type { PortalAuthService } from '../services/portal-auth.service.js';
-import type { TeamService } from '../services/team.service.js';
 import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/auth.js';
 import {
   createPortalAuthMiddleware,
@@ -15,7 +14,6 @@ import { requireAnyPermission } from '../middleware/rbac.js';
 type RouterDeps = {
   portalExpansionService: PortalExpansionService;
   portalAuthService: PortalAuthService;
-  teamService: TeamService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -83,7 +81,6 @@ const shareSchema = z.object({
 export function createPortalExpansionRouter({
   portalExpansionService,
   portalAuthService,
-  teamService,
   jwtSecret,
   authService,
 }: RouterDeps): Router {
@@ -290,14 +287,14 @@ export function createPortalExpansionRouter({
   router.get(
     '/staff/document-shares',
     requireStaffAuth,
-    requireAnyPermission(teamService, [
+    requireAnyPermission(
       'portal:read',
       'portal:write',
       'documents:read',
       'documents:write',
       'customers:read',
       'customers:write',
-    ]),
+    ),
     async (req, res) => {
       try {
         const customerId = typeof req.query.customerId === 'string' ? req.query.customerId : undefined;
@@ -312,7 +309,7 @@ export function createPortalExpansionRouter({
   router.post(
     '/staff/document-shares',
     requireStaffAuth,
-    requireAnyPermission(teamService, ['portal:write', 'documents:write', 'customers:write']),
+    requireAnyPermission('portal:write', 'documents:write', 'customers:write'),
     async (req, res) => {
       try {
         const parsed = shareSchema.safeParse(req.body);
@@ -331,7 +328,7 @@ export function createPortalExpansionRouter({
   router.delete(
     '/staff/document-shares/:shareId',
     requireStaffAuth,
-    requireAnyPermission(teamService, ['portal:write', 'documents:write', 'customers:write']),
+    requireAnyPermission('portal:write', 'documents:write', 'customers:write'),
     async (req, res) => {
       try {
         const share = await portalExpansionService.revokeDocumentShare(staffActor(req), param(req, 'shareId'));

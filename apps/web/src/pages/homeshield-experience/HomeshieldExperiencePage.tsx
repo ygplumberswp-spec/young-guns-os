@@ -147,6 +147,10 @@ export function HomeshieldExperiencePage() {
     }
   }
 
+  async function run(ok: string, action: () => Promise<unknown>) {
+    await withFeedback(action, ok);
+  }
+
   if (!canView) {
     return (
       <div className="space-y-4">

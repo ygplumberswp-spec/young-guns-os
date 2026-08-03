@@ -131,7 +131,7 @@ export * from './finance-cashflow-profit.js';
 export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';
 export * from './procurement-intelligence.js';
-// export * from './stock-forecasting.js'; // missing local — build verify
+export * from './stock-forecasting.js';
 export * from './payroll-timesheet-intelligence.js';
 export * from './technician-intelligence.js';
 export * from './hr-employee-intelligence.js';

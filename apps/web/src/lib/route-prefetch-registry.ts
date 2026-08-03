@@ -225,6 +225,17 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   {
     path: '/fleet-ai-recommendations',
     load: () => import('../pages/fleet-ai-recommendations/FleetAiRecommendationsPage'),
+    permissions: [
+      'fleet:read',
+      'fleet:write',
+      'fleet_intelligence:read',
+      'fleet_intelligence:write',
+      'agents:read',
+      '*',
+    ],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
+    priority: 2,
+    safeToPreload: true,
   },
 
   {

@@ -2,6 +2,7 @@ import type { IntegrationProviderAutoSyncStatus, XeroImportJobProgress, XeroImpo
 
 const IMPORT_STAGE_LABELS: Record<XeroImportStage, string> = {
   contacts: 'Contacts',
+  quotes: 'Quotes',
   invoices: 'Invoices',
   payments: 'Payments',
   bank_transactions: 'Bank transactions',
