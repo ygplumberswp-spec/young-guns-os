@@ -41,6 +41,7 @@ import { PortalFeedbackPage } from './pages/portal/PortalFeedbackPage';
 import { PortalLoyaltyPage } from './pages/portal/PortalLoyaltyPage';
 import { PortalAssetsPage } from './pages/portal/PortalAssetsPage';
 import { PortalNotFoundPage } from './pages/portal/PortalNotFoundPage';
+import { PortalHomeshieldPage } from './pages/portal/PortalHomeshieldPage';
 import { MobileLayout } from './layouts/MobileLayout';
 import { MobileDashboardPage } from './pages/mobile/MobileDashboardPage';
 import { MobileJobsPage } from './pages/mobile/MobileJobsPage';
@@ -109,6 +110,7 @@ export function App() {
                     <Route path="/loyalty" component={PortalLoyaltyPage} />
                     <Route path="/assets" component={PortalAssetsPage} />
                     <Route path="/" component={PortalDashboardPage} />
+                    <Route path="/homeshield" component={PortalHomeshieldPage} />
                     <Route path="/:rest*" component={PortalNotFoundPage} />
                   </Switch>
                 </PortalLayout>
@@ -439,6 +441,10 @@ export function App() {
                         <Route
                           path="/recurring-maintenance"
                           component={OwnerPages.RecurringMaintenancePage}
+                        />
+                        <Route
+                          path="/homeshield-experience"
+                          component={OwnerPages.HomeshieldExperiencePage}
                         />
                         <Route
                           path="/fleet-intelligence"

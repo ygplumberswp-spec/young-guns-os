@@ -174,6 +174,20 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     ],
   },
   {
+    href: '/homeshield-experience',
+    label: 'HomeShield Experience',
+    permissions: [
+      'customers:read',
+      'customers:write',
+      'portal:read',
+      'portal:manage',
+      'agents:read',
+      'finance:read',
+      'finance:write',
+      '*',
+    ],
+  },
+  {
     href: '/mission-control',
     label: NAV_LABELS.companyHealth,
     permissions: ['executive:read', 'ops:read', '*'],
@@ -337,6 +351,11 @@ export const CLIENT_PORTAL_NAV_ITEMS: NavItemConfig[] = [
   {
     href: '/my/assets',
     label: 'Properties / Equipment',
+    portalPermission: 'portal.dashboard:read',
+  },
+  {
+    href: '/my/homeshield',
+    label: 'HomeShield',
     portalPermission: 'portal.dashboard:read',
   },
   { href: '/my/profile', label: 'Profile', portalPermission: 'portal.dashboard:read' },

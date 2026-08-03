@@ -55,6 +55,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/automation': 'intelligence',
   '/workflow-automation': 'operations',
   '/recurring-maintenance': 'operations',
+  '/homeshield-experience': 'operations',
   '/mission-control': 'intelligence',
   '/integrations': 'platform',
   '/security': 'platform',

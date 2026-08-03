@@ -536,6 +536,10 @@ export const RecurringMaintenancePage = lazyNamed(
   () => import('../pages/recurring-maintenance/RecurringMaintenancePage'),
   'RecurringMaintenancePage',
 );
+export const HomeshieldExperiencePage = lazyNamed(
+  () => import('../pages/homeshield-experience/HomeshieldExperiencePage'),
+  'HomeshieldExperiencePage',
+);
 export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',

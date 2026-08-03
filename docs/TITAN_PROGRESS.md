@@ -130,8 +130,8 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | ETA tracking | ⬜ Remaining |
 | Notifications | ⬜ Remaining |
 | Reviews | ⬜ Remaining |
-| Customer lifetime value | ⬜ Remaining |
-| HomeShield experience | ⬜ Remaining |
+| Customer lifetime value | 🟡 Built / testing |
+| HomeShield experience | 🟢 Completed |
 
 ---
 
@@ -155,6 +155,8 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 ---
 
 ## Notes
+
+- HomeShield Customer Experience (Department 7.3, `homeshield-experience`, migration `0148`) — membership plans, subscriptions, benefits, service reminders, maintenance history from Recurring Maintenance, renewal/outreach drafts, honest customer lifetime value (unavailable without stored CLV — never invented), AURA retention/customer-value/maintenance/renewal recommendation drafts (Owner approval; never auto-bill). Portal `/my/homeshield` own data only. No fake memberships.
 
 - Vehicle Intelligence Foundation (Department 8.1, `vehicle-intelligence`, migration `0150`) — extends existing Fleet / Cartrack / job-vehicle modules: real vehicle profiles, fuel tracking foundation from fleet operating costs, maintenance cues from vehicle status + vehicle-linked asset schedules, vehicle costs, usage history from job assignments, AURA insight drafts (maintenance/cost/risk; Owner approval; never auto-mutate fleet). No fake GPS/fuel; honest unavailable when Cartrack disconnected or no records. Operational CRUD stays under `/fleet`; GPS analytics under `/fleet-intelligence`.
 - Employee Intelligence Foundation (`hr-employee-intelligence`, migration `0151`) — Owner/Admin-gated profiles, workforce overview/capacity, skills intelligence (gaps/training needs), and AURA recommendation drafts only (skills shortage, training opportunity, capacity — never auto HR). Connects Technician Intelligence, Jobs, Scheduling; timesheets/payroll/recruitment future-ready with honest unavailable. No fake employees/payroll. Extends users/roles/workforce/wi_profiles/technician-intelligence.
