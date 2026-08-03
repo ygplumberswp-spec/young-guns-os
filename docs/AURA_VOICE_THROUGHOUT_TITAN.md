@@ -88,6 +88,67 @@ Channels 3, 4 and 5 are specified in
 [`OWNER_VOICE_WHATSAPP_COMMAND_MODE.md`](./OWNER_VOICE_WHATSAPP_COMMAND_MODE.md) and must be
 built on the same shared layer rather than a second implementation.
 
+## Conversation transcript and history
+
+Voice is never audio-only. **Every voice interaction also produces a readable text conversation
+inside AURA Chat**, so the user can see what was said, what AURA understood, and what happened.
+
+Displayed in the conversation:
+
+- The user's speech as **live or near-live transcription**.
+- AURA's spoken response, shown as **text** as well as being spoken.
+- **Proposed actions, approvals and execution results**, clearly marked as what they are.
+- **Timestamps**, and the **verified user and source channel** the message came from.
+- **Edit, Approve, Reject and Cancel** controls wherever they apply to that message.
+- **Failures and the explanation for them**, recorded visibly rather than silently dropped.
+
+Honesty rules already stated apply to the visible record as well: AURA never shows an action as
+succeeded unless the underlying service or provider confirmed it.
+
+Conversation behaviour:
+
+- Voice messages and typed messages are stored in **one continuous conversation history** — not
+  separate voice and chat logs.
+- **Contextual follow-up questions are preserved**, so reopening a conversation keeps the thread
+  of what was being discussed.
+- Previous conversations can be **searched, reopened and continued**.
+- The user can **switch naturally between speaking and typing in the same conversation**, mid
+  thread, without starting over or losing context.
+
+Remote channels behave the same way. An Owner call-in or WhatsApp command specified in
+[`OWNER_VOICE_WHATSAPP_COMMAND_MODE.md`](./OWNER_VOICE_WHATSAPP_COMMAND_MODE.md) produces the
+same chat record and the same audit trail as an in-app interaction.
+
+## Immutable audit record
+
+Separate from the conversation history — and **not deletable with it** — every interaction
+writes an immutable audit record containing:
+
+- Verified user
+- Company ID
+- Source channel
+- Transcript
+- Interpreted intent
+- Requested action
+- Approval status
+- Execution result
+- Timestamp
+
+Conversation history is the user-facing record; the audit record is the compliance record. The
+two are stored separately so that clearing a conversation can never erase the audit trail.
+
+## Audio storage and retention
+
+Storing the audio itself is **optional and configurable** — the transcript and audit record do
+not depend on keeping the recording.
+
+- **No secret recording.** Recording status is clearly displayed while it is happening.
+- Retention periods and deletion controls are configurable.
+- Recordings and transcripts are protected by **RBAC and tenant isolation**, exactly like every
+  other record in TITAN.
+- Authorised users may delete ordinary conversation history where policy permits, while the
+  **required security and audit records are preserved**.
+
 ## Security requirements
 
 - Voice respects the speaker's **role and permissions**. A user can only do by voice what they
@@ -139,5 +200,21 @@ Additional requirements:
   bypass.
 - Remote Owner channels require verification before acting on sensitive requests.
 - Transcript, interpretation, approval and execution are audited for every interaction.
+- Every voice interaction also appears as readable text in AURA Chat, showing the user's
+  transcription, AURA's response, proposed actions, approvals, execution results, failures and
+  their explanations, with timestamps and the verified user and channel.
+- Edit, Approve, Reject and Cancel controls are available on the messages they apply to.
+- Voice and typed messages share one continuous conversation history, context is preserved for
+  follow-ups, and previous conversations can be searched, reopened and continued.
+- The user can switch between speaking and typing inside the same conversation without losing
+  context.
+- Each interaction writes a separate immutable audit record holding the verified user, company
+  ID, source channel, transcript, interpreted intent, requested action, approval status,
+  execution result and timestamp.
+- Audio storage is optional and configurable, recording status is visible, retention and
+  deletion are controllable, and recordings and transcripts are protected by RBAC and tenant
+  isolation.
+- Deleting ordinary conversation history where policy permits never removes the required
+  security and audit records.
 - Nothing is ever reported as successful unless the underlying service confirmed it.
 - Text remains a complete fallback when speech is unavailable.
