@@ -160,8 +160,6 @@ import { EnterpriseSaasManagementService } from './services/enterprise-saas-mana
 import { createEnterpriseSaasManagementRouter } from './routes/enterprise-saas-management.js';
 import { EnterpriseVoiceReceptionService } from './services/enterprise-voice-reception.service.js';
 import { createEnterpriseVoiceReceptionRouter } from './routes/enterprise-voice-reception.js';
-import { VoiceAiReceptionistService } from './services/voice-ai-receptionist.service.js';
-import { createVoiceAiReceptionistRouter } from './routes/voice-ai-receptionist.js';
 import { EnterpriseDocumentAiService } from './services/enterprise-document-ai.service.js';
 import { createEnterpriseDocumentAiRouter } from './routes/enterprise-document-ai.js';
 import { EnterpriseBusinessContinuityService } from './services/enterprise-business-continuity.service.js';
@@ -262,16 +260,14 @@ import { FinanceReportingForecastService } from './services/finance-reporting-fo
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
 import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
-import { FleetAiRecommendationsService } from './services/fleet-ai-recommendations.service.js';
-import { Customer360IntelligenceService } from './services/customer-360-intelligence.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
-import { RecruitmentPerformanceIntelligenceService } from './services/recruitment-performance-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { StockForecastingService } from './services/stock-forecasting.service.js';
 import { PayrollTimesheetIntelligenceService } from './services/payroll-timesheet-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
+import { HomeshieldExperienceService } from './services/homeshield-experience.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
@@ -304,16 +300,14 @@ import { createFinanceReportingForecastRouter } from './routes/finance-reporting
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
 import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
-import { createFleetAiRecommendationsRouter } from './routes/fleet-ai-recommendations.js';
-import { createCustomer360IntelligenceRouter } from './routes/customer-360-intelligence.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
-import { createRecruitmentPerformanceIntelligenceRouter } from './routes/recruitment-performance-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createStockForecastingRouter } from './routes/stock-forecasting.js';
 import { createPayrollTimesheetIntelligenceRouter } from './routes/payroll-timesheet-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
+import { createHomeshieldExperienceRouter } from './routes/homeshield-experience.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
@@ -880,10 +874,7 @@ const stockForecastingService = new StockForecastingService({
   procurementService,
 });
 const vehicleIntelligenceService = new VehicleIntelligenceService(db);
-const fleetAiRecommendationsService = new FleetAiRecommendationsService(db);
-const customer360IntelligenceService = new Customer360IntelligenceService(db);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
-const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -978,6 +969,7 @@ const recurringMaintenanceService = new RecurringMaintenanceService({
   enterpriseAssetLifecycleService,
   emailCentreService,
 });
+const homeshieldExperienceService = new HomeshieldExperienceService(db);
 const enterpriseWorkforceIntelligenceService = new EnterpriseWorkforceIntelligenceService({
   db,
   enterpriseSaasPlatformService,
@@ -1126,7 +1118,6 @@ const enterpriseSaasManagementService = new EnterpriseSaasManagementService({
   financeService,
   aiOperationsService,
 });
-const voiceAiReceptionistService = new VoiceAiReceptionistService(db);
 const enterpriseVoiceReceptionService = new EnterpriseVoiceReceptionService({
   db,
   voiceService,
@@ -2347,15 +2338,6 @@ app.use(
   }),
 );
 app.use(
-  '/api/v1/voice-ai-receptionist',
-  createVoiceAiReceptionistRouter({
-    voiceAiReceptionistService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
-app.use(
   '/api/v1/enterprise-voice-reception',
   createEnterpriseVoiceReceptionRouter({
     enterpriseVoiceReceptionService,
@@ -2580,27 +2562,9 @@ app.use(
   }),
 );
 app.use(
-  '/api/v1/customer-360-intelligence',
-  createCustomer360IntelligenceRouter({
-    customer360IntelligenceService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
-app.use(
   '/api/v1/hr-employee-intelligence',
   createHrEmployeeIntelligenceRouter({
     hrEmployeeIntelligenceService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
-app.use(
-  '/api/v1/recruitment-performance-intelligence',
-  createRecruitmentPerformanceIntelligenceRouter({
-    recruitmentPerformanceIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -2638,15 +2602,6 @@ app.use(
   '/api/v1/vehicle-intelligence',
   createVehicleIntelligenceRouter({
     vehicleIntelligenceService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
-app.use(
-  '/api/v1/fleet-ai-recommendations',
-  createFleetAiRecommendationsRouter({
-    fleetAiRecommendationsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
@@ -2701,6 +2656,17 @@ app.use(
     db,
   }),
 );
+app.use(
+  '/api/v1/homeshield-experience',
+  createHomeshieldExperienceRouter({
+    homeshieldExperienceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    portalAuthService,
+  }),
+);
+
 app.use(
   '/api/v1/enterprise-security',
   createEnterpriseSecurityRouter({
