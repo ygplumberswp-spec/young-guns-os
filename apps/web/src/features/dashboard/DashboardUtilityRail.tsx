@@ -187,12 +187,27 @@ function IntegrationConnectionsRailPanel() {
             const tone =
               honesty === 'connected' ? 'is-ok' : honesty === 'attention' ? 'is-warn' : 'is-muted';
 
+            const lastSyncHint =
+              String(provider.provider) === 'xero' && honesty === 'connected'
+                ? provider.lastSyncAt
+                  ? `Synced ${new Date(provider.lastSyncAt).toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                    })}`
+                  : 'Connected — awaiting first sync'
+                : null;
+
             return (
               <li key={String(provider.provider)}>
                 <span className={`exec-utility-status__dot ${tone}`} />
                 <div className="exec-utility-connections__meta">
                   <span className="exec-utility-connections__name">{provider.name}</span>
                   <strong className={`exec-utility-connections__status ${tone}`}>{label}</strong>
+                  {lastSyncHint ? (
+                    <em className="exec-utility-connections__sync">{lastSyncHint}</em>
+                  ) : null}
                 </div>
                 <Link href={href} className="exec-utility-connections__cta">
                   {cta}

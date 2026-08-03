@@ -1948,6 +1948,13 @@ a:focus-visible {
   font-size: 0.8125rem;
 }
 
+.exec-outstanding__xero-meta {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--titan-text-muted);
+}
+
 .exec-utility-glance {
   list-style: none;
   margin: 0;
@@ -2204,6 +2211,15 @@ a:focus-visible {
 }
 
 .exec-utility-connections__status.is-muted {
+  color: var(--titan-text-muted);
+}
+
+.exec-utility-connections__sync {
+  display: block;
+  margin-top: 0.1rem;
+  font-size: 0.6875rem;
+  font-style: normal;
+  font-weight: 500;
   color: var(--titan-text-muted);
 }
 

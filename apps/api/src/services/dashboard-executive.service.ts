@@ -4,6 +4,8 @@ import type {
   ExecutiveDashboardSummary,
   ExecutiveLiveJob,
   ExecutiveTeamMember,
+  ExecutiveXeroFinance,
+  XeroSyncStatusResponse,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -26,6 +28,10 @@ import {
   CACHE_TTLS,
 } from './api-read-cache.js';
 
+type XeroFinanceStatusSource = {
+  getSyncStatus(companyId: string): Promise<XeroSyncStatusResponse>;
+};
+
 type DashboardExecutiveDeps = {
   db: DatabaseClient;
   jobsService: JobsService;
@@ -33,6 +39,7 @@ type DashboardExecutiveDeps = {
   financeService: FinanceService;
   intelligenceService: IntelligenceService;
   dayPlanService: CompanyDayPlanService;
+  xeroSyncService?: XeroFinanceStatusSource;
 };
 
 function startOfLocalDay(): Date {
@@ -88,6 +95,7 @@ export class DashboardExecutiveService {
       draftInvoices,
       leadCount,
       messageCount,
+      xeroStatus,
     ] = await Promise.all([
       this.deps.jobsService.getStats(companyId),
       this.deps.financeService.getStats(companyId),
@@ -168,6 +176,7 @@ export class DashboardExecutiveService {
             lt(communications.createdAt, end),
           ),
         ),
+      this.loadXeroFinance(companyId),
     ]);
 
     const scheduledCount = calendar.events.filter((event) => event.status === 'scheduled').length;
@@ -348,8 +357,46 @@ export class DashboardExecutiveService {
         oldestOverdue,
         largestOutstanding,
       },
+      xeroFinance: xeroStatus,
       teamToday,
     };
+  }
+
+  private async loadXeroFinance(companyId: string): Promise<ExecutiveXeroFinance> {
+    const empty: ExecutiveXeroFinance = {
+      connected: false,
+      organisationName: null,
+      lastSyncAt: null,
+      lastError: null,
+      importStatus: null,
+      importMessage: null,
+      syncedCustomerCount: 0,
+      syncedInvoiceCount: 0,
+      syncedPaymentCount: 0,
+      currency: 'USD',
+    };
+
+    if (!this.deps.xeroSyncService) {
+      return empty;
+    }
+
+    try {
+      const status = await this.deps.xeroSyncService.getSyncStatus(companyId);
+      return {
+        connected: status.connected,
+        organisationName: status.organisationName,
+        lastSyncAt: status.lastSyncAt,
+        lastError: status.lastError,
+        importStatus: status.importJob?.status ?? null,
+        importMessage: status.importJob?.message ?? null,
+        syncedCustomerCount: status.customers.syncedCount,
+        syncedInvoiceCount: status.invoices.syncedCount,
+        syncedPaymentCount: status.payments.syncedCount,
+        currency: status.currency,
+      };
+    } catch {
+      return empty;
+    }
   }
 
   private buildLiveOperations(

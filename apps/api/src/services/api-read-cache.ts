@@ -98,6 +98,12 @@ export function invalidateIntegrationReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:integration-platform`);
 }
 
+/** Clears Owner dashboard + finance read caches after Xero import settles. */
+export function invalidateDashboardFinanceCaches(companyId: string) {
+  apiReadCache.invalidatePrefix(`${companyId}:dashboard/executive-summary`);
+  invalidateFinanceListCaches(companyId);
+}
+
 /** Clears background work status read caches for a tenant. */
 export function invalidateBackgroundWorkReadCaches(companyId: string) {
   apiReadCache.invalidatePrefix(`${companyId}:background-work`);

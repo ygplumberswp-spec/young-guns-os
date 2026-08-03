@@ -32,7 +32,10 @@ import { decryptXeroCredentials, isXeroOAuthCredentials } from '../lib/crypto.js
 import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError, XERO_PAGE_SIZE, XERO_RATE_LIMIT_BASE_DELAY_MS } from '../lib/xero.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
 import type { XeroOAuthService } from './xero-oauth.service.js';
-import { invalidateIntegrationReadCaches } from './api-read-cache.js';
+import {
+  invalidateDashboardFinanceCaches,
+  invalidateIntegrationReadCaches,
+} from './api-read-cache.js';
 import {
   advanceToNextStage,
   buildImportJobProgress,
@@ -161,6 +164,8 @@ export class XeroSyncService {
       connected: true,
       organisationName: connection.config.organisationName ?? null,
       baseCurrency: connection.config.baseCurrency ?? null,
+      lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
+      lastError: connection.lastError ?? null,
       customers: customersStats,
       quotes: quotesStats,
       invoices: invoicesStats,
@@ -368,6 +373,7 @@ export class XeroSyncService {
       const deadlineAt = Date.now() + XERO_IMPORT_BATCH_BUDGET_MS;
       let allStagesComplete = false;
       let waitingForRetry = false;
+      let continueDelayMs: number | null = null;
 
       while (Date.now() < deadlineAt && !state.failedStage && !waitingForRetry) {
         const batchResult = await this.processCurrentImportStageBatch(ctx, state, deadlineAt);
@@ -384,6 +390,8 @@ export class XeroSyncService {
 
         if (batchResult.rateLimited) {
           waitingForRetry = true;
+          const retryAt = state.nextRetryAt ? new Date(state.nextRetryAt).getTime() : Date.now();
+          continueDelayMs = Math.max(0, Math.min(retryAt - Date.now(), 60_000));
           break;
         }
 
@@ -396,12 +404,24 @@ export class XeroSyncService {
           await this.persistImportJobState(syncJobId, state, 'processing');
         } else if (batchResult.budgetExhausted) {
           await this.persistImportJobState(syncJobId, state, 'waiting_next_batch');
+          continueDelayMs = 0;
           break;
         }
       }
 
       if (state.failedStage || !allStagesComplete) {
         if (!state.failedStage) {
+          // Continue multi-batch / rate-limited imports without relying solely on SCHEDULERS_ENABLED.
+          const delayMs = continueDelayMs ?? 0;
+          setTimeout(() => {
+            void this.processImportJobBatch(syncJobId).catch((error: unknown) => {
+              console.error('[xero-sync] Follow-up import batch failed', {
+                companyId: job.companyId,
+                syncJobId,
+                error,
+              });
+            });
+          }, delayMs);
           return null;
         }
 
@@ -654,6 +674,7 @@ export class XeroSyncService {
     });
 
     invalidateIntegrationReadCaches(companyId);
+    invalidateDashboardFinanceCaches(companyId);
     return result;
   }
 
@@ -1543,6 +1564,9 @@ export class XeroSyncService {
       connected: true,
       organisationName: status.organisationName,
       baseCurrency: status.baseCurrency,
+      lastSyncAt: status.lastSyncAt,
+      lastError: status.lastError,
+      importStatus: status.importJob?.status ?? null,
       syncedCustomerCount: status.customers.syncedCount,
       syncedInvoiceCount: status.invoices.syncedCount,
       syncedQuoteCount: status.quotes.syncedCount,
@@ -2830,6 +2854,8 @@ function emptySyncStatus(currency: string): XeroSyncStatusResponse {
     connected: false,
     organisationName: null,
     baseCurrency: null,
+    lastSyncAt: null,
+    lastError: null,
     customers: empty,
     quotes: empty,
     invoices: empty,

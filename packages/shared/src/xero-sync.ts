@@ -169,6 +169,9 @@ export type XeroSyncStatusResponse = {
   connected: boolean;
   organisationName: string | null;
   baseCurrency: string | null;
+  /** Connection-level last successful sync/import timestamp. */
+  lastSyncAt: string | null;
+  lastError: string | null;
   customers: XeroEntitySyncStats;
   quotes: XeroEntitySyncStats;
   invoices: XeroEntitySyncStats;
@@ -207,6 +210,9 @@ export type XeroAccountingAuraContext = {
   connected: boolean;
   organisationName: string | null;
   baseCurrency: string | null;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  importStatus: string | null;
   syncedCustomerCount: number;
   syncedInvoiceCount: number;
   syncedQuoteCount: number;

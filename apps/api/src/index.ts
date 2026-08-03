@@ -594,6 +594,7 @@ const dashboardExecutiveService = new DashboardExecutiveService({
   financeService,
   intelligenceService,
   dayPlanService,
+  xeroSyncService,
 });
 const analyticsService = new AnalyticsService(db, financeService, fleetService, inventoryService);
 const workforceService = new WorkforceService({
@@ -1235,7 +1236,9 @@ bindAutomationEventEmitter(async (event) => {
 const runtimeMode = (process.env.TITAN_RUNTIME_MODE || 'api').toLowerCase();
 const isWorkerProcess = runtimeMode === 'worker' || runtimeMode === 'scheduler';
 
-if (isWorkerProcess && !env.runtime.startInProcessAutomationWorkers) {
+const backgroundRuntimeAllowed =
+  env.runtime.startInProcessAutomationWorkers || env.runtime.schedulersEnabled;
+if (isWorkerProcess && !backgroundRuntimeAllowed) {
   logger.error(
     { runtimeMode },
     'Worker/scheduler process refused: enable WORKERS_ENABLED, SCHEDULERS_ENABLED, or AUTOMATIONS_ENABLED',

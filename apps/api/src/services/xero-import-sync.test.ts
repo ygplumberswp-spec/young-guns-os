@@ -188,3 +188,24 @@ test('timeout constants are finite and ordered for safe sync budgets', () => {
   assert.ok(XERO_REQUEST_TIMEOUT_MS < XERO_IMPORT_BATCH_BUDGET_MS);
   assert.ok(XERO_IMPORT_BATCH_BUDGET_MS < XERO_IMPORT_STALE_JOB_MS);
 });
+
+test('POST /xero/sync enqueues import after organisation verify', () => {
+  const source = readFileSync(
+    new URL('../routes/integrations.ts', import.meta.url),
+    'utf8',
+  );
+  const routeStart = source.indexOf("router.post('/xero/sync'");
+  const routeEnd = source.indexOf("router.get(", routeStart);
+  const route = source.slice(routeStart, routeEnd);
+
+  assert.match(route, /businessIntegrationsService\.syncXero/);
+  assert.match(route, /xeroSyncService\.enqueueImportSync/);
+  assert.match(route, /queued:\s*true/);
+});
+
+test('import batch self-chains when waiting for next batch', () => {
+  const source = readFileSync(new URL('./xero-sync.service.ts', import.meta.url), 'utf8');
+  assert.match(source, /Continue multi-batch \/ rate-limited imports/);
+  assert.match(source, /continueDelayMs/);
+  assert.match(source, /invalidateDashboardFinanceCaches/);
+});

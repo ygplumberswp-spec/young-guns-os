@@ -524,12 +524,37 @@ export function createIntegrationsRouter({
   });
 
   router.post('/xero/sync', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const { companyId, userId } = getAuth(req);
 
     try {
-      const result = await businessIntegrationsService.syncXero(companyId);
-      res.json({ data: { result } });
+      // Organisation verify keeps connection metadata healthy, then enqueue the
+      // real Xero→TITAN import that feeds invoices/payments dashboard widgets.
+      const orgResult = await businessIntegrationsService.syncXero(companyId);
+      const queued = await xeroSyncService.enqueueImportSync(companyId, userId, {
+        jobType: 'manual',
+        trigger: 'manual',
+      });
+
+      invalidateIntegrationReadCaches(companyId);
+
+      res.json({
+        data: {
+          result: {
+            ...orgResult,
+            syncJobId: queued.jobId,
+            queued: true,
+            message: queued.message,
+          },
+          jobId: queued.jobId,
+          status: queued.status,
+          message: queued.message,
+        },
+      });
     } catch (error) {
+      if (error instanceof XeroSyncError) {
+        handleXeroSyncError(res, error);
+        return;
+      }
       handleBusinessIntegrationsError(res, error);
     }
   });

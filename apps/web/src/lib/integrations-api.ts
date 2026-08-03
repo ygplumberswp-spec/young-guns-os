@@ -188,7 +188,9 @@ export async function syncXero(accessToken: string): Promise<XeroSyncResult & { 
 }
 
 export async function enqueueXeroImportSync(accessToken: string) {
+  // POST /integrations/xero/sync verifies the org, then enqueues the real import job.
   const data = await request<{
+    result: XeroSyncResult & { queued?: boolean; message?: string };
     jobId: string;
     status: 'queued' | 'running';
     message: string;
@@ -197,7 +199,11 @@ export async function enqueueXeroImportSync(accessToken: string) {
     accessToken,
     timeoutMs: 15_000,
   });
-  return data;
+  return {
+    jobId: data.jobId,
+    status: data.status,
+    message: data.message,
+  };
 }
 
 export async function fetchXeroSyncStatus(accessToken: string): Promise<XeroSyncStatusResponse> {

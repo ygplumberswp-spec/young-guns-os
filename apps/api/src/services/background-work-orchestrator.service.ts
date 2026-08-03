@@ -13,6 +13,7 @@ import type { XeroTwoWayVerifyService } from './xero-two-way-verify.service.js';
 import {
   invalidateBackgroundWorkReadCaches,
   invalidateCustomerValueReadCaches,
+  invalidateDashboardFinanceCaches,
   invalidateIntegrationReadCaches,
 } from './api-read-cache.js';
 
@@ -161,6 +162,7 @@ export class BackgroundWorkOrchestratorService {
   }): Promise<void> {
     invalidateCustomerValueReadCaches(input.companyId);
     invalidateIntegrationReadCaches(input.companyId);
+    invalidateDashboardFinanceCaches(input.companyId);
     invalidateBackgroundWorkReadCaches(input.companyId);
 
     const metrics = await this.deps.customerValueClassificationService.refreshValueMetrics(
@@ -196,6 +198,7 @@ export class BackgroundWorkOrchestratorService {
   private async handleXeroImportCompleted(event: TenantDomainEvent): Promise<void> {
     invalidateCustomerValueReadCaches(event.companyId);
     invalidateIntegrationReadCaches(event.companyId);
+    invalidateDashboardFinanceCaches(event.companyId);
     invalidateBackgroundWorkReadCaches(event.companyId);
   }
 

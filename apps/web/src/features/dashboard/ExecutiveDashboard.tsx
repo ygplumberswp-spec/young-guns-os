@@ -132,6 +132,7 @@ export function ExecutiveDashboard() {
             >
               <OutstandingInvoicesPanel
                 data={summary?.outstandingInvoices ?? null}
+                xeroFinance={summary?.xeroFinance ?? null}
                 isLoading={isLoading}
                 error={loadError}
                 onRetry={() => void summaryQuery.refetch()}

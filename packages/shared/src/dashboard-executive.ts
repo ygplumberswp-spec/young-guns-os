@@ -129,6 +129,25 @@ export type ExecutiveOutstandingInvoices = {
   largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
 };
 
+/**
+ * Honest Xero finance feed status for the Owner dashboard.
+ * Aggregates still come from TITAN invoices/payments after import — never invented.
+ */
+export type ExecutiveXeroFinance = {
+  connected: boolean;
+  organisationName: string | null;
+  /** Connection-level last successful import/sync timestamp. */
+  lastSyncAt: string | null;
+  lastError: string | null;
+  /** Latest import job display status when one exists. */
+  importStatus: string | null;
+  importMessage: string | null;
+  syncedCustomerCount: number;
+  syncedInvoiceCount: number;
+  syncedPaymentCount: number;
+  currency: string;
+};
+
 export type ExecutiveDashboardSummary = {
   generatedAt: string;
   header: ExecutiveHeaderCounts;
@@ -137,6 +156,8 @@ export type ExecutiveDashboardSummary = {
   completedToday: ExecutiveCompletedJob[];
   priorities: ExecutivePrioritiesSummary;
   outstandingInvoices: ExecutiveOutstandingInvoices;
+  /** Xero connection + last successful sync — always present, honest empty when disconnected. */
+  xeroFinance: ExecutiveXeroFinance;
   /** @deprecated V1.1 — retained for compatibility; UI no longer renders Team Today. */
   teamToday: ExecutiveTeamMember[];
 };

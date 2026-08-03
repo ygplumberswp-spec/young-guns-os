@@ -426,6 +426,9 @@ export type XeroSyncResult = {
   baseCurrency: string | null;
   syncedAt: string;
   syncJobId?: string;
+  /** True when a Xero data import job was also queued after organisation verify. */
+  queued?: boolean;
+  message?: string;
 };
 
 export type EmailConnectionSummary = {

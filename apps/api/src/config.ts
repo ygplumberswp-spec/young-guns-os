@@ -134,7 +134,10 @@ function resolveRuntimeControls(
     whatsappEnabled: parseBoolFlag(raw.WHATSAPP_ENABLED, false) && providersEnabled,
     emailSendingEnabled: parseBoolFlag(raw.EMAIL_SENDING_ENABLED, false) && providersEnabled,
     readyRequireRedis: parseBoolFlag(raw.READY_REQUIRE_REDIS, defaultRequireRedis),
-    startInProcessAutomationWorkers: workersEnabled || schedulersEnabled || automationsEnabled,
+    // Schedulers (Xero/import ticks) are independent of automation queue workers.
+    // Coupling them forced a 5s automation poll whenever SCHEDULERS_ENABLED=true,
+    // multiplying DB session usage against Supabase session-mode pool_size (~15).
+    startInProcessAutomationWorkers: workersEnabled || automationsEnabled,
   };
 }
 

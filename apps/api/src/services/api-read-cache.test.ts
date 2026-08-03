@@ -5,6 +5,7 @@ import {
   buildTenantCacheKey,
   cachedTenantRead,
   CACHE_TTLS,
+  invalidateDashboardFinanceCaches,
   invalidateIntegrationReadCaches,
 } from './api-read-cache.js';
 
@@ -103,4 +104,28 @@ test('invalidateIntegrationReadCaches clears integration namespaces only for ten
   assert.equal(hubLoads, 2);
   assert.deepEqual(crmCached, { customers: 1 });
   assert.deepEqual(tenantBHubCached, { ok: true });
+});
+
+test('invalidateDashboardFinanceCaches clears dashboard and finance namespaces', async () => {
+  apiReadCache.invalidateAll();
+
+  await cachedTenantRead(
+    buildTenantCacheKey('tenant-a', 'dashboard/executive-summary'),
+    async () => ({ xero: true }),
+  );
+  await cachedTenantRead(buildTenantCacheKey('tenant-a', 'finance/stats'), async () => ({
+    outstanding: 1,
+  }));
+  await cachedTenantRead(
+    buildTenantCacheKey('tenant-a', 'integration-hub/dashboard'),
+    async () => ({ ok: true }),
+  );
+
+  invalidateDashboardFinanceCaches('tenant-a');
+
+  assert.equal(apiReadCache.get(buildTenantCacheKey('tenant-a', 'dashboard/executive-summary')), null);
+  assert.equal(apiReadCache.get(buildTenantCacheKey('tenant-a', 'finance/stats')), null);
+  assert.deepEqual(apiReadCache.get(buildTenantCacheKey('tenant-a', 'integration-hub/dashboard')), {
+    ok: true,
+  });
 });
