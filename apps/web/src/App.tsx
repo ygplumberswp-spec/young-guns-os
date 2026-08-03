@@ -248,6 +248,10 @@ export function App() {
                           path="/document-intelligence"
                           component={OwnerPages.DocumentIntelligencePage}
                         />
+                        <Route
+                          path="/compliance-intelligence"
+                          component={OwnerPages.ComplianceIntelligencePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

@@ -266,6 +266,7 @@ import { SalesAnalyticsIntelligenceService } from './services/sales-analytics-in
 import { Customer360IntelligenceService } from './services/customer-360-intelligence.service.js';
 import { PropertyIntelligenceService } from './services/property-intelligence.service.js';
 import { DocumentIntelligenceService } from './services/document-intelligence.service.js';
+import { ComplianceIntelligenceService } from './services/compliance-intelligence.service.js';
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
@@ -316,6 +317,7 @@ import { createSalesAnalyticsIntelligenceRouter } from './routes/sales-analytics
 import { createCustomer360IntelligenceRouter } from './routes/customer-360-intelligence.js';
 import { createPropertyIntelligenceRouter } from './routes/property-intelligence.js';
 import { createDocumentIntelligenceRouter } from './routes/document-intelligence.js';
+import { createComplianceIntelligenceRouter } from './routes/compliance-intelligence.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
@@ -887,6 +889,7 @@ const salesAnalyticsIntelligenceService = new SalesAnalyticsIntelligenceService(
 const customer360IntelligenceService = new Customer360IntelligenceService(db);
 const propertyIntelligenceService = new PropertyIntelligenceService(db);
 const documentIntelligenceService = new DocumentIntelligenceService(db);
+const complianceIntelligenceService = new ComplianceIntelligenceService(db);
 const financeReportingForecastService = new FinanceReportingForecastService(db);
 const financeCashflowProfitService = new FinanceCashflowProfitService(db);
 const procurementIntelligenceService = new ProcurementIntelligenceService({
@@ -2638,6 +2641,15 @@ app.use(
   '/api/v1/document-intelligence',
   createDocumentIntelligenceRouter({
     documentIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/compliance-intelligence',
+  createComplianceIntelligenceRouter({
+    complianceIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

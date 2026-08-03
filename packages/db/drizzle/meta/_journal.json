@@ -1128,6 +1128,13 @@
       "when": 1754395000163,
       "tag": "0163_document_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 161,
+      "version": "7",
+      "when": 1754396000164,
+      "tag": "0164_compliance_intelligence",
+      "breakpoints": true
     }
   ]
 }

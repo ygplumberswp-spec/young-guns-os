@@ -268,6 +268,20 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {
+    href: '/compliance-intelligence',
+    label: 'Compliance Intelligence',
+    permissions: [
+      'legal_compliance:read',
+      'legal_compliance:write',
+      'legal_compliance:manage',
+      'documents:read',
+      'documents:write',
+      'agents:read',
+      '*',
+    ],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],
