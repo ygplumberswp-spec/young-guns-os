@@ -159,6 +159,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/marketing-agent',
+    load: () => import('../pages/marketing-agent/MarketingAgentPage'),
+    permissions: ['marketing:read', 'marketing_intelligence:read', 'agents:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/aura/agents',
     load: () => import('../pages/agents/AgentDashboardPage'),
     permissions: ['agents:read', '*'],

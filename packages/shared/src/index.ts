@@ -117,6 +117,7 @@ export * from './personal-whatsapp-connection.js';
 export * from './communication-aura-intelligence.js';
 export * from './aura-command-centre.js';
 export * from './aura-agent-network.js';
+export * from './aura-evolution.js';
 export * from './marketing-agent.js';
 export * from './technician-intelligence.js';
 export * from './enterprise-security.js';

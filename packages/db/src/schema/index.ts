@@ -109,6 +109,7 @@ export * from './personal-whatsapp-connection';
 export * from './communication-aura-intelligence';
 export * from './aura-command-centre';
 export * from './aura-agent-network';
+export * from './aura-evolution';
 export * from './marketing-agent';
 export * from './technician-intelligence';
 export * from './workflow-automation';

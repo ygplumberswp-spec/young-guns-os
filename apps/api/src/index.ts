@@ -2456,6 +2456,15 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/marketing-agent',
+  createMarketingAgentRouter({
+    marketingAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/technician-intelligence',
   createTechnicianIntelligenceRouter({
     technicianIntelligenceService,

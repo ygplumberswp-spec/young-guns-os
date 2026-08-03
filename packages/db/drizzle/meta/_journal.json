@@ -925,6 +925,13 @@
       "when": 1754326800000,
       "tag": "0134_aura_agent_network",
       "breakpoints": true
+    },
+    {
+      "idx": 132,
+      "version": "7",
+      "when": 1754330400000,
+      "tag": "0136_marketing_agent_foundation",
+      "breakpoints": true
     }
   ]
 }
