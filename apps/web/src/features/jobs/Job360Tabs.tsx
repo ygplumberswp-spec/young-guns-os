@@ -143,6 +143,18 @@ export function Job360Tabs({
           <Panel title="Lifecycle & Payment">
             <dl className="crm-detail-list job-finance-ledger">
               <div>
+                <dt>Job status (office)</dt>
+                <dd>{formatJobStatus(job.status)}</dd>
+              </div>
+              <div>
+                <dt>Field phase</dt>
+                <dd>
+                  {execution?.executionPhase
+                    ? execution.executionPhase.replace(/_/g, ' ')
+                    : 'Not started on mobile'}
+                </dd>
+              </div>
+              <div>
                 <dt>Lifecycle</dt>
                 <dd>{lifecycleLabel ?? formatJobStatus(job.status)}</dd>
               </div>
@@ -188,6 +200,10 @@ export function Job360Tabs({
                 </div>
               )}
             </dl>
+            <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+              Lifecycle blends office status, field phase, and finance. Gated mobile completion is
+              the source of truth for the Completed billing step.
+            </p>
           </Panel>
           {execution?.completionSnapshot ? (
             <Panel title="Completion Snapshot">

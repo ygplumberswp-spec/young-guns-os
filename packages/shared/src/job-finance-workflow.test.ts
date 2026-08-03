@@ -78,7 +78,20 @@ test('deriveJobCashChainSteps marks completed when snapshot exists', () => {
     hasCompletionSnapshot: true,
     financeSummary: { invoices: [], payments: [] },
   });
-  assert.equal(steps.find((step) => step.id === 'completed')?.done, true);
+  const completed = steps.find((step) => step.id === 'completed');
+  assert.equal(completed?.done, true);
+  assert.match(completed?.detail ?? '', /gated mobile completion snapshot/i);
+});
+
+test('deriveJobCashChainSteps is honest when office completed without snapshot', () => {
+  const steps = deriveJobCashChainSteps({
+    jobStatus: 'completed',
+    hasCompletionSnapshot: false,
+    financeSummary: { invoices: [], payments: [] },
+  });
+  const completed = steps.find((step) => step.id === 'completed');
+  assert.equal(completed?.done, true);
+  assert.match(completed?.detail ?? '', /no gated mobile snapshot/i);
 });
 
 test('deriveJobCashChainSteps marks paid when outstanding is zero', () => {

@@ -97,10 +97,13 @@ export class TravelTimeService {
     let warning: string | null = null;
     if (googleMapsConnected && (!origin || !destination)) {
       warning =
-        'Google Maps is connected, but one or both locations lack verified coordinates — using default travel minutes.';
+        'Travel estimate is approximate: Google Maps is connected, but one or both job sites are missing map coordinates. Add or verify site coordinates for live routing minutes; using default travel minutes for now.';
     } else if (!googleMapsConnected && cartrackConnected) {
       warning =
-        'Cartrack is connected for GPS positions. Google Maps routing is not connected — using default travel minutes.';
+        'Travel estimate is approximate: Cartrack can show GPS presence, but Google Maps routing is not connected — using default travel minutes.';
+    } else if (!googleMapsConnected && (!origin || !destination)) {
+      warning =
+        'Travel estimate is approximate: Google Maps routing is not connected and job site coordinates are incomplete — using default travel minutes.';
     }
 
     return {

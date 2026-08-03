@@ -102,7 +102,7 @@ export function JobCompletionFinancePanel({
   return (
     <Panel
       title="Completion & Billing"
-      description="Booked → Completed → Invoiced → Paid. Internal invoice numbers stay pending until Xero sync."
+      description="Booked → Completed → Invoiced → Paid. Gated mobile completion is the Completed source of truth. Internal invoice numbers stay pending until Xero sync."
     >
       <ol className="finance-chain-list">
         {chainSteps.map((step) => (
@@ -126,13 +126,23 @@ export function JobCompletionFinancePanel({
             </dd>
           </div>
         </dl>
-      ) : execution && jobStatus !== 'completed' ? (
+      ) : jobStatus === 'completed' ? (
         <p className="page-muted" style={{ marginTop: '0.75rem' }}>
-          Field completion snapshot will appear here after gated mobile completion.
+          Office job status is completed, but there is no gated mobile completion snapshot. Billing
+          can continue; field evidence package is missing.
         </p>
-      ) : null}
+      ) : (
+        <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+          Field completion snapshot will appear here after gated mobile completion. Office status
+          alone does not create the snapshot.
+        </p>
+      )}
 
-      {chips.length > 0 ? (
+      {financeSummary == null ? (
+        <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+          Finance summary unavailable for this job right now.
+        </p>
+      ) : chips.length > 0 ? (
         <div className="finance-chip-row" style={{ marginTop: '0.75rem' }}>
           {chips.map((chip, index) =>
             chip.href ? (
@@ -150,7 +160,8 @@ export function JobCompletionFinancePanel({
         </div>
       ) : (
         <p className="page-muted" style={{ marginTop: '0.75rem' }}>
-          No quotes, invoices, or payments linked to this job yet.
+          No quotes, invoices, or payments linked to this job yet. Totals stay empty until finance
+          records exist — nothing is invented here.
         </p>
       )}
 

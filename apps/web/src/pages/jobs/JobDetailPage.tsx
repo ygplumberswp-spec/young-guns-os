@@ -32,7 +32,8 @@ import { fetchJobFinanceSummary } from '../../lib/finance-api';
 import { fetchPurchaseOrders } from '../../lib/procurement-api';
 import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
-import { canAccessFinance } from '../../features/finance/utils';
+import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
+import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
@@ -89,10 +90,26 @@ export function JobDetailPage() {
     () => (user ? canAccessFinance(user.permissions) : false),
     [user],
   );
+  const canWriteFinance = useMemo(
+    () => (user ? canManageFinance(user.permissions) : false),
+    [user],
+  );
   const canViewProcurement = useMemo(
     () => (user ? canAccessProcurement(user.permissions) : false),
     [user],
   );
+
+  async function reloadFinanceSummary() {
+    if (!accessToken || !jobId || !canViewFinance) {
+      setFinanceSummary(null);
+      return;
+    }
+    try {
+      setFinanceSummary(await fetchJobFinanceSummary(accessToken, jobId));
+    } catch {
+      setFinanceSummary(null);
+    }
+  }
 
   async function loadJob() {
     if (!accessToken || !jobId) {
@@ -415,11 +432,19 @@ export function JobDetailPage() {
                 <dd>{job.jobNumber ?? '—'}</dd>
               </div>
               <div>
-                <dt>Status</dt>
+                <dt>Job status (office)</dt>
                 <dd>
                   <span className={`jobs-status jobs-status--${job.status}`}>
                     {formatJobStatus(job.status)}
                   </span>
+                </dd>
+              </div>
+              <div>
+                <dt>Field phase</dt>
+                <dd>
+                  {execution?.executionPhase
+                    ? execution.executionPhase.replace(/_/g, ' ')
+                    : 'Not started on mobile'}
                 </dd>
               </div>
               <div>
@@ -520,11 +545,15 @@ export function JobDetailPage() {
                   {execution?.completionSnapshot
                     ? new Date(execution.completionSnapshot.createdAt).toLocaleString()
                     : isCompletedJob
-                      ? 'Completed (no snapshot on record)'
+                      ? 'Office status completed — no gated mobile snapshot on record'
                       : '—'}
                 </dd>
               </div>
             </dl>
+            <p className="page-muted" style={{ marginTop: '0.75rem' }}>
+              Field completion is the source of truth: gated mobile complete writes the immutable
+              snapshot. Office job status may differ until that handoff lands.
+            </p>
           </Panel>
         }
         schedulePanel={
@@ -566,7 +595,7 @@ export function JobDetailPage() {
                       </label>
 
                       <label className="titan-input-group">
-                        <span className="titan-input-label">Status</span>
+                        <span className="titan-input-label">Job status (office)</span>
                         <select
                           className="titan-input"
                           value={status}
@@ -579,6 +608,10 @@ export function JobDetailPage() {
                           ))}
                         </select>
                       </label>
+                      <p className="page-muted">
+                        Office status is separate from field phase. Marking completed here does not
+                        replace gated mobile completion or create a completion snapshot.
+                      </p>
 
                       <label className="titan-input-group">
                         <span className="titan-input-label">Priority</span>
@@ -1013,27 +1046,23 @@ export function JobDetailPage() {
           </>
         }
         financePanel={
-          <Panel title="Finance">
-            {financeSummary && financeSummary.chips.length > 0 ? (
-              <div className="finance-chip-row">
-                {financeSummary.chips.map((chip, index) =>
-                  chip.href ? (
-                    <Link key={`${chip.kind}-${index}`} href={chip.href} className="finance-chip">
-                      <span>{chip.label}</span>
-                      <strong>{chip.value}</strong>
-                    </Link>
-                  ) : (
-                    <span key={`${chip.kind}-${index}`} className="finance-chip">
-                      <span>{chip.label}</span>
-                      <strong>{chip.value}</strong>
-                    </span>
-                  ),
-                )}
-              </div>
-            ) : (
-              <p className="page-muted">No quotes, invoices, or payments linked to this job yet.</p>
-            )}
-          </Panel>
+          accessToken ? (
+            <JobCompletionFinancePanel
+              accessToken={accessToken}
+              jobId={job.id}
+              customerId={job.customerId}
+              jobStatus={job.status}
+              jobNumber={job.jobNumber}
+              financeSummary={financeSummary}
+              execution={execution}
+              canManageFinance={canWriteFinance}
+              onFinanceUpdated={reloadFinanceSummary}
+            />
+          ) : (
+            <Panel title="Completion & Billing">
+              <p className="page-muted">Sign in required to load finance handoff.</p>
+            </Panel>
+          )
         }
         documentsPanel={
           <Panel title="Documents">

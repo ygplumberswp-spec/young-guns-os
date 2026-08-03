@@ -22,6 +22,13 @@ export function deriveJobCashChainSteps(input: {
     paymentRows.length > 0 ||
     (invoiceRows.length > 0 && invoiceRows.every((invoice) => invoice.status === 'paid'));
   const completed = input.jobStatus === 'completed' || input.hasCompletionSnapshot;
+  let completedDetail = 'Awaiting gated mobile completion';
+  if (input.hasCompletionSnapshot) {
+    completedDetail = 'Gated mobile completion snapshot recorded';
+  } else if (input.jobStatus === 'completed') {
+    completedDetail =
+      'Office status is completed — no gated mobile snapshot on record yet';
+  }
 
   const outstandingCents = invoiceRows.reduce((sum, invoice) => sum + invoice.outstandingCents, 0);
 
@@ -36,7 +43,7 @@ export function deriveJobCashChainSteps(input: {
       id: 'completed',
       label: 'Completed',
       done: completed,
-      detail: completed ? 'Field completion recorded' : 'Awaiting gated mobile completion',
+      detail: completedDetail,
     },
     {
       id: 'invoiced',
