@@ -203,15 +203,22 @@ export function PersonalCommunicationsIntelligencePage() {
     <div className="page">
       <PageHeader
         title="Personal Communications Intelligence"
-        description="Separate from Business WhatsApp — Personal WhatsApp (Owner only). Intelligence and approval-gated actions only. Direct Personal WhatsApp session pairing is not supported."
+        description="Company-scoped intelligence over Business WhatsApp messages (`personal_comm_*`). Distinct from Personal WhatsApp Assistant and Personal WhatsApp Intelligence."
       />
-      <Panel title="Personal WhatsApp (Owner only)">
+      <Panel title="What this module is (and is not)">
         <p className="page-muted">
-          <strong>Status: Blocked / unsupported for direct connection.</strong> TITAN does not store
-          Personal WhatsApp session keys or simulate a personal account connection. This channel is
-          never mixed with Business WhatsApp and is never available to Clients or Technicians.
-          Outgoing messages, deletes, and consequential actions require Owner approval with audit
-          evidence.
+          <strong>This page (PCI)</strong> indexes real Business WhatsApp messages for lead/follow-up
+          intelligence. It does not ingest Personal WhatsApp sessions.
+        </p>
+        <p className="page-muted">
+          <strong>Personal WhatsApp Assistant</strong> (`personal_whatsapp`) is a separate Platform
+          Owner–only credential path on the Communications Hub — private by default, never
+          auto-imported, never mixed into Business WhatsApp.
+        </p>
+        <p className="page-muted">
+          <strong>Personal WhatsApp Intelligence</strong> classifies those owner-scoped personal
+          threads and queues CRM/timeline links + AURA drafts for explicit Owner approval.{' '}
+          <a href="/personal-whatsapp-intelligence">Open Personal WhatsApp Intelligence</a>
         </p>
       </Panel>
       {error ? <p className="form-error">{error}</p> : null}

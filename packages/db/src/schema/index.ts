@@ -104,6 +104,7 @@ export * from './dispatch-intelligence';
 export * from './ops-intelligence';
 export * from './fleet-intelligence';
 export * from './personal-communications-intelligence';
+export * from './personal-whatsapp-intelligence';
 export * from './enterprise-security';
 export * from './integration-platform';
 export * from './enterprise-analytics';

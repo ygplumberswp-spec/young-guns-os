@@ -419,6 +419,10 @@ export function App() {
                           path="/personal-communications-intelligence"
                           component={OwnerPages.PersonalCommunicationsIntelligencePage}
                         />
+                        <Route
+                          path="/personal-whatsapp-intelligence"
+                          component={OwnerPages.PersonalWhatsappIntelligencePage}
+                        />
                         <Route path="/recruiting" component={OwnerPages.RecruitingPage} />
                         <Route
                           path="/integrations/cartrack"

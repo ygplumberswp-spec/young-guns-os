@@ -179,6 +179,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/business-continuity',
   '/communications-intelligence',
   '/personal-communications-intelligence',
+  '/personal-whatsapp-intelligence',
   '/ai-orchestration',
 ]);
 

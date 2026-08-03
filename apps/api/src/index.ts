@@ -245,6 +245,7 @@ import { DispatchIntelligenceService } from './services/dispatch-intelligence.se
 import { OpsIntelligenceService } from './services/ops-intelligence.service.js';
 import { FleetIntelligenceService } from './services/fleet-intelligence.service.js';
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
+import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
 import { EnterpriseSecurityService } from './services/enterprise-security.service.js';
 import { ConnectorEngineService } from './services/connector-engine.service.js';
 import { IntegrationPlatformService } from './services/integration-platform.service.js';
@@ -263,6 +264,7 @@ import { createDispatchIntelligenceRouter } from './routes/dispatch-intelligence
 import { createOpsIntelligenceRouter } from './routes/ops-intelligence.js';
 import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
+import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
 import { createEnterpriseSecurityRouter } from './routes/enterprise-security.js';
 import { createIntegrationPlatformRouter } from './routes/integration-platform.js';
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
@@ -799,6 +801,7 @@ const personalCommunicationsIntelligenceService = new PersonalCommunicationsInte
   aiOrchestrationService,
   notificationService,
 );
+const personalWhatsappIntelligenceService = new PersonalWhatsappIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY ?? env.JWT_SECRET,
@@ -2373,6 +2376,15 @@ app.use(
   '/api/v1/personal-communications-intelligence',
   createPersonalCommunicationsIntelligenceRouter({
     personalCommunicationsIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/personal-whatsapp-intelligence',
+  createPersonalWhatsappIntelligenceRouter({
+    personalWhatsappIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

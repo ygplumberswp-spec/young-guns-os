@@ -5,6 +5,7 @@ import {
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
   canSyncBusinessGmail,
+  classifyPersonalWaIntelligence,
   detectWhatsappInboundUrgency,
   technicianJobScopedOnly,
   type CommPlatformAccountKind,
@@ -1451,17 +1452,24 @@ export class CommunicationsPlatformService {
       .orderBy(desc(commPlatformPersonalThreads.createdAt))
       .limit(20);
 
-    return threads.map((t) => ({
-      id: t.id,
-      contactPhone: t.contactPhone,
-      contactName: t.contactName,
-      suggestedClassification: 'unknown',
-      confidence: 0,
-      options: ['import', 'import_from', 'create_customer', 'link', 'keep_private'],
-      defaultAction: 'keep_private',
-      autoImport: false,
-      createdAt: t.createdAt.toISOString(),
-    }));
+    return threads.map((t) => {
+      const intel = classifyPersonalWaIntelligence({
+        contactName: t.contactName,
+        contactPhone: t.contactPhone,
+        preview: t.lastMessagePreview,
+      });
+      return {
+        id: t.id,
+        contactPhone: t.contactPhone,
+        contactName: t.contactName,
+        suggestedClassification: intel.classification,
+        confidence: intel.confidence,
+        options: ['import', 'import_from', 'create_customer', 'link', 'keep_private'] as const,
+        defaultAction: 'keep_private' as const,
+        autoImport: false as const,
+        createdAt: t.createdAt.toISOString(),
+      };
+    });
   }
 
   async recordImportDecision(

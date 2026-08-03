@@ -679,7 +679,7 @@ export class EmailCentreService {
         personalWhatsappIntelligence: 'readiness_only',
       },
       syncNote:
-        'Unified timeline indexes Gmail inbox, WhatsApp Business, CRM communications, notes, and attachment links into uc_timeline_index. Personal WA intelligence is readiness-only.',
+        'Unified timeline indexes Gmail inbox, WhatsApp Business, CRM communications, notes, and attachment links into uc_timeline_index. Personal WA Intelligence may add Owner-approved link markers only — never raw private threads.',
     };
   }
 

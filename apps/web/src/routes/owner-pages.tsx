@@ -520,6 +520,11 @@ export const PersonalCommunicationsIntelligencePage = lazyNamed(
     import('../pages/personal-communications-intelligence/PersonalCommunicationsIntelligencePage'),
   'PersonalCommunicationsIntelligencePage',
 );
+export const PersonalWhatsappIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/personal-whatsapp-intelligence/PersonalWhatsappIntelligencePage'),
+  'PersonalWhatsappIntelligencePage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),
