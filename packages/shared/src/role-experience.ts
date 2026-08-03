@@ -148,6 +148,7 @@ export const DISPATCHER_ALLOWED_HREFS = new Set([
   '/documents',
   '/mobile-platform/dispatcher',
   '/dispatch-intelligence',
+  '/technician-intelligence',
   '/settings/team',
 ]);
 
@@ -187,6 +188,11 @@ export const TECHNICIAN_NAV_ITEMS: NavItemConfig[] = [
   {
     href: '/mobile/time',
     label: 'Timesheets',
+    experiences: ['technician', 'platform_owner', 'company_owner'],
+  },
+  {
+    href: '/mobile/performance',
+    label: 'Performance',
     experiences: ['technician', 'platform_owner', 'company_owner'],
   },
   {
@@ -258,6 +264,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/recruiting',
   '/quality',
   '/operations',
+  '/technician-intelligence',
   '/mobile-platform',
   '/app-builder',
 ];

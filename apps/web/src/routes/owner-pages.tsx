@@ -507,6 +507,10 @@ export const DispatchIntelligencePage = lazyNamed(
   () => import('../pages/dispatch-intelligence/DispatchIntelligencePage'),
   'DispatchIntelligencePage',
 );
+export const TechnicianIntelligencePage = lazyNamed(
+  () => import('../pages/technician-intelligence/TechnicianIntelligencePage'),
+  'TechnicianIntelligencePage',
+);
 export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',

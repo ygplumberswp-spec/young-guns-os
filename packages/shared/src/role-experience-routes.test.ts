@@ -12,7 +12,13 @@ function isBlocked(prefixes: string[], path: string): boolean {
 
 describe('technician route protection', () => {
   it('blocks technicians from operational owner modules', () => {
-    for (const prefix of ['/jobs', '/communications', '/documents', '/dispatch']) {
+    for (const prefix of [
+      '/jobs',
+      '/communications',
+      '/documents',
+      '/dispatch',
+      '/technician-intelligence',
+    ]) {
       assert.equal(isBlocked(OWNER_ONLY_ROUTE_PREFIXES, prefix), true, `expected ${prefix}`);
     }
   });

@@ -111,6 +111,7 @@ export * from './ops-intelligence.js';
 export * from './fleet-intelligence.js';
 export * from './personal-communications-intelligence.js';
 export * from './personal-whatsapp-intelligence.js';
+export * from './technician-intelligence.js';
 export * from './enterprise-security.js';
 export * from './secure-session.js';
 export * from './integration-platform.js';
