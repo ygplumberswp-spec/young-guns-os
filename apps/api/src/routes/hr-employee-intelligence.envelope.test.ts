@@ -54,4 +54,12 @@ describe('hr employee intelligence API envelope & safety', () => {
     assert.ok(routeSource.includes('scheduling'));
     assert.ok(routeSource.includes('recruitment'));
   });
+
+  it('connects compliance via real certification expiry only', () => {
+    assert.ok(routeSource.includes("'compliance'"));
+    assert.ok(serviceSource.includes('buildHrIntelQualificationComplianceRows'));
+    assert.ok(serviceSource.includes('buildHrIntelQualificationComplianceSnapshot'));
+    assert.ok(serviceSource.includes('qualificationComplianceAvailable'));
+    assert.ok(serviceSource.includes('eq(certifications.companyId, actor.companyId)'));
+  });
 });

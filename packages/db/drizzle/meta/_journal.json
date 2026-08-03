@@ -1100,6 +1100,13 @@
       "when": 1754391000158,
       "tag": "0158_sales_analytics_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 157,
+      "version": "7",
+      "when": 1754392000165,
+      "tag": "0165_hr_employee_intelligence_compliance",
+      "breakpoints": true
     }
   ]
 }

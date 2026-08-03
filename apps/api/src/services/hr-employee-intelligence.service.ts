@@ -2,6 +2,8 @@ import { and, desc, eq, ne, sql } from 'drizzle-orm';
 import {
   buildHrIntelEmploymentSummary,
   buildHrIntelPayrollSnapshot,
+  buildHrIntelQualificationComplianceRows,
+  buildHrIntelQualificationComplianceSnapshot,
   buildHrIntelRecommendationDrafts,
   buildHrIntelSkillGaps,
   buildHrIntelSkillsIntelligenceSnapshot,
@@ -23,6 +25,7 @@ import {
   type HrIntelAuraInsightSummary,
   type HrIntelDashboard,
   type HrIntelEmployeeRecord,
+  type HrIntelQualificationComplianceRow,
   type HrIntelRecommendationSummary,
   type HrIntelSelfProfile,
   type HrIntelSettings,
@@ -497,6 +500,25 @@ export class HrEmployeeIntelligenceService {
     const payroll = buildHrIntelPayrollSnapshot({ periodCount, providerAdapterCount });
     const recruitingCount = recruitingCountRow[0]?.count ?? 0;
 
+    const qualificationComplianceRows: HrIntelQualificationComplianceRow[] =
+      buildHrIntelQualificationComplianceRows({
+        qualifications: employees.flatMap((e) =>
+          e.qualifications.map((q) => ({
+            userId: e.userId,
+            displayName: this.displayName(e.firstName, e.lastName),
+            certificationId: q.id,
+            certificationKey: q.certificationKey,
+            name: q.name,
+            expiresAt: q.expiresAt,
+          })),
+        ),
+      });
+    const qualificationCompliance = buildHrIntelQualificationComplianceSnapshot({
+      trackedQualificationCount: certRows.length,
+      withExpiryCount: certRows.filter((c) => c.expiresAt !== null).length,
+      rows: qualificationComplianceRows,
+    });
+
     let summary: string;
     if (workforce.availability === 'unavailable') {
       summary =
@@ -520,6 +542,8 @@ export class HrEmployeeIntelligenceService {
       skillsIntelligence,
       timesheets,
       payroll,
+      qualificationCompliance,
+      qualificationComplianceRows: qualificationComplianceRows.slice(0, 100),
       employees,
       team,
       skillsOverview,
@@ -531,6 +555,7 @@ export class HrEmployeeIntelligenceService {
         timesheetsAvailable: timesheets.availability === 'available',
         payrollAvailable: payroll.availability === 'available',
         recruitmentAvailable: recruitingCount > 0,
+        qualificationComplianceAvailable: qualificationCompliance.availability === 'available',
       }),
       auraInsights: insights.map((i) => this.toInsight(i)),
       settings,
@@ -663,6 +688,7 @@ export class HrEmployeeIntelligenceService {
       openJobAssignments: dashboard.workforceAvailability.openJobAssignments,
       distinctSkillCount: dashboard.skillsOverview.length,
       activeTechnicianCount: dashboard.technicians.length,
+      qualificationComplianceRows: dashboard.qualificationComplianceRows,
     });
 
     const created: HrIntelRecommendationSummary[] = [];

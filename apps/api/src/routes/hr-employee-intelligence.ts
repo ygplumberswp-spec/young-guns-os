@@ -27,6 +27,7 @@ const createInsightSchema = z.object({
     'jobs',
     'scheduling',
     'recruitment',
+    'compliance',
     'hr',
   ]),
   title: z.string().trim().min(1).max(200),

@@ -33,6 +33,7 @@ export type HrIntelInsightTarget =
   | 'jobs'
   | 'scheduling'
   | 'recruitment'
+  | 'compliance'
   | 'hr';
 
 export type HrIntelInsightStatus = 'open' | 'acknowledged' | 'dismissed';
@@ -266,6 +267,28 @@ export type HrIntelPayrollSnapshot = {
   rationale: string;
 };
 
+export type HrIntelQualificationComplianceSnapshot = {
+  availability: HrIntelAvailability;
+  trackedQualificationCount: number;
+  withExpiryCount: number;
+  expiredCount: number;
+  expiringSoonCount: number;
+  affectedEmployeeCount: number;
+  rationale: string;
+};
+
+export type HrIntelQualificationComplianceRow = {
+  userId: string;
+  displayName: string;
+  certificationId: string;
+  certificationKey: string;
+  name: string;
+  expiresAt: string;
+  state: 'expired' | 'expiring_soon';
+  daysRemaining: number;
+  rationale: string;
+};
+
 export type HrIntelDashboard = {
   summary: string;
   productClarification: {
@@ -285,6 +308,8 @@ export type HrIntelDashboard = {
   skillsIntelligence: HrIntelSkillsIntelligenceSnapshot;
   timesheets: HrIntelTimesheetSnapshot;
   payroll: HrIntelPayrollSnapshot;
+  qualificationCompliance: HrIntelQualificationComplianceSnapshot;
+  qualificationComplianceRows: HrIntelQualificationComplianceRow[];
   employees: HrIntelEmployeeRecord[];
   team: HrIntelTeamNode[];
   skillsOverview: HrIntelSkillOverviewRow[];
@@ -504,6 +529,90 @@ export function buildHrIntelPayrollSnapshot(input: {
   };
 }
 
+export const HR_INTEL_QUALIFICATION_EXPIRY_WINDOW_DAYS = 60;
+
+export function buildHrIntelQualificationComplianceRows(input: {
+  qualifications: Array<{
+    userId: string;
+    displayName: string;
+    certificationId: string;
+    certificationKey: string;
+    name: string;
+    expiresAt: string | null;
+  }>;
+  now?: Date;
+  windowDays?: number;
+}): HrIntelQualificationComplianceRow[] {
+  const now = input.now ?? new Date();
+  const windowDays = input.windowDays ?? HR_INTEL_QUALIFICATION_EXPIRY_WINDOW_DAYS;
+  const rows: HrIntelQualificationComplianceRow[] = [];
+  for (const q of input.qualifications) {
+    if (!q.expiresAt) continue;
+    const expires = new Date(q.expiresAt);
+    if (Number.isNaN(expires.getTime())) continue;
+    const daysRemaining = Math.floor((expires.getTime() - now.getTime()) / 86_400_000);
+    if (daysRemaining > windowDays) continue;
+    const state = daysRemaining < 0 ? 'expired' : 'expiring_soon';
+    rows.push({
+      userId: q.userId,
+      displayName: q.displayName,
+      certificationId: q.certificationId,
+      certificationKey: q.certificationKey,
+      name: q.name,
+      expiresAt: q.expiresAt,
+      state,
+      daysRemaining,
+      rationale:
+        state === 'expired'
+          ? `Real certification record expired ${Math.abs(daysRemaining)} day(s) ago — compliance review recommendation only.`
+          : `Real certification record expires in ${daysRemaining} day(s) — compliance review recommendation only.`,
+    });
+  }
+  return rows.sort((a, b) => a.daysRemaining - b.daysRemaining);
+}
+
+export function buildHrIntelQualificationComplianceSnapshot(input: {
+  trackedQualificationCount: number;
+  rows: HrIntelQualificationComplianceRow[];
+  withExpiryCount: number;
+}): HrIntelQualificationComplianceSnapshot {
+  if (input.trackedQualificationCount <= 0) {
+    return {
+      availability: 'unavailable',
+      trackedQualificationCount: 0,
+      withExpiryCount: 0,
+      expiredCount: 0,
+      expiringSoonCount: 0,
+      affectedEmployeeCount: 0,
+      rationale:
+        'Qualification compliance future-ready — no real certification records recorded (honest unavailable, not invented).',
+    };
+  }
+  const expiredCount = input.rows.filter((r) => r.state === 'expired').length;
+  const expiringSoonCount = input.rows.filter((r) => r.state === 'expiring_soon').length;
+  const affectedEmployeeCount = new Set(input.rows.map((r) => r.userId)).size;
+  if (input.withExpiryCount <= 0) {
+    return {
+      availability: 'unavailable',
+      trackedQualificationCount: input.trackedQualificationCount,
+      withExpiryCount: 0,
+      expiredCount: 0,
+      expiringSoonCount: 0,
+      affectedEmployeeCount: 0,
+      rationale: `${input.trackedQualificationCount} real certification record(s) tracked, but none carry an expiry date — expiry compliance stays unavailable (never inferred).`,
+    };
+  }
+  return {
+    availability: 'available',
+    trackedQualificationCount: input.trackedQualificationCount,
+    withExpiryCount: input.withExpiryCount,
+    expiredCount,
+    expiringSoonCount,
+    affectedEmployeeCount,
+    rationale: `${expiredCount} expired and ${expiringSoonCount} expiring within ${HR_INTEL_QUALIFICATION_EXPIRY_WINDOW_DAYS} day(s), from ${input.withExpiryCount} dated certification record(s). Review recommendation only — never auto-suspends work.`,
+  };
+}
+
 export function buildHrIntelSkillGaps(input: {
   employees: Array<{
     userId: string;
@@ -569,6 +678,7 @@ export function buildHrIntelRecommendationDrafts(input: {
   openJobAssignments: number;
   distinctSkillCount: number;
   activeTechnicianCount: number;
+  qualificationComplianceRows?: HrIntelQualificationComplianceRow[];
 }): Array<{
   kind: HrIntelRecommendationKind;
   title: string;
@@ -612,6 +722,23 @@ export function buildHrIntelRecommendationDrafts(input: {
       ].join('\n'),
       skillKey: need.trainingKey,
       subjectUserId: need.userId,
+    });
+  }
+
+  const complianceRows = input.qualificationComplianceRows ?? [];
+  if (complianceRows.length > 0) {
+    const row = complianceRows[0]!;
+    const expiredCount = complianceRows.filter((r) => r.state === 'expired').length;
+    drafts.push({
+      kind: 'workforce_improvement',
+      title: `Qualification compliance — ${complianceRows.length} certification(s) expired or expiring`,
+      body: [
+        `${expiredCount} expired and ${complianceRows.length - expiredCount} expiring within ${HR_INTEL_QUALIFICATION_EXPIRY_WINDOW_DAYS} day(s), from real certification records.`,
+        `Example: ${row.displayName} — ${row.name} (${row.state === 'expired' ? 'expired' : 'expiring'}).`,
+        'Recommendation draft for Owner review with Legal & Compliance — never auto-suspends work or mutates HR.',
+      ].join('\n'),
+      skillKey: row.certificationKey,
+      subjectUserId: row.userId,
     });
   }
 
@@ -664,10 +791,12 @@ export function listHrIntelConnections(input?: {
   timesheetsAvailable?: boolean;
   payrollAvailable?: boolean;
   recruitmentAvailable?: boolean;
+  qualificationComplianceAvailable?: boolean;
 }): HrIntelConnection[] {
   const timesheetsAvailable = input?.timesheetsAvailable ?? false;
   const payrollAvailable = input?.payrollAvailable ?? false;
   const recruitmentAvailable = input?.recruitmentAvailable ?? false;
+  const qualificationComplianceAvailable = input?.qualificationComplianceAvailable ?? false;
   return [
     {
       target: 'technician_intelligence',
@@ -722,6 +851,16 @@ export function listHrIntelConnections(input?: {
       note: recruitmentAvailable
         ? 'Recruiting records present.'
         : 'Future-ready — unavailable until real recruiting candidates exist.',
+    },
+    {
+      target: 'compliance',
+      label: 'Legal & Compliance',
+      href: '/legal-compliance',
+      status: qualificationComplianceAvailable ? 'available_link' : 'unavailable',
+      availability: qualificationComplianceAvailable ? 'available' : 'unavailable',
+      note: qualificationComplianceAvailable
+        ? 'Qualification expiry signals from real certification records — review only, never auto-suspends work.'
+        : 'Future-ready — unavailable until real certification records carry expiry dates.',
     },
     {
       target: 'workforce_intelligence',

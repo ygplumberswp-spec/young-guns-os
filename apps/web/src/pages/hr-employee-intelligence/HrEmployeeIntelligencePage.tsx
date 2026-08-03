@@ -303,6 +303,31 @@ export function HrEmployeeIntelligencePage() {
                   </ul>
                 )}
               </Panel>
+              <Panel title="Qualification compliance" className="border-slate-800 bg-slate-950/80">
+                <p className="mb-3 text-sm text-slate-300">
+                  {dashboard.qualificationCompliance.rationale}
+                </p>
+                {dashboard.qualificationComplianceRows.length === 0 ? (
+                  <EmptyState
+                    title="No expiry signals"
+                    description="Expiry signals appear only from real certification records that carry an expiry date."
+                  />
+                ) : (
+                  <ul className="space-y-2 text-sm text-slate-300">
+                    {dashboard.qualificationComplianceRows.map((q) => (
+                      <li
+                        key={q.certificationId}
+                        className="rounded border border-slate-800 px-3 py-2"
+                      >
+                        <div className="font-medium text-cyan-100">
+                          {q.displayName} · {q.name} · {q.state}
+                        </div>
+                        <div className="text-xs text-slate-500">{q.rationale}</div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
             </div>
           ) : null}
 

@@ -3,7 +3,7 @@ import { companies } from './companies';
 import { users } from './users';
 
 export const heiInsightTargetEnum = pgEnum('hei_insight_target', [
-  'command_centre','executive_dashboard','workforce_intelligence','technician_intelligence','timesheets','payroll','jobs','scheduling','recruitment','hr',
+  'command_centre','executive_dashboard','workforce_intelligence','technician_intelligence','timesheets','payroll','jobs','scheduling','recruitment','compliance','hr',
 ]);
 export const heiInsightStatusEnum = pgEnum('hei_insight_status', ['open','acknowledged','dismissed']);
 export const heiRecommendationKindEnum = pgEnum('hei_recommendation_kind', [
