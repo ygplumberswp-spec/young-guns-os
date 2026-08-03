@@ -3,6 +3,8 @@
 **Status: authoritative standard — recorded, not yet audited.**
 This document records the architecture rules and the Final Acceptance Audit standard for TITAN's AI agents. It does **not** run the audit, and it does **not** claim any agent is complete. No implementation work is authorised by this document.
 
+Declaring Version 1.0 complete is governed by [`TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md`](./TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md) — the authoritative V1.0 acceptance gate. Its **77-Agent Audit** section still requires the Owner-pasted 77-agent list (see section 2 below) before that audit can run.
+
 ---
 
 ## 1. Purpose
@@ -171,6 +173,7 @@ No classification may be recorded without all of the following. "Not applicable"
 ## 5. Status
 
 - **This document:** recorded. It is the standard, and it is binding on future audits.
+- **V1.0 declaration:** gated by [`TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md`](./TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md); its 77-Agent Audit section remains blocked on the Owner-pasted list.
 - **The 77-agent list:** **not recorded — pending Owner paste** (see section 2).
 - **The Final Acceptance Audit:** **not started.** Running it is deliberately later work and requires the Owner's exact list first.
 - **Implementation impact of this commit:** none. No agent was created, renamed, rebuilt, or duplicated; no department was started; no service, route, schema, or navigation entry was changed.
