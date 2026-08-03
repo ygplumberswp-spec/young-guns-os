@@ -100,6 +100,7 @@ export * from './knowledge.js';
 export * from './business-intelligence.js';
 export * from './integration-api-management.js';
 export * from './portal-experience.js';
+export * from './portal-expansion.js';
 export * from './mobile-workforce.js';
 export * from './business-day-timeline.js';
 export * from './boq.js';

@@ -97,6 +97,7 @@ export * from './finance-intelligence';
 export * from './knowledge-learning';
 export * from './business-intelligence';
 export * from './portal-customer-requests';
+export * from './portal-expansion';
 export * from './mobile-workforce';
 export * from './quality-assurance';
 export * from './communications-intelligence';

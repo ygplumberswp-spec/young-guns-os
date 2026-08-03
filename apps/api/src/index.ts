@@ -236,6 +236,7 @@ import { createBusinessIntelligenceRouter } from './routes/business-intelligence
 import { PortalAuthService } from './services/portal-auth.service.js';
 import { PortalService } from './services/portal.service.js';
 import { PortalExperienceService } from './services/portal-experience.service.js';
+import { PortalExpansionService } from './services/portal-expansion.service.js';
 import { MobileWorkforceService } from './services/mobile-workforce.service.js';
 import { QualityAssuranceService } from './services/quality-assurance.service.js';
 import { CommunicationsIntelligenceService } from './services/communications-intelligence.service.js';
@@ -300,6 +301,7 @@ import { createIntegrationPlatformRouter } from './routes/integration-platform.j
 import { createEnterpriseAnalyticsRouter } from './routes/enterprise-analytics.js';
 import { createPortalAuthRouter } from './routes/portal-auth.js';
 import { createPortalRouter } from './routes/portal.js';
+import { createPortalExpansionRouter } from './routes/portal-expansion.js';
 import type { Env } from './config.js';
 
 function bootLog(message: string, extra?: Record<string, unknown>): void {
@@ -737,6 +739,7 @@ const mobileService = new MobileService(
   notificationService,
 );
 const portalExperienceService = new PortalExperienceService(db, mobileService, notificationService);
+const portalExpansionService = new PortalExpansionService(db);
 const mobileWorkforceService = new MobileWorkforceService(
   db,
   mobileService,
@@ -2650,6 +2653,16 @@ app.use(
     portalAuthService,
     jwtSecret: env.JWT_SECRET,
     isProduction: env.NODE_ENV === 'production',
+  }),
+);
+app.use(
+  '/api/v1/portal/expansion',
+  createPortalExpansionRouter({
+    portalExpansionService,
+    portalAuthService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(
