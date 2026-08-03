@@ -163,6 +163,7 @@ export * from './enterprise-public-developer-platform';
 export * from './enterprise-saas-management';
 export * from './enterprise-voice-reception';
 export * from './voice-ai-receptionist';
+export * from './call-intelligence';
 export * from './enterprise-document-ai';
 export * from './enterprise-business-continuity';
 export * from './enterprise-global-search';

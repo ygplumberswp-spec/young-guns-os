@@ -308,6 +308,10 @@ export const VoiceAiReceptionistPage = lazyNamed(
   () => import('../pages/voice-ai-receptionist/VoiceAiReceptionistPage'),
   'VoiceAiReceptionistPage',
 );
+export const CallIntelligencePage = lazyNamed(
+  () => import('../pages/call-intelligence/CallIntelligencePage'),
+  'CallIntelligencePage',
+);
 export const DocumentAiPage = lazyNamed(
   () => import('../pages/document-ai/DocumentAiPage'),
   'DocumentAiPage',

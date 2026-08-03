@@ -172,6 +172,7 @@ export * from './enterprise-public-developer-platform.js';
 export * from './enterprise-saas-management.js';
 export * from './enterprise-voice-reception.js';
 export * from './voice-ai-receptionist.js';
+export * from './call-intelligence.js';
 export * from './enterprise-document-ai.js';
 export * from './enterprise-business-continuity.js';
 export * from './enterprise-global-search.js';

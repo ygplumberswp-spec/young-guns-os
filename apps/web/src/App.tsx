@@ -220,6 +220,10 @@ export function App() {
                           path="/voice-ai-receptionist"
                           component={OwnerPages.VoiceAiReceptionistPage}
                         />
+                        <Route
+                          path="/call-intelligence"
+                          component={OwnerPages.CallIntelligencePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"
