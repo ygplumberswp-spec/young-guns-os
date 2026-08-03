@@ -429,6 +429,10 @@ export function App() {
                           component={OwnerPages.TechnicianIntelligencePage}
                         />
                         <Route
+                          path="/payroll-timesheet-intelligence"
+                          component={OwnerPages.PayrollTimesheetIntelligencePage}
+                        />
+                        <Route
                           path="/workflow-automation"
                           component={OwnerPages.WorkflowAutomationPage}
                         />

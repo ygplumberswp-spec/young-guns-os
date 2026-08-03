@@ -69,6 +69,15 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/payroll-timesheet-intelligence',
+    load: () =>
+      import('../pages/payroll-timesheet-intelligence/PayrollTimesheetIntelligencePage'),
+    permissions: ['*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/scheduling',
     load: () => import('../pages/scheduling/SchedulingPage'),
     permissions: ['dispatch:read', '*'],

@@ -263,6 +263,7 @@ import { VehicleIntelligenceService } from './services/vehicle-intelligence.serv
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { StockForecastingService } from './services/stock-forecasting.service.js';
+import { PayrollTimesheetIntelligenceService } from './services/payroll-timesheet-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -301,6 +302,7 @@ import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.j
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createStockForecastingRouter } from './routes/stock-forecasting.js';
+import { createPayrollTimesheetIntelligenceRouter } from './routes/payroll-timesheet-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -412,6 +414,7 @@ if (auraProvider) {
 }
 
 const companyService = new CompanyService(db);
+const payrollTimesheetIntelligenceService = new PayrollTimesheetIntelligenceService(db);
 let companyMediaStoragePath: string;
 let jobEvidenceStoragePath: string;
 try {
@@ -2559,6 +2562,15 @@ app.use(
   '/api/v1/hr-employee-intelligence',
   createHrEmployeeIntelligenceRouter({
     hrEmployeeIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/payroll-timesheet-intelligence',
+  createPayrollTimesheetIntelligenceRouter({
+    payrollTimesheetIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

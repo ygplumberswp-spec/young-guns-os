@@ -523,6 +523,11 @@ export const TechnicianIntelligencePage = lazyNamed(
   () => import('../pages/technician-intelligence/TechnicianIntelligencePage'),
   'TechnicianIntelligencePage',
 );
+export const PayrollTimesheetIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/payroll-timesheet-intelligence/PayrollTimesheetIntelligencePage'),
+  'PayrollTimesheetIntelligencePage',
+);
 export const WorkflowAutomationPage = lazyNamed(
   () => import('../pages/workflow-automation/WorkflowAutomationPage'),
   'WorkflowAutomationPage',

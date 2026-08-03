@@ -130,6 +130,7 @@ export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';
 export * from './procurement-intelligence.js';
 // export * from './stock-forecasting.js'; // missing local — build verify
+export * from './payroll-timesheet-intelligence.js';
 export * from './technician-intelligence.js';
 export * from './hr-employee-intelligence.js';
 export * from './enterprise-security.js';
@@ -165,6 +166,7 @@ export * from './enterprise-industry-packs.js';
 export * from './enterprise-public-developer-platform.js';
 export * from './enterprise-saas-management.js';
 export * from './enterprise-voice-reception.js';
+export * from './voice-ai-receptionist.js';
 export * from './enterprise-document-ai.js';
 export * from './enterprise-business-continuity.js';
 export * from './enterprise-global-search.js';
