@@ -268,6 +268,10 @@ export function App() {
                           path="/security-monitoring"
                           component={OwnerPages.SecurityMonitoringPage}
                         />
+                        <Route
+                          path="/industry-templates"
+                          component={OwnerPages.IndustryTemplatesPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

@@ -352,6 +352,10 @@ export const SecurityMonitoringPage = lazyNamed(
   () => import('../pages/security-monitoring/SecurityMonitoringPage'),
   'SecurityMonitoringPage',
 );
+export const IndustryTemplatesPage = lazyNamed(
+  () => import('../pages/industry-templates/IndustryTemplatesPage'),
+  'IndustryTemplatesPage',
+);
 export const ExecutiveCommandCentrePage = lazyNamed(
   () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
   'ExecutiveCommandCentrePage',

@@ -271,6 +271,7 @@ import { ExecutiveCommandCentreService } from './services/executive-command-cent
 import { SmartNotificationIntelligenceService } from './services/smart-notification-intelligence.service.js';
 import { MarketIntelligenceService } from './services/market-intelligence.service.js';
 import { SecurityMonitoringService } from './services/security-monitoring.service.js';
+import { IndustryTemplatesService } from './services/industry-templates.service.js';
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
@@ -326,6 +327,7 @@ import { createExecutiveCommandCentreRouter } from './routes/executive-command-c
 import { createSmartNotificationIntelligenceRouter } from './routes/smart-notification-intelligence.js';
 import { createMarketIntelligenceRouter } from './routes/market-intelligence.js';
 import { createSecurityMonitoringRouter } from './routes/security-monitoring.js';
+import { createIndustryTemplatesRouter } from './routes/industry-templates.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
@@ -902,6 +904,7 @@ const executiveCommandCentreService = new ExecutiveCommandCentreService(db);
 const smartNotificationIntelligenceService = new SmartNotificationIntelligenceService(db);
 const marketIntelligenceService = new MarketIntelligenceService(db);
 const securityMonitoringService = new SecurityMonitoringService(db);
+const industryTemplatesService = new IndustryTemplatesService(db);
 const financeReportingForecastService = new FinanceReportingForecastService(db);
 const financeCashflowProfitService = new FinanceCashflowProfitService(db);
 const procurementIntelligenceService = new ProcurementIntelligenceService({
@@ -2698,6 +2701,15 @@ app.use(
   '/api/v1/security-monitoring',
   createSecurityMonitoringRouter({
     securityMonitoringService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/industry-templates',
+  createIndustryTemplatesRouter({
+    industryTemplatesService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

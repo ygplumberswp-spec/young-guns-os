@@ -361,6 +361,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['security:read', '*'],
   },
   {
+    href: '/industry-templates',
+    label: 'Industry Templates',
+    permissions: ['company:manage', 'settings:write', '*'],
+  },
+  {
     href: '/enterprise-modules',
     label: 'Enterprise Modules',
     permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
@@ -548,6 +553,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/integrations',
   '/security',
   '/security-monitoring',
+  '/industry-templates',
   '/settings',
   '/aura',
   '/automation',
@@ -571,6 +577,7 @@ export const DISPATCHER_BLOCKED_ROUTE_PREFIXES = [
   '/aura',
   '/security',
   '/security-monitoring',
+  '/industry-templates',
   '/platform-health',
   '/release-center',
   '/saas-management',

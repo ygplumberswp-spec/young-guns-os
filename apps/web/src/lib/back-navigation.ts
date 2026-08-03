@@ -210,6 +210,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/smart-notifications',
   '/market-intelligence',
   '/security-monitoring',
+  '/industry-templates',
   '/document-ai',
   '/business-continuity',
   '/communications-intelligence',

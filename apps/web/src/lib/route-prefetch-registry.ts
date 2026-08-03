@@ -352,6 +352,15 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    // The chunk holds no template data; every read is access-checked server side.
+    path: '/industry-templates',
+    load: () => import('../pages/industry-templates/IndustryTemplatesPage'),
+    permissions: ['company:manage', 'settings:write', '*'],
+    experiences: ['platform_owner', 'company_owner'],
+    priority: 3,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],
