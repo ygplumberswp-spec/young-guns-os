@@ -8,7 +8,7 @@ TITAN Version 1.0 must not be declared complete based only on pages, documents o
 
 - [x] Department 20 — UX Final Pass (`8da8068`)
 - [ ] Xero Complete Historical Sync & Xero AI
-- [ ] Department 21 — SaaS Scaling
+- [ ] Department 21 — SaaS Scaling — approved / queued, NOT started; begins only after the Xero phase above is complete and Owner-approved ([scope](./TITAN_AURA_DEPARTMENT_21_SAAS_SCALING.md))
 - [ ] Production Hardening
 - [ ] Full System Testing
 - [ ] Live Integrations
