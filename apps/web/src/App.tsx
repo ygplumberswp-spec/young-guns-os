@@ -224,6 +224,10 @@ export function App() {
                           path="/call-intelligence"
                           component={OwnerPages.CallIntelligencePage}
                         />
+                        <Route
+                          path="/sales-intelligence-agent"
+                          component={OwnerPages.SalesIntelligenceAgentPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

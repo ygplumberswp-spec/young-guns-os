@@ -260,6 +260,7 @@ import { MarketingAgentService } from './services/marketing-agent.service.js';
 import { SocialMediaIntegrationsService } from './services/social-media-integrations.service.js';
 import { ContentReputationIntelligenceService } from './services/content-reputation-intelligence.service.js';
 import { FinanceAuraAgentService } from './services/finance-aura-agent.service.js';
+import { SalesIntelligenceAgentService } from './services/sales-intelligence-agent.service.js';
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
@@ -304,6 +305,7 @@ import { createMarketingAgentRouter } from './routes/marketing-agent.js';
 import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
 import { createContentReputationIntelligenceRouter } from './routes/content-reputation-intelligence.js';
 import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
+import { createSalesIntelligenceAgentRouter } from './routes/sales-intelligence-agent.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
@@ -869,6 +871,7 @@ const auraAgentNetworkService = new AuraAgentNetworkService({ db });
 const auraEvolutionService = new AuraEvolutionService({ db });
 const marketingAgentService = new MarketingAgentService(db);
 const financeAuraAgentService = new FinanceAuraAgentService(db);
+const salesIntelligenceAgentService = new SalesIntelligenceAgentService(db);
 const financeReportingForecastService = new FinanceReportingForecastService(db);
 const financeCashflowProfitService = new FinanceCashflowProfitService(db);
 const procurementIntelligenceService = new ProcurementIntelligenceService({
@@ -2565,6 +2568,16 @@ app.use(
   '/api/v1/finance-aura-agent',
   createFinanceAuraAgentRouter({
     financeAuraAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/sales-intelligence-agent',
+  createSalesIntelligenceAgentRouter({
+    salesIntelligenceAgentService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

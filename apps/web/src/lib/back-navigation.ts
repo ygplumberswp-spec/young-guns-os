@@ -199,6 +199,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/voice-reception',
   '/voice-ai-receptionist',
   '/call-intelligence',
+  '/sales-intelligence-agent',
   '/document-ai',
   '/business-continuity',
   '/communications-intelligence',

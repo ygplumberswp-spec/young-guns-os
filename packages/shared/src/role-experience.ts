@@ -199,6 +199,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {
+    href: '/sales-intelligence-agent',
+    label: 'Sales Intelligence Agent',
+    permissions: ['crm:read', 'crm:write', 'quotes:read', 'sales:read', 'agents:read', '*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

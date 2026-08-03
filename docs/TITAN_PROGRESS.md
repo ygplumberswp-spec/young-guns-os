@@ -141,7 +141,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 |--------|--------|
 | Voice AI Receptionist | 🟢 Completed |
 | Call Intelligence Engine | 🟢 Completed |
-| Sales Intelligence Agent | ⬜ Remaining |
+| Sales Intelligence Agent | 🟢 Completed |
 | Customer 360 | ⬜ Remaining |
 | Property Intelligence | ⬜ Remaining |
 | Document Intelligence | ⬜ Remaining |
@@ -157,6 +157,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 ## Notes
 
+- Sales Intelligence Agent Foundation (Department 10.1, `sales-intelligence-agent`, migration `0157`) — extends existing CRM / leads / sales pipeline / quotes / communications (does not rebuild CRM): lead hunting from real sources/quotes/comms, honest lead qualification (needs/urgency/score/potential value when stored), pipeline + conversion tracking foundation, and AURA sales insight/recommendation drafts (best next action, lead priority, revenue opportunities). Owner approval required before outreach; no spam / no uncontrolled outreach / never auto-send. Registers Command Centre `sales` key. Owner UI `/sales-intelligence-agent`. No fake leads; no deploy. Never touches Yoco `0123`.
 - Call Intelligence Engine (Department 9.2, `call-intelligence`, migration `0156`) — extends Voice AI Receptionist (9.1) + core `/voice` sessions: call summaries/key points/requests/actions/follow-up recommendations from real transcripts/notes; privacy-gated customer history lookup; lead extraction drafts with Owner approval (never auto CRM write / never auto customer communication); sentiment when lexical signal present else unavailable; aggregated call insights from real call text only. Owner UI `/call-intelligence`. No fake calls/leads. No deploy. Never touches Yoco `0123`.
 - Driver Intelligence (Department 8.2, `driver-intelligence`, migration `0155`) — extends Fleet / Cartrack / Vehicle Intelligence / job-vehicle: driver profiles, driving behaviour insights, route efficiency, vehicle usage, trip analysis from real GPS/behaviour/assignment signals; AURA recommendation drafts (efficiency/risk/training — never auto-discipline). Owner/Admin only for behaviour intelligence. No fake GPS; honest unavailable when Cartrack/trips missing. Operational CRUD stays under `/fleet`; GPS analytics under `/fleet-intelligence`; vehicle profiles under `/vehicle-intelligence`. Owner UI `/driver-intelligence`. No deploy. Never touches Yoco `0123`.
 - Customer Engagement Intelligence (Department 7.2, `customer-engagement-intelligence`, migration `0147`) — engagement/relationship scoring, satisfaction tracking, follow-ups, review requests, communication insights (Communication AURA + timeline when present), retention opportunities including HomeShield renewal/inactive signals. Connects Customer 360 (honest unavailable — not rebuilt), Communication Timeline/AURA, Jobs, Recurring Maintenance, HomeShield. AURA suggests follow-ups / unhappy customers / opportunities as drafts only; no auto-send; Owner/ops approval. Extends Communication Intelligence / CX foundations. No fake customers or scores. Owner UI `/customer-engagement-intelligence`. No deploy. Never touches Yoco `0123`.

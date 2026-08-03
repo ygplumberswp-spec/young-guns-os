@@ -120,6 +120,7 @@ export * from './marketing-agent';
 export * from './social-media-integrations';
 export * from './content-reputation-intelligence';
 export * from './finance-aura-agent';
+export * from './sales-intelligence-agent';
 export * from './finance-reporting-forecast';
 export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';

@@ -1079,6 +1079,13 @@
       "when": 1754388000156,
       "tag": "0156_call_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 154,
+      "version": "7",
+      "when": 1754389000157,
+      "tag": "0157_sales_intelligence_agent_foundation",
+      "breakpoints": true
     }
   ]
 }
