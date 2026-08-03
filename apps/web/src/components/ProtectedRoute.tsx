@@ -4,10 +4,14 @@ import { LoadingState } from '@titan/ui';
 import { useAuth } from '../lib/auth-context';
 import { toAppAbsoluteHref, useAppPathname } from '../lib/nested-routing';
 import {
+  clearStaffAuthReturnPath,
   resolveStaffPostLoginPath,
   staffAuthReturnFromSearch,
 } from '../lib/staff-auth-return-routing';
-import { staffLoginRedirectHref } from '../lib/session-expiry-routing';
+import {
+  isSessionExpiredLoginReason,
+  staffLoginRedirectHref,
+} from '../lib/session-expiry-routing';
 
 type ProtectedRouteProps = {
   children: ReactNode;
@@ -20,7 +24,13 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // Only label true refresh rejections as expired — missing/unreachable are plain sign-in.
+      // Session expiry → role home after re-auth (no deep-page restore).
+      // Missing/unreachable may keep returnTo for intentional deep links.
+      if (sessionBootstrap === 'expired') {
+        clearStaffAuthReturnPath();
+        setLocation(staffLoginRedirectHref('expired'));
+        return;
+      }
       setLocation(staffLoginRedirectHref(sessionBootstrap, pathname));
     }
   }, [isAuthenticated, isLoading, pathname, sessionBootstrap, setLocation]);
@@ -51,6 +61,12 @@ export function GuestRoute({ children }: GuestRouteProps) {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
+      const reason = new URLSearchParams(search).get('reason');
+      if (isSessionExpiredLoginReason(reason)) {
+        clearStaffAuthReturnPath();
+        setLocation(toAppAbsoluteHref(resolveStaffPostLoginPath(user, null)));
+        return;
+      }
       staffAuthReturnFromSearch(search);
       setLocation(toAppAbsoluteHref(resolveStaffPostLoginPath(user)));
     }

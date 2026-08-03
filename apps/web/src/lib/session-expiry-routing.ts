@@ -18,12 +18,18 @@ export type StaffSessionBootstrapRedirect =
 /**
  * Protected staff routes redirect here when bootstrap finishes unauthenticated.
  * Only true refresh rejections carry the session-expired reason — first visits stay plain.
+ *
+ * Session expiry never attaches `returnTo` — re-auth lands on role home (`getStaffHomePath`).
+ * Intentional deep links (first visit / missing session) may still pass `returnTo`.
  */
 export function staffLoginRedirectPath(
   sessionBootstrap: StaffSessionBootstrapRedirect,
   returnPath?: string | null,
 ): string {
   const base = sessionBootstrap === 'expired' ? SESSION_EXPIRED_LOGIN_PATH : PLAIN_LOGIN_PATH;
+  if (sessionBootstrap === 'expired') {
+    return base;
+  }
   return returnPath ? appendStaffAuthReturnQuery(base, returnPath) : base;
 }
 

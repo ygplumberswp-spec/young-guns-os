@@ -233,7 +233,7 @@ export function LeadCreatePage() {
         <Panel title="Enquiry">
           <label>
             Enquiry source
-            <select className="input" value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
+            <select className="titan-select" value={sourceId} onChange={(e) => setSourceId(e.target.value)}>
               <option value="">Unknown / not set</option>
               {(sources ?? []).map((source) => (
                 <option key={source.id} value={source.id}>

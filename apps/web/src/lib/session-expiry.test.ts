@@ -49,10 +49,20 @@ describe('staff session expiry redirect contract', () => {
     }
   });
 
-  it('preserves returnTo for protected-route deep links', () => {
+  it('preserves returnTo for protected-route deep links when session is missing', () => {
     const path = staffLoginRedirectPath('missing', '/integrations/xero');
     assert.match(path, /returnTo=/);
     assert.match(path, /integrations%2Fxero|integrations\/xero/);
+  });
+
+  it('does not attach returnTo on session_expired (land on role home after re-auth)', () => {
+    const path = staffLoginRedirectPath('expired', '/integrations/xero');
+    assert.equal(path, SESSION_EXPIRED_LOGIN_PATH);
+    assert.equal(path.includes('returnTo'), false);
+    assert.equal(
+      staffLoginRedirectHref('expired', '/leads'),
+      toAppAbsoluteHref(SESSION_EXPIRED_LOGIN_PATH),
+    );
   });
 
   it('does not label loading or authenticated states as session expired', () => {

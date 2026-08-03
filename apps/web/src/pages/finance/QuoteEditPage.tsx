@@ -411,7 +411,7 @@ export function QuoteEditPage() {
           />
         </label>
 
-        <label className="finance-toolbar__check">
+        <label className="finance-toolbar__check checkbox-row">
           <input
             type="checkbox"
             checked={belowFloorOverride}

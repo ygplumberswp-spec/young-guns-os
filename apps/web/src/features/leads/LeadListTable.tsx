@@ -263,13 +263,13 @@ export function LeadListTable({
     <Panel title="Lead Registry">
       <div className="leads-toolbar">
         <input
-          className="input"
+          className="titan-input"
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Search name, mobile, email, suburb…"
           aria-label="Search Leads"
         />
-        <label className="leads-toolbar__check">
+        <label className="leads-toolbar__check checkbox-row">
           <input
             type="checkbox"
             checked={overdueOnly}

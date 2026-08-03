@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth-context';
 import { ApiClientError, isLoginMfaChallenge, MFA_CHALLENGE_STORAGE_KEY, MFA_LOGIN_REDIRECT_PATH } from '../../lib/api-client';
 import { isSessionExpiredLoginReason } from '../../lib/session-expiry-routing';
 import {
+  clearStaffAuthReturnPath,
   resolveStaffPostLoginPath,
   staffAuthReturnFromSearch,
 } from '../../lib/staff-auth-return-routing';
@@ -41,8 +42,14 @@ function LoginForm() {
         setLocation(MFA_LOGIN_REDIRECT_PATH);
         return;
       }
-      staffAuthReturnFromSearch(search);
-      setLocation(resolveStaffPostLoginPath(result.user));
+      // Session expiry always lands on role home — ignore leftover returnTo.
+      if (isSessionExpiredLoginReason(reason)) {
+        clearStaffAuthReturnPath();
+        setLocation(resolveStaffPostLoginPath(result.user, null));
+      } else {
+        staffAuthReturnFromSearch(search);
+        setLocation(resolveStaffPostLoginPath(result.user));
+      }
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Unable to sign in');
     } finally {

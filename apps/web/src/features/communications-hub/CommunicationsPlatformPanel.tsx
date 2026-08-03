@@ -472,6 +472,7 @@ export function CommunicationsPlatformPanel({
               <label>
                 Channel
                 <select
+                  className="titan-select"
                   value={channel}
                   onChange={(e) => setChannel(e.target.value as typeof channel)}
                 >
@@ -483,6 +484,7 @@ export function CommunicationsPlatformPanel({
               <label>
                 From
                 <select
+                  className="titan-select"
                   value={participantKind}
                   onChange={(e) =>
                     setParticipantKind(e.target.value as typeof participantKind)
@@ -522,7 +524,7 @@ export function CommunicationsPlatformPanel({
                 </label>
               ) : null}
             </div>
-            <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
+            <div className="page-header-actions form-grid" style={{ marginTop: '0.75rem' }}>
               <Button variant="secondary" disabled={isWorking} onClick={() => void applyFilters()}>
                 Apply filters
               </Button>

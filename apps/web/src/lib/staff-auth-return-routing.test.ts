@@ -4,6 +4,7 @@ import { getStaffHomePath } from '@titan/auth/browser';
 import { toAppAbsoluteHref } from './nested-routing.js';
 import {
   appendStaffAuthReturnQuery,
+  clearStaffAuthReturnPath,
   consumeStaffAuthReturnPath,
   normalizeStaffAuthReturnPath,
   resolveStaffPostLoginPath,
@@ -51,6 +52,17 @@ describe('staff auth return routing', () => {
     );
   });
 
+  it('lands Company Owner on TITAN Dashboard (/) when no intentional returnTo', () => {
+    assert.equal(resolveStaffPostLoginPath(ownerUser, null), '/');
+  });
+
+  it('honours intentional OAuth / deep-link returnTo after login', () => {
+    assert.equal(
+      resolveStaffPostLoginPath(ownerUser, '/integrations/xero?xero=connected'),
+      '/integrations/xero?xero=connected',
+    );
+  });
+
   it('exposes app-absolute login redirect with returnTo', () => {
     const href = toAppAbsoluteHref(
       appendStaffAuthReturnQuery(PLAIN_LOGIN_PATH, '/integrations/xero'),
@@ -79,6 +91,35 @@ describe('staff auth return routing', () => {
       appendStaffAuthReturnQuery(PLAIN_LOGIN_PATH, '/integrations');
       assert.equal(consumeStaffAuthReturnPath(), '/integrations');
       assert.equal(consumeStaffAuthReturnPath(), null);
+    } finally {
+      Object.defineProperty(globalThis, 'sessionStorage', {
+        configurable: true,
+        value: original,
+      });
+    }
+  });
+
+  it('clearStaffAuthReturnPath drops remembered deep links without consuming a value', () => {
+    const storage = new Map<string, string>();
+    const original = globalThis.sessionStorage;
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      configurable: true,
+      value: {
+        getItem: (key: string) => storage.get(key) ?? null,
+        setItem: (key: string, value: string) => {
+          storage.set(key, value);
+        },
+        removeItem: (key: string) => {
+          storage.delete(key);
+        },
+      },
+    });
+
+    try {
+      appendStaffAuthReturnQuery(PLAIN_LOGIN_PATH, '/leads');
+      clearStaffAuthReturnPath();
+      assert.equal(consumeStaffAuthReturnPath(), null);
+      assert.equal(resolveStaffPostLoginPath(ownerUser, null), '/');
     } finally {
       Object.defineProperty(globalThis, 'sessionStorage', {
         configurable: true,

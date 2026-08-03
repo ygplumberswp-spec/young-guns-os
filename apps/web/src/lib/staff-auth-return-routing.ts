@@ -54,6 +54,13 @@ export function consumeStaffAuthReturnPath(): string | null {
   return stored;
 }
 
+/** Drop any remembered deep link (e.g. after session expiry). */
+export function clearStaffAuthReturnPath(): void {
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(STAFF_AUTH_RETURN_STORAGE_KEY);
+  }
+}
+
 export function staffAuthReturnFromSearch(search: string): string | null {
   const value = new URLSearchParams(search).get(STAFF_AUTH_RETURN_QUERY);
   const normalized = normalizeStaffAuthReturnPath(value);
