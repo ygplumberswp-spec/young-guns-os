@@ -216,6 +216,10 @@ export function App() {
                         <Route path="/developer" component={OwnerPages.DeveloperPortalPage} />
                         <Route path="/saas-management" component={OwnerPages.SaasManagementPage} />
                         <Route path="/voice-reception" component={OwnerPages.VoiceReceptionPage} />
+                        <Route
+                          path="/voice-ai-receptionist"
+                          component={OwnerPages.VoiceAiReceptionistPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

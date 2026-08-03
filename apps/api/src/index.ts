@@ -160,6 +160,8 @@ import { EnterpriseSaasManagementService } from './services/enterprise-saas-mana
 import { createEnterpriseSaasManagementRouter } from './routes/enterprise-saas-management.js';
 import { EnterpriseVoiceReceptionService } from './services/enterprise-voice-reception.service.js';
 import { createEnterpriseVoiceReceptionRouter } from './routes/enterprise-voice-reception.js';
+import { VoiceAiReceptionistService } from './services/voice-ai-receptionist.service.js';
+import { createVoiceAiReceptionistRouter } from './routes/voice-ai-receptionist.js';
 import { EnterpriseDocumentAiService } from './services/enterprise-document-ai.service.js';
 import { createEnterpriseDocumentAiRouter } from './routes/enterprise-document-ai.js';
 import { EnterpriseBusinessContinuityService } from './services/enterprise-business-continuity.service.js';
@@ -1118,6 +1120,7 @@ const enterpriseSaasManagementService = new EnterpriseSaasManagementService({
   financeService,
   aiOperationsService,
 });
+const voiceAiReceptionistService = new VoiceAiReceptionistService(db);
 const enterpriseVoiceReceptionService = new EnterpriseVoiceReceptionService({
   db,
   voiceService,
@@ -2333,6 +2336,15 @@ app.use(
   '/api/v1/enterprise-saas-management',
   createEnterpriseSaasManagementRouter({
     enterpriseSaasManagementService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/voice-ai-receptionist',
+  createVoiceAiReceptionistRouter({
+    voiceAiReceptionistService,
+    teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

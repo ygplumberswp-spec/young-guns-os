@@ -193,6 +193,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/developer',
   '/saas-management',
   '/voice-reception',
+  '/voice-ai-receptionist',
   '/document-ai',
   '/business-continuity',
   '/communications-intelligence',

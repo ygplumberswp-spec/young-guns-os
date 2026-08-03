@@ -139,7 +139,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 | Module | Status |
 |--------|--------|
-| Voice AI Receptionist | ⬜ Remaining |
+| Voice AI Receptionist | 🟢 Completed |
 | Sales Intelligence Agent | ⬜ Remaining |
 | Customer 360 | ⬜ Remaining |
 | Property Intelligence | ⬜ Remaining |
@@ -155,6 +155,8 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 ---
 
 ## Notes
+
+- Voice AI Receptionist Foundation (Department 9.1, `voice-ai-receptionist`, migration `0153`) — extends `/voice` + enterprise voice reception: inbound call session records, caller identification, CRM customer lookup, approval-gated lead create (execute on Owner approve), booking drafts (never auto-schedule), routing rules, SA locale/voice config with honest `not_configured` TTS/STT/telephony until credentials connect, always-on human takeover + audit. Owner UI `/voice-ai-receptionist`. No fake calls/customers/leads. No deploy. Never touches Yoco `0123`.
 
 - HomeShield Customer Experience (Department 7.3, `homeshield-experience`, migration `0148`) — membership plans, subscriptions, benefits, service reminders, maintenance history from Recurring Maintenance, renewal/outreach drafts, honest customer lifetime value (unavailable without stored CLV — never invented), AURA retention/customer-value/maintenance/renewal recommendation drafts (Owner approval; never auto-bill). Portal `/my/homeshield` own data only. No fake memberships.
 
