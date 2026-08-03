@@ -252,6 +252,10 @@ export function App() {
                           path="/compliance-intelligence"
                           component={OwnerPages.ComplianceIntelligencePage}
                         />
+                        <Route
+                          path="/executive-command-centre"
+                          component={OwnerPages.ExecutiveCommandCentrePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

@@ -136,6 +136,7 @@ export * from './customer-360-intelligence.js';
 export * from './property-intelligence.js';
 export * from './document-intelligence.js';
 export * from './compliance-intelligence.js';
+export * from './executive-command-centre.js';
 export * from './finance-cashflow-profit.js';
 export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';

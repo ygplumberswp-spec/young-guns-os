@@ -282,6 +282,14 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
   {
+    // Owner only — exposes revenue, profit, cash, payroll and strategy data.
+    // Consolidates the executive view instead of adding more Intelligence entries.
+    href: '/executive-command-centre',
+    label: 'Executive Command Centre',
+    permissions: ['executive:read', '*'],
+    experiences: ['company_owner', 'platform_owner'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

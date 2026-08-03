@@ -61,6 +61,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/property-intelligence': 'intelligence',
   '/document-intelligence': 'intelligence',
   '/compliance-intelligence': 'intelligence',
+  '/executive-command-centre': 'intelligence',
   '/aura/agents': 'intelligence',
   '/aura/command-centre': 'intelligence',
   '/aura/evolution': 'intelligence',

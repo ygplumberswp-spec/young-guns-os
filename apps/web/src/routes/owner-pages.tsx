@@ -340,6 +340,10 @@ export const ComplianceIntelligencePage = lazyNamed(
   () => import('../pages/compliance-intelligence/ComplianceIntelligencePage'),
   'ComplianceIntelligencePage',
 );
+export const ExecutiveCommandCentrePage = lazyNamed(
+  () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
+  'ExecutiveCommandCentrePage',
+);
 export const DocumentAiPage = lazyNamed(
   () => import('../pages/document-ai/DocumentAiPage'),
   'DocumentAiPage',

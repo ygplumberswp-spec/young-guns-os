@@ -310,6 +310,16 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    // Owner only — no staff experience, so the finance-bearing chunk is not
+    // preloaded for non-owners.
+    path: '/executive-command-centre',
+    load: () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
+    permissions: ['executive:read', '*'],
+    experiences: ['platform_owner', 'company_owner'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],
