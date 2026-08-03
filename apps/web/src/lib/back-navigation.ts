@@ -128,6 +128,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/procurement/suppliers',
   '/inventory/products',
   '/inventory/stock',
+  '/inventory-intelligence',
   '/fleet',
   '/documents',
   '/communications/templates',

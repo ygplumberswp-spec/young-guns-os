@@ -175,6 +175,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/inventory-intelligence',
+    load: () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
+    permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/social-media-integrations',
     load: () =>
       import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),

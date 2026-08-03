@@ -92,13 +92,13 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 | Module | Status |
 |--------|--------|
-| Inventory Intelligence | ⬜ Remaining |
-| Stock intelligence | ⬜ Remaining |
-| Warehouse | ⬜ Remaining |
+| Inventory Intelligence | 🟢 Completed |
+| Stock intelligence | 🟡 Built / testing |
+| Warehouse | 🟡 Built / testing |
 | Suppliers | 🟢 Completed |
 | Pricing | 🟢 Completed |
 | Purchase orders | 🟢 Completed |
-| Reorder alerts | ⬜ Remaining |
+| Reorder alerts | 🟡 Built / testing |
 | Forecasting | ⬜ Remaining |
 
 
@@ -154,6 +154,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 ## Notes
 
+- Inventory Intelligence Foundation (`inventory-intelligence`, migration `0142`) — extends existing inventory/procurement/job-material modules: stock & warehouse visibility from real records, material usage + movement history, shortage/reorder alert drafts (Owner approval; never auto-PO/auto-reorder), AURA insight handoffs, Owner-gated settings. No fake stock; honest unavailable states. Suppliers/POs remain under procurement; operational CRUD stays under `/inventory`.
 - Supplier & Procurement Intelligence (Department 5.2, migration `0143`) — extends existing procurement/suppliers/supplier-price modules (+ Inventory Intelligence when present): real supplier profiles, purchase history, pricing records, cost comparisons from real pricing, Owner-gated purchase recommendation drafts (optional draft PO only — never auto-purchase / never auto-order). No fake suppliers/POs/prices; honest empty states. Owner approval for recommend-accept / PO execute.
 - Recurring Maintenance Engine committed (`a11160e`) — marked **🟢 Completed**.
 - Personal WhatsApp Connection Layer extends Communications Platform `personal_whatsapp` + owner gates; live Meta Graph / device-link pairing remains additive (honest testing matrix in Owner UI).

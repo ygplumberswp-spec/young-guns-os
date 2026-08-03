@@ -965,6 +965,13 @@
       "idx": 137,
       "version": "7",
       "when": 1754352000000,
+      "tag": "0142_inventory_intelligence",
+      "breakpoints": true
+    },
+    {
+      "idx": 138,
+      "version": "7",
+      "when": 1754355600000,
       "tag": "0143_procurement_intelligence",
       "breakpoints": true
     }
