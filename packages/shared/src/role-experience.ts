@@ -21,6 +21,265 @@ export type NavItemConfig = {
   portalPermissions?: PortalAccessPermission[];
 };
 
+/* -------------------------------------------------------------------------- */
+/* Consolidated navigation (UX final pass)                                     */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The sidebar lists business modules, not every page. Each module has one
+ * landing page in the sidebar; its supporting pages stay in the registry below
+ * and surface inside the module instead.
+ *
+ * Nothing is removed by this grouping. Every page keeps its route, its own
+ * permissions and its place in the registry — the same permission filter runs
+ * before a page appears anywhere, so moving an item out of the sidebar can
+ * never make it visible to someone who could not already open it.
+ */
+export type NavModuleId =
+  | 'dashboard'
+  | 'search'
+  | 'customers'
+  | 'leads'
+  | 'jobs'
+  | 'schedule'
+  | 'quotes'
+  | 'invoices'
+  | 'payments'
+  | 'inventory'
+  | 'suppliers'
+  | 'fleet'
+  | 'documents'
+  | 'communications'
+  | 'team'
+  | 'marketing'
+  | 'reports'
+  | 'aura'
+  | 'integrations'
+  | 'settings';
+
+/** Sidebar order. Groups are applied on top of this by the web layer. */
+export const NAV_MODULE_ORDER: NavModuleId[] = [
+  'dashboard',
+  'search',
+  'customers',
+  'leads',
+  'jobs',
+  'schedule',
+  'quotes',
+  'invoices',
+  'payments',
+  'inventory',
+  'suppliers',
+  'fleet',
+  'documents',
+  'communications',
+  'team',
+  'marketing',
+  'reports',
+  'aura',
+  'integrations',
+  'settings',
+];
+
+/** The one page per module that appears in the main sidebar. */
+export const NAV_MODULE_PRIMARY_HREF: Record<NavModuleId, string> = {
+  dashboard: '/',
+  search: '/global-search',
+  customers: '/crm',
+  leads: '/leads',
+  jobs: '/jobs',
+  schedule: '/scheduling',
+  quotes: '/finance/quotes',
+  invoices: '/finance/invoices',
+  payments: '/finance/payments',
+  inventory: '/inventory/products',
+  suppliers: '/procurement/suppliers',
+  fleet: '/fleet',
+  documents: '/documents',
+  communications: '/communications/messages',
+  team: '/settings/team',
+  marketing: '/marketing',
+  reports: '/analytics',
+  aura: '/aura',
+  integrations: '/integrations',
+  settings: '/settings/company',
+};
+
+/** Plain-language name for the module, used by the in-module navigation. */
+export const NAV_MODULE_LABELS: Record<NavModuleId, string> = {
+  dashboard: 'Dashboard',
+  search: 'Search',
+  customers: 'Customers',
+  leads: 'Leads',
+  jobs: 'Jobs',
+  schedule: 'Schedule',
+  quotes: 'Quotes',
+  invoices: 'Invoices',
+  payments: 'Payments',
+  inventory: 'Inventory',
+  suppliers: 'Suppliers',
+  fleet: 'Fleet',
+  documents: 'Documents',
+  communications: 'Communications',
+  team: 'Team',
+  marketing: 'Marketing',
+  reports: 'Reports',
+  aura: 'AURA',
+  integrations: 'Integrations',
+  settings: 'Settings',
+};
+
+/**
+ * Which module each page belongs to. A page listed here that is not its
+ * module's landing page appears inside that module rather than in the sidebar.
+ */
+export const NAV_MODULE_BY_HREF: Record<string, NavModuleId> = {
+  '/': 'dashboard',
+  '/mission-control': 'dashboard',
+  '/executive-command-centre': 'dashboard',
+  '/smart-notifications': 'dashboard',
+
+  '/global-search': 'search',
+
+  '/crm': 'customers',
+  '/customer-360-intelligence': 'customers',
+  '/property-intelligence': 'customers',
+  '/customer-engagement-intelligence': 'customers',
+  '/homeshield-experience': 'customers',
+
+  '/leads': 'leads',
+  '/sales-intelligence-agent': 'leads',
+  '/sales-followup-intelligence': 'leads',
+  '/sales-analytics-intelligence': 'leads',
+
+  '/jobs': 'jobs',
+  '/recurring-maintenance': 'jobs',
+
+  '/scheduling': 'schedule',
+  '/mobile-platform/dispatcher': 'schedule',
+  '/dispatch-intelligence': 'schedule',
+  '/technician-intelligence': 'schedule',
+
+  '/finance/quotes': 'quotes',
+  '/finance/invoices': 'invoices',
+  '/finance/payments': 'payments',
+  '/finance/boq': 'payments',
+
+  '/inventory/products': 'inventory',
+  '/inventory-intelligence': 'inventory',
+  '/stock-forecasting': 'inventory',
+
+  '/procurement/suppliers': 'suppliers',
+  '/procurement': 'suppliers',
+  '/procurement-intelligence': 'suppliers',
+
+  '/fleet': 'fleet',
+  '/vehicle-intelligence': 'fleet',
+  '/fleet-ai-recommendations': 'fleet',
+  '/driver-intelligence': 'fleet',
+
+  '/documents': 'documents',
+  '/document-intelligence': 'documents',
+  '/compliance-intelligence': 'documents',
+
+  '/communications/messages': 'communications',
+  '/email-centre': 'communications',
+  '/communication-timeline': 'communications',
+  '/communication-aura-intelligence': 'communications',
+  '/voice-ai-receptionist': 'communications',
+  '/call-intelligence': 'communications',
+
+  '/settings/team': 'team',
+  '/hr-employee-intelligence': 'team',
+  '/recruitment-performance-intelligence': 'team',
+  '/payroll-timesheet-intelligence': 'team',
+
+  '/marketing': 'marketing',
+  '/marketing-agent': 'marketing',
+  '/marketing-intelligence': 'marketing',
+  '/social-media-integrations': 'marketing',
+  '/content-reputation-intelligence': 'marketing',
+  '/market-intelligence': 'marketing',
+
+  '/analytics': 'reports',
+
+  '/aura': 'aura',
+  '/aura/agents': 'aura',
+  '/aura/command-centre': 'aura',
+  '/aura/evolution': 'aura',
+  '/aura-agent-network': 'aura',
+  '/automation': 'aura',
+  '/workflow-automation': 'aura',
+
+  '/integrations': 'integrations',
+
+  '/settings/company': 'settings',
+  '/security': 'settings',
+  '/security-monitoring': 'settings',
+  '/industry-templates': 'settings',
+  '/enterprise-modules': 'settings',
+  '/platform-health': 'settings',
+  '/release-center': 'settings',
+  '/saas-management': 'settings',
+};
+
+const NAV_PRIMARY_HREFS: ReadonlySet<string> = new Set(Object.values(NAV_MODULE_PRIMARY_HREF));
+
+export function isPrimaryNavHref(href: string): boolean {
+  return NAV_PRIMARY_HREFS.has(href);
+}
+
+/**
+ * Which module a location belongs to. Falls back to the longest mapped prefix
+ * so a detail page such as `/finance/quotes/123` still resolves to Quotes.
+ */
+export function resolveNavModuleForHref(href: string): NavModuleId | null {
+  const direct = NAV_MODULE_BY_HREF[href];
+  if (direct) return direct;
+
+  let bestMatch: NavModuleId | null = null;
+  let bestLength = 0;
+  for (const [candidate, moduleId] of Object.entries(NAV_MODULE_BY_HREF)) {
+    if (candidate === '/') continue;
+    if (href === candidate || href.startsWith(`${candidate}/`)) {
+      if (candidate.length > bestLength) {
+        bestLength = candidate.length;
+        bestMatch = moduleId;
+      }
+    }
+  }
+  return bestMatch;
+}
+
+/**
+ * The sidebar: one landing page per module, in module order. Input must
+ * already be permission-filtered, so a module the user cannot open simply
+ * does not appear.
+ */
+export function selectPrimaryNavItems(items: NavItemConfig[]): NavItemConfig[] {
+  const byHref = new Map(items.map((item) => [item.href, item] as const));
+  const primary: NavItemConfig[] = [];
+  for (const moduleId of NAV_MODULE_ORDER) {
+    const item = byHref.get(NAV_MODULE_PRIMARY_HREF[moduleId]);
+    if (item) primary.push(item);
+  }
+  return primary;
+}
+
+/**
+ * The supporting pages inside one module — everything that used to sit in the
+ * sidebar under its own entry. Input must already be permission-filtered.
+ */
+export function selectModuleToolItems(
+  items: NavItemConfig[],
+  moduleId: NavModuleId,
+): NavItemConfig[] {
+  const primaryHref = NAV_MODULE_PRIMARY_HREF[moduleId];
+  return items.filter(
+    (item) => item.href !== primaryHref && NAV_MODULE_BY_HREF[item.href] === moduleId,
+  );
+}
+
 /** Experiences that receive the full company Business OS nav (subject to permissions). */
 export const COMPANY_BUSINESS_EXPERIENCES: StaffExperience[] = [
   'platform_owner',
@@ -54,7 +313,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     label: 'Inventory Intelligence',
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
   },
-  { href: '/procurement', label: 'Procurement', permissions: ['procurement:read', '*'] },
+  // Suppliers is the module landing page. `/procurement` is the purchase order
+  // list, so it is named for what it actually shows. Both keep the same
+  // permissions they have always had.
+  { href: '/procurement/suppliers', label: 'Suppliers', permissions: ['procurement:read', '*'] },
+  { href: '/procurement', label: 'Purchase Orders', permissions: ['procurement:read', '*'] },
   {
     href: '/procurement-intelligence',
     label: 'Procurement Intelligence',

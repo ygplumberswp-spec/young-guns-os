@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { describe, it } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { OWNER_STAFF_NAV_ITEMS } from '@titan/shared';
+import { OWNER_STAFF_NAV_ITEMS, selectPrimaryNavItems } from '@titan/shared';
 import { NAV_ICON_SIZE, NAV_ICON_STROKE } from './NavIcon.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -20,8 +20,17 @@ describe('NavIcon sidebar standardization', () => {
     assert.equal(navIconSource.includes('fill="currentColor"'), false);
   });
 
-  it('covers every owner staff nav label', () => {
-    const labels = [...new Set(OWNER_STAFF_NAV_ITEMS.map((item) => item.label))];
+  /**
+   * Icons are a sidebar affordance. The sidebar lists module landing pages, and
+   * the in-module navigation below the header uses text links, so the contract
+   * is that every sidebar entry has a drawn icon rather than the generic
+   * fallback.
+   */
+  it('covers every sidebar module label', () => {
+    const labels = [
+      ...new Set(selectPrimaryNavItems(OWNER_STAFF_NAV_ITEMS).map((item) => item.label)),
+    ];
+    assert.ok(labels.length > 0, 'expected a consolidated sidebar');
     for (const label of labels) {
       const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const keyPattern =
@@ -30,6 +39,12 @@ describe('NavIcon sidebar standardization', () => {
           : new RegExp(`['"]${escaped}['"]\\s*:`);
       assert.match(navIconSource, keyPattern, `missing NavIcon path for "${label}"`);
     }
+  });
+
+  it('renders in-module navigation as text so it needs no icon set', () => {
+    const moduleToolbarSource = readFileSync(join(__dirname, 'ux/ModuleToolbar.tsx'), 'utf8');
+    assert.equal(moduleToolbarSource.includes('NavIcon'), false);
+    assert.match(moduleToolbarSource, /module-toolbar__link/);
   });
 
   it('keeps icon slot + active cyan colour-only contract in layout/CSS', () => {

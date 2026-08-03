@@ -18,6 +18,7 @@ export { BulkActionBar, type BulkAction } from './BulkActionBar';
 export { EmptyState } from './EmptyState';
 export { activeSidebarClassName, ACTIVE_SIDEBAR_ITEM_CLASS } from './ActiveSidebarItem';
 export { HeaderSearchTrigger } from './HeaderSearchTrigger';
+export { ModuleToolbar } from './ModuleToolbar';
 export {
   SearchCommandPalette,
   SearchCommandPaletteShell,

@@ -1,7 +1,14 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'wouter';
 import { AppShell, Button } from '@titan/ui';
-import { AI_NAME } from '@titan/shared';
+import {
+  AI_NAME,
+  NAV_MODULE_LABELS,
+  NAV_MODULE_PRIMARY_HREF,
+  resolveNavModuleForHref,
+  selectModuleToolItems,
+  selectPrimaryNavItems,
+} from '@titan/shared';
 import { isTechnicianRole } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { useCompanyLocale } from '../lib/company-locale-context';
@@ -17,6 +24,7 @@ import { StagingBadge } from '../components/StagingBadge';
 import { SessionStatusBanner } from '../components/SessionStatusBanner';
 import {
   HeaderSearchTrigger,
+  ModuleToolbar,
   SearchCommandPalette,
   useSearchCommandPaletteShortcut,
   AppContentContainer,
@@ -52,8 +60,18 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   const activeLocation = pendingHref ?? location;
 
+  // `navItems` stays the full permission-filtered registry. The sidebar shows
+  // one landing page per business module; the rest surface inside their module,
+  // so nothing is hidden from someone who could already open it.
   const navItems = useMemo(() => (user ? filterOwnerStaffNav(user) : []), [user]);
-  const groupedNavItems = useMemo(() => groupNavItems(navItems), [navItems]);
+  const primaryNavItems = useMemo(() => selectPrimaryNavItems(navItems), [navItems]);
+  const groupedNavItems = useMemo(() => groupNavItems(primaryNavItems), [primaryNavItems]);
+
+  const activeModule = useMemo(() => resolveNavModuleForHref(activeLocation), [activeLocation]);
+  const moduleToolItems = useMemo(
+    () => (activeModule ? selectModuleToolItems(navItems, activeModule) : []),
+    [navItems, activeModule],
+  );
   const isTechnician = user ? isTechnicianRole(toStaffIdentity(user)) : false;
   const canSearch = user ? canAccessGlobalSearch(user.permissions) : false;
   useSearchCommandPaletteShortcut(openCommandPalette, canSearch);
@@ -223,7 +241,22 @@ export function AppLayout({ children }: AppLayoutProps) {
         onClose={() => setCommandPaletteOpen(false)}
         canAccessSearch={canSearch}
       />
-      <AppContentContainer>{children}</AppContentContainer>
+      <AppContentContainer>
+        {activeModule ? (
+          <ModuleToolbar
+            moduleLabel={NAV_MODULE_LABELS[activeModule]}
+            moduleHref={NAV_MODULE_PRIMARY_HREF[activeModule]}
+            items={moduleToolItems}
+            activeLocation={activeLocation}
+            onNavigate={(href) => {
+              setPendingHref(href);
+              setMobileNavOpen(false);
+            }}
+            onIntent={handleNavIntent}
+          />
+        ) : null}
+        {children}
+      </AppContentContainer>
     </AppShell>
   );
 }

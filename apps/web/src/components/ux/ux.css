@@ -429,3 +429,62 @@
 .ux-command-palette__recent-link:hover {
   text-decoration: underline;
 }
+
+/* In-module navigation — sits above page content when a module has sections. */
+.module-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--titan-border);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.module-toolbar__link {
+  flex: 0 0 auto;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--titan-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    border-color 120ms ease;
+}
+
+.module-toolbar__link:hover {
+  background-color: var(--titan-surface-hover);
+  color: var(--titan-text);
+}
+
+.module-toolbar__link--active {
+  background-color: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+  color: var(--titan-text);
+  font-weight: 600;
+}
+
+.module-toolbar__link:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
+}
+
+@media (max-width: 640px) {
+  .module-toolbar {
+    flex-wrap: nowrap;
+    margin-bottom: 0.75rem;
+  }
+
+  .module-toolbar__link {
+    padding: 0.3125rem 0.625rem;
+    font-size: 0.75rem;
+  }
+}

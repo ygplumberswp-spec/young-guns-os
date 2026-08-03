@@ -104,7 +104,14 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M12 13v8" />
     </>
   ),
-  Procurement: (
+  Suppliers: (
+    <>
+      <path d="M3 9l1.5-4.5A2 2 0 0 1 6.4 3h11.2a2 2 0 0 1 1.9 1.5L21 9" />
+      <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <path d="M9 13h6" />
+    </>
+  ),
+  'Purchase Orders': (
     <>
       <circle cx="9" cy="20" r="1" />
       <circle cx="18" cy="20" r="1" />
