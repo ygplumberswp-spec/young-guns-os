@@ -16,6 +16,10 @@ falls after the remaining departments, this waits for it. Until then it stays ma
 **planned / required**, not started. When it is implemented later, it is committed and
 reported separately from the department work.
 
+Related planned scope: [`AURA_VOICE_THROUGHOUT_TITAN.md`](./AURA_VOICE_THROUGHOUT_TITAN.md).
+The Owner channels described here are the **remote** channels of that platform-wide voice
+capability, and both must be built on the same shared voice command / intent layer.
+
 ## Channels
 
 The Platform Owner can command the business through two channels:
