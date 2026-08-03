@@ -474,6 +474,10 @@ export function App() {
                           component={OwnerPages.FinanceCashflowProfitPage}
                         />
                         <Route
+                          path="/finance-reporting-forecast"
+                          component={OwnerPages.FinanceReportingForecastPage}
+                        />
+                        <Route
                           path="/inventory-intelligence"
                           component={OwnerPages.InventoryIntelligencePage}
                         />

@@ -571,6 +571,10 @@ export const FinanceCashflowProfitPage = lazyNamed(
   () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
   'FinanceCashflowProfitPage',
 );
+export const FinanceReportingForecastPage = lazyNamed(
+  () => import('../pages/finance-reporting-forecast/FinanceReportingForecastPage'),
+  'FinanceReportingForecastPage',
+);
 export const InventoryIntelligencePage = lazyNamed(
   () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
   'InventoryIntelligencePage',

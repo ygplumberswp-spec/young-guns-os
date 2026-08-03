@@ -124,6 +124,7 @@ export * from './marketing-agent.js';
 export * from './social-media-integrations.js';
 export * from './content-reputation-intelligence.js';
 export * from './finance-aura-agent.js';
+export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';
 export * from './procurement-intelligence.js';
 export * from './stock-forecasting.js';

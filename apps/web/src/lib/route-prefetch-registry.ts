@@ -175,6 +175,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/finance-reporting-forecast',
+    load: () => import('../pages/finance-reporting-forecast/FinanceReportingForecastPage'),
+    permissions: ['finance:read', 'finance:write', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/finance-cashflow-profit',
     load: () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
   },

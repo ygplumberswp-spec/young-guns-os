@@ -11,6 +11,11 @@ const sectionTabs = [
 const secondaryItems = [
   { id: 'finance-aura-agent', label: 'Finance AURA Agent', href: '/finance-aura-agent' },
   {
+    id: 'finance-reporting-forecast',
+    label: 'Reporting & Forecasting',
+    href: '/finance-reporting-forecast',
+  },
+  {
     id: 'finance-cashflow-profit',
     label: 'Cashflow & Profit',
     href: '/finance-cashflow-profit',
