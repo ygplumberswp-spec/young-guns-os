@@ -95,9 +95,9 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Inventory Intelligence | ⬜ Remaining |
 | Stock intelligence | ⬜ Remaining |
 | Warehouse | ⬜ Remaining |
-| Suppliers | ⬜ Remaining |
-| Pricing | ⬜ Remaining |
-| Purchase orders | ⬜ Remaining |
+| Suppliers | 🟢 Completed |
+| Pricing | 🟢 Completed |
+| Purchase orders | 🟢 Completed |
 | Reorder alerts | ⬜ Remaining |
 | Forecasting | ⬜ Remaining |
 
@@ -154,6 +154,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 ## Notes
 
+- Supplier & Procurement Intelligence (Department 5.2, migration `0143`) — extends existing procurement/suppliers/supplier-price modules (+ Inventory Intelligence when present): real supplier profiles, purchase history, pricing records, cost comparisons from real pricing, Owner-gated purchase recommendation drafts (optional draft PO only — never auto-purchase / never auto-order). No fake suppliers/POs/prices; honest empty states. Owner approval for recommend-accept / PO execute.
 - Recurring Maintenance Engine committed (`a11160e`) — marked **🟢 Completed**.
 - Personal WhatsApp Connection Layer extends Communications Platform `personal_whatsapp` + owner gates; live Meta Graph / device-link pairing remains additive (honest testing matrix in Owner UI).
 - Communication AURA Intelligence extends Email Centre / Communications Platform business inbox — prioritisation, honest sentiment (unavailable when no signal), smart-reply & follow-up drafts (approval only, never auto-send), scoring, customer insights, CRM/timeline link proposals. Does not source Personal WhatsApp.

@@ -470,6 +470,10 @@ export function App() {
                           component={OwnerPages.FinanceAuraAgentPage}
                         />
                         <Route
+                          path="/procurement-intelligence"
+                          component={OwnerPages.ProcurementIntelligencePage}
+                        />
+                        <Route
                           path="/social-media-integrations"
                           component={OwnerPages.SocialMediaIntegrationsPage}
                         />

@@ -50,6 +50,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   // UX-K / UX-050 — removed duplicate label "Finance" that reused Quotes href.
   { href: '/inventory/products', label: 'Inventory', permissions: ['inventory:read', '*'] },
   { href: '/procurement', label: 'Procurement', permissions: ['procurement:read', '*'] },
+  {
+    href: '/procurement-intelligence',
+    label: 'Procurement Intelligence',
+    permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
+  },
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
     href: '/mobile-platform/dispatcher',

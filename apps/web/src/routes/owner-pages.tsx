@@ -567,6 +567,10 @@ export const FinanceAuraAgentPage = lazyNamed(
   () => import('../pages/finance-aura-agent/FinanceAuraAgentPage'),
   'FinanceAuraAgentPage',
 );
+export const ProcurementIntelligencePage = lazyNamed(
+  () => import('../pages/procurement-intelligence/ProcurementIntelligencePage'),
+  'ProcurementIntelligencePage',
+);
 export const SocialMediaIntegrationsPage = lazyNamed(
   () =>
     import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),
