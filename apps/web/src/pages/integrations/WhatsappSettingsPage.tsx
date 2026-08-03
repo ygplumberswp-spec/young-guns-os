@@ -298,7 +298,23 @@ export function WhatsappSettingsPage() {
                   <dt>Message Health</dt>
                   <dd>{messageHealthLabel(connection, stats)}</dd>
                 </div>
+                <div>
+                  <dt>Availability</dt>
+                  <dd>
+                    {connection.featureEnabled === false
+                      ? 'Disabled'
+                      : connection.webhooksEnabled === false ||
+                          connection.outboundMessagesEnabled === false
+                        ? 'Limited'
+                        : 'Live'}
+                  </dd>
+                </div>
               </dl>
+              {connection.runtimeNote ? (
+                <p className="muted" style={{ marginTop: '0.5rem' }}>
+                  {connection.runtimeNote}
+                </p>
+              ) : null}
 
               {canManage ? (
                 <>

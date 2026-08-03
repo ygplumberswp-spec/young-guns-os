@@ -1,9 +1,11 @@
 import { and, desc, eq, ilike, inArray, or, sql, type SQL } from 'drizzle-orm';
 import { isPlatformOwnerRole, isTechnicianRole } from '@titan/auth';
 import {
+  buildBusinessWhatsappOfficeActions,
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
   canSyncBusinessGmail,
+  detectWhatsappInboundUrgency,
   technicianJobScopedOnly,
   type CommPlatformAccountKind,
   type CommPlatformAuraDraftAssistResult,
@@ -68,7 +70,13 @@ import {
   type GmailEntityLinkLookups,
 } from './gmail-entity-link.js';
 import { GmailClientError } from '../lib/gmail.client.js';
+import {
+  groupBusinessWhatsappIndexRows,
+  groupBusinessWhatsappMessagesByCustomer,
+} from '../lib/whatsapp-business-chats.js';
+import { normalizePhoneNumber } from '../lib/whatsapp.client.js';
 import { GmailOAuthError, type GmailOAuthService } from './gmail-oauth.service.js';
+import type { WhatsappService } from './whatsapp.service.js';
 
 export class CommunicationsPlatformError extends Error {
   constructor(
@@ -85,6 +93,16 @@ export type CommPlatformActor = {
   userId: string;
   roleName: string;
   permissions: string[];
+};
+
+export type BusinessWhatsappInboundIndexInput = {
+  companyId: string;
+  externalMessageId: string;
+  contactPhone: string;
+  contactName: string | null;
+  messagePreview: string;
+  customerId: string | null;
+  occurredAt: Date;
 };
 
 type TenantScope = { companyId: string; userId: string };
@@ -150,22 +168,33 @@ const EMPTY_PERSONAL_WA: CommPlatformConnectionHealth = {
 };
 
 export class CommunicationsPlatformService {
+  private whatsappService?: WhatsappService;
+
   constructor(
     private readonly db: DatabaseClient,
     private readonly encryptionKey?: string,
     private readonly gmailOAuthService?: GmailOAuthService,
-  ) {}
+    whatsappService?: WhatsappService,
+  ) {
+    this.whatsappService = whatsappService;
+  }
 
   static create(deps: {
     db: DatabaseClient;
     encryptionKey?: string;
     gmailOAuthService?: GmailOAuthService;
+    whatsappService?: WhatsappService;
   }): CommunicationsPlatformService {
     return new CommunicationsPlatformService(
       deps.db,
       deps.encryptionKey,
       deps.gmailOAuthService,
+      deps.whatsappService,
     );
+  }
+
+  setWhatsappService(whatsappService: WhatsappService): void {
+    this.whatsappService = whatsappService;
   }
 
   assertBusinessAccess(actor: CommPlatformActor): void {
@@ -216,7 +245,7 @@ export class CommunicationsPlatformService {
         ownerOnly: false,
         exposesPersonalData: false,
         status: 'ready',
-        note: 'Business-only summarize over indexed Gmail — personal threads never included. Never auto-sends.',
+        note: 'Business-only summarize over indexed Gmail + Business WhatsApp — personal threads never included. Never auto-sends.',
       },
       {
         capability: 'business_draft',
@@ -224,7 +253,7 @@ export class CommunicationsPlatformService {
         ownerOnly: false,
         exposesPersonalData: false,
         status: 'ready',
-        note: 'AURA may draft replies only; send requires explicit Owner/staff approval (draft → approve → execute).',
+        note: 'AURA may draft Gmail/WhatsApp replies only; send requires explicit Owner/staff approval (draft → approve → execute).',
       },
       {
         capability: 'business_emergency',
@@ -240,7 +269,7 @@ export class CommunicationsPlatformService {
         ownerOnly: false,
         exposesPersonalData: false,
         status: 'stub',
-        note: 'Job suggest stub from business conversations — no personal data.',
+        note: 'Job/lead suggest readiness from business Gmail + WhatsApp — Hub shows Create lead/job links; never auto-creates.',
       },
       {
         capability: 'personal_assist',
@@ -294,11 +323,19 @@ export class CommunicationsPlatformService {
         connected,
         hasCredentials: Boolean(legacyWa.credentialsEncrypted),
         lastError: legacyWa.lastError,
+        displayPhoneNumber: legacyWa.displayPhoneNumber,
         emptyStateMessage: connected
           ? 'Business WhatsApp connected via Integration Hub — messages appear when received.'
           : EMPTY_BUSINESS_WA.emptyStateMessage,
       };
+    } else if (legacyWa?.displayPhoneNumber) {
+      businessWhatsapp = {
+        ...businessWhatsapp,
+        displayPhoneNumber: legacyWa.displayPhoneNumber,
+      };
     }
+
+    businessWhatsapp = this.applyWhatsappRuntimeHonesty(businessWhatsapp);
 
     let personalWhatsapp: CommPlatformConnectionHealth | null = null;
     if (isPlatformOwnerRole(actor)) {
@@ -779,16 +816,25 @@ export class CommunicationsPlatformService {
   }
 
   /**
-   * AURA summarize / draft-reply assist. Never sends. Drafts still require approve → execute.
+   * AURA summarize / draft-reply assist for business inbox (Gmail + Business WhatsApp).
+   * Never sends. Drafts still require approve → execute.
    */
   async auraAssistGmail(
     actor: CommPlatformActor,
     inboxItemId: string,
     mode: 'summarize' | 'draft_reply',
   ): Promise<CommPlatformAuraDraftAssistResult> {
+    return this.auraAssistInbox(actor, inboxItemId, mode);
+  }
+
+  async auraAssistInbox(
+    actor: CommPlatformActor,
+    inboxItemId: string,
+    mode: 'summarize' | 'draft_reply',
+  ): Promise<CommPlatformAuraDraftAssistResult> {
     this.assertBusinessAccess(actor);
     if (isTechnicianRole(actor)) {
-      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot use AURA mail assist');
+      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot use AURA assist');
     }
 
     const [row] = await this.db
@@ -798,7 +844,10 @@ export class CommunicationsPlatformService {
         and(
           eq(commPlatformInboxIndex.id, inboxItemId),
           eq(commPlatformInboxIndex.companyId, actor.companyId),
-          eq(commPlatformInboxIndex.accountKind, 'business_gmail'),
+          or(
+            eq(commPlatformInboxIndex.accountKind, 'business_gmail'),
+            eq(commPlatformInboxIndex.accountKind, 'business_whatsapp'),
+          ),
         ),
       )
       .limit(1);
@@ -806,16 +855,33 @@ export class CommunicationsPlatformService {
     if (!row) {
       throw new CommunicationsPlatformError('NOT_FOUND', 'Inbox item not found');
     }
+    if (row.accountKind === 'personal_whatsapp') {
+      throw new CommunicationsPlatformError(
+        'FORBIDDEN',
+        'Personal WhatsApp is never available to business AURA assist',
+      );
+    }
 
-    const subject = row.subject ?? '(no subject)';
+    const isWhatsapp = row.accountKind === 'business_whatsapp';
+    const subject = row.subject ?? (isWhatsapp ? 'WhatsApp conversation' : '(no subject)');
     const preview = row.preview ?? '';
+    const contactPhone =
+      typeof row.metadata?.contactPhone === 'string' ? row.metadata.contactPhone : null;
     const summary = [
-      `Subject: ${subject}`,
+      isWhatsapp ? 'Channel: Business WhatsApp' : `Subject: ${subject}`,
       row.participantLabel ? `From/participant: ${row.participantLabel}` : null,
-      preview ? `Preview: ${preview}` : 'No preview indexed yet — sync Gmail for fuller context.',
+      contactPhone ? `Phone: +${contactPhone.replace(/^\+/, '')}` : null,
+      preview
+        ? `Preview: ${preview}`
+        : isWhatsapp
+          ? 'No preview indexed yet — waiting for inbound messages.'
+          : 'No preview indexed yet — sync Gmail for fuller context.',
       row.linkTargetType
         ? `Linked: ${row.linkTargetType} ${row.linkTargetId ?? ''}`.trim()
         : 'No confident CRM link yet.',
+      isWhatsapp
+        ? 'Office readiness: Create lead/job from Hub actions — never auto-created.'
+        : null,
     ]
       .filter(Boolean)
       .join('\n');
@@ -823,15 +889,35 @@ export class CommunicationsPlatformService {
     if (mode === 'summarize') {
       await this.recordAudit(
         { companyId: actor.companyId, userId: actor.userId },
-        'comm_platform_gmail_aura_summarize',
+        isWhatsapp
+          ? 'comm_platform_whatsapp_aura_summarize'
+          : 'comm_platform_gmail_aura_summarize',
         inboxItemId,
-        { autoSend: false },
+        { autoSend: false, channel: row.channel },
       );
       return {
         mode,
         status: 'ready',
         summary,
-        note: 'Business-only summary from indexed Gmail. AURA did not send anything.',
+        note: isWhatsapp
+          ? 'Business-only summary from indexed WhatsApp. AURA did not send anything.'
+          : 'Business-only summary from indexed Gmail. AURA did not send anything.',
+        autoSend: false,
+      };
+    }
+
+    if (isWhatsapp) {
+      await this.recordAudit(
+        { companyId: actor.companyId, userId: actor.userId },
+        'comm_platform_whatsapp_aura_draft_stub',
+        inboxItemId,
+        { autoSend: false },
+      );
+      return {
+        mode,
+        status: 'stub',
+        summary,
+        note: 'WhatsApp draft assist is ready for context only — create/approve drafts via Business WhatsApp messaging (draft → approve → send). Nothing was sent.',
         autoSend: false,
       };
     }
@@ -1101,6 +1187,89 @@ export class CommunicationsPlatformService {
     };
   }
 
+  /**
+   * Upsert Communications Hub inbox index for an inbound Business WhatsApp message.
+   * Thread key = normalized contact phone (never personal WhatsApp).
+   */
+  async indexBusinessWhatsappInbound(input: BusinessWhatsappInboundIndexInput): Promise<void> {
+    const threadKey = normalizePhoneNumber(input.contactPhone);
+    if (!threadKey) return;
+
+    const [existing] = await this.db
+      .select({ id: commPlatformInboxIndex.id })
+      .from(commPlatformInboxIndex)
+      .where(
+        and(
+          eq(commPlatformInboxIndex.companyId, input.companyId),
+          eq(commPlatformInboxIndex.accountKind, 'business_whatsapp'),
+          eq(commPlatformInboxIndex.externalMessageId, input.externalMessageId),
+        ),
+      )
+      .limit(1);
+
+    if (existing) return;
+
+    const [account] = await this.db
+      .select({ id: commPlatformAccounts.id })
+      .from(commPlatformAccounts)
+      .where(
+        and(
+          eq(commPlatformAccounts.companyId, input.companyId),
+          eq(commPlatformAccounts.accountKind, 'business_whatsapp'),
+        ),
+      )
+      .limit(1);
+
+    let customerName: string | null = null;
+    if (input.customerId) {
+      const [customer] = await this.db
+        .select({ name: customers.name })
+        .from(customers)
+        .where(
+          and(eq(customers.id, input.customerId), eq(customers.companyId, input.companyId)),
+        )
+        .limit(1);
+      customerName = customer?.name ?? null;
+    }
+
+    const participantLabel =
+      customerName ?? input.contactName ?? `+${threadKey}`;
+    const preview = input.messagePreview.slice(0, 400);
+    const urgent = detectWhatsappInboundUrgency(preview);
+
+    await this.db.insert(commPlatformInboxIndex).values({
+      companyId: input.companyId,
+      accountId: account?.id ?? null,
+      accountKind: 'business_whatsapp',
+      channel: 'whatsapp',
+      externalThreadId: threadKey,
+      externalMessageId: input.externalMessageId,
+      subject: input.contactName ? `WhatsApp · ${input.contactName}` : `WhatsApp · +${threadKey}`,
+      preview,
+      participantLabel,
+      participantKind: input.customerId ? 'customer' : 'unknown',
+      folder: 'inbox',
+      unread: true,
+      urgent,
+      direction: 'inbound',
+      linkTargetType: input.customerId ? 'customer' : null,
+      linkTargetId: input.customerId,
+      assignedJobId: null,
+      attachmentCount: 0,
+      labels: urgent ? ['whatsapp', 'business', 'urgent'] : ['whatsapp', 'business'],
+      occurredAt: input.occurredAt,
+      metadata: {
+        contactPhone: threadKey,
+        contactName: input.contactName,
+        source: 'meta_cloud_api_webhook',
+        leadJobCreateReady: true,
+        autoCreateLead: false,
+        autoCreateJob: false,
+        autoSend: false,
+      },
+    });
+  }
+
   async listBusinessWhatsappChats(
     actor: CommPlatformActor,
   ): Promise<CommPlatformWhatsappChatSummary[]> {
@@ -1116,45 +1285,74 @@ export class CommunicationsPlatformService {
         ),
       )
       .orderBy(desc(commPlatformInboxIndex.occurredAt))
-      .limit(100);
+      .limit(200);
 
     if (indexed.length > 0) {
-      return indexed.map((row) => ({
-        id: row.id,
-        accountKind: 'business_whatsapp' as const,
-        contactPhone: null,
-        contactName: row.participantLabel,
-        lastMessagePreview: row.preview,
-        lastMessageAt: row.occurredAt.toISOString(),
-        unread: row.unread,
-        attachmentCount: row.attachmentCount,
-        linkTargetType: row.linkTargetType,
-        linkTargetId: row.linkTargetId,
-        isPersonal: false,
-      }));
+      return groupBusinessWhatsappIndexRows(indexed)
+        .slice(0, 100)
+        .map((row) => {
+          const metaPhone =
+            typeof row.metadata?.contactPhone === 'string' ? row.metadata.contactPhone : null;
+          return {
+            id: row.externalThreadId ?? row.id,
+            accountKind: 'business_whatsapp' as const,
+            contactPhone: metaPhone ?? row.externalThreadId,
+            contactName: row.participantLabel,
+            lastMessagePreview: row.preview,
+            lastMessageAt: row.occurredAt.toISOString(),
+            unread: row.unread,
+            attachmentCount: row.attachmentCount,
+            linkTargetType: row.linkTargetType,
+            linkTargetId: row.linkTargetId,
+            isPersonal: false,
+          };
+        });
     }
 
-    // Honest empty fallback from existing whatsapp_messages (business connection) — no fakes
+    // Honest fallback: group whatsapp_messages by customer (or unmatched singleton)
     const messages = await this.db
       .select()
       .from(whatsappMessages)
       .where(eq(whatsappMessages.companyId, actor.companyId))
       .orderBy(desc(whatsappMessages.createdAt))
-      .limit(50);
+      .limit(200);
 
-    return messages.map((m) => ({
-      id: m.id,
-      accountKind: 'business_whatsapp' as const,
-      contactPhone: null,
-      contactName: null,
-      lastMessagePreview: m.messageContent?.slice(0, 200) ?? null,
-      lastMessageAt: m.createdAt.toISOString(),
-      unread: false,
-      attachmentCount: 0,
-      linkTargetType: m.customerId ? ('customer' as const) : null,
-      linkTargetId: m.customerId,
-      isPersonal: false,
-    }));
+    const customerIds = [
+      ...new Set(messages.map((m) => m.customerId).filter((id): id is string => Boolean(id))),
+    ];
+    const customerById = new Map<string, { name: string; phone: string | null }>();
+    if (customerIds.length > 0) {
+      const customerRows = await this.db
+        .select({
+          id: customers.id,
+          name: customers.name,
+          phone: customers.phone,
+        })
+        .from(customers)
+        .where(
+          and(eq(customers.companyId, actor.companyId), inArray(customers.id, customerIds)),
+        );
+      for (const c of customerRows) {
+        customerById.set(c.id, { name: c.name, phone: c.phone });
+      }
+    }
+
+    return groupBusinessWhatsappMessagesByCustomer(messages).map(({ key, latest }) => {
+      const customer = latest.customerId ? customerById.get(latest.customerId) : undefined;
+      return {
+        id: key,
+        accountKind: 'business_whatsapp' as const,
+        contactPhone: customer?.phone ? normalizePhoneNumber(customer.phone) : null,
+        contactName: customer?.name ?? null,
+        lastMessagePreview: latest.messageContent?.slice(0, 200) ?? null,
+        lastMessageAt: latest.createdAt.toISOString(),
+        unread: false,
+        attachmentCount: 0,
+        linkTargetType: latest.customerId ? ('customer' as const) : null,
+        linkTargetId: latest.customerId,
+        isPersonal: false,
+      };
+    });
   }
 
   async linkInboxItem(
@@ -1872,6 +2070,41 @@ export class CommunicationsPlatformService {
     });
   }
 
+  private applyWhatsappRuntimeHonesty(
+    health: CommPlatformConnectionHealth,
+  ): CommPlatformConnectionHealth {
+    const flags = this.whatsappService?.getRuntimeFlags();
+    if (!flags) return health;
+
+    const userNotes: string[] = [];
+    if (!flags.whatsappEnabled) {
+      userNotes.push('Business WhatsApp is turned off for this environment');
+    }
+    if (!flags.webhooksEnabled) {
+      userNotes.push('Incoming messages are paused');
+    }
+    if (!flags.outboundMessagesEnabled) {
+      userNotes.push('Outgoing messages are paused');
+    }
+
+    const runtimeNote = userNotes.length > 0 ? userNotes.join('. ') + '.' : null;
+    const featureOff = !flags.whatsappEnabled;
+
+    return {
+      ...health,
+      featureEnabled: flags.whatsappEnabled,
+      webhooksEnabled: flags.webhooksEnabled,
+      outboundMessagesEnabled: flags.outboundMessagesEnabled,
+      runtimeNote,
+      // Keep credential truth, but surface disabled as degraded-for-ops honesty.
+      connected: featureOff ? false : health.connected,
+      status: featureOff && health.status === 'connected' ? 'degraded' : health.status,
+      emptyStateMessage: runtimeNote
+        ? `${runtimeNote} ${health.emptyStateMessage}`
+        : health.emptyStateMessage,
+    };
+  }
+
   private healthSummaryLine(
     gmail: CommPlatformConnectionHealth,
     wa: CommPlatformConnectionHealth,
@@ -1881,6 +2114,7 @@ export class CommunicationsPlatformService {
       `Gmail: ${gmail.status}`,
       `Business WA: ${wa.status}`,
     ];
+    if (wa.runtimeNote) parts.push(`WA gates: restricted`);
     if (personal) parts.push(`Personal WA: ${personal.status}`);
     return parts.join(' · ');
   }
@@ -1889,6 +2123,28 @@ export class CommunicationsPlatformService {
     row: typeof commPlatformInboxIndex.$inferSelect,
   ): CommPlatformInboxItemSummary {
     const isPersonal = row.accountKind === 'personal_whatsapp';
+    const contactPhone =
+      typeof row.metadata?.contactPhone === 'string'
+        ? row.metadata.contactPhone
+        : row.accountKind === 'business_whatsapp'
+          ? row.externalThreadId
+          : null;
+    const customerId =
+      row.linkTargetType === 'customer' && row.linkTargetId ? row.linkTargetId : null;
+    const officeActions =
+      row.accountKind === 'business_whatsapp' && !isPersonal
+        ? buildBusinessWhatsappOfficeActions({
+            contactPhone,
+            contactName:
+              typeof row.metadata?.contactName === 'string'
+                ? row.metadata.contactName
+                : row.participantLabel,
+            customerId,
+            preview: row.preview,
+            inboxItemId: row.id,
+          })
+        : undefined;
+
     return {
       id: row.id,
       accountKind: row.accountKind,
@@ -1909,6 +2165,8 @@ export class CommunicationsPlatformService {
       attachmentCount: row.attachmentCount,
       labels: row.labels ?? [],
       capabilityState: 'connected',
+      contactPhone,
+      officeActions,
     };
   }
 

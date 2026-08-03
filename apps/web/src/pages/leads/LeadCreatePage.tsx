@@ -1,5 +1,5 @@
 import { PageHeader } from '../../components/ux';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { Button, Input, Panel } from '@titan/ui';
 import {
@@ -86,6 +86,25 @@ export function LeadCreatePage() {
   }, [contactEmail]);
 
   const phonePreview = contactPhone.trim() ? normalizeSaMobile(contactPhone) : null;
+
+  /** Prefill from Communications Hub WhatsApp readiness links — never auto-saves. */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const phone = params.get('phone');
+    const name = params.get('name');
+    const descriptionParam = params.get('description');
+    const source = params.get('source');
+    if (phone?.trim()) setContactPhone(phone.trim());
+    if (name?.trim()) setContactName(name.trim());
+    if (descriptionParam?.trim()) setDescription(descriptionParam.trim());
+    if (source === 'whatsapp') {
+      setNotes((current) =>
+        current.trim()
+          ? current
+          : 'Opened from Business WhatsApp conversation — review before saving.',
+      );
+    }
+  }, []);
 
   async function runDuplicateCheck() {
     if (!accessToken) return;

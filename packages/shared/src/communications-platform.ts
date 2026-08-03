@@ -71,6 +71,16 @@ export type CommPlatformDraftStatus =
   | 'executed'
   | 'cancelled';
 
+/** Explicit office actions — never auto-create; staff opens create forms with prefill. */
+export type CommPlatformOfficeAction = {
+  kind: 'create_lead' | 'create_job' | 'open_customer' | 'open_whatsapp_settings';
+  href: string;
+  label: string;
+  enabled: boolean;
+  /** Honest note — readiness only; never implies silent import. */
+  note: string;
+};
+
 export type CommPlatformInboxItemSummary = {
   id: string;
   accountKind: CommPlatformAccountKind;
@@ -92,6 +102,10 @@ export type CommPlatformInboxItemSummary = {
   attachmentCount: number;
   labels: string[];
   capabilityState: CommPlatformCapabilityState;
+  /** Normalized contact phone when known (Business WhatsApp). */
+  contactPhone?: string | null;
+  /** Lead/job creation readiness affordances — never auto-executed. */
+  officeActions?: CommPlatformOfficeAction[];
 };
 
 export type CommPlatformConnectionHealth = {
@@ -119,6 +133,13 @@ export type CommPlatformConnectionHealth = {
   lastSyncStatus?: string | null;
   /** Sanitized last sync failure message (never secrets/tokens). */
   lastSyncError?: string | null;
+  /** Display phone for Business WhatsApp when known. */
+  displayPhoneNumber?: string | null;
+  /** Runtime feature gate honesty (Business WhatsApp). */
+  featureEnabled?: boolean;
+  webhooksEnabled?: boolean;
+  outboundMessagesEnabled?: boolean;
+  runtimeNote?: string | null;
 };
 
 export type CommPlatformSettingsSummary = {
@@ -497,6 +518,95 @@ export function formatBusinessGmailUserStatus(input: {
   if (!input.oauthConfigured) return 'Not Configured';
   if (input.status === 'not_configured') return 'Disconnected';
   return formatCommPlatformCapabilityState(input.status);
+}
+
+/**
+ * Honest Business WhatsApp status for normal users (no env-flag debug text).
+ * Connected / Error / Not Configured / Disconnected — plus Disabled when feature gated.
+ */
+export function formatBusinessWhatsappUserStatus(input: {
+  status: CommPlatformCapabilityState;
+  connected: boolean;
+  hasCredentials: boolean;
+  featureEnabled?: boolean;
+}): string {
+  if (input.featureEnabled === false) return 'Disabled';
+  if (input.status === 'error') return 'Error';
+  if (input.status === 'connected' || input.connected) return 'Connected';
+  if (input.status === 'pending') return 'Pending';
+  if (input.status === 'degraded') return 'Attention needed';
+  if (input.hasCredentials || input.status === 'disconnected') return 'Disconnected';
+  return 'Not Configured';
+}
+
+/** Light inbound priority signal — never invents urgency without message cues. */
+export function detectWhatsappInboundUrgency(preview: string | null | undefined): boolean {
+  const text = (preview ?? '').toLowerCase();
+  if (!text.trim()) return false;
+  return /\b(urgent|emergency|asap|flood|gas\s*leak|no\s*hot\s*water|burst|critical)\b/.test(
+    text,
+  );
+}
+
+/**
+ * Build lead/job creation readiness links for a Business WhatsApp conversation.
+ * Opens create forms with prefill — never auto-creates CRM records.
+ */
+export function buildBusinessWhatsappOfficeActions(input: {
+  contactPhone: string | null;
+  contactName: string | null;
+  customerId: string | null;
+  preview: string | null;
+  inboxItemId?: string | null;
+}): CommPlatformOfficeAction[] {
+  const phone = input.contactPhone?.replace(/\D/g, '') || '';
+  const name = (input.contactName ?? '').trim();
+  const params = new URLSearchParams();
+  if (phone) params.set('phone', phone.startsWith('27') ? `+${phone}` : phone);
+  if (name) params.set('name', name);
+  params.set('source', 'whatsapp');
+  if (input.preview?.trim()) {
+    params.set('description', input.preview.trim().slice(0, 280));
+  }
+  if (input.inboxItemId) params.set('commsInboxId', input.inboxItemId);
+
+  const actions: CommPlatformOfficeAction[] = [];
+
+  if (input.customerId) {
+    actions.push({
+      kind: 'open_customer',
+      href: `/crm/customers/${input.customerId}`,
+      label: 'Open customer',
+      enabled: true,
+      note: 'Conversation matched an existing customer.',
+    });
+    actions.push({
+      kind: 'create_job',
+      href: `/jobs/new?customerId=${encodeURIComponent(input.customerId)}`,
+      label: 'Create job',
+      enabled: true,
+      note: 'Opens job create with this customer — you confirm before saving.',
+    });
+  } else {
+    actions.push({
+      kind: 'create_lead',
+      href: `/leads/new?${params.toString()}`,
+      label: 'Create lead',
+      enabled: Boolean(phone || name),
+      note: phone || name
+        ? 'Opens lead create with phone/name prefilled — nothing is saved until you submit.'
+        : 'Add a phone or name before creating a lead from this conversation.',
+    });
+    actions.push({
+      kind: 'create_job',
+      href: '/jobs/new',
+      label: 'Create job',
+      enabled: false,
+      note: 'Link or match a customer first — jobs require an existing customer.',
+    });
+  }
+
+  return actions;
 }
 
 export function canAccessBusinessCommunications(identity: {

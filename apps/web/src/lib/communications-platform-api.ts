@@ -171,8 +171,17 @@ export async function auraAssistGmail(
   inboxItemId: string,
   mode: 'summarize' | 'draft_reply',
 ) {
+  return auraAssistInbox(accessToken, inboxItemId, mode);
+}
+
+/** Business inbox AURA assist (Gmail + Business WhatsApp). Never auto-sends. */
+export async function auraAssistInbox(
+  accessToken: string,
+  inboxItemId: string,
+  mode: 'summarize' | 'draft_reply',
+) {
   const data = await request<{ assist: CommPlatformAuraDraftAssistResult }>(
-    `/communications-platform/gmail/inbox/${inboxItemId}/aura-assist`,
+    `/communications-platform/inbox/${inboxItemId}/aura-assist`,
     { method: 'POST', accessToken, body: { mode } },
   );
   return data.assist;

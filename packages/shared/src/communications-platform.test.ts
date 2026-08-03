@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  buildBusinessWhatsappOfficeActions,
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
   canConnectBusinessGmail,
   canSyncBusinessGmail,
+  detectWhatsappInboundUrgency,
   formatBusinessGmailUserStatus,
+  formatBusinessWhatsappUserStatus,
   formatCommPlatformCapabilityState,
   formatGmailSyncUserStatus,
   normalizeGmailSyncLifecycle,
@@ -81,6 +84,68 @@ describe('communications platform RBAC & privacy', () => {
     assert.equal(formatCommPlatformCapabilityState('connected'), 'Connected');
     assert.equal(formatCommPlatformCapabilityState('disconnected'), 'Disconnected');
     assert.equal(formatCommPlatformCapabilityState('not_configured'), 'Not Configured');
+  });
+
+  it('Business WhatsApp user status is honest without env-flag debug text', () => {
+    assert.equal(
+      formatBusinessWhatsappUserStatus({
+        status: 'connected',
+        connected: true,
+        hasCredentials: true,
+        featureEnabled: true,
+      }),
+      'Connected',
+    );
+    assert.equal(
+      formatBusinessWhatsappUserStatus({
+        status: 'connected',
+        connected: true,
+        hasCredentials: true,
+        featureEnabled: false,
+      }),
+      'Disabled',
+    );
+    assert.equal(
+      formatBusinessWhatsappUserStatus({
+        status: 'not_configured',
+        connected: false,
+        hasCredentials: false,
+      }),
+      'Not Configured',
+    );
+    assert.equal(
+      formatBusinessWhatsappUserStatus({
+        status: 'error',
+        connected: false,
+        hasCredentials: true,
+      }),
+      'Error',
+    );
+  });
+
+  it('detects WhatsApp inbound urgency from message cues only', () => {
+    assert.equal(detectWhatsappInboundUrgency('Please call ASAP — burst pipe'), true);
+    assert.equal(detectWhatsappInboundUrgency('Thanks, see you Thursday'), false);
+  });
+
+  it('builds lead/job office actions without auto-create', () => {
+    const unmatched = buildBusinessWhatsappOfficeActions({
+      contactPhone: '27821111111',
+      contactName: 'Sam',
+      customerId: null,
+      preview: 'Need a quote',
+    });
+    assert.ok(unmatched.some((a) => a.kind === 'create_lead' && a.enabled && a.href.includes('/leads/new')));
+    assert.ok(unmatched.some((a) => a.kind === 'create_job' && !a.enabled));
+
+    const matched = buildBusinessWhatsappOfficeActions({
+      contactPhone: '27821111111',
+      contactName: 'Sam',
+      customerId: 'cust-1',
+      preview: null,
+    });
+    assert.ok(matched.some((a) => a.kind === 'open_customer' && a.href.includes('/crm/customers/cust-1')));
+    assert.ok(matched.some((a) => a.kind === 'create_job' && a.enabled && a.href.includes('customerId=cust-1')));
   });
 
   it('Business Gmail Sync allows Owners and Admin, never Technician or Client', () => {

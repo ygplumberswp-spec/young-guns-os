@@ -376,7 +376,33 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
         });
         return;
       }
-      const result = await deps.communicationsPlatformService.auraAssistGmail(
+      const result = await deps.communicationsPlatformService.auraAssistInbox(
+        getActor(req as AuthenticatedRequest),
+        getRouteParam(req.params.id),
+        parsed.data.mode,
+      );
+      res.json({ data: { assist: result } });
+    } catch (error) {
+      const mapped = mapCommunicationsPlatformError(error);
+      res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });
+    }
+  });
+
+  /** Business inbox AURA assist (Gmail + Business WhatsApp). Never auto-sends. */
+  router.post('/inbox/:id/aura-assist', requireWrite, async (req, res) => {
+    try {
+      const parsed = auraAssistSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid AURA assist payload',
+            details: parsed.error.flatten(),
+          },
+        });
+        return;
+      }
+      const result = await deps.communicationsPlatformService.auraAssistInbox(
         getActor(req as AuthenticatedRequest),
         getRouteParam(req.params.id),
         parsed.data.mode,

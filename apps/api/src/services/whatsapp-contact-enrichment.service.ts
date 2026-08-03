@@ -311,8 +311,98 @@ export class WhatsappContactEnrichmentService {
   }
 
   /**
+   * Record inbound WhatsApp for later Owner/Manager match review.
+   * Never silently creates customers. Matched customers are linked on the message already;
+   * unmatched / review-needed traffic lands in `whatsapp_match_reviews`.
+   */
+  async recordInboundOpportunity(input: {
+    companyId: string;
+    contactPhone: string;
+    contactName: string | null;
+    externalMessageId: string;
+    customerId: string | null;
+    messagePreview: string;
+  }): Promise<{ createdReview: boolean }> {
+    assertNoDuplicateCustomerCreateFromWhatsApp({
+      existingCustomerId: input.customerId,
+      createCustomerRequested: false,
+    });
+
+    const waId = input.contactPhone.replace(/\D/g, '');
+    if (!waId) {
+      return { createdReview: false };
+    }
+
+    const proposedMobileNormalized = normalizeSaMobile(input.contactPhone);
+    const conversationRef = input.externalMessageId;
+
+    // Matched inbound: durable evidence only when customer lacks a verified mobile source.
+    // Do not auto-write customer.phone here.
+    if (input.customerId) {
+      return { createdReview: false };
+    }
+
+    try {
+      const [existingPending] = await this.db
+        .select({ id: whatsappMatchReviews.id })
+        .from(whatsappMatchReviews)
+        .where(
+          and(
+            eq(whatsappMatchReviews.companyId, input.companyId),
+            eq(whatsappMatchReviews.whatsappWaId, waId),
+            eq(whatsappMatchReviews.status, 'pending'),
+          ),
+        )
+        .limit(1);
+
+      if (existingPending) {
+        return { createdReview: false };
+      }
+
+      await this.db.insert(whatsappMatchReviews).values({
+        companyId: input.companyId,
+        customerId: null,
+        whatsappWaId: waId,
+        whatsappDisplayName: input.contactName,
+        proposedMobile: input.contactPhone,
+        proposedMobileNormalized,
+        matchClassification: 'no_match',
+        confidenceScore: 0,
+        evidence: [
+          {
+            code: 'message_content_ref',
+            detail: 'Inbound Business WhatsApp with no tenant customer phone match',
+            weight: 0,
+            sourceRef: conversationRef,
+          },
+          ...(input.contactName
+            ? [
+                {
+                  code: 'name_only_insufficient' as const,
+                  detail: `WhatsApp profile name: ${input.contactName}`,
+                  weight: 5,
+                  sourceRef: conversationRef,
+                },
+              ]
+            : []),
+        ],
+        status: 'pending',
+        priorityRank: 40,
+        conversationRef,
+        conflictingCustomerIds: [],
+      });
+
+      return { createdReview: true };
+    } catch {
+      // Enrichment tables may be unmigrated — never fail inbound webhook path.
+      return { createdReview: false };
+    }
+  }
+
+  /**
    * Stub — live WhatsApp conversation import when connected.
    * Does not call Meta API without credentials; returns honest disconnected state.
+   * Webhook-driven `recordInboundOpportunity` is the live enrichment intake path.
    */
   async runAutoSyncPass(companyId: string): Promise<{ processed: number; state: string }> {
     const connection = await this.whatsappService.getConnection(companyId);

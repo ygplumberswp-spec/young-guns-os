@@ -469,6 +469,11 @@ const whatsappService = WhatsappService.create({
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   apiPublicUrl,
   hubService: integrationHubService,
+  runtime: {
+    whatsappEnabled: env.runtime.whatsappEnabled,
+    webhooksEnabled: env.runtime.webhooksEnabled,
+    outboundMessagesEnabled: env.runtime.outboundMessagesEnabled,
+  },
 });
 const whatsappContactEnrichmentService = WhatsappContactEnrichmentService.create({
   db,
@@ -818,6 +823,13 @@ const communicationsPlatformService = CommunicationsPlatformService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   gmailOAuthService,
+  whatsappService,
+});
+whatsappService.setInboundHooks({
+  indexInboundMessage: (input) =>
+    communicationsPlatformService.indexBusinessWhatsappInbound(input),
+  recordInboundEnrichment: (input) =>
+    whatsappContactEnrichmentService.recordInboundOpportunity(input).then(() => undefined),
 });
 const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicationsService({
   db,
@@ -1639,6 +1651,7 @@ app.use(
   createWhatsappWebhookRouter({
     whatsappService,
     db,
+    appSecret: env.WHATSAPP_APP_SECRET,
   }),
 );
 app.use(

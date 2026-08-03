@@ -905,7 +905,7 @@ export function createIntegrationsRouter({
   );
 
   router.put('/whatsapp', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const { companyId, userId } = getAuth(req);
     const parsed = saveWhatsappSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -920,7 +920,7 @@ export function createIntegrationsRouter({
     }
 
     try {
-      const connection = await whatsappService.saveConnection(companyId, parsed.data);
+      const connection = await whatsappService.saveConnection(companyId, parsed.data, userId);
       res.json({ data: { connection } });
     } catch (error) {
       handleWhatsappError(res, error);
@@ -928,10 +928,10 @@ export function createIntegrationsRouter({
   });
 
   router.delete('/whatsapp', requireAnyPermission('integrations:manage'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const { companyId, userId } = getAuth(req);
 
     try {
-      const connection = await whatsappService.disconnect(companyId);
+      const connection = await whatsappService.disconnect(companyId, userId);
       res.json({ data: { connection } });
     } catch (error) {
       handleWhatsappError(res, error);
@@ -1537,12 +1537,12 @@ function handleWhatsappError(res: import('express').Response, error: unknown) {
     const status =
       error.code === 'NOT_FOUND'
         ? 404
-        : error.code === 'NOT_CONNECTED' ||
-            error.code === 'VALIDATION_ERROR' ||
-            error.code === 'CONNECTION_FAILED'
-          ? 400
-          : error.code === 'ENCRYPTION_NOT_CONFIGURED'
-            ? 503
+        : error.code === 'FEATURE_DISABLED' || error.code === 'ENCRYPTION_NOT_CONFIGURED'
+          ? 503
+          : error.code === 'NOT_CONNECTED' ||
+              error.code === 'VALIDATION_ERROR' ||
+              error.code === 'CONNECTION_FAILED'
+            ? 400
             : 400;
 
     res.status(status).json({

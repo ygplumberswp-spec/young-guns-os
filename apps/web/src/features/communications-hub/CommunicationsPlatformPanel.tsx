@@ -6,16 +6,21 @@ import {
   canConnectBusinessGmail,
   canSyncBusinessGmail,
   formatBusinessGmailUserStatus,
+  formatBusinessWhatsappUserStatus,
   formatCommPlatformCapabilityState,
   formatGmailSyncUserStatus,
   normalizeGmailSyncLifecycle,
   type CommPlatformGmailOAuthStatus,
+  type CommPlatformInboxItemSummary,
   type CommPlatformInboxResult,
   type CommPlatformSettingsSummary,
+  type CommPlatformWhatsappChatSummary,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
+  auraAssistInbox,
   disconnectBusinessGmail,
+  fetchBusinessWhatsappChats,
   fetchCommunicationsPlatformInbox,
   fetchCommunicationsPlatformSettings,
   fetchGmailOAuthStatus,
@@ -54,6 +59,8 @@ export function CommunicationsPlatformPanel({
   const [success, setSuccess] = useState<string | null>(null);
   const [manageGmail, setManageGmail] = useState(false);
   const [manageBusinessWhatsapp, setManageBusinessWhatsapp] = useState(false);
+  const [whatsappChats, setWhatsappChats] = useState<CommPlatformWhatsappChatSummary[]>([]);
+  const [assistNote, setAssistNote] = useState<string | null>(null);
 
   /** Personal WhatsApp — Platform Owner only (unchanged). */
   const isOwner = useMemo(
@@ -107,6 +114,17 @@ export function CommunicationsPlatformPanel({
       limit: 50,
     });
     setInbox(inboxData);
+
+    if (channel === 'whatsapp' || channel === 'all') {
+      try {
+        const chats = await fetchBusinessWhatsappChats(accessToken);
+        setWhatsappChats(chats);
+      } catch {
+        setWhatsappChats([]);
+      }
+    } else {
+      setWhatsappChats([]);
+    }
   }
 
   useEffect(() => {
@@ -412,14 +430,32 @@ export function CommunicationsPlatformPanel({
     unread: boolean;
     urgent: boolean;
     folder: string;
+    channel?: string;
   }): string {
     const parts: string[] = [];
+    if (item.channel === 'whatsapp') parts.push('WhatsApp');
+    if (item.channel === 'email') parts.push('Email');
     parts.push(item.unread ? 'Unread' : 'Read');
-    if (item.urgent) parts.push('Urgent');
+    if (item.urgent) parts.push('Priority');
     if (item.folder && item.folder !== 'inbox') {
       parts.push(item.folder.charAt(0).toUpperCase() + item.folder.slice(1));
     }
     return parts.join(' · ');
+  }
+
+  async function runAuraSummarize(item: CommPlatformInboxItemSummary) {
+    if (!accessToken) return;
+    setIsWorking(true);
+    setAssistNote(null);
+    setError(null);
+    try {
+      const assist = await auraAssistInbox(accessToken, item.id, 'summarize');
+      setAssistNote(assist.summary ? `${assist.note}\n\n${assist.summary}` : assist.note);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Unable to summarise conversation');
+    } finally {
+      setIsWorking(false);
+    }
   }
 
   async function disconnectGmail() {
@@ -455,6 +491,14 @@ export function CommunicationsPlatformPanel({
         lastSyncStatus: settings.businessGmail.lastSyncStatus,
       })
     : 'Disconnected';
+  const whatsappStatusLabel = settings
+    ? formatBusinessWhatsappUserStatus({
+        status: settings.businessWhatsapp.status,
+        connected: settings.businessWhatsapp.connected,
+        hasCredentials: settings.businessWhatsapp.hasCredentials,
+        featureEnabled: settings.businessWhatsapp.featureEnabled,
+      })
+    : '—';
 
   if (isLoading) {
     return <Panel title="Communications Platform">Loading platform…</Panel>;
@@ -566,6 +610,11 @@ export function CommunicationsPlatformPanel({
                 </span>
               </div>
             ) : null}
+            {assistNote ? (
+              <p className="muted" style={{ whiteSpace: 'pre-wrap', marginBottom: '0.75rem' }}>
+                {assistNote}
+              </p>
+            ) : null}
             {!inbox || inbox.items.length === 0 ? (
               <EmptyState
                 title={
@@ -573,14 +622,14 @@ export function CommunicationsPlatformPanel({
                     ? 'Connect a business channel'
                     : inbox?.emptyReason === 'role_filtered'
                       ? 'No assigned conversations'
-                      : gmailConnected
+                      : gmailConnected || settings?.businessWhatsapp.connected
                         ? 'No messages yet'
                         : 'No messages yet'
                 }
                 description={
-                  gmailConnected
-                    ? 'Your inbox is ready. Use Sync Now to pull messages from Business Gmail.'
-                    : 'Connect Business Gmail or Business WhatsApp under Business Channels. Messages appear here after they sync.'
+                  gmailConnected || settings?.businessWhatsapp.connected
+                    ? 'Your inbox is ready. Gmail uses Sync Now; Business WhatsApp appears when real messages arrive.'
+                    : 'Connect Business Gmail or Business WhatsApp under Business Channels. Messages appear here after they sync or arrive.'
                 }
               />
             ) : (
@@ -591,6 +640,7 @@ export function CommunicationsPlatformPanel({
                     <span className="status-pill">{inboxItemStatus(item)}</span>
                     <p>
                       <strong>From:</strong> {item.participantLabel?.trim() || 'Unknown'}
+                      {item.contactPhone ? ` · +${item.contactPhone.replace(/^\+/, '')}` : ''}
                       {' · '}
                       <strong>Date:</strong> {formatInboxDate(item.occurredAt)}
                     </p>
@@ -600,11 +650,95 @@ export function CommunicationsPlatformPanel({
                         ? ` · ${item.attachmentCount} attachment(s)`
                         : ''}
                     </p>
+                    {item.linkTargetType && item.linkTargetId ? (
+                      <p className="muted">
+                        Linked: {item.linkTargetType}
+                        {item.linkTargetType === 'customer' ? (
+                          <>
+                            {' · '}
+                            <Link href={`/crm/customers/${item.linkTargetId}`}>Open customer</Link>
+                          </>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    <div className="page-header-actions" style={{ marginTop: '0.5rem' }}>
+                      <Button
+                        variant="secondary"
+                        disabled={isWorking || item.isPersonal}
+                        onClick={() => void runAuraSummarize(item)}
+                      >
+                        Summarise
+                      </Button>
+                      {(item.officeActions ?? [])
+                        .filter((action) => action.enabled)
+                        .map((action) => (
+                          <Link key={action.kind} href={action.href}>
+                            <Button variant="secondary" title={action.note}>
+                              {action.label}
+                            </Button>
+                          </Link>
+                        ))}
+                    </div>
                   </div>
                 ))}
               </div>
             )}
           </Panel>
+
+          {channel === 'whatsapp' || whatsappChats.length > 0 ? (
+            <Panel title="Business WhatsApp conversations">
+              {whatsappChats.length === 0 ? (
+                <EmptyState
+                  title={whatsappStatusLabel === 'Connected' ? 'No conversations yet' : whatsappStatusLabel}
+                  description={
+                    settings?.businessWhatsapp.emptyStateMessage ??
+                    'Conversations appear here when real Business WhatsApp messages arrive. No demo threads.'
+                  }
+                />
+              ) : (
+                <div className="data-list">
+                  {whatsappChats.map((chat) => (
+                    <div key={chat.id} className="data-list-item">
+                      <strong>
+                        {chat.contactName?.trim() ||
+                          (chat.contactPhone ? `+${chat.contactPhone}` : 'WhatsApp contact')}
+                      </strong>
+                      <span className="status-pill">
+                        {chat.unread ? 'Unread' : 'Read'}
+                        {chat.linkTargetType === 'customer' ? ' · Customer' : ''}
+                      </span>
+                      <p>{chat.lastMessagePreview?.trim() || 'No preview'}</p>
+                      <p className="muted">
+                        {chat.lastMessageAt ? formatInboxDate(chat.lastMessageAt) : '—'}
+                      </p>
+                      <div className="page-header-actions" style={{ marginTop: '0.5rem' }}>
+                        {chat.linkTargetId && chat.linkTargetType === 'customer' ? (
+                          <>
+                            <Link href={`/crm/customers/${chat.linkTargetId}`}>
+                              <Button variant="secondary">Open customer</Button>
+                            </Link>
+                            <Link href={`/jobs/new?customerId=${encodeURIComponent(chat.linkTargetId)}`}>
+                              <Button variant="secondary">Create job</Button>
+                            </Link>
+                          </>
+                        ) : (
+                          <Link
+                            href={`/leads/new?${new URLSearchParams({
+                              ...(chat.contactPhone ? { phone: chat.contactPhone } : {}),
+                              ...(chat.contactName ? { name: chat.contactName } : {}),
+                              source: 'whatsapp',
+                            }).toString()}`}
+                          >
+                            <Button variant="secondary">Create lead</Button>
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Panel>
+          ) : null}
         </>
       ) : null}
 
@@ -620,10 +754,7 @@ export function CommunicationsPlatformPanel({
               label="Indexed messages"
               value={String(inbox?.total ?? 0)}
             />
-            <StatCard
-              label="Business WhatsApp"
-              value={formatCommPlatformCapabilityState(settings.businessWhatsapp.status)}
-            />
+            <StatCard label="Business WhatsApp" value={whatsappStatusLabel} />
             {settings.personalWhatsapp ? (
               <StatCard
                 label="Personal WhatsApp (Owner only)"
@@ -755,20 +886,33 @@ export function CommunicationsPlatformPanel({
           </Panel>
 
           <Panel title="Business WhatsApp">
-            {settings.businessWhatsapp.connected ? (
+            {settings.businessWhatsapp.connected ||
+            settings.businessWhatsapp.hasCredentials ||
+            settings.businessWhatsapp.status === 'degraded' ? (
               <>
                 <dl className="integrations-detail-list">
                   <div>
                     <dt>Status</dt>
-                    <dd>Connected</dd>
+                    <dd>{whatsappStatusLabel}</dd>
                   </div>
                   <div>
                     <dt>Message Health</dt>
-                    <dd>{settings.businessWhatsapp.status}</dd>
+                    <dd>
+                      {settings.businessWhatsapp.connected
+                        ? 'Receiving live messages'
+                        : formatCommPlatformCapabilityState(settings.businessWhatsapp.status)}
+                    </dd>
                   </div>
+                  {settings.businessWhatsapp.displayPhoneNumber ? (
+                    <div>
+                      <dt>Number</dt>
+                      <dd>{settings.businessWhatsapp.displayPhoneNumber}</dd>
+                    </div>
+                  ) : null}
                 </dl>
                 <p className="muted" style={{ marginTop: '0.5rem' }}>
-                  Customer messaging, notifications and AI communications via Meta WhatsApp Business.
+                  {settings.businessWhatsapp.runtimeNote ??
+                    'Customer messaging via Meta WhatsApp Business. Draft → approve → send; never auto-sent. Leads and jobs are created only when you choose to.'}
                 </p>
                 <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
                   <Button

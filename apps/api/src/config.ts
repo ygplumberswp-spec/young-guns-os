@@ -38,6 +38,8 @@ const envSchema = z.object({
   PAYMENT_PROCESSING_ENABLED: z.string().optional(),
   XERO_SYNC_ENABLED: z.string().optional(),
   WHATSAPP_ENABLED: z.string().optional(),
+  /** Meta App Secret for X-Hub-Signature-256 verification (optional soft gate). */
+  WHATSAPP_APP_SECRET: z.string().min(1).optional(),
   EMAIL_SENDING_ENABLED: z.string().optional(),
   READY_REQUIRE_REDIS: z.string().optional(),
   /** Optional comma-separated extra browser origins allowed for credentialed CORS. */

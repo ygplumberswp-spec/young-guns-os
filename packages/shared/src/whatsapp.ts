@@ -71,6 +71,14 @@ export type WhatsappConnectionSummary = {
   lastError: string | null;
   connectedAt: string | null;
   webhookUrl: string;
+  /** Runtime gate: WHATSAPP_ENABLED && PROVIDERS_ENABLED */
+  featureEnabled: boolean;
+  /** Runtime gate: WEBHOOKS_ENABLED (inbound processing) */
+  webhooksEnabled: boolean;
+  /** Runtime gate: OUTBOUND_MESSAGES_ENABLED (live send/approve) */
+  outboundMessagesEnabled: boolean;
+  /** Honest operator note when flags block live traffic */
+  runtimeNote: string | null;
 };
 
 export type SaveWhatsappConnectionRequest = {
