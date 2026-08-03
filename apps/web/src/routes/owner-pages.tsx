@@ -535,6 +535,10 @@ export const FleetIntelligencePage = lazyNamed(
   () => import('../pages/fleet-intelligence/FleetIntelligencePage'),
   'FleetIntelligencePage',
 );
+export const VehicleIntelligencePage = lazyNamed(
+  () => import('../pages/vehicle-intelligence/VehicleIntelligencePage'),
+  'VehicleIntelligencePage',
+);
 export const EnterpriseSecurityPage = lazyNamed(
   () => import('../pages/enterprise-security/EnterpriseSecurityPage'),
   'EnterpriseSecurityPage',

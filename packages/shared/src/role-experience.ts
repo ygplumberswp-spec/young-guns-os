@@ -68,6 +68,18 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   },
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
+    href: '/vehicle-intelligence',
+    label: 'Vehicle Intelligence',
+    permissions: [
+      'fleet:read',
+      'fleet:write',
+      'fleet_intelligence:read',
+      'fleet_intelligence:write',
+      'agents:read',
+      '*',
+    ],
+  },
+  {
     href: '/mobile-platform/dispatcher',
     label: NAV_LABELS.liveDispatch,
     permissions: ['dispatch:read', 'mobile:read', '*'],

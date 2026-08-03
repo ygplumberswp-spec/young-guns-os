@@ -1009,6 +1009,13 @@
       "when": 1754372000000,
       "tag": "0151_hr_employee_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 144,
+      "version": "7",
+      "when": 1754369000144,
+      "tag": "0150_vehicle_intelligence",
+      "breakpoints": true
     }
   ]
 }

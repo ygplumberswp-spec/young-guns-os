@@ -259,6 +259,7 @@ import { FinanceAuraAgentService } from './services/finance-aura-agent.service.j
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
+import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
@@ -295,6 +296,7 @@ import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
+import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
@@ -860,6 +862,7 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
 );
 const contentReputationIntelligenceService = new ContentReputationIntelligenceService(db);
 const inventoryIntelligenceService = new InventoryIntelligenceService(db);
+const vehicleIntelligenceService = new VehicleIntelligenceService(db);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
 const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
@@ -2560,6 +2563,15 @@ app.use(
   '/api/v1/procurement-intelligence',
   createProcurementIntelligenceRouter({
     procurementIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/vehicle-intelligence',
+  createVehicleIntelligenceRouter({
+    vehicleIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

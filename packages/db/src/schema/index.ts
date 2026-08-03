@@ -106,6 +106,7 @@ export * from './ai-orchestration';
 export * from './dispatch-intelligence';
 export * from './ops-intelligence';
 export * from './fleet-intelligence';
+export * from './vehicle-intelligence';
 export * from './personal-communications-intelligence';
 export * from './personal-whatsapp-intelligence';
 export * from './personal-whatsapp-connection';

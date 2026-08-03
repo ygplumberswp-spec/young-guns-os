@@ -113,6 +113,7 @@ export * from './dispatch-intelligence.js';
 export * from './dispatch-ops.js';
 export * from './ops-intelligence.js';
 export * from './fleet-intelligence.js';
+export * from './vehicle-intelligence.js';
 export * from './personal-communications-intelligence.js';
 export * from './personal-whatsapp-intelligence.js';
 export * from './personal-whatsapp-connection.js';

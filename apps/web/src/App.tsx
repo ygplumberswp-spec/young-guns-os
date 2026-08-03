@@ -440,6 +440,10 @@ export function App() {
                           path="/fleet-intelligence"
                           component={OwnerPages.FleetIntelligencePage}
                         />
+                        <Route
+                          path="/vehicle-intelligence"
+                          component={OwnerPages.VehicleIntelligencePage}
+                        />
                         <Route path="/security" component={OwnerPages.EnterpriseSecurityPage} />
                         <Route
                           path="/personal-communications-intelligence"
