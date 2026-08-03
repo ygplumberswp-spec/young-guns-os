@@ -3,6 +3,7 @@ import type {
   XeroAccountingAuraContext,
   XeroEntitySyncResult,
   XeroEnqueueImportResult,
+  XeroFinancePipelineSummary,
   XeroImportEntityCounts,
   XeroImportJobProgress,
   XeroImportSyncResult,
@@ -11,18 +12,30 @@ import type {
   XeroSyncStatusResponse,
   IntegrationSyncTrigger,
 } from '@titan/shared';
-import { resolveOfficialXeroInvoiceNumber } from '@titan/shared';
+import {
+  extractXeroLineItemsFromRaw,
+  mapXeroLineItemsToTitan,
+  mapXeroQuoteStatus,
+  normalizeContactEmail,
+  normalizeContactPhone,
+  pickCustomerMatchCandidate,
+  resolveOfficialXeroInvoiceNumber,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   customers,
   integrationConnections,
   integrationSyncJobs,
+  invoiceLineItems,
   invoices,
   jobs,
   payments,
+  quoteLineItems,
   quotes,
   securityAuditLogs,
+  xeroBankTransactions,
   xeroCustomerMappings,
+  xeroFinanceSyncRuns,
   xeroInvoiceMappings,
   xeroPaymentMappings,
   xeroQuoteMappings,
@@ -149,13 +162,15 @@ export class XeroSyncService {
       return emptySyncStatus(currency);
     }
 
-    const [customersStats, quotesStats, invoicesStats, paymentsStats, outstanding] =
+    const [customersStats, quotesStats, invoicesStats, paymentsStats, bankStats, outstanding, financePipeline] =
       await Promise.all([
         this.getEntityStats(companyId, 'customer'),
         this.getEntityStats(companyId, 'quote'),
         this.getEntityStats(companyId, 'invoice'),
         this.getEntityStats(companyId, 'payment'),
+        this.getBankTransactionStats(companyId),
         this.getOutstandingSummary(companyId),
+        this.getFinancePipelineSummary(companyId, connection.id),
       ]);
 
     const importJob = await this.getImportJobProgress(companyId);
@@ -170,11 +185,13 @@ export class XeroSyncService {
       quotes: quotesStats,
       invoices: invoicesStats,
       payments: paymentsStats,
+      bankTransactions: bankStats,
       outstandingAmountCents: outstanding.outstandingAmountCents,
       unpaidInvoiceCount: outstanding.unpaidInvoiceCount,
       customersWithOutstandingCount: outstanding.customersWithOutstandingCount,
       currency,
       importJob,
+      financePipeline,
     };
   }
 
@@ -278,6 +295,15 @@ export class XeroSyncService {
         },
       });
     }
+
+    await this.db.insert(xeroFinanceSyncRuns).values({
+      companyId,
+      integrationConnectionId: ctx.connection.id,
+      syncJobId,
+      trigger: options?.trigger ?? 'manual',
+      status: 'queued',
+      details: { scheduledJobsReady: true },
+    });
 
     void this.processImportJobBatch(syncJobId).catch((error: unknown) => {
       console.error('[xero-sync] Background import batch failed after enqueue', {
@@ -459,12 +485,14 @@ export class XeroSyncService {
             checkpoint: {
               stage: progress.currentStage ?? 'contacts',
               contactsPage: 1,
+              quotesPage: 1,
               invoicesPage: 1,
               paymentsPage: 1,
               bankTransactionsPage: 1,
             },
             completedStages: progress.completedStages,
             contacts: progress.contacts,
+            quotes: progress.quotes,
             invoices: progress.invoices,
             payments: progress.payments,
             bankTransactions: progress.bankTransactions,
@@ -666,6 +694,8 @@ export class XeroSyncService {
       resultSummary: importJobStateToSummary(state),
     });
 
+    await this.recordFinanceSyncRun(companyId, connectionId, syncJobId, state, success, result.message);
+
     await this.importJobSettledHandler?.({
       companyId,
       syncJobId,
@@ -695,6 +725,11 @@ export class XeroSyncService {
           lastBatchSize = batch.length;
           await this.importContactBatch(ctx, batch, state.contacts);
           state.checkpoint.contactsPage += 1;
+        } else if (stage === 'quotes') {
+          const batch = await ctx.client.listQuotesPage(state.checkpoint.quotesPage);
+          lastBatchSize = batch.length;
+          await this.importQuoteBatch(ctx, batch, state.quotes);
+          state.checkpoint.quotesPage += 1;
         } else if (stage === 'invoices') {
           const batch = await ctx.client.listInvoicesPage(state.checkpoint.invoicesPage);
           lastBatchSize = batch.length;
@@ -966,7 +1001,7 @@ export class XeroSyncService {
     companyId: string,
     partialState: XeroImportJobState,
   ): Promise<XeroImportJobState> {
-    const [customerRows, invoiceRows, paymentRows, bankRows] = await Promise.all([
+    const [customerRows, quoteRows, invoiceRows, paymentRows, bankRows] = await Promise.all([
       this.db
         .select({ count: sql<number>`count(*)::int` })
         .from(xeroCustomerMappings)
@@ -974,6 +1009,15 @@ export class XeroSyncService {
           and(
             eq(xeroCustomerMappings.companyId, companyId),
             eq(xeroCustomerMappings.syncStatus, 'synced'),
+          ),
+        ),
+      this.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(xeroQuoteMappings)
+        .where(
+          and(
+            eq(xeroQuoteMappings.companyId, companyId),
+            eq(xeroQuoteMappings.syncStatus, 'synced'),
           ),
         ),
       this.db
@@ -996,17 +1040,12 @@ export class XeroSyncService {
         ),
       this.db
         .select({ count: sql<number>`count(*)::int` })
-        .from(xeroSyncLogs)
-        .where(
-          and(
-            eq(xeroSyncLogs.companyId, companyId),
-            eq(xeroSyncLogs.entityType, 'bank_transaction'),
-            eq(xeroSyncLogs.status, 'success'),
-          ),
-        ),
+        .from(xeroBankTransactions)
+        .where(eq(xeroBankTransactions.companyId, companyId)),
     ]);
 
     const customerCount = customerRows[0]?.count ?? 0;
+    const quoteCount = quoteRows[0]?.count ?? 0;
     const invoiceCount = invoiceRows[0]?.count ?? 0;
     const paymentCount = paymentRows[0]?.count ?? 0;
     const bankCount = bankRows[0]?.count ?? 0;
@@ -1017,6 +1056,10 @@ export class XeroSyncService {
       contacts: {
         ...partialState.contacts,
         pulledCount: Math.max(partialState.contacts.pulledCount, customerCount),
+      },
+      quotes: {
+        ...partialState.quotes,
+        pulledCount: Math.max(partialState.quotes.pulledCount, quoteCount),
       },
       invoices: {
         ...partialState.invoices,
@@ -1036,8 +1079,21 @@ export class XeroSyncService {
 
     if (customerCount > 0) {
       state.checkpoint.contactsPage = Math.max(1, Math.ceil(customerCount / XERO_PAGE_SIZE));
-      if (invoiceCount > 0 || paymentCount > 0 || bankCount > 0 || customerCount >= XERO_PAGE_SIZE) {
+      if (
+        quoteCount > 0 ||
+        invoiceCount > 0 ||
+        paymentCount > 0 ||
+        bankCount > 0 ||
+        customerCount >= XERO_PAGE_SIZE
+      ) {
         completed.add('contacts');
+      }
+    }
+
+    if (quoteCount > 0) {
+      state.checkpoint.quotesPage = Math.max(1, Math.ceil(quoteCount / XERO_PAGE_SIZE));
+      if (invoiceCount > 0 || paymentCount > 0 || bankCount > 0) {
+        completed.add('quotes');
       }
     }
 
@@ -1063,6 +1119,8 @@ export class XeroSyncService {
 
     if (!completed.has('contacts')) {
       state.checkpoint.stage = 'contacts';
+    } else if (!completed.has('quotes')) {
+      state.checkpoint.stage = 'quotes';
     } else if (!completed.has('invoices')) {
       state.checkpoint.stage = 'invoices';
     } else if (!completed.has('payments')) {
@@ -1991,6 +2049,7 @@ export class XeroSyncService {
             .set({
               name: contact.name,
               email: contact.email,
+              phone: contact.phone ?? undefined,
               updatedAt: new Date(),
             })
             .where(
@@ -2012,6 +2071,7 @@ export class XeroSyncService {
             xeroContactId: contact.contactId,
             name: contact.name,
             email: contact.email,
+            phone: contact.phone,
           });
           await this.upsertCustomerMapping(ctx, customerId, contact.contactId, 'synced');
           counts.createdCount += 1;
@@ -2039,6 +2099,123 @@ export class XeroSyncService {
     }
 
     if (remoteContacts.length === 0 && counts.pulledCount === 0 && counts.skippedCount === 0) {
+      counts.skippedCount = 1;
+    }
+  }
+
+  private async importQuoteBatch(
+    ctx: SyncContext,
+    remoteQuotes: Awaited<ReturnType<XeroClient['listQuotesPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
+    const syncedAt = new Date();
+
+    for (const remote of remoteQuotes) {
+      try {
+        if (!remote.contactId) {
+          counts.skippedCount += 1;
+          continue;
+        }
+
+        const customerId = await this.resolveCustomerForXeroContact(ctx, {
+          xeroContactId: remote.contactId,
+          name: remote.contactName ?? 'Xero contact',
+        });
+
+        const existingMapping = await this.db.query.xeroQuoteMappings.findFirst({
+          where: and(
+            eq(xeroQuoteMappings.companyId, ctx.companyId),
+            eq(xeroQuoteMappings.xeroQuoteId, remote.quoteId),
+          ),
+        });
+
+        const quoteNumber =
+          remote.quoteNumber?.trim() || `XERO-Q-${remote.quoteId.slice(0, 8).toUpperCase()}`;
+        const status = mapXeroQuoteStatus(remote.status);
+        const totalCents = amountToCents(remote.total);
+        const subtotalCents = amountToCents(remote.subtotal);
+        const vatCents = amountToCents(remote.totalTax);
+        const resolvedTotal =
+          totalCents > 0 ? totalCents : subtotalCents + vatCents > 0 ? subtotalCents + vatCents : 0;
+        const currency = remote.currencyCode ?? ctx.connection.config.baseCurrency ?? 'USD';
+        const title = remote.title?.trim() || quoteNumber;
+        const provenance = {
+          sourceProvider: 'xero' as const,
+          sourceExternalId: remote.quoteId,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+          xeroQuoteId: remote.quoteId,
+          xeroQuoteNumber: quoteNumber,
+        };
+        const financials = {
+          status,
+          amountCents: resolvedTotal,
+          subtotalCents: subtotalCents > 0 ? subtotalCents : resolvedTotal,
+          vatCents,
+          totalCents: resolvedTotal,
+          currency,
+          title,
+          validUntil: remote.expiryDate ? new Date(remote.expiryDate) : null,
+          issuedAt: remote.issueDate ? new Date(remote.issueDate) : undefined,
+          acceptedAt: status === 'accepted' ? syncedAt : null,
+          declinedAt: status === 'declined' ? syncedAt : null,
+          notes: 'Imported from Xero',
+          ...provenance,
+        };
+
+        let quoteId: string;
+        if (existingMapping) {
+          await this.db
+            .update(quotes)
+            .set({
+              ...financials,
+              updatedAt: syncedAt,
+            })
+            .where(and(eq(quotes.id, existingMapping.quoteId), eq(quotes.companyId, ctx.companyId)));
+          quoteId = existingMapping.quoteId;
+          counts.updatedCount += 1;
+        } else {
+          const [created] = await this.db
+            .insert(quotes)
+            .values({
+              companyId: ctx.companyId,
+              customerId,
+              quoteNumber,
+              ...financials,
+            })
+            .returning();
+          if (!created) {
+            throw new XeroSyncError('CREATE_FAILED', 'Unable to create quote from Xero');
+          }
+          quoteId = created.id;
+          counts.createdCount += 1;
+        }
+
+        await this.upsertQuoteMapping(ctx, quoteId, remote.quoteId, 'synced');
+        await this.replaceQuoteLineItems(ctx, quoteId, remote.raw);
+        counts.pulledCount += 1;
+
+        await this.writeLog(ctx, {
+          entityType: 'quote',
+          entityId: quoteId,
+          xeroEntityId: remote.quoteId,
+          action: 'pull',
+          status: 'success',
+          message: `Imported quote ${quoteNumber} from Xero`,
+        });
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'quote',
+          xeroEntityId: remote.quoteId,
+          action: 'pull',
+          status: 'failed',
+          message: mapError(error),
+        });
+      }
+    }
+
+    if (remoteQuotes.length === 0 && counts.pulledCount === 0 && counts.skippedCount === 0) {
       counts.skippedCount = 1;
     }
   }
@@ -2076,9 +2253,15 @@ export class XeroSyncService {
         const financials = buildImportedInvoiceFinancialFields(remote);
         const invoiceNumber = resolveImportedInvoiceNumber(remote.invoiceNumber, remote.invoiceId);
         const currency = remote.currencyCode ?? ctx.connection.config.baseCurrency ?? 'USD';
+        const syncedAt = new Date();
         const importedIdentity = {
           xeroInvoiceNumber: invoiceNumber,
+          xeroReference: remote.reference,
           numberAuthority: 'xero' as const,
+          sourceProvider: 'xero' as const,
+          sourceExternalId: remote.invoiceId,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
         };
 
         if (existingMapping) {
@@ -2102,6 +2285,7 @@ export class XeroSyncService {
               conflict.message,
               {
                 xeroInvoiceNumber: invoiceNumber,
+                xeroReference: remote.reference,
                 conflictMetadata: conflict as unknown as Record<string, unknown>,
               },
             );
@@ -2119,7 +2303,7 @@ export class XeroSyncService {
               ...importedIdentity,
               dueDate: remote.dueDate ? new Date(remote.dueDate) : null,
               issuedAt: remote.issueDate ? new Date(remote.issueDate) : undefined,
-              updatedAt: new Date(),
+              updatedAt: syncedAt,
             })
             .where(
               and(
@@ -2128,13 +2312,14 @@ export class XeroSyncService {
               ),
             );
 
+          await this.replaceInvoiceLineItems(ctx, existingMapping.invoiceId, remote.raw);
           await this.upsertInvoiceMapping(
             ctx,
             existingMapping.invoiceId,
             remote.invoiceId,
             'synced',
             null,
-            { xeroInvoiceNumber: invoiceNumber },
+            { xeroInvoiceNumber: invoiceNumber, xeroReference: remote.reference },
           );
           counts.updatedCount += 1;
           counts.pulledCount += 1;
@@ -2162,7 +2347,7 @@ export class XeroSyncService {
             ...financials,
             currency,
             dueDate: remote.dueDate ? new Date(remote.dueDate) : null,
-            issuedAt: remote.issueDate ? new Date(remote.issueDate) : new Date(),
+            issuedAt: remote.issueDate ? new Date(remote.issueDate) : syncedAt,
             notes: 'Imported from Xero',
           })
           .returning();
@@ -2171,8 +2356,10 @@ export class XeroSyncService {
           throw new XeroSyncError('CREATE_FAILED', 'Unable to create invoice from Xero');
         }
 
+        await this.replaceInvoiceLineItems(ctx, createdInvoice.id, remote.raw);
         await this.upsertInvoiceMapping(ctx, createdInvoice.id, remote.invoiceId, 'synced', null, {
           xeroInvoiceNumber: invoiceNumber,
+          xeroReference: remote.reference,
         });
         counts.createdCount += 1;
         counts.pulledCount += 1;
@@ -2227,7 +2414,40 @@ export class XeroSyncService {
           ),
         });
 
+        const syncedAt = new Date();
+        const paymentReference = remotePayment.reference?.trim() || remotePayment.paymentId;
+        const paymentProvenance = {
+          xeroPaymentId: remotePayment.paymentId,
+          xeroPaymentStatus: remotePayment.status,
+          sourceProvider: 'xero' as const,
+          sourceExternalId: remotePayment.paymentId,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+        };
+
         if (existingPaymentMapping) {
+          await this.db
+            .update(payments)
+            .set({
+              reference: paymentReference,
+              ...paymentProvenance,
+            })
+            .where(
+              and(
+                eq(payments.id, existingPaymentMapping.paymentId),
+                eq(payments.companyId, ctx.companyId),
+              ),
+            );
+          await this.db
+            .update(xeroPaymentMappings)
+            .set({
+              syncStatus: 'synced',
+              lastSyncedAt: syncedAt,
+              lastSuccessfulSyncAt: syncedAt,
+              lastError: null,
+              updatedAt: syncedAt,
+            })
+            .where(eq(xeroPaymentMappings.id, existingPaymentMapping.id));
           counts.updatedCount += 1;
           counts.pulledCount += 1;
           continue;
@@ -2242,9 +2462,10 @@ export class XeroSyncService {
             amountCents: paymentCents,
             currency: remotePayment.currencyCode ?? invoiceMapping.invoice.currency,
             method: 'bank_transfer',
-            reference: remotePayment.paymentId,
-            paidAt: remotePayment.date ? new Date(remotePayment.date) : new Date(),
+            reference: paymentReference,
+            paidAt: remotePayment.date ? new Date(remotePayment.date) : syncedAt,
             notes: 'Imported from Xero',
+            ...paymentProvenance,
           })
           .returning();
 
@@ -2261,8 +2482,8 @@ export class XeroSyncService {
           paymentId: createdPayment.id,
           xeroPaymentId: remotePayment.paymentId,
           syncStatus: 'synced',
-          lastSyncedAt: new Date(),
-          lastSuccessfulSyncAt: new Date(),
+          lastSyncedAt: syncedAt,
+          lastSuccessfulSyncAt: syncedAt,
         });
 
         const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
@@ -2316,50 +2537,67 @@ export class XeroSyncService {
   ): Promise<void> {
     for (const remote of remoteRows) {
       try {
-        const existing = await this.db.query.xeroSyncLogs.findFirst({
+        const syncedAt = new Date();
+        const amountCents = amountToCents(remote.amount);
+        const currency = remote.currencyCode ?? ctx.connection.config.baseCurrency ?? 'USD';
+        const category =
+          remote.type && remote.status ? `${remote.type}/${remote.status}` : remote.type;
+        const existing = await this.db.query.xeroBankTransactions.findFirst({
           where: and(
-            eq(xeroSyncLogs.companyId, ctx.companyId),
-            eq(xeroSyncLogs.entityType, 'bank_transaction'),
-            eq(xeroSyncLogs.xeroEntityId, remote.bankTransactionId),
+            eq(xeroBankTransactions.companyId, ctx.companyId),
+            eq(xeroBankTransactions.xeroBankTransactionId, remote.bankTransactionId),
           ),
         });
 
-        const details = {
-          amount: remote.amount,
-          currencyCode: remote.currencyCode,
-          date: remote.date,
+        const row = {
+          transactionDate: remote.date ? remote.date.slice(0, 10) : null,
+          amountCents,
+          currency,
           reference: remote.reference,
           description: remote.description,
+          category,
+          bankAccountCode: remote.bankAccountCode,
+          contactName: remote.contactName,
+          xeroContactId: remote.contactId,
+          status: remote.status,
+          type: remote.type,
+          isReconciled: remote.isReconciled,
+          sourceProvider: 'xero' as const,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+          rawSummary: {
+            reference: remote.reference,
+            description: remote.description,
+            type: remote.type,
+            status: remote.status,
+          },
+          updatedAt: syncedAt,
         };
 
         if (existing) {
           await this.db
-            .update(xeroSyncLogs)
-            .set({
-              message:
-                remote.description ?? remote.reference ?? 'Updated bank transaction from Xero',
-              details,
-              syncJobId: ctx.syncJobId ?? null,
-            })
-            .where(eq(xeroSyncLogs.id, existing.id));
+            .update(xeroBankTransactions)
+            .set(row)
+            .where(eq(xeroBankTransactions.id, existing.id));
           counts.updatedCount += 1;
-          counts.pulledCount += 1;
-          continue;
+        } else {
+          await this.db.insert(xeroBankTransactions).values({
+            companyId: ctx.companyId,
+            integrationConnectionId: ctx.connection.id,
+            xeroBankTransactionId: remote.bankTransactionId,
+            ...row,
+          });
+          counts.createdCount += 1;
         }
 
-        await this.db.insert(xeroSyncLogs).values({
-          companyId: ctx.companyId,
-          integrationConnectionId: ctx.connection.id,
-          syncJobId: ctx.syncJobId ?? null,
+        counts.pulledCount += 1;
+        await this.writeLog(ctx, {
           entityType: 'bank_transaction',
           xeroEntityId: remote.bankTransactionId,
           action: 'pull',
           status: 'success',
           message: remote.description ?? remote.reference ?? 'Imported bank transaction from Xero',
-          details,
         });
-        counts.createdCount += 1;
-        counts.pulledCount += 1;
       } catch (error) {
         counts.failedCount += 1;
         await this.writeLog(ctx, {
@@ -2388,8 +2626,49 @@ export class XeroSyncService {
       ),
     });
 
-    if (existingMapping) {
-      return existingMapping.customerId;
+    const email = normalizeContactEmail(input.email);
+    const phoneDigits = normalizeContactPhone(input.phone);
+
+    let emailMatchCustomerId: string | null = null;
+    let phoneMatchCustomerId: string | null = null;
+
+    if (!existingMapping && email) {
+      const byEmail = await this.db.query.customers.findFirst({
+        where: and(eq(customers.companyId, ctx.companyId), eq(customers.email, email)),
+        columns: { id: true },
+      });
+      emailMatchCustomerId = byEmail?.id ?? null;
+    }
+
+    if (!existingMapping && !emailMatchCustomerId && phoneDigits) {
+      const companyCustomers = await this.db.query.customers.findMany({
+        where: eq(customers.companyId, ctx.companyId),
+        columns: { id: true, phone: true },
+        limit: 5000,
+      });
+      const byPhone = companyCustomers.find(
+        (row) => normalizeContactPhone(row.phone) === phoneDigits,
+      );
+      phoneMatchCustomerId = byPhone?.id ?? null;
+    }
+
+    const match = pickCustomerMatchCandidate({
+      mappedCustomerId: existingMapping?.customerId ?? null,
+      emailMatchCustomerId,
+      phoneMatchCustomerId,
+    });
+
+    if (match) {
+      await this.db
+        .update(customers)
+        .set({
+          name: input.name,
+          email: input.email ?? undefined,
+          phone: input.phone ?? undefined,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(customers.id, match.customerId), eq(customers.companyId, ctx.companyId)));
+      return match.customerId;
     }
 
     const [created] = await this.db
@@ -2408,6 +2687,194 @@ export class XeroSyncService {
     }
 
     return created.id;
+  }
+
+  private async replaceInvoiceLineItems(
+    ctx: SyncContext,
+    invoiceId: string,
+    raw: Record<string, unknown>,
+  ): Promise<void> {
+    const mapped = mapXeroLineItemsToTitan(extractXeroLineItemsFromRaw(raw));
+    await this.db
+      .delete(invoiceLineItems)
+      .where(
+        and(eq(invoiceLineItems.companyId, ctx.companyId), eq(invoiceLineItems.invoiceId, invoiceId)),
+      );
+    if (mapped.length === 0) return;
+    await this.db.insert(invoiceLineItems).values(
+      mapped.map((line) => ({
+        companyId: ctx.companyId,
+        invoiceId,
+        position: line.position,
+        category: line.category,
+        description: line.description,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPriceCents,
+        vatRateBps: line.vatRateBps,
+        lineSubtotalCents: line.lineSubtotalCents,
+        lineVatCents: line.lineVatCents,
+        lineTotalCents: line.lineTotalCents,
+        accountCode: line.accountCode,
+        sourceExternalId: line.sourceExternalId,
+      })),
+    );
+  }
+
+  private async replaceQuoteLineItems(
+    ctx: SyncContext,
+    quoteId: string,
+    raw: Record<string, unknown>,
+  ): Promise<void> {
+    const mapped = mapXeroLineItemsToTitan(extractXeroLineItemsFromRaw(raw));
+    await this.db
+      .delete(quoteLineItems)
+      .where(and(eq(quoteLineItems.companyId, ctx.companyId), eq(quoteLineItems.quoteId, quoteId)));
+    if (mapped.length === 0) return;
+    await this.db.insert(quoteLineItems).values(
+      mapped.map((line) => ({
+        companyId: ctx.companyId,
+        quoteId,
+        position: line.position,
+        category: 'other' as const,
+        description: line.description,
+        quantity: line.quantity,
+        unitPriceCents: line.unitPriceCents,
+        vatRateBps: line.vatRateBps,
+        lineSubtotalCents: line.lineSubtotalCents,
+        lineVatCents: line.lineVatCents,
+        lineTotalCents: line.lineTotalCents,
+        accountCode: line.accountCode,
+        sourceExternalId: line.sourceExternalId,
+      })),
+    );
+  }
+
+  private async getBankTransactionStats(companyId: string) {
+    const [countRow] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(xeroBankTransactions)
+      .where(eq(xeroBankTransactions.companyId, companyId));
+    const [latest] = await this.db
+      .select({ lastSyncedAt: xeroBankTransactions.sourceSyncedAt })
+      .from(xeroBankTransactions)
+      .where(eq(xeroBankTransactions.companyId, companyId))
+      .orderBy(desc(xeroBankTransactions.sourceSyncedAt))
+      .limit(1);
+    const failedRows = await this.db.query.xeroSyncLogs.findMany({
+      where: and(
+        eq(xeroSyncLogs.companyId, companyId),
+        eq(xeroSyncLogs.entityType, 'bank_transaction'),
+        eq(xeroSyncLogs.status, 'failed'),
+      ),
+      orderBy: [desc(xeroSyncLogs.createdAt)],
+      limit: 1,
+    });
+    const syncedCount = countRow?.count ?? 0;
+    return {
+      syncedCount,
+      failedCount: failedRows.length > 0 ? 1 : 0,
+      pendingCount: 0,
+      outOfSyncCount: 0,
+      lastSyncAt: latest?.lastSyncedAt?.toISOString() ?? null,
+      lastSuccessfulSyncAt: latest?.lastSyncedAt?.toISOString() ?? null,
+      lastError: failedRows[0]?.message ?? null,
+    };
+  }
+
+  private async getFinancePipelineSummary(
+    companyId: string,
+    connectionId: string,
+  ): Promise<XeroFinancePipelineSummary> {
+    const latest = await this.db.query.xeroFinanceSyncRuns.findFirst({
+      where: and(
+        eq(xeroFinanceSyncRuns.companyId, companyId),
+        eq(xeroFinanceSyncRuns.integrationConnectionId, connectionId),
+      ),
+      orderBy: [desc(xeroFinanceSyncRuns.startedAt)],
+    });
+
+    if (!latest) {
+      return {
+        lastSyncAt: null,
+        lastError: null,
+        status: null,
+        contactsImported: 0,
+        quotesImported: 0,
+        invoicesImported: 0,
+        paymentsImported: 0,
+        bankTransactionsImported: 0,
+        failedCount: 0,
+        scheduledJobsReady: true,
+      };
+    }
+
+    return {
+      lastSyncAt: latest.lastSyncAt?.toISOString() ?? latest.finishedAt?.toISOString() ?? null,
+      lastError: latest.errorSummary,
+      status: latest.status,
+      contactsImported: latest.contactsImported,
+      quotesImported: latest.quotesImported,
+      invoicesImported: latest.invoicesImported,
+      paymentsImported: latest.paymentsImported,
+      bankTransactionsImported: latest.bankTransactionsImported,
+      failedCount: latest.failedCount,
+      scheduledJobsReady: true,
+    };
+  }
+
+  private async recordFinanceSyncRun(
+    companyId: string,
+    connectionId: string,
+    syncJobId: string,
+    state: XeroImportJobState,
+    success: boolean,
+    message: string,
+  ): Promise<void> {
+    const now = new Date();
+    const failedCount = sumImportFailureCounts(state);
+    const existing = await this.db.query.xeroFinanceSyncRuns.findFirst({
+      where: and(
+        eq(xeroFinanceSyncRuns.companyId, companyId),
+        eq(xeroFinanceSyncRuns.syncJobId, syncJobId),
+      ),
+    });
+
+    const values = {
+      status: success ? 'completed' : 'failed',
+      finishedAt: now,
+      lastSyncAt: success ? now : null,
+      contactsImported: state.contacts.createdCount + state.contacts.updatedCount,
+      quotesImported: state.quotes.createdCount + state.quotes.updatedCount,
+      invoicesImported: state.invoices.createdCount + state.invoices.updatedCount,
+      paymentsImported: state.payments.createdCount + state.payments.updatedCount,
+      bankTransactionsImported:
+        state.bankTransactions.createdCount + state.bankTransactions.updatedCount,
+      failedCount,
+      errorSummary: success ? null : message,
+      details: {
+        completedStages: state.completedStages,
+        failedStage: state.failedStage,
+        scheduledJobsReady: true,
+      },
+      updatedAt: now,
+    };
+
+    if (existing) {
+      await this.db
+        .update(xeroFinanceSyncRuns)
+        .set(values)
+        .where(eq(xeroFinanceSyncRuns.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(xeroFinanceSyncRuns).values({
+      companyId,
+      integrationConnectionId: connectionId,
+      syncJobId,
+      trigger: state.trigger ?? 'manual',
+      startedAt: now,
+      ...values,
+    });
   }
 
   private async writeLog(
@@ -2860,10 +3327,23 @@ function emptySyncStatus(currency: string): XeroSyncStatusResponse {
     quotes: empty,
     invoices: empty,
     payments: empty,
+    bankTransactions: empty,
     outstandingAmountCents: 0,
     unpaidInvoiceCount: 0,
     customersWithOutstandingCount: 0,
     currency,
+    financePipeline: {
+      lastSyncAt: null,
+      lastError: null,
+      status: null,
+      contactsImported: 0,
+      quotesImported: 0,
+      invoicesImported: 0,
+      paymentsImported: 0,
+      bankTransactionsImported: 0,
+      failedCount: 0,
+      scheduledJobsReady: true,
+    },
   };
 }
 

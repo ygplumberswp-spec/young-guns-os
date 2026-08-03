@@ -34,6 +34,7 @@ export const XERO_IMPORT_MAX_PAGES_PER_BATCH = 5;
 
 export const XERO_IMPORT_STAGES: XeroImportStage[] = [
   'contacts',
+  'quotes',
   'invoices',
   'payments',
   'bank_transactions',
@@ -48,12 +49,14 @@ export function createInitialImportJobState(options?: {
     checkpoint: {
       stage: options?.checkpoint?.stage ?? 'contacts',
       contactsPage: options?.checkpoint?.contactsPage ?? 1,
+      quotesPage: options?.checkpoint?.quotesPage ?? 1,
       invoicesPage: options?.checkpoint?.invoicesPage ?? 1,
       paymentsPage: options?.checkpoint?.paymentsPage ?? 1,
       bankTransactionsPage: options?.checkpoint?.bankTransactionsPage ?? 1,
     },
     completedStages: [],
     contacts: emptyImportCounts(),
+    quotes: emptyImportCounts(),
     invoices: emptyImportCounts(),
     payments: emptyImportCounts(),
     bankTransactions: emptyImportCounts(),
@@ -70,6 +73,7 @@ export function importJobStateToSummary(state: XeroImportJobState): Record<strin
     currentStage: state.checkpoint.stage,
     completedStages: state.completedStages,
     contacts: summarizeCounts(state.contacts),
+    quotes: summarizeCounts(state.quotes),
     invoices: summarizeCounts(state.invoices),
     payments: summarizeCounts(state.payments),
     bankTransactions: summarizeCounts(state.bankTransactions),
@@ -97,6 +101,7 @@ export function parseImportJobState(
     checkpoint: {
       stage: checkpoint.stage ?? 'contacts',
       contactsPage: checkpoint.contactsPage ?? 1,
+      quotesPage: checkpoint.quotesPage ?? 1,
       invoicesPage: checkpoint.invoicesPage ?? 1,
       paymentsPage: checkpoint.paymentsPage ?? 1,
       bankTransactionsPage: checkpoint.bankTransactionsPage ?? 1,
@@ -105,6 +110,7 @@ export function parseImportJobState(
       ? (summary.completedStages as XeroImportStage[])
       : [],
     contacts: parseCounts(summary?.contacts),
+    quotes: parseCounts(summary?.quotes),
     invoices: parseCounts(summary?.invoices),
     payments: parseCounts(summary?.payments),
     bankTransactions: parseCounts(summary?.bankTransactions),
@@ -159,6 +165,7 @@ export function buildImportJobProgress(
     completedStages: state.completedStages,
     checkpoint: state.checkpoint,
     contacts: state.contacts,
+    quotes: state.quotes,
     invoices: state.invoices,
     payments: state.payments,
     bankTransactions: state.bankTransactions,
@@ -185,6 +192,7 @@ export function buildImportSyncResult(
     message: buildXeroImportSyncMessage({
       success,
       contacts: state.contacts,
+      quotes: state.quotes,
       invoices: state.invoices,
       payments: state.payments,
       bankTransactions: state.bankTransactions,
@@ -193,6 +201,7 @@ export function buildImportSyncResult(
     }),
     syncedAt,
     contacts: state.contacts,
+    quotes: state.quotes,
     invoices: state.invoices,
     payments: state.payments,
     bankTransactions: state.bankTransactions,
@@ -285,6 +294,8 @@ export function getStageCounts(
   switch (stage) {
     case 'contacts':
       return state.contacts;
+    case 'quotes':
+      return state.quotes;
     case 'invoices':
       return state.invoices;
     case 'payments':
@@ -309,6 +320,7 @@ export function clearStaleStageFailuresOnResume(state: XeroImportJobState): void
 export function sumImportFailureCounts(state: XeroImportJobState): number {
   return (
     state.contacts.failedCount +
+    state.quotes.failedCount +
     state.invoices.failedCount +
     state.payments.failedCount +
     state.bankTransactions.failedCount
@@ -318,6 +330,7 @@ export function sumImportFailureCounts(state: XeroImportJobState): number {
 export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boolean {
   const processed =
     state.contacts.pulledCount +
+    state.quotes.pulledCount +
     state.invoices.pulledCount +
     state.payments.pulledCount +
     state.bankTransactions.pulledCount;
@@ -327,6 +340,7 @@ export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boole
     state.completedStages.length > 0 ||
     state.abandoned === true ||
     state.checkpoint.contactsPage > 1 ||
+    state.checkpoint.quotesPage > 1 ||
     state.checkpoint.invoicesPage > 1 ||
     state.checkpoint.paymentsPage > 1 ||
     state.checkpoint.bankTransactionsPage > 1 ||

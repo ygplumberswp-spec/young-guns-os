@@ -981,6 +981,13 @@
       "when": 1754355600000,
       "tag": "0143_procurement_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 140,
+      "version": "7",
+      "when": 1754236800000,
+      "tag": "0145_xero_finance_foundation_repair",
+      "breakpoints": true
     }
   ]
 }

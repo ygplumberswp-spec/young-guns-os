@@ -59,6 +59,11 @@ export const invoices = pgTable('invoices', {
   cancelReason: text('cancel_reason'),
   clientActionId: text('client_action_id'),
   issuedAt: timestamp('issued_at', { withTimezone: true }),
+  /** Import provenance — set on Xero pull; never invents financial values. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceSyncedAt: timestamp('source_synced_at', { withTimezone: true }),
+  sourceImportJobId: uuid('source_import_job_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -83,6 +88,8 @@ export const invoiceLineItems = pgTable('invoice_line_items', {
   lineSubtotalCents: integer('line_subtotal_cents').notNull().default(0),
   lineVatCents: integer('line_vat_cents').notNull().default(0),
   lineTotalCents: integer('line_total_cents').notNull().default(0),
+  accountCode: text('account_code'),
+  sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

@@ -129,9 +129,14 @@ export type ExecutiveOutstandingInvoices = {
   largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
 };
 
+export type ExecutiveXeroFinanceTrendPoint = {
+  month: string;
+  amountCents: number;
+};
+
 /**
  * Honest Xero finance feed status for the Owner dashboard.
- * Aggregates still come from TITAN invoices/payments after import — never invented.
+ * Aggregates come from real synced TITAN invoices/payments/quotes — never invented.
  */
 export type ExecutiveXeroFinance = {
   connected: boolean;
@@ -145,6 +150,21 @@ export type ExecutiveXeroFinance = {
   syncedCustomerCount: number;
   syncedInvoiceCount: number;
   syncedPaymentCount: number;
+  syncedQuoteCount: number;
+  syncedBankTransactionCount: number;
+  failedRecordCount: number;
+  /** Revenue from paid/partially paid synced invoices — 0 when none. */
+  revenueCents: number;
+  outstandingCents: number;
+  paidCents: number;
+  overdueCents: number;
+  unpaidInvoiceCount: number;
+  paidInvoiceCount: number;
+  overdueInvoiceCount: number;
+  quotePipelineCents: number;
+  quotePipelineCount: number;
+  monthlyTurnover: ExecutiveXeroFinanceTrendPoint[];
+  paymentTrends: ExecutiveXeroFinanceTrendPoint[];
   currency: string;
 };
 

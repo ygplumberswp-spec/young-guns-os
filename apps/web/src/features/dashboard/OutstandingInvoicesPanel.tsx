@@ -153,7 +153,7 @@ export function OutstandingInvoicesPanel({
       {xeroFinance ? (
         <p className="exec-outstanding__xero-meta" data-testid="xero-finance-meta">
           {xeroFinance.connected
-            ? `Xero${xeroFinance.organisationName ? ` · ${xeroFinance.organisationName}` : ''} · Last sync ${formatSyncLabel(xeroFinance.lastSyncAt)} · ${xeroFinance.syncedInvoiceCount} invoices / ${xeroFinance.syncedPaymentCount} payments synced`
+            ? `Xero${xeroFinance.organisationName ? ` · ${xeroFinance.organisationName}` : ''} · Last sync ${formatSyncLabel(xeroFinance.lastSyncAt)} · ${xeroFinance.syncedInvoiceCount} invoices / ${xeroFinance.syncedPaymentCount} payments / ${xeroFinance.syncedQuoteCount} quotes synced · Revenue ${((xeroFinance.revenueCents ?? 0) / 100).toLocaleString(undefined, { style: 'currency', currency: xeroFinance.currency })} · Quote pipeline ${xeroFinance.quotePipelineCount}`
             : 'Xero not connected — figures are TITAN finance records only'}
         </p>
       ) : null}

@@ -111,7 +111,13 @@ export const quotes = pgTable('quotes', {
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
   cancelReason: text('cancel_reason'),
   xeroQuoteId: text('xero_quote_id'),
+  xeroQuoteNumber: text('xero_quote_number'),
   clientActionId: text('client_action_id'),
+  /** Import provenance — set on Xero pull; never invents financial values. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceSyncedAt: timestamp('source_synced_at', { withTimezone: true }),
+  sourceImportJobId: uuid('source_import_job_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -137,6 +143,8 @@ export const quoteLineItems = pgTable('quote_line_items', {
   lineCostCents: integer('line_cost_cents').notNull().default(0),
   isOptional: boolean('is_optional').notNull().default(false),
   optionTier: text('option_tier'),
+  accountCode: text('account_code'),
+  sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -180,7 +180,7 @@ export function XeroSettingsPage() {
     <div className="integrations-page">
       <PageHeader
         title="Xero"
-        description="Connect your Xero organisation so TITAN can verify accounting access before future invoice and payment sync."
+        description="Connect your Xero organisation to import historical contacts, quotes, invoices, payments, and bank transactions into TITAN. Xero remains the accounting source of truth."
       />
       <IntegrationsNav />
       <p>

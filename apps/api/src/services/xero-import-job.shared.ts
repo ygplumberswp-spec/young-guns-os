@@ -10,6 +10,7 @@ export type XeroImportJobState = {
   checkpoint: XeroImportCheckpoint;
   completedStages: XeroImportStage[];
   contacts: XeroImportEntityCounts;
+  quotes: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
   bankTransactions: XeroImportEntityCounts;
@@ -51,29 +52,34 @@ export function summarizeCounts(counts: XeroImportEntityCounts): Record<string, 
 export function buildXeroImportSyncMessage(input: {
   success: boolean;
   contacts: XeroImportEntityCounts;
+  quotes?: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
   bankTransactions: XeroImportEntityCounts;
   failedStage?: XeroImportStage | null;
   stageError?: string | null;
 }): string {
+  const quotes = input.quotes ?? emptyImportCounts();
   const createdTotal =
     input.contacts.createdCount +
+    quotes.createdCount +
     input.invoices.createdCount +
     input.payments.createdCount +
     input.bankTransactions.createdCount;
   const updatedTotal =
     input.contacts.updatedCount +
+    quotes.updatedCount +
     input.invoices.updatedCount +
     input.payments.updatedCount +
     input.bankTransactions.updatedCount;
   const failedTotal =
     input.contacts.failedCount +
+    quotes.failedCount +
     input.invoices.failedCount +
     input.payments.failedCount +
     input.bankTransactions.failedCount;
 
-  const summary = `Contacts ${input.contacts.createdCount} new / ${input.contacts.updatedCount} updated, invoices ${input.invoices.createdCount} new / ${input.invoices.updatedCount} updated, payments ${input.payments.createdCount} new / ${input.payments.updatedCount} updated, bank transactions ${input.bankTransactions.createdCount} new / ${input.bankTransactions.updatedCount} updated`;
+  const summary = `Contacts ${input.contacts.createdCount} new / ${input.contacts.updatedCount} updated, quotes ${quotes.createdCount} new / ${quotes.updatedCount} updated, invoices ${input.invoices.createdCount} new / ${input.invoices.updatedCount} updated, payments ${input.payments.createdCount} new / ${input.payments.updatedCount} updated, bank transactions ${input.bankTransactions.createdCount} new / ${input.bankTransactions.updatedCount} updated`;
 
   if (input.success) {
     return `Xero sync complete. ${summary}.`;

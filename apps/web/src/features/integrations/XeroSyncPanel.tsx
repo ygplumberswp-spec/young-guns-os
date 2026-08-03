@@ -52,6 +52,7 @@ function formatEntityStats(stats: {
 
 const IMPORT_STAGE_LABELS = {
   contacts: 'Contacts',
+  quotes: 'Quotes',
   invoices: 'Invoices',
   payments: 'Payments',
   bank_transactions: 'Bank transactions',
@@ -60,10 +61,11 @@ const IMPORT_STAGE_LABELS = {
 function formatImportJobProgress(job: XeroImportJobProgress): string {
   const stageLabel = job.currentStage ? IMPORT_STAGE_LABELS[job.currentStage] : 'Starting';
   const contacts = `${job.contacts.createdCount} new / ${job.contacts.updatedCount} updated`;
+  const quotes = `${job.quotes.createdCount} new / ${job.quotes.updatedCount} updated`;
   const invoices = `${job.invoices.createdCount} new / ${job.invoices.updatedCount} updated`;
   const payments = `${job.payments.createdCount} new / ${job.payments.updatedCount} updated`;
   const bank = `${job.bankTransactions.createdCount} new / ${job.bankTransactions.updatedCount} updated`;
-  return `${stageLabel} — Contacts ${contacts}, Invoices ${invoices}, Payments ${payments}, Bank ${bank}`;
+  return `${stageLabel} — Contacts ${contacts}, Quotes ${quotes}, Invoices ${invoices}, Payments ${payments}, Bank ${bank}`;
 }
 
 async function pollXeroImportUntilSettled(
@@ -139,8 +141,10 @@ function buildHonestStatusMessage(args: {
 
   const failedTotal =
     (status?.customers.failedCount ?? 0) +
+    (status?.quotes.failedCount ?? 0) +
     (status?.invoices.failedCount ?? 0) +
     (status?.payments.failedCount ?? 0) +
+    (status?.financePipeline?.failedCount ?? 0) +
     bankFailed;
 
   if (failedTotal > 0) {
@@ -205,7 +209,12 @@ export function XeroSyncPanel({
     setAutoSyncStatus(autoSync);
     setImportProgress(syncStatus.importJob ?? null);
     setRecentLogMessage(logs[0]?.message ?? null);
-    setBankTransactionStats(countBankTransactionLogs(logs));
+    const fromStatus = syncStatus.bankTransactions?.syncedCount ?? 0;
+    const fromLogs = countBankTransactionLogs(logs);
+    setBankTransactionStats({
+      synced: Math.max(fromStatus, fromLogs.synced),
+      failed: Math.max(syncStatus.bankTransactions?.failedCount ?? 0, fromLogs.failed),
+    });
   }, [accessToken]);
 
   useEffect(() => {
@@ -296,8 +305,12 @@ export function XeroSyncPanel({
         }
       } else if (result.xeroSync?.success) {
         const sync = result.xeroSync;
+        const quotes = sync.quotes ?? {
+          createdCount: 0,
+          updatedCount: 0,
+        };
         setSuccess(
-          `${sync.message} Contacts ${sync.contacts.createdCount} new / ${sync.contacts.updatedCount} updated · Invoices ${sync.invoices.createdCount} new / ${sync.invoices.updatedCount} updated · Payments ${sync.payments.createdCount} new / ${sync.payments.updatedCount} updated · Bank transactions ${sync.bankTransactions.createdCount} new / ${sync.bankTransactions.updatedCount} updated.`,
+          `${sync.message} Contacts ${sync.contacts.createdCount} new / ${sync.contacts.updatedCount} updated · Quotes ${quotes.createdCount} new / ${quotes.updatedCount} updated · Invoices ${sync.invoices.createdCount} new / ${sync.invoices.updatedCount} updated · Payments ${sync.payments.createdCount} new / ${sync.payments.updatedCount} updated · Bank transactions ${sync.bankTransactions.createdCount} new / ${sync.bankTransactions.updatedCount} updated.`,
         );
       } else if (result.xeroSync) {
         const stage = result.xeroSync.failedStage
@@ -391,8 +404,9 @@ export function XeroSyncPanel({
 
       <Panel title="Recovery Controls (Manual Sync)">
         <p className="page-muted">
-          Pull contacts, invoices, payments, and bank transactions from Xero into TITAN. These actions
-          are read-only — nothing is written back to your Xero ledger.
+          Pull contacts, quotes, invoices, payments, and bank transactions from Xero into TITAN.
+          These actions are read-only — nothing is written back to your Xero ledger. Bank rows are
+          stored for history only (no automatic accounting changes).
         </p>
 
         {canManage && !isConnected ? (
@@ -427,6 +441,26 @@ export function XeroSyncPanel({
         {status ? (
           <>
             <dl className="integration-status-list">
+              <div>
+                <dt>Last successful sync</dt>
+                <dd>
+                  {status.lastSyncAt
+                    ? new Date(status.lastSyncAt).toLocaleString()
+                    : 'No successful sync yet'}
+                </dd>
+              </div>
+              <div>
+                <dt>Pipeline status</dt>
+                <dd>{status.financePipeline?.status ?? status.importJob?.uiStatusLabel ?? 'Idle'}</dd>
+              </div>
+              <div>
+                <dt>Failed records</dt>
+                <dd>{status.financePipeline?.failedCount ?? 0}</dd>
+              </div>
+              <div>
+                <dt>Quotes synced</dt>
+                <dd>{status.quotes.syncedCount}</dd>
+              </div>
               <div>
                 <dt>Outstanding invoices</dt>
                 <dd>{status.unpaidInvoiceCount}</dd>
@@ -503,6 +537,7 @@ export function XeroSyncPanel({
           statusMessage={statusMessage}
           counts={{
             contacts: status?.customers.syncedCount ?? 0,
+            quotes: status?.quotes.syncedCount ?? 0,
             invoices: status?.invoices.syncedCount ?? 0,
             payments: status?.payments.syncedCount ?? 0,
             bankTransactions: bankCount,

@@ -27,12 +27,12 @@ test('isStageComplete detects partial and final contact pages', () => {
   assert.equal(isStageComplete('contacts', checkpoint, 0), true);
 });
 
-test('advanceToNextStage marks contacts complete and moves to invoices', () => {
+test('advanceToNextStage marks contacts complete and moves to quotes', () => {
   const state = createInitialImportJobState();
   const hasNext = advanceToNextStage(state);
   assert.equal(hasNext, true);
   assert.deepEqual(state.completedStages, ['contacts']);
-  assert.equal(state.checkpoint.stage, 'invoices');
+  assert.equal(state.checkpoint.stage, 'quotes');
 });
 
 test('advanceToNextStage completes final bank_transactions stage', () => {
@@ -40,6 +40,7 @@ test('advanceToNextStage completes final bank_transactions stage', () => {
     checkpoint: {
       stage: 'bank_transactions',
       contactsPage: 2,
+      quotesPage: 1,
       invoicesPage: 1,
       paymentsPage: 1,
       bankTransactionsPage: 1,
@@ -80,13 +81,15 @@ test('clearStaleStageFailuresOnResume drops failures from completed earlier stag
     checkpoint: {
       stage: 'bank_transactions',
       contactsPage: 8,
+      quotesPage: 2,
       invoicesPage: 7,
       paymentsPage: 7,
       bankTransactionsPage: 34,
     },
   });
-  state.completedStages = ['contacts', 'invoices', 'payments', 'bank_transactions'];
+  state.completedStages = ['contacts', 'quotes', 'invoices', 'payments', 'bank_transactions'];
   state.contacts.failedCount = 673;
+  state.quotes.failedCount = 2;
   state.invoices.failedCount = 585;
   state.bankTransactions.createdCount = 3062;
   state.bankTransactions.updatedCount = 16;
@@ -95,6 +98,7 @@ test('clearStaleStageFailuresOnResume drops failures from completed earlier stag
   clearStaleStageFailuresOnResume(state);
 
   assert.equal(state.contacts.failedCount, 0);
+  assert.equal(state.quotes.failedCount, 0);
   assert.equal(state.invoices.failedCount, 0);
   assert.equal(state.payments.failedCount, 0);
   assert.equal(sumImportFailureCounts(state), 0);

@@ -23,13 +23,19 @@ export type XeroImportEntityCounts = {
   skippedCount: number;
 };
 
-export type XeroImportStage = 'contacts' | 'invoices' | 'payments' | 'bank_transactions';
+export type XeroImportStage =
+  | 'contacts'
+  | 'quotes'
+  | 'invoices'
+  | 'payments'
+  | 'bank_transactions';
 
 export type XeroImportSyncResult = {
   success: boolean;
   message: string;
   syncedAt: string | null;
   contacts: XeroImportEntityCounts;
+  quotes: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
   bankTransactions: XeroImportEntityCounts;
@@ -74,6 +80,7 @@ export const XERO_IMPORT_UI_STATUS_LABELS: Record<XeroImportJobDisplayStatus, st
 export type XeroImportCheckpoint = {
   stage: XeroImportStage;
   contactsPage: number;
+  quotesPage: number;
   invoicesPage: number;
   paymentsPage: number;
   bankTransactionsPage: number;
@@ -88,6 +95,7 @@ export type XeroImportJobProgress = {
   completedStages: XeroImportStage[];
   checkpoint: XeroImportCheckpoint;
   contacts: XeroImportEntityCounts;
+  quotes: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
   bankTransactions: XeroImportEntityCounts;
@@ -147,12 +155,14 @@ export function deriveXeroImportJobUiStatus(input: {
 
 export function sumXeroImportProcessedCounts(input: {
   contacts: XeroImportEntityCounts;
+  quotes?: XeroImportEntityCounts;
   invoices: XeroImportEntityCounts;
   payments: XeroImportEntityCounts;
   bankTransactions: XeroImportEntityCounts;
 }): number {
   return (
     input.contacts.pulledCount +
+    (input.quotes?.pulledCount ?? 0) +
     input.invoices.pulledCount +
     input.payments.pulledCount +
     input.bankTransactions.pulledCount
@@ -163,6 +173,20 @@ export type XeroEnqueueImportResult = {
   jobId: string;
   status: 'queued' | 'running';
   message: string;
+};
+
+export type XeroFinancePipelineSummary = {
+  lastSyncAt: string | null;
+  lastError: string | null;
+  status: string | null;
+  contactsImported: number;
+  quotesImported: number;
+  invoicesImported: number;
+  paymentsImported: number;
+  bankTransactionsImported: number;
+  failedCount: number;
+  /** True when a future scheduled job can attach to this pipeline. */
+  scheduledJobsReady: boolean;
 };
 
 export type XeroSyncStatusResponse = {
@@ -176,11 +200,13 @@ export type XeroSyncStatusResponse = {
   quotes: XeroEntitySyncStats;
   invoices: XeroEntitySyncStats;
   payments: XeroEntitySyncStats;
+  bankTransactions?: XeroEntitySyncStats;
   outstandingAmountCents: number;
   unpaidInvoiceCount: number;
   customersWithOutstandingCount: number;
   currency: string;
   importJob?: XeroImportJobProgress | null;
+  financePipeline?: XeroFinancePipelineSummary | null;
 };
 
 export type XeroEntitySyncResult = {

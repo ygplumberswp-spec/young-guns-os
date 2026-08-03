@@ -73,6 +73,7 @@ export * from './portal.js';
 export * from './role-experience.js';
 export * from './nav-labels.js';
 export * from './xero-sync.js';
+export * from './xero-finance-pipeline.js';
 export * from './xero-two-way-sync.js';
 export * from './vehicle-registration.js';
 export * from './whatsapp.js';

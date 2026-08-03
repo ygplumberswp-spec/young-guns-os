@@ -19,6 +19,7 @@ export type XeroContactRecord = {
   contactId: string;
   name: string;
   email: string | null;
+  phone: string | null;
   raw: Record<string, unknown>;
 };
 
@@ -26,6 +27,15 @@ export type XeroQuoteRecord = {
   quoteId: string;
   quoteNumber: string | null;
   status: string | null;
+  contactId: string | null;
+  contactName: string | null;
+  subtotal: number;
+  totalTax: number;
+  total: number;
+  currencyCode: string | null;
+  issueDate: string | null;
+  expiryDate: string | null;
+  title: string | null;
   raw: Record<string, unknown>;
 };
 
@@ -43,6 +53,7 @@ export type XeroInvoiceRecord = {
   currencyCode: string | null;
   issueDate: string | null;
   dueDate: string | null;
+  reference: string | null;
   raw: Record<string, unknown>;
 };
 
@@ -53,6 +64,12 @@ export type XeroBankTransactionRecord = {
   date: string | null;
   reference: string | null;
   description: string | null;
+  type: string | null;
+  status: string | null;
+  bankAccountCode: string | null;
+  contactId: string | null;
+  contactName: string | null;
+  isReconciled: boolean;
   raw: Record<string, unknown>;
 };
 
@@ -62,6 +79,8 @@ export type XeroPaymentRecord = {
   amount: number;
   currencyCode: string | null;
   date: string | null;
+  reference: string | null;
+  status: string | null;
   raw: Record<string, unknown>;
 };
 
@@ -370,6 +389,34 @@ export class XeroClient {
     return extractContacts(payload);
   }
 
+  async listQuotesPage(page: number): Promise<XeroQuoteRecord[]> {
+    const payload = await this.apiRequest('GET', `/Quotes?page=${page}`);
+    return extractQuotes(payload);
+  }
+
+  async listQuotes(): Promise<XeroQuoteRecord[]> {
+    const quotes: XeroQuoteRecord[] = [];
+    let page = 1;
+
+    while (page <= 50) {
+      const batch = await this.listQuotesPage(page);
+
+      if (batch.length === 0) {
+        break;
+      }
+
+      quotes.push(...batch);
+
+      if (batch.length < XERO_PAGE_SIZE) {
+        break;
+      }
+
+      page += 1;
+    }
+
+    return quotes;
+  }
+
   async listInvoices(): Promise<XeroInvoiceRecord[]> {
     const invoices: XeroInvoiceRecord[] = [];
     let page = 1;
@@ -628,10 +675,22 @@ function extractContacts(payload: unknown): XeroContactRecord[] {
         contactId,
         name,
         email: pickString(contact, ['EmailAddress', 'emailAddress']),
+        phone: extractContactPhone(contact),
         raw: contact,
       } satisfies XeroContactRecord;
     })
     .filter((row): row is XeroContactRecord => row !== null);
+}
+
+function extractContactPhone(contact: Record<string, unknown>): string | null {
+  const phones = Array.isArray(contact.Phones) ? contact.Phones : [];
+  for (const phone of phones) {
+    if (!phone || typeof phone !== 'object') continue;
+    const row = phone as Record<string, unknown>;
+    const number = pickString(row, ['PhoneNumber', 'phoneNumber']);
+    if (number) return number;
+  }
+  return null;
 }
 
 function extractQuotes(payload: unknown): XeroQuoteRecord[] {
@@ -655,10 +714,24 @@ function extractQuotes(payload: unknown): XeroQuoteRecord[] {
         return null;
       }
 
+      const contact =
+        quote.Contact && typeof quote.Contact === 'object'
+          ? (quote.Contact as Record<string, unknown>)
+          : null;
+
       return {
         quoteId,
         quoteNumber: pickString(quote, ['QuoteNumber', 'quoteNumber']),
         status: pickString(quote, ['Status', 'status']),
+        contactId: contact ? pickString(contact, ['ContactID', 'contactID', 'contactId']) : null,
+        contactName: contact ? pickString(contact, ['Name', 'name']) : null,
+        subtotal: pickNumber(quote, ['SubTotal', 'subTotal', 'subtotal']) ?? 0,
+        totalTax: pickNumber(quote, ['TotalTax', 'totalTax']) ?? 0,
+        total: pickNumber(quote, ['Total', 'total']) ?? 0,
+        currencyCode: pickString(quote, ['CurrencyCode', 'currencyCode']),
+        issueDate: pickString(quote, ['Date', 'date']),
+        expiryDate: pickString(quote, ['ExpiryDate', 'expiryDate']),
+        title: pickString(quote, ['Title', 'title']),
         raw: quote,
       } satisfies XeroQuoteRecord;
     })
@@ -705,6 +778,7 @@ function extractInvoices(payload: unknown): XeroInvoiceRecord[] {
         currencyCode: pickString(invoice, ['CurrencyCode', 'currencyCode']),
         issueDate: pickString(invoice, ['Date', 'date']),
         dueDate: pickString(invoice, ['DueDate', 'dueDate']),
+        reference: pickString(invoice, ['Reference', 'reference']),
         raw: invoice,
       } satisfies XeroInvoiceRecord;
     })
@@ -736,13 +810,35 @@ function extractBankTransactions(payload: unknown): XeroBankTransactionRecord[] 
         return null;
       }
 
+      const contact =
+        transaction.Contact && typeof transaction.Contact === 'object'
+          ? (transaction.Contact as Record<string, unknown>)
+          : null;
+      const bankAccount =
+        transaction.BankAccount && typeof transaction.BankAccount === 'object'
+          ? (transaction.BankAccount as Record<string, unknown>)
+          : null;
+      const lineItems = Array.isArray(transaction.LineItems) ? transaction.LineItems : [];
+      const firstLine =
+        lineItems[0] && typeof lineItems[0] === 'object'
+          ? (lineItems[0] as Record<string, unknown>)
+          : null;
+
       return {
         bankTransactionId,
         amount: pickNumber(transaction, ['Total', 'total']) ?? 0,
         currencyCode: pickString(transaction, ['CurrencyCode', 'currencyCode']),
         date: pickString(transaction, ['Date', 'date']),
         reference: pickString(transaction, ['Reference', 'reference']),
-        description: pickString(transaction, ['Reference', 'reference']),
+        description:
+          pickString(transaction, ['Reference', 'reference']) ??
+          (firstLine ? pickString(firstLine, ['Description', 'description']) : null),
+        type: pickString(transaction, ['Type', 'type']),
+        status: pickString(transaction, ['Status', 'status']),
+        bankAccountCode: bankAccount ? pickString(bankAccount, ['Code', 'code']) : null,
+        contactId: contact ? pickString(contact, ['ContactID', 'contactID', 'contactId']) : null,
+        contactName: contact ? pickString(contact, ['Name', 'name']) : null,
+        isReconciled: transaction.IsReconciled === true,
         raw: transaction,
       } satisfies XeroBankTransactionRecord;
     })
@@ -781,6 +877,8 @@ function extractPayments(payload: unknown): XeroPaymentRecord[] {
         amount: pickNumber(payment, ['Amount', 'amount']) ?? 0,
         currencyCode: pickString(payment, ['CurrencyCode', 'currencyCode']),
         date: pickString(payment, ['Date', 'date']),
+        reference: pickString(payment, ['Reference', 'reference']),
+        status: pickString(payment, ['Status', 'status']),
         raw: payment,
       } satisfies XeroPaymentRecord;
     })

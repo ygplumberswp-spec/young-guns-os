@@ -2,6 +2,7 @@ import { Button } from '@titan/ui';
 
 export type XeroEntityCountSummary = {
   contacts: number;
+  quotes: number;
   invoices: number;
   payments: number;
   bankTransactions: number;
@@ -97,6 +98,8 @@ export function XeroConnectionStatusCard({
 
       <p className="xero-status-card__counts">
         Contacts: {counts.contacts.toLocaleString()}
+        <span aria-hidden="true"> | </span>
+        Quotes: {counts.quotes.toLocaleString()}
         <span aria-hidden="true"> | </span>
         Invoices: {counts.invoices.toLocaleString()}
         <span aria-hidden="true"> | </span>

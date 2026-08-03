@@ -7,6 +7,7 @@ import type {
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
 } from '@titan/shared';
+import { buildFinanceDashboardSnapshot } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   communications,
@@ -15,7 +16,11 @@ import {
   leads,
   mobileTimeEntries,
   payments,
+  quotes,
   users,
+  xeroInvoiceMappings,
+  xeroPaymentMappings,
+  xeroQuoteMappings,
 } from '@titan/db';
 import type { CompanyDayPlanService } from './company-day-plan.service.js';
 import type { FinanceService } from './finance.service.js';
@@ -373,6 +378,20 @@ export class DashboardExecutiveService {
       syncedCustomerCount: 0,
       syncedInvoiceCount: 0,
       syncedPaymentCount: 0,
+      syncedQuoteCount: 0,
+      syncedBankTransactionCount: 0,
+      failedRecordCount: 0,
+      revenueCents: 0,
+      outstandingCents: 0,
+      paidCents: 0,
+      overdueCents: 0,
+      unpaidInvoiceCount: 0,
+      paidInvoiceCount: 0,
+      overdueInvoiceCount: 0,
+      quotePipelineCents: 0,
+      quotePipelineCount: 0,
+      monthlyTurnover: [],
+      paymentTrends: [],
       currency: 'USD',
     };
 
@@ -382,6 +401,15 @@ export class DashboardExecutiveService {
 
     try {
       const status = await this.deps.xeroSyncService.getSyncStatus(companyId);
+      const snapshot = await this.loadSyncedFinanceSnapshot(companyId);
+      const failedRecordCount =
+        status.customers.failedCount +
+        status.quotes.failedCount +
+        status.invoices.failedCount +
+        status.payments.failedCount +
+        (status.bankTransactions?.failedCount ?? 0) +
+        (status.financePipeline?.failedCount ?? 0);
+
       return {
         connected: status.connected,
         organisationName: status.organisationName,
@@ -392,11 +420,87 @@ export class DashboardExecutiveService {
         syncedCustomerCount: status.customers.syncedCount,
         syncedInvoiceCount: status.invoices.syncedCount,
         syncedPaymentCount: status.payments.syncedCount,
+        syncedQuoteCount: status.quotes.syncedCount,
+        syncedBankTransactionCount: status.bankTransactions?.syncedCount ?? 0,
+        failedRecordCount,
+        revenueCents: snapshot.revenueCents,
+        outstandingCents: snapshot.outstandingCents,
+        paidCents: snapshot.paidCents,
+        overdueCents: snapshot.overdueCents,
+        unpaidInvoiceCount: snapshot.unpaidInvoiceCount,
+        paidInvoiceCount: snapshot.paidInvoiceCount,
+        overdueInvoiceCount: snapshot.overdueInvoiceCount,
+        quotePipelineCents: snapshot.quotePipelineCents,
+        quotePipelineCount: snapshot.quotePipelineCount,
+        monthlyTurnover: snapshot.monthlyTurnover,
+        paymentTrends: snapshot.paymentTrends,
         currency: status.currency,
       };
     } catch {
       return empty;
     }
+  }
+
+  /** Real synced TITAN rows only (Xero-mapped) — never invents values. */
+  private async loadSyncedFinanceSnapshot(companyId: string) {
+    const [invoiceRows, paymentRows, quoteRows] = await Promise.all([
+      this.deps.db
+        .select({
+          status: invoices.status,
+          totalCents: invoices.totalCents,
+          amountCents: invoices.amountCents,
+          amountPaidCents: invoices.amountPaidCents,
+          dueDate: invoices.dueDate,
+          issuedAt: invoices.issuedAt,
+        })
+        .from(invoices)
+        .innerJoin(
+          xeroInvoiceMappings,
+          and(
+            eq(xeroInvoiceMappings.invoiceId, invoices.id),
+            eq(xeroInvoiceMappings.companyId, companyId),
+            eq(xeroInvoiceMappings.syncStatus, 'synced'),
+          ),
+        )
+        .where(eq(invoices.companyId, companyId)),
+      this.deps.db
+        .select({
+          amountCents: payments.amountCents,
+          paidAt: payments.paidAt,
+        })
+        .from(payments)
+        .innerJoin(
+          xeroPaymentMappings,
+          and(
+            eq(xeroPaymentMappings.paymentId, payments.id),
+            eq(xeroPaymentMappings.companyId, companyId),
+            eq(xeroPaymentMappings.syncStatus, 'synced'),
+          ),
+        )
+        .where(eq(payments.companyId, companyId)),
+      this.deps.db
+        .select({
+          status: quotes.status,
+          totalCents: quotes.totalCents,
+          amountCents: quotes.amountCents,
+        })
+        .from(quotes)
+        .innerJoin(
+          xeroQuoteMappings,
+          and(
+            eq(xeroQuoteMappings.quoteId, quotes.id),
+            eq(xeroQuoteMappings.companyId, companyId),
+            eq(xeroQuoteMappings.syncStatus, 'synced'),
+          ),
+        )
+        .where(eq(quotes.companyId, companyId)),
+    ]);
+
+    return buildFinanceDashboardSnapshot({
+      invoices: invoiceRows,
+      payments: paymentRows,
+      quotes: quoteRows,
+    });
   }
 
   private buildLiveOperations(

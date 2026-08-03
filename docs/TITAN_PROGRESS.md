@@ -79,6 +79,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 | Module | Status |
 |--------|--------|
+| Xero Finance Foundation Repair (historical sync & pipeline) | 🟢 Completed |
 | Finance Intelligence Agent | 🟢 Completed |
 | Cashflow intelligence | 🟢 Complete |
 | Profit forecasting | ⬜ Remaining |
@@ -154,6 +155,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 ## Notes
 
+- Xero Finance Foundation Repair (Department 4.0, migration `0145`) — extends existing Xero OAuth + sync foundation: historical invoice/quote/payment/contact import with provenance + line-item account codes, durable bank-transaction import (read-only, no automatic accounting), contact match by Xero ID/email/phone (duplicate prevention), finance sync-run pipeline for Owner Sync now / last sync / counts / failures (scheduled-job ready), Owner dashboard `xeroFinance` connected to real Xero-mapped TITAN totals (revenue/outstanding/paid/overdue/quote pipeline/monthly turnover/payment trends — zero when empty). Does not rebuild Xero integration; does not overwrite Xero; does not touch Yoco `0123` or Finance AURA `0139`.
 - Inventory Intelligence Foundation (`inventory-intelligence`, migration `0142`) — extends existing inventory/procurement/job-material modules: stock & warehouse visibility from real records, material usage + movement history, shortage/reorder alert drafts (Owner approval; never auto-PO/auto-reorder), AURA insight handoffs, Owner-gated settings. No fake stock; honest unavailable states. Suppliers/POs remain under procurement; operational CRUD stays under `/inventory`.
 - Supplier & Procurement Intelligence (Department 5.2, migration `0143`) — extends existing procurement/suppliers/supplier-price modules (+ Inventory Intelligence when present): real supplier profiles, purchase history, pricing records, cost comparisons from real pricing, Owner-gated purchase recommendation drafts (optional draft PO only — never auto-purchase / never auto-order). No fake suppliers/POs/prices; honest empty states. Owner approval for recommend-accept / PO execute.
 - Recurring Maintenance Engine committed (`a11160e`) — marked **🟢 Completed**.
