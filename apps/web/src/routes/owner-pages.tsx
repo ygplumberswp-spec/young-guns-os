@@ -630,3 +630,8 @@ export const DataProtectionSettingsPage = lazyNamed(
   () => import('../pages/settings/DataProtectionSettingsPage'),
   'DataProtectionSettingsPage',
 );
+
+export const StockForecastingPage = lazyNamed(
+  () => import('../pages/stock-forecasting/StockForecastingPage'),
+  'StockForecastingPage',
+);

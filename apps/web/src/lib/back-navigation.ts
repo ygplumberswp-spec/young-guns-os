@@ -121,6 +121,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/finance-reporting-forecast',
   '/finance-cashflow-profit',
   '/procurement-intelligence',
+  '/stock-forecasting',
   '/social-media-integrations',
   '/finance/quotes',
   '/finance/invoices',

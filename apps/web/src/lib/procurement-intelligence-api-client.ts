@@ -9,12 +9,12 @@ import type {
   RefreshPiRecommendationsRequest,
   UpdatePiSettingsRequest,
 } from '@titan/shared';
-import { apiRequest, ApiClientError } from './api-client';
+import { request, ApiClientError } from './api-client';
 
 export { ApiClientError as ProcurementIntelligenceApiClientError };
 
 export async function fetchPiDashboard(accessToken: string): Promise<PiDashboard> {
-  const res = await apiRequest<{ dashboard: PiDashboard }>(
+  const res = await request<{ dashboard: PiDashboard }>(
     '/procurement-intelligence/dashboard',
     { method: 'GET', accessToken },
   );
@@ -25,7 +25,7 @@ export async function refreshPiRecommendations(
   accessToken: string,
   body: RefreshPiRecommendationsRequest = {},
 ): Promise<{ created: number; recommendations: PiPurchaseRecommendationSummary[] }> {
-  return apiRequest('/procurement-intelligence/recommendations/refresh', {
+  return request('/procurement-intelligence/recommendations/refresh', {
     method: 'POST',
     accessToken,
     body,
@@ -37,7 +37,7 @@ export async function decidePiRecommendation(
   recommendationId: string,
   body: DecidePiRecommendationRequest,
 ): Promise<PiPurchaseRecommendationSummary> {
-  const res = await apiRequest<{ recommendation: PiPurchaseRecommendationSummary }>(
+  const res = await request<{ recommendation: PiPurchaseRecommendationSummary }>(
     `/procurement-intelligence/recommendations/${recommendationId}/decide`,
     { method: 'POST', accessToken, body },
   );
@@ -48,7 +48,7 @@ export async function refreshPiCostComparisons(
   accessToken: string,
   body: RefreshPiCostComparisonsRequest = {},
 ) {
-  return apiRequest('/procurement-intelligence/cost-comparisons/refresh', {
+  return request('/procurement-intelligence/cost-comparisons/refresh', {
     method: 'POST',
     accessToken,
     body,
@@ -59,7 +59,7 @@ export async function updatePiSettings(
   accessToken: string,
   body: UpdatePiSettingsRequest,
 ): Promise<PiSettings> {
-  const res = await apiRequest<{ settings: PiSettings }>(
+  const res = await request<{ settings: PiSettings }>(
     '/procurement-intelligence/settings',
     { method: 'PATCH', accessToken, body },
   );
@@ -70,7 +70,7 @@ export async function createPiAuraInsight(
   accessToken: string,
   body: CreatePiAuraInsightRequest,
 ) {
-  return apiRequest('/procurement-intelligence/aura-insights', {
+  return request('/procurement-intelligence/aura-insights', {
     method: 'POST',
     accessToken,
     body,
@@ -82,7 +82,7 @@ export async function acknowledgePiInsight(
   insightId: string,
   body: AcknowledgePiInsightRequest,
 ) {
-  return apiRequest(`/procurement-intelligence/aura-insights/${insightId}/acknowledge`, {
+  return request(`/procurement-intelligence/aura-insights/${insightId}/acknowledge`, {
     method: 'POST',
     accessToken,
     body,

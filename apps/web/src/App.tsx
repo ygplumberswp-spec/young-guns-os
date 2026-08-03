@@ -493,6 +493,10 @@ export function App() {
                           path="/procurement-intelligence"
                           component={OwnerPages.ProcurementIntelligencePage}
                         />
+                          <Route
+                          path="/stock-forecasting"
+                          component={OwnerPages.StockForecastingPage}
+                        />
                         <Route
                           path="/social-media-integrations"
                           component={OwnerPages.SocialMediaIntegrationsPage}

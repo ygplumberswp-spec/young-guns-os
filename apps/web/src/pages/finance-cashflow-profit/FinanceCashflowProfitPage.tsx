@@ -213,7 +213,7 @@ export function FinanceCashflowProfitPage() {
       <div className="page-stack">
         <PageHeader
           title="Cashflow & Profit Intelligence"
-          subtitle="Owner / finance access only"
+          description="Owner / finance access only"
         />
         <EmptyState
           title="Access denied"
@@ -230,7 +230,7 @@ export function FinanceCashflowProfitPage() {
     <div className="page-stack" style={{ gap: '1.25rem' }}>
       <PageHeader
         title="Cashflow & Profit Intelligence"
-        subtitle="Real TITAN invoices, payments, jobs, and costs — never invented"
+        description="Real TITAN invoices, payments, jobs, and costs — never invented"
       />
 
       <div
@@ -266,25 +266,25 @@ export function FinanceCashflowProfitPage() {
       </div>
 
       {error ? (
-        <Panel>
+        <Panel title="Status">
           <p style={{ color: 'var(--titan-danger, #f87171)', margin: 0 }}>{error}</p>
         </Panel>
       ) : null}
       {success ? (
-        <Panel>
+        <Panel title="Status">
           <p style={{ color: 'var(--titan-cyan, #22d3ee)', margin: 0 }}>{success}</p>
         </Panel>
       ) : null}
 
       {isLoading || !dashboard ? (
-        <Panel>
+        <Panel title="Status">
           <p style={{ margin: 0, color: 'var(--titan-muted, #94a3b8)' }}>Loading real finance signals…</p>
         </Panel>
       ) : (
         <>
           {tab === 'dashboard' ? (
             <>
-              <Panel>
+              <Panel title="Status">
                 <p style={{ margin: '0 0 0.75rem', color: 'var(--titan-muted, #94a3b8)' }}>
                   {dashboard.summary}
                 </p>
@@ -330,7 +330,7 @@ export function FinanceCashflowProfitPage() {
                 <StatCard label="Pending approvals" value={String(dashboard.pendingApprovals)} />
               </div>
               {cashflow?.warnings?.length ? (
-                <Panel>
+                <Panel title="Status">
                   <h3 style={{ marginTop: 0 }}>Financial warnings</h3>
                   <ul>
                     {cashflow.warnings.map((w) => (
@@ -340,7 +340,7 @@ export function FinanceCashflowProfitPage() {
                 </Panel>
               ) : null}
               {(cashflow?.gaps?.length || profit?.gaps?.length) ? (
-                <Panel>
+                <Panel title="Status">
                   <h3 style={{ marginTop: 0 }}>Honest data gaps</h3>
                   <ul>
                     {[...(cashflow?.gaps ?? []), ...(profit?.gaps ?? [])].map((g) => (
@@ -353,7 +353,7 @@ export function FinanceCashflowProfitPage() {
           ) : null}
 
           {tab === 'cashflow' && cashflow ? (
-            <Panel>
+            <Panel title="Status">
               <h3 style={{ marginTop: 0 }}>Cashflow intelligence</h3>
               <p style={{ color: 'var(--titan-muted, #94a3b8)' }}>{cashflow.summary}</p>
               <p>
@@ -401,7 +401,7 @@ export function FinanceCashflowProfitPage() {
           ) : null}
 
           {tab === 'profit' && profit ? (
-            <Panel>
+            <Panel title="Status">
               <h3 style={{ marginTop: 0 }}>Profit intelligence</h3>
               <p style={{ color: 'var(--titan-muted, #94a3b8)' }}>{profit.summary}</p>
               <p>
@@ -458,7 +458,7 @@ export function FinanceCashflowProfitPage() {
           ) : null}
 
           {tab === 'insights' ? (
-            <Panel>
+            <Panel title="Status">
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0, flex: 1 }}>AURA insights</h3>
                 {canManage ? (
@@ -513,7 +513,7 @@ export function FinanceCashflowProfitPage() {
           ) : null}
 
           {tab === 'actions' ? (
-            <Panel>
+            <Panel title="Status">
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
                 <h3 style={{ margin: 0, flex: 1 }}>Recommended actions</h3>
                 {canManage ? (
@@ -590,7 +590,7 @@ export function FinanceCashflowProfitPage() {
           ) : null}
 
           {tab === 'aura' ? (
-            <Panel>
+            <Panel title="Status">
               <h3 style={{ marginTop: 0 }}>Connections</h3>
               <ul>
                 {dashboard.auraConnections.map((c) => (

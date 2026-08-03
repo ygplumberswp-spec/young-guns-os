@@ -262,6 +262,7 @@ import { InventoryIntelligenceService } from './services/inventory-intelligence.
 import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
+import { StockForecastingService } from './services/stock-forecasting.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -299,6 +300,7 @@ import { createInventoryIntelligenceRouter } from './routes/inventory-intelligen
 import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
+import { createStockForecastingRouter } from './routes/stock-forecasting.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -862,9 +864,12 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
 );
 const contentReputationIntelligenceService = new ContentReputationIntelligenceService(db);
 const inventoryIntelligenceService = new InventoryIntelligenceService(db);
+const stockForecastingService = new StockForecastingService({
+  db,
+  procurementService,
+});
 const vehicleIntelligenceService = new VehicleIntelligenceService(db);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
-const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2569,6 +2574,15 @@ app.use(
   }),
 );
 app.use(
+  '/api/v1/stock-forecasting',
+  createStockForecastingRouter({
+    stockForecastingService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
   '/api/v1/vehicle-intelligence',
   createVehicleIntelligenceRouter({
     vehicleIntelligenceService,
@@ -2606,15 +2620,6 @@ app.use(
   }),
 );
 
-app.use(
-  '/api/v1/recruitment-performance-intelligence',
-  createRecruitmentPerformanceIntelligenceRouter({
-    recruitmentPerformanceIntelligenceService,
-    teamService,
-    jwtSecret: env.JWT_SECRET,
-    authService,
-  }),
-);
 app.use(
   '/api/v1/workflow-automation',
   createWorkflowAutomationRouter({

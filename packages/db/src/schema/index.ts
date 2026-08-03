@@ -169,3 +169,4 @@ export * from './enterprise-release-management';
 export * from './integration-api-management';
 export * from './tenant-capabilities';
 export * from './relations';
+export * from './stock-forecasting.js'

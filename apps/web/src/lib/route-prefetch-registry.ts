@@ -185,6 +185,10 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   {
     path: '/finance-cashflow-profit',
     load: () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
+    permissions: ['finance:read', 'finance:write', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
   },
   {
     path: '/hr-employee-intelligence',
@@ -212,6 +216,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
   {
     path: '/inventory-intelligence',
     load: () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
+    permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
+    path: '/stock-forecasting',
+    load: () => import('../pages/stock-forecasting/StockForecastingPage'),
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
     experiences: ['platform_owner', 'company_owner', 'manager', 'staff'],
     priority: 2,

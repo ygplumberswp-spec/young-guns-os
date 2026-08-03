@@ -61,6 +61,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
   },
   {
+    href: '/stock-forecasting',
+    label: 'Stock Forecasting',
+    permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
+  },
+  {
     href: '/hr-employee-intelligence',
     label: 'Employee Intelligence',
     permissions: ['*'],
