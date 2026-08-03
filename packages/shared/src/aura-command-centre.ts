@@ -375,6 +375,8 @@ export function auraCommandDepartmentAvailability(
 
 export function auraCommandDepartmentGap(agentKey: AuraCommandAgentKey): string | null {
   switch (agentKey) {
+    case 'finance':
+      return 'Finance AURA Agent Foundation is available (recommendations/insights/alerts). Cashflow forecasting, deep profitability, and expense intelligence remain roadmap depth.';
     case 'marketing':
       return 'Full Marketing Agent / social channel intelligence remains on the roadmap.';
     case 'hr':

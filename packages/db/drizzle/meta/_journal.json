@@ -953,6 +953,13 @@
       "when": 1754341200000,
       "tag": "0138_content_reputation_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 136,
+      "version": "7",
+      "when": 1754344800000,
+      "tag": "0139_finance_aura_agent_foundation",
+      "breakpoints": true
     }
   ]
 }

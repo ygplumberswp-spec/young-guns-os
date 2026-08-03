@@ -254,6 +254,7 @@ import { AuraEvolutionService } from './services/aura-evolution.service.js';
 import { MarketingAgentService } from './services/marketing-agent.service.js';
 import { SocialMediaIntegrationsService } from './services/social-media-integrations.service.js';
 import { ContentReputationIntelligenceService } from './services/content-reputation-intelligence.service.js';
+import { FinanceAuraAgentService } from './services/finance-aura-agent.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -284,6 +285,7 @@ import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
 import { createMarketingAgentRouter } from './routes/marketing-agent.js';
 import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
 import { createContentReputationIntelligenceRouter } from './routes/content-reputation-intelligence.js';
+import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -832,6 +834,7 @@ const auraCommandCentreService = new AuraCommandCentreService({ db });
 const auraAgentNetworkService = new AuraAgentNetworkService({ db });
 const auraEvolutionService = new AuraEvolutionService({ db });
 const marketingAgentService = new MarketingAgentService(db);
+const financeAuraAgentService = new FinanceAuraAgentService(db);
 const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -2480,6 +2483,15 @@ app.use(
   '/api/v1/marketing-agent',
   createMarketingAgentRouter({
     marketingAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/finance-aura-agent',
+  createFinanceAuraAgentRouter({
+    financeAuraAgentService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
