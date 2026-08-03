@@ -90,11 +90,15 @@ describe('communications platform API envelope & safety', () => {
 
   it('Gmail sync persists honest syncing / completed / failed lifecycle', () => {
     assert.ok(routeSource.includes("router.post('/gmail/sync'"));
+    assert.ok(routeSource.includes("result.syncStatus === 'syncing' ? 202 : 200"));
     assert.ok(serviceSource.includes("lastSyncStatus: 'syncing'"));
     assert.ok(serviceSource.includes("lastSyncStatus: 'completed'"));
     assert.ok(serviceSource.includes("lastSyncStatus: 'failed'"));
     assert.ok(serviceSource.includes('canSyncBusinessGmail(actor)'));
+    assert.ok(serviceSource.includes("syncStatus: 'syncing'"));
     assert.ok(serviceSource.includes("syncStatus: 'completed'"));
+    assert.ok(serviceSource.includes('runGmailSyncImport'));
+    assert.ok(serviceSource.includes('sanitizeGmailSyncErrorMessage'));
     assert.ok(!serviceSource.includes("lastSyncStatus: 'ok'"));
   });
 });

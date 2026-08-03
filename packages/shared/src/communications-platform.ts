@@ -117,6 +117,8 @@ export type CommPlatformConnectionHealth = {
   lastSyncAt?: string | null;
   /** Last sync outcome for honest UI. */
   lastSyncStatus?: string | null;
+  /** Sanitized last sync failure message (never secrets/tokens). */
+  lastSyncError?: string | null;
 };
 
 export type CommPlatformSettingsSummary = {
@@ -314,13 +316,18 @@ export type CommPlatformGmailSyncLifecycle =
   | 'failed';
 
 export type CommPlatformGmailSyncResult = {
+  /** Counts are 0 while sync is still running in the background. */
   synced: number;
   skipped: number;
   labels: string[];
   capabilityState: CommPlatformCapabilityState;
-  /** User-facing sync outcome after this run. */
-  syncStatus: 'completed' | 'failed';
-  lastSyncAt: string;
+  /**
+   * Immediate Sync Now responses use `syncing` (HTTP 202).
+   * Final outcomes are observed via settings polling (`completed` / `failed`).
+   */
+  syncStatus: 'syncing' | 'completed' | 'failed';
+  /** Prior/last completed sync time; null until a sync has finished successfully. */
+  lastSyncAt: string | null;
   note: string;
 };
 

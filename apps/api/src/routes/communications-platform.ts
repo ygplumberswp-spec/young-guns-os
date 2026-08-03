@@ -332,11 +332,13 @@ export function createCommunicationsPlatformRouter(deps: RouterDeps): Router {
         });
         return;
       }
+      // Accept quickly — import continues in-process after response (see syncGmailMailbox).
       const result = await deps.communicationsPlatformService.syncGmailMailbox(
         getActor(req as AuthenticatedRequest),
         parsed.data,
       );
-      res.json({ data: { sync: result } });
+      const status = result.syncStatus === 'syncing' ? 202 : 200;
+      res.status(status).json({ data: { sync: result } });
     } catch (error) {
       const mapped = mapCommunicationsPlatformError(error);
       res.status(mapped.status).json({ error: { code: mapped.code, message: mapped.message } });

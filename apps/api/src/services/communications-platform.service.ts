@@ -106,9 +106,14 @@ const EMPTY_GMAIL: CommPlatformConnectionHealth = {
   emailAddress: null,
   lastSyncAt: null,
   lastSyncStatus: null,
+  lastSyncError: null,
   emptyStateMessage:
     'Business Gmail is not configured. Set Google OAuth credentials, then connect Business Gmail — no messages are invented.',
 };
+
+/** In-process lock so concurrent Sync Now clicks don't start duplicate imports. */
+const activeGmailSyncCompanyIds = new Set<string>();
+const GMAIL_SYNC_STALE_MS = 10 * 60 * 1000;
 
 const EMPTY_BUSINESS_WA: CommPlatformConnectionHealth = {
   accountKind: 'business_whatsapp',
@@ -521,6 +526,10 @@ export class CommunicationsPlatformService {
     };
   }
 
+  /**
+   * Starts Business Gmail sync and returns immediately with `syncStatus: 'syncing'`.
+   * Import continues in-process (fire-and-forget); poll settings for completed/failed.
+   */
   async syncGmailMailbox(
     actor: CommPlatformActor,
     options: { folder?: CommPlatformGmailMailboxView['folder']; maxMessages?: number } = {},
@@ -553,101 +562,178 @@ export class CommunicationsPlatformService {
       )
       .limit(1);
 
-    if (account) {
-      await this.persistGmailSyncMetadata(account, {
-        lastSyncStatus: 'syncing',
-        lastSyncFolder: folder,
-        lastSyncError: null,
+    if (!account?.credentialsEncrypted) {
+      throw new CommunicationsPlatformError(
+        'NOT_CONNECTED',
+        'Connect Business Gmail before syncing',
+      );
+    }
+
+    const meta = account.metadata ?? {};
+    const priorLastSyncAt = typeof meta.lastSyncAt === 'string' ? meta.lastSyncAt : null;
+    const alreadySyncing = meta.lastSyncStatus === 'syncing';
+    const startedAtMs =
+      typeof meta.lastSyncStartedAt === 'string'
+        ? Date.parse(meta.lastSyncStartedAt)
+        : Number.NaN;
+    const syncIsFresh =
+      alreadySyncing &&
+      !Number.isNaN(startedAtMs) &&
+      Date.now() - startedAtMs < GMAIL_SYNC_STALE_MS;
+
+    if (syncIsFresh || activeGmailSyncCompanyIds.has(actor.companyId)) {
+      return {
+        synced: 0,
+        skipped: 0,
+        labels: [],
+        capabilityState: 'connected',
+        syncStatus: 'syncing',
+        lastSyncAt: priorLastSyncAt,
+        note: 'Gmail sync is already in progress. Messages will appear when import finishes.',
+      };
+    }
+
+    const startedAt = new Date().toISOString();
+    await this.persistGmailSyncMetadata(account, {
+      lastSyncStatus: 'syncing',
+      lastSyncStartedAt: startedAt,
+      lastSyncFolder: folder,
+      lastSyncError: null,
+    });
+
+    activeGmailSyncCompanyIds.add(actor.companyId);
+    void this.runGmailSyncImport({
+      companyId: actor.companyId,
+      userId: actor.userId,
+      accountId: account.id,
+      folder,
+      maxMessages,
+    }).catch((error: unknown) => {
+      console.error('[comm-platform] Background Gmail sync failed after accept', {
+        companyId: actor.companyId,
+        error: sanitizeGmailSyncErrorMessage(error),
       });
+    });
+
+    return {
+      synced: 0,
+      skipped: 0,
+      labels: [],
+      capabilityState: 'connected',
+      syncStatus: 'syncing',
+      lastSyncAt: priorLastSyncAt,
+      note: 'Gmail sync started. Importing messages in the background.',
+    };
+  }
+
+  /**
+   * Background import body — never called from the HTTP response path after accept.
+   * Token refresh still goes through GmailOAuthService.createClient (encrypted tenant tokens).
+   */
+  private async runGmailSyncImport(input: {
+    companyId: string;
+    userId: string;
+    accountId: string;
+    folder: CommPlatformGmailMailboxView['folder'];
+    maxMessages: number;
+  }): Promise<void> {
+    const [account] = await this.db
+      .select()
+      .from(commPlatformAccounts)
+      .where(
+        and(
+          eq(commPlatformAccounts.id, input.accountId),
+          eq(commPlatformAccounts.companyId, input.companyId),
+          eq(commPlatformAccounts.accountKind, 'business_gmail'),
+        ),
+      )
+      .limit(1);
+
+    if (!account || !this.gmailOAuthService) {
+      activeGmailSyncCompanyIds.delete(input.companyId);
+      return;
     }
 
     try {
-      const client = await this.gmailOAuthService.createClient(actor.companyId);
+      const client = await this.gmailOAuthService.createClient(input.companyId);
       const labels = await client.listLabels();
-      const query = folderQuery(folder);
+      const query = folderQuery(input.folder);
       const listed = await client.listMessages({
         ...query,
-        maxResults: maxMessages,
+        maxResults: input.maxMessages,
       });
 
-      const lookups = await this.buildEntityLinkLookups(actor.companyId);
+      const lookups = await this.buildEntityLinkLookups(input.companyId);
+      const messageIds = listed.messages.map((item) => item.id);
+      const existingIdSet = new Set<string>();
+      if (messageIds.length > 0) {
+        const existingRows = await this.db
+          .select({ externalMessageId: commPlatformInboxIndex.externalMessageId })
+          .from(commPlatformInboxIndex)
+          .where(
+            and(
+              eq(commPlatformInboxIndex.companyId, input.companyId),
+              inArray(commPlatformInboxIndex.externalMessageId, messageIds),
+            ),
+          );
+        for (const row of existingRows) {
+          if (row.externalMessageId) existingIdSet.add(row.externalMessageId);
+        }
+      }
+
       let synced = 0;
       let skipped = 0;
 
       for (const item of listed.messages) {
-        const existing = await this.db
-          .select({ id: commPlatformInboxIndex.id })
-          .from(commPlatformInboxIndex)
-          .where(
-            and(
-              eq(commPlatformInboxIndex.companyId, actor.companyId),
-              eq(commPlatformInboxIndex.externalMessageId, item.id),
-            ),
-          )
-          .limit(1);
-        if (existing[0]) {
+        if (existingIdSet.has(item.id)) {
           skipped += 1;
           continue;
         }
 
         const message = await client.getMessage(item.id, 'full');
         await this.indexGmailMessage(
-          actor.companyId,
-          account?.id ?? null,
+          input.companyId,
+          account.id,
           message,
           lookups,
-          folder,
+          input.folder,
         );
+        existingIdSet.add(item.id);
         synced += 1;
       }
 
       const labelNames = labels.map((l) => l.name || l.id).filter(Boolean);
-      const now = new Date();
-      const lastSyncAt = now.toISOString();
-      if (account) {
-        await this.persistGmailSyncMetadata(account, {
-          lastSyncAt,
-          lastSyncStatus: 'completed',
-          lastSyncFolder: folder,
-          lastSyncCounts: { synced, skipped },
-          lastSyncError: null,
-        });
-      }
-
-      await this.recordAudit(
-        { companyId: actor.companyId, userId: actor.userId },
-        'comm_platform_gmail_sync',
-        actor.companyId,
-        { folder, synced, skipped, syncStatus: 'completed', autoSend: false },
-      );
-
-      return {
-        synced,
-        skipped,
-        labels: labelNames,
-        capabilityState: 'connected',
-        syncStatus: 'completed',
+      const lastSyncAt = new Date().toISOString();
+      await this.persistGmailSyncMetadata(account, {
         lastSyncAt,
-        note: `Synced ${synced} new message(s) from Gmail (${skipped} already indexed).`,
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Business Gmail sync failed';
-      if (account) {
-        await this.persistGmailSyncMetadata(account, {
-          lastSyncAt: new Date().toISOString(),
-          lastSyncStatus: 'failed',
-          lastSyncFolder: folder,
-          lastSyncError: message.slice(0, 500),
-        });
-      }
+        lastSyncStatus: 'completed',
+        lastSyncFolder: input.folder,
+        lastSyncCounts: { synced, skipped },
+        lastSyncError: null,
+        lastSyncLabels: labelNames.slice(0, 50),
+      });
+
       await this.recordAudit(
-        { companyId: actor.companyId, userId: actor.userId },
+        { companyId: input.companyId, userId: input.userId },
         'comm_platform_gmail_sync',
-        actor.companyId,
-        { folder, syncStatus: 'failed', error: message.slice(0, 500), autoSend: false },
+        input.companyId,
+        { folder: input.folder, synced, skipped, syncStatus: 'completed', autoSend: false },
       );
-      throw error;
+    } catch (error) {
+      const message = sanitizeGmailSyncErrorMessage(error);
+      await this.persistGmailSyncMetadata(account, {
+        lastSyncStatus: 'failed',
+        lastSyncFolder: input.folder,
+        lastSyncError: message,
+      });
+      await this.recordAudit(
+        { companyId: input.companyId, userId: input.userId },
+        'comm_platform_gmail_sync',
+        input.companyId,
+        { folder: input.folder, syncStatus: 'failed', error: message, autoSend: false },
+      );
+    } finally {
+      activeGmailSyncCompanyIds.delete(input.companyId);
     }
   }
 
@@ -1620,6 +1706,10 @@ export class CommunicationsPlatformService {
       emailAddress: row.externalAddress,
       lastSyncAt: typeof meta.lastSyncAt === 'string' ? meta.lastSyncAt : null,
       lastSyncStatus: typeof meta.lastSyncStatus === 'string' ? meta.lastSyncStatus : null,
+      lastSyncError:
+        typeof meta.lastSyncError === 'string' && meta.lastSyncError.trim()
+          ? meta.lastSyncError.slice(0, 500)
+          : null,
       emptyStateMessage: connected
         ? `${row.label} connected${row.externalAddress ? ` (${row.externalAddress})` : ''} — showing real indexed traffic only.`
         : oauthAppMissing
@@ -1868,6 +1958,27 @@ export class CommunicationsPlatformService {
   }
 }
 
+/** Strip tokens / credential-looking strings from sync errors shown to users and stored in metadata. */
+export function sanitizeGmailSyncErrorMessage(error: unknown): string {
+  const raw =
+    error instanceof CommunicationsPlatformError ||
+    error instanceof GmailOAuthError ||
+    error instanceof GmailClientError
+      ? error.message
+      : error instanceof Error
+        ? error.message
+        : 'Business Gmail sync failed';
+  const cleaned = raw
+    .replace(/Bearer\s+[A-Za-z0-9._\-/=+]+/gi, 'Bearer [redacted]')
+    .replace(/ya29\.[A-Za-z0-9._\-]+/g, '[redacted]')
+    .replace(/1\/\/[A-Za-z0-9_\-]+/g, '[redacted]')
+    .replace(/refresh[_-]?token["']?\s*[:=]\s*["']?[^"',\s]+/gi, 'refresh_token=[redacted]')
+    .replace(/access[_-]?token["']?\s*[:=]\s*["']?[^"',\s]+/gi, 'access_token=[redacted]')
+    .slice(0, 500)
+    .trim();
+  return cleaned || 'Business Gmail sync failed';
+}
+
 export function mapCommunicationsPlatformError(error: unknown): {
   status: number;
   code: string;
@@ -1881,10 +1992,12 @@ export function mapCommunicationsPlatformError(error: unknown): {
           ? 403
           : error.code === 'NOT_CONFIGURED'
             ? 503
-            : error.code === 'VALIDATION_ERROR'
-              ? 400
-              : 500;
-    return { status, code: error.code, message: error.message };
+            : error.code === 'NOT_CONNECTED'
+              ? 409
+              : error.code === 'VALIDATION_ERROR'
+                ? 400
+                : 500;
+    return { status, code: error.code, message: sanitizeGmailSyncErrorMessage(error) };
   }
   if (error instanceof GmailOAuthError) {
     const status =
@@ -1893,13 +2006,13 @@ export function mapCommunicationsPlatformError(error: unknown): {
         : error.code === 'NOT_CONNECTED' || error.code === 'RECONNECT_REQUIRED'
           ? 409
           : 400;
-    return { status, code: error.code, message: error.message };
+    return { status, code: error.code, message: sanitizeGmailSyncErrorMessage(error) };
   }
   if (error instanceof GmailClientError) {
     return {
       status: error.status === 401 || error.status === 403 ? 401 : 502,
       code: error.code,
-      message: error.message,
+      message: sanitizeGmailSyncErrorMessage(error),
     };
   }
   return { status: 500, code: 'INTERNAL_ERROR', message: 'Communications platform error' };

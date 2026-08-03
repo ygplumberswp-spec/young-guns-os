@@ -8,6 +8,7 @@ import {
   formatBusinessGmailUserStatus,
   formatCommPlatformCapabilityState,
   formatGmailSyncUserStatus,
+  normalizeGmailSyncLifecycle,
   type CommPlatformGmailOAuthStatus,
   type CommPlatformInboxResult,
   type CommPlatformSettingsSummary,
@@ -153,6 +154,47 @@ export function CommunicationsPlatformPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional initial + filter reload via Apply
   }, [accessToken]);
 
+  /** Keep Sync status honest while a background import is running (including after refresh). */
+  useEffect(() => {
+    if (!accessToken) return;
+    if (normalizeGmailSyncLifecycle(settings?.businessGmail.lastSyncStatus) !== 'syncing') {
+      return;
+    }
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      void (async () => {
+        try {
+          const nextSettings = await fetchCommunicationsPlatformSettings(accessToken);
+          if (cancelled) return;
+          setSettings(nextSettings);
+          const lifecycle = normalizeGmailSyncLifecycle(
+            nextSettings.businessGmail.lastSyncStatus,
+          );
+          if (lifecycle === 'completed') {
+            setSuccess((prev) => prev ?? 'Sync completed — mailbox updated from Business Gmail.');
+            try {
+              await reload();
+            } catch {
+              // Settings already updated above.
+            }
+          } else if (lifecycle === 'failed') {
+            setError(
+              nextSettings.businessGmail.lastSyncError ||
+                'Gmail sync failed. Reconnect Business Gmail if the problem continues.',
+            );
+          }
+        } catch {
+          // Ignore transient poll errors.
+        }
+      })();
+    }, 2_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- poll while syncing; reload/settings identity intentionally omitted
+  }, [accessToken, settings?.businessGmail.lastSyncStatus]);
+
   async function applyFilters() {
     if (!accessToken) return;
     setIsWorking(true);
@@ -257,6 +299,33 @@ export function CommunicationsPlatformPanel({
     }
   }
 
+  async function pollGmailSyncUntilSettled(token: string): Promise<{
+    status: 'completed' | 'failed' | 'timeout';
+    settings: CommPlatformSettingsSummary | null;
+  }> {
+    const maxAttempts = 60;
+    const delayMs = 2_000;
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      try {
+        const nextSettings = await fetchCommunicationsPlatformSettings(token);
+        setSettings(nextSettings);
+        const lifecycle = normalizeGmailSyncLifecycle(
+          nextSettings.businessGmail.lastSyncStatus,
+        );
+        if (lifecycle === 'completed') {
+          return { status: 'completed', settings: nextSettings };
+        }
+        if (lifecycle === 'failed') {
+          return { status: 'failed', settings: nextSettings };
+        }
+      } catch {
+        // Keep polling — transient settings read failures shouldn't abort sync feedback.
+      }
+    }
+    return { status: 'timeout', settings: null };
+  }
+
   async function syncGmail() {
     if (!accessToken) return;
     if (!canSyncGmail) {
@@ -272,11 +341,41 @@ export function CommunicationsPlatformPanel({
         businessGmail: {
           ...settings.businessGmail,
           lastSyncStatus: 'syncing',
+          lastSyncError: null,
         },
       });
     }
     try {
       const result = await syncGmailMailbox(accessToken, { folder: 'inbox', maxMessages: 40 });
+      if (result.syncStatus === 'syncing') {
+        setSuccess(result.note || 'Sync started — importing messages from Gmail…');
+        const settled = await pollGmailSyncUntilSettled(accessToken);
+        if (settled.status === 'completed') {
+          setSuccess('Sync completed — mailbox updated from Business Gmail.');
+          await reload();
+        } else if (settled.status === 'failed') {
+          setSuccess(null);
+          setError(
+            settled.settings?.businessGmail.lastSyncError ||
+              'Gmail sync failed. Reconnect Business Gmail if the problem continues.',
+          );
+          try {
+            await reload();
+          } catch {
+            // Keep the sync failure message.
+          }
+        } else {
+          setSuccess(
+            'Sync is still running. Refresh shortly — status updates when import finishes.',
+          );
+          try {
+            await reload();
+          } catch {
+            // Status may still show Syncing from optimistic update.
+          }
+        }
+        return;
+      }
       setSuccess(
         result.synced > 0
           ? `Sync completed — ${result.synced} new message(s) added.`
@@ -557,6 +656,12 @@ export function CommunicationsPlatformPanel({
                   <dt>Last synced</dt>
                   <dd>{formatLastSynced(settings.businessGmail.lastSyncAt)}</dd>
                 </div>
+                {gmailSyncStatusLabel === 'Failed' && settings.businessGmail.lastSyncError ? (
+                  <div>
+                    <dt>Sync error</dt>
+                    <dd>{settings.businessGmail.lastSyncError}</dd>
+                  </div>
+                ) : null}
               </dl>
             ) : (
               <EmptyState
