@@ -237,6 +237,8 @@ export function PersonalWhatsappIntelligencePage() {
             <strong>Personal WhatsApp Assistant</strong> — Platform Owner credential path
             (`personal_whatsapp`); private by default; never auto-imported.{' '}
             <Link href="/communications-hub">Open Communications Hub</Link>
+            {' · '}
+            <Link href="/personal-whatsapp-connection">Open Connection Layer</Link>
           </li>
           <li>
             <strong>This workflow</strong> — intelligence on owner-scoped personal threads only.

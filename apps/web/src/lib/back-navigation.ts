@@ -183,6 +183,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/communications-intelligence',
   '/personal-communications-intelligence',
   '/personal-whatsapp-intelligence',
+  '/personal-whatsapp-connection',
   '/ai-orchestration',
 ]);
 

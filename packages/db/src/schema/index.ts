@@ -105,6 +105,7 @@ export * from './ops-intelligence';
 export * from './fleet-intelligence';
 export * from './personal-communications-intelligence';
 export * from './personal-whatsapp-intelligence';
+export * from './personal-whatsapp-connection';
 export * from './technician-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';

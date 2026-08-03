@@ -246,6 +246,7 @@ import { OpsIntelligenceService } from './services/ops-intelligence.service.js';
 import { FleetIntelligenceService } from './services/fleet-intelligence.service.js';
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
 import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
+import { PersonalWhatsappConnectionService } from './services/personal-whatsapp-connection.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -268,6 +269,7 @@ import { createOpsIntelligenceRouter } from './routes/ops-intelligence.js';
 import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
 import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
+import { createPersonalWhatsappConnectionRouter } from './routes/personal-whatsapp-connection.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -814,6 +816,10 @@ const personalCommunicationsIntelligenceService = new PersonalCommunicationsInte
   notificationService,
 );
 const personalWhatsappIntelligenceService = new PersonalWhatsappIntelligenceService(db);
+const personalWhatsappConnectionService = new PersonalWhatsappConnectionService(
+  db,
+  env.INTEGRATIONS_ENCRYPTION_KEY,
+);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2403,6 +2409,15 @@ app.use(
   '/api/v1/personal-whatsapp-intelligence',
   createPersonalWhatsappIntelligenceRouter({
     personalWhatsappIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/personal-whatsapp-connection',
+  createPersonalWhatsappConnectionRouter({
+    personalWhatsappConnectionService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

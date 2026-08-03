@@ -984,15 +984,29 @@ export function CommunicationsPlatformPanel({
                 <dl className="integrations-detail-list">
                   <div>
                     <dt>Status</dt>
-                    <dd>{settings.personalWhatsapp.connected ? 'Connected' : 'Not Connected'}</dd>
+                    <dd>
+                      {formatCommPlatformCapabilityState(settings.personalWhatsapp.status)}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Credentials</dt>
+                    <dd>
+                      {settings.personalWhatsapp.hasCredentials
+                        ? 'Stored (encrypted)'
+                        : 'Not stored'}
+                    </dd>
                   </div>
                 </dl>
                 <p style={{ marginTop: '0.5rem' }}>
                   Separate from Business WhatsApp. Private by default, never in business search, never
                   auto-imported. Sync: {settings.personalWhatsapp.syncEnabled ? 'On' : 'Off'}.
+                  Manage pairing, reconnect, session health, and privacy on the Connection Layer.
                 </p>
                 <p className="muted">{settings.personalWhatsapp.emptyStateMessage}</p>
                 <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
+                  <Link href="/personal-whatsapp-connection">
+                    <Button>Open Connection Layer</Button>
+                  </Link>
                   <Button
                     variant="secondary"
                     disabled={isWorking}
