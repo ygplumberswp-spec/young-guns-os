@@ -1,4 +1,5 @@
 import type { JobAddressInput, JobPriority, JobSiteContactInput } from './job-contract.js';
+import type { JobExecutionPhase } from './job-execution.js';
 
 export type JobStatus = 'new' | 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
 export type { JobPriority, JobAddressInput, JobSiteContactInput };
@@ -43,6 +44,8 @@ export type JobSummary = {
   jobType: string | null;
   priority: JobPriority;
   status: JobStatus;
+  /** Field execution phase (dual-track with status). Null when not loaded. */
+  executionPhase: JobExecutionPhase | null;
   addressDisplay: string | null;
   /** Verified snapshot coordinates when geocoded — never invented. */
   latitude: number | null;

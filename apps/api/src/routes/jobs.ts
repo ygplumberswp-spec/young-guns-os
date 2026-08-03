@@ -210,7 +210,11 @@ export function createJobsRouter({
 
   router.get('/today', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
     const { companyId } = getAuth(req);
-    const jobsList = await jobsService.listTodaysScheduledJobs(companyId);
+    const includeCompleted =
+      req.query.includeCompleted === '1' || req.query.includeCompleted === 'true';
+    const jobsList = await jobsService.listTodaysScheduledJobs(companyId, 100, {
+      includeCompleted,
+    });
     res.json({ data: { jobs: jobsList } });
   });
 

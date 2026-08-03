@@ -768,17 +768,28 @@ export class JobsService {
     );
   }
 
-  /** UX-012 — today's scheduled/in-progress jobs for dashboard Upcoming Work. */
-  async listTodaysScheduledJobs(companyId: string, limit = 20): Promise<JobSummary[]> {
+  /**
+   * UX-012 / Ops Slice 2 — today's jobs for dashboard + dispatcher board.
+   * Pass includeCompleted for dispatch end-of-day status flow; dashboard stays open work.
+   */
+  async listTodaysScheduledJobs(
+    companyId: string,
+    limit = 100,
+    options?: { includeCompleted?: boolean },
+  ): Promise<JobSummary[]> {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
 
+    const statuses = options?.includeCompleted
+      ? (['scheduled', 'in_progress', 'completed'] as const)
+      : (['scheduled', 'in_progress'] as const);
+
     const rows = await this.db.query.jobs.findMany({
       where: and(
         eq(jobs.companyId, companyId),
-        inArray(jobs.status, ['scheduled', 'in_progress']),
+        inArray(jobs.status, [...statuses]),
         gte(jobs.scheduledAt, start),
         lt(jobs.scheduledAt, end),
       ),
@@ -970,6 +981,7 @@ function toJobSummary(job: JobWithRelations): JobSummary {
     jobType: job.jobType ?? null,
     priority: job.priority ?? 'normal',
     status: job.status,
+    executionPhase: job.executionPhase ?? null,
     addressDisplay,
     latitude: job.snapshotLatitude ?? null,
     longitude: job.snapshotLongitude ?? null,

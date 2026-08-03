@@ -119,6 +119,7 @@ import { createEnterpriseProductionReadinessRouter } from './routes/enterprise-p
 import { EnterpriseMobilePlatformService } from './services/enterprise-mobile-platform.service.js';
 import { createEnterpriseMobilePlatformRouter } from './routes/enterprise-mobile-platform.js';
 import { EnterpriseUnifiedCommunicationsService } from './services/enterprise-unified-communications.service.js';
+import { DispatchCommunicationService } from './services/dispatch-communication.service.js';
 import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
 import { CommunicationsPlatformService } from './services/communications-platform.service.js';
 import { createCommunicationsPlatformRouter } from './routes/communications-platform.js';
@@ -828,6 +829,10 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
   integrationHubService,
   gmailOAuthService,
 });
+const dispatchCommunicationService = new DispatchCommunicationService(
+  db,
+  enterpriseUnifiedCommunicationsService,
+);
 const enterpriseCustomerExperienceService = new EnterpriseCustomerExperienceService({
   db,
   enterpriseSaasPlatformService,
@@ -2049,6 +2054,7 @@ app.use(
   '/api/v1/enterprise-communications',
   createEnterpriseUnifiedCommunicationsRouter({
     enterpriseUnifiedCommunicationsService,
+    dispatchCommunicationService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

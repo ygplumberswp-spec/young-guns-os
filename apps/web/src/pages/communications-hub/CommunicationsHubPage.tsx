@@ -554,7 +554,8 @@ export function CommunicationsHubPage() {
             <Panel title="Dispatch Customer Notifications">
               <p>
                 Technician dispatch notifications use configured providers — no assumed SMS or
-                tracking provider.
+                tracking provider. Appointment confirmation, technician en route, and job completed
+                drafts use draft→approve→queue (UC dispatch-notifications). TITAN never auto-sends.
               </p>
               {dashboard.dispatchNotifications.length === 0 ? (
                 <EmptyState

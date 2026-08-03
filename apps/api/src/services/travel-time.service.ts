@@ -10,6 +10,11 @@ export type TravelTimeRequest = {
   toJobId?: string | null;
   origin?: { latitude: number; longitude: number } | null;
   destination?: { latitude: number; longitude: number } | null;
+  /**
+   * Optional live technician/vehicle origin (e.g. Cartrack GPS).
+   * Used only when coordinates are real — never invented.
+   */
+  vehicleOrigin?: { latitude: number; longitude: number } | null;
   defaultMinutes: number;
 };
 
@@ -21,12 +26,17 @@ export type TravelTimeResult = {
   source: 'default' | 'cartrack' | 'google_maps';
   cartrackConnected: boolean;
   googleMapsConnected: boolean;
+  /** True when a verified vehicle/tech GPS origin was supplied. */
+  vehicleOriginUsed: boolean;
   warning: string | null;
 };
 
 /**
  * Travel time — Google Maps Distance Matrix / Directions when both endpoints
  * have real coordinates. Never invents locations or routes.
+ *
+ * Prefer vehicleOrigin (Cartrack) → job origin → fromJobId when estimating
+ * technician-to-customer travel for dispatch ETA foundation.
  */
 export class TravelTimeService {
   constructor(
@@ -52,12 +62,21 @@ export class TravelTimeService {
       ? await this.googleMapsService.isConnected(input.companyId)
       : false;
 
+    const vehicleOrigin =
+      input.vehicleOrigin &&
+      isValidLatLng(input.vehicleOrigin.latitude, input.vehicleOrigin.longitude)
+        ? input.vehicleOrigin
+        : null;
+
     const origin =
+      vehicleOrigin ??
       input.origin ??
       (input.fromJobId ? await this.loadJobCoords(input.companyId, input.fromJobId) : null);
     const destination =
       input.destination ??
       (input.toJobId ? await this.loadJobCoords(input.companyId, input.toJobId) : null);
+
+    const vehicleOriginUsed = Boolean(vehicleOrigin && origin === vehicleOrigin);
 
     if (
       googleMapsConnected &&
@@ -86,7 +105,12 @@ export class TravelTimeService {
             source: 'google_maps',
             cartrackConnected,
             googleMapsConnected: true,
-            warning: null,
+            vehicleOriginUsed,
+            warning: vehicleOriginUsed
+              ? null
+              : cartrackConnected
+                ? 'Route uses job/site origin — supply live vehicle GPS for technician-to-site ETA.'
+                : null,
           };
         }
       } catch {
@@ -97,10 +121,14 @@ export class TravelTimeService {
     let warning: string | null = null;
     if (googleMapsConnected && (!origin || !destination)) {
       warning =
-        'Travel estimate is approximate: Google Maps is connected, but one or both job sites are missing map coordinates. Add or verify site coordinates for live routing minutes; using default travel minutes for now.';
+        vehicleOrigin == null && cartrackConnected
+          ? 'Travel estimate is approximate: Cartrack is connected but no live vehicle coordinates were supplied, and one or both endpoints lack verified coordinates — using default travel minutes.'
+          : 'Travel estimate is approximate: Google Maps is connected, but one or both job sites are missing map coordinates. Add or verify site coordinates for live routing minutes; using default travel minutes for now.';
     } else if (!googleMapsConnected && cartrackConnected) {
       warning =
-        'Travel estimate is approximate: Cartrack can show GPS presence, but Google Maps routing is not connected — using default travel minutes.';
+        vehicleOrigin != null
+          ? 'Technician GPS is available for presence, but Google Maps routing is not connected — using default travel minutes (no invented ETA).'
+          : 'Travel estimate is approximate: Cartrack can show GPS presence, but Google Maps routing is not connected — using default travel minutes.';
     } else if (!googleMapsConnected && (!origin || !destination)) {
       warning =
         'Travel estimate is approximate: Google Maps routing is not connected and job site coordinates are incomplete — using default travel minutes.';
@@ -114,6 +142,7 @@ export class TravelTimeService {
       source: 'default',
       cartrackConnected,
       googleMapsConnected,
+      vehicleOriginUsed,
       warning,
     };
   }

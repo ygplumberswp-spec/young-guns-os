@@ -105,6 +105,7 @@ export * from './communications-intelligence.js';
 export * from './asset-equipment.js';
 export * from './ai-orchestration.js';
 export * from './dispatch-intelligence.js';
+export * from './dispatch-ops.js';
 export * from './ops-intelligence.js';
 export * from './fleet-intelligence.js';
 export * from './personal-communications-intelligence.js';

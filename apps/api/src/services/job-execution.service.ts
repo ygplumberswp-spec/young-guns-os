@@ -19,7 +19,12 @@ import type {
   ReturnJobMaterialLineRequest,
   SubmitGatedJobCompletionRequest,
 } from '@titan/shared';
-import { JOB_EXECUTION_TRANSITIONS, evaluateCompletionGate, phaseToJobStatus } from '@titan/shared';
+import {
+  JOB_EXECUTION_TRANSITIONS,
+  evaluateCompletionGate,
+  mapWorkflowActionToCommunicationHook,
+  phaseToJobStatus,
+} from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
   inventoryItems,
@@ -464,6 +469,8 @@ export class JobExecutionService {
       clientActionId: input.clientActionId ?? null,
     });
 
+    const communicationHook = mapWorkflowActionToCommunicationHook(input.action);
+
     if (toStatus !== job.status) {
       emitBusinessEvent({
         companyId: scope.companyId,
@@ -480,6 +487,9 @@ export class JobExecutionService {
           },
           customerId: updated.customerId,
           executionPhase: toPhase,
+          /** Readiness hint only — never auto-queues or sends CX messages. */
+          dispatchCommunicationHook: communicationHook,
+          dispatchCommunicationAutoSend: false,
         },
       });
     }
@@ -1507,6 +1517,8 @@ export class JobExecutionService {
         },
         customerId: updated.customerId,
         executionPhase: 'completed',
+        dispatchCommunicationHook: 'job_completed' as const,
+        dispatchCommunicationAutoSend: false,
       },
     });
     emitBusinessEvent({

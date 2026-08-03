@@ -149,7 +149,15 @@ export function mapCalendarJobDisplayStatus(input: {
   if (!input.assignedUserId) return 'Unassigned';
 
   if (input.executionPhase === 'en_route') return 'Travelling';
-  if (input.executionPhase === 'on_site' || input.executionPhase === 'in_progress') {
+  if (input.executionPhase === 'on_site') return 'On site';
+  if (
+    input.executionPhase === 'in_progress' ||
+    input.executionPhase === 'paused' ||
+    input.executionPhase === 'awaiting_customer' ||
+    input.executionPhase === 'awaiting_parts' ||
+    input.executionPhase === 'awaiting_approval' ||
+    input.executionPhase === 'ready_to_complete'
+  ) {
     return 'On site';
   }
   if (input.executionPhase === 'accepted') return 'Dispatched';

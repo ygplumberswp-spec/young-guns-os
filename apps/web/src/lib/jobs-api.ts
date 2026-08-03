@@ -20,8 +20,14 @@ export async function fetchJobsStats(accessToken: string): Promise<JobsStats> {
   return request<JobsStats>('/jobs/stats', { accessToken });
 }
 
-export async function fetchTodaysJobs(accessToken: string): Promise<JobSummary[]> {
-  const data = await request<{ jobs: JobSummary[] }>('/jobs/today', { accessToken });
+export async function fetchTodaysJobs(
+  accessToken: string,
+  options?: { includeCompleted?: boolean },
+): Promise<JobSummary[]> {
+  const params = new URLSearchParams();
+  if (options?.includeCompleted) params.set('includeCompleted', '1');
+  const query = params.size > 0 ? `?${params.toString()}` : '';
+  const data = await request<{ jobs: JobSummary[] }>(`/jobs/today${query}`, { accessToken });
   return data.jobs;
 }
 

@@ -599,6 +599,7 @@ function toMobileJobSummary(
     jobType: row.jobType ?? null,
     priority: row.priority ?? 'normal',
     status: row.status,
+    executionPhase: row.executionPhase ?? null,
     addressDisplay,
     latitude: row.snapshotLatitude ?? null,
     longitude: row.snapshotLongitude ?? null,
