@@ -111,6 +111,8 @@ export type EmailStoredCredentials = {
 
 export type YocoStoredCredentials = {
   secretKey: string;
+  /** Standard Webhooks signing secret (`whsec_…`) from Yoco webhook subscription create. */
+  webhookSecret?: string | null;
 };
 
 function encryptJsonCredentials<T extends object>(credentials: T, encryptionKey: string): string {
@@ -333,6 +335,39 @@ export function decryptGmailCredentials(
     refreshToken: parsed.refreshToken?.trim() || undefined,
     expiresAt: parsed.expiresAt,
     emailAddress: parsed.emailAddress?.trim() || undefined,
+    scope: parsed.scope,
+  };
+}
+
+/** Social media platform tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type SocialMediaStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  scope?: string;
+};
+
+export function encryptSocialMediaCredentials(
+  credentials: SocialMediaStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptSocialMediaCredentials(
+  payload: string,
+  encryptionKey: string,
+): SocialMediaStoredCredentials {
+  const parsed = decryptJsonCredentials<SocialMediaStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim()) {
+    throw new Error('Invalid stored social media credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken.trim(),
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
     scope: parsed.scope,
   };
 }

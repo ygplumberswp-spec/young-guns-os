@@ -939,6 +939,13 @@
       "when": 1754334000000,
       "tag": "0136_marketing_agent_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 134,
+      "version": "7",
+      "when": 1754337600000,
+      "tag": "0137_social_media_integrations",
+      "breakpoints": true
     }
   ]
 }

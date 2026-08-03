@@ -563,6 +563,11 @@ export const MarketingAgentPage = lazyNamed(
   () => import('../pages/marketing-agent/MarketingAgentPage'),
   'MarketingAgentPage',
 );
+export const SocialMediaIntegrationsPage = lazyNamed(
+  () =>
+    import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),
+  'SocialMediaIntegrationsPage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),

@@ -465,6 +465,10 @@ export function App() {
                           path="/marketing-agent"
                           component={OwnerPages.MarketingAgentPage}
                         />
+                        <Route
+                          path="/social-media-integrations"
+                          component={OwnerPages.SocialMediaIntegrationsPage}
+                        />
                         <Route path="/recruiting" component={OwnerPages.RecruitingPage} />
                         <Route
                           path="/integrations/cartrack"

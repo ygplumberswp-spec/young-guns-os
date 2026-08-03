@@ -252,6 +252,7 @@ import { AuraCommandCentreService } from './services/aura-command-centre.service
 import { AuraAgentNetworkService } from './services/aura-agent-network.service.js';
 import { AuraEvolutionService } from './services/aura-evolution.service.js';
 import { MarketingAgentService } from './services/marketing-agent.service.js';
+import { SocialMediaIntegrationsService } from './services/social-media-integrations.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -280,6 +281,7 @@ import { createAuraCommandCentreRouter } from './routes/aura-command-centre.js';
 import { createAuraAgentNetworkRouter } from './routes/aura-agent-network.js';
 import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
 import { createMarketingAgentRouter } from './routes/marketing-agent.js';
+import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -828,6 +830,10 @@ const auraCommandCentreService = new AuraCommandCentreService({ db });
 const auraAgentNetworkService = new AuraAgentNetworkService({ db });
 const auraEvolutionService = new AuraEvolutionService({ db });
 const marketingAgentService = new MarketingAgentService(db);
+const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
+  db,
+  env.INTEGRATIONS_ENCRYPTION_KEY,
+);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2471,6 +2477,15 @@ app.use(
   '/api/v1/marketing-agent',
   createMarketingAgentRouter({
     marketingAgentService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/social-media-integrations',
+  createSocialMediaIntegrationsRouter({
+    socialMediaIntegrationsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
