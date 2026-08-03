@@ -80,10 +80,10 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Module | Status |
 |--------|--------|
 | Finance Intelligence Agent | 🟢 Completed |
-| Cashflow intelligence | ⬜ Remaining |
+| Cashflow intelligence | 🟢 Complete |
 | Profit forecasting | ⬜ Remaining |
-| Job profitability | ⬜ Remaining |
-| Expense intelligence | ⬜ Remaining |
+| Job profitability | 🟢 Complete |
+| Expense intelligence | 🟡 Partial (PO-only) |
 | Reporting automation | ⬜ Remaining |
 
 ---
@@ -163,7 +163,8 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 - Marketing Agent Foundation (`marketing-agent`, migration `0136`) — campaigns/goals/recommendations, plumbing & educational content draft generators, analytics from real stored activity only, Owner approval before publish path. Social platform publish execute is gated (Facebook/Instagram/TikTok/LinkedIn/GBP not live). Content intelligence foundation included; channel connectors remain remaining.
 - Social Media Integration Layer (`social-media-integrations`, migration `0137`) — Facebook/Instagram/TikTok/LinkedIn/GBP connection settings, honest status/health/provider info, encrypted credentials, sync foundation, monitoring storage for real items only, Marketing Agent draft handoff, and Owner approval queue (draft → review → approved → execute gated). No auto-post/auto-reply; live OAuth/sync/publish remain additive.
 - Content & Reputation Intelligence (`content-reputation-intelligence`, migration `0138`) — extends Marketing Agent + Social Media: content quality scoring on real drafts, plumbing suggestion categories (draft templates only), review tracking with honest sentiment/reputation (unavailable without signals), Owner-entered competitor observations (no scraping), AURA insight handoffs. Approval-gated outbound drafts; never auto-publish/auto-reply; no demo reviews/competitors/scores.
-- Finance AURA Agent Foundation (`finance-aura-agent`, migration `0139`) — Owner-gated finance intelligence layer: agent identity registered on Command Centre / Agent Network `finance` key, recommendations (drafts), insights, alerts, Owner approval workflow, ask/summary over real TITAN invoices/payments/jobs/customers and post-import Xero markers. Extends existing finance/Xero/finance-intelligence; no fake balances; no auto-execute of financial mutations; Technician/Client denied. Cashflow forecasting / deep profitability / expense intelligence remain roadmap.
+- Finance AURA Agent Foundation (`finance-aura-agent`, migration `0139`) — Owner-gated finance intelligence layer: agent identity registered on Command Centre / Agent Network `finance` key, recommendations (drafts), insights, alerts, Owner approval workflow, ask/summary over real TITAN invoices/payments/jobs/customers and post-import Xero markers. Extends existing finance/Xero/finance-intelligence; no fake balances; no auto-execute of financial mutations; Technician/Client denied. Cashflow & Profit Intelligence delivered in `0140` (`finance-cashflow-profit`); expense ledger depth remains partial (PO-only).
+- Cashflow & Profit Intelligence (`finance-cashflow-profit`, migration `0140`) — extends Finance AURA Agent with cashflow (income/incoming 30d/receivables/overdue/trends/risks), job profitability (material costs when real; labour minutes from timesheets; labour $ unavailable without hourly rate), AURA draft insights/actions with Owner approval + audit. Real TITAN data only; Xero via post-import markers. Expense cash position incomplete without POs/expense ledger.
 - AURA Agent Network (Department 2.2, migration `0134`) — secure A2A messages/handoffs, controlled context sharing, sequential/parallel workflow runs, Owner approval queue + monitoring UI. Extends Command Centre `aura_command_agent_registry` + `AGENT_REGISTRY` / `agent_profiles`; no demo agent activity; messaging/financial/sensitive actions never auto-execute.
 - AURA Evolution / Learning Agent (Department 2.3, migration `0135`) — Owner-gated learning from real Command Centre decisions, agent/workflow/maintenance outcomes, and recommendation scoring; honest pattern unavailable states; knowledge links extend Command Centre / `aura_memory`; no demo insights; no auto business/finance/customer mutations.
 - Do not mark modules complete until owner-accepted and production-safe for that milestone.

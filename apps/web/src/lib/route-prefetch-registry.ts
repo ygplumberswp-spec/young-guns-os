@@ -175,6 +175,10 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/finance-cashflow-profit',
+    load: () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
+  },
+  {
     path: '/inventory-intelligence',
     load: () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],

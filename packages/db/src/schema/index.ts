@@ -114,6 +114,7 @@ export * from './marketing-agent';
 export * from './social-media-integrations';
 export * from './content-reputation-intelligence';
 export * from './finance-aura-agent';
+export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';
 export * from './procurement-intelligence';
 export * from './technician-intelligence';

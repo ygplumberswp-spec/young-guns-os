@@ -118,6 +118,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/marketing-intelligence',
   '/marketing-agent',
   '/finance-aura-agent',
+  '/finance-cashflow-profit',
   '/procurement-intelligence',
   '/social-media-integrations',
   '/finance/quotes',
