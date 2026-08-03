@@ -542,6 +542,11 @@ export const PersonalWhatsappConnectionPage = lazyNamed(
     import('../pages/personal-whatsapp-connection/PersonalWhatsappConnectionPage'),
   'PersonalWhatsappConnectionPage',
 );
+export const CommunicationAuraIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
+  'CommunicationAuraIntelligencePage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),

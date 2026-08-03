@@ -150,6 +150,15 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/communication-aura-intelligence',
+    load: () =>
+      import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
+    permissions: ['communications:read', 'communications_intelligence:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/aura/agents',
     load: () => import('../pages/agents/AgentDashboardPage'),
     permissions: ['agents:read', '*'],

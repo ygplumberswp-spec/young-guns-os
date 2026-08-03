@@ -210,6 +210,8 @@ export function CommunicationsHubPage() {
         <Link href="/email-centre">Email Centre</Link>
         {' · '}
         <Link href="/communication-timeline">Communication Timeline</Link>
+        {' · '}
+        <Link href="/communication-aura-intelligence">Communication AURA Intelligence</Link>
       </p>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -268,6 +270,9 @@ export function CommunicationsHubPage() {
             <div className="page-header-actions">
               <Link href="/communications-intelligence">
                 <Button variant="secondary">Comms Intelligence</Button>
+              </Link>
+              <Link href="/communication-aura-intelligence">
+                <Button variant="secondary">Communication AURA</Button>
               </Link>
               <Link href="/integrations/whatsapp">
                 <Button variant="secondary">Business WhatsApp</Button>

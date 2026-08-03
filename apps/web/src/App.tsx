@@ -441,6 +441,10 @@ export function App() {
                           path="/personal-whatsapp-connection"
                           component={OwnerPages.PersonalWhatsappConnectionPage}
                         />
+                        <Route
+                          path="/communication-aura-intelligence"
+                          component={OwnerPages.CommunicationAuraIntelligencePage}
+                        />
                         <Route path="/recruiting" component={OwnerPages.RecruitingPage} />
                         <Route
                           path="/integrations/cartrack"

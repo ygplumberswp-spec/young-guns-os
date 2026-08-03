@@ -247,6 +247,7 @@ import { FleetIntelligenceService } from './services/fleet-intelligence.service.
 import { PersonalCommunicationsIntelligenceService } from './services/personal-communications-intelligence.service.js';
 import { PersonalWhatsappIntelligenceService } from './services/personal-whatsapp-intelligence.service.js';
 import { PersonalWhatsappConnectionService } from './services/personal-whatsapp-connection.service.js';
+import { CommunicationAuraIntelligenceService } from './services/communication-aura-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
 import { RecurringMaintenanceService } from './services/recurring-maintenance.service.js';
@@ -270,6 +271,7 @@ import { createFleetIntelligenceRouter } from './routes/fleet-intelligence.js';
 import { createPersonalCommunicationsIntelligenceRouter } from './routes/personal-communications-intelligence.js';
 import { createPersonalWhatsappIntelligenceRouter } from './routes/personal-whatsapp-intelligence.js';
 import { createPersonalWhatsappConnectionRouter } from './routes/personal-whatsapp-connection.js';
+import { createCommunicationAuraIntelligenceRouter } from './routes/communication-aura-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
 import { createRecurringMaintenanceRouter } from './routes/recurring-maintenance.js';
@@ -820,6 +822,7 @@ const personalWhatsappConnectionService = new PersonalWhatsappConnectionService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY,
 );
+const communicationAuraIntelligenceService = new CommunicationAuraIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2418,6 +2421,15 @@ app.use(
   '/api/v1/personal-whatsapp-connection',
   createPersonalWhatsappConnectionRouter({
     personalWhatsappConnectionService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/communication-aura-intelligence',
+  createCommunicationAuraIntelligenceRouter({
+    communicationAuraIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

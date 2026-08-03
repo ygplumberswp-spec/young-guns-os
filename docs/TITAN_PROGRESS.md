@@ -39,7 +39,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Client Completion Reports | 🟢 Completed |
 | Personal WhatsApp Intelligence (foundation) | 🟢 Completed |
 | Personal WhatsApp Connection Layer | 🟢 Completed |
-| Communication AURA Intelligence | ⬜ Remaining |
+| Communication AURA Intelligence | 🟢 Completed |
 
 ---
 
@@ -155,5 +155,6 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 - Recurring Maintenance Engine committed (`a11160e`) — marked **🟢 Completed**.
 - Personal WhatsApp Connection Layer extends Communications Platform `personal_whatsapp` + owner gates; live Meta Graph / device-link pairing remains additive (honest testing matrix in Owner UI).
+- Communication AURA Intelligence extends Email Centre / Communications Platform business inbox — prioritisation, honest sentiment (unavailable when no signal), smart-reply & follow-up drafts (approval only, never auto-send), scoring, customer insights, CRM/timeline link proposals. Does not source Personal WhatsApp.
 - Do not mark modules complete until owner-accepted and production-safe for that milestone.
 - Keep department work isolated; see [`TITAN_DEVELOPMENT_RULES.md`](./TITAN_DEVELOPMENT_RULES.md).
