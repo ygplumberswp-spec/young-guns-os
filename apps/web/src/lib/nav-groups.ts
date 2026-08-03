@@ -43,6 +43,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/inventory-intelligence': 'intelligence',
   '/vehicle-intelligence': 'intelligence',
   '/hr-employee-intelligence': 'intelligence',
+  '/recruitment-performance-intelligence': 'intelligence',
   '/payroll-timesheet-intelligence': 'intelligence',
   '/procurement-intelligence': 'intelligence',
   '/stock-forecasting': 'intelligence',

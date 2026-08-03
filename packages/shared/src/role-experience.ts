@@ -71,6 +71,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['*'],
     experiences: ['company_owner', 'platform_owner', 'staff'],
   },
+  {
+    href: '/recruitment-performance-intelligence',
+    label: 'Recruitment & Performance',
+    permissions: ['workforce:read', 'recruiting:read', '*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
     href: '/vehicle-intelligence',

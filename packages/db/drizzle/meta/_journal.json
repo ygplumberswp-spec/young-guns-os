@@ -1051,6 +1051,13 @@
       "when": 1754376000154,
       "tag": "0154_fleet_ai_recommendations",
       "breakpoints": true
+    },
+    {
+      "idx": 150,
+      "version": "7",
+      "when": 1754386000152,
+      "tag": "0152_recruitment_performance_intelligence",
+      "breakpoints": true
     }
   ]
 }

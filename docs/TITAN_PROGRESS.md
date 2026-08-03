@@ -117,7 +117,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Overtime | 🟢 Completed |
 | Leave | ⬜ Remaining |
 | Performance | ⬜ Remaining |
-| Recruitment | ⬜ Remaining |
+| Recruitment | 🟢 Completed |
 
 ---
 
@@ -156,6 +156,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 
 ## Notes
 
+- Recruitment & Performance Intelligence (Department 6.3, `recruitment-performance-intelligence`, migration `0152`) — extends recruiting candidates/applications, workforce skills/certs/training, Technician Intelligence, jobs/quality/timesheets, HR Employee Intelligence, Payroll & Timesheet Intelligence: candidate pipeline, interview workflow drafts, Owner-gated hiring drafts, performance insights, and AURA recommendation drafts (training/capacity/workforce risk/planning — recommendations only; no automatic hiring; no fake candidates/scores). Owner UI `/recruitment-performance-intelligence`. No deploy. Never touches Yoco `0123`.
 - Fleet AI Recommendations (Department 8.3, `fleet-ai-recommendations`, migration `0154`) — Owner/Admin-gated AURA optimisation recommendation drafts from real Cartrack/fleet/job/cost/maintenance signals: maintenance suggestions, cost reduction, route improvements, fleet efficiency, replacement planning. Recommendations only; never auto-assign/sell/replace/execute maintenance; no invented GPS/costs. Extends Vehicle Intelligence + existing fleet; does not rebuild Driver Intelligence.
 - Voice AI Receptionist Foundation (Department 9.1, `voice-ai-receptionist`, migration `0153`) — extends `/voice` + enterprise voice reception: inbound call session records, caller identification, CRM customer lookup, approval-gated lead create (execute on Owner approve), booking drafts (never auto-schedule), routing rules, SA locale/voice config with honest `not_configured` TTS/STT/telephony until credentials connect, always-on human takeover + audit. Owner UI `/voice-ai-receptionist`. No fake calls/customers/leads. No deploy. Never touches Yoco `0123`.
 

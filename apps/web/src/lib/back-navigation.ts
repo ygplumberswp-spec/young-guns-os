@@ -158,6 +158,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/vehicle-intelligence',
   '/sales-intelligence',
   '/hr-employee-intelligence',
+  '/recruitment-performance-intelligence',
   '/payroll-timesheet-intelligence',
   '/workforce-intelligence',
   '/platform',

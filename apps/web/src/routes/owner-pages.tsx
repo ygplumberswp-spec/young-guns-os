@@ -604,6 +604,10 @@ export const HrEmployeeIntelligencePage = lazyNamed(
   () => import('../pages/hr-employee-intelligence/HrEmployeeIntelligencePage'),
   'HrEmployeeIntelligencePage',
 );
+export const RecruitmentPerformanceIntelligencePage = lazyNamed(
+  () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
+  'RecruitmentPerformanceIntelligencePage',
+);
 export const ProcurementIntelligencePage = lazyNamed(
   () => import('../pages/procurement-intelligence/ProcurementIntelligencePage'),
   'ProcurementIntelligencePage',

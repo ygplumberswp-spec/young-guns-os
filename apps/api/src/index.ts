@@ -264,6 +264,7 @@ import { InventoryIntelligenceService } from './services/inventory-intelligence.
 import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
 import { FleetAiRecommendationsService } from './services/fleet-ai-recommendations.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
+import { RecruitmentPerformanceIntelligenceService } from './services/recruitment-performance-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { StockForecastingService } from './services/stock-forecasting.service.js';
 import { PayrollTimesheetIntelligenceService } from './services/payroll-timesheet-intelligence.service.js';
@@ -305,6 +306,7 @@ import { createInventoryIntelligenceRouter } from './routes/inventory-intelligen
 import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
 import { createFleetAiRecommendationsRouter } from './routes/fleet-ai-recommendations.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
+import { createRecruitmentPerformanceIntelligenceRouter } from './routes/recruitment-performance-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createStockForecastingRouter } from './routes/stock-forecasting.js';
 import { createPayrollTimesheetIntelligenceRouter } from './routes/payroll-timesheet-intelligence.js';
@@ -880,6 +882,7 @@ const stockForecastingService = new StockForecastingService({
 const vehicleIntelligenceService = new VehicleIntelligenceService(db);
 const fleetAiRecommendationsService = new FleetAiRecommendationsService(db);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
+const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
   db,
@@ -2580,6 +2583,16 @@ app.use(
   '/api/v1/hr-employee-intelligence',
   createHrEmployeeIntelligenceRouter({
     hrEmployeeIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+
+app.use(
+  '/api/v1/recruitment-performance-intelligence',
+  createRecruitmentPerformanceIntelligenceRouter({
+    recruitmentPerformanceIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

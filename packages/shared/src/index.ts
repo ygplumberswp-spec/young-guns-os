@@ -135,6 +135,7 @@ export * from './stock-forecasting.js';
 export * from './payroll-timesheet-intelligence.js';
 export * from './technician-intelligence.js';
 export * from './hr-employee-intelligence.js';
+export * from './recruitment-performance-intelligence.js';
 export * from './enterprise-security.js';
 export * from './secure-session.js';
 export * from './integration-platform.js';

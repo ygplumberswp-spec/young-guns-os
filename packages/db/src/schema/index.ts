@@ -126,6 +126,7 @@ export * from './procurement-intelligence';
 export * from './technician-intelligence';
 export * from './payroll-timesheet-intelligence';
 export * from './hr-employee-intelligence';
+export * from './recruitment-performance-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';
 export * from './homeshield-experience';

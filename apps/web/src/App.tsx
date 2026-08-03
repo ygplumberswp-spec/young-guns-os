@@ -508,6 +508,10 @@ export function App() {
                           component={OwnerPages.HrEmployeeIntelligencePage}
                         />
                         <Route
+                          path="/recruitment-performance-intelligence"
+                          component={OwnerPages.RecruitmentPerformanceIntelligencePage}
+                        />
+                        <Route
                           path="/procurement-intelligence"
                           component={OwnerPages.ProcurementIntelligencePage}
                         />
