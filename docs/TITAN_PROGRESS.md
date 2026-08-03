@@ -54,7 +54,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Executive assistant mode | 🟢 Completed |
 | Morning Business Briefing | ⬜ Remaining |
 | Agent-to-agent communication | 🟢 Completed |
-| AURA Evolution / Learning Agent | ⬜ Remaining |
+| AURA Evolution / Learning Agent | 🟢 Completed |
 
 ---
 
@@ -159,5 +159,6 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 - AURA Command Centre (Department 2.1, migration `0133`) — Owner command dashboard, business memory foundation, executive assistant mode, and agent coordination registry/handoffs. Extends existing AURA chat / `aura_memory` / agent tasks; specialist agents remain foundation-only; no demo analytics; Personal WA private never sourced. AURA Chat marked 🟡 (existing chat surfaces; Global AURA FAB / route-context WIP may remain uncommitted).
 - Marketing Agent Foundation (`marketing-agent`, migration `0136`) — campaigns/goals/recommendations, plumbing & educational content draft generators, analytics from real stored activity only, Owner approval before publish path. Social platform publish execute is gated (Facebook/Instagram/TikTok/LinkedIn/GBP not live). Content intelligence foundation included; channel connectors remain remaining.
 - AURA Agent Network (Department 2.2, migration `0134`) — secure A2A messages/handoffs, controlled context sharing, sequential/parallel workflow runs, Owner approval queue + monitoring UI. Extends Command Centre `aura_command_agent_registry` + `AGENT_REGISTRY` / `agent_profiles`; no demo agent activity; messaging/financial/sensitive actions never auto-execute.
+- AURA Evolution / Learning Agent (Department 2.3, migration `0135`) — Owner-gated learning from real Command Centre decisions, agent/workflow/maintenance outcomes, and recommendation scoring; honest pattern unavailable states; knowledge links extend Command Centre / `aura_memory`; no demo insights; no auto business/finance/customer mutations.
 - Do not mark modules complete until owner-accepted and production-safe for that milestone.
 - Keep department work isolated; see [`TITAN_DEVELOPMENT_RULES.md`](./TITAN_DEVELOPMENT_RULES.md).

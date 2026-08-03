@@ -250,6 +250,7 @@ import { PersonalWhatsappConnectionService } from './services/personal-whatsapp-
 import { CommunicationAuraIntelligenceService } from './services/communication-aura-intelligence.service.js';
 import { AuraCommandCentreService } from './services/aura-command-centre.service.js';
 import { AuraAgentNetworkService } from './services/aura-agent-network.service.js';
+import { AuraEvolutionService } from './services/aura-evolution.service.js';
 import { MarketingAgentService } from './services/marketing-agent.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
@@ -277,6 +278,7 @@ import { createPersonalWhatsappConnectionRouter } from './routes/personal-whatsa
 import { createCommunicationAuraIntelligenceRouter } from './routes/communication-aura-intelligence.js';
 import { createAuraCommandCentreRouter } from './routes/aura-command-centre.js';
 import { createAuraAgentNetworkRouter } from './routes/aura-agent-network.js';
+import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
 import { createMarketingAgentRouter } from './routes/marketing-agent.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
@@ -824,6 +826,7 @@ const personalWhatsappConnectionService = new PersonalWhatsappConnectionService(
 const communicationAuraIntelligenceService = new CommunicationAuraIntelligenceService(db);
 const auraCommandCentreService = new AuraCommandCentreService({ db });
 const auraAgentNetworkService = new AuraAgentNetworkService({ db });
+const auraEvolutionService = new AuraEvolutionService({ db });
 const marketingAgentService = new MarketingAgentService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
@@ -2450,6 +2453,15 @@ app.use(
   '/api/v1/aura-agent-network',
   createAuraAgentNetworkRouter({
     auraAgentNetworkService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    db,
+  }),
+);
+app.use(
+  '/api/v1/aura-evolution',
+  createAuraEvolutionRouter({
+    auraEvolutionService,
     jwtSecret: env.JWT_SECRET,
     authService,
     db,

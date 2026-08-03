@@ -159,6 +159,33 @@ const NAV_ICON_PATHS: Record<string, ReactElement> = {
       <path d="M17.66 6.34l1.41-1.41" />
     </>
   ),
+  'AURA Command Centre': (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M8 8h8" />
+      <path d="M8 12h8" />
+      <path d="M8 16h5" />
+    </>
+  ),
+  'AURA Agent Network': (
+    <>
+      <circle cx="6" cy="6" r="2" />
+      <circle cx="18" cy="6" r="2" />
+      <circle cx="12" cy="18" r="2" />
+      <path d="M7.5 7.5l3 8" />
+      <path d="M16.5 7.5l-3 8" />
+      <path d="M8 6h8" />
+    </>
+  ),
+  'AURA Evolution': (
+    <>
+      <path d="M12 3v6" />
+      <path d="M8 7l4-4 4 4" />
+      <circle cx="12" cy="15" r="6" />
+      <path d="M10 15h4" />
+      <path d="M12 13v4" />
+    </>
+  ),
   'Automation Command Centre': (
     <>
       <rect x="4" y="4" width="16" height="16" rx="2" />

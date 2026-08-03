@@ -22,6 +22,10 @@ export const AuraAgentNetworkPage = lazyNamed(
   () => import('../pages/aura-agent-network/AuraAgentNetworkPage'),
   'AuraAgentNetworkPage',
 );
+export const AuraEvolutionPage = lazyNamed(
+  () => import('../pages/aura/AuraEvolutionPage'),
+  'AuraEvolutionPage',
+);
 export const TodaysPlanPage = lazyNamed(
   () => import('../pages/aura/TodaysPlanPage'),
   'TodaysPlanPage',
@@ -549,11 +553,6 @@ export const PersonalWhatsappConnectionPage = lazyNamed(
   () =>
     import('../pages/personal-whatsapp-connection/PersonalWhatsappConnectionPage'),
   'PersonalWhatsappConnectionPage',
-);
-export const CommunicationAuraIntelligencePage = lazyNamed(
-  () =>
-    import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
-  'CommunicationAuraIntelligencePage',
 );
 export const CommunicationAuraIntelligencePage = lazyNamed(
   () =>
