@@ -22,11 +22,17 @@ this capability:
 | **This capability** | **The vehicle (bakkie)** | A dropped destination pin |
 
 The two share the same Cartrack position lookup, the same staleness and honesty rules and the same
-Google Maps link builder, and must reuse one shared position-resolution layer rather than each building
-their own. The companion document is `docs/VEHICLE_NUMBER_PLATE_NAVIGATION_QUICK_ACTION.md`. **That
-file is not present in this repository at the time of recording** — when it is recorded, link it from
-here and from `TITAN_PROGRESS.md`, and reconcile the shared position layer across both scopes. This
-document does not assume its content.
+Google Maps deep-link helper, and **must reuse one shared position-resolution layer** rather than each
+building their own. Companion scope:
+[`VEHICLE_NUMBER_PLATE_NAVIGATION_QUICK_ACTION.md`](./VEHICLE_NUMBER_PLATE_NAVIGATION_QUICK_ACTION.md).
+
+Where the two scopes describe the same thing, the companion document's already-recorded decisions are
+the baseline and must not be re-decided here — in particular the existing shared position-health model
+in `packages/shared/src/fleet-tracking.ts` (`live` / `stale` / `unavailable`, `FLEET_POSITION_STALE_MS`,
+`FLEET_SYNC_STALE_MS`), coordinate validation via `isValidLatLng`, and the existing
+`buildGoogleMapsNavigateUrl` deep-link helper in `packages/shared/src/google-maps.ts`. Both must be
+implemented against one shared layer, so a vehicle can never be `stale` in one surface and `live` in the
+other.
 
 ---
 
@@ -97,6 +103,8 @@ line with `file:line` evidence and report honestly if the finding differs.
 | Fleet AI Recommendations | `fleet-ai-recommendations`, migration `0154` | Route-improvement recommendation drafts (drafts only) |
 | Dispatch | `dispatch-intelligence`, `dispatch-ops`, migration `0006` / `0046` | Assignment, dispatch decisions and the dispatch board |
 | Jobs | `jobs`, including `snapshotLatitude` / snapshot longitude | The job, its site address and any captured coordinates |
+| Fleet position health | `packages/shared/src/fleet-tracking.ts` | `live` / `stale` / `unavailable`, `FLEET_POSITION_STALE_MS`, `FLEET_SYNC_STALE_MS`, `isValidLatLng` — the existing honest freshness model |
+| Google Maps deep link | `packages/shared/src/google-maps.ts` (`buildGoogleMapsNavigateUrl`) | An existing destination deep link that needs **no** Directions/Routes API call |
 | Google Maps | Existing Maps integration used by Property Intelligence (`0161`) | Pin rendering, and the existing rule that a pin is `unavailable` without real validated coordinates |
 | WhatsApp business channel | `whatsapp-connections`, `whatsapp-messages`, `whatsapp-templates`, migration `0019` | Template send, provider delivery status |
 | Communications | `communications`, `communications-platform`, `enterprise-unified-communications` | The shared outbound path, preferences and consent |
@@ -112,6 +120,12 @@ line with `file:line` evidence and report honestly if the finding differs.
    navigate quick action can use.
 4. There is **no directions share audit** — who shared what destination, with whom, on which channel,
    and whether the provider confirmed it.
+5. **Distance and duration are a real unmet dependency.** The existing deep-link helper opens Google
+   Maps without calling a Directions or Routes API, so it returns no distance and no duration. Producing
+   those values requires a **provisioned** Directions/Routes API and its quota and cost. Until that is
+   confirmed provisioned, distance and duration are reported as **`unavailable` with the reason** and the
+   capability still ships the pin, the origin, the age and the link — **no figure is estimated to fill
+   the gap**.
 
 ---
 
