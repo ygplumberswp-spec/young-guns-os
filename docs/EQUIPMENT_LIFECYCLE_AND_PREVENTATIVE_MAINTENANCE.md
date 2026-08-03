@@ -28,6 +28,12 @@ surfaces and must not rebuild, duplicate or replace any of them:
   **Document Intelligence** (Department 13, `document-intelligence`, migration `0163`) — COC
   workflows, certificates, warranties, expiry tracking and typed document profiles.
 
+**Sub-requirement — the hard completion gate.** The geyser installation completion gate is recorded in
+full in [`GEYSER_INSTALLATION_COMPLETION_REQUIREMENTS.md`](./GEYSER_INSTALLATION_COMPLETION_REQUIREMENTS.md)
+and summarised under *Geyser installation completion requirements* below. It is part of this capability
+and part of job completion; it is **not started** and must not be implemented during another active
+phase.
+
 ---
 
 ## Scope areas
@@ -277,6 +283,83 @@ completion report.
 
 **A field that is not known is left empty and reported as unknown.** No placeholder serial numbers, no
 assumed manufacturers, no default warranty dates, no invented capacities.
+
+---
+
+## Geyser installation completion requirements
+
+**Status: ⬜ Planned / required — NOT started. Part of this capability and of job completion. Must not
+be started during another active phase.** Full detail, including the 18-item acceptance checklist:
+[`GEYSER_INSTALLATION_COMPLETION_REQUIREMENTS.md`](./GEYSER_INSTALLATION_COMPLETION_REQUIREMENTS.md).
+
+A geyser installation that ends as a completed job plus an invoice loses the asset. The completion gate
+is the only reliable point of capture, because the technician is standing at the unit with the data
+plate in front of them.
+
+### The gate
+
+**A geyser installation job may not be marked fully complete until every field below is either
+captured or explicitly marked unavailable** — a deliberate, attributed, recorded action with a reason.
+A field left simply empty **blocks completion**; silence is not an answer, and an unavailable field
+stays visible afterwards as a known gap.
+
+| # | Field | # | Field |
+|---|-------|---|-------|
+| 1 | Manufacturer | 10 | Warranty expiry date |
+| 2 | Brand (recorded separately) | 11 | Property |
+| 3 | Model | 12 | Customer |
+| 4 | Capacity | 13 | Installer / technician |
+| 5 | Serial number | 14 | Job |
+| 6 | Installation date | 15 | COC / certificate |
+| 7 | Supplier | 16 | Installation photos |
+| 8 | Supplier invoice | 17 | Data-plate photo |
+| 9 | Warranty start date | 18 | Initial maintenance due date |
+
+### Data-plate capture
+
+The technician may **scan or photograph the data plate** instead of typing manufacturer, brand, model,
+capacity and serial number.
+
+- The **original image is preserved unchanged and permanently**. Enhancement or cropping writes new
+  artefacts only.
+- Extracted values are **proposals with confidence**, not facts. **Authorised users may correct
+  extracted values**, and every correction records the original value, the corrected value, the actor,
+  the timestamp and the reason.
+- A field the image does not show stays unavailable. This reuses the existing capture / OCR / review
+  foundation ([`SMART_INVOICE_AND_RECEIPT_CAPTURE.md`](./SMART_INVOICE_AND_RECEIPT_CAPTURE.md)) — no
+  parallel capture pipeline.
+
+### Honesty
+
+- **Never invent a serial number.** No generated, sequential, derived or placeholder serials.
+- **Never invent a warranty date.** No assumed standard term, no default to active.
+- Where the warranty is not verified, TITAN states exactly:
+
+  > Warranty details require confirmation.
+
+  No warranty reminder is fabricated for that asset; it lands on the *warranty date missing* list.
+
+### After completion
+
+Each action below runs on real records, is **idempotent** on reprocessing, and is reported as a failure
+with its reason if it cannot be performed:
+
+1. Create the **equipment asset** record — the `asset_equipment` row **and** its
+   `al_asset_registry_profiles` row, atomically or reported as failed.
+2. **Link the property and the customer.**
+3. **Link the COC, the supplier invoice and the photos** as real document IDs.
+4. **Create warranty reminders** — only from real dates, at 90 / 60 / 30 days and on expiry.
+5. **Create the first annual maintenance reminder** — from the real installation date, or flagged
+   `needs_start_date` with no invented due date.
+6. **Create the anode inspection reminder** — labelled a company default, never a manufacturer
+   requirement.
+7. **Add the installation to the property timeline** in Property Intelligence.
+
+All reminders use the existing Recurring Maintenance Engine (`0130`) and `asset_maintenance_schedules`.
+The existing job completion path (`jobs`, job-execution, `completion_reports`, and the existing
+gated-completion idempotency guards) is **extended, not replaced** — an implementer must re-verify that
+inventory with `file:line` evidence first. No customer message is sent; customer-facing reminders stay
+drafts requiring approval.
 
 ---
 
