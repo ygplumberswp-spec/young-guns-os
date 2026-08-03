@@ -270,6 +270,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/sales-analytics-intelligence',
+    load: () => import('../pages/sales-analytics-intelligence/SalesAnalyticsIntelligencePage'),
+    permissions: ['sales:read', 'sales:write', 'sales_intelligence:read', 'leads:read', 'analytics:read', 'agents:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],
