@@ -356,6 +356,11 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/integrations', label: 'Integrations', permissions: ['integrations:read', '*'] },
   { href: '/security', label: 'Security', permissions: ['security:read', '*'] },
   {
+    href: '/security-monitoring',
+    label: 'Security Monitoring',
+    permissions: ['security:read', '*'],
+  },
+  {
     href: '/enterprise-modules',
     label: 'Enterprise Modules',
     permissions: ['company:manage', 'ops:read', 'executive:read', '*'],
@@ -542,6 +547,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
   '/mission-control',
   '/integrations',
   '/security',
+  '/security-monitoring',
   '/settings',
   '/aura',
   '/automation',
@@ -564,6 +570,7 @@ export const OWNER_ONLY_ROUTE_PREFIXES = [
 export const DISPATCHER_BLOCKED_ROUTE_PREFIXES = [
   '/aura',
   '/security',
+  '/security-monitoring',
   '/platform-health',
   '/release-center',
   '/saas-management',

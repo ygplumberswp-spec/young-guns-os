@@ -348,6 +348,10 @@ export const MarketIntelligencePage = lazyNamed(
   () => import('../pages/market-intelligence/MarketIntelligencePage'),
   'MarketIntelligencePage',
 );
+export const SecurityMonitoringPage = lazyNamed(
+  () => import('../pages/security-monitoring/SecurityMonitoringPage'),
+  'SecurityMonitoringPage',
+);
 export const ExecutiveCommandCentrePage = lazyNamed(
   () => import('../pages/executive-command-centre/ExecutiveCommandCentrePage'),
   'ExecutiveCommandCentrePage',

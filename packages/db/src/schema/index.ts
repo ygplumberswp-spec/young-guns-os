@@ -130,6 +130,7 @@ export * from './compliance-intelligence';
 export * from './executive-command-centre';
 export * from './smart-notification-intelligence';
 export * from './market-intelligence';
+export * from './security-monitoring';
 export * from './finance-reporting-forecast';
 export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';

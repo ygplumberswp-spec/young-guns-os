@@ -341,6 +341,17 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    // The chunk holds no security data. The API decides what each role may
+    // read, and logs, session metadata and permission history never leave it
+    // for a technician or a client.
+    path: '/security-monitoring',
+    load: () => import('../pages/security-monitoring/SecurityMonitoringPage'),
+    permissions: ['security:read', '*'],
+    experiences: ['platform_owner', 'company_owner'],
+    priority: 3,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],

@@ -264,6 +264,10 @@ export function App() {
                           path="/market-intelligence"
                           component={OwnerPages.MarketIntelligencePage}
                         />
+                        <Route
+                          path="/security-monitoring"
+                          component={OwnerPages.SecurityMonitoringPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"
