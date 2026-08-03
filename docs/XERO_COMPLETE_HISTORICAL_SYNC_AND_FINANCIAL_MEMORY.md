@@ -1,13 +1,12 @@
 # Xero Complete Historical Sync & Financial Memory
 
-**Status: ⬜ Approved — queued after Department 20 (UX Final Pass); NOT started.**
+**Status: 🟡 Code complete — BLOCKED on staging Xero credentials for verification.**
 
-This document records approved scope only. **No implementation exists for this phase and none may be
-started yet.** It is written so the work can be picked up later without re-deciding the requirements.
-
-Implementation begins **only after Department 20 (UX Final Pass) completes**. Do not begin this work
-alongside Department 21, hardening, or any other department. When it is implemented, it is committed
-and reported **separately** from department work.
+Phases A (audit), B (root cause) and C (implementation) are done and committed. **No item on the
+26-item verification checklist can be marked pass**, because this environment has no Xero OAuth
+application configured and therefore no Xero organisation to sync against. See
+[Implementation status](#implementation-status) at the end of this document for the audit results,
+the root causes found, what changed, and exactly what is blocked and on whom.
 
 ---
 
@@ -423,13 +422,121 @@ The implementation report for this phase must contain:
 
 ---
 
-## Status
+## Implementation status
 
-**⬜ Approved — queued after Department 20 UX Final Pass; NOT started.**
+**🟡 Code complete — verification BLOCKED on staging Xero credentials.**
 
-- Scope is approved and recorded. **No code has been written for this phase.**
-- Implementation begins **only after Department 20 (UX Final Pass) completes**.
-- Do **not** start this alongside Department 21, hardening, or any other work.
-- Department 20's in-progress files (role experience, navigation, web UX) must not be touched by
-  this phase.
-- When implemented, this phase is committed and reported separately from department work.
+### Phase A — audit results
+
+Classified against the code as it stood at `8da8068`.
+
+| Item | Verdict | Evidence |
+|---|---|---|
+| A1 OAuth connect flow | WORKING | `apps/api/src/services/xero-oauth.service.ts:17-23,165` — authorize/token/revoke URLs, state, callback |
+| A2 Token exchange + encrypted storage | WORKING | `xero-oauth.service.ts:213-254` via `encryptXeroOAuthCredentials` |
+| A3 Refresh + rotation | WORKING | `xero-oauth.service.ts:414-471` — rotates stored refresh token, 60s expiry buffer, in-flight dedupe |
+| A4 Tenant selection + storage | WORKING | `xero-oauth.service.ts:244-254,388-395` stores `config.tenantId` |
+| A5 Disconnect / reconnect | WORKING | `xero-oauth.service.ts:359` revokes; mappings keyed on Xero ID so they survive |
+| A6 Connection health | WORKING | `xero-oauth.service.ts:89-120` — real status, `reconnectRequired`, legacy-credential detection |
+| A7 Sync triggers | PARTIAL | Manual + scheduled exist (`integration-sync-orchestrator.service.ts:246`); **no webhook** |
+| A8 Pagination | **BROKEN** | `xero.client.ts:345,368,401,424,463` — every list capped at `page <= 50` (5,000 records) then returned silently truncated |
+| A9 Rate limits | PARTIAL | `xero.client.ts:596` detected 429 but `:536` ignored `Retry-After`; max backoff 32s vs Xero's 60s minute window |
+| A10 Date filtering | PARTIAL | No date floor applied (good) but **no `If-Modified-Since`**, so every run re-imported everything |
+| A11 Resumability | WORKING | `xero-sync.service.ts:914` `resumeAbandonedImportJobs`, `:1000` checkpoint reconstruction |
+| A12 Checkpoints | WORKING | `xero-import-job.processor.ts:96` per-entity page checkpoints persisted to `resultSummary` |
+| A13 Idempotency | WORKING | Upsert by Xero ID in every import batch |
+| A14 Per-record errors | WORKING | Each batch wraps per record in try/catch and continues |
+| A15 Silent skips | **BROKEN** | `xero-sync.service.ts:2115,2230,2397,2404` — incremented `skippedCount` and `continue`d with **no log row** |
+| A16 Run lifecycle | WORKING | `xero-finance-sync-runs` + `finalizeImportJob` record start/finish/counts/failure |
+| A17 Contacts | PARTIAL | Imported, but `?page=` without `includeArchived` omits archived contacts, so counts cannot match Xero |
+| A18 Quotes | WORKING | `xero-sync.service.ts:2106` with line items |
+| A19 Invoices ACCREC | WORKING | `xero-sync.service.ts:2223` header + line items |
+| A20 Bills ACCPAY | **NOT FOUND** | `xero.client.ts:444` hardcoded `Type=="ACCREC"`; `importSupplierBillsStub` returned a stub |
+| A21 Payments + allocation | **BROKEN** | Imported, but unallocated payments dropped silently and `:2489` re-added the amount Xero already reported as paid |
+| A22 Credit notes | **NOT FOUND** | `importCreditNotesStub` returned a stub |
+| A23 Bank transactions | WORKING | `xero-sync.service.ts:2533` |
+| A24 Chart of accounts | **NOT FOUND** | Only fetched internally for a default account code (`xero.client.ts:487`); never imported |
+| A25 Tracking categories | **NOT FOUND** | No endpoint, no table |
+| A26 Attachments | **NOT FOUND** | No endpoint, no table, and no `accounting.attachments` scope requested |
+| A27 Xero ID retention | WORKING | Mapping tables plus `sourceExternalId` on imported rows |
+| A28 Provenance | WORKING | `sourceProvider` / `sourceSyncedAt` / `sourceImportJobId` on imported rows |
+| A29 Amount/currency fidelity | WORKING | Integer cents throughout; currency stored per record |
+| A30 Sync log content | PARTIAL | `xero_sync_logs` is queryable, but incomplete because of A15 |
+| A31 Owner sync status UI | WORKING | `apps/web/src/features/integrations/XeroSyncPanel.tsx` |
+| A32 Finance reads | PARTIAL | Reads TITAN invoices/payments; no bills, credit notes or accounts to read |
+| A33 Customer 360 financial history | **NOT FOUND** | No Xero-sourced financial history section |
+| A34 AURA attribution | PARTIAL | `buildAuraContext` supplied figures with no coverage, classification or citations |
+| A35 Write-back gating | WORKING | `xero-write-approval-gate.service.ts` + workflow; Draft→Approve→Execute intact |
+| A36 Test coverage | PARTIAL | Existing Xero tests are pure unit tests over mocks; none exercise real sync |
+
+### Phase B — root causes
+
+- **B-ENV (primary, blocks everything).** Xero is not syncing because the integration is
+  **not configured in this environment**. `.env` contains no `XERO_*` variables and neither
+  `PROVIDERS_ENABLED` nor `XERO_SYNC_ENABLED` is set. `config.ts:133` gates `xeroSyncEnabled` on
+  both flags, and `config.ts:222-235` returns `{ configured: false }` without a client ID/secret —
+  so the OAuth connect flow can never start, no tokens are ever stored, and no sync can run. This
+  is environmental, not a code defect, and only the Owner can resolve it.
+- **B-PAGES.** A `page <= 50` ceiling in five client list methods truncated any entity beyond
+  5,000 records and returned the short list as if complete.
+- **B-ACCPAY.** `Type=="ACCREC"` was hardcoded into the only invoice pager, so bills were
+  unreachable by construction.
+- **B-ENTITIES.** Credit notes, chart of accounts, tracking categories and attachments had no
+  client method, no schema and no import stage.
+- **B-SCOPE.** `accounting.attachments` was never requested, so attachments would 403 even once
+  implemented.
+- **B-SKIPS.** Four `continue` paths dropped records without a log row, so a skipped record was
+  indistinguishable from a record that never existed.
+- **B-PAID.** The invoice stage wrote Xero's `AmountPaid`, then the payment stage added the same
+  payment on top — inflating paid totals and drifting from the ledger.
+- **B-RETRY.** `Retry-After` was ignored, so a 429 inside Xero's 60-second window could exhaust
+  retries and fail a stage that only needed to wait.
+- **B-INCREMENTAL.** With no modified-since support, every scheduled run was a full re-import.
+
+Genuinely fine and deliberately untouched (B12): A1–A6, A11–A14, A16, A18, A19, A23, A27–A29,
+A31, A35, and all Yoco (`0123`) code.
+
+### What changed
+
+- **Migration** `0171_xero_complete_historical_sync.sql`; schema `packages/db/src/schema/xero-financial-history.ts`
+  (accounts, tracking categories/options, bills + line items, credit notes + allocations, payment
+  allocations, attachments, per-entity coverage) and five new `xero_sync_entity_type` enum values.
+- **Client** `apps/api/src/lib/xero.client.ts` — page caps removed in favour of exhaustive paging
+  that raises `PAGINATION_RUNAWAY` rather than truncating; `Retry-After` honoured; `If-Modified-Since`
+  support; `includeArchived` on contacts; new endpoints for bills, credit notes, accounts, tracking
+  categories and attachments.
+- **Pipeline** — import stages went from 5 to 10 in dependency order (reference data first,
+  attachments last); every skip now writes a log row; the payment double-count is removed in both
+  the import and legacy sync paths; per-entity coverage is persisted on stage completion;
+  incremental runs use a modified-since watermark only once every entity has completed a clean
+  full historical pull.
+- **Surfaces** — `xero-financial-memory.service.ts` provides Customer 360 financial history with
+  attribution on every figure; `GET /xero/sync/coverage` and
+  `GET /xero/financial-history/:customerId` expose coverage and history under existing RBAC with
+  audit logging; AURA context now carries coverage plus explicit evidence guidance.
+- **Scope** — `accounting.attachments.read` added to the OAuth scope string.
+- **Tests** — `apps/api/src/services/xero-historical-sync.test.ts` (27 tests) covering no date
+  floor, no record cap, pagination termination, Retry-After, checkpoint round-trip, stage ordering,
+  entity coverage, zero silent skips, no payment double-count, coverage honesty and AURA guidance.
+
+### Verification — BLOCKED
+
+**All 26 verification items (V1–V26) are unverified.** They require a staging Xero organisation,
+and this environment has no Xero OAuth application configured. No sync has been run, no records
+have been imported, and no counts exist. Nothing here should be read as evidence that sync works
+against a real organisation.
+
+To unblock, the Owner must provide, for **staging only**:
+
+1. A Xero app (`XERO_CLIENT_ID`, `XERO_CLIENT_SECRET`) with the redirect URI registered.
+2. `PROVIDERS_ENABLED=true` and `XERO_SYNC_ENABLED=true` in the staging environment.
+3. A staging Xero organisation with real historical shape to connect and sync.
+
+Once connected, run the full historical import and record per-entity counts against Xero's own
+counts before any V-item is marked pass.
+
+### Constraints honoured
+
+No second ledger, no fake or seeded financial data, no production Xero tenant touched, no deploy,
+no uncontrolled write-back (Draft → Approve → Execute unchanged), RBAC/tenant isolation/audit
+preserved, Yoco `0123` untouched, and no Department 20 or 21 files modified.

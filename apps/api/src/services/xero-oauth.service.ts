@@ -18,8 +18,17 @@ const AUTHORIZE_URL = 'https://login.xero.com/identity/connect/authorize';
 const TOKEN_URL = 'https://identity.xero.com/connect/token';
 const REVOKE_URL = 'https://identity.xero.com/connect/revocation';
 const CONNECTIONS_URL = 'https://api.xero.com/connections';
-const OAUTH_SCOPES =
-  'openid profile email offline_access accounting.settings accounting.contacts accounting.invoices accounting.payments accounting.banktransactions';
+/**
+ * Granular Xero accounting scopes.
+ * - accounting.settings  → organisation, chart of accounts, tracking categories
+ * - accounting.contacts  → contacts
+ * - accounting.invoices  → invoices (ACCREC), bills (ACCPAY), credit notes, quotes
+ * - accounting.payments  → payments, overpayments, prepayments
+ * - accounting.banktransactions → bank transactions
+ * - accounting.attachments.read → attachment metadata on the records above (read-only)
+ */
+export const OAUTH_SCOPES =
+  'openid profile email offline_access accounting.settings accounting.contacts accounting.invoices accounting.payments accounting.banktransactions accounting.attachments.read';
 const STATE_TTL_MS = 10 * 60 * 1000;
 const TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 

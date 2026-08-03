@@ -1170,6 +1170,13 @@
       "when": 1754487000170,
       "tag": "0170_industry_templates",
       "breakpoints": true
+    },
+    {
+      "idx": 167,
+      "version": "7",
+      "when": 1754573400171,
+      "tag": "0171_xero_complete_historical_sync",
+      "breakpoints": true
     }
   ]
 }

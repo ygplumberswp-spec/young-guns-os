@@ -107,8 +107,10 @@ test('buildXeroImportSyncMessage reports success counts', () => {
   });
 
   assert.match(message, /Xero sync complete/);
-  assert.match(message, /Contacts 2 new \/ 1 updated/);
+  assert.match(message, /contacts 2 new \/ 1 updated/);
   assert.match(message, /invoices 4 new \/ 2 updated/);
+  // Stages with nothing to report are omitted rather than padded with zeroes.
+  assert.doesNotMatch(message, /bills/);
 });
 
 test('buildXeroImportSyncMessage reports partial failure', () => {

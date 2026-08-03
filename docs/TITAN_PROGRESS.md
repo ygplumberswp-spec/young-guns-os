@@ -85,6 +85,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Module | Status |
 |--------|--------|
 | Xero Finance Foundation Repair (historical sync & pipeline) | 🟢 Completed |
+| Xero Complete Historical Sync & Financial Memory | 🟡 Code complete — verification blocked on staging Xero credentials ([scope](./XERO_COMPLETE_HISTORICAL_SYNC_AND_FINANCIAL_MEMORY.md)) |
 | Finance Intelligence Agent | 🟢 Completed |
 | Cashflow intelligence | 🟢 Complete |
 | Profit forecasting | ⬜ Remaining |

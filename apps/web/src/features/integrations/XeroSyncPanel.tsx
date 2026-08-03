@@ -7,7 +7,7 @@ import type {
   XeroImportJobProgress,
   XeroSyncStatusResponse,
 } from '@titan/shared';
-import { XERO_SYNC_BLOCKED_REASON } from '@titan/shared';
+import { XERO_IMPORT_STAGE_LABELS, XERO_SYNC_BLOCKED_REASON } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchIntegrationAutoSyncStatus } from '../../lib/integration-auto-sync-api-client';
 import { syncIntegrationConnectors } from '../../lib/integration-platform-api-client';
@@ -50,22 +50,31 @@ function formatEntityStats(stats: {
   return `${stats.syncedCount} synced · ${stats.pendingCount} pending · ${stats.failedCount} failed`;
 }
 
-const IMPORT_STAGE_LABELS = {
-  contacts: 'Contacts',
-  quotes: 'Quotes',
-  invoices: 'Invoices',
-  payments: 'Payments',
-  bank_transactions: 'Bank transactions',
-} as const;
-
+/** Stages with nothing imported are omitted rather than shown as a row of zeroes. */
 function formatImportJobProgress(job: XeroImportJobProgress): string {
-  const stageLabel = job.currentStage ? IMPORT_STAGE_LABELS[job.currentStage] : 'Starting';
-  const contacts = `${job.contacts.createdCount} new / ${job.contacts.updatedCount} updated`;
-  const quotes = `${job.quotes.createdCount} new / ${job.quotes.updatedCount} updated`;
-  const invoices = `${job.invoices.createdCount} new / ${job.invoices.updatedCount} updated`;
-  const payments = `${job.payments.createdCount} new / ${job.payments.updatedCount} updated`;
-  const bank = `${job.bankTransactions.createdCount} new / ${job.bankTransactions.updatedCount} updated`;
-  return `${stageLabel} — Contacts ${contacts}, Quotes ${quotes}, Invoices ${invoices}, Payments ${payments}, Bank ${bank}`;
+  const stageLabel = job.currentStage
+    ? XERO_IMPORT_STAGE_LABELS[job.currentStage]
+    : 'Starting';
+
+  const counts: Array<[string, { createdCount: number; updatedCount: number }]> = [
+    [XERO_IMPORT_STAGE_LABELS.accounts, job.accounts],
+    [XERO_IMPORT_STAGE_LABELS.tracking_categories, job.trackingCategories],
+    [XERO_IMPORT_STAGE_LABELS.contacts, job.contacts],
+    [XERO_IMPORT_STAGE_LABELS.quotes, job.quotes],
+    [XERO_IMPORT_STAGE_LABELS.invoices, job.invoices],
+    [XERO_IMPORT_STAGE_LABELS.bills, job.bills],
+    [XERO_IMPORT_STAGE_LABELS.credit_notes, job.creditNotes],
+    [XERO_IMPORT_STAGE_LABELS.payments, job.payments],
+    [XERO_IMPORT_STAGE_LABELS.bank_transactions, job.bankTransactions],
+    [XERO_IMPORT_STAGE_LABELS.attachments, job.attachments],
+  ];
+
+  const detail = counts
+    .filter(([, entity]) => entity.createdCount > 0 || entity.updatedCount > 0)
+    .map(([label, entity]) => `${label} ${entity.createdCount} new / ${entity.updatedCount} updated`)
+    .join(', ');
+
+  return detail ? `${stageLabel} — ${detail}` : `${stageLabel} — no records imported yet`;
 }
 
 async function pollXeroImportUntilSettled(

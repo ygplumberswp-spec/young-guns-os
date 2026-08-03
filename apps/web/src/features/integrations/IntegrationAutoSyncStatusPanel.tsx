@@ -1,12 +1,5 @@
-import type { IntegrationProviderAutoSyncStatus, XeroImportJobProgress, XeroImportStage } from '@titan/shared';
-
-const IMPORT_STAGE_LABELS: Record<XeroImportStage, string> = {
-  contacts: 'Contacts',
-  quotes: 'Quotes',
-  invoices: 'Invoices',
-  payments: 'Payments',
-  bank_transactions: 'Bank transactions',
-};
+import type { IntegrationProviderAutoSyncStatus, XeroImportJobProgress } from '@titan/shared';
+import { XERO_IMPORT_STAGE_LABELS as IMPORT_STAGE_LABELS } from '@titan/shared';
 
 function autoSyncStateModifier(state: IntegrationProviderAutoSyncStatus['uiState']): string {
   switch (state) {

@@ -1,24 +1,31 @@
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import type {
   XeroAccountingAuraContext,
+  XeroEntityCoverageRow,
   XeroEntitySyncResult,
   XeroEnqueueImportResult,
+  XeroEvidenceCoverage,
   XeroFinancePipelineSummary,
+  XeroHistoryCoverage,
   XeroImportEntityCounts,
   XeroImportJobProgress,
+  XeroImportStage,
   XeroImportSyncResult,
+  XeroSyncEntityType,
   XeroSyncLogSummary,
   XeroSyncScope,
   XeroSyncStatusResponse,
   IntegrationSyncTrigger,
 } from '@titan/shared';
 import {
+  buildAuraEvidenceGuidance,
   extractXeroLineItemsFromRaw,
   mapXeroLineItemsToTitan,
   mapXeroQuoteStatus,
   normalizeContactEmail,
   normalizeContactPhone,
   pickCustomerMatchCandidate,
+  resolveEvidenceCoverage,
   resolveOfficialXeroInvoiceNumber,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -33,13 +40,23 @@ import {
   quoteLineItems,
   quotes,
   securityAuditLogs,
+  xeroAccounts,
+  xeroAttachments,
   xeroBankTransactions,
+  xeroBillLineItems,
+  xeroBills,
+  xeroCreditNoteAllocations,
+  xeroCreditNotes,
   xeroCustomerMappings,
+  xeroEntityCoverage,
   xeroFinanceSyncRuns,
   xeroInvoiceMappings,
+  xeroPaymentAllocations,
   xeroPaymentMappings,
   xeroQuoteMappings,
   xeroSyncLogs,
+  xeroTrackingCategories,
+  xeroTrackingOptions,
 } from '@titan/db';
 import { decryptXeroCredentials, isXeroOAuthCredentials } from '../lib/crypto.js';
 import { amountToCents, mapXeroInvoiceStatus, XeroClient, XeroError, XERO_PAGE_SIZE, XERO_RATE_LIMIT_BASE_DELAY_MS } from '../lib/xero.client.js';
@@ -51,10 +68,12 @@ import {
 } from './api-read-cache.js';
 import {
   advanceToNextStage,
+  XERO_IMPORT_STAGES,
   buildImportJobProgress,
   buildImportSyncResult,
   clearStaleStageFailuresOnResume,
   createInitialImportJobState,
+  getStageCounts,
   importJobStateToSummary,
   isStageComplete,
   parseImportJobState,
@@ -89,7 +108,33 @@ export { buildXeroImportSyncMessage, summarizeCounts };
 
 const XERO_IMPORT_WORKER_ID = `${process.env.HOSTNAME ?? 'worker'}-${process.pid}`;
 
+/** Parent records whose attachments are fetched per attachment batch tick. */
+const XERO_ATTACHMENT_PARENT_BATCH = 25;
+
+/** History older than this is reported as stale rather than presented as current. */
+const XERO_HISTORY_STALE_AFTER_MS = 24 * 60 * 60 * 1000;
+
 const processingImportJobs = new Set<string>();
+
+function readRawString(record: Record<string, unknown>, key: string): string | null {
+  const value = record[key];
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function readRawNumber(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  return null;
+}
 
 type XeroSyncServiceDeps = {
   db: DatabaseClient;
@@ -106,6 +151,11 @@ type SyncFromXeroOptions = {
   idempotencyKey?: string;
   /** When true, blocks until the queued background job finishes (tests/internal only). */
   waitForCompletion?: boolean;
+  /**
+   * Force a complete re-pull with no date floor, ignoring the incremental watermark. Defaults to
+   * true until a full historical import has completed for every entity.
+   */
+  fullHistory?: boolean;
 };
 
 export type XeroImportJobSettledInput = {
@@ -266,6 +316,7 @@ export class XeroSyncService {
     const initialState = createInitialImportJobState({
       idempotencyKey: options?.idempotencyKey,
       trigger: options?.trigger,
+      modifiedSince: await this.resolveModifiedSinceForRun(companyId, options),
     });
 
     if (!this.hubService) {
@@ -318,6 +369,49 @@ export class XeroSyncService {
       status: 'queued',
       message: 'Xero import queued for background processing.',
     };
+  }
+
+  /**
+   * The date floor for a run, or null for a complete historical pull.
+   *
+   * A modified-since floor is only ever applied once every entity has already completed a full
+   * historical import. If any entity is still incomplete, the next run pulls everything again so
+   * the gap is closed rather than skipped — an incremental run must never be the reason history
+   * is missing.
+   */
+  private async resolveModifiedSinceForRun(
+    companyId: string,
+    options?: SyncFromXeroOptions,
+  ): Promise<string | null> {
+    if (options?.fullHistory) {
+      return null;
+    }
+
+    const coverage = await this.db.query.xeroEntityCoverage.findMany({
+      where: eq(xeroEntityCoverage.companyId, companyId),
+    });
+
+    const covered = new Map(coverage.map((row) => [row.entity, row]));
+    const everyStageComplete = XERO_IMPORT_STAGES.every((stage) => {
+      const row = covered.get(stage);
+      return Boolean(row?.fullHistorySyncedAt) && (row?.failedCount ?? 0) === 0;
+    });
+
+    if (!everyStageComplete) {
+      return null;
+    }
+
+    // Take the oldest watermark across entities so a stage that fell behind still catches up.
+    const watermarks = XERO_IMPORT_STAGES.map(
+      (stage) => covered.get(stage)?.modifiedSinceWatermark,
+    ).filter((value): value is Date => value instanceof Date);
+
+    if (watermarks.length !== XERO_IMPORT_STAGES.length) {
+      return null;
+    }
+
+    const oldest = watermarks.reduce((min, value) => (value < min ? value : min));
+    return oldest.toISOString();
   }
 
   async processPendingImportJobs(limit = 10): Promise<number> {
@@ -480,22 +574,21 @@ export class XeroSyncService {
 
     if (!options?.waitForCompletion) {
       const progress = await this.getImportJobProgress(companyId, queued.jobId);
-      const state = progress
+      const state: XeroImportJobState = progress
         ? {
-            checkpoint: {
-              stage: progress.currentStage ?? 'contacts',
-              contactsPage: 1,
-              quotesPage: 1,
-              invoicesPage: 1,
-              paymentsPage: 1,
-              bankTransactionsPage: 1,
-            },
+            ...createInitialImportJobState(options),
+            checkpoint: progress.checkpoint,
             completedStages: progress.completedStages,
+            accounts: progress.accounts,
+            trackingCategories: progress.trackingCategories,
             contacts: progress.contacts,
             quotes: progress.quotes,
             invoices: progress.invoices,
+            bills: progress.bills,
+            creditNotes: progress.creditNotes,
             payments: progress.payments,
             bankTransactions: progress.bankTransactions,
+            attachments: progress.attachments,
             failedStage: progress.failedStage,
             stageError: progress.message,
           }
@@ -718,40 +811,84 @@ export class XeroSyncService {
     let lastBatchSize = 0;
     let budgetExhausted = false;
 
+    // Null modifiedSince means a complete historical pull — no date floor is ever applied
+    // implicitly. It is only set for an explicit incremental (gap-closing) run.
+    const listOptions = { modifiedSince: state.checkpoint.modifiedSince };
+
     try {
       while (pagesProcessed < XERO_IMPORT_MAX_PAGES_PER_BATCH && Date.now() < deadlineAt) {
-        if (stage === 'contacts') {
-          const batch = await ctx.client.listContactsPage(state.checkpoint.contactsPage);
+        if (stage === 'accounts') {
+          const batch = await ctx.client.listAccounts();
+          lastBatchSize = batch.length;
+          await this.importAccountBatch(ctx, batch, state.accounts);
+        } else if (stage === 'tracking_categories') {
+          const batch = await ctx.client.listTrackingCategories();
+          lastBatchSize = batch.length;
+          await this.importTrackingCategoryBatch(ctx, batch, state.trackingCategories);
+        } else if (stage === 'contacts') {
+          const batch = await ctx.client.listContactsPage(
+            state.checkpoint.contactsPage,
+            listOptions,
+          );
           lastBatchSize = batch.length;
           await this.importContactBatch(ctx, batch, state.contacts);
           state.checkpoint.contactsPage += 1;
         } else if (stage === 'quotes') {
-          const batch = await ctx.client.listQuotesPage(state.checkpoint.quotesPage);
+          const batch = await ctx.client.listQuotesPage(state.checkpoint.quotesPage, listOptions);
           lastBatchSize = batch.length;
           await this.importQuoteBatch(ctx, batch, state.quotes);
           state.checkpoint.quotesPage += 1;
         } else if (stage === 'invoices') {
-          const batch = await ctx.client.listInvoicesPage(state.checkpoint.invoicesPage);
+          const batch = await ctx.client.listInvoicesPage(
+            state.checkpoint.invoicesPage,
+            listOptions,
+          );
           lastBatchSize = batch.length;
           await this.importInvoiceBatch(ctx, batch, state.invoices);
           state.checkpoint.invoicesPage += 1;
+        } else if (stage === 'bills') {
+          const batch = await ctx.client.listBillsPage(state.checkpoint.billsPage, listOptions);
+          lastBatchSize = batch.length;
+          await this.importBillBatch(ctx, batch, state.bills);
+          state.checkpoint.billsPage += 1;
+        } else if (stage === 'credit_notes') {
+          const batch = await ctx.client.listCreditNotesPage(
+            state.checkpoint.creditNotesPage,
+            listOptions,
+          );
+          lastBatchSize = batch.length;
+          await this.importCreditNoteBatch(ctx, batch, state.creditNotes);
+          state.checkpoint.creditNotesPage += 1;
         } else if (stage === 'payments') {
-          const batch = await ctx.client.listPaymentsPage(state.checkpoint.paymentsPage);
+          const batch = await ctx.client.listPaymentsPage(
+            state.checkpoint.paymentsPage,
+            listOptions,
+          );
           lastBatchSize = batch.length;
           await this.importPaymentBatch(ctx, batch, state.payments);
           state.checkpoint.paymentsPage += 1;
-        } else {
+        } else if (stage === 'bank_transactions') {
           const batch = await ctx.client.listBankTransactionsPage(
             state.checkpoint.bankTransactionsPage,
+            listOptions,
           );
           lastBatchSize = batch.length;
           await this.importBankTransactionBatch(ctx, batch, state.bankTransactions);
           state.checkpoint.bankTransactionsPage += 1;
+        } else {
+          const progressed = await this.importAttachmentBatch(ctx, state);
+          lastBatchSize = progressed.processed;
+
+          if (progressed.done) {
+            await this.recordEntityCoverage(ctx, state, stage);
+            return { stageComplete: true, budgetExhausted: false };
+          }
         }
 
         pagesProcessed += 1;
 
         if (isStageComplete(stage, state.checkpoint, lastBatchSize)) {
+          await this.recordEntityCoverage(ctx, state, stage);
           return { stageComplete: true, budgetExhausted: false };
         }
 
@@ -765,13 +902,19 @@ export class XeroSyncService {
         budgetExhausted = true;
       }
 
-      return {
-        stageComplete: isStageComplete(stage, state.checkpoint, lastBatchSize),
-        budgetExhausted,
-      };
+      const stageComplete = isStageComplete(stage, state.checkpoint, lastBatchSize);
+
+      if (stageComplete) {
+        await this.recordEntityCoverage(ctx, state, stage);
+      }
+
+      return { stageComplete, budgetExhausted };
     } catch (error) {
       if (error instanceof XeroError && error.code === 'RATE_LIMIT') {
-        state.nextRetryAt = new Date(Date.now() + XERO_RATE_LIMIT_BASE_DELAY_MS * 2).toISOString();
+        // Honour the delay Xero asked for. Throttling slows a run; it must never truncate one.
+        state.nextRetryAt = new Date(
+          Date.now() + (error.retryAfterMs ?? XERO_RATE_LIMIT_BASE_DELAY_MS * 2),
+        ).toISOString();
         state.activity = 'rate_limited';
         state.stageError = error.message;
         return { stageComplete: false, budgetExhausted: true, rateLimited: true };
@@ -784,6 +927,110 @@ export class XeroSyncService {
           : mapError(error);
       return { stageComplete: false, budgetExhausted: false };
     }
+  }
+
+  /**
+   * Honest, evidence-backed coverage of the imported Xero history. Every "complete / partial /
+   * unavailable" claim shown on Finance, Customer 360 or in an AURA answer resolves from here —
+   * a rendered page is never treated as proof that a sync worked.
+   */
+  async getHistoryCoverage(companyId: string): Promise<XeroHistoryCoverage> {
+    const connection = await this.getConnectedConnection(companyId);
+
+    if (!connection || connection.status !== 'connected') {
+      return {
+        connected: false,
+        fullHistorySyncedAt: null,
+        noDateFloorApplied: false,
+        lastIncrementalSyncAt: null,
+        stale: true,
+        staleRationale: 'Xero is not connected, so no financial history has been imported.',
+        entities: [],
+        overallCoverage: 'unavailable',
+        overallRationale:
+          'Xero is not connected. Connect Xero and run a full historical import before relying on financial answers.',
+      };
+    }
+
+    const rows = await this.db.query.xeroEntityCoverage.findMany({
+      where: eq(xeroEntityCoverage.companyId, companyId),
+    });
+    const byEntity = new Map(rows.map((row) => [row.entity, row]));
+
+    const entities: XeroEntityCoverageRow[] = XERO_IMPORT_STAGES.map((stage) => {
+      const row = byEntity.get(stage);
+
+      if (!row) {
+        return {
+          entity: stage,
+          importedCount: 0,
+          lastSyncedAt: null,
+          failedCount: 0,
+          skippedCount: 0,
+          coverage: 'unavailable' as const,
+          coverageRationale: `No import has ever run for ${stage}.`,
+        };
+      }
+
+      const { coverage, rationale } = resolveEvidenceCoverage({
+        recordCount: row.importedCount,
+        failedCount: row.failedCount,
+        skippedCount: row.skippedCount,
+        fullHistorySynced: row.fullHistorySyncedAt !== null,
+      });
+
+      return {
+        entity: stage,
+        importedCount: row.importedCount,
+        lastSyncedAt: row.lastSyncedAt?.toISOString() ?? null,
+        failedCount: row.failedCount,
+        skippedCount: row.skippedCount,
+        coverage,
+        coverageRationale: rationale,
+      };
+    });
+
+    const fullHistoryDates = XERO_IMPORT_STAGES.map(
+      (stage) => byEntity.get(stage)?.fullHistorySyncedAt,
+    );
+    const everyStageFullySynced = fullHistoryDates.every((value) => value instanceof Date);
+    const fullHistorySyncedAt = everyStageFullySynced
+      ? (fullHistoryDates as Date[]).reduce((min, value) => (value < min ? value : min)).toISOString()
+      : null;
+
+    const lastSyncedAt = rows
+      .map((row) => row.lastSyncedAt)
+      .filter((value): value is Date => value instanceof Date)
+      .sort((a, b) => b.getTime() - a.getTime())[0];
+    const staleAfterMs = XERO_HISTORY_STALE_AFTER_MS;
+    const stale = !lastSyncedAt || Date.now() - lastSyncedAt.getTime() > staleAfterMs;
+
+    const incomplete = entities.filter((entity) => entity.coverage !== 'complete');
+    const overallCoverage: XeroEvidenceCoverage =
+      incomplete.length === 0
+        ? 'complete'
+        : incomplete.length === entities.length
+          ? 'unavailable'
+          : 'partial';
+
+    return {
+      connected: true,
+      fullHistorySyncedAt,
+      noDateFloorApplied: everyStageFullySynced,
+      lastIncrementalSyncAt: lastSyncedAt?.toISOString() ?? null,
+      stale,
+      staleRationale: stale
+        ? lastSyncedAt
+          ? `Last Xero sync was ${lastSyncedAt.toISOString()}, older than the ${Math.round(staleAfterMs / 3_600_000)}h freshness window.`
+          : 'No Xero sync has completed yet.'
+        : null,
+      entities,
+      overallCoverage,
+      overallRationale:
+        incomplete.length === 0
+          ? 'Full Xero history imported for every entity with no failed or skipped records.'
+          : `Incomplete for: ${incomplete.map((entity) => entity.entity).join(', ')}. Answers must be scoped to what is actually covered.`,
+    };
   }
 
   async listSyncLogs(companyId: string, limit = 100): Promise<XeroSyncLogSummary[]> {
@@ -1530,9 +1777,17 @@ export class XeroSyncService {
             lastSuccessfulSyncAt: new Date(),
           });
 
-          // Avoid N+1 Xero invoice fetches during payment sync.
+          // Recompute the paid total from the imported Xero payments for this invoice rather
+          // than adding to whatever is stored. Adding would double-count against the AmountPaid
+          // the invoice import already took from Xero, and drift from the ledger.
           const paymentCents = amountToCents(remotePayment.amount);
-          const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
+          const [paidRow] = await this.db
+            .select({ paidCents: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
+            .from(payments)
+            .where(
+              and(eq(payments.companyId, companyId), eq(payments.invoiceId, invoiceMapping.invoiceId)),
+            );
+          const nextPaidCents = Math.max(paidRow?.paidCents ?? paymentCents, 0);
           const invoiceTotalCents = invoiceMapping.invoice.amountCents ?? 0;
           const amountDue = Math.max(invoiceTotalCents - nextPaidCents, 0) / 100;
           const amountPaid = nextPaidCents / 100;
@@ -1618,6 +1873,8 @@ export class XeroSyncService {
       }
     }
 
+    const historyCoverage = await this.getHistoryCoverage(companyId);
+
     return {
       connected: true,
       organisationName: status.organisationName,
@@ -1625,6 +1882,11 @@ export class XeroSyncService {
       lastSyncAt: status.lastSyncAt,
       lastError: status.lastError,
       importStatus: status.importJob?.status ?? null,
+      // Coverage travels with the context so AURA can scope an answer to what is actually
+      // imported, and refuse where it is not, instead of answering confidently over a partial
+      // history.
+      historyCoverage,
+      evidenceGuidance: buildAuraEvidenceGuidance(historyCoverage),
       syncedCustomerCount: status.customers.syncedCount,
       syncedInvoiceCount: status.invoices.syncedCount,
       syncedQuoteCount: status.quotes.syncedCount,
@@ -2114,6 +2376,13 @@ export class XeroSyncService {
       try {
         if (!remote.contactId) {
           counts.skippedCount += 1;
+          await this.writeLog(ctx, {
+            entityType: 'quote',
+            xeroEntityId: remote.quoteId,
+            action: 'pull',
+            status: 'failed',
+            message: 'Skipped: Xero quote has no contact, so it cannot be linked to a customer',
+          });
           continue;
         }
 
@@ -2229,6 +2498,13 @@ export class XeroSyncService {
       try {
         if (!remote.contactId) {
           counts.skippedCount += 1;
+          await this.writeLog(ctx, {
+            entityType: 'invoice',
+            xeroEntityId: remote.invoiceId,
+            action: 'pull',
+            status: 'failed',
+            message: 'Skipped: Xero invoice has no contact, so it cannot be linked to a customer',
+          });
           continue;
         }
 
@@ -2394,15 +2670,33 @@ export class XeroSyncService {
     const mappingByXeroInvoiceId = buildSyncedInvoiceMappingLookup(invoiceMappings);
 
     for (const remotePayment of remotePayments) {
-      if (!remotePayment.invoiceId) {
+      // Every payment is recorded as an allocation row first, so a payment that cannot be tied to
+      // an imported parent is still visible history rather than a silent disappearance.
+      const invoiceMapping = remotePayment.invoiceId
+        ? mappingByXeroInvoiceId.get(remotePayment.invoiceId)
+        : undefined;
+
+      const unresolvedReason = !remotePayment.invoiceId
+        ? 'Xero payment has no invoice allocation (overpayment, prepayment or unallocated)'
+        : !invoiceMapping?.invoice
+          ? `Xero payment allocates to invoice ${remotePayment.invoiceId}, which is not present in TITAN (it may be a bill or a record outside the imported scope)`
+          : null;
+
+      await this.recordPaymentAllocation(ctx, remotePayment, unresolvedReason);
+
+      if (unresolvedReason) {
         counts.skippedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'payment',
+          xeroEntityId: remotePayment.paymentId,
+          action: 'pull',
+          status: 'failed',
+          message: `Skipped: ${unresolvedReason}. Allocation retained in xero_payment_allocations.`,
+        });
         continue;
       }
 
-      const invoiceMapping = mappingByXeroInvoiceId.get(remotePayment.invoiceId);
-
       if (!invoiceMapping?.invoice) {
-        counts.skippedCount += 1;
         continue;
       }
 
@@ -2486,27 +2780,10 @@ export class XeroSyncService {
           lastSuccessfulSyncAt: syncedAt,
         });
 
-        const nextPaidCents = (invoiceMapping.invoice.amountPaidCents ?? 0) + paymentCents;
-        const invoiceTotalCents = invoiceMapping.invoice.amountCents ?? 0;
-        const amountDue = Math.max(invoiceTotalCents - nextPaidCents, 0) / 100;
-        const amountPaid = nextPaidCents / 100;
-        const total = invoiceTotalCents / 100;
-
-        await this.db
-          .update(invoices)
-          .set({
-            amountPaidCents: nextPaidCents,
-            status: mapXeroInvoiceStatus({
-              xeroStatus: amountDue <= 0 ? 'PAID' : invoiceMapping.invoice.status,
-              amountDue,
-              amountPaid,
-              total,
-            }),
-            updatedAt: new Date(),
-          })
-          .where(eq(invoices.id, invoiceMapping.invoiceId));
-
-        invoiceMapping.invoice.amountPaidCents = nextPaidCents;
+        // The invoice stage already wrote Xero's own AmountPaid, which includes this payment.
+        // Adding it again here would inflate the paid amount and drift from the Xero ledger, so
+        // the paid total is left as Xero reported it.
+        void paymentCents;
 
         await this.writeLog(ctx, {
           entityType: 'payment',
@@ -2528,6 +2805,51 @@ export class XeroSyncService {
         });
       }
     }
+  }
+
+  /** Xero's payment→invoice allocation, stored verbatim including unresolved allocations. */
+  private async recordPaymentAllocation(
+    ctx: SyncContext,
+    remotePayment: Awaited<ReturnType<XeroClient['listPaymentsPage']>>[number],
+    unresolvedReason: string | null,
+  ): Promise<void> {
+    const syncedAt = new Date();
+    const values = {
+      xeroInvoiceId: remotePayment.invoiceId,
+      targetType: remotePayment.invoiceId ? 'invoice' : 'unallocated',
+      amountCents: amountToCents(remotePayment.amount),
+      currency: remotePayment.currencyCode,
+      paidOn: remotePayment.date ? remotePayment.date.slice(0, 10) : null,
+      reference: remotePayment.reference,
+      status: remotePayment.status,
+      unresolved: unresolvedReason !== null,
+      unresolvedReason,
+      sourceSyncedAt: syncedAt,
+      sourceImportJobId: ctx.syncJobId ?? null,
+      updatedAt: syncedAt,
+    };
+
+    const existing = await this.db.query.xeroPaymentAllocations.findFirst({
+      where: and(
+        eq(xeroPaymentAllocations.companyId, ctx.companyId),
+        eq(xeroPaymentAllocations.xeroPaymentId, remotePayment.paymentId),
+      ),
+    });
+
+    if (existing) {
+      await this.db
+        .update(xeroPaymentAllocations)
+        .set(values)
+        .where(eq(xeroPaymentAllocations.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(xeroPaymentAllocations).values({
+      companyId: ctx.companyId,
+      integrationConnectionId: ctx.connection.id,
+      xeroPaymentId: remotePayment.paymentId,
+      ...values,
+    });
   }
 
   private async importBankTransactionBatch(
@@ -2613,6 +2935,561 @@ export class XeroSyncService {
     if (remoteRows.length === 0 && counts.pulledCount === 0 && counts.skippedCount === 0) {
       counts.skippedCount = 1;
     }
+  }
+
+  /** Chart of accounts — imported so line items resolve to real account meaning. */
+  private async importAccountBatch(
+    ctx: SyncContext,
+    remoteAccounts: Awaited<ReturnType<XeroClient['listAccounts']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
+    for (const remote of remoteAccounts) {
+      try {
+        const syncedAt = new Date();
+        const row = {
+          code: remote.code,
+          name: remote.name,
+          type: remote.type,
+          taxType: remote.taxType,
+          accountClass: remote.accountClass,
+          status: remote.status,
+          description: remote.description,
+          reportingCode: remote.reportingCode,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+          updatedAt: syncedAt,
+        };
+
+        const existing = await this.db.query.xeroAccounts.findFirst({
+          where: and(
+            eq(xeroAccounts.companyId, ctx.companyId),
+            eq(xeroAccounts.xeroAccountId, remote.accountId),
+          ),
+        });
+
+        if (existing) {
+          await this.db.update(xeroAccounts).set(row).where(eq(xeroAccounts.id, existing.id));
+          counts.updatedCount += 1;
+        } else {
+          await this.db.insert(xeroAccounts).values({
+            companyId: ctx.companyId,
+            integrationConnectionId: ctx.connection.id,
+            xeroAccountId: remote.accountId,
+            ...row,
+          });
+          counts.createdCount += 1;
+        }
+
+        counts.pulledCount += 1;
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'account',
+          xeroEntityId: remote.accountId,
+          action: 'pull',
+          status: 'failed',
+          message: mapError(error),
+        });
+      }
+    }
+  }
+
+  private async importTrackingCategoryBatch(
+    ctx: SyncContext,
+    remoteCategories: Awaited<ReturnType<XeroClient['listTrackingCategories']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
+    for (const remote of remoteCategories) {
+      try {
+        const syncedAt = new Date();
+        const existing = await this.db.query.xeroTrackingCategories.findFirst({
+          where: and(
+            eq(xeroTrackingCategories.companyId, ctx.companyId),
+            eq(xeroTrackingCategories.xeroTrackingCategoryId, remote.trackingCategoryId),
+          ),
+        });
+
+        let categoryId: string;
+
+        if (existing) {
+          await this.db
+            .update(xeroTrackingCategories)
+            .set({ name: remote.name, status: remote.status, sourceSyncedAt: syncedAt, updatedAt: syncedAt })
+            .where(eq(xeroTrackingCategories.id, existing.id));
+          categoryId = existing.id;
+          counts.updatedCount += 1;
+        } else {
+          const [created] = await this.db
+            .insert(xeroTrackingCategories)
+            .values({
+              companyId: ctx.companyId,
+              integrationConnectionId: ctx.connection.id,
+              xeroTrackingCategoryId: remote.trackingCategoryId,
+              name: remote.name,
+              status: remote.status,
+              sourceSyncedAt: syncedAt,
+              sourceImportJobId: ctx.syncJobId ?? null,
+            })
+            .returning();
+
+          if (!created) {
+            throw new XeroSyncError('CREATE_FAILED', 'Unable to store Xero tracking category');
+          }
+
+          categoryId = created.id;
+          counts.createdCount += 1;
+        }
+
+        for (const option of remote.options) {
+          const existingOption = await this.db.query.xeroTrackingOptions.findFirst({
+            where: and(
+              eq(xeroTrackingOptions.companyId, ctx.companyId),
+              eq(xeroTrackingOptions.xeroTrackingOptionId, option.trackingOptionId),
+            ),
+          });
+
+          if (existingOption) {
+            await this.db
+              .update(xeroTrackingOptions)
+              .set({ name: option.name, status: option.status, sourceSyncedAt: syncedAt, updatedAt: syncedAt })
+              .where(eq(xeroTrackingOptions.id, existingOption.id));
+            continue;
+          }
+
+          await this.db.insert(xeroTrackingOptions).values({
+            companyId: ctx.companyId,
+            trackingCategoryId: categoryId,
+            xeroTrackingOptionId: option.trackingOptionId,
+            name: option.name,
+            status: option.status,
+            sourceSyncedAt: syncedAt,
+          });
+        }
+
+        counts.pulledCount += 1;
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'tracking_category',
+          xeroEntityId: remote.trackingCategoryId,
+          action: 'pull',
+          status: 'failed',
+          message: mapError(error),
+        });
+      }
+    }
+  }
+
+  /**
+   * Supplier bills (ACCPAY) with line items and account codes — the expense side that makes real
+   * expense intelligence possible. Xero's list pages omit line items, so each bill is fetched.
+   */
+  private async importBillBatch(
+    ctx: SyncContext,
+    remoteBills: Awaited<ReturnType<XeroClient['listBillsPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
+    for (const remote of remoteBills) {
+      try {
+        const syncedAt = new Date();
+        const detail = (await ctx.client.fetchInvoiceDetail(remote.invoiceId)) ?? remote;
+        const row = {
+          xeroContactId: remote.contactId,
+          supplierName: remote.contactName,
+          billNumber: remote.invoiceNumber,
+          reference: remote.reference,
+          // Xero status verbatim: VOIDED and DELETED are recorded, not dropped.
+          status: remote.status,
+          subtotalCents: amountToCents(remote.subtotal),
+          taxCents: amountToCents(remote.totalTax),
+          totalCents: amountToCents(remote.total),
+          amountDueCents: amountToCents(remote.amountDue),
+          amountPaidCents: amountToCents(remote.amountPaid),
+          currency: remote.currencyCode ?? ctx.connection.config.baseCurrency ?? null,
+          issueDate: remote.issueDate ? remote.issueDate.slice(0, 10) : null,
+          dueDate: remote.dueDate ? remote.dueDate.slice(0, 10) : null,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+          updatedAt: syncedAt,
+        };
+
+        const existing = await this.db.query.xeroBills.findFirst({
+          where: and(
+            eq(xeroBills.companyId, ctx.companyId),
+            eq(xeroBills.xeroInvoiceId, remote.invoiceId),
+          ),
+        });
+
+        let billId: string;
+
+        if (existing) {
+          await this.db.update(xeroBills).set(row).where(eq(xeroBills.id, existing.id));
+          billId = existing.id;
+          counts.updatedCount += 1;
+        } else {
+          const [created] = await this.db
+            .insert(xeroBills)
+            .values({
+              companyId: ctx.companyId,
+              integrationConnectionId: ctx.connection.id,
+              xeroInvoiceId: remote.invoiceId,
+              ...row,
+            })
+            .returning();
+
+          if (!created) {
+            throw new XeroSyncError('CREATE_FAILED', 'Unable to store Xero bill');
+          }
+
+          billId = created.id;
+          counts.createdCount += 1;
+        }
+
+        await this.replaceBillLineItems(ctx, billId, detail.raw);
+        counts.pulledCount += 1;
+
+        await this.writeLog(ctx, {
+          entityType: 'bill',
+          entityId: billId,
+          xeroEntityId: remote.invoiceId,
+          action: 'pull',
+          status: 'success',
+          message: `Imported supplier bill ${remote.invoiceNumber ?? remote.invoiceId} from Xero`,
+        });
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'bill',
+          xeroEntityId: remote.invoiceId,
+          action: 'pull',
+          status: 'failed',
+          message: mapError(error),
+        });
+      }
+    }
+  }
+
+  private async replaceBillLineItems(
+    ctx: SyncContext,
+    billId: string,
+    raw: Record<string, unknown>,
+  ): Promise<void> {
+    // Read Xero's raw LineItems rather than the normalised sales-invoice shape: bills need the
+    // account code, tax type and tracking exactly as Xero holds them for expense intelligence.
+    const rawLines = Array.isArray(raw.LineItems)
+      ? (raw.LineItems.filter(
+          (line): line is Record<string, unknown> => Boolean(line) && typeof line === 'object',
+        ) as Array<Record<string, unknown>>)
+      : [];
+
+    await this.db
+      .delete(xeroBillLineItems)
+      .where(
+        and(eq(xeroBillLineItems.companyId, ctx.companyId), eq(xeroBillLineItems.billId, billId)),
+      );
+
+    if (rawLines.length === 0) {
+      return;
+    }
+
+    await this.db.insert(xeroBillLineItems).values(
+      rawLines.map((line, index) => ({
+        companyId: ctx.companyId,
+        billId,
+        xeroLineItemId: readRawString(line, 'LineItemID'),
+        position: index,
+        description: readRawString(line, 'Description'),
+        quantity: Math.round(readRawNumber(line, 'Quantity') ?? 1),
+        unitAmountCents: amountToCents(readRawNumber(line, 'UnitAmount') ?? 0),
+        lineAmountCents: amountToCents(readRawNumber(line, 'LineAmount') ?? 0),
+        taxAmountCents: amountToCents(readRawNumber(line, 'TaxAmount') ?? 0),
+        accountCode: readRawString(line, 'AccountCode'),
+        taxType: readRawString(line, 'TaxType'),
+        tracking: Array.isArray(line.Tracking)
+          ? (line.Tracking as Array<Record<string, unknown>>)
+          : [],
+      })),
+    );
+  }
+
+  private async importCreditNoteBatch(
+    ctx: SyncContext,
+    remoteNotes: Awaited<ReturnType<XeroClient['listCreditNotesPage']>>,
+    counts: XeroImportEntityCounts,
+  ): Promise<void> {
+    for (const remote of remoteNotes) {
+      try {
+        const syncedAt = new Date();
+        const row = {
+          creditNoteNumber: remote.creditNoteNumber,
+          xeroContactId: remote.contactId,
+          contactName: remote.contactName,
+          type: remote.type,
+          status: remote.status,
+          subtotalCents: amountToCents(remote.subtotal),
+          taxCents: amountToCents(remote.totalTax),
+          totalCents: amountToCents(remote.total),
+          remainingCreditCents: amountToCents(remote.remainingCredit),
+          currency: remote.currencyCode ?? ctx.connection.config.baseCurrency ?? null,
+          issueDate: remote.date ? remote.date.slice(0, 10) : null,
+          reference: remote.reference,
+          sourceSyncedAt: syncedAt,
+          sourceImportJobId: ctx.syncJobId ?? null,
+          updatedAt: syncedAt,
+        };
+
+        const existing = await this.db.query.xeroCreditNotes.findFirst({
+          where: and(
+            eq(xeroCreditNotes.companyId, ctx.companyId),
+            eq(xeroCreditNotes.xeroCreditNoteId, remote.creditNoteId),
+          ),
+        });
+
+        let creditNoteId: string;
+
+        if (existing) {
+          await this.db.update(xeroCreditNotes).set(row).where(eq(xeroCreditNotes.id, existing.id));
+          creditNoteId = existing.id;
+          counts.updatedCount += 1;
+        } else {
+          const [created] = await this.db
+            .insert(xeroCreditNotes)
+            .values({
+              companyId: ctx.companyId,
+              integrationConnectionId: ctx.connection.id,
+              xeroCreditNoteId: remote.creditNoteId,
+              ...row,
+            })
+            .returning();
+
+          if (!created) {
+            throw new XeroSyncError('CREATE_FAILED', 'Unable to store Xero credit note');
+          }
+
+          creditNoteId = created.id;
+          counts.createdCount += 1;
+        }
+
+        await this.db
+          .delete(xeroCreditNoteAllocations)
+          .where(
+            and(
+              eq(xeroCreditNoteAllocations.companyId, ctx.companyId),
+              eq(xeroCreditNoteAllocations.creditNoteId, creditNoteId),
+            ),
+          );
+
+        if (remote.allocations.length > 0) {
+          await this.db.insert(xeroCreditNoteAllocations).values(
+            remote.allocations.map((allocation) => ({
+              companyId: ctx.companyId,
+              creditNoteId,
+              xeroInvoiceId: allocation.invoiceId,
+              amountCents: amountToCents(allocation.amount),
+              allocatedOn: allocation.date ? allocation.date.slice(0, 10) : null,
+            })),
+          );
+        }
+
+        counts.pulledCount += 1;
+
+        await this.writeLog(ctx, {
+          entityType: 'credit_note',
+          entityId: creditNoteId,
+          xeroEntityId: remote.creditNoteId,
+          action: 'pull',
+          status: 'success',
+          message: `Imported credit note ${remote.creditNoteNumber ?? remote.creditNoteId} from Xero`,
+        });
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'credit_note',
+          xeroEntityId: remote.creditNoteId,
+          action: 'pull',
+          status: 'failed',
+          message: mapError(error),
+        });
+      }
+    }
+  }
+
+  /**
+   * Attachment metadata for imported invoices, bills and credit notes. Walks parents in
+   * checkpointed slices so a long tenant resumes rather than restarting.
+   */
+  private async importAttachmentBatch(
+    ctx: SyncContext,
+    state: XeroImportJobState,
+  ): Promise<{ processed: number; done: boolean }> {
+    const counts = state.attachments;
+    const parents = await this.loadAttachmentParents(
+      ctx.companyId,
+      state.checkpoint.attachmentsOffset,
+      XERO_ATTACHMENT_PARENT_BATCH,
+    );
+
+    if (parents.length === 0) {
+      return { processed: 0, done: true };
+    }
+
+    for (const parent of parents) {
+      try {
+        const remoteAttachments = await ctx.client.listAttachments(parent.endpoint, parent.xeroId);
+
+        for (const remote of remoteAttachments) {
+          const syncedAt = new Date();
+          const row = {
+            parentType: parent.parentType,
+            parentXeroId: parent.xeroId,
+            fileName: remote.fileName,
+            mimeType: remote.mimeType,
+            contentLength: remote.contentLength,
+            xeroUrl: remote.url,
+            includeOnline: remote.includeOnline,
+            sourceSyncedAt: syncedAt,
+            sourceImportJobId: ctx.syncJobId ?? null,
+            updatedAt: syncedAt,
+          };
+
+          const existing = await this.db.query.xeroAttachments.findFirst({
+            where: and(
+              eq(xeroAttachments.companyId, ctx.companyId),
+              eq(xeroAttachments.xeroAttachmentId, remote.attachmentId),
+            ),
+          });
+
+          if (existing) {
+            await this.db
+              .update(xeroAttachments)
+              .set(row)
+              .where(eq(xeroAttachments.id, existing.id));
+            counts.updatedCount += 1;
+          } else {
+            await this.db.insert(xeroAttachments).values({
+              companyId: ctx.companyId,
+              integrationConnectionId: ctx.connection.id,
+              xeroAttachmentId: remote.attachmentId,
+              ...row,
+            });
+            counts.createdCount += 1;
+          }
+
+          counts.pulledCount += 1;
+        }
+      } catch (error) {
+        counts.failedCount += 1;
+        await this.writeLog(ctx, {
+          entityType: 'attachment',
+          xeroEntityId: parent.xeroId,
+          action: 'pull',
+          status: 'failed',
+          message: `Attachment fetch failed for ${parent.parentType} ${parent.xeroId}: ${mapError(error)}`,
+        });
+      }
+    }
+
+    state.checkpoint.attachmentsOffset += parents.length;
+    return { processed: parents.length, done: parents.length < XERO_ATTACHMENT_PARENT_BATCH };
+  }
+
+  /** Parents whose attachments should be fetched, in a stable order so the offset cursor is safe. */
+  private async loadAttachmentParents(
+    companyId: string,
+    offset: number,
+    limit: number,
+  ): Promise<
+    Array<{
+      xeroId: string;
+      parentType: string;
+      endpoint: 'Invoices' | 'BankTransactions' | 'CreditNotes' | 'Contacts';
+    }>
+  > {
+    const invoiceRows = await this.db
+      .select({ xeroId: xeroInvoiceMappings.xeroInvoiceId })
+      .from(xeroInvoiceMappings)
+      .where(eq(xeroInvoiceMappings.companyId, companyId))
+      .orderBy(xeroInvoiceMappings.xeroInvoiceId);
+    const billRows = await this.db
+      .select({ xeroId: xeroBills.xeroInvoiceId })
+      .from(xeroBills)
+      .where(eq(xeroBills.companyId, companyId))
+      .orderBy(xeroBills.xeroInvoiceId);
+    const creditNoteRows = await this.db
+      .select({ xeroId: xeroCreditNotes.xeroCreditNoteId })
+      .from(xeroCreditNotes)
+      .where(eq(xeroCreditNotes.companyId, companyId))
+      .orderBy(xeroCreditNotes.xeroCreditNoteId);
+
+    const parents = [
+      ...invoiceRows
+        .filter((row): row is { xeroId: string } => Boolean(row.xeroId))
+        .map((row) => ({
+          xeroId: row.xeroId,
+          parentType: 'invoice',
+          endpoint: 'Invoices' as const,
+        })),
+      ...billRows.map((row) => ({
+        xeroId: row.xeroId,
+        parentType: 'bill',
+        endpoint: 'Invoices' as const,
+      })),
+      ...creditNoteRows.map((row) => ({
+        xeroId: row.xeroId,
+        parentType: 'credit_note',
+        endpoint: 'CreditNotes' as const,
+      })),
+    ];
+
+    return parents.slice(offset, offset + limit);
+  }
+
+  /**
+   * Persist what this run actually covered for one entity. Coverage claims elsewhere read from
+   * here — they are never inferred from a page rendering successfully.
+   */
+  private async recordEntityCoverage(
+    ctx: SyncContext,
+    state: XeroImportJobState,
+    stage: XeroImportStage,
+  ): Promise<void> {
+    const counts = getStageCounts(state, stage);
+    const now = new Date();
+    const isFullHistoryRun = state.checkpoint.modifiedSince === null;
+
+    const existing = await this.db.query.xeroEntityCoverage.findFirst({
+      where: and(
+        eq(xeroEntityCoverage.companyId, ctx.companyId),
+        eq(xeroEntityCoverage.entity, stage),
+      ),
+    });
+
+    const values = {
+      lastSyncedAt: now,
+      lastSyncJobId: ctx.syncJobId ?? null,
+      importedCount: counts.createdCount + counts.updatedCount,
+      failedCount: counts.failedCount,
+      skippedCount: counts.skippedCount,
+      // Only a run with no date floor can claim complete history.
+      ...(isFullHistoryRun ? { fullHistorySyncedAt: now, modifiedSinceWatermark: now } : {}),
+      lastError: state.stageError,
+      updatedAt: now,
+    };
+
+    if (existing) {
+      await this.db
+        .update(xeroEntityCoverage)
+        .set(values)
+        .where(eq(xeroEntityCoverage.id, existing.id));
+      return;
+    }
+
+    await this.db.insert(xeroEntityCoverage).values({
+      companyId: ctx.companyId,
+      integrationConnectionId: ctx.connection.id,
+      entity: stage,
+      ...values,
+    });
   }
 
   private async resolveCustomerForXeroContact(
@@ -2880,7 +3757,7 @@ export class XeroSyncService {
   private async writeLog(
     ctx: SyncContext,
     input: {
-      entityType: 'customer' | 'quote' | 'invoice' | 'payment' | 'bank_transaction';
+      entityType: XeroSyncEntityType;
       entityId?: string;
       xeroEntityId?: string | null;
       action: 'push' | 'pull' | 'update' | 'link';
@@ -2901,18 +3778,22 @@ export class XeroSyncService {
     });
   }
 
-  /** Stub import stages — activated after migration 0109 + post-import verify GO. */
-  async importCreditNotesStub(_companyId: string): Promise<{ status: 'stub'; message: string }> {
+  /**
+   * @deprecated Credit notes now import as a real stage in the historical import pipeline.
+   * Retained so existing callers keep compiling; it reports the live stage rather than a stub.
+   */
+  async importCreditNotesStub(_companyId: string): Promise<{ status: 'active'; message: string }> {
     return {
-      status: 'stub',
-      message: 'Credit note import stage not active — see TITAN_XERO_TWO_WAY_SYNC.md',
+      status: 'active',
+      message: 'Credit notes import via the credit_notes stage of the Xero historical import.',
     };
   }
 
-  async importSupplierBillsStub(_companyId: string): Promise<{ status: 'stub'; message: string }> {
+  /** @deprecated Supplier bills now import as the `bills` stage. */
+  async importSupplierBillsStub(_companyId: string): Promise<{ status: 'active'; message: string }> {
     return {
-      status: 'stub',
-      message: 'Supplier bill import stage not active — see TITAN_XERO_TWO_WAY_SYNC.md',
+      status: 'active',
+      message: 'Supplier bills (ACCPAY) import via the bills stage of the Xero historical import.',
     };
   }
 

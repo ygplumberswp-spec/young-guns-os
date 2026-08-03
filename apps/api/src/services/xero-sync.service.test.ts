@@ -13,10 +13,14 @@ import {
 } from './xero-import-job.processor.js';
 import { XERO_PAGE_SIZE } from '../lib/xero.client.js';
 
-test('createInitialImportJobState starts at contacts page 1', () => {
+test('createInitialImportJobState starts at the first stage with every page at 1', () => {
   const state = createInitialImportJobState();
-  assert.equal(state.checkpoint.stage, 'contacts');
+  // Reference data leads the pipeline so line items resolve to real accounts and tracking.
+  assert.equal(state.checkpoint.stage, 'accounts');
   assert.equal(state.checkpoint.contactsPage, 1);
+  assert.equal(state.checkpoint.billsPage, 1);
+  assert.equal(state.checkpoint.creditNotesPage, 1);
+  assert.equal(state.checkpoint.attachmentsOffset, 0);
   assert.deepEqual(state.completedStages, []);
 });
 
@@ -28,27 +32,24 @@ test('isStageComplete detects partial and final contact pages', () => {
 });
 
 test('advanceToNextStage marks contacts complete and moves to quotes', () => {
-  const state = createInitialImportJobState();
+  const state = createInitialImportJobState({ checkpoint: { stage: 'contacts' } });
   const hasNext = advanceToNextStage(state);
   assert.equal(hasNext, true);
   assert.deepEqual(state.completedStages, ['contacts']);
   assert.equal(state.checkpoint.stage, 'quotes');
 });
 
-test('advanceToNextStage completes final bank_transactions stage', () => {
-  const state = createInitialImportJobState({
-    checkpoint: {
-      stage: 'bank_transactions',
-      contactsPage: 2,
-      quotesPage: 1,
-      invoicesPage: 1,
-      paymentsPage: 1,
-      bankTransactionsPage: 1,
-    },
-  });
+test('advanceToNextStage completes the final attachments stage', () => {
+  const state = createInitialImportJobState({ checkpoint: { stage: 'attachments' } });
   const hasNext = advanceToNextStage(state);
   assert.equal(hasNext, false);
-  assert.deepEqual(state.completedStages, ['bank_transactions']);
+  assert.deepEqual(state.completedStages, ['attachments']);
+});
+
+test('bank_transactions is no longer the final stage', () => {
+  const state = createInitialImportJobState({ checkpoint: { stage: 'bank_transactions' } });
+  assert.equal(advanceToNextStage(state), true);
+  assert.equal(state.checkpoint.stage, 'attachments');
 });
 
 test('parseImportJobState restores checkpoint for resume', () => {

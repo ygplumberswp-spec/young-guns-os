@@ -2,6 +2,8 @@ export class XeroError extends Error {
   constructor(
     public readonly code: string,
     message: string,
+    /** Populated for RATE_LIMIT so callers can schedule the retry Xero actually asked for. */
+    public readonly retryAfterMs?: number,
   ) {
     super(message);
     this.name = 'XeroError';
@@ -84,6 +86,61 @@ export type XeroPaymentRecord = {
   raw: Record<string, unknown>;
 };
 
+export type XeroCreditNoteRecord = {
+  creditNoteId: string;
+  creditNoteNumber: string | null;
+  type: string | null;
+  status: string | null;
+  contactId: string | null;
+  contactName: string | null;
+  subtotal: number;
+  totalTax: number;
+  total: number;
+  remainingCredit: number;
+  currencyCode: string | null;
+  date: string | null;
+  reference: string | null;
+  allocations: Array<{ invoiceId: string | null; amount: number; date: string | null }>;
+  raw: Record<string, unknown>;
+};
+
+export type XeroAccountRecord = {
+  accountId: string;
+  code: string | null;
+  name: string;
+  type: string | null;
+  taxType: string | null;
+  accountClass: string | null;
+  status: string | null;
+  description: string | null;
+  reportingCode: string | null;
+  raw: Record<string, unknown>;
+};
+
+export type XeroTrackingCategoryRecord = {
+  trackingCategoryId: string;
+  name: string;
+  status: string | null;
+  options: Array<{ trackingOptionId: string; name: string; status: string | null }>;
+  raw: Record<string, unknown>;
+};
+
+export type XeroAttachmentRecord = {
+  attachmentId: string;
+  fileName: string;
+  mimeType: string | null;
+  contentLength: number | null;
+  url: string | null;
+  includeOnline: boolean;
+  raw: Record<string, unknown>;
+};
+
+/** Shared options for list endpoints. `modifiedSince` drives incremental (gap-closing) syncs. */
+export type XeroListOptions = {
+  /** RFC 1123 / ISO timestamp sent as If-Modified-Since. Omit for a full historical pull. */
+  modifiedSince?: string | null;
+};
+
 type XeroClientOptions = {
   tenantId: string;
   getAccessToken: () => Promise<string>;
@@ -96,9 +153,51 @@ export const XERO_REQUEST_TIMEOUT_MS = 20_000;
 export const XERO_PAGE_SIZE = 100;
 export const XERO_RATE_LIMIT_MAX_RETRIES = 5;
 export const XERO_RATE_LIMIT_BASE_DELAY_MS = 2_000;
+/**
+ * Absolute page ceiling used only to detect a non-terminating pager. Reaching it raises
+ * PAGINATION_RUNAWAY rather than returning a truncated list — history is never silently capped.
+ */
+export const XERO_PAGE_RUNAWAY_LIMIT = 10_000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Xero signals its minute limit with Retry-After (seconds). Honour it when present, otherwise
+ * fall back to exponential backoff. Capped so a bad header cannot stall a run indefinitely.
+ */
+export function resolveRateLimitDelayMs(
+  retryAfterHeader: string | null | undefined,
+  attempt: number,
+): number {
+  const parsed = Number.parseInt((retryAfterHeader ?? '').trim(), 10);
+
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.min(parsed * 1_000, 5 * 60_000);
+  }
+
+  return XERO_RATE_LIMIT_BASE_DELAY_MS * 2 ** Math.max(0, attempt - 1);
+}
+
+/** Xero list endpoints return a full page while more records remain. */
+export function hasMoreXeroPages(batchSize: number): boolean {
+  return batchSize >= XERO_PAGE_SIZE;
+}
+
+function buildQuery(params: Record<string, string | number | boolean | null | undefined>): string {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === null || value === undefined || value === '') {
+      continue;
+    }
+
+    search.set(key, String(value));
+  }
+
+  const query = search.toString();
+  return query ? `?${query}` : '';
 }
 
 function timeoutSignal(timeoutMs: number): AbortSignal {
@@ -338,145 +437,161 @@ export class XeroClient {
     return invoices[0]!;
   }
 
-  async listPayments(): Promise<XeroPaymentRecord[]> {
-    const payments: XeroPaymentRecord[] = [];
+  /**
+   * Page an entity to exhaustion. There is no record or page cap: the loop ends only when Xero
+   * returns a short/empty page. A runaway pager raises instead of returning partial history.
+   */
+  private async listAllPages<T>(
+    entity: string,
+    fetchPage: (page: number) => Promise<T[]>,
+  ): Promise<T[]> {
+    const rows: T[] = [];
     let page = 1;
 
-    while (page <= 50) {
-      const batch = await this.listPaymentsPage(page);
+    while (page <= XERO_PAGE_RUNAWAY_LIMIT) {
+      const batch = await fetchPage(page);
+      rows.push(...batch);
 
-      if (batch.length === 0) {
-        break;
-      }
-
-      payments.push(...batch);
-
-      if (batch.length < XERO_PAGE_SIZE) {
-        break;
+      if (!hasMoreXeroPages(batch.length)) {
+        return rows;
       }
 
       page += 1;
     }
 
-    return payments;
+    throw new XeroError(
+      'PAGINATION_RUNAWAY',
+      `Xero ${entity} pagination exceeded ${XERO_PAGE_RUNAWAY_LIMIT} pages without terminating — refusing to return truncated history`,
+    );
   }
 
-  async listContacts(): Promise<XeroContactRecord[]> {
-    const contacts: XeroContactRecord[] = [];
-    let page = 1;
-
-    while (page <= 50) {
-      const batch = await this.listContactsPage(page);
-
-      if (batch.length === 0) {
-        break;
-      }
-
-      contacts.push(...batch);
-
-      if (batch.length < XERO_PAGE_SIZE) {
-        break;
-      }
-
-      page += 1;
-    }
-
-    return contacts;
+  async listPayments(options?: XeroListOptions): Promise<XeroPaymentRecord[]> {
+    return this.listAllPages('Payments', (page) => this.listPaymentsPage(page, options));
   }
 
-  async listContactsPage(page: number): Promise<XeroContactRecord[]> {
-    const payload = await this.apiRequest('GET', `/Contacts?page=${page}`);
+  async listContacts(options?: XeroListOptions): Promise<XeroContactRecord[]> {
+    return this.listAllPages('Contacts', (page) => this.listContactsPage(page, options));
+  }
+
+  /** Archived contacts are part of history — Xero omits them unless includeArchived is set. */
+  async listContactsPage(page: number, options?: XeroListOptions): Promise<XeroContactRecord[]> {
+    const query = buildQuery({ page, includeArchived: true });
+    const payload = await this.apiRequest('GET', `/Contacts${query}`, undefined, options?.modifiedSince);
     return extractContacts(payload);
   }
 
-  async listQuotesPage(page: number): Promise<XeroQuoteRecord[]> {
-    const payload = await this.apiRequest('GET', `/Quotes?page=${page}`);
+  async listQuotesPage(page: number, options?: XeroListOptions): Promise<XeroQuoteRecord[]> {
+    const query = buildQuery({ page });
+    const payload = await this.apiRequest('GET', `/Quotes${query}`, undefined, options?.modifiedSince);
     return extractQuotes(payload);
   }
 
-  async listQuotes(): Promise<XeroQuoteRecord[]> {
-    const quotes: XeroQuoteRecord[] = [];
-    let page = 1;
-
-    while (page <= 50) {
-      const batch = await this.listQuotesPage(page);
-
-      if (batch.length === 0) {
-        break;
-      }
-
-      quotes.push(...batch);
-
-      if (batch.length < XERO_PAGE_SIZE) {
-        break;
-      }
-
-      page += 1;
-    }
-
-    return quotes;
+  async listQuotes(options?: XeroListOptions): Promise<XeroQuoteRecord[]> {
+    return this.listAllPages('Quotes', (page) => this.listQuotesPage(page, options));
   }
 
-  async listInvoices(): Promise<XeroInvoiceRecord[]> {
-    const invoices: XeroInvoiceRecord[] = [];
-    let page = 1;
-
-    while (page <= 50) {
-      const batch = await this.listInvoicesPage(page);
-
-      if (batch.length === 0) {
-        break;
-      }
-
-      invoices.push(...batch);
-
-      if (batch.length < XERO_PAGE_SIZE) {
-        break;
-      }
-
-      page += 1;
-    }
-
-    return invoices;
+  async listInvoices(options?: XeroListOptions): Promise<XeroInvoiceRecord[]> {
+    return this.listAllPages('Invoices', (page) => this.listInvoicesPage(page, options));
   }
 
-  async listInvoicesPage(page: number): Promise<XeroInvoiceRecord[]> {
-    const where = encodeURIComponent('Type=="ACCREC"');
-    const payload = await this.apiRequest('GET', `/Invoices?where=${where}&page=${page}`);
+  /** Sales invoices (ACCREC). Voided and deleted invoices are retained, not filtered out. */
+  async listInvoicesPage(page: number, options?: XeroListOptions): Promise<XeroInvoiceRecord[]> {
+    return this.listInvoicesPageByType('ACCREC', page, options);
+  }
+
+  /** Supplier bills (ACCPAY) — the expense side of the ledger. */
+  async listBillsPage(page: number, options?: XeroListOptions): Promise<XeroInvoiceRecord[]> {
+    return this.listInvoicesPageByType('ACCPAY', page, options);
+  }
+
+  async listBills(options?: XeroListOptions): Promise<XeroInvoiceRecord[]> {
+    return this.listAllPages('Bills', (page) => this.listBillsPage(page, options));
+  }
+
+  private async listInvoicesPageByType(
+    type: 'ACCREC' | 'ACCPAY',
+    page: number,
+    options?: XeroListOptions,
+  ): Promise<XeroInvoiceRecord[]> {
+    const query = buildQuery({ where: `Type=="${type}"`, page });
+    const payload = await this.apiRequest(
+      'GET',
+      `/Invoices${query}`,
+      undefined,
+      options?.modifiedSince,
+    );
     return extractInvoices(payload);
   }
 
-  async listPaymentsPage(page: number): Promise<XeroPaymentRecord[]> {
-    const payload = await this.apiRequest('GET', `/Payments?page=${page}`);
+  /** Full invoice/bill detail including line items — list pages omit them for ACCPAY/ACCREC alike. */
+  async fetchInvoiceDetail(invoiceId: string): Promise<XeroInvoiceRecord | null> {
+    const payload = await this.apiRequest('GET', `/Invoices/${invoiceId}`);
+    return extractInvoices(payload)[0] ?? null;
+  }
+
+  async listPaymentsPage(page: number, options?: XeroListOptions): Promise<XeroPaymentRecord[]> {
+    const query = buildQuery({ page });
+    const payload = await this.apiRequest('GET', `/Payments${query}`, undefined, options?.modifiedSince);
     return extractPayments(payload);
   }
 
-  async listBankTransactionsPage(page: number): Promise<XeroBankTransactionRecord[]> {
-    const payload = await this.apiRequest('GET', `/BankTransactions?page=${page}`);
+  async listBankTransactionsPage(
+    page: number,
+    options?: XeroListOptions,
+  ): Promise<XeroBankTransactionRecord[]> {
+    const query = buildQuery({ page });
+    const payload = await this.apiRequest(
+      'GET',
+      `/BankTransactions${query}`,
+      undefined,
+      options?.modifiedSince,
+    );
     return extractBankTransactions(payload);
   }
 
-  async listBankTransactions(): Promise<XeroBankTransactionRecord[]> {
-    const rows: XeroBankTransactionRecord[] = [];
-    let page = 1;
+  async listBankTransactions(options?: XeroListOptions): Promise<XeroBankTransactionRecord[]> {
+    return this.listAllPages('BankTransactions', (page) =>
+      this.listBankTransactionsPage(page, options),
+    );
+  }
 
-    while (page <= 50) {
-      const batch = await this.listBankTransactionsPage(page);
+  async listCreditNotesPage(page: number, options?: XeroListOptions): Promise<XeroCreditNoteRecord[]> {
+    const query = buildQuery({ page });
+    const payload = await this.apiRequest(
+      'GET',
+      `/CreditNotes${query}`,
+      undefined,
+      options?.modifiedSince,
+    );
+    return extractCreditNotes(payload);
+  }
 
-      if (batch.length === 0) {
-        break;
-      }
+  async listCreditNotes(options?: XeroListOptions): Promise<XeroCreditNoteRecord[]> {
+    return this.listAllPages('CreditNotes', (page) => this.listCreditNotesPage(page, options));
+  }
 
-      rows.push(...batch);
+  /** Chart of accounts. Xero does not page this endpoint — it returns the full set. */
+  async listAccounts(): Promise<XeroAccountRecord[]> {
+    const payload = await this.apiRequest('GET', '/Accounts');
+    return extractAccountRecords(payload);
+  }
 
-      if (batch.length < XERO_PAGE_SIZE) {
-        break;
-      }
+  /** Tracking categories including their options. Not paged by Xero. */
+  async listTrackingCategories(): Promise<XeroTrackingCategoryRecord[]> {
+    const payload = await this.apiRequest('GET', '/TrackingCategories?includeArchived=true');
+    return extractTrackingCategories(payload);
+  }
 
-      page += 1;
-    }
-
-    return rows;
+  /**
+   * Attachment metadata for one parent record. Only metadata is imported — file content stays in
+   * Xero and is fetched on demand through the access-controlled document path.
+   */
+  async listAttachments(
+    endpoint: 'Invoices' | 'BankTransactions' | 'CreditNotes' | 'Contacts',
+    parentXeroId: string,
+  ): Promise<XeroAttachmentRecord[]> {
+    const payload = await this.apiRequest('GET', `/${endpoint}/${parentXeroId}/Attachments`);
+    return extractAttachments(payload);
   }
 
   private async getDefaultSalesAccountCode(): Promise<string> {
@@ -519,22 +634,26 @@ export class XeroClient {
     return accessToken;
   }
 
-  private async apiRequest(method: 'GET' | 'POST', path: string, body?: unknown): Promise<unknown> {
+  private async apiRequest(
+    method: 'GET' | 'POST',
+    path: string,
+    body?: unknown,
+    modifiedSince?: string | null,
+  ): Promise<unknown> {
     let attempt = 0;
 
     while (attempt <= XERO_RATE_LIMIT_MAX_RETRIES) {
       attempt += 1;
 
       try {
-        return await this.apiRequestOnce(method, path, body);
+        return await this.apiRequestOnce(method, path, body, modifiedSince);
       } catch (error) {
         if (
           error instanceof XeroError &&
           error.code === 'RATE_LIMIT' &&
           attempt <= XERO_RATE_LIMIT_MAX_RETRIES
         ) {
-          const retryAfterMs = XERO_RATE_LIMIT_BASE_DELAY_MS * 2 ** (attempt - 1);
-          await sleep(retryAfterMs);
+          await sleep(error.retryAfterMs ?? resolveRateLimitDelayMs(null, attempt));
           continue;
         }
 
@@ -549,6 +668,7 @@ export class XeroClient {
     method: 'GET' | 'POST',
     path: string,
     body?: unknown,
+    modifiedSince?: string | null,
   ): Promise<unknown> {
     const accessToken = await this.fetchAccessToken();
     const url = `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
@@ -563,6 +683,7 @@ export class XeroClient {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'xero-tenant-id': this.tenantId,
+          ...(modifiedSince ? { 'If-Modified-Since': modifiedSince } : {}),
         },
         body: body ? JSON.stringify(body) : undefined,
         signal: timeoutSignal(this.requestTimeoutMs),
@@ -594,7 +715,12 @@ export class XeroClient {
     }
 
     if (response.status === 429) {
-      throw new XeroError('RATE_LIMIT', 'Xero rate limit reached. Retrying with backoff.');
+      const retryAfterMs = resolveRateLimitDelayMs(response.headers.get('Retry-After'), 1);
+      throw new XeroError(
+        'RATE_LIMIT',
+        `Xero rate limit reached. Retrying in ${Math.ceil(retryAfterMs / 1000)}s.`,
+        retryAfterMs,
+      );
     }
 
     if (!response.ok) {
@@ -883,6 +1009,162 @@ function extractPayments(payload: unknown): XeroPaymentRecord[] {
       } satisfies XeroPaymentRecord;
     })
     .filter((row): row is XeroPaymentRecord => row !== null);
+}
+
+function extractCreditNotes(payload: unknown): XeroCreditNoteRecord[] {
+  return mapRows(payload, 'CreditNotes', (creditNote) => {
+    const creditNoteId = pickString(creditNote, ['CreditNoteID', 'creditNoteID', 'creditNoteId']);
+
+    if (!creditNoteId) {
+      return null;
+    }
+
+    const contact =
+      creditNote.Contact && typeof creditNote.Contact === 'object'
+        ? (creditNote.Contact as Record<string, unknown>)
+        : null;
+    const allocationRows = Array.isArray(creditNote.Allocations) ? creditNote.Allocations : [];
+
+    return {
+      creditNoteId,
+      creditNoteNumber: pickString(creditNote, ['CreditNoteNumber', 'creditNoteNumber']),
+      type: pickString(creditNote, ['Type', 'type']),
+      status: pickString(creditNote, ['Status', 'status']),
+      contactId: contact ? pickString(contact, ['ContactID', 'contactID', 'contactId']) : null,
+      contactName: contact ? pickString(contact, ['Name', 'name']) : null,
+      subtotal: pickNumber(creditNote, ['SubTotal', 'subTotal', 'subtotal']) ?? 0,
+      totalTax: pickNumber(creditNote, ['TotalTax', 'totalTax']) ?? 0,
+      total: pickNumber(creditNote, ['Total', 'total']) ?? 0,
+      remainingCredit: pickNumber(creditNote, ['RemainingCredit', 'remainingCredit']) ?? 0,
+      currencyCode: pickString(creditNote, ['CurrencyCode', 'currencyCode']),
+      date: pickString(creditNote, ['Date', 'date']),
+      reference: pickString(creditNote, ['Reference', 'reference']),
+      allocations: allocationRows
+        .map((row) => {
+          if (!row || typeof row !== 'object') return null;
+          const allocation = row as Record<string, unknown>;
+          const invoice =
+            allocation.Invoice && typeof allocation.Invoice === 'object'
+              ? (allocation.Invoice as Record<string, unknown>)
+              : null;
+          return {
+            invoiceId: invoice ? pickString(invoice, ['InvoiceID', 'invoiceID']) : null,
+            amount: pickNumber(allocation, ['Amount', 'amount']) ?? 0,
+            date: pickString(allocation, ['Date', 'date']),
+          };
+        })
+        .filter((row): row is { invoiceId: string | null; amount: number; date: string | null } =>
+          row !== null,
+        ),
+      raw: creditNote,
+    } satisfies XeroCreditNoteRecord;
+  });
+}
+
+function extractAccountRecords(payload: unknown): XeroAccountRecord[] {
+  return mapRows(payload, 'Accounts', (account) => {
+    const accountId = pickString(account, ['AccountID', 'accountID', 'accountId']);
+    const name = pickString(account, ['Name', 'name']);
+
+    if (!accountId || !name) {
+      return null;
+    }
+
+    return {
+      accountId,
+      code: pickString(account, ['Code', 'code']),
+      name,
+      type: pickString(account, ['Type', 'type']),
+      taxType: pickString(account, ['TaxType', 'taxType']),
+      accountClass: pickString(account, ['Class', 'class']),
+      status: pickString(account, ['Status', 'status']),
+      description: pickString(account, ['Description', 'description']),
+      reportingCode: pickString(account, ['ReportingCode', 'reportingCode']),
+      raw: account,
+    } satisfies XeroAccountRecord;
+  });
+}
+
+function extractTrackingCategories(payload: unknown): XeroTrackingCategoryRecord[] {
+  return mapRows(payload, 'TrackingCategories', (category) => {
+    const trackingCategoryId = pickString(category, [
+      'TrackingCategoryID',
+      'trackingCategoryID',
+      'trackingCategoryId',
+    ]);
+    const name = pickString(category, ['Name', 'name']);
+
+    if (!trackingCategoryId || !name) {
+      return null;
+    }
+
+    const optionRows = Array.isArray(category.Options) ? category.Options : [];
+
+    return {
+      trackingCategoryId,
+      name,
+      status: pickString(category, ['Status', 'status']),
+      options: optionRows
+        .map((row) => {
+          if (!row || typeof row !== 'object') return null;
+          const option = row as Record<string, unknown>;
+          const trackingOptionId = pickString(option, ['TrackingOptionID', 'trackingOptionID']);
+          const optionName = pickString(option, ['Name', 'name']);
+          if (!trackingOptionId || !optionName) return null;
+          return {
+            trackingOptionId,
+            name: optionName,
+            status: pickString(option, ['Status', 'status']),
+          };
+        })
+        .filter(
+          (row): row is { trackingOptionId: string; name: string; status: string | null } =>
+            row !== null,
+        ),
+      raw: category,
+    } satisfies XeroTrackingCategoryRecord;
+  });
+}
+
+function extractAttachments(payload: unknown): XeroAttachmentRecord[] {
+  return mapRows(payload, 'Attachments', (attachment) => {
+    const attachmentId = pickString(attachment, ['AttachmentID', 'attachmentID', 'attachmentId']);
+    const fileName = pickString(attachment, ['FileName', 'fileName']);
+
+    if (!attachmentId || !fileName) {
+      return null;
+    }
+
+    return {
+      attachmentId,
+      fileName,
+      mimeType: pickString(attachment, ['MimeType', 'mimeType']),
+      contentLength: pickNumber(attachment, ['ContentLength', 'contentLength']),
+      url: pickString(attachment, ['Url', 'url']),
+      includeOnline: attachment.IncludeOnline === true,
+      raw: attachment,
+    } satisfies XeroAttachmentRecord;
+  });
+}
+
+function mapRows<T>(
+  payload: unknown,
+  key: string,
+  map: (row: Record<string, unknown>) => T | null,
+): T[] {
+  if (!payload || typeof payload !== 'object') {
+    return [];
+  }
+
+  const rows = (payload as Record<string, unknown>)[key];
+
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows
+    .map((row) => (row && typeof row === 'object' ? map(row as Record<string, unknown>) : null))
+    .filter((row): row is T => row !== null);
 }
 
 function extractAccounts(payload: unknown): Array<{ code: string }> {

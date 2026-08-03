@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { ExecutiveXeroFinance, XeroSyncStatusResponse } from '@titan/shared';
 import { buildFinanceDashboardSnapshot } from '@titan/shared';
+import { emptyImportCounts } from './xero-import-job.shared.js';
 
 /** Mirrors DashboardExecutiveService.loadXeroFinance mapping for unit coverage. */
 function mapXeroStatusToExecutiveFinance(
@@ -130,9 +131,18 @@ describe('executive dashboard Xero finance mapping', () => {
             contactsPage: 1,
             quotesPage: 1,
             invoicesPage: 1,
+            billsPage: 1,
+            creditNotesPage: 1,
             paymentsPage: 1,
             bankTransactionsPage: 1,
+            attachmentsOffset: 0,
+            modifiedSince: null,
           },
+          accounts: emptyImportCounts(),
+          trackingCategories: emptyImportCounts(),
+          bills: emptyImportCounts(),
+          creditNotes: emptyImportCounts(),
+          attachments: emptyImportCounts(),
           contacts: {
             createdCount: 12,
             updatedCount: 0,

@@ -6,14 +6,41 @@ import type {
   XeroImportStage,
 } from '@titan/shared';
 
-export type XeroImportJobState = {
+/** Per-stage counters keyed by the state field that holds them. */
+export type XeroImportStageCountsKey =
+  | 'accounts'
+  | 'trackingCategories'
+  | 'contacts'
+  | 'quotes'
+  | 'invoices'
+  | 'bills'
+  | 'creditNotes'
+  | 'payments'
+  | 'bankTransactions'
+  | 'attachments';
+
+export const XERO_IMPORT_STAGE_COUNT_KEYS: Record<XeroImportStage, XeroImportStageCountsKey> = {
+  accounts: 'accounts',
+  tracking_categories: 'trackingCategories',
+  contacts: 'contacts',
+  quotes: 'quotes',
+  invoices: 'invoices',
+  bills: 'bills',
+  credit_notes: 'creditNotes',
+  payments: 'payments',
+  bank_transactions: 'bankTransactions',
+  attachments: 'attachments',
+};
+
+export const XERO_IMPORT_COUNT_KEYS: XeroImportStageCountsKey[] = Object.values(
+  XERO_IMPORT_STAGE_COUNT_KEYS,
+);
+
+export type XeroImportStageCounts = Record<XeroImportStageCountsKey, XeroImportEntityCounts>;
+
+export type XeroImportJobState = XeroImportStageCounts & {
   checkpoint: XeroImportCheckpoint;
   completedStages: XeroImportStage[];
-  contacts: XeroImportEntityCounts;
-  quotes: XeroImportEntityCounts;
-  invoices: XeroImportEntityCounts;
-  payments: XeroImportEntityCounts;
-  bankTransactions: XeroImportEntityCounts;
   failedStage: XeroImportStage | null;
   stageError: string | null;
   idempotencyKey?: string;
@@ -39,6 +66,13 @@ export function emptyImportCounts(): XeroImportEntityCounts {
   };
 }
 
+export function emptyStageCounts(): XeroImportStageCounts {
+  return XERO_IMPORT_COUNT_KEYS.reduce((acc, key) => {
+    acc[key] = emptyImportCounts();
+    return acc;
+  }, {} as XeroImportStageCounts);
+}
+
 export function summarizeCounts(counts: XeroImportEntityCounts): Record<string, number> {
   return {
     createdCount: counts.createdCount,
@@ -49,46 +83,67 @@ export function summarizeCounts(counts: XeroImportEntityCounts): Record<string, 
   };
 }
 
-export function buildXeroImportSyncMessage(input: {
-  success: boolean;
-  contacts: XeroImportEntityCounts;
-  quotes?: XeroImportEntityCounts;
-  invoices: XeroImportEntityCounts;
-  payments: XeroImportEntityCounts;
-  bankTransactions: XeroImportEntityCounts;
-  failedStage?: XeroImportStage | null;
-  stageError?: string | null;
-}): string {
-  const quotes = input.quotes ?? emptyImportCounts();
-  const createdTotal =
-    input.contacts.createdCount +
-    quotes.createdCount +
-    input.invoices.createdCount +
-    input.payments.createdCount +
-    input.bankTransactions.createdCount;
-  const updatedTotal =
-    input.contacts.updatedCount +
-    quotes.updatedCount +
-    input.invoices.updatedCount +
-    input.payments.updatedCount +
-    input.bankTransactions.updatedCount;
-  const failedTotal =
-    input.contacts.failedCount +
-    quotes.failedCount +
-    input.invoices.failedCount +
-    input.payments.failedCount +
-    input.bankTransactions.failedCount;
+function sumField(
+  counts: Partial<XeroImportStageCounts>,
+  field: keyof XeroImportEntityCounts,
+): number {
+  return XERO_IMPORT_COUNT_KEYS.reduce((total, key) => total + (counts[key]?.[field] ?? 0), 0);
+}
 
-  const summary = `Contacts ${input.contacts.createdCount} new / ${input.contacts.updatedCount} updated, quotes ${quotes.createdCount} new / ${quotes.updatedCount} updated, invoices ${input.invoices.createdCount} new / ${input.invoices.updatedCount} updated, payments ${input.payments.createdCount} new / ${input.payments.updatedCount} updated, bank transactions ${input.bankTransactions.createdCount} new / ${input.bankTransactions.updatedCount} updated`;
+/** Stage counts in the order they are reported to the Owner. */
+const MESSAGE_STAGES: Array<{ key: XeroImportStageCountsKey; label: string }> = [
+  { key: 'accounts', label: 'accounts' },
+  { key: 'trackingCategories', label: 'tracking categories' },
+  { key: 'contacts', label: 'contacts' },
+  { key: 'quotes', label: 'quotes' },
+  { key: 'invoices', label: 'invoices' },
+  { key: 'bills', label: 'bills' },
+  { key: 'creditNotes', label: 'credit notes' },
+  { key: 'payments', label: 'payments' },
+  { key: 'bankTransactions', label: 'bank transactions' },
+  { key: 'attachments', label: 'attachments' },
+];
+
+export function buildXeroImportSyncMessage(
+  input: Partial<XeroImportStageCounts> & {
+    success: boolean;
+    failedStage?: XeroImportStage | null;
+    stageError?: string | null;
+  },
+): string {
+  const createdTotal = sumField(input, 'createdCount');
+  const updatedTotal = sumField(input, 'updatedCount');
+  const failedTotal = sumField(input, 'failedCount');
+  const skippedTotal = sumField(input, 'skippedCount');
+
+  const summary = MESSAGE_STAGES.filter(({ key }) => {
+    const counts = input[key];
+    return (
+      counts &&
+      (counts.createdCount > 0 ||
+        counts.updatedCount > 0 ||
+        counts.failedCount > 0 ||
+        counts.skippedCount > 0)
+    );
+  })
+    .map(({ key, label }) => {
+      const counts = input[key]!;
+      return `${label} ${counts.createdCount} new / ${counts.updatedCount} updated`;
+    })
+    .join(', ');
+
+  const detailSummary = summary || 'no records returned by Xero';
+  const skippedNote =
+    skippedTotal > 0 ? ` ${skippedTotal} record(s) skipped — each has a sync log row.` : '';
 
   if (input.success) {
-    return `Xero sync complete. ${summary}.`;
+    return `Xero sync complete. ${detailSummary}.${skippedNote}`;
   }
 
   if (input.failedStage) {
     const detail = input.stageError ? ` ${input.stageError}` : '';
-    return `Xero sync failed during ${input.failedStage}.${detail} ${summary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records. Last sync was not updated.`;
+    return `Xero sync failed during ${input.failedStage}.${detail} ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote} Last sync was not updated.`;
   }
 
-  return `Xero sync finished with ${failedTotal} failed record(s). ${summary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.`;
+  return `Xero sync finished with ${failedTotal} failed record(s). ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote}`;
 }

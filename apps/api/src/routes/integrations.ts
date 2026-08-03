@@ -5,6 +5,8 @@ import type { IntegrationsService } from '../services/integrations.service.js';
 import { IntegrationsError } from '../services/integrations.service.js';
 import type { XeroSyncService } from '../services/xero-sync.service.js';
 import { XeroSyncError } from '../services/xero-sync.service.js';
+import type { XeroFinancialMemoryService } from '../services/xero-financial-memory.service.js';
+import { XeroFinancialMemoryError } from '../services/xero-financial-memory.service.js';
 import type { XeroWriteApprovalWorkflowService } from '../services/xero-write-approval-workflow.service.js';
 import { XeroWriteApprovalWorkflowError } from '../services/xero-write-approval-workflow.service.js';
 import type { BusinessIntegrationsService } from '../services/business-integrations.service.js';
@@ -180,6 +182,7 @@ type IntegrationsRouterDeps = {
   businessIntegrationsService: BusinessIntegrationsService;
   resendEmailService?: ResendEmailService;
   xeroSyncService: XeroSyncService;
+  xeroFinancialMemoryService?: XeroFinancialMemoryService;
   xeroWriteApprovalWorkflowService?: XeroWriteApprovalWorkflowService;
   integrationHubService: IntegrationHubService;
   integrationApiManagementService: IntegrationApiManagementService;
@@ -216,6 +219,7 @@ export function createIntegrationsRouter({
   businessIntegrationsService,
   resendEmailService,
   xeroSyncService,
+  xeroFinancialMemoryService,
   xeroWriteApprovalWorkflowService,
   integrationHubService,
   integrationApiManagementService,
@@ -604,6 +608,47 @@ export function createIntegrationsRouter({
       const { companyId } = getAuth(req);
       const logs = await xeroSyncService.listSyncLogs(companyId);
       res.json({ data: { logs } });
+    },
+  );
+
+  /** Honest per-entity coverage of the imported Xero history — the evidence behind every claim. */
+  router.get(
+    '/xero/sync/coverage',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const coverage = await xeroSyncService.getHistoryCoverage(companyId);
+      res.json({ data: { coverage } });
+    },
+  );
+
+  router.get(
+    '/xero/financial-history/:customerId',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId, userId, roleName } = getAuth(req);
+
+      if (!xeroFinancialMemoryService) {
+        res.status(503).json({ error: { message: 'Xero financial memory is not configured.' } });
+        return;
+      }
+
+      try {
+        const history = await xeroFinancialMemoryService.getCustomerFinancialHistoryAudited(
+          { companyId, userId, role: roleName },
+          String(req.params.customerId),
+        );
+        res.json({ data: { history } });
+      } catch (error) {
+        if (error instanceof XeroFinancialMemoryError) {
+          res
+            .status(error.code === 'FORBIDDEN' ? 403 : error.code === 'NOT_FOUND' ? 404 : 400)
+            .json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+
+        throw error;
+      }
     },
   );
 

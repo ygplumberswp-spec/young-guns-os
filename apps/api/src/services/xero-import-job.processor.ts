@@ -15,8 +15,12 @@ import { XERO_PAGE_SIZE } from '../lib/xero.client.js';
 import {
   buildXeroImportSyncMessage,
   emptyImportCounts,
+  emptyStageCounts,
   summarizeCounts,
+  XERO_IMPORT_COUNT_KEYS,
+  XERO_IMPORT_STAGE_COUNT_KEYS,
   type XeroImportJobState,
+  type XeroImportStageCountsKey,
 } from './xero-import-job.shared.js';
 
 /** Per-batch wall-clock budget — each scheduler tick processes within this window. */
@@ -32,34 +36,51 @@ export const XERO_IMPORT_STALE_JOB_MS = XERO_IMPORT_STALL_THRESHOLD_MS;
 /** Max entity pages processed per batch tick. */
 export const XERO_IMPORT_MAX_PAGES_PER_BATCH = 5;
 
+/**
+ * Dependency order. Reference data first so line items resolve to real accounts and tracking;
+ * attachments last so their parent records already exist to link against.
+ */
 export const XERO_IMPORT_STAGES: XeroImportStage[] = [
+  'accounts',
+  'tracking_categories',
   'contacts',
   'quotes',
   'invoices',
+  'bills',
+  'credit_notes',
   'payments',
   'bank_transactions',
+  'attachments',
 ];
+
+/** Stages Xero returns in one unpaged response. */
+export const XERO_UNPAGED_STAGES: ReadonlySet<XeroImportStage> = new Set<XeroImportStage>([
+  'accounts',
+  'tracking_categories',
+]);
 
 export function createInitialImportJobState(options?: {
   idempotencyKey?: string;
   trigger?: IntegrationSyncTrigger;
   checkpoint?: Partial<XeroImportCheckpoint>;
+  /** Null (default) means a complete historical pull with no date floor. */
+  modifiedSince?: string | null;
 }): XeroImportJobState {
   return {
+    ...emptyStageCounts(),
     checkpoint: {
-      stage: options?.checkpoint?.stage ?? 'contacts',
+      stage: options?.checkpoint?.stage ?? XERO_IMPORT_STAGES[0]!,
       contactsPage: options?.checkpoint?.contactsPage ?? 1,
       quotesPage: options?.checkpoint?.quotesPage ?? 1,
       invoicesPage: options?.checkpoint?.invoicesPage ?? 1,
+      billsPage: options?.checkpoint?.billsPage ?? 1,
+      creditNotesPage: options?.checkpoint?.creditNotesPage ?? 1,
       paymentsPage: options?.checkpoint?.paymentsPage ?? 1,
       bankTransactionsPage: options?.checkpoint?.bankTransactionsPage ?? 1,
+      attachmentsOffset: options?.checkpoint?.attachmentsOffset ?? 0,
+      modifiedSince: options?.checkpoint?.modifiedSince ?? options?.modifiedSince ?? null,
     },
     completedStages: [],
-    contacts: emptyImportCounts(),
-    quotes: emptyImportCounts(),
-    invoices: emptyImportCounts(),
-    payments: emptyImportCounts(),
-    bankTransactions: emptyImportCounts(),
     failedStage: null,
     stageError: null,
     idempotencyKey: options?.idempotencyKey,
@@ -68,15 +89,19 @@ export function createInitialImportJobState(options?: {
 }
 
 export function importJobStateToSummary(state: XeroImportJobState): Record<string, unknown> {
+  const counts = XERO_IMPORT_COUNT_KEYS.reduce<Record<string, Record<string, number>>>(
+    (acc, key) => {
+      acc[key] = summarizeCounts(state[key]);
+      return acc;
+    },
+    {},
+  );
+
   return {
+    ...counts,
     checkpoint: state.checkpoint,
     currentStage: state.checkpoint.stage,
     completedStages: state.completedStages,
-    contacts: summarizeCounts(state.contacts),
-    quotes: summarizeCounts(state.quotes),
-    invoices: summarizeCounts(state.invoices),
-    payments: summarizeCounts(state.payments),
-    bankTransactions: summarizeCounts(state.bankTransactions),
     failedStage: state.failedStage,
     stageError: state.stageError,
     idempotencyKey: state.idempotencyKey,
@@ -97,23 +122,31 @@ export function parseImportJobState(
   summary: Record<string, unknown> | null | undefined,
 ): XeroImportJobState {
   const checkpoint = (summary?.checkpoint ?? {}) as Partial<XeroImportCheckpoint>;
+  const counts = XERO_IMPORT_COUNT_KEYS.reduce((acc, key) => {
+    acc[key] = parseCounts(summary?.[key]);
+    return acc;
+  }, {} as Record<XeroImportStageCountsKey, XeroImportEntityCounts>);
+
   return {
+    ...counts,
     checkpoint: {
-      stage: checkpoint.stage ?? 'contacts',
+      // Jobs written before the historical-sync stages default to the first stage rather than
+      // silently resuming mid-pipeline against a checkpoint that no longer exists.
+      stage: checkpoint.stage ?? XERO_IMPORT_STAGES[0]!,
       contactsPage: checkpoint.contactsPage ?? 1,
       quotesPage: checkpoint.quotesPage ?? 1,
       invoicesPage: checkpoint.invoicesPage ?? 1,
+      billsPage: checkpoint.billsPage ?? 1,
+      creditNotesPage: checkpoint.creditNotesPage ?? 1,
       paymentsPage: checkpoint.paymentsPage ?? 1,
       bankTransactionsPage: checkpoint.bankTransactionsPage ?? 1,
+      attachmentsOffset: checkpoint.attachmentsOffset ?? 0,
+      modifiedSince:
+        typeof checkpoint.modifiedSince === 'string' ? checkpoint.modifiedSince : null,
     },
     completedStages: Array.isArray(summary?.completedStages)
       ? (summary.completedStages as XeroImportStage[])
       : [],
-    contacts: parseCounts(summary?.contacts),
-    quotes: parseCounts(summary?.quotes),
-    invoices: parseCounts(summary?.invoices),
-    payments: parseCounts(summary?.payments),
-    bankTransactions: parseCounts(summary?.bankTransactions),
     failedStage: (summary?.failedStage as XeroImportStage | null | undefined) ?? null,
     stageError: typeof summary?.stageError === 'string' ? summary.stageError : null,
     idempotencyKey:
@@ -164,11 +197,16 @@ export function buildImportJobProgress(
     currentStage: state.failedStage ? state.failedStage : state.checkpoint.stage,
     completedStages: state.completedStages,
     checkpoint: state.checkpoint,
+    accounts: state.accounts,
+    trackingCategories: state.trackingCategories,
     contacts: state.contacts,
     quotes: state.quotes,
     invoices: state.invoices,
+    bills: state.bills,
+    creditNotes: state.creditNotes,
     payments: state.payments,
     bankTransactions: state.bankTransactions,
+    attachments: state.attachments,
     failedStage: state.failedStage,
     message,
     syncedAt,
@@ -191,31 +229,49 @@ export function buildImportSyncResult(
     success,
     message: buildXeroImportSyncMessage({
       success,
+      accounts: state.accounts,
+      trackingCategories: state.trackingCategories,
       contacts: state.contacts,
       quotes: state.quotes,
       invoices: state.invoices,
+      bills: state.bills,
+      creditNotes: state.creditNotes,
       payments: state.payments,
       bankTransactions: state.bankTransactions,
+      attachments: state.attachments,
       failedStage: state.failedStage,
       stageError: state.stageError,
     }),
     syncedAt,
+    accounts: state.accounts,
+    trackingCategories: state.trackingCategories,
     contacts: state.contacts,
     quotes: state.quotes,
     invoices: state.invoices,
+    bills: state.bills,
+    creditNotes: state.creditNotes,
     payments: state.payments,
     bankTransactions: state.bankTransactions,
+    attachments: state.attachments,
     failedStage: state.failedStage,
     completedStages: state.completedStages,
     syncJobId,
   };
 }
 
+/**
+ * A paged stage is done only when Xero returns a short page. Unpaged stages (accounts, tracking)
+ * complete after their single response, and attachments signal completion explicitly.
+ */
 export function isStageComplete(
-  _stage: XeroImportStage,
+  stage: XeroImportStage,
   _checkpoint: XeroImportCheckpoint,
   lastBatchSize: number,
 ): boolean {
+  if (XERO_UNPAGED_STAGES.has(stage)) {
+    return true;
+  }
+
   if (lastBatchSize === 0) {
     return true;
   }
@@ -291,18 +347,7 @@ export function getStageCounts(
   state: XeroImportJobState,
   stage: XeroImportStage,
 ): XeroImportEntityCounts {
-  switch (stage) {
-    case 'contacts':
-      return state.contacts;
-    case 'quotes':
-      return state.quotes;
-    case 'invoices':
-      return state.invoices;
-    case 'payments':
-      return state.payments;
-    case 'bank_transactions':
-      return state.bankTransactions;
-  }
+  return state[XERO_IMPORT_STAGE_COUNT_KEYS[stage]];
 }
 
 /** Drop per-record failure tallies from stages already finished before the resume checkpoint. */
@@ -318,22 +363,18 @@ export function clearStaleStageFailuresOnResume(state: XeroImportJobState): void
 }
 
 export function sumImportFailureCounts(state: XeroImportJobState): number {
-  return (
-    state.contacts.failedCount +
-    state.quotes.failedCount +
-    state.invoices.failedCount +
-    state.payments.failedCount +
-    state.bankTransactions.failedCount
-  );
+  return XERO_IMPORT_COUNT_KEYS.reduce((total, key) => total + state[key].failedCount, 0);
+}
+
+export function sumImportSkippedCounts(state: XeroImportJobState): number {
+  return XERO_IMPORT_COUNT_KEYS.reduce((total, key) => total + state[key].skippedCount, 0);
 }
 
 export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boolean {
-  const processed =
-    state.contacts.pulledCount +
-    state.quotes.pulledCount +
-    state.invoices.pulledCount +
-    state.payments.pulledCount +
-    state.bankTransactions.pulledCount;
+  const processed = XERO_IMPORT_COUNT_KEYS.reduce(
+    (total, key) => total + state[key].pulledCount,
+    0,
+  );
 
   return (
     processed > 0 ||
@@ -342,9 +383,12 @@ export function hasRecoverableImportCheckpoint(state: XeroImportJobState): boole
     state.checkpoint.contactsPage > 1 ||
     state.checkpoint.quotesPage > 1 ||
     state.checkpoint.invoicesPage > 1 ||
+    state.checkpoint.billsPage > 1 ||
+    state.checkpoint.creditNotesPage > 1 ||
     state.checkpoint.paymentsPage > 1 ||
     state.checkpoint.bankTransactionsPage > 1 ||
-    state.checkpoint.stage !== 'contacts'
+    state.checkpoint.attachmentsOffset > 0 ||
+    state.checkpoint.stage !== XERO_IMPORT_STAGES[0]
   );
 }
 

@@ -74,6 +74,7 @@ import { IntegrationApiManagementService } from './services/integration-api-mana
 import { BusinessIntegrationsService } from './services/business-integrations.service.js';
 import { XeroOAuthService } from './services/xero-oauth.service.js';
 import { XeroSyncService } from './services/xero-sync.service.js';
+import { XeroFinancialMemoryService } from './services/xero-financial-memory.service.js';
 import { XeroWriteApprovalGate } from './services/xero-write-approval-gate.service.js';
 import { XeroMappingConflictService } from './services/xero-mapping-conflict.service.js';
 import { XeroWriteApprovalWorkflowService } from './services/xero-write-approval-workflow.service.js';
@@ -552,6 +553,7 @@ const xeroSyncService = XeroSyncService.create({
   writeApprovalGate: xeroWriteApprovalGate,
   mappingConflictService: xeroMappingConflictService,
 });
+const xeroFinancialMemoryService = new XeroFinancialMemoryService(db, xeroSyncService);
 const xeroWriteApprovalWorkflowService = new XeroWriteApprovalWorkflowService(
   db,
   xeroWriteApprovalGate,
@@ -1787,6 +1789,7 @@ app.use(
     businessIntegrationsService,
     resendEmailService,
     xeroSyncService,
+    xeroFinancialMemoryService,
     xeroWriteApprovalWorkflowService,
     integrationHubService,
     integrationApiManagementService,
