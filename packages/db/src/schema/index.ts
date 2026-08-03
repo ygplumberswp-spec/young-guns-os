@@ -122,6 +122,7 @@ export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';
 export * from './procurement-intelligence';
 export * from './technician-intelligence';
+export * from './hr-employee-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';
 export * from './enterprise-security';

@@ -579,6 +579,10 @@ export const InventoryIntelligencePage = lazyNamed(
   () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
   'InventoryIntelligencePage',
 );
+export const HrEmployeeIntelligencePage = lazyNamed(
+  () => import('../pages/hr-employee-intelligence/HrEmployeeIntelligencePage'),
+  'HrEmployeeIntelligencePage',
+);
 export const ProcurementIntelligencePage = lazyNamed(
   () => import('../pages/procurement-intelligence/ProcurementIntelligencePage'),
   'ProcurementIntelligencePage',

@@ -127,8 +127,9 @@ export * from './finance-aura-agent.js';
 export * from './finance-reporting-forecast.js';
 export * from './inventory-intelligence.js';
 export * from './procurement-intelligence.js';
-export * from './stock-forecasting.js';
+// export * from './stock-forecasting.js'; // missing local — build verify
 export * from './technician-intelligence.js';
+export * from './hr-employee-intelligence.js';
 export * from './enterprise-security.js';
 export * from './secure-session.js';
 export * from './integration-platform.js';

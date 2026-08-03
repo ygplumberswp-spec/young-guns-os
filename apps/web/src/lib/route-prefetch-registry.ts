@@ -187,6 +187,14 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     load: () => import('../pages/finance-cashflow-profit/FinanceCashflowProfitPage'),
   },
   {
+    path: '/hr-employee-intelligence',
+    load: () => import('../pages/hr-employee-intelligence/HrEmployeeIntelligencePage'),
+    permissions: ['*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/inventory-intelligence',
     load: () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],

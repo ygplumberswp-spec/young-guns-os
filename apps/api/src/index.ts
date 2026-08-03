@@ -259,6 +259,7 @@ import { FinanceAuraAgentService } from './services/finance-aura-agent.service.j
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
+import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { TechnicianIntelligenceService } from './services/technician-intelligence.service.js';
 import { WorkflowAutomationService } from './services/workflow-automation.service.js';
@@ -294,6 +295,7 @@ import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
+import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createTechnicianIntelligenceRouter } from './routes/technician-intelligence.js';
 import { createWorkflowAutomationRouter } from './routes/workflow-automation.js';
@@ -858,6 +860,7 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
 );
 const contentReputationIntelligenceService = new ContentReputationIntelligenceService(db);
 const inventoryIntelligenceService = new InventoryIntelligenceService(db);
+const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
 const recruitmentPerformanceIntelligenceService = new RecruitmentPerformanceIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
@@ -2539,6 +2542,15 @@ app.use(
   '/api/v1/inventory-intelligence',
   createInventoryIntelligenceRouter({
     inventoryIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/hr-employee-intelligence',
+  createHrEmployeeIntelligenceRouter({
+    hrEmployeeIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

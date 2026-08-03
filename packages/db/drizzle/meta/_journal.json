@@ -1002,6 +1002,13 @@
       "when": 1754364000146,
       "tag": "0146_portal_expansion",
       "breakpoints": true
+    },
+    {
+      "idx": 143,
+      "version": "7",
+      "when": 1754372000000,
+      "tag": "0151_hr_employee_intelligence",
+      "breakpoints": true
     }
   ]
 }

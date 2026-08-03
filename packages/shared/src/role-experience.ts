@@ -60,6 +60,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     label: 'Procurement Intelligence',
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],
   },
+  {
+    href: '/hr-employee-intelligence',
+    label: 'Employee Intelligence',
+    permissions: ['*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
   { href: '/fleet', label: 'Fleet', permissions: ['fleet:read', '*'] },
   {
     href: '/mobile-platform/dispatcher',
