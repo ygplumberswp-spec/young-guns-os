@@ -63,8 +63,7 @@ function cents(value: number | null | undefined, currency: string) {
 
 function ReportCard({ report }: { report: FrfReportResult }) {
   return (
-    <Panel className="frf-card">
-      <h3 style={{ marginTop: 0, textTransform: 'capitalize' }}>{report.kind.replace('_', ' ')}</h3>
+    <Panel title={report.kind.replace('_', ' ')} className="frf-card">
       <p className="ux-muted">{report.summary}</p>
       <p>
         <strong>Availability:</strong> {report.availability}
@@ -85,10 +84,7 @@ function ReportCard({ report }: { report: FrfReportResult }) {
 
 function ForecastCard({ forecast }: { forecast: FrfForecastResult }) {
   return (
-    <Panel className="frf-card">
-      <h3 style={{ marginTop: 0, textTransform: 'capitalize' }}>
-        {forecast.kind.replace('_', ' ')} forecast
-      </h3>
+    <Panel title={`${forecast.kind.replace('_', ' ')} forecast`} className="frf-card">
       <p className="ux-muted">{forecast.summary}</p>
       <p>
         <strong>Availability:</strong> {forecast.availability}
@@ -163,7 +159,7 @@ export function FinanceReportingForecastPage() {
       try {
         setError(null);
         await loadPage();
-      } catch (err) {
+      } catch (err: unknown) {
         if (!cancelled) {
           setError(
             err instanceof FinanceReportingForecastApiClientError
@@ -189,7 +185,7 @@ export function FinanceReportingForecastPage() {
       await action();
       setSuccess(ok);
       await loadPage();
-    } catch (err) {
+    } catch (err: unknown) {
       setError(
         err instanceof FinanceReportingForecastApiClientError
           ? err.message
@@ -248,11 +244,11 @@ export function FinanceReportingForecastPage() {
     <div className="ux-page finance-reporting-forecast-page">
       <PageHeader
         title="Financial Reporting & Forecasting"
-        subtitle="Real TITAN reports with transparent forecasts — assumptions and confidence disclosed; never invented projections."
+        description="Real TITAN reports with transparent forecasts — assumptions and confidence disclosed; never invented projections."
       />
 
-      {error ? <Panel className="ux-alert ux-alert--error">{error}</Panel> : null}
-      {success ? <Panel className="ux-alert ux-alert--success">{success}</Panel> : null}
+      {error ? <Panel title="Error" className="ux-alert ux-alert--error">{error}</Panel> : null}
+      {success ? <Panel title="Status" className="ux-alert ux-alert--success">{success}</Panel> : null}
 
       {dashboard ? (
         <>
@@ -364,7 +360,7 @@ export function FinanceReportingForecastPage() {
           {tab === 'budgets' ? (
             <section>
               {canManage ? (
-                <Panel>
+                <Panel title="Owner budget plan">
                   <h3 style={{ marginTop: 0 }}>Owner budget plan</h3>
                   <form onSubmit={(e) => void handleBudget(e)} className="ux-form-stack">
                     <Input
@@ -394,7 +390,7 @@ export function FinanceReportingForecastPage() {
                 />
               ) : (
                 dashboard.budgetPlans.map((b) => (
-                  <Panel key={b.id}>
+                  <Panel key={b.id} title={b.name || "Budget plan"}>
                     <h3 style={{ marginTop: 0 }}>{b.name}</h3>
                     <p>
                       Revenue variance:{' '}
@@ -430,7 +426,7 @@ export function FinanceReportingForecastPage() {
                 />
               ) : (
                 dashboard.insights.map((insight) => (
-                  <Panel key={insight.id}>
+                  <Panel key={insight.id} title={insight.title}>
                     <h3 style={{ marginTop: 0 }}>{insight.title}</h3>
                     <p className="ux-muted">
                       Target: {insight.target} · {insight.status}
@@ -484,7 +480,7 @@ export function FinanceReportingForecastPage() {
                 />
               ) : (
                 dashboard.actions.map((action) => (
-                  <Panel key={action.id}>
+                  <Panel key={action.id} title={action.title}>
                     <h3 style={{ marginTop: 0 }}>{action.title}</h3>
                     <p className="ux-muted">
                       {action.kind} · {action.status}
@@ -533,13 +529,13 @@ export function FinanceReportingForecastPage() {
           {tab === 'connect' ? (
             <section className="frf-grid">
               {dashboard.auraConnections.map((c) => (
-                <Panel key={c.target}>
+                <Panel key={c.target} title={String(c.target)}>
                   <h3 style={{ marginTop: 0 }}>{c.label}</h3>
                   <p className="ux-muted">{c.note}</p>
                   <Link href={c.href}>{c.href}</Link>
                 </Panel>
               ))}
-              <Panel>
+              <Panel title="Policy">
                 <h3 style={{ marginTop: 0 }}>Policy</h3>
                 <ul>
                   <li>Owner approval required: {String(dashboard.policy.requiresOwnerApproval)}</li>
