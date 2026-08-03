@@ -3,7 +3,10 @@ import type {
   EmailConnectionSummary,
   EmailSyncResult,
   IntegrationProvider,
+  ResendConnectionSummary,
+  ResendSyncResult,
   SaveEmailConnectionRequest,
+  SaveResendConnectionRequest,
   SaveYocoConnectionRequest,
   XeroConnectionSummary,
   XeroSyncResult,
@@ -15,10 +18,13 @@ import { integrationConnections } from '@titan/db';
 import { EmailSmtpClient, EmailSmtpError } from '../lib/email-smtp.client.js';
 import {
   decryptEmailCredentials,
+  decryptResendCredentials,
   decryptYocoCredentials,
   encryptEmailCredentials,
+  encryptResendCredentials,
   encryptYocoCredentials,
 } from '../lib/crypto.js';
+import { ResendClient, ResendError } from '../lib/resend.client.js';
 import { XeroError } from '../lib/xero.client.js';
 import { YocoClient, YocoError } from '../lib/yoco.client.js';
 import type { IntegrationHubService } from './integration-hub.service.js';
@@ -39,6 +45,8 @@ type BusinessIntegrationsServiceDeps = {
   encryptionKey?: string;
   hubService?: IntegrationHubService;
   xeroOAuthService?: XeroOAuthService;
+  apiPublicUrl?: string;
+  emailSendingEnabled?: boolean;
 };
 
 export class BusinessIntegrationsService {
@@ -47,6 +55,8 @@ export class BusinessIntegrationsService {
     private readonly encryptionKey?: string,
     private readonly hubService?: IntegrationHubService,
     private readonly xeroOAuthService?: XeroOAuthService,
+    private readonly apiPublicUrl?: string,
+    private readonly emailSendingEnabled: boolean = false,
   ) {}
 
   static create(deps: BusinessIntegrationsServiceDeps): BusinessIntegrationsService {
@@ -55,6 +65,8 @@ export class BusinessIntegrationsService {
       deps.encryptionKey,
       deps.hubService,
       deps.xeroOAuthService,
+      deps.apiPublicUrl,
+      deps.emailSendingEnabled ?? false,
     );
   }
 
@@ -458,6 +470,211 @@ export class BusinessIntegrationsService {
     return this.getYocoConnection(companyId);
   }
 
+  async getResendConnection(companyId: string): Promise<ResendConnectionSummary> {
+    const connection = await this.getOrCreateConnection(companyId, 'resend');
+    const credentials = this.tryDecryptResendCredentials(connection.credentialsEncrypted);
+    const base = this.apiPublicUrl?.replace(/\/$/, '') ?? null;
+
+    return {
+      provider: 'resend',
+      status: connection.status,
+      connected: connection.status === 'connected' && Boolean(connection.credentialsEncrypted),
+      fromEmail: connection.config.fromEmail ?? null,
+      fromName: connection.config.fromName ?? null,
+      apiKeyHint: credentials?.apiKey ? maskSecret(credentials.apiKey) : null,
+      hasCredentials: Boolean(connection.credentialsEncrypted),
+      hasWebhookSecret: Boolean(credentials?.webhookSecret),
+      webhookUrl: base ? `${base}/api/v1/webhooks/resend` : null,
+      lastDeliveryAt: connection.config.lastDeliveryAt ?? null,
+      lastDeliveryStatus: connection.config.lastDeliveryStatus ?? null,
+      lastDeliveryError: connection.config.lastDeliveryError ?? null,
+      lastSyncAt: connection.lastSyncAt?.toISOString() ?? null,
+      lastError: connection.lastError,
+      connectedAt: connection.connectedAt?.toISOString() ?? null,
+      emailSendingEnabled: this.emailSendingEnabled,
+    };
+  }
+
+  async saveResendConnection(
+    companyId: string,
+    input: SaveResendConnectionRequest,
+  ): Promise<ResendConnectionSummary> {
+    this.ensureEncryptionKey();
+
+    const fromEmail = input.fromEmail.trim().toLowerCase();
+    const fromName = input.fromName?.trim() || null;
+    const apiKeyInput = input.apiKey?.trim().replace(/^Bearer\s+/i, '').trim() || '';
+    const webhookSecretInput =
+      input.webhookSecret === undefined
+        ? undefined
+        : input.webhookSecret === null || input.webhookSecret.trim() === ''
+          ? null
+          : input.webhookSecret.trim();
+
+    if (!fromEmail) {
+      throw new BusinessIntegrationsError('VALIDATION_ERROR', 'From email is required');
+    }
+
+    const connection = await this.getOrCreateConnection(companyId, 'resend');
+    const existingCreds = this.tryDecryptResendCredentials(connection.credentialsEncrypted);
+    const apiKey = apiKeyInput || existingCreds?.apiKey || '';
+
+    if (!apiKey) {
+      throw new BusinessIntegrationsError(
+        'VALIDATION_ERROR',
+        'Resend API key is required on first connect',
+      );
+    }
+
+    const webhookSecret =
+      webhookSecretInput === undefined
+        ? (existingCreds?.webhookSecret ?? null)
+        : webhookSecretInput;
+
+    if (webhookSecret && !webhookSecret.startsWith('whsec_')) {
+      throw new BusinessIntegrationsError(
+        'VALIDATION_ERROR',
+        'Resend webhook secret must start with whsec_',
+      );
+    }
+
+    await this.db
+      .update(integrationConnections)
+      .set({
+        status: 'pending',
+        config: {
+          ...connection.config,
+          fromEmail,
+          fromName: fromName ?? undefined,
+        },
+        lastError: null,
+        updatedAt: new Date(),
+      })
+      .where(eq(integrationConnections.id, connection.id));
+
+    try {
+      const client = new ResendClient({ apiKey });
+      const verification = await client.testConnection();
+
+      await this.db
+        .update(integrationConnections)
+        .set({
+          status: 'connected',
+          credentialsEncrypted: encryptResendCredentials(
+            { apiKey, webhookSecret },
+            this.encryptionKey!,
+          ),
+          config: {
+            ...connection.config,
+            fromEmail,
+            fromName: fromName ?? undefined,
+            domainCount: verification.domainCount,
+            lastVerifiedAt: new Date().toISOString(),
+          },
+          connectedAt: new Date(),
+          lastError: null,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationConnections.id, connection.id));
+    } catch (error) {
+      const message = mapResendError(error);
+
+      await this.db
+        .update(integrationConnections)
+        .set({
+          status: 'error',
+          lastError: message,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationConnections.id, connection.id));
+
+      throw new BusinessIntegrationsError('CONNECTION_FAILED', message);
+    }
+
+    return this.getResendConnection(companyId);
+  }
+
+  async disconnectResend(companyId: string): Promise<ResendConnectionSummary> {
+    await this.disconnectProvider(companyId, 'resend');
+    return this.getResendConnection(companyId);
+  }
+
+  async syncResend(companyId: string): Promise<ResendSyncResult> {
+    const connection = await this.requireConnectedConnection(companyId, 'resend', 'Resend');
+    const syncJobId = await this.hubService?.startSyncJob({
+      companyId,
+      provider: 'resend',
+      integrationConnectionId: connection.id,
+      jobType: 'manual',
+    });
+
+    const credentials = decryptResendCredentials(
+      connection.credentialsEncrypted!,
+      this.encryptionKey!,
+    );
+    const fromEmail = connection.config.fromEmail;
+
+    if (!fromEmail) {
+      throw new BusinessIntegrationsError('CONFIG_ERROR', 'Resend connection config is incomplete');
+    }
+
+    try {
+      const client = new ResendClient({ apiKey: credentials.apiKey });
+      const verification = await client.testConnection();
+      const syncedAt = new Date();
+
+      await this.db
+        .update(integrationConnections)
+        .set({
+          config: {
+            ...connection.config,
+            domainCount: verification.domainCount,
+            lastVerifiedAt: syncedAt.toISOString(),
+          },
+          lastSyncAt: syncedAt,
+          lastError: null,
+          updatedAt: syncedAt,
+        })
+        .where(eq(integrationConnections.id, connection.id));
+
+      const result: ResendSyncResult = {
+        verified: true,
+        fromEmail,
+        domainCount: verification.domainCount,
+        syncedAt: syncedAt.toISOString(),
+        syncJobId,
+      };
+
+      if (syncJobId) {
+        await this.hubService?.completeSyncJob(syncJobId, {
+          status: 'completed',
+          resultSummary: { ...result },
+        });
+      }
+
+      return result;
+    } catch (error) {
+      const message = mapResendError(error);
+
+      await this.db
+        .update(integrationConnections)
+        .set({
+          lastError: message,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrationConnections.id, connection.id));
+
+      if (syncJobId) {
+        await this.hubService?.completeSyncJob(syncJobId, {
+          status: 'failed',
+          errorMessage: message,
+        });
+      }
+
+      throw new BusinessIntegrationsError('SYNC_FAILED', message);
+    }
+  }
+
   async syncYoco(companyId: string): Promise<YocoSyncResult> {
     const connection = await this.requireConnectedConnection(companyId, 'yoco', 'Yoco');
     const syncJobId = await this.hubService?.startSyncJob({
@@ -634,6 +851,18 @@ export class BusinessIntegrationsService {
       return null;
     }
   }
+
+  private tryDecryptResendCredentials(payload: string | null) {
+    if (!payload || !this.encryptionKey) {
+      return null;
+    }
+
+    try {
+      return decryptResendCredentials(payload, this.encryptionKey);
+    } catch {
+      return null;
+    }
+  }
 }
 
 function maskSecret(value: string): string {
@@ -666,6 +895,14 @@ function mapYocoError(error: unknown): string {
   }
 
   return error instanceof Error ? error.message : 'Yoco request failed';
+}
+
+function mapResendError(error: unknown): string {
+  if (error instanceof ResendError || error instanceof BusinessIntegrationsError) {
+    return error.message;
+  }
+
+  return error instanceof Error ? error.message : 'Resend request failed';
 }
 
 function inferYocoEnvironment(secretKey: string): 'test' | 'live' {

@@ -84,6 +84,8 @@ import { GoogleMapsService } from './services/google-maps.service.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
+import { createResendWebhookRouter } from './routes/resend-webhook.js';
+import { ResendEmailService } from './services/resend-email.service.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
 import { DocumentsService } from './services/documents.service.js';
@@ -443,6 +445,15 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
   hubService: integrationHubService,
   xeroOAuthService,
+  apiPublicUrl,
+  emailSendingEnabled: env.runtime.emailSendingEnabled,
+});
+const resendEmailService = ResendEmailService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  hubService: integrationHubService,
+  emailSendingEnabled: env.runtime.emailSendingEnabled,
+  webhooksEnabled: env.runtime.webhooksEnabled,
 });
 const xeroWriteApprovalGate = new XeroWriteApprovalGate(db);
 const xeroMappingConflictService = new XeroMappingConflictService(db);
@@ -540,7 +551,7 @@ integrationsService.setOnCartrackConnectedHook(({ companyId }) => {
       console.error('[index] Cartrack auto-sync initial hook failed', error);
     });
 });
-const communicationsService = new CommunicationsService(db);
+const communicationsService = new CommunicationsService(db, resendEmailService);
 const documentsService = new DocumentsService(db);
 const automationService = new AutomationService(db);
 const agentOrchestrationService = new AgentOrchestrationService(db);
@@ -1610,6 +1621,7 @@ app.use(
   createIntegrationsRouter({
     integrationsService,
     businessIntegrationsService,
+    resendEmailService,
     xeroSyncService,
     xeroWriteApprovalWorkflowService,
     integrationHubService,
@@ -1655,6 +1667,12 @@ app.use(
     whatsappService,
     db,
     appSecret: env.WHATSAPP_APP_SECRET,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/resend',
+  createResendWebhookRouter({
+    resendEmailService,
   }),
 );
 app.use(

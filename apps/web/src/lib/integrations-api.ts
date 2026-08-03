@@ -5,8 +5,12 @@ import type {
   EmailSyncResult,
   FleetTrackingContext,
   IntegrationVehicleMappingSummary,
+  ResendConnectionSummary,
+  ResendDeliverySummary,
+  ResendSyncResult,
   SaveCartrackConnectionRequest,
   SaveEmailConnectionRequest,
+  SaveResendConnectionRequest,
   SaveYocoConnectionRequest,
   StartXeroOAuthRequest,
   StartXeroOAuthResponse,
@@ -376,6 +380,51 @@ export async function syncEmail(accessToken: string): Promise<EmailSyncResult> {
     accessToken,
   });
   return data.result;
+}
+
+export async function fetchResendConnection(accessToken: string): Promise<ResendConnectionSummary> {
+  const data = await request<{ connection: ResendConnectionSummary }>('/integrations/resend', {
+    accessToken,
+  });
+  return data.connection;
+}
+
+export async function saveResendConnection(
+  accessToken: string,
+  body: SaveResendConnectionRequest,
+): Promise<ResendConnectionSummary> {
+  const data = await request<{ connection: ResendConnectionSummary }>('/integrations/resend', {
+    method: 'PUT',
+    accessToken,
+    body,
+  });
+  return data.connection;
+}
+
+export async function disconnectResend(accessToken: string): Promise<ResendConnectionSummary> {
+  const data = await request<{ connection: ResendConnectionSummary }>('/integrations/resend', {
+    method: 'DELETE',
+    accessToken,
+  });
+  return data.connection;
+}
+
+export async function syncResend(accessToken: string): Promise<ResendSyncResult> {
+  const data = await request<{ result: ResendSyncResult }>('/integrations/resend/sync', {
+    method: 'POST',
+    accessToken,
+  });
+  return data.result;
+}
+
+export async function fetchResendDeliveries(
+  accessToken: string,
+): Promise<ResendDeliverySummary[]> {
+  const data = await request<{ deliveries: ResendDeliverySummary[] }>(
+    '/integrations/resend/deliveries',
+    { accessToken },
+  );
+  return data.deliveries;
 }
 
 export async function fetchYocoConnection(accessToken: string): Promise<YocoConnectionSummary> {

@@ -424,6 +424,10 @@ export function App() {
                           path="/integrations/email"
                           component={OwnerPages.EmailSettingsPage}
                         />
+                        <Route
+                          path="/integrations/resend"
+                          component={OwnerPages.ResendSettingsPage}
+                        />
                         <Route path="/integrations/yoco" component={OwnerPages.YocoSettingsPage} />
                         <Route
                           path="/integrations/whatsapp"

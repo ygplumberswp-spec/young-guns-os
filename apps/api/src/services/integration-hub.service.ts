@@ -280,7 +280,8 @@ export class IntegrationHubService {
           capabilityState === 'connected_usable' &&
           (entry.provider === 'whatsapp' ||
             entry.provider === 'email' ||
-            entry.provider === 'gmail');
+            entry.provider === 'gmail' ||
+            entry.provider === 'resend');
 
         return {
           ...entry,

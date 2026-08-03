@@ -10,7 +10,7 @@
     "start:worker": "node --import tsx src/bin/worker.ts",
     "start:scheduler": "node --import tsx src/bin/scheduler.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/tenant-scope.test.ts src/lib/cross-tenant-denial-matrix.test.ts src/lib/role-forbidden-api-action.test.ts src/lib/n8n-signing.test.ts src/lib/whatsapp-signing.test.ts src/lib/whatsapp-business-chats.test.ts src/lib/env-flags.test.ts src/lib/storage-paths.test.ts src/lib/auth-cookies.test.ts src/lib/public-url.test.ts src/lib/google-maps.client.test.ts src/middleware/security-headers.test.ts src/routes/*.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts"
+    "test": "tsx --test src/lib/tenant-scope.test.ts src/lib/cross-tenant-denial-matrix.test.ts src/lib/role-forbidden-api-action.test.ts src/lib/n8n-signing.test.ts src/lib/whatsapp-signing.test.ts src/lib/resend-signing.test.ts src/lib/whatsapp-business-chats.test.ts src/lib/env-flags.test.ts src/lib/storage-paths.test.ts src/lib/auth-cookies.test.ts src/lib/public-url.test.ts src/lib/google-maps.client.test.ts src/lib/resend.client.test.ts src/lib/crypto-resend.test.ts src/middleware/security-headers.test.ts src/routes/*.test.ts src/services/*.test.ts src/services/jobs-contract.test.ts"
   },
   "dependencies": {
     "@titan/aura": "workspace:*",

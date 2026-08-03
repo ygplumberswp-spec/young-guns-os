@@ -454,6 +454,10 @@ export const EmailSettingsPage = lazyNamed(
   () => import('../pages/integrations/EmailSettingsPage'),
   'EmailSettingsPage',
 );
+export const ResendSettingsPage = lazyNamed(
+  () => import('../pages/integrations/ResendSettingsPage'),
+  'ResendSettingsPage',
+);
 export const YocoSettingsPage = lazyNamed(
   () => import('../pages/integrations/YocoSettingsPage'),
   'YocoSettingsPage',

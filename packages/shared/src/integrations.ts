@@ -178,8 +178,8 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
     name: 'Resend',
     description: 'Transactional email delivery via Resend API.',
     category: 'communications',
-    availability: 'planned',
-    settingsPath: null,
+    availability: 'available',
+    settingsPath: '/integrations/resend',
     supportsSync: true,
     supportsWebhooks: true,
   },
@@ -501,4 +501,72 @@ export type YocoSyncResult = {
   environment: 'test' | 'live';
   syncedAt: string;
   syncJobId?: string;
+};
+
+/** Transactional email purposes supported by the Resend delivery layer. */
+export type ResendEmailPurpose =
+  | 'customer_quote'
+  | 'invoice'
+  | 'payment_receipt'
+  | 'job_confirmation'
+  | 'appointment_reminder'
+  | 'maintenance_reminder'
+  | 'system_notification'
+  | 'outbound_message';
+
+export type ResendDeliveryStatus = 'sent' | 'delivered' | 'failed';
+
+export type ResendConnectionSummary = {
+  provider: 'resend';
+  status: IntegrationConnectionStatus;
+  /** True when status is connected and encrypted API key is present. */
+  connected: boolean;
+  fromEmail: string | null;
+  fromName: string | null;
+  apiKeyHint: string | null;
+  hasCredentials: boolean;
+  /** True when a Svix/Resend webhook signing secret (`whsec_…`) is stored. */
+  hasWebhookSecret: boolean;
+  /** Public inbound webhook URL owners should register in Resend. */
+  webhookUrl: string | null;
+  lastDeliveryAt: string | null;
+  lastDeliveryStatus: ResendDeliveryStatus | null;
+  lastDeliveryError: string | null;
+  lastSyncAt: string | null;
+  lastError: string | null;
+  connectedAt: string | null;
+  /** Runtime gate: PROVIDERS_ENABLED && EMAIL_SENDING_ENABLED. */
+  emailSendingEnabled: boolean;
+};
+
+export type SaveResendConnectionRequest = {
+  /** Required on first connect; optional when updating from/webhook only. */
+  apiKey?: string;
+  fromEmail: string;
+  fromName?: string | null;
+  /** Resend webhook signing secret (`whsec_…`) for delivery events. */
+  webhookSecret?: string | null;
+};
+
+export type ResendSyncResult = {
+  verified: true;
+  fromEmail: string;
+  domainCount: number;
+  syncedAt: string;
+  syncJobId?: string;
+};
+
+export type ResendDeliverySummary = {
+  id: string;
+  purpose: ResendEmailPurpose;
+  toEmail: string;
+  subject: string;
+  status: ResendDeliveryStatus;
+  resendEmailId: string | null;
+  communicationId: string | null;
+  failureReason: string | null;
+  sentAt: string | null;
+  deliveredAt: string | null;
+  failedAt: string | null;
+  createdAt: string;
 };

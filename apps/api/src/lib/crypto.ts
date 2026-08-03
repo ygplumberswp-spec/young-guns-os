@@ -247,6 +247,33 @@ export function decryptN8nCredentials(
   return parsed;
 }
 
+export type ResendStoredCredentials = {
+  apiKey: string;
+  /** Svix signing secret from Resend webhook (`whsec_…`). */
+  webhookSecret?: string | null;
+};
+
+export function encryptResendCredentials(
+  credentials: ResendStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptResendCredentials(
+  payload: string,
+  encryptionKey: string,
+): ResendStoredCredentials {
+  const parsed = decryptJsonCredentials<ResendStoredCredentials>(payload, encryptionKey);
+  if (!parsed.apiKey?.trim()) {
+    throw new Error('Invalid stored Resend credentials');
+  }
+  return {
+    apiKey: parsed.apiKey.trim(),
+    webhookSecret: parsed.webhookSecret?.trim() || null,
+  };
+}
+
 export type GoogleMapsStoredCredentials = {
   /** Server key for Places / Geocoding / Directions / Distance Matrix. Never returned to browser. */
   apiKey: string;

@@ -9,6 +9,8 @@ import type { XeroWriteApprovalWorkflowService } from '../services/xero-write-ap
 import { XeroWriteApprovalWorkflowError } from '../services/xero-write-approval-workflow.service.js';
 import type { BusinessIntegrationsService } from '../services/business-integrations.service.js';
 import { BusinessIntegrationsError } from '../services/business-integrations.service.js';
+import type { ResendEmailService } from '../services/resend-email.service.js';
+import { ResendEmailError } from '../services/resend-email.service.js';
 import type { IntegrationHubService } from '../services/integration-hub.service.js';
 import { IntegrationHubError } from '../services/integration-hub.service.js';
 import type { IntegrationApiManagementService } from '../services/integration-api-management.service.js';
@@ -58,6 +60,30 @@ const saveEmailSchema = z.object({
   fromEmail: z.string().trim().email(),
   fromName: z.string().trim().max(200).optional().nullable(),
 });
+
+const saveResendSchema = z.preprocess((raw) => {
+  if (!raw || typeof raw !== 'object') return raw;
+  const body = raw as Record<string, unknown>;
+  const apiKey = body.apiKey ?? body.api_key;
+  let webhookSecret = body.webhookSecret ?? body.webhook_secret;
+  if (webhookSecret === '') webhookSecret = null;
+  return {
+    apiKey,
+    fromEmail: body.fromEmail ?? body.from_email,
+    fromName: body.fromName ?? body.from_name,
+    webhookSecret,
+  };
+}, z.object({
+  apiKey: z
+    .string()
+    .trim()
+    .max(2000)
+    .transform((value) => value.replace(/^Bearer\s+/i, '').trim())
+    .optional(),
+  fromEmail: z.string().trim().email(),
+  fromName: z.string().trim().max(200).optional().nullable(),
+  webhookSecret: z.string().trim().max(500).nullable().optional(),
+}));
 
 const saveYocoSchema = z.preprocess((raw) => {
   if (!raw || typeof raw !== 'object') return raw;
@@ -152,6 +178,7 @@ const resolveXeroConflictSchema = z.object({
 type IntegrationsRouterDeps = {
   integrationsService: IntegrationsService;
   businessIntegrationsService: BusinessIntegrationsService;
+  resendEmailService?: ResendEmailService;
   xeroSyncService: XeroSyncService;
   xeroWriteApprovalWorkflowService?: XeroWriteApprovalWorkflowService;
   integrationHubService: IntegrationHubService;
@@ -187,6 +214,7 @@ function normalizeQueryValue(value: unknown): string | string[] | undefined {
 export function createIntegrationsRouter({
   integrationsService,
   businessIntegrationsService,
+  resendEmailService,
   xeroSyncService,
   xeroWriteApprovalWorkflowService,
   integrationHubService,
@@ -876,6 +904,88 @@ export function createIntegrationsRouter({
       handleBusinessIntegrationsError(res, error);
     }
   });
+
+  router.get(
+    '/resend',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      const connection = await businessIntegrationsService.getResendConnection(companyId);
+      res.json({ data: { connection } });
+    },
+  );
+
+  router.put('/resend', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const parsed = saveResendSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      res.status(400).json({
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid Resend connection payload',
+          details: parsed.error.flatten(),
+        },
+      });
+      return;
+    }
+
+    try {
+      const connection = await businessIntegrationsService.saveResendConnection(
+        companyId,
+        parsed.data,
+      );
+      res.json({ data: { connection } });
+    } catch (error) {
+      handleBusinessIntegrationsError(res, error);
+    }
+  });
+
+  router.delete('/resend', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const connection = await businessIntegrationsService.disconnectResend(companyId);
+    res.json({ data: { connection } });
+  });
+
+  router.post('/resend/sync', requireAnyPermission('integrations:manage'), async (req, res) => {
+    const { companyId } = getAuth(req);
+
+    try {
+      const result = await businessIntegrationsService.syncResend(companyId);
+      res.json({ data: { result } });
+    } catch (error) {
+      handleBusinessIntegrationsError(res, error);
+    }
+  });
+
+  router.get(
+    '/resend/deliveries',
+    requireAnyPermission('integrations:read', 'integrations:manage'),
+    async (req, res) => {
+      const { companyId } = getAuth(req);
+      if (!resendEmailService) {
+        res.status(503).json({
+          error: {
+            code: 'NOT_CONFIGURED',
+            message: 'Resend delivery service is not configured',
+          },
+        });
+        return;
+      }
+      try {
+        const deliveries = await resendEmailService.listRecentDeliveries(companyId);
+        res.json({ data: { deliveries } });
+      } catch (error) {
+        if (error instanceof ResendEmailError) {
+          res.status(400).json({
+            error: { code: error.code, message: error.message },
+          });
+          return;
+        }
+        throw error;
+      }
+    },
+  );
 
   router.get(
     '/yoco',

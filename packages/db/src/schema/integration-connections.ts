@@ -70,6 +70,11 @@ export type IntegrationConnectionConfig = {
     serverKeyStatus: string;
     browserKeyStatus: string;
   } | null;
+  /** Resend — last outbound delivery snapshot for Integrations UI. */
+  lastDeliveryAt?: string | null;
+  lastDeliveryStatus?: 'sent' | 'delivered' | 'failed' | null;
+  lastDeliveryError?: string | null;
+  domainCount?: number;
 };
 
 export const integrationConnections = pgTable('integration_connections', {

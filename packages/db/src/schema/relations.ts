@@ -155,6 +155,7 @@ import {
   securityRiskAlerts,
 } from './enterprise-security';
 import { paymentReceipts, payments } from './payments';
+import { resendEmailDeliveries, resendWebhookEvents } from './resend-email-deliveries';
 import { integrationSyncJobs } from './integration-sync-jobs';
 import { integrationWebhookEndpoints } from './integration-webhook-endpoints';
 import { integrationWebhookEvents } from './integration-webhook-events';
@@ -773,6 +774,37 @@ export const paymentReceiptsRelations = relations(paymentReceipts, ({ one }) => 
   company: one(companies, {
     fields: [paymentReceipts.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const resendEmailDeliveriesRelations = relations(resendEmailDeliveries, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [resendEmailDeliveries.companyId],
+    references: [companies.id],
+  }),
+  connection: one(integrationConnections, {
+    fields: [resendEmailDeliveries.integrationConnectionId],
+    references: [integrationConnections.id],
+  }),
+  communication: one(communications, {
+    fields: [resendEmailDeliveries.communicationId],
+    references: [communications.id],
+  }),
+  webhookEvents: many(resendWebhookEvents),
+}));
+
+export const resendWebhookEventsRelations = relations(resendWebhookEvents, ({ one }) => ({
+  company: one(companies, {
+    fields: [resendWebhookEvents.companyId],
+    references: [companies.id],
+  }),
+  connection: one(integrationConnections, {
+    fields: [resendWebhookEvents.integrationConnectionId],
+    references: [integrationConnections.id],
+  }),
+  delivery: one(resendEmailDeliveries, {
+    fields: [resendWebhookEvents.deliveryId],
+    references: [resendEmailDeliveries.id],
   }),
 }));
 
