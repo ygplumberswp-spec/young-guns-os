@@ -3,6 +3,7 @@ import { isPlatformOwnerRole, isTechnicianRole } from '@titan/auth';
 import {
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
+  canSyncBusinessGmail,
   technicianJobScopedOnly,
   type CommPlatformAccountKind,
   type CommPlatformAuraDraftAssistResult,
@@ -513,10 +514,10 @@ export class CommunicationsPlatformService {
       items: inbox.items,
       labels,
       note: !oauthConfigured
-        ? 'Not configured — Google OAuth client credentials are missing on the API. No fake connection.'
+        ? 'Business Gmail is not configured on this system yet.'
         : state === 'connected'
-          ? 'Showing indexed business Gmail items. Run Sync to pull Inbox/Sent/Drafts/Labels from Google. AURA never auto-sends.'
-          : 'Gmail OAuth is available but not connected. Use Connect Gmail in Channel Settings.',
+          ? 'Showing indexed Business Gmail items. Use Sync Now to pull mail from Google. Sends always require approval.'
+          : 'Business Gmail is available but not connected. Use Connect under Business Channels.',
     };
   }
 
@@ -525,8 +526,11 @@ export class CommunicationsPlatformService {
     options: { folder?: CommPlatformGmailMailboxView['folder']; maxMessages?: number } = {},
   ): Promise<CommPlatformGmailSyncResult> {
     this.assertBusinessAccess(actor);
-    if (isTechnicianRole(actor)) {
-      throw new CommunicationsPlatformError('FORBIDDEN', 'Technicians cannot sync Gmail');
+    if (!canSyncBusinessGmail(actor) || isTechnicianRole(actor)) {
+      throw new CommunicationsPlatformError(
+        'FORBIDDEN',
+        'You do not have permission to sync Business Gmail',
+      );
     }
     if (!this.gmailOAuthService?.isAppConfigured()) {
       throw new CommunicationsPlatformError(
@@ -537,13 +541,6 @@ export class CommunicationsPlatformService {
 
     const folder = options.folder ?? 'inbox';
     const maxMessages = Math.min(Math.max(options.maxMessages ?? 40, 1), 100);
-    const client = await this.gmailOAuthService.createClient(actor.companyId);
-    const labels = await client.listLabels();
-    const query = folderQuery(folder);
-    const listed = await client.listMessages({
-      ...query,
-      maxResults: maxMessages,
-    });
 
     const [account] = await this.db
       .select()
@@ -556,63 +553,102 @@ export class CommunicationsPlatformService {
       )
       .limit(1);
 
-    const lookups = await this.buildEntityLinkLookups(actor.companyId);
-    let synced = 0;
-    let skipped = 0;
+    if (account) {
+      await this.persistGmailSyncMetadata(account, {
+        lastSyncStatus: 'syncing',
+        lastSyncFolder: folder,
+        lastSyncError: null,
+      });
+    }
 
-    for (const item of listed.messages) {
-      const existing = await this.db
-        .select({ id: commPlatformInboxIndex.id })
-        .from(commPlatformInboxIndex)
-        .where(
-          and(
-            eq(commPlatformInboxIndex.companyId, actor.companyId),
-            eq(commPlatformInboxIndex.externalMessageId, item.id),
-          ),
-        )
-        .limit(1);
-      if (existing[0]) {
-        skipped += 1;
-        continue;
+    try {
+      const client = await this.gmailOAuthService.createClient(actor.companyId);
+      const labels = await client.listLabels();
+      const query = folderQuery(folder);
+      const listed = await client.listMessages({
+        ...query,
+        maxResults: maxMessages,
+      });
+
+      const lookups = await this.buildEntityLinkLookups(actor.companyId);
+      let synced = 0;
+      let skipped = 0;
+
+      for (const item of listed.messages) {
+        const existing = await this.db
+          .select({ id: commPlatformInboxIndex.id })
+          .from(commPlatformInboxIndex)
+          .where(
+            and(
+              eq(commPlatformInboxIndex.companyId, actor.companyId),
+              eq(commPlatformInboxIndex.externalMessageId, item.id),
+            ),
+          )
+          .limit(1);
+        if (existing[0]) {
+          skipped += 1;
+          continue;
+        }
+
+        const message = await client.getMessage(item.id, 'full');
+        await this.indexGmailMessage(
+          actor.companyId,
+          account?.id ?? null,
+          message,
+          lookups,
+          folder,
+        );
+        synced += 1;
       }
 
-      const message = await client.getMessage(item.id, 'full');
-      await this.indexGmailMessage(actor.companyId, account?.id ?? null, message, lookups, folder);
-      synced += 1;
+      const labelNames = labels.map((l) => l.name || l.id).filter(Boolean);
+      const now = new Date();
+      const lastSyncAt = now.toISOString();
+      if (account) {
+        await this.persistGmailSyncMetadata(account, {
+          lastSyncAt,
+          lastSyncStatus: 'completed',
+          lastSyncFolder: folder,
+          lastSyncCounts: { synced, skipped },
+          lastSyncError: null,
+        });
+      }
+
+      await this.recordAudit(
+        { companyId: actor.companyId, userId: actor.userId },
+        'comm_platform_gmail_sync',
+        actor.companyId,
+        { folder, synced, skipped, syncStatus: 'completed', autoSend: false },
+      );
+
+      return {
+        synced,
+        skipped,
+        labels: labelNames,
+        capabilityState: 'connected',
+        syncStatus: 'completed',
+        lastSyncAt,
+        note: `Synced ${synced} new message(s) from Gmail (${skipped} already indexed).`,
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Business Gmail sync failed';
+      if (account) {
+        await this.persistGmailSyncMetadata(account, {
+          lastSyncAt: new Date().toISOString(),
+          lastSyncStatus: 'failed',
+          lastSyncFolder: folder,
+          lastSyncError: message.slice(0, 500),
+        });
+      }
+      await this.recordAudit(
+        { companyId: actor.companyId, userId: actor.userId },
+        'comm_platform_gmail_sync',
+        actor.companyId,
+        { folder, syncStatus: 'failed', error: message.slice(0, 500), autoSend: false },
+      );
+      throw error;
     }
-
-    const labelNames = labels.map((l) => l.name || l.id).filter(Boolean);
-    const now = new Date();
-    if (account) {
-      await this.db
-        .update(commPlatformAccounts)
-        .set({
-          metadata: {
-            ...(account.metadata ?? {}),
-            lastSyncAt: now.toISOString(),
-            lastSyncStatus: 'ok',
-            lastSyncFolder: folder,
-            lastSyncCounts: { synced, skipped },
-          },
-          updatedAt: now,
-        })
-        .where(eq(commPlatformAccounts.id, account.id));
-    }
-
-    await this.recordAudit(
-      { companyId: actor.companyId, userId: actor.userId },
-      'comm_platform_gmail_sync',
-      actor.companyId,
-      { folder, synced, skipped, autoSend: false },
-    );
-
-    return {
-      synced,
-      skipped,
-      labels: labelNames,
-      capabilityState: 'connected',
-      note: `Synced ${synced} new message(s) from Gmail (${skipped} already indexed). Real provider data only.`,
-    };
   }
 
   async getGmailAttachment(
@@ -1504,6 +1540,28 @@ export class CommunicationsPlatformService {
   }
 
   // --- internals ---
+
+  private async persistGmailSyncMetadata(
+    account: typeof commPlatformAccounts.$inferSelect,
+    patch: Record<string, unknown>,
+  ): Promise<void> {
+    const [fresh] = await this.db
+      .select({ metadata: commPlatformAccounts.metadata })
+      .from(commPlatformAccounts)
+      .where(eq(commPlatformAccounts.id, account.id))
+      .limit(1);
+    const now = new Date();
+    await this.db
+      .update(commPlatformAccounts)
+      .set({
+        metadata: {
+          ...(fresh?.metadata ?? account.metadata ?? {}),
+          ...patch,
+        },
+        updatedAt: now,
+      })
+      .where(eq(commPlatformAccounts.id, account.id));
+  }
 
   private toHealth(
     row: typeof commPlatformAccounts.$inferSelect | null,

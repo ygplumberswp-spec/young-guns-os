@@ -412,7 +412,7 @@ export function CommunicationsHubPage() {
                                 onClick={() => void connectBusinessGmailFromProviders()}
                                 title={
                                   !gmailOauthReady
-                                    ? 'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API.'
+                                    ? 'Business Gmail is not set up on this system yet. Ask your Platform Owner to finish setup.'
                                     : undefined
                                 }
                               >

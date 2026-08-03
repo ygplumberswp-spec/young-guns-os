@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
   canAccessPersonalWhatsappAssistant,
   canConnectBusinessGmail,
+  canSyncBusinessGmail,
   personalAllowedInBusinessSearch,
 } from '@titan/shared';
 import { CommunicationsPlatformService } from './communications-platform.service.js';
@@ -34,6 +35,24 @@ describe('communications platform service RBAC guards', () => {
         false,
       );
     }
+  });
+
+  it('canSyncBusinessGmail allows Owner/Admin sync and blocks Technician/Client', () => {
+    assert.equal(
+      canSyncBusinessGmail({ roleName: 'Admin', permissions: ['communications:write'] }),
+      true,
+    );
+    assert.equal(
+      canSyncBusinessGmail({
+        roleName: 'Technician',
+        permissions: ['communications:write'],
+      }),
+      false,
+    );
+    assert.equal(
+      canSyncBusinessGmail({ roleName: 'Client', permissions: ['*'] }),
+      false,
+    );
   });
 
   it('assertPersonalAccess rejects Admin / Office / Tech / Developer / Support and staff roles', () => {

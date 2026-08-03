@@ -4,17 +4,17 @@ import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import { isPlatformOwnerRole } from '@titan/auth/browser';
 import {
   canConnectBusinessGmail,
+  canSyncBusinessGmail,
   formatBusinessGmailUserStatus,
   formatCommPlatformCapabilityState,
+  formatGmailSyncUserStatus,
   type CommPlatformGmailOAuthStatus,
-  type CommPlatformHubDashboard,
   type CommPlatformInboxResult,
   type CommPlatformSettingsSummary,
 } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import {
   disconnectBusinessGmail,
-  fetchCommunicationsPlatformHub,
   fetchCommunicationsPlatformInbox,
   fetchCommunicationsPlatformSettings,
   fetchGmailOAuthStatus,
@@ -36,7 +36,6 @@ export function CommunicationsPlatformPanel({
   view = 'inbox',
 }: CommunicationsPlatformPanelProps) {
   const { accessToken, user } = useAuth();
-  const [dashboard, setDashboard] = useState<CommPlatformHubDashboard | null>(null);
   const [inbox, setInbox] = useState<CommPlatformInboxResult | null>(null);
   const [settings, setSettings] = useState<CommPlatformSettingsSummary | null>(null);
   const [gmailOAuth, setGmailOAuth] = useState<CommPlatformGmailOAuthStatus | null>(null);
@@ -71,15 +70,23 @@ export function CommunicationsPlatformPanel({
         : false,
     [user],
   );
+  /** Sync Now — Owners, Admin, and staff with write (not Technician/Client). */
+  const canSyncGmail = useMemo(
+    () =>
+      user
+        ? canSyncBusinessGmail({ roleName: user.roleName, permissions: user.permissions })
+        : false,
+    [user],
+  );
+  const gmailNotConfiguredReason =
+    'Business Gmail is not set up on this system yet. Ask your Platform Owner to finish setup, then reload.';
 
   async function reload() {
     if (!accessToken) return;
-    const [hubResult, settingsResult, oauthResult] = await Promise.allSettled([
-      fetchCommunicationsPlatformHub(accessToken),
+    const [settingsResult, oauthResult] = await Promise.allSettled([
       fetchCommunicationsPlatformSettings(accessToken),
       fetchGmailOAuthStatus(accessToken),
     ]);
-    if (hubResult.status === 'fulfilled') setDashboard(hubResult.value);
     if (settingsResult.status === 'fulfilled') {
       setSettings(settingsResult.value);
     } else {
@@ -234,9 +241,7 @@ export function CommunicationsPlatformPanel({
         gmailOAuth?.oauthConfigured ?? settings?.businessGmail.oauthConfigured,
       );
       if (!oauthReady) {
-        setError(
-          'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API, then reload.',
-        );
+        setError(gmailNotConfiguredReason);
         return;
       }
       const url = await startGmailOAuth(accessToken, '/communications-hub');
@@ -254,18 +259,68 @@ export function CommunicationsPlatformPanel({
 
   async function syncGmail() {
     if (!accessToken) return;
+    if (!canSyncGmail) {
+      setError('You do not have permission to sync Business Gmail');
+      return;
+    }
     setIsWorking(true);
     setError(null);
     setSuccess(null);
+    if (settings) {
+      setSettings({
+        ...settings,
+        businessGmail: {
+          ...settings.businessGmail,
+          lastSyncStatus: 'syncing',
+        },
+      });
+    }
     try {
       const result = await syncGmailMailbox(accessToken, { folder: 'inbox', maxMessages: 40 });
-      setSuccess(result.note);
+      setSuccess(
+        result.synced > 0
+          ? `Sync completed — ${result.synced} new message(s) added.`
+          : result.note || 'Sync completed — mailbox is up to date.',
+      );
       await reload();
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Gmail sync failed');
+      try {
+        await reload();
+      } catch {
+        // Keep the sync failure message; settings may still show Failed.
+      }
     } finally {
       setIsWorking(false);
     }
+  }
+
+  function formatInboxDate(iso: string): string {
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return iso;
+    return date.toLocaleString(undefined, {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  }
+
+  function formatLastSynced(iso: string | null | undefined): string {
+    if (!iso) return 'Never';
+    return formatInboxDate(iso);
+  }
+
+  function inboxItemStatus(item: {
+    unread: boolean;
+    urgent: boolean;
+    folder: string;
+  }): string {
+    const parts: string[] = [];
+    parts.push(item.unread ? 'Unread' : 'Read');
+    if (item.urgent) parts.push('Urgent');
+    if (item.folder && item.folder !== 'inbox') {
+      parts.push(item.folder.charAt(0).toUpperCase() + item.folder.slice(1));
+    }
+    return parts.join(' · ');
   }
 
   async function disconnectGmail() {
@@ -295,8 +350,12 @@ export function CommunicationsPlatformPanel({
         status: settings.businessGmail.status,
       })
     : 'Disconnected';
-  const gmailNotConfiguredReason =
-    'Not configured — set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET on the API, then reload.';
+  const gmailSyncStatusLabel = settings
+    ? formatGmailSyncUserStatus({
+        connected: settings.businessGmail.connected,
+        lastSyncStatus: settings.businessGmail.lastSyncStatus,
+      })
+    : 'Disconnected';
 
   if (isLoading) {
     return <Panel title="Communications Platform">Loading platform…</Panel>;
@@ -307,19 +366,9 @@ export function CommunicationsPlatformPanel({
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      {dashboard ? (
-        <Panel title="Send policy">
-          <p>{dashboard.summary}</p>
-          <p>
-            Auto-send: <strong>disabled</strong> · Approval required:{' '}
-            <strong>yes</strong> · Pattern: draft → approve → execute
-          </p>
-        </Panel>
-      ) : null}
-
       {view === 'inbox' ? (
         <>
-          <Panel title="Filters & business search">
+          <Panel title="Search & filters">
             <div className="form-grid">
               <label>
                 Channel
@@ -333,7 +382,7 @@ export function CommunicationsPlatformPanel({
                 </select>
               </label>
               <label>
-                Participant
+                From
                 <select
                   value={participantKind}
                   onChange={(e) =>
@@ -370,7 +419,7 @@ export function CommunicationsPlatformPanel({
                     checked={includePersonal}
                     onChange={(e) => setIncludePersonal(e.target.checked)}
                   />
-                  Include Personal WhatsApp (Owner only — not business search)
+                  Include Personal WhatsApp (Owner only)
                 </label>
               ) : null}
             </div>
@@ -381,46 +430,71 @@ export function CommunicationsPlatformPanel({
               <Input
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Search business channels only…"
+                placeholder="Search sender, subject, or message…"
               />
               <Button
                 variant="secondary"
                 disabled={isWorking || !searchQ.trim()}
                 onClick={() => void runBusinessSearch()}
               >
-                Business search
+                Search history
               </Button>
             </div>
           </Panel>
 
-          <Panel title="Unified inbox (real indexed traffic)">
+          <Panel
+            title={
+              inbox && inbox.total > 0
+                ? `Inbox (${inbox.total})`
+                : 'Inbox'
+            }
+          >
+            {gmailConnected && canSyncGmail ? (
+              <div className="page-header-actions" style={{ marginBottom: '0.75rem' }}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking || gmailSyncStatusLabel === 'Syncing'}
+                  onClick={() => void syncGmail()}
+                >
+                  {gmailSyncStatusLabel === 'Syncing' ? 'Syncing…' : 'Sync Now'}
+                </Button>
+                <span className="muted">
+                  Sync: {gmailSyncStatusLabel}
+                  {' · '}
+                  Last synced: {formatLastSynced(settings?.businessGmail.lastSyncAt)}
+                </span>
+              </div>
+            ) : null}
             {!inbox || inbox.items.length === 0 ? (
               <EmptyState
                 title={
                   inbox?.emptyReason === 'not_configured'
-                    ? 'Channels not configured'
+                    ? 'Connect a business channel'
                     : inbox?.emptyReason === 'role_filtered'
                       ? 'No assigned conversations'
-                      : 'No messages yet'
+                      : gmailConnected
+                        ? 'No messages yet'
+                        : 'No messages yet'
                 }
                 description={
-                  inbox?.capabilityNotes?.join(' ') ??
-                  'Honest empty state — no fake messages. Connect Business Gmail or Business WhatsApp, then real traffic will appear here.'
+                  gmailConnected
+                    ? 'Your inbox is ready. Use Sync Now to pull messages from Business Gmail.'
+                    : 'Connect Business Gmail or Business WhatsApp under Business Channels. Messages appear here after they sync.'
                 }
               />
             ) : (
               <div className="data-list">
                 {inbox.items.map((item) => (
                   <div key={item.id} className="data-list-item">
-                    <strong>{item.subject ?? item.participantLabel ?? 'Conversation'}</strong>
-                    <span className="status-pill">
-                      {item.accountKind}
-                      {item.isPersonal ? ' · personal' : ''}
-                      {item.unread ? ' · unread' : ''}
-                      {item.urgent ? ' · urgent' : ''}
-                    </span>
+                    <strong>{item.subject?.trim() || '(No subject)'}</strong>
+                    <span className="status-pill">{inboxItemStatus(item)}</span>
                     <p>
-                      {item.preview ?? 'No preview'} · {item.occurredAt}
+                      <strong>From:</strong> {item.participantLabel?.trim() || 'Unknown'}
+                      {' · '}
+                      <strong>Date:</strong> {formatInboxDate(item.occurredAt)}
+                    </p>
+                    <p>
+                      {item.preview?.trim() || 'No preview'}
                       {item.attachmentCount > 0
                         ? ` · ${item.attachmentCount} attachment(s)`
                         : ''}
@@ -437,6 +511,14 @@ export function CommunicationsPlatformPanel({
         <>
           <div className="stat-grid">
             <StatCard label="Business Gmail" value={gmailStatusLabel} />
+            <StatCard
+              label="Gmail sync"
+              value={gmailConnected ? gmailSyncStatusLabel : '—'}
+            />
+            <StatCard
+              label="Indexed messages"
+              value={String(inbox?.total ?? 0)}
+            />
             <StatCard
               label="Business WhatsApp"
               value={formatCommPlatformCapabilityState(settings.businessWhatsapp.status)}
@@ -455,114 +537,114 @@ export function CommunicationsPlatformPanel({
             {!gmailOauthReady ? (
               <EmptyState
                 title="Not Configured"
-                description="Google OAuth client credentials are missing on the API. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and optional GOOGLE_REDIRECT_URI. TITAN will not show a fake connected state."
+                description="Business Gmail setup is not finished on this system yet. Ask your Platform Owner to complete setup. TITAN will not show Connected until Google sign-in works."
               />
             ) : gmailConnected ? (
-              <p>
-                Connected
-                {settings.businessGmail.emailAddress
-                  ? ` · Connected Account: ${settings.businessGmail.emailAddress}`
-                  : ''}
-                {settings.businessGmail.lastSyncAt
-                  ? ` · Last Sync: ${settings.businessGmail.lastSyncAt}`
-                  : ' · Last Sync: never'}
-              </p>
+              <dl className="integrations-detail-list">
+                <div>
+                  <dt>Connection</dt>
+                  <dd>{gmailStatusLabel}</dd>
+                </div>
+                <div>
+                  <dt>Account</dt>
+                  <dd>{settings.businessGmail.emailAddress || 'Connected'}</dd>
+                </div>
+                <div>
+                  <dt>Sync status</dt>
+                  <dd>{gmailSyncStatusLabel}</dd>
+                </div>
+                <div>
+                  <dt>Last synced</dt>
+                  <dd>{formatLastSynced(settings.businessGmail.lastSyncAt)}</dd>
+                </div>
+              </dl>
             ) : (
               <EmptyState
                 title="Disconnected"
-                description={
-                  settings.businessGmail.emptyStateMessage ||
-                  'Google OAuth is configured on the API. Connect Business Gmail to store encrypted tenant tokens — Inbox stays empty until Sync.'
-                }
+                description="Connect Business Gmail to bring real email into the Communications Hub. Inbox stays empty until you sync."
               />
             )}
-            <p>
-              Status: {gmailStatusLabel}
-              {' · '}
-              OAuth app: {gmailOauthReady ? 'configured' : 'missing'}
-              {' · '}
-              Tenant credentials:{' '}
-              {settings.businessGmail.hasCredentials ? 'stored (encrypted)' : 'none'}
-            </p>
-            {canManageGmailConnection ? (
-              <>
-                <div className="page-header-actions">
-                  {gmailConnected ? (
-                    <Button
-                      disabled={isWorking}
-                      onClick={() => setManageGmail((open) => !open)}
-                    >
-                      {manageGmail ? 'Close' : 'Manage'}
-                    </Button>
-                  ) : (
-                    <Button
-                      disabled={isWorking || !gmailOauthReady}
-                      onClick={() => void connectGmail()}
-                      title={!gmailOauthReady ? gmailNotConfiguredReason : undefined}
-                    >
-                      Connect
-                    </Button>
-                  )}
-                </div>
-                {!gmailOauthReady ? (
-                  <p className="form-error" style={{ marginTop: '0.5rem' }}>
-                    {gmailNotConfiguredReason}
-                  </p>
-                ) : null}
-                {gmailConnected && manageGmail ? (
-                  <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
-                    <Button
-                      variant="secondary"
-                      disabled={isWorking || !gmailOauthReady}
-                      onClick={() => void connectGmail()}
-                    >
-                      Reconnect
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={isWorking || !settings.businessGmail.hasCredentials}
-                      onClick={() => void disconnectGmail()}
-                    >
-                      Disconnect
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={isWorking}
-                      onClick={() => void testConnection('business_gmail')}
-                    >
-                      Test Connection
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={isWorking || !gmailOauthReady}
-                      onClick={() => void syncGmail()}
-                    >
-                      Sync History
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled
-                      title="Permissions view is not built yet"
-                    >
-                      Permissions
-                    </Button>
-                    <Link href="/integrations">
-                      <Button variant="secondary">Diagnostics</Button>
-                    </Link>
-                  </div>
-                ) : null}
-              </>
+            <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
+              {canManageGmailConnection ? (
+                gmailConnected ? (
+                  <Button
+                    disabled={isWorking}
+                    onClick={() => setManageGmail((open) => !open)}
+                  >
+                    {manageGmail ? 'Close' : 'Manage'}
+                  </Button>
+                ) : (
+                  <Button
+                    disabled={isWorking || !gmailOauthReady}
+                    onClick={() => void connectGmail()}
+                    title={!gmailOauthReady ? gmailNotConfiguredReason : undefined}
+                  >
+                    Connect
+                  </Button>
+                )
+              ) : null}
+              {gmailConnected && canSyncGmail ? (
+                <Button
+                  variant="secondary"
+                  disabled={isWorking || gmailSyncStatusLabel === 'Syncing'}
+                  onClick={() => void syncGmail()}
+                >
+                  {gmailSyncStatusLabel === 'Syncing' ? 'Syncing…' : 'Sync Now'}
+                </Button>
+              ) : null}
+            </div>
+            {!gmailOauthReady && canManageGmailConnection ? (
+              <p className="form-error" style={{ marginTop: '0.5rem' }}>
+                {gmailNotConfiguredReason}
+              </p>
+            ) : null}
+            {gmailConnected && manageGmail && canManageGmailConnection ? (
+              <div className="page-header-actions" style={{ marginTop: '0.75rem' }}>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking || !gmailOauthReady}
+                  onClick={() => void connectGmail()}
+                >
+                  Reconnect
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking || !settings.businessGmail.hasCredentials}
+                  onClick={() => void disconnectGmail()}
+                >
+                  Disconnect
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={isWorking}
+                  onClick={() => void testConnection('business_gmail')}
+                >
+                  Test Connection
+                </Button>
+                <Link href="/integrations">
+                  <Button variant="secondary">Advanced diagnostics</Button>
+                </Link>
+              </div>
+            ) : null}
+            {!canManageGmailConnection ? (
+              <p className="muted" style={{ marginTop: '0.75rem' }}>
+                Connection is managed by Platform Owner or Company Owner.
+                {canSyncGmail && gmailConnected
+                  ? ' You can sync mail into the inbox when connected.'
+                  : ' Authorized business users can use the inbox when connected.'}
+              </p>
             ) : (
-              <p className="muted">
-                Connection is managed by Platform Owner or Company Owner. Authorized business
-                users can use the inbox when connected.
+              <p className="muted" style={{ marginTop: '0.75rem' }}>
+                Messages never send on their own — drafts need approval before send. Personal
+                WhatsApp stays private and separate.
               </p>
             )}
-            <p className="muted" style={{ marginTop: '0.75rem' }}>
-              Official Google OAuth 2.0. Tokens encrypt with INTEGRATIONS_ENCRYPTION_KEY and
-              refresh automatically. AURA may summarize/draft only — send requires approve →
-              execute. Personal WhatsApp (Owner only) stays private and separate.
-            </p>
+            {canManageGmailConnection && manageGmail ? (
+              <p className="muted" style={{ marginTop: '0.5rem' }}>
+                Advanced: Google sign-in stores encrypted tokens for this company and refreshes
+                them automatically. Integration diagnostics are available under Advanced settings.
+              </p>
+            ) : null}
           </Panel>
 
           <Panel title="Business WhatsApp">

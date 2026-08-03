@@ -4,8 +4,11 @@ import {
   canAccessBusinessCommunications,
   canAccessPersonalWhatsappAssistant,
   canConnectBusinessGmail,
+  canSyncBusinessGmail,
   formatBusinessGmailUserStatus,
   formatCommPlatformCapabilityState,
+  formatGmailSyncUserStatus,
+  normalizeGmailSyncLifecycle,
   isBusinessAccountKind,
   isPersonalAccountKind,
   personalAllowedInBusinessSearch,
@@ -78,6 +81,74 @@ describe('communications platform RBAC & privacy', () => {
     assert.equal(formatCommPlatformCapabilityState('connected'), 'Connected');
     assert.equal(formatCommPlatformCapabilityState('disconnected'), 'Disconnected');
     assert.equal(formatCommPlatformCapabilityState('not_configured'), 'Not Configured');
+  });
+
+  it('Business Gmail Sync allows Owners and Admin, never Technician or Client', () => {
+    assert.equal(
+      canSyncBusinessGmail({ roleName: 'Platform Owner', permissions: ['*'] }),
+      true,
+    );
+    assert.equal(
+      canSyncBusinessGmail({ roleName: 'Company Owner', permissions: ['*'] }),
+      true,
+    );
+    assert.equal(
+      canSyncBusinessGmail({
+        roleName: 'Admin',
+        permissions: ['communications:manage', 'communications:write'],
+      }),
+      true,
+    );
+    assert.equal(
+      canSyncBusinessGmail({
+        roleName: 'Manager',
+        permissions: ['communications:write'],
+      }),
+      true,
+    );
+    assert.equal(
+      canSyncBusinessGmail({
+        roleName: 'Technician',
+        permissions: ['communications:write', 'communications:read'],
+      }),
+      false,
+    );
+    assert.equal(
+      canSyncBusinessGmail({
+        roleName: 'Client',
+        permissions: ['portal.communications:read', '*'],
+      }),
+      false,
+    );
+  });
+
+  it('Gmail sync user status is honest Connected / Syncing / Completed / Failed', () => {
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: true, lastSyncStatus: null }),
+      'Connected',
+    );
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: true, lastSyncStatus: 'syncing' }),
+      'Syncing',
+    );
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: true, lastSyncStatus: 'completed' }),
+      'Completed',
+    );
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: true, lastSyncStatus: 'ok' }),
+      'Completed',
+    );
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: true, lastSyncStatus: 'failed' }),
+      'Failed',
+    );
+    assert.equal(
+      formatGmailSyncUserStatus({ connected: false, lastSyncStatus: 'completed' }),
+      'Disconnected',
+    );
+    assert.equal(normalizeGmailSyncLifecycle('ok'), 'completed');
+    assert.equal(normalizeGmailSyncLifecycle(undefined), 'idle');
   });
 
   it('personal WhatsApp assistant is Platform Owner only', () => {

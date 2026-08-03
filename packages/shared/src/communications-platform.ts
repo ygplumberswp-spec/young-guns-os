@@ -306,11 +306,21 @@ export type CommPlatformGmailOAuthStatus = {
   emptyStateMessage: string;
 };
 
+/** Durable Gmail sync lifecycle stored on account metadata (`lastSyncStatus`). */
+export type CommPlatformGmailSyncLifecycle =
+  | 'idle'
+  | 'syncing'
+  | 'completed'
+  | 'failed';
+
 export type CommPlatformGmailSyncResult = {
   synced: number;
   skipped: number;
   labels: string[];
   capabilityState: CommPlatformCapabilityState;
+  /** User-facing sync outcome after this run. */
+  syncStatus: 'completed' | 'failed';
+  lastSyncAt: string;
   note: string;
 };
 
@@ -386,6 +396,64 @@ export function canConnectBusinessGmail(identity: {
     identity.roleName === 'Company Owner' ||
     identity.roleName === 'Owner'
   );
+}
+
+/**
+ * Business Gmail Sync Now — Owners and Admin (and staff with write/manage) may sync.
+ * Technician and Client never sync. Connect remains Owner-only (see canConnectBusinessGmail).
+ */
+export function canSyncBusinessGmail(identity: {
+  roleName: string;
+  permissions: string[];
+}): boolean {
+  if (identity.roleName === 'Technician' || identity.roleName === 'Client') {
+    return false;
+  }
+  if (
+    identity.roleName === 'Platform Owner' ||
+    identity.roleName === 'Company Owner' ||
+    identity.roleName === 'Owner' ||
+    identity.roleName === 'Admin'
+  ) {
+    return true;
+  }
+  if (identity.permissions.includes('*')) return true;
+  return (
+    identity.permissions.includes('communications:write') ||
+    identity.permissions.includes('communications:manage') ||
+    identity.permissions.includes('integrations:manage')
+  );
+}
+
+/** Normalize stored metadata sync status into a lifecycle value. */
+export function normalizeGmailSyncLifecycle(
+  lastSyncStatus: string | null | undefined,
+): CommPlatformGmailSyncLifecycle {
+  if (lastSyncStatus === 'syncing') return 'syncing';
+  if (lastSyncStatus === 'completed' || lastSyncStatus === 'ok') return 'completed';
+  if (lastSyncStatus === 'failed' || lastSyncStatus === 'error') return 'failed';
+  return 'idle';
+}
+
+/**
+ * User-facing Gmail sync status when the mailbox is connected:
+ * Connected (idle / never synced) · Syncing · Completed · Failed.
+ */
+export function formatGmailSyncUserStatus(input: {
+  connected: boolean;
+  lastSyncStatus?: string | null;
+}): string {
+  if (!input.connected) return 'Disconnected';
+  switch (normalizeGmailSyncLifecycle(input.lastSyncStatus)) {
+    case 'syncing':
+      return 'Syncing';
+    case 'completed':
+      return 'Completed';
+    case 'failed':
+      return 'Failed';
+    default:
+      return 'Connected';
+  }
 }
 
 /** User-facing labels for capability status (internal enum values stay unchanged for APIs). */

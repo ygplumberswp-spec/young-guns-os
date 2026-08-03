@@ -87,4 +87,14 @@ describe('communications platform API envelope & safety', () => {
     assert.ok(routeSource.includes('isPlatformOwnerRole(actor)'));
     assert.ok(routeSource.includes('Personal WhatsApp Assistant is Platform Owner only'));
   });
+
+  it('Gmail sync persists honest syncing / completed / failed lifecycle', () => {
+    assert.ok(routeSource.includes("router.post('/gmail/sync'"));
+    assert.ok(serviceSource.includes("lastSyncStatus: 'syncing'"));
+    assert.ok(serviceSource.includes("lastSyncStatus: 'completed'"));
+    assert.ok(serviceSource.includes("lastSyncStatus: 'failed'"));
+    assert.ok(serviceSource.includes('canSyncBusinessGmail(actor)'));
+    assert.ok(serviceSource.includes("syncStatus: 'completed'"));
+    assert.ok(!serviceSource.includes("lastSyncStatus: 'ok'"));
+  });
 });
