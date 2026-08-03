@@ -22,11 +22,17 @@ import {
 } from '../../lib/communications-platform-api';
 import { useAuth } from '../../lib/auth-context';
 
-type PlatformTab = 'unified' | 'settings';
+export type CommunicationsPlatformView = 'inbox' | 'channels';
 
-export function CommunicationsPlatformPanel() {
+type CommunicationsPlatformPanelProps = {
+  /** Controlled view from Communications Hub primary nav. */
+  view?: CommunicationsPlatformView;
+};
+
+export function CommunicationsPlatformPanel({
+  view = 'inbox',
+}: CommunicationsPlatformPanelProps) {
   const { accessToken, user } = useAuth();
-  const [tab, setTab] = useState<PlatformTab>('unified');
   const [dashboard, setDashboard] = useState<CommPlatformHubDashboard | null>(null);
   const [inbox, setInbox] = useState<CommPlatformInboxResult | null>(null);
   const [settings, setSettings] = useState<CommPlatformSettingsSummary | null>(null);
@@ -97,13 +103,9 @@ export function CommunicationsPlatformPanel() {
         const openChannelSettings = params.get('channelSettings') === '1';
         if (gmailOutcome === 'connected') {
           setSuccess(gmailMessage?.trim() || 'Business Gmail connected via Google OAuth.');
-          setTab('settings');
           setManageGmail(true);
         } else if (gmailOutcome === 'error') {
           setError(gmailMessage?.trim() || 'Google OAuth for Business Gmail failed.');
-          setTab('settings');
-        } else if (openChannelSettings) {
-          setTab('settings');
         }
         if (gmailOutcome || openChannelSettings) {
           params.delete('gmail');
@@ -297,24 +299,7 @@ export function CommunicationsPlatformPanel() {
         </Panel>
       ) : null}
 
-      <div className="tab-row">
-        <button
-          type="button"
-          className={tab === 'unified' ? 'tab-button active' : 'tab-button'}
-          onClick={() => setTab('unified')}
-        >
-          Unified Inbox
-        </button>
-        <button
-          type="button"
-          className={tab === 'settings' ? 'tab-button active' : 'tab-button'}
-          onClick={() => setTab('settings')}
-        >
-          Channel Settings
-        </button>
-      </div>
-
-      {tab === 'unified' ? (
+      {view === 'inbox' ? (
         <>
           <Panel title="Filters & business search">
             <div className="form-grid">
@@ -430,7 +415,7 @@ export function CommunicationsPlatformPanel() {
         </>
       ) : null}
 
-      {tab === 'settings' && settings ? (
+      {view === 'channels' && settings ? (
         <>
           <div className="stat-grid">
             <StatCard label="Business Gmail" value={settings.businessGmail.status} />

@@ -26,20 +26,49 @@ import {
 } from '../../features/communications-hub/utils';
 import { CommunicationsPlatformPanel } from '../../features/communications-hub/CommunicationsPlatformPanel';
 
-type CommsHubTab =
-  | 'platform'
-  | 'overview'
+type PrimaryHubTab = 'inbox' | 'channels' | 'assistant';
+
+type AdvancedHubTab =
   | 'providers'
-  | 'voice'
-  | 'timeline'
+  | 'analytics'
   | 'outbound'
   | 'dispatch'
-  | 'analytics'
-  | 'assistant';
+  | 'voice'
+  | 'timeline'
+  | 'diagnostics';
+
+type CommsHubTab = PrimaryHubTab | AdvancedHubTab;
+
+const PRIMARY_TABS: Array<{ id: PrimaryHubTab; label: string }> = [
+  { id: 'inbox', label: 'Inbox' },
+  { id: 'channels', label: 'Business Channels' },
+  { id: 'assistant', label: 'AURA Communications' },
+];
+
+const ADVANCED_TABS: Array<{ id: AdvancedHubTab; label: string }> = [
+  { id: 'providers', label: 'Providers' },
+  { id: 'analytics', label: 'Analytics' },
+  { id: 'outbound', label: 'Outbound Calling' },
+  { id: 'dispatch', label: 'Dispatch Communications' },
+  { id: 'voice', label: 'Voice Configuration' },
+  { id: 'timeline', label: 'Sync Timeline' },
+  { id: 'diagnostics', label: 'Diagnostics' },
+];
+
+const ADVANCED_TAB_IDS = new Set<CommsHubTab>(ADVANCED_TABS.map((tab) => tab.id));
+
+function isAdvancedTab(tab: CommsHubTab): tab is AdvancedHubTab {
+  return ADVANCED_TAB_IDS.has(tab);
+}
+
+function isPlatformTab(tab: CommsHubTab): tab is 'inbox' | 'channels' {
+  return tab === 'inbox' || tab === 'channels';
+}
 
 export function CommunicationsHubPage() {
   const { accessToken, user } = useAuth();
-  const [activeTab, setActiveTab] = useState<CommsHubTab>('platform');
+  const [activeTab, setActiveTab] = useState<CommsHubTab>('inbox');
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [dashboard, setDashboard] = useState<EnterpriseUnifiedCommunicationsDashboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isWorking, setIsWorking] = useState(false);
@@ -71,11 +100,22 @@ export function CommunicationsHubPage() {
     [user],
   );
 
+  const showAdvanced = advancedOpen || isAdvancedTab(activeTab);
+  const needsEnterpriseDashboard = !isPlatformTab(activeTab) && activeTab !== 'assistant';
+
   async function loadDashboard() {
     if (!accessToken) return;
     const data = await fetchUnifiedCommunicationsDashboard(accessToken);
     setDashboard(data);
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('channelSettings') === '1' || params.get('gmail')) {
+      setActiveTab('channels');
+      setAdvancedOpen(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +176,16 @@ export function CommunicationsHubPage() {
     }
   }
 
+  function selectPrimaryTab(tab: PrimaryHubTab) {
+    setActiveTab(tab);
+    setAdvancedOpen(false);
+  }
+
+  function selectAdvancedTab(tab: AdvancedHubTab) {
+    setActiveTab(tab);
+    setAdvancedOpen(true);
+  }
+
   if (!canView) {
     return (
       <div className="automation-page">
@@ -147,75 +197,112 @@ export function CommunicationsHubPage() {
     );
   }
 
-  const tabs: Array<{ id: CommsHubTab; label: string }> = [
-    { id: 'platform', label: 'Inbox & Channels' },
-    { id: 'overview', label: 'Overview' },
-    { id: 'providers', label: 'Providers' },
-    { id: 'voice', label: 'AI Voice' },
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'outbound', label: 'Outbound Calling' },
-    { id: 'dispatch', label: 'Dispatch Comms' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'assistant', label: 'AI Assistant' },
-  ];
-
   return (
     <div className="automation-page">
       <PageHeader
         title="Communications Hub"
         description="Business Gmail, Business WhatsApp, and optional Personal WhatsApp (Owner only) — real data only; send requires approval."
-        actions={
-          <div className="page-header-actions">
-            <Link href="/communications-intelligence">
-              <Button variant="secondary">Comms Intelligence</Button>
-            </Link>
-            <Link href="/integrations/whatsapp">
-              <Button variant="secondary">Business WhatsApp</Button>
-            </Link>
-            <Link href="/portal/communications">
-              <Button variant="secondary">Customer Center</Button>
-            </Link>
-            {canWrite ? (
-              <Button
-                variant="secondary"
-                disabled={isWorking}
-                onClick={() =>
-                  void runAction(
-                    () => syncCommunicationTimeline(accessToken!),
-                    'Timeline synced from real modules.',
-                  )
-                }
-              >
-                Sync Timeline
-              </Button>
-            ) : null}
-          </div>
-        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 
-      <div className="tab-row">
-        {tabs.map((tab) => (
+      <div className="tab-row" role="tablist" aria-label="Communications Hub">
+        {PRIMARY_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
             className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => selectPrimaryTab(tab.id)}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      {activeTab === 'platform' ? <CommunicationsPlatformPanel /> : null}
+      <section className="integrations-advanced">
+        <button
+          type="button"
+          className="integrations-advanced__toggle"
+          onClick={() => {
+            if (showAdvanced) {
+              setAdvancedOpen(false);
+              if (isAdvancedTab(activeTab)) {
+                setActiveTab('inbox');
+              }
+            } else {
+              setAdvancedOpen(true);
+            }
+          }}
+          aria-expanded={showAdvanced}
+        >
+          {showAdvanced ? 'Hide Advanced' : 'Show Advanced'}
+        </button>
 
-      {activeTab !== 'platform' && isLoading ? (
+        {showAdvanced ? (
+          <div className="integrations-advanced__content">
+            <div className="tab-row" role="tablist" aria-label="Advanced Settings">
+              {ADVANCED_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={activeTab === tab.id ? 'tab-button active' : 'tab-button'}
+                  onClick={() => selectAdvancedTab(tab.id)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            <div className="page-header-actions">
+              <Link href="/communications-intelligence">
+                <Button variant="secondary">Comms Intelligence</Button>
+              </Link>
+              <Link href="/integrations/whatsapp">
+                <Button variant="secondary">Business WhatsApp</Button>
+              </Link>
+              <Link href="/portal/communications">
+                <Button variant="secondary">Customer Center</Button>
+              </Link>
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      {isPlatformTab(activeTab) ? <CommunicationsPlatformPanel view={activeTab} /> : null}
+
+      {activeTab === 'assistant' ? (
+        <Panel title="AURA Communications Agent">
+          <p>
+            Ask about communication history, draft replies, call summaries, and customer updates.
+            Recommendations only — business channels; personal data not exposed.
+          </p>
+          {assistantError ? <p className="form-error">{assistantError}</p> : null}
+          <AuraMessageList messages={agentMessages} isSending={isSending} />
+          {pendingTasks.map((task) => (
+            <AuraTaskApprovalCard
+              key={task.id}
+              task={task}
+              accessToken={accessToken ?? ''}
+              onUpdated={updateTask}
+            />
+          ))}
+          <AuraComposer
+            disabled={isSending}
+            onSend={(content) => void sendAgentMessage(content, 'communications')}
+            placeholder="Ask about calls, WhatsApp, SMS, email, or draft a reply…"
+          />
+        </Panel>
+      ) : null}
+
+      {needsEnterpriseDashboard && isLoading ? (
         <Panel title="Loading">Loading communications hub…</Panel>
-      ) : activeTab !== 'platform' && !dashboard ? (
+      ) : needsEnterpriseDashboard && !dashboard ? (
         <EmptyState title="No data" description="Communications hub is unavailable." />
-      ) : activeTab !== 'platform' && dashboard ? (
+      ) : needsEnterpriseDashboard && dashboard ? (
         <>
           <Panel title="Platform Summary">
             <p>{dashboard.summary}</p>
@@ -226,7 +313,7 @@ export function CommunicationsHubPage() {
             ) : null}
           </Panel>
 
-          {activeTab === 'overview' ? (
+          {activeTab === 'diagnostics' ? (
             <div className="stat-grid">
               <StatCard label="Active Providers" value={String(dashboard.activeProviderCount)} />
               <StatCard
@@ -312,7 +399,7 @@ export function CommunicationsHubPage() {
                                   const url = new URL(window.location.href);
                                   url.searchParams.set('channelSettings', '1');
                                   window.history.replaceState({}, '', url.toString());
-                                  setActiveTab('platform');
+                                  selectPrimaryTab('channels');
                                 }}
                               >
                                 Manage
@@ -370,6 +457,22 @@ export function CommunicationsHubPage() {
 
           {activeTab === 'timeline' ? (
             <Panel title="Unified Communication Timeline">
+              {canWrite ? (
+                <div className="page-header-actions" style={{ marginBottom: '0.75rem' }}>
+                  <Button
+                    variant="secondary"
+                    disabled={isWorking}
+                    onClick={() =>
+                      void runAction(
+                        () => syncCommunicationTimeline(accessToken!),
+                        'Timeline synced from real modules.',
+                      )
+                    }
+                  >
+                    Sync Timeline
+                  </Button>
+                </div>
+              ) : null}
               {dashboard.recentTimeline.length === 0 &&
               dashboard.intelligence.recentTimeline.length === 0 ? (
                 <EmptyState
@@ -510,30 +613,6 @@ export function CommunicationsHubPage() {
                   />
                 </div>
               )}
-            </Panel>
-          ) : null}
-
-          {activeTab === 'assistant' ? (
-            <Panel title="AURA Communications Agent">
-              <p>
-                Ask about communication history, draft replies, call summaries, and customer
-                updates. Recommendations only — business channels; personal data not exposed.
-              </p>
-              {assistantError ? <p className="form-error">{assistantError}</p> : null}
-              <AuraMessageList messages={agentMessages} isSending={isSending} />
-              {pendingTasks.map((task) => (
-                <AuraTaskApprovalCard
-                  key={task.id}
-                  task={task}
-                  accessToken={accessToken ?? ''}
-                  onUpdated={updateTask}
-                />
-              ))}
-              <AuraComposer
-                disabled={isSending}
-                onSend={(content) => void sendAgentMessage(content, 'communications')}
-                placeholder="Ask about calls, WhatsApp, SMS, email, or draft a reply…"
-              />
             </Panel>
           ) : null}
         </>
