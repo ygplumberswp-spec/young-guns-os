@@ -23,6 +23,7 @@ export * from './quotes';
 export * from './boq';
 export * from './draft-workspace';
 export * from './job-document-packs';
+export * from './completion-reports';
 export * from './invoices';
 export * from './payments';
 export * from './inventory-locations';

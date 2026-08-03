@@ -277,6 +277,14 @@ export function App() {
                           path="/documents/job-packs"
                           component={OwnerPages.JobPackListPage}
                         />
+                        <Route
+                          path="/documents/completion-reports/:id"
+                          component={OwnerPages.CompletionReportDetailPage}
+                        />
+                        <Route
+                          path="/documents/completion-reports"
+                          component={OwnerPages.CompletionReportListPage}
+                        />
                         <Route path="/documents/:id" component={OwnerPages.DocumentDetailPage} />
                         <Route path="/documents" component={OwnerPages.DocumentListPage} />
                         <Route

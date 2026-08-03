@@ -53,12 +53,14 @@ import { MarketingEligibilityService } from './services/marketing-eligibility.se
 import { JobsService } from './services/jobs.service.js';
 import { JobCostingService } from './services/job-costing.service.js';
 import { JobDocumentPackService } from './services/job-document-pack.service.js';
+import { CompletionReportService } from './services/completion-report.service.js';
 import { SchedulingService } from './services/scheduling.service.js';
 import { FinanceService } from './services/finance.service.js';
 import { createFinanceRouter } from './routes/finance.js';
 import { createBoqRouter } from './routes/boq.js';
 import { createDraftsRouter } from './routes/drafts.js';
 import { createJobDocumentPackRouter } from './routes/job-document-packs.js';
+import { createCompletionReportRouter } from './routes/completion-reports.js';
 import { BoqService } from './services/boq.service.js';
 import { DraftAutosaveService } from './services/draft-autosave.service.js';
 import { InventoryService } from './services/inventory.service.js';
@@ -867,6 +869,7 @@ const emailCentreService = EmailCentreService.create({
   communicationsPlatformService,
   enterpriseUnifiedCommunicationsService,
 });
+const completionReportService = new CompletionReportService(db, emailCentreService);
 const dispatchCommunicationService = new DispatchCommunicationService(
   db,
   enterpriseUnifiedCommunicationsService,
@@ -1605,6 +1608,16 @@ app.use(
   '/api/v1/job-document-packs',
   createJobDocumentPackRouter({
     jobDocumentPackService,
+    teamService,
+    db,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/completion-reports',
+  createCompletionReportRouter({
+    completionReportService,
     teamService,
     db,
     jwtSecret: env.JWT_SECRET,

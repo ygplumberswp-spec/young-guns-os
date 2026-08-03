@@ -34,6 +34,9 @@ import { useAuth } from '../../lib/auth-context';
 import { canManageJobs, formatJobStatus } from '../../features/jobs/JobList';
 import { canAccessFinance, canManageFinance } from '../../features/finance/utils';
 import { JobCompletionFinancePanel } from '../../features/finance/JobCompletionFinancePanel';
+import { JobCompletionReportPanel } from '../../features/jobs/JobCompletionReportPanel';
+import { JobDocumentPackPanel } from '../../features/jobs/JobDocumentPackPanel';
+import { canAccessDocuments, canManageDocuments } from '../../features/documents/utils';
 import { canAccessProcurement, materialLineStatusPillClass } from '../../features/procurement/utils';
 import { JobSchedulePanel } from '../../features/scheduling/JobSchedulePanel';
 import { canAccessScheduling, canManageScheduling } from '../../features/scheduling/utils';
@@ -78,6 +81,14 @@ export function JobDetailPage() {
   const [accessInstructions, setAccessInstructions] = useState('');
 
   const canWrite = useMemo(() => (user ? canManageJobs(user.permissions) : false), [user]);
+  const canViewDocuments = useMemo(
+    () => (user ? canAccessDocuments(user.permissions) : false),
+    [user],
+  );
+  const canWriteDocuments = useMemo(
+    () => (user ? canManageDocuments(user.permissions) : false),
+    [user],
+  );
   const canViewSchedule = useMemo(
     () => (user ? canAccessScheduling(user.permissions) : false),
     [user],
@@ -1065,29 +1076,46 @@ export function JobDetailPage() {
           )
         }
         documentsPanel={
-          <Panel title="Documents">
-            {job.documents.length === 0 ? (
-              <p className="page-muted">No documents linked to this job yet.</p>
-            ) : (
-              <ul className="jobs-doc-list">
-                {job.documents.map((doc) => (
-                  <li key={doc.id}>
-                    <Link href={`/documents/${doc.id}`} className="jobs-link">
-                      {doc.title}
-                    </Link>{' '}
-                    <span className="page-muted">({doc.fileName})</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {canWrite ? (
-              <div className="jobs-form__actions">
-                <Link href={`/documents/new?jobId=${job.id}`}>
-                  <Button variant="secondary">Add Document</Button>
-                </Link>
-              </div>
+          <>
+            <Panel title="Documents">
+              {job.documents.length === 0 ? (
+                <p className="page-muted">No documents linked to this job yet.</p>
+              ) : (
+                <ul className="jobs-doc-list">
+                  {job.documents.map((doc) => (
+                    <li key={doc.id}>
+                      <Link href={`/documents/${doc.id}`} className="jobs-link">
+                        {doc.title}
+                      </Link>{' '}
+                      <span className="page-muted">({doc.fileName})</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {canWrite ? (
+                <div className="jobs-form__actions">
+                  <Link href={`/documents/new?jobId=${job.id}`}>
+                    <Button variant="secondary">Add Document</Button>
+                  </Link>
+                </div>
+              ) : null}
+            </Panel>
+            {accessToken && canViewDocuments ? (
+              <>
+                <JobCompletionReportPanel
+                  accessToken={accessToken}
+                  jobId={job.id}
+                  canWrite={canWriteDocuments}
+                />
+                <JobDocumentPackPanel
+                  accessToken={accessToken}
+                  jobId={job.id}
+                  jobTitle={job.title}
+                  canWrite={canWriteDocuments}
+                />
+              </>
             ) : null}
-          </Panel>
+          </>
         }
         compliancePanel={
           <Panel title="COC & Compliance">

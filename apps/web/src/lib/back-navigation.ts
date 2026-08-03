@@ -52,6 +52,8 @@ export const PARENT_ROUTE_ENTRIES: ParentRouteEntry[] = [
   { match: /^\/documents\/categories$/, fallback: '/documents' },
   { match: /^\/documents\/job-packs\/[^/]+$/, fallback: '/documents/job-packs' },
   { match: /^\/documents\/job-packs$/, fallback: '/documents' },
+  { match: /^\/documents\/completion-reports\/[^/]+$/, fallback: '/documents/completion-reports' },
+  { match: /^\/documents\/completion-reports$/, fallback: '/documents' },
   { match: /^\/documents\/[^/]+$/, fallback: '/documents' },
 
   // Communications

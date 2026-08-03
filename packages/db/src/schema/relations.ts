@@ -271,6 +271,7 @@ import {
 import { boqDocuments, boqLineItems } from './boq';
 import { draftWorkspace } from './draft-workspace';
 import { jobDocumentPackItems, jobDocumentPacks } from './job-document-packs';
+import { completionReports } from './completion-reports';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
@@ -675,6 +676,45 @@ export const jobDocumentPackItemsRelations = relations(jobDocumentPackItems, ({ 
   document: one(documents, {
     fields: [jobDocumentPackItems.documentId],
     references: [documents.id],
+  }),
+}));
+
+export const completionReportsRelations = relations(completionReports, ({ one }) => ({
+  company: one(companies, {
+    fields: [completionReports.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [completionReports.jobId],
+    references: [jobs.id],
+  }),
+  customer: one(customers, {
+    fields: [completionReports.customerId],
+    references: [customers.id],
+  }),
+  property: one(cxCustomerProperties, {
+    fields: [completionReports.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  invoice: one(invoices, {
+    fields: [completionReports.invoiceId],
+    references: [invoices.id],
+  }),
+  quote: one(quotes, {
+    fields: [completionReports.quoteId],
+    references: [quotes.id],
+  }),
+  boqDocument: one(boqDocuments, {
+    fields: [completionReports.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+  document: one(documents, {
+    fields: [completionReports.documentId],
+    references: [documents.id],
+  }),
+  createdBy: one(users, {
+    fields: [completionReports.createdByUserId],
+    references: [users.id],
   }),
 }));
 
