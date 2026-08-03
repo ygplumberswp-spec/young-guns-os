@@ -244,6 +244,10 @@ export function App() {
                           path="/property-intelligence"
                           component={OwnerPages.PropertyIntelligencePage}
                         />
+                        <Route
+                          path="/document-intelligence"
+                          component={OwnerPages.DocumentIntelligencePage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"
