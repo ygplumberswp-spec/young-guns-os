@@ -11,6 +11,8 @@ The **Xero Complete Historical Sync & Financial Memory** phase may be active. Do
 alongside it, and do not touch Xero or Finance work-in-progress files while recording this scope. See
 [`XERO_COMPLETE_HISTORICAL_SYNC_AND_FINANCIAL_MEMORY.md`](./XERO_COMPLETE_HISTORICAL_SYNC_AND_FINANCIAL_MEMORY.md).
 
+The active V1.0 finish sequence is recorded in [`TITAN_AURA_ACTIVE_FINISH_ROADMAP.md`](./TITAN_AURA_ACTIVE_FINISH_ROADMAP.md), where this department is **Phase 1** of the updated numbering. That numbering and the "queued after Xero" status above are **not yet reconciled** — the Owner decides whether the open Xero phase finishes first or is paused for this department. Either way this department is **not started** and needs Owner approval at the stop gate before it begins.
+
 ---
 
 APPROVED.

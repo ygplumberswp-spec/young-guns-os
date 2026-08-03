@@ -4,6 +4,8 @@ Status: Authoritative V1.0 acceptance gate — use this before declaring Version
 
 TITAN Version 1.0 must not be declared complete based only on pages, documents or module names.
 
+The phase order and stop gates that lead to this checklist are recorded in [`TITAN_AURA_ACTIVE_FINISH_ROADMAP.md`](./TITAN_AURA_ACTIVE_FINISH_ROADMAP.md) — the active V1.0 finish sequence. That roadmap says what is built next and in what order; this checklist says what must pass before Version 1.0 is declared complete.
+
 ## 1. Department and Phase Completion
 
 - [x] Department 20 — UX Final Pass (`8da8068`)

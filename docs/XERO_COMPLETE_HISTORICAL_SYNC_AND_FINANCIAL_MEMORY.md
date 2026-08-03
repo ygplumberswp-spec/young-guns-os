@@ -10,6 +10,8 @@ the root causes found, what changed, and exactly what is blocked and on whom.
 
 ---
 
+The active V1.0 finish sequence is recorded in [`TITAN_AURA_ACTIVE_FINISH_ROADMAP.md`](./TITAN_AURA_ACTIVE_FINISH_ROADMAP.md). That roadmap's updated numbering starts at Department 21 — SaaS Scaling and **omits this phase from the numbered list**, because this phase was queued earlier. This work is **not cancelled** by that record: it remains open and blocked on staging Xero credentials, and **the Owner decides** whether it finishes before Department 21 or is paused for it.
+
 ## Purpose
 
 Repair and complete the existing Xero integration so that TITAN holds the **full historical
