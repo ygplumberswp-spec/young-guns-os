@@ -116,7 +116,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Timesheets | 🟢 Completed |
 | Overtime | 🟢 Completed |
 | Leave | ⬜ Remaining |
-| Performance | ⬜ Remaining |
+| Performance | 🟢 Completed |
 | Recruitment | 🟢 Completed |
 
 ---
