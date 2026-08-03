@@ -112,6 +112,7 @@ export * from './aura-agent-network';
 export * from './aura-evolution';
 export * from './marketing-agent';
 export * from './social-media-integrations';
+export * from './content-reputation-intelligence';
 export * from './technician-intelligence';
 export * from './workflow-automation';
 export * from './recurring-maintenance';

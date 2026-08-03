@@ -568,6 +568,11 @@ export const SocialMediaIntegrationsPage = lazyNamed(
     import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),
   'SocialMediaIntegrationsPage',
 );
+export const ContentReputationIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/content-reputation-intelligence/ContentReputationIntelligencePage'),
+  'ContentReputationIntelligencePage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),

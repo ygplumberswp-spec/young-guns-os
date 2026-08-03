@@ -102,6 +102,16 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     ],
   },
   {
+    href: '/content-reputation-intelligence',
+    label: 'Content & Reputation',
+    permissions: [
+      'marketing:read',
+      'marketing_intelligence:read',
+      'agents:read',
+      '*',
+    ],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

@@ -946,6 +946,13 @@
       "when": 1754337600000,
       "tag": "0137_social_media_integrations",
       "breakpoints": true
+    },
+    {
+      "idx": 135,
+      "version": "7",
+      "when": 1754341200000,
+      "tag": "0138_content_reputation_intelligence",
+      "breakpoints": true
     }
   ]
 }

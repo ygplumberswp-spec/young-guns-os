@@ -70,8 +70,8 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 | Google Business Profile | 🟢 Completed |
 | Website monitoring | ⬜ Remaining |
 | Content intelligence | 🟢 Completed |
-| Reputation management | ⬜ Remaining |
-| Competitor intelligence | ⬜ Remaining |
+| Reputation management | 🟢 Completed |
+| Competitor intelligence | 🟢 Completed |
 
 ---
 
@@ -159,6 +159,7 @@ Update this file when a milestone changes status. Source of truth for scope: [`T
 - AURA Command Centre (Department 2.1, migration `0133`) — Owner command dashboard, business memory foundation, executive assistant mode, and agent coordination registry/handoffs. Extends existing AURA chat / `aura_memory` / agent tasks; specialist agents remain foundation-only; no demo analytics; Personal WA private never sourced. AURA Chat marked 🟡 (existing chat surfaces; Global AURA FAB / route-context WIP may remain uncommitted).
 - Marketing Agent Foundation (`marketing-agent`, migration `0136`) — campaigns/goals/recommendations, plumbing & educational content draft generators, analytics from real stored activity only, Owner approval before publish path. Social platform publish execute is gated (Facebook/Instagram/TikTok/LinkedIn/GBP not live). Content intelligence foundation included; channel connectors remain remaining.
 - Social Media Integration Layer (`social-media-integrations`, migration `0137`) — Facebook/Instagram/TikTok/LinkedIn/GBP connection settings, honest status/health/provider info, encrypted credentials, sync foundation, monitoring storage for real items only, Marketing Agent draft handoff, and Owner approval queue (draft → review → approved → execute gated). No auto-post/auto-reply; live OAuth/sync/publish remain additive.
+- Content & Reputation Intelligence (`content-reputation-intelligence`, migration `0138`) — extends Marketing Agent + Social Media: content quality scoring on real drafts, plumbing suggestion categories (draft templates only), review tracking with honest sentiment/reputation (unavailable without signals), Owner-entered competitor observations (no scraping), AURA insight handoffs. Approval-gated outbound drafts; never auto-publish/auto-reply; no demo reviews/competitors/scores.
 - AURA Agent Network (Department 2.2, migration `0134`) — secure A2A messages/handoffs, controlled context sharing, sequential/parallel workflow runs, Owner approval queue + monitoring UI. Extends Command Centre `aura_command_agent_registry` + `AGENT_REGISTRY` / `agent_profiles`; no demo agent activity; messaging/financial/sensitive actions never auto-execute.
 - AURA Evolution / Learning Agent (Department 2.3, migration `0135`) — Owner-gated learning from real Command Centre decisions, agent/workflow/maintenance outcomes, and recommendation scoring; honest pattern unavailable states; knowledge links extend Command Centre / `aura_memory`; no demo insights; no auto business/finance/customer mutations.
 - Do not mark modules complete until owner-accepted and production-safe for that milestone.
