@@ -81,6 +81,16 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   { href: '/analytics', label: 'Analytics', permissions: ['analytics:read', '*'] },
   { href: '/marketing', label: 'Marketing', permissions: ['marketing:read', '*'] },
   {
+    href: '/marketing-agent',
+    label: 'Marketing Agent',
+    permissions: [
+      'marketing:read',
+      'marketing_intelligence:read',
+      'agents:read',
+      '*',
+    ],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

@@ -116,6 +116,7 @@ export const MODULE_ROOT_PATHS = new Set([
   '/leads',
   '/marketing',
   '/marketing-intelligence',
+  '/marketing-agent',
   '/finance/quotes',
   '/finance/invoices',
   '/finance/payments',

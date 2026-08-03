@@ -551,6 +551,15 @@ export const CommunicationAuraIntelligencePage = lazyNamed(
     import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
   'CommunicationAuraIntelligencePage',
 );
+export const CommunicationAuraIntelligencePage = lazyNamed(
+  () =>
+    import('../pages/communication-aura-intelligence/CommunicationAuraIntelligencePage'),
+  'CommunicationAuraIntelligencePage',
+);
+export const MarketingAgentPage = lazyNamed(
+  () => import('../pages/marketing-agent/MarketingAgentPage'),
+  'MarketingAgentPage',
+);
 export const NotFoundPage = lazyNamed(() => import('../pages/NotFoundPage'), 'NotFoundPage');
 export const CartrackSettingsPage = lazyNamed(
   () => import('../pages/settings/CartrackSettingsPage'),

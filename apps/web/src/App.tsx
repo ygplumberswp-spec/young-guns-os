@@ -449,6 +449,14 @@ export function App() {
                           path="/communication-aura-intelligence"
                           component={OwnerPages.CommunicationAuraIntelligencePage}
                         />
+                        <Route
+                          path="/communication-aura-intelligence"
+                          component={OwnerPages.CommunicationAuraIntelligencePage}
+                        />
+                        <Route
+                          path="/marketing-agent"
+                          component={OwnerPages.MarketingAgentPage}
+                        />
                         <Route path="/recruiting" component={OwnerPages.RecruitingPage} />
                         <Route
                           path="/integrations/cartrack"
