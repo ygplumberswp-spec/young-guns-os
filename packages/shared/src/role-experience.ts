@@ -290,6 +290,14 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     experiences: ['company_owner', 'platform_owner'],
   },
   {
+    // Every staff experience may open it — the API decides what the feed holds,
+    // and finance, payroll, security and strategy categories stay Owner only.
+    href: '/smart-notifications',
+    label: 'Smart Notifications',
+    permissions: ['notifications:read', 'notifications:write', 'notifications:manage', '*'],
+    experiences: ['company_owner', 'platform_owner', 'staff'],
+  },
+  {
     href: '/aura/agents',
     label: NAV_LABELS.auraTeam,
     permissions: ['agents:read', '*'],

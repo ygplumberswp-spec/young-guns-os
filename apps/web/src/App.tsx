@@ -256,6 +256,10 @@ export function App() {
                           path="/executive-command-centre"
                           component={OwnerPages.ExecutiveCommandCentrePage}
                         />
+                        <Route
+                          path="/smart-notifications"
+                          component={OwnerPages.SmartNotificationsPage}
+                        />
                         <Route path="/document-ai" component={OwnerPages.DocumentAiPage} />
                         <Route
                           path="/business-continuity"

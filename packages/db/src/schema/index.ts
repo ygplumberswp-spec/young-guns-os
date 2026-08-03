@@ -128,6 +128,7 @@ export * from './property-intelligence';
 export * from './document-intelligence';
 export * from './compliance-intelligence';
 export * from './executive-command-centre';
+export * from './smart-notification-intelligence';
 export * from './finance-reporting-forecast';
 export * from './finance-cashflow-profit';
 export * from './inventory-intelligence';

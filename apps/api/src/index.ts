@@ -268,6 +268,7 @@ import { PropertyIntelligenceService } from './services/property-intelligence.se
 import { DocumentIntelligenceService } from './services/document-intelligence.service.js';
 import { ComplianceIntelligenceService } from './services/compliance-intelligence.service.js';
 import { ExecutiveCommandCentreService } from './services/executive-command-centre.service.js';
+import { SmartNotificationIntelligenceService } from './services/smart-notification-intelligence.service.js';
 import { FinanceReportingForecastService } from './services/finance-reporting-forecast.service.js';
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
@@ -320,6 +321,7 @@ import { createPropertyIntelligenceRouter } from './routes/property-intelligence
 import { createDocumentIntelligenceRouter } from './routes/document-intelligence.js';
 import { createComplianceIntelligenceRouter } from './routes/compliance-intelligence.js';
 import { createExecutiveCommandCentreRouter } from './routes/executive-command-centre.js';
+import { createSmartNotificationIntelligenceRouter } from './routes/smart-notification-intelligence.js';
 import { createFinanceReportingForecastRouter } from './routes/finance-reporting-forecast.js';
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
@@ -893,6 +895,7 @@ const propertyIntelligenceService = new PropertyIntelligenceService(db);
 const documentIntelligenceService = new DocumentIntelligenceService(db);
 const complianceIntelligenceService = new ComplianceIntelligenceService(db);
 const executiveCommandCentreService = new ExecutiveCommandCentreService(db);
+const smartNotificationIntelligenceService = new SmartNotificationIntelligenceService(db);
 const financeReportingForecastService = new FinanceReportingForecastService(db);
 const financeCashflowProfitService = new FinanceCashflowProfitService(db);
 const procurementIntelligenceService = new ProcurementIntelligenceService({
@@ -2662,6 +2665,15 @@ app.use(
   '/api/v1/executive-command-centre',
   createExecutiveCommandCentreRouter({
     executiveCommandCentreService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/smart-notifications',
+  createSmartNotificationIntelligenceRouter({
+    smartNotificationIntelligenceService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

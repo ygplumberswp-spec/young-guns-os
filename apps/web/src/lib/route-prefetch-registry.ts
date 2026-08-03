@@ -320,6 +320,16 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    // Feed contents are decided per role by the API, so the chunk itself is
+    // safe for any staff experience to preload.
+    path: '/smart-notifications',
+    load: () => import('../pages/smart-notifications/SmartNotificationsPage'),
+    permissions: ['notifications:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'staff'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/recruitment-performance-intelligence',
     load: () => import('../pages/recruitment-performance-intelligence/RecruitmentPerformanceIntelligencePage'),
     permissions: ['workforce:read', 'recruiting:read', '*'],
