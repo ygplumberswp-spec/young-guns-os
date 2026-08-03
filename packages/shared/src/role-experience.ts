@@ -85,6 +85,19 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     ],
   },
   {
+    href: '/fleet-ai-recommendations',
+    label: 'Fleet AI Recommendations',
+    permissions: [
+      'fleet:read',
+      'fleet:write',
+      'fleet_intelligence:read',
+      'fleet_intelligence:write',
+      'agents:read',
+      '*',
+    ],
+  },
+
+  {
     href: '/mobile-platform/dispatcher',
     label: NAV_LABELS.liveDispatch,
     permissions: ['dispatch:read', 'mobile:read', '*'],

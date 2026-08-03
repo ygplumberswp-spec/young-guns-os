@@ -262,6 +262,7 @@ import { FinanceReportingForecastService } from './services/finance-reporting-fo
 import { FinanceCashflowProfitService } from './services/finance-cashflow-profit.service.js';
 import { InventoryIntelligenceService } from './services/inventory-intelligence.service.js';
 import { VehicleIntelligenceService } from './services/vehicle-intelligence.service.js';
+import { FleetAiRecommendationsService } from './services/fleet-ai-recommendations.service.js';
 import { HrEmployeeIntelligenceService } from './services/hr-employee-intelligence.service.js';
 import { ProcurementIntelligenceService } from './services/procurement-intelligence.service.js';
 import { StockForecastingService } from './services/stock-forecasting.service.js';
@@ -302,6 +303,7 @@ import { createFinanceReportingForecastRouter } from './routes/finance-reporting
 import { createFinanceCashflowProfitRouter } from './routes/finance-cashflow-profit.js';
 import { createInventoryIntelligenceRouter } from './routes/inventory-intelligence.js';
 import { createVehicleIntelligenceRouter } from './routes/vehicle-intelligence.js';
+import { createFleetAiRecommendationsRouter } from './routes/fleet-ai-recommendations.js';
 import { createHrEmployeeIntelligenceRouter } from './routes/hr-employee-intelligence.js';
 import { createProcurementIntelligenceRouter } from './routes/procurement-intelligence.js';
 import { createStockForecastingRouter } from './routes/stock-forecasting.js';
@@ -876,6 +878,7 @@ const stockForecastingService = new StockForecastingService({
   procurementService,
 });
 const vehicleIntelligenceService = new VehicleIntelligenceService(db);
+const fleetAiRecommendationsService = new FleetAiRecommendationsService(db);
 const hrEmployeeIntelligenceService = new HrEmployeeIntelligenceService(db);
 const technicianIntelligenceService = new TechnicianIntelligenceService(db);
 const enterpriseSecurityService = new EnterpriseSecurityService(
@@ -2614,6 +2617,15 @@ app.use(
   '/api/v1/vehicle-intelligence',
   createVehicleIntelligenceRouter({
     vehicleIntelligenceService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/fleet-ai-recommendations',
+  createFleetAiRecommendationsRouter({
+    fleetAiRecommendationsService,
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,

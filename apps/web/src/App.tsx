@@ -458,6 +458,10 @@ export function App() {
                           path="/vehicle-intelligence"
                           component={OwnerPages.VehicleIntelligencePage}
                         />
+                        <Route
+                          path="/fleet-ai-recommendations"
+                          component={OwnerPages.FleetAiRecommendationsPage}
+                        />
                         <Route path="/security" component={OwnerPages.EnterpriseSecurityPage} />
                         <Route
                           path="/personal-communications-intelligence"

@@ -223,6 +223,11 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/fleet-ai-recommendations',
+    load: () => import('../pages/fleet-ai-recommendations/FleetAiRecommendationsPage'),
+  },
+
+  {
     path: '/inventory-intelligence',
     load: () => import('../pages/inventory-intelligence/InventoryIntelligencePage'),
     permissions: ['inventory:read', 'procurement:read', 'agents:read', '*'],

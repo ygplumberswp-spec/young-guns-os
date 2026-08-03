@@ -28,6 +28,7 @@ const HREF_GROUP: Record<string, NavGroupId> = {
   '/inventory/products': 'operations',
   '/procurement': 'operations',
   '/fleet': 'operations',
+  '/fleet-ai-recommendations': 'intelligence',
   '/mobile-platform/dispatcher': 'operations',
   '/dispatch-intelligence': 'operations',
   '/communications/messages': 'operations',
