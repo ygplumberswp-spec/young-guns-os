@@ -342,6 +342,14 @@ export const CommunicationsHubPage = lazyNamed(
   () => import('../pages/communications-hub/CommunicationsHubPage'),
   'CommunicationsHubPage',
 );
+export const EmailCentrePage = lazyNamed(
+  () => import('../pages/email-centre/EmailCentrePage'),
+  'EmailCentrePage',
+);
+export const CommunicationTimelinePage = lazyNamed(
+  () => import('../pages/communication-timeline/CommunicationTimelinePage'),
+  'CommunicationTimelinePage',
+);
 export const CustomerExperiencePage = lazyNamed(
   () => import('../pages/customer-experience/CustomerExperiencePage'),
   'CustomerExperiencePage',

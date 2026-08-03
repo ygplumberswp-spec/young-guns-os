@@ -156,6 +156,11 @@ export function App() {
                           path="/communications-hub"
                           component={OwnerPages.CommunicationsHubPage}
                         />
+                        <Route path="/email-centre" component={OwnerPages.EmailCentrePage} />
+                        <Route
+                          path="/communication-timeline"
+                          component={OwnerPages.CommunicationTimelinePage}
+                        />
                         <Route
                           path="/customer-experience"
                           component={OwnerPages.CustomerExperiencePage}

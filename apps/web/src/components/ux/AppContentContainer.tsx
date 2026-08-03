@@ -20,6 +20,8 @@ const WIDE_ROUTE_PREFIXES = [
   '/documents',
   '/communications',
   '/communications-hub',
+  '/email-centre',
+  '/communication-timeline',
   '/communications-intelligence',
   '/analytics',
   '/reports',

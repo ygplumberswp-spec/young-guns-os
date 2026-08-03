@@ -206,6 +206,12 @@ export function CommunicationsHubPage() {
         description="Business Gmail, Business WhatsApp, and optional Personal WhatsApp (Owner only) — real data only; send requires approval."
       />
 
+      <p className="muted">
+        <Link href="/email-centre">Email Centre</Link>
+        {' · '}
+        <Link href="/communication-timeline">Communication Timeline</Link>
+      </p>
+
       {error ? <p className="form-error">{error}</p> : null}
       {success ? <p className="form-success">{success}</p> : null}
 

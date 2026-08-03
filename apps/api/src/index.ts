@@ -125,6 +125,8 @@ import { DispatchCommunicationService } from './services/dispatch-communication.
 import { createEnterpriseUnifiedCommunicationsRouter } from './routes/enterprise-unified-communications.js';
 import { CommunicationsPlatformService } from './services/communications-platform.service.js';
 import { createCommunicationsPlatformRouter } from './routes/communications-platform.js';
+import { EmailCentreService } from './services/email-centre.service.js';
+import { createEmailCentreRouter } from './routes/email-centre.js';
 import { GmailOAuthService } from './services/gmail-oauth.service.js';
 import { EnterpriseCustomerExperienceService } from './services/enterprise-customer-experience.service.js';
 import { createEnterpriseCustomerExperienceRouter } from './routes/enterprise-customer-experience.js';
@@ -447,6 +449,13 @@ const businessIntegrationsService = BusinessIntegrationsService.create({
   xeroOAuthService,
   apiPublicUrl,
   emailSendingEnabled: env.runtime.emailSendingEnabled,
+});
+  db,
+  financeService,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  hubService: integrationHubService,
+  webhooksEnabled: env.runtime.webhooksEnabled,
+  paymentProcessingEnabled: env.runtime.paymentProcessingEnabled,
 });
 const resendEmailService = ResendEmailService.create({
   db,
@@ -852,6 +861,11 @@ const enterpriseUnifiedCommunicationsService = new EnterpriseUnifiedCommunicatio
   integrationsService,
   integrationHubService,
   gmailOAuthService,
+});
+const emailCentreService = EmailCentreService.create({
+  db,
+  communicationsPlatformService,
+  enterpriseUnifiedCommunicationsService,
 });
 const dispatchCommunicationService = new DispatchCommunicationService(
   db,
@@ -1693,6 +1707,15 @@ app.use(
     jwtSecret: env.JWT_SECRET,
     authService,
     appUrl: env.APP_URL,
+  }),
+);
+app.use(
+  '/api/v1/email-centre',
+  createEmailCentreRouter({
+    emailCentreService,
+    teamService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(

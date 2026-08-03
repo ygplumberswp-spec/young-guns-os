@@ -134,6 +134,22 @@ const STAFF_ROUTE_REGISTRY: RoutePrefetchEntry[] = [
     safeToPreload: true,
   },
   {
+    path: '/email-centre',
+    load: () => import('../pages/email-centre/EmailCentrePage'),
+    permissions: ['communications:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
+    path: '/communication-timeline',
+    load: () => import('../pages/communication-timeline/CommunicationTimelinePage'),
+    permissions: ['communications:read', '*'],
+    experiences: ['platform_owner', 'company_owner', 'manager', 'staff', 'dispatcher'],
+    priority: 2,
+    safeToPreload: true,
+  },
+  {
     path: '/aura/agents',
     load: () => import('../pages/agents/AgentDashboardPage'),
     permissions: ['agents:read', '*'],

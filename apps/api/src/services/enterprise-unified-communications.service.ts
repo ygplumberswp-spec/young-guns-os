@@ -156,10 +156,13 @@ export class EnterpriseUnifiedCommunicationsService {
 
     const created: UcTimelineEntrySummary[] = [];
     for (const entry of commTimeline) {
+      const sourceModule = entry.entityType ?? entry.channel;
+      const sourceEntityId = entry.entityId ?? entry.id;
       const existing = await this.deps.db.query.ucTimelineIndex.findFirst({
         where: and(
           eq(ucTimelineIndex.companyId, companyId),
-          eq(ucTimelineIndex.sourceEntityId, entry.id),
+          eq(ucTimelineIndex.sourceModule, sourceModule),
+          eq(ucTimelineIndex.sourceEntityId, sourceEntityId),
         ),
       });
       if (existing) {
@@ -175,12 +178,13 @@ export class EnterpriseUnifiedCommunicationsService {
         .values({
           companyId,
           customerId: entry.customerId,
+          jobId: (entry.metadata?.jobId as string | undefined) ?? null,
           entryType,
           channel: mapCommIntelChannel(entry.channel),
           title: entry.title,
           summary: entry.preview,
-          sourceModule: entry.entityType ?? entry.channel,
-          sourceEntityId: entry.entityId ?? entry.id,
+          sourceModule,
+          sourceEntityId,
           occurredAt: new Date(entry.occurredAt),
           metadata: entry.metadata ?? {},
         })
@@ -724,6 +728,7 @@ export class EnterpriseUnifiedCommunicationsService {
     return {
       id: row.id,
       customerId: row.customerId,
+      jobId: row.jobId ?? null,
       entryType: row.entryType,
       channel: row.channel,
       title: row.title,

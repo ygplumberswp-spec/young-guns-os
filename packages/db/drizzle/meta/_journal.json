@@ -855,6 +855,13 @@
       "when": 1754290800000,
       "tag": "0124_resend_email_deliveries",
       "breakpoints": true
+    },
+    {
+      "idx": 122,
+      "version": "7",
+      "when": 1754294400000,
+      "tag": "0125_email_centre_communication_timeline",
+      "breakpoints": true
     }
   ]
 }

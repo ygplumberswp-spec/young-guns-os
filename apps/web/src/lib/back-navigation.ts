@@ -157,6 +157,8 @@ export const MODULE_ROOT_PATHS = new Set([
   '/data-migration',
   '/mobile-platform',
   '/communications-hub',
+  '/email-centre',
+  '/communication-timeline',
   '/customer-experience',
   '/asset-intelligence',
   '/asset-equipment',

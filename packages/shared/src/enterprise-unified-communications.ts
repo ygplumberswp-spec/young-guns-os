@@ -80,6 +80,7 @@ export type UcProviderAdapterSummary = {
 export type UcTimelineEntrySummary = {
   id: string;
   customerId: string | null;
+  jobId?: string | null;
   entryType: string;
   channel: UcProviderChannel | null;
   title: string;
