@@ -19,6 +19,14 @@ Related planned scope: [`OWNER_VOICE_WHATSAPP_COMMAND_MODE.md`](./OWNER_VOICE_WH
 Owner call-in and Owner WhatsApp are the **remote** channels of the same voice capability
 described here, and both share one command / intent layer.
 
+Required voice standard (also planned / required, not started): every customer-facing
+receptionist voice — including the spoken side of this capability, WhatsApp voice responses and
+the mobile voice phases — must be a natural-sounding **South African female voice** as specified
+in [`SA_FEMALE_RECEPTIONIST_VOICE_STANDARD.md`](./SA_FEMALE_RECEPTIONIST_VOICE_STANDARD.md).
+That is a configuration and quality standard applied to the configurable TTS provider, not a
+separate voice architecture, and the Platform Owner must preview and approve the final voice
+before production activation.
+
 ## Core principle
 
 Voice is available **throughout TITAN**, not parked on a single screen.

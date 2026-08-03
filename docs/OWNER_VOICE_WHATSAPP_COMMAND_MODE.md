@@ -20,6 +20,12 @@ Related planned scope: [`AURA_VOICE_THROUGHOUT_TITAN.md`](./AURA_VOICE_THROUGHOU
 The Owner channels described here are the **remote** channels of that platform-wide voice
 capability, and both must be built on the same shared voice command / intent layer.
 
+Required voice standard (also planned / required, not started): where these channels speak to a
+customer — the receptionist call path and WhatsApp voice responses — the voice must be a
+natural-sounding **South African female voice** as specified in
+[`SA_FEMALE_RECEPTIONIST_VOICE_STANDARD.md`](./SA_FEMALE_RECEPTIONIST_VOICE_STANDARD.md), with
+Platform Owner preview and approval required before production activation.
+
 ## Channels
 
 The Platform Owner can command the business through two channels:
