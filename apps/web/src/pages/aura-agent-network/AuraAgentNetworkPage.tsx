@@ -1,0 +1,25 @@
+import { useEffect, useState, type ReactNode } from 'react';
+import { Link } from 'wouter';
+import { Button, EmptyState, Panel, StatCard } from '@titan/ui';
+import { PageHeader } from '../../components/ux';
+import { useAuth } from '../../lib/auth-context';
+import { decideAuraNetworkApproval, ensureAuraNetworkRegistry, fetchAuraNetworkActivity, fetchAuraNetworkApprovals, fetchAuraNetworkContext, fetchAuraNetworkMessages, fetchAuraNetworkMonitor, fetchAuraNetworkRegistry, fetchAuraNetworkWorkflows } from '../../lib/aura-agent-network-api-client';
+type Tab='monitor'|'registry'|'messages'|'workflows'|'approvals'|'context';
+export function AuraAgentNetworkPage(){
+ const {accessToken,user}=useAuth();const [tab,setTab]=useState<Tab>('monitor');const [data,setData]=useState<any>({});const [error,setError]=useState<string|null>(null);
+ const allowed=!!user&&['*','agents:read','agents:write','agents:manage','orchestration:read','orchestration:write'].some(p=>user.permissions.includes(p));
+ const load=async()=>{if(!accessToken)return;const [monitor,registry,messages,workflows,approvals,context,activity]=await Promise.all([fetchAuraNetworkMonitor(accessToken),fetchAuraNetworkRegistry(accessToken),fetchAuraNetworkMessages(accessToken),fetchAuraNetworkWorkflows(accessToken),fetchAuraNetworkApprovals(accessToken),fetchAuraNetworkContext(accessToken),fetchAuraNetworkActivity(accessToken)]);setData({monitor:monitor.overview,registry:registry.agents,messages:messages.messages,workflows:workflows.workflows,approvals:approvals.approvals,context:context.access,activity:activity.activity});};
+ useEffect(()=>{void load().catch((e:Error)=>setError(e.message));},[accessToken,allowed]);
+ if(!allowed)return <PageHeader title="AURA Agent Network" description="You do not have permission to view Agent Network monitoring."/>;
+ return <div className="space-y-6"><PageHeader title="AURA Agent Network" description="Owner-controlled coordination: no demo activity, no Personal WhatsApp private context, and no auto-executed sensitive actions."/>
+ <Panel title="Connected AURA surfaces"><div className="flex gap-2"><Link href="/aura/agents"><Button variant="secondary">AURA Team</Button></Link><Link href="/workflow-automation"><Button variant="secondary">Workflow Automation</Button></Link></div></Panel>
+ <div className="flex flex-wrap gap-2">{(['monitor','registry','messages','workflows','approvals','context'] as Tab[]).map(x=><button key={x} type="button" onClick={()=>setTab(x)} className={`rounded-md border px-3 py-1.5 text-sm ${tab===x?'border-cyan-500/50 bg-cyan-500/10 text-cyan-200':'border-slate-700 bg-slate-950/60 text-slate-300'}`}>{x}</button>)}</div>{error&&<p className="form-error">{error}</p>}
+ {tab==='monitor'&&<><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{Object.entries(data.monitor?.counts??{}).map(([k,v])=><StatCard key={k} label={k} value={String(v)}/>)}</div><Panel title="Safety guarantees"><p className="text-sm text-slate-300">All coordination is tenant-scoped and approval controlled. Sensitive actions remain drafts with autoExecuted: false.</p></Panel></>}
+ {tab==='registry'&&<Panel title="Network registry"><div className="mb-3"><Button onClick={()=>accessToken&&void ensureAuraNetworkRegistry(accessToken).then(load)}>Ensure registry</Button></div><List items={data.registry} empty="No agents registered yet." render={(x)=><><b>{x.agentKey}</b> · {x.status} · {x.linkedAgentKey??'Command Centre executive'}</>}/></Panel>}
+ {tab==='messages'&&<Panel title="Secure messages"><List items={data.messages} empty="No agent messages." render={(x)=><><b>{x.fromAgentKey} → {x.toAgentKey}</b> · {x.subject}<p className="text-xs text-slate-400">{x.status} · autoExecuted: false</p></>}/></Panel>}
+ {tab==='workflows'&&<Panel title="Coordination workflows"><List items={data.workflows} empty="No workflows." render={(x)=><><b>{x.name}</b> · {x.mode} · {x.status}</>}/></Panel>}
+ {tab==='approvals'&&<Panel title="Owner approvals"><List items={data.approvals} empty="No pending approvals." render={(x)=><div className="flex justify-between gap-2"><span><b>{x.type}</b> · {x.status}</span><span className="flex gap-2"><Button onClick={()=>accessToken&&void decideAuraNetworkApproval(accessToken,x.id,'approve').then(load)}>Approve</Button><Button variant="secondary" onClick={()=>accessToken&&void decideAuraNetworkApproval(accessToken,x.id,'reject').then(load)}>Reject</Button></span></div>}/></Panel>}
+ {tab==='context'&&<Panel title="Context-access audit"><List items={data.context} empty="No context access requests." render={(x)=><>{x.fromAgentKey} → {x.toAgentKey} · {x.contextDomain} · {String(x.accessGranted)}</>}/></Panel>}
+ </div>;
+}
+function List({items,empty,render}:{items:any[]|undefined;empty:string;render:(item:any)=>ReactNode}){return !items?.length?<EmptyState title={empty} description="Live tenant activity appears here when available."/>:<ul className="space-y-2">{items.map((x:any)=><li key={x.id} className="rounded border border-slate-800 bg-slate-950/50 p-3 text-sm text-slate-300">{render(x)}</li>)}</ul>;}

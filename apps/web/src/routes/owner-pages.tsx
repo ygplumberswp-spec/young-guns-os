@@ -18,6 +18,10 @@ export const AuraCommandCentrePage = lazyNamed(
   () => import('../pages/aura/AuraCommandCentrePage'),
   'AuraCommandCentrePage',
 );
+export const AuraAgentNetworkPage = lazyNamed(
+  () => import('../pages/aura-agent-network/AuraAgentNetworkPage'),
+  'AuraAgentNetworkPage',
+);
 export const TodaysPlanPage = lazyNamed(
   () => import('../pages/aura/TodaysPlanPage'),
   'TodaysPlanPage',

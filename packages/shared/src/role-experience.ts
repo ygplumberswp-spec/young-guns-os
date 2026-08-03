@@ -167,6 +167,12 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
     permissions: ['agents:read', 'intelligence:read', 'agents:write', 'intelligence:write', '*'],
     experiences: [...COMPANY_BUSINESS_EXPERIENCES],
   },
+  {
+    href: '/aura-agent-network',
+    label: NAV_LABELS.auraAgentNetwork,
+    permissions: ['agents:read', 'agents:write', 'agents:manage', 'orchestration:read', 'orchestration:write', '*'],
+    experiences: [...COMPANY_BUSINESS_EXPERIENCES],
+  },
 ];
 
 /** Dispatcher operational navigation — no platform admin, AURA owner chat or SaaS controls. */

@@ -1,0 +1,18 @@
+import type { AuraNetworkAgentKey, AuraNetworkMessageKind } from '@titan/shared';
+import { request, ApiClientError } from './api-client';
+export { ApiClientError as AuraAgentNetworkApiClientError };
+const get=<T>(token:string,path:string)=>request<T>(`/aura-agent-network${path}`,{accessToken:token});
+const post=<T>(token:string,path:string,body?:unknown)=>request<T>(`/aura-agent-network${path}`,{accessToken:token,method:'POST',body});
+export const fetchAuraNetworkMonitor=(t:string)=>get<{overview:any}>(t,'/monitor');
+export const fetchAuraNetworkRegistry=(t:string)=>get<{agents:any[]}>(t,'/registry');
+export const ensureAuraNetworkRegistry=(t:string)=>post<{agents:any[]}>(t,'/registry/ensure');
+export const fetchAuraNetworkMessages=(t:string)=>get<{messages:any[]}>(t,'/messages');
+export const createAuraNetworkMessage=(t:string,input:{fromAgentKey:AuraNetworkAgentKey;toAgentKey:AuraNetworkAgentKey;kind:AuraNetworkMessageKind;subject:string;body:string;contextDomain?:string})=>post<{message:any}>(t,'/messages',input);
+export const fetchAuraNetworkWorkflows=(t:string)=>get<{workflows:any[]}>(t,'/workflows');
+export const createAuraNetworkWorkflow=(t:string,input:{name:string;description?:string;mode?:'sequential'|'parallel';definition?:Record<string,unknown>})=>post<{workflow:any}>(t,'/workflows',input);
+export const createAuraNetworkExampleWorkflow=(t:string)=>post<{workflow:any}>(t,'/workflows/example');
+export const startAuraNetworkWorkflow=(t:string,workflowId:string)=>post<{run:any}>(t,'/workflows/start',{workflowId});
+export const fetchAuraNetworkApprovals=(t:string)=>get<{approvals:any[]}>(t,'/approvals');
+export const decideAuraNetworkApproval=(t:string,id:string,decision:'approve'|'reject',notes?:string)=>post<{approval:any;autoExecuted:false}>(t,`/approvals/${encodeURIComponent(id)}/decide`,{decision,notes});
+export const fetchAuraNetworkContext=(t:string)=>get<{access:any[]}>(t,'/context-access');
+export const fetchAuraNetworkActivity=(t:string)=>get<{activity:any[]}>(t,'/activity');

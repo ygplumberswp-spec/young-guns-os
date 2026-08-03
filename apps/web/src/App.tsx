@@ -400,6 +400,10 @@ export function App() {
                           path="/aura/command-centre"
                           component={OwnerPages.AuraCommandCentrePage}
                         />
+                        <Route
+                          path="/aura-agent-network"
+                          component={OwnerPages.AuraAgentNetworkPage}
+                        />
                         <Route path="/aura" component={OwnerPages.AuraPage} />
                         <Route path="/analytics" component={OwnerPages.AnalyticsPage} />
                         <Route path="/quality" component={OwnerPages.QualityPage} />
