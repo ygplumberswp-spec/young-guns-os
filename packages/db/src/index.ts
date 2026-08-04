@@ -4,12 +4,14 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from './schema/index.js';
 import {
   buildPostgresClientOptions,
+  resolveDbPoolMax,
   sanitizeDbError,
   summarizeDatabaseUrl,
 } from './connection-options.js';
 
 export {
   buildPostgresClientOptions,
+  resolveDbPoolMax,
   sanitizeDbError,
   summarizeDatabaseUrl,
   type DbEndpointSummary,
@@ -23,9 +25,6 @@ export function preferIpv4DnsOrder(): void {
     // Older Node runtimes may not support this API.
   }
 }
-
-/** Headroom below Supabase session-mode pool limits (typically 15). */
-const DEFAULT_POOL_MAX = 8;
 
 let sharedClient: postgres.Sql | null = null;
 let sharedDb: ReturnType<typeof drizzle<typeof schema>> | null = null;
@@ -65,7 +64,7 @@ export function createDb(connectionString: string) {
   preferIpv4DnsOrder();
 
   const options = buildPostgresClientOptions(connectionString);
-  options.max = DEFAULT_POOL_MAX;
+  options.max = resolveDbPoolMax(connectionString);
 
   sharedConnectionString = connectionString;
   sharedClient = postgres(connectionString, options);

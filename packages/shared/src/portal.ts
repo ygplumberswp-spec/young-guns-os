@@ -52,7 +52,7 @@ export const PORTAL_ACCESS_PERMISSION_OPTIONS: Array<{
   },
   {
     value: 'portal.knowledge:read',
-    label: 'Knowledge & self-service',
+    label: 'Knowledge & Self-Service',
     description: 'Search customer-visible knowledge articles and SOPs.',
   },
   {

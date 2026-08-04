@@ -5,6 +5,7 @@ import { JobsError } from '../services/jobs.service.js';
 import type { TeamService } from '../services/team.service.js';
 import type { JobExecutionService } from '../services/job-execution.service.js';
 import { JobExecutionError } from '../services/job-execution.service.js';
+import type { JobCostingService } from '../services/job-costing.service.js';
 import type { MobileWorkforceService } from '../services/mobile-workforce.service.js';
 import { MobileWorkforceError } from '../services/mobile-workforce.service.js';
 import type { DatabaseClient } from '@titan/db';
@@ -14,6 +15,7 @@ import {
   createDenyTechnicianFromOwnerModules,
   createRequireAssignedJob,
 } from '../middleware/authorization-guards.js';
+import { appendServerTiming } from '../lib/server-timing.js';
 
 const jobStatusSchema = z.enum(['new', 'scheduled', 'in_progress', 'completed', 'cancelled']);
 const jobPrioritySchema = z.enum(['low', 'normal', 'high', 'urgent']);
@@ -27,6 +29,14 @@ const addressSchema = z.object({
   unit: z.string().trim().max(50).optional().nullable(),
 });
 
+const geoFieldsSchema = z.object({
+  latitude: z.number().min(-90).max(90).optional().nullable(),
+  longitude: z.number().min(-180).max(180).optional().nullable(),
+  placeId: z.string().trim().max(300).optional().nullable(),
+  formattedAddress: z.string().trim().max(500).optional().nullable(),
+  geocodeStatus: z.enum(['unverified', 'verified', 'failed']).optional().nullable(),
+});
+
 const siteContactSchema = z.object({
   name: z.string().trim().min(1).max(200),
   mobile: z.string().trim().min(1).max(30),
@@ -38,13 +48,14 @@ const createJobSchema = z
     customerId: z.string().uuid(),
     propertyId: z.string().uuid().optional().nullable(),
     newProperty: addressSchema
+      .merge(geoFieldsSchema)
       .extend({
         propertyName: z.string().trim().max(200).optional().nullable(),
         isPrimary: z.boolean().optional(),
       })
       .optional()
       .nullable(),
-    address: addressSchema.optional().nullable(),
+    address: addressSchema.merge(geoFieldsSchema).optional().nullable(),
     siteContact: siteContactSchema,
     siteContactDiffersFromCustomer: z.boolean().optional(),
     jobType: z.string().trim().min(1).max(120),
@@ -124,6 +135,7 @@ const authorizeMaterialLineSchema = z.object({
   fulfilledQuantity: z.number().positive().optional(),
   reason: z.string().trim().max(2000).optional().nullable(),
   clientActionId: z.string().trim().min(1).max(200),
+  inventoryItemId: z.string().uuid().optional().nullable(),
   locationId: z.string().uuid().optional().nullable(),
 });
 
@@ -133,17 +145,25 @@ const returnMaterialLineSchema = z.object({
   clientActionId: z.string().trim().min(1).max(200),
 });
 
-function hasCostVisibility(auth: { permissions: string[] }): boolean {
+function hasCostVisibility(auth: { permissions: string[]; roleName?: string | null }): boolean {
   return (
     auth.permissions.includes('*') ||
     auth.permissions.includes('inventory:write') ||
-    auth.permissions.includes('finance:write')
+    auth.permissions.includes('finance:write') ||
+    auth.permissions.includes('finance:read') ||
+    auth.permissions.includes('procurement:read')
   );
+}
+
+function canViewJobProfit(auth: { permissions: string[]; roleName?: string | null }): boolean {
+  if (auth.permissions.includes('*') || auth.permissions.includes('finance:write')) return true;
+  return ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? '');
 }
 
 type JobsRouterDeps = {
   jobsService: JobsService;
   jobExecutionService: JobExecutionService;
+  jobCostingService: JobCostingService;
   mobileWorkforceService: MobileWorkforceService;
   teamService: TeamService;
   db: DatabaseClient;
@@ -162,6 +182,7 @@ function getRouteParam(value: string | string[]): string {
 export function createJobsRouter({
   jobsService,
   jobExecutionService,
+  jobCostingService,
   mobileWorkforceService,
   teamService,
   db,
@@ -189,7 +210,11 @@ export function createJobsRouter({
 
   router.get('/today', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
     const { companyId } = getAuth(req);
-    const jobsList = await jobsService.listTodaysScheduledJobs(companyId);
+    const includeCompleted =
+      req.query.includeCompleted === '1' || req.query.includeCompleted === 'true';
+    const jobsList = await jobsService.listTodaysScheduledJobs(companyId, 100, {
+      includeCompleted,
+    });
     res.json({ data: { jobs: jobsList } });
   });
 
@@ -209,7 +234,9 @@ export function createJobsRouter({
   router.get('/', requireAnyPermission('jobs:read', 'jobs:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const search = typeof req.query.q === 'string' ? req.query.q : null;
+    const started = performance.now();
     const jobsList = await jobsService.listJobs(companyId, search);
+    appendServerTiming(res, 'jobs-list', performance.now() - started);
     res.json({ data: { jobs: jobsList } });
   });
 
@@ -259,7 +286,7 @@ export function createJobsRouter({
   );
 
   router.patch('/:jobId', requireAnyPermission('jobs:write'), async (req, res) => {
-    const { companyId } = getAuth(req);
+    const auth = getAuth(req);
     const parsed = updateJobSchema.safeParse(req.body);
 
     if (!parsed.success) {
@@ -275,11 +302,28 @@ export function createJobsRouter({
 
     try {
       const job = await jobsService.updateJob(
-        companyId,
+        auth.companyId,
         getRouteParam(req.params.jobId),
         parsed.data,
+        { userId: auth.userId },
       );
       res.json({ data: { job } });
+    } catch (error) {
+      handleJobsError(res, error);
+    }
+  });
+
+  router.delete('/:jobId', requireAnyPermission('jobs:write'), async (req, res) => {
+    const auth = getAuth(req);
+    try {
+      const isOwner =
+        auth.roleName === 'Company Owner' || auth.permissions.includes('*');
+      await jobsService.deleteJob(
+        { companyId: auth.companyId, userId: auth.userId },
+        getRouteParam(req.params.jobId),
+        { isOwner },
+      );
+      res.json({ data: { deleted: true } });
     } catch (error) {
       handleJobsError(res, error);
     }
@@ -297,6 +341,24 @@ export function createJobsRouter({
           getRouteParam(req.params.jobId),
         );
         res.json({ data: { summary } });
+      } catch (error) {
+        handleJobExecutionError(res, error);
+      }
+    },
+  );
+
+  router.get(
+    '/:jobId/timeline',
+    requireAnyPermission('jobs:read', 'jobs:write'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      try {
+        const events = await jobExecutionService.listTimeline(
+          auth,
+          getRouteParam(req.params.jobId),
+        );
+        res.json({ data: { events } });
       } catch (error) {
         handleJobExecutionError(res, error);
       }
@@ -503,6 +565,32 @@ export function createJobsRouter({
     },
   );
 
+  router.get(
+    '/:jobId/costing',
+    requireAnyPermission('jobs:read', 'jobs:write', 'finance:read', 'finance:write'),
+    requireAssignedJob,
+    async (req, res) => {
+      const auth = getAuth(req);
+      if (!hasCostVisibility(auth)) {
+        res.status(403).json({
+          error: { code: 'FORBIDDEN', message: 'Job costing is restricted to authorized finance roles' },
+        });
+        return;
+      }
+
+      try {
+        const summary = await jobCostingService.getJobCostingSummary(
+          auth.companyId,
+          getRouteParam(req.params.jobId),
+          { includeProfit: canViewJobProfit(auth) },
+        );
+        res.json({ data: { summary } });
+      } catch (error) {
+        handleJobsError(res, error);
+      }
+    },
+  );
+
   return router;
 }
 
@@ -514,9 +602,11 @@ function handleJobsError(res: import('express').Response, error: unknown) {
       error.code === 'ASSIGNEE_NOT_FOUND' ||
       error.code === 'PROPERTY_NOT_FOUND'
         ? 404
-        : error.code === 'VALIDATION_ERROR'
-          ? 400
-          : 400;
+        : error.code === 'JOB_COMPLETED_IMMUTABLE'
+          ? 409
+          : error.code === 'VALIDATION_ERROR'
+            ? 400
+            : 400;
 
     res.status(status).json({
       error: {

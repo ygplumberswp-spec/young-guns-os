@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { hasAnyPermission } from '@titan/auth';
+import { canWriteCompanyMemory, hasAnyPermission } from '@titan/auth';
 import type { DatabaseClient } from '@titan/db';
 import type { AuthenticatedRequest } from './auth.js';
 import { recordAuthorizationFailure } from './authorization-guards.js';
@@ -52,6 +52,53 @@ export function requireAnyPermission(...permissions: string[]) {
         error: {
           code: 'FORBIDDEN',
           message: 'You do not have permission to perform this action',
+        },
+      });
+      return;
+    }
+
+    next();
+  };
+}
+
+/** Owner/Admin only — permanent AURA company memory mutations. */
+export function requireCompanyMemoryWrite() {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const auth = (req as AuthenticatedRequest).auth;
+
+    if (!auth) {
+      res.status(401).json({
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication required',
+        },
+      });
+      return;
+    }
+
+    if (!canWriteCompanyMemory(auth)) {
+      if (auditDb) {
+        void recordAuthorizationFailure(auditDb, {
+          companyId: auth.companyId,
+          userId: auth.userId,
+          sessionId: auth.sessionId,
+          action: 'permission_denied',
+          metadata: {
+            path: req.path,
+            method: req.method,
+            roleName: auth.roleName,
+            requiredPermissions: ['company_memory:write'],
+          },
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent'],
+        }).catch(() => {
+          /* never block the 403 on audit failure */
+        });
+      }
+      res.status(403).json({
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Only company owners and admins may manage permanent AURA memory rules',
         },
       });
       return;

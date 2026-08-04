@@ -9,6 +9,7 @@ export {
   isPlatformOwner,
   isPlatformOwnerRole,
   isCompanyOwnerRole,
+  canWriteCompanyMemory,
   isManagerRole,
   isAccountantRole,
   isDispatcherRole,

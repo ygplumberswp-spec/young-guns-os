@@ -1,0 +1,1 @@
+{"error":{"code":"DB_UNAVAILABLE","message":"Database is not reachable","detail":{"reason":"28P01","host":"aws-0-eu-west-1.pooler.supabase.com","port":5432,"sslmode":null,"isSupabaseDirect":false,"isSupabasePooler":true}}}

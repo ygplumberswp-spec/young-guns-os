@@ -19,6 +19,9 @@ import {
   notifications,
 } from './mobile';
 import { auraMemory } from './aura-memory';
+import { companyDayPlans } from './company-day-plans';
+import { companyDayPlanFollowUps } from './company-day-plan-follow-ups';
+import { companyBusinessRules, businessRuleTasks } from './company-business-rules';
 import { auraMessages } from './aura-messages';
 import { companies } from './companies';
 import { customerActivities } from './customer-activities';
@@ -26,6 +29,7 @@ import { customers } from './customers';
 import { jobs } from './jobs';
 import { cxCustomerProperties } from './enterprise-customer-experience';
 import { invoiceLineItems, invoices } from './invoices';
+import { financeDocumentAttachments } from './finance-document-attachments';
 import { inventoryItems } from './inventory-items';
 import { inventoryLocations } from './inventory-locations';
 import { inventoryStockLevels } from './inventory-stock-levels';
@@ -152,6 +156,7 @@ import {
   securityRiskAlerts,
 } from './enterprise-security';
 import { paymentReceipts, payments } from './payments';
+import { resendEmailDeliveries, resendWebhookEvents } from './resend-email-deliveries';
 import { integrationSyncJobs } from './integration-sync-jobs';
 import { integrationWebhookEndpoints } from './integration-webhook-endpoints';
 import { integrationWebhookEvents } from './integration-webhook-events';
@@ -213,6 +218,12 @@ import {
   workforceRecommendations,
 } from './workforce';
 import {
+  supplierPriceCatalogueItems,
+  supplierPriceImportJobs,
+  supplierPriceImportLines,
+  supplierPriceReviewQueue,
+} from './supplier-price-intelligence';
+import {
   procurementRecommendations,
   purchaseOrderItems,
   purchaseOrders,
@@ -258,10 +269,15 @@ import {
   quoteLineItems,
   quotes,
 } from './quotes';
+import { boqDocuments, boqLineItems } from './boq';
+import { draftWorkspace } from './draft-workspace';
+import { jobDocumentPackItems, jobDocumentPacks } from './job-document-packs';
+import { completionReports } from './completion-reports';
 import { vehicles } from './vehicles';
 import { roles } from './roles';
 import { sessions } from './sessions';
 import { userInvites } from './user-invites';
+import { companySchedulingSettings, schedulingOverrideAudits } from './scheduling';
 import { users } from './users';
 
 export const companiesRelations = relations(companies, ({ many }) => ({
@@ -270,6 +286,10 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   sessions: many(sessions),
   auraConversations: many(auraConversations),
   auraMemory: many(auraMemory),
+  companyDayPlans: many(companyDayPlans),
+  companyDayPlanFollowUps: many(companyDayPlanFollowUps),
+  companyBusinessRules: many(companyBusinessRules),
+  businessRuleTasks: many(businessRuleTasks),
   reportDefinitions: many(reportDefinitions),
   reportRuns: many(reportRuns),
   analyticsSnapshots: many(analyticsSnapshots),
@@ -282,6 +302,7 @@ export const companiesRelations = relations(companies, ({ many }) => ({
   agentOrchestrations: many(agentOrchestrations),
   agentOrchestrationRuns: many(agentOrchestrationRuns),
   userInvites: many(userInvites),
+  draftWorkspace: many(draftWorkspace),
   customers: many(customers),
   customerActivities: many(customerActivities),
   jobs: many(jobs),
@@ -468,6 +489,7 @@ export const rolesRelations = relations(roles, ({ one, many }) => ({
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
+  draftWorkspaceOwned: many(draftWorkspace, { relationName: 'draftWorkspaceOwner' }),
   company: one(companies, {
     fields: [users.companyId],
     references: [companies.id],
@@ -561,6 +583,140 @@ export const quotesRelations = relations(quotes, ({ one, many }) => ({
   lineItems: many(quoteLineItems),
   acceptances: many(quoteAcceptances),
   invoices: many(invoices),
+  boqDocument: one(boqDocuments, {
+    fields: [quotes.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+}));
+
+export const boqDocumentsRelations = relations(boqDocuments, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [boqDocuments.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [boqDocuments.customerId],
+    references: [customers.id],
+  }),
+  job: one(jobs, {
+    fields: [boqDocuments.jobId],
+    references: [jobs.id],
+  }),
+  quote: one(quotes, {
+    fields: [boqDocuments.quoteId],
+    references: [quotes.id],
+  }),
+  lineItems: many(boqLineItems),
+}));
+
+export const boqLineItemsRelations = relations(boqLineItems, ({ one }) => ({
+  document: one(boqDocuments, {
+    fields: [boqLineItems.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+  company: one(companies, {
+    fields: [boqLineItems.companyId],
+    references: [companies.id],
+  }),
+}));
+
+export const draftWorkspaceRelations = relations(draftWorkspace, ({ one }) => ({
+  company: one(companies, {
+    fields: [draftWorkspace.companyId],
+    references: [companies.id],
+  }),
+  user: one(users, {
+    fields: [draftWorkspace.userId],
+    references: [users.id],
+    relationName: 'draftWorkspaceOwner',
+  }),
+  lastEditedBy: one(users, {
+    fields: [draftWorkspace.lastEditedByUserId],
+    references: [users.id],
+    relationName: 'draftWorkspaceLastEditor',
+  }),
+}));
+
+export const jobDocumentPacksRelations = relations(jobDocumentPacks, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [jobDocumentPacks.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [jobDocumentPacks.jobId],
+    references: [jobs.id],
+  }),
+  customer: one(customers, {
+    fields: [jobDocumentPacks.customerId],
+    references: [customers.id],
+  }),
+  createdBy: one(users, {
+    fields: [jobDocumentPacks.createdByUserId],
+    references: [users.id],
+  }),
+  approvedBy: one(users, {
+    fields: [jobDocumentPacks.approvedByUserId],
+    references: [users.id],
+  }),
+  sentBy: one(users, {
+    fields: [jobDocumentPacks.sentByUserId],
+    references: [users.id],
+  }),
+  items: many(jobDocumentPackItems),
+}));
+
+export const jobDocumentPackItemsRelations = relations(jobDocumentPackItems, ({ one }) => ({
+  pack: one(jobDocumentPacks, {
+    fields: [jobDocumentPackItems.packId],
+    references: [jobDocumentPacks.id],
+  }),
+  company: one(companies, {
+    fields: [jobDocumentPackItems.companyId],
+    references: [companies.id],
+  }),
+  document: one(documents, {
+    fields: [jobDocumentPackItems.documentId],
+    references: [documents.id],
+  }),
+}));
+
+export const completionReportsRelations = relations(completionReports, ({ one }) => ({
+  company: one(companies, {
+    fields: [completionReports.companyId],
+    references: [companies.id],
+  }),
+  job: one(jobs, {
+    fields: [completionReports.jobId],
+    references: [jobs.id],
+  }),
+  customer: one(customers, {
+    fields: [completionReports.customerId],
+    references: [customers.id],
+  }),
+  property: one(cxCustomerProperties, {
+    fields: [completionReports.propertyId],
+    references: [cxCustomerProperties.id],
+  }),
+  invoice: one(invoices, {
+    fields: [completionReports.invoiceId],
+    references: [invoices.id],
+  }),
+  quote: one(quotes, {
+    fields: [completionReports.quoteId],
+    references: [quotes.id],
+  }),
+  boqDocument: one(boqDocuments, {
+    fields: [completionReports.boqDocumentId],
+    references: [boqDocuments.id],
+  }),
+  document: one(documents, {
+    fields: [completionReports.documentId],
+    references: [documents.id],
+  }),
+  createdBy: one(users, {
+    fields: [completionReports.createdByUserId],
+    references: [users.id],
+  }),
 }));
 
 export const quoteLineItemsRelations = relations(quoteLineItems, ({ one }) => ({
@@ -659,6 +815,37 @@ export const paymentReceiptsRelations = relations(paymentReceipts, ({ one }) => 
   company: one(companies, {
     fields: [paymentReceipts.companyId],
     references: [companies.id],
+  }),
+}));
+
+export const resendEmailDeliveriesRelations = relations(resendEmailDeliveries, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [resendEmailDeliveries.companyId],
+    references: [companies.id],
+  }),
+  connection: one(integrationConnections, {
+    fields: [resendEmailDeliveries.integrationConnectionId],
+    references: [integrationConnections.id],
+  }),
+  communication: one(communications, {
+    fields: [resendEmailDeliveries.communicationId],
+    references: [communications.id],
+  }),
+  webhookEvents: many(resendWebhookEvents),
+}));
+
+export const resendWebhookEventsRelations = relations(resendWebhookEvents, ({ one }) => ({
+  company: one(companies, {
+    fields: [resendWebhookEvents.companyId],
+    references: [companies.id],
+  }),
+  connection: one(integrationConnections, {
+    fields: [resendWebhookEvents.integrationConnectionId],
+    references: [integrationConnections.id],
+  }),
+  delivery: one(resendEmailDeliveries, {
+    fields: [resendWebhookEvents.deliveryId],
+    references: [resendEmailDeliveries.id],
   }),
 }));
 
@@ -1114,6 +1301,14 @@ export const agentExecutionsRelations = relations(agentExecutions, ({ one }) => 
     fields: [agentExecutions.agentProfileId],
     references: [agentProfiles.id],
   }),
+  businessRule: one(companyBusinessRules, {
+    fields: [agentExecutions.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+  dayPlan: one(companyDayPlans, {
+    fields: [agentExecutions.dayPlanId],
+    references: [companyDayPlans.id],
+  }),
 }));
 
 export const portalUsersRelations = relations(portalUsers, ({ one, many }) => ({
@@ -1438,6 +1633,85 @@ export const auraMemoryRelations = relations(auraMemory, ({ one }) => ({
   }),
 }));
 
+
+export const companyDayPlansRelations = relations(companyDayPlans, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyDayPlans.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyDayPlans.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyDayPlans.updatedByUserId],
+    references: [users.id],
+  }),
+  assignedUser: one(users, {
+    fields: [companyDayPlans.assignedUserId],
+    references: [users.id],
+  }),
+  businessRule: one(companyBusinessRules, {
+    fields: [companyDayPlans.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+}));
+
+export const companyDayPlanFollowUpsRelations = relations(companyDayPlanFollowUps, ({ one }) => ({
+  company: one(companies, {
+    fields: [companyDayPlanFollowUps.companyId],
+    references: [companies.id],
+  }),
+  customer: one(customers, {
+    fields: [companyDayPlanFollowUps.customerId],
+    references: [customers.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyDayPlanFollowUps.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyDayPlanFollowUps.updatedByUserId],
+    references: [users.id],
+  }),
+  assignedUser: one(users, {
+    fields: [companyDayPlanFollowUps.assignedUserId],
+    references: [users.id],
+  }),
+}));
+
+export const companyBusinessRulesRelations = relations(companyBusinessRules, ({ one, many }) => ({
+  company: one(companies, {
+    fields: [companyBusinessRules.companyId],
+    references: [companies.id],
+  }),
+  createdBy: one(users, {
+    fields: [companyBusinessRules.createdByUserId],
+    references: [users.id],
+  }),
+  updatedBy: one(users, {
+    fields: [companyBusinessRules.updatedByUserId],
+    references: [users.id],
+  }),
+  tasks: many(businessRuleTasks),
+  dayPlans: many(companyDayPlans),
+}));
+
+export const businessRuleTasksRelations = relations(businessRuleTasks, ({ one }) => ({
+  company: one(companies, {
+    fields: [businessRuleTasks.companyId],
+    references: [companies.id],
+  }),
+  businessRule: one(companyBusinessRules, {
+    fields: [businessRuleTasks.businessRuleId],
+    references: [companyBusinessRules.id],
+  }),
+  dayPlan: one(companyDayPlans, {
+    fields: [businessRuleTasks.dayPlanId],
+    references: [companyDayPlans.id],
+  }),
+}));
+
 export const reportDefinitionsRelations = relations(reportDefinitions, ({ one, many }) => ({
   company: one(companies, {
     fields: [reportDefinitions.companyId],
@@ -1668,6 +1942,34 @@ export const agentOrchestrationLogsRelations = relations(agentOrchestrationLogs,
     references: [agentOrchestrationRunSteps.id],
   }),
 }));
+
+export const companySchedulingSettingsRelations = relations(
+  companySchedulingSettings,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [companySchedulingSettings.companyId],
+      references: [companies.id],
+    }),
+  }),
+);
+
+export const schedulingOverrideAuditsRelations = relations(
+  schedulingOverrideAudits,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [schedulingOverrideAudits.companyId],
+      references: [companies.id],
+    }),
+    job: one(jobs, {
+      fields: [schedulingOverrideAudits.jobId],
+      references: [jobs.id],
+    }),
+    user: one(users, {
+      fields: [schedulingOverrideAudits.userId],
+      references: [users.id],
+    }),
+  }),
+);
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
   user: one(users, {
@@ -2236,6 +2538,53 @@ export const supplierProductsRelations = relations(supplierProducts, ({ one }) =
   inventoryItem: one(inventoryItems, {
     fields: [supplierProducts.inventoryItemId],
     references: [inventoryItems.id],
+  }),
+}));
+
+export const supplierPriceImportJobsRelations = relations(
+  supplierPriceImportJobs,
+  ({ one, many }) => ({
+    company: one(companies, {
+      fields: [supplierPriceImportJobs.companyId],
+      references: [companies.id],
+    }),
+    supplier: one(suppliers, {
+      fields: [supplierPriceImportJobs.supplierId],
+      references: [suppliers.id],
+    }),
+    lines: many(supplierPriceImportLines),
+  }),
+);
+
+export const supplierPriceImportLinesRelations = relations(supplierPriceImportLines, ({ one }) => ({
+  company: one(companies, {
+    fields: [supplierPriceImportLines.companyId],
+    references: [companies.id],
+  }),
+  importJob: one(supplierPriceImportJobs, {
+    fields: [supplierPriceImportLines.importJobId],
+    references: [supplierPriceImportJobs.id],
+  }),
+}));
+
+export const supplierPriceCatalogueItemsRelations = relations(
+  supplierPriceCatalogueItems,
+  ({ one }) => ({
+    company: one(companies, {
+      fields: [supplierPriceCatalogueItems.companyId],
+      references: [companies.id],
+    }),
+  }),
+);
+
+export const supplierPriceReviewQueueRelations = relations(supplierPriceReviewQueue, ({ one }) => ({
+  company: one(companies, {
+    fields: [supplierPriceReviewQueue.companyId],
+    references: [companies.id],
+  }),
+  importLine: one(supplierPriceImportLines, {
+    fields: [supplierPriceReviewQueue.importLineId],
+    references: [supplierPriceImportLines.id],
   }),
 }));
 
@@ -3346,5 +3695,24 @@ export const n8nAuditEventsRelations = relations(n8nAuditEvents, ({ one }) => ({
   actor: one(users, {
     fields: [n8nAuditEvents.actorUserId],
     references: [users.id],
+  }),
+}));
+
+export const financeDocumentAttachmentsRelations = relations(financeDocumentAttachments, ({ one }) => ({
+  company: one(companies, {
+    fields: [financeDocumentAttachments.companyId],
+    references: [companies.id],
+  }),
+  quote: one(quotes, {
+    fields: [financeDocumentAttachments.quoteId],
+    references: [quotes.id],
+  }),
+  invoice: one(invoices, {
+    fields: [financeDocumentAttachments.invoiceId],
+    references: [invoices.id],
+  }),
+  job: one(jobs, {
+    fields: [financeDocumentAttachments.jobId],
+    references: [jobs.id],
   }),
 }));

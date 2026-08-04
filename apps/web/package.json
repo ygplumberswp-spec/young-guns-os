@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/lib/*.test.ts src/features/aura/*.test.ts src/features/jobs/*.test.ts src/lib/portal-routing.test.ts src/lib/nested-routing.test.ts src/brand/*.test.ts"
+    "test": "tsx --test src/lib/*.test.ts src/lib/live-updates/*.test.ts src/features/aura/*.test.ts src/features/dashboard/*.test.ts src/features/jobs/*.test.ts src/features/dispatch/*.test.ts src/features/fleet/*.test.ts src/features/maps/*.test.ts src/features/global-search/*.test.ts src/features/crm/*.test.ts src/features/finance/*.test.ts src/lib/portal-routing.test.ts src/lib/nested-routing.test.ts src/brand/*.test.ts src/lib/login-mfa.test.ts src/lib/session-expiry.test.ts src/lib/secure-session.test.ts src/lib/mobile-offline-completion.test.ts src/lib/role-forbidden-direct-url.test.ts src/hooks/*.test.ts src/components/NavIcon.test.ts src/components/ux/*.test.ts src/components/calendar/*.test.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.2.5",
@@ -16,6 +16,8 @@
     "@titan/auth": "workspace:*",
     "@titan/shared": "workspace:*",
     "@titan/ui": "workspace:*",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-markdown": "^10.1.0",

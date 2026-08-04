@@ -185,6 +185,7 @@ export class StockMovementsService {
 
     const rows = await this.db.query.inventoryStockMovements.findMany({
       where: and(...conditions),
+      with: { item: true, location: true },
       orderBy: (table, { desc }) => [desc(table.createdAt)],
       limit: 200,
     });
@@ -224,13 +225,19 @@ function isUniqueViolation(error: unknown): boolean {
 }
 
 function toMovementSummary(
-  row: typeof inventoryStockMovements.$inferSelect,
+  row: typeof inventoryStockMovements.$inferSelect & {
+    item?: typeof inventoryItems.$inferSelect | null;
+    location?: typeof inventoryLocations.$inferSelect | null;
+  },
   idempotentReplay: boolean,
 ): InventoryStockMovementSummary {
   return {
     id: row.id,
     itemId: row.itemId,
+    itemSku: row.item?.sku ?? null,
+    itemName: row.item?.name ?? null,
     locationId: row.locationId,
+    locationName: row.location?.name ?? null,
     movementType: row.movementType,
     quantityDelta: row.quantityDelta,
     quantityBefore: row.quantityBefore,

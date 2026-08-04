@@ -17,8 +17,8 @@ export const CUSTOMER_SUPPORT_CONVERSATION_STATUS_OPTIONS: Array<{
   label: string;
 }> = [
   { value: 'open', label: 'Open' },
-  { value: 'in_progress', label: 'In progress' },
-  { value: 'waiting_customer', label: 'Waiting on customer' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'waiting_customer', label: 'Waiting On Customer' },
   { value: 'escalated', label: 'Escalated' },
   { value: 'resolved', label: 'Resolved' },
   { value: 'closed', label: 'Closed' },

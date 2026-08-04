@@ -1,13 +1,19 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'wouter';
 import { Button, EmptyState, Input, PageHeader, Panel } from '@titan/ui';
-import type { JobWorkflowAction, MobileJobExecutionWorkspace } from '@titan/shared';
+import type {
+  JobMaterialSource,
+  JobWorkflowAction,
+  MobileJobExecutionWorkspace,
+  MobileWorkforceInventoryCentre,
+} from '@titan/shared';
 import { requiredChecklistForJobType } from '@titan/shared';
 import {
   MobileApiClientError,
   completeMobileJobGated,
   createMobileJobVariation,
   createMobileTimeEntry,
+  fetchMobileInventory,
   fetchMobileJobWorkspace,
   newClientActionId,
   recordMobileMaterialLine,
@@ -72,6 +78,10 @@ export function MobileJobDetailPage() {
   const [note, setNote] = useState('');
   const [materialDesc, setMaterialDesc] = useState('');
   const [materialQty, setMaterialQty] = useState('1');
+  const [materialItemId, setMaterialItemId] = useState('');
+  const [materialLocationId, setMaterialLocationId] = useState('');
+  const [materialSource, setMaterialSource] = useState<JobMaterialSource>('vehicle_stock');
+  const [inventoryCentre, setInventoryCentre] = useState<MobileWorkforceInventoryCentre | null>(null);
   const [variationTitle, setVariationTitle] = useState('');
   const [variationCondition, setVariationCondition] = useState('');
   const [variationExplanation, setVariationExplanation] = useState('');
@@ -105,8 +115,12 @@ export function MobileJobDetailPage() {
   const reload = useCallback(async () => {
     if (!accessToken || !jobId) return;
     try {
-      const data = await fetchMobileJobWorkspace(accessToken, jobId);
+      const [data, inventory] = await Promise.all([
+        fetchMobileJobWorkspace(accessToken, jobId),
+        fetchMobileInventory(accessToken).catch(() => null),
+      ]);
       setWorkspace(data);
+      if (inventory) setInventoryCentre(inventory);
       await cacheMobileWorkspaceSnapshot(jobId, data as unknown as Record<string, unknown>);
       const keys = requiredChecklistForJobType(data.jobType);
       setChecklist((prev) => {
@@ -393,6 +407,23 @@ export function MobileJobDetailPage() {
   async function handleMaterial(event: FormEvent) {
     event.preventDefault();
     if (!accessToken || !jobId || busy) return;
+
+    const needsStock = materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock';
+    if (needsStock && (!materialItemId || !materialLocationId)) {
+      setError('Select an inventory item and stock location for vehicle/warehouse use');
+      return;
+    }
+
+    const payload = {
+      description: materialDesc.trim(),
+      quantity: Number(materialQty) || 1,
+      unit: 'ea',
+      materialSource,
+      inventoryItemId: materialItemId || null,
+      locationId: materialLocationId || null,
+      requestOnly: true,
+    };
+
     setBusy(true);
     setError(null);
     try {
@@ -401,27 +432,21 @@ export function MobileJobDetailPage() {
           clientActionId: newOfflineClientActionId('material'),
           actionType: 'material_line',
           jobId,
-          payload: {
-            description: materialDesc.trim(),
-            quantity: Number(materialQty) || 1,
-            unit: 'ea',
-            materialSource: 'vehicle_stock',
-          },
+          payload,
         });
         setMaterialDesc('');
+        setMaterialItemId('');
+        setMaterialLocationId('');
         await refreshOffline();
-        setMessage('Material recorded offline — pending sync');
+        setMessage('Material requested offline — pending sync and office approval');
         return;
       }
-      await recordMobileMaterialLine(accessToken, jobId, {
-        description: materialDesc.trim(),
-        quantity: Number(materialQty) || 1,
-        unit: 'ea',
-        materialSource: 'vehicle_stock',
-      });
+      await recordMobileMaterialLine(accessToken, jobId, payload);
       setMaterialDesc('');
+      setMaterialItemId('');
+      setMaterialLocationId('');
       await reload();
-      setMessage('Material recorded (stock decrement deferred to INV-008)');
+      setMessage('Material requested — stock decrements when office approves');
     } catch (err) {
       setError(err instanceof MobileApiClientError ? err.message : 'Unable to record material');
     } finally {
@@ -515,7 +540,7 @@ export function MobileJobDetailPage() {
   if (isLoading) return <p className="page-muted">Loading job workspace…</p>;
   if (error && !workspace) return <p className="form-error">{error}</p>;
   if (!workspace) {
-    return <EmptyState title="Job not found" description="This job is not assigned to you." />;
+    return <EmptyState title="Job Not Found" description="This job is not assigned to you." />;
   }
 
   const primaryActions = workspace.availableActions.filter((a) =>
@@ -616,7 +641,7 @@ export function MobileJobDetailPage() {
         ) : null}
       </Panel>
 
-      <Panel title="Work description">
+      <Panel title="Work Description">
         <p>{workspace.workInstructions ?? '—'}</p>
         {workspace.customerVisibleNotes ? (
           <p className="page-muted">Customer-visible: {workspace.customerVisibleNotes}</p>
@@ -624,7 +649,7 @@ export function MobileJobDetailPage() {
         {workspace.internalNotes ? <p className="page-muted">Internal: {workspace.internalNotes}</p> : null}
       </Panel>
 
-      <Panel title="Crew & vehicle">
+      <Panel title="Crew & Vehicle">
         <ul className="portal-list">
           {workspace.crew.map((member) => (
             <li key={member.id}>
@@ -764,8 +789,58 @@ export function MobileJobDetailPage() {
             onChange={(e) => setMaterialQty(e.target.value)}
             required
           />
+          <label className="titan-input-group">
+            <span className="titan-input-label">Source</span>
+            <select
+              className="titan-input"
+              value={materialSource}
+              onChange={(e) => setMaterialSource(e.target.value as JobMaterialSource)}
+            >
+              <option value="vehicle_stock">Vehicle stock</option>
+              <option value="warehouse_stock">Warehouse stock</option>
+              <option value="supplier_purchase">Supplier purchase</option>
+              <option value="customer_supplied">Customer supplied</option>
+            </select>
+          </label>
+          {materialSource === 'vehicle_stock' || materialSource === 'warehouse_stock' ? (
+            <>
+              <label className="titan-input-group">
+                <span className="titan-input-label">Inventory item</span>
+                <select
+                  className="titan-input"
+                  value={materialItemId}
+                  onChange={(e) => setMaterialItemId(e.target.value)}
+                  required
+                >
+                  <option value="">Select item</option>
+                  {(inventoryCentre?.catalogItems ?? []).map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.sku ? `${item.sku} — ` : ''}
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="titan-input-group">
+                <span className="titan-input-label">Stock location</span>
+                <select
+                  className="titan-input"
+                  value={materialLocationId}
+                  onChange={(e) => setMaterialLocationId(e.target.value)}
+                  required
+                >
+                  <option value="">Select location</option>
+                  {(inventoryCentre?.locations ?? []).map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name} ({location.locationType})
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          ) : null}
           <Button type="submit" disabled={busy}>
-            Record vehicle stock use
+            Request material use
           </Button>
         </form>
         <ul className="portal-list">
@@ -775,6 +850,8 @@ export function MobileJobDetailPage() {
               <span>
                 {line.quantity} {line.unit} · {line.materialSource.replace(/_/g, ' ')} ·{' '}
                 {line.status.replace(/_/g, ' ')}
+                {line.inventoryItemName ? ` · ${line.inventoryItemName}` : ''}
+                {line.locationName ? ` @ ${line.locationName}` : ''}
                 {line.rejectionReason ? ` · ${line.rejectionReason}` : ''}
               </span>
             </li>
@@ -782,7 +859,7 @@ export function MobileJobDetailPage() {
         </ul>
       </Panel>
 
-      <Panel title="Variation (pending approval)">
+      <Panel title="Variation (Pending Approval)">
         <form className="jobs-form" onSubmit={(e) => void handleVariation(e)}>
           <Input
             label="Title"
@@ -791,7 +868,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={variationCondition}
             onChange={(e) => setVariationCondition(e.target.value)}
             required
@@ -820,7 +897,7 @@ export function MobileJobDetailPage() {
         </ul>
       </Panel>
 
-      <Panel title="Completion gate">
+      <Panel title="Completion Gate">
         <p className="page-muted">
           {workspace.completionGate.canComplete
             ? 'Evidence looks ready — fill declaration to complete.'
@@ -850,13 +927,13 @@ export function MobileJobDetailPage() {
             />
           </label>
           <Input
-            label="Site condition"
+            label="Site Condition"
             value={completeForm.siteCondition}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, siteCondition: e.target.value }))}
             required
           />
           <Input
-            label="Customer / site representative"
+            label="Customer / Site Representative"
             value={completeForm.customerRepName}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, customerRepName: e.target.value }))
@@ -864,7 +941,7 @@ export function MobileJobDetailPage() {
             required
           />
           <Input
-            label="Signer role / relationship"
+            label="Signer Role / Relationship"
             value={completeForm.signerRole}
             onChange={(e) => setCompleteForm((prev) => ({ ...prev, signerRole: e.target.value }))}
           />
@@ -887,7 +964,7 @@ export function MobileJobDetailPage() {
             {signatureDocId ? 'Signature stored' : 'Save signature evidence'}
           </Button>
           <Input
-            label="Signature unavailable reason (mandatory if no signature)"
+            label="Signature Unavailable Reason (Mandatory If No Signature)"
             value={completeForm.signatureUnavailableReason}
             onChange={(e) =>
               setCompleteForm((prev) => ({
@@ -925,7 +1002,7 @@ export function MobileJobDetailPage() {
             </p>
           </label>
           <Input
-            label="Outstanding defect / follow-up"
+            label="Outstanding Defect / Follow-Up"
             value={completeForm.outstandingDefects}
             onChange={(e) =>
               setCompleteForm((prev) => ({ ...prev, outstandingDefects: e.target.value }))
@@ -960,7 +1037,7 @@ export function MobileJobDetailPage() {
       </Panel>
 
       {workspace.propertyHistory.length > 0 ? (
-        <Panel title="Property history">
+        <Panel title="Property History">
           <ul className="portal-list">
             {workspace.propertyHistory.map((item) => (
               <li key={item.id}>

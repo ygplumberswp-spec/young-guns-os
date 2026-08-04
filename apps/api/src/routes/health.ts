@@ -173,6 +173,7 @@ export function createHealthRouter(
         database: 'connected',
         redis: redisStatus,
         providersEnabled: deps.runtime?.providersEnabled ?? false,
+        schedulersEnabled: deps.runtime?.schedulersEnabled ?? false,
         workersEnabled: deps.runtime?.workersEnabled ?? false,
         webhooksEnabled: deps.runtime?.webhooksEnabled ?? false,
         timestamp: new Date().toISOString(),

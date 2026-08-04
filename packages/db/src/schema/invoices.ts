@@ -42,7 +42,8 @@ export const invoices = pgTable('invoices', {
   xeroInvoiceNumber: text('xero_invoice_number'),
   xeroReference: text('xero_reference'),
   numberAuthority: text('number_authority').notNull().default('internal_pending_xero'),
-  title: text('title').notNull(),
+  /** Legacy DB column — not user-facing (Phase J-6). Application always sets customer name or ''. */
+  title: text('title').notNull().default(''),
   status: invoiceStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull(),
   subtotalCents: integer('subtotal_cents').notNull().default(0),
@@ -55,10 +56,18 @@ export const invoices = pgTable('invoices', {
   billingName: text('billing_name'),
   billingEmail: text('billing_email'),
   billingPhone: text('billing_phone'),
+  billingAddress: text('billing_address'),
+  siteAddress: text('site_address'),
+  postalAddress: text('postal_address'),
   notes: text('notes'),
   cancelReason: text('cancel_reason'),
   clientActionId: text('client_action_id'),
   issuedAt: timestamp('issued_at', { withTimezone: true }),
+  /** Import provenance — set on Xero pull; never invents financial values. */
+  sourceProvider: text('source_provider'),
+  sourceExternalId: text('source_external_id'),
+  sourceSyncedAt: timestamp('source_synced_at', { withTimezone: true }),
+  sourceImportJobId: uuid('source_import_job_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -83,6 +92,8 @@ export const invoiceLineItems = pgTable('invoice_line_items', {
   lineSubtotalCents: integer('line_subtotal_cents').notNull().default(0),
   lineVatCents: integer('line_vat_cents').notNull().default(0),
   lineTotalCents: integer('line_total_cents').notNull().default(0),
+  accountCode: text('account_code'),
+  sourceExternalId: text('source_external_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

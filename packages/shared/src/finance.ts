@@ -1,3 +1,6 @@
+import type { JobPaymentLedger } from './job-payment-ledger.js';
+import type { FinanceDocumentAddressSnapshot } from './finance-document-roundtrip.js';
+
 export type QuoteStatus =
   | 'draft'
   | 'internal_review'
@@ -34,15 +37,15 @@ export type InvoiceNumberAuthority = 'internal_pending_xero' | 'xero';
 
 export const QUOTE_STATUS_OPTIONS: Array<{ value: QuoteStatus; label: string }> = [
   { value: 'draft', label: 'Draft' },
-  { value: 'internal_review', label: 'Internal review' },
-  { value: 'approved_for_sending', label: 'Approved for sending' },
-  { value: 'sent', label: 'Sent / issued' },
+  { value: 'internal_review', label: 'Internal Review' },
+  { value: 'approved_for_sending', label: 'Approved For Sending' },
+  { value: 'sent', label: 'Sent / Issued' },
   { value: 'viewed', label: 'Viewed' },
   { value: 'accepted', label: 'Accepted' },
   { value: 'declined', label: 'Declined' },
   { value: 'expired', label: 'Expired' },
   { value: 'superseded', label: 'Superseded' },
-  { value: 'converted', label: 'Converted / invoiced' },
+  { value: 'converted', label: 'Converted / Invoiced' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
@@ -65,23 +68,28 @@ export const INVOICE_STAGE_OPTIONS: Array<{ value: InvoiceStage; label: string }
 export const PAYMENT_METHOD_OPTIONS: Array<{ value: PaymentMethod; label: string }> = [
   { value: 'cash', label: 'Cash' },
   { value: 'card', label: 'Card' },
-  { value: 'bank_transfer', label: 'Bank transfer' },
+  { value: 'bank_transfer', label: 'Bank Transfer' },
   { value: 'other', label: 'Other' },
 ];
 
 export const QUOTE_LINE_CATEGORY_OPTIONS: Array<{ value: QuoteLineCategory; label: string }> = [
-  { value: 'scope', label: 'Scope of work' },
+  { value: 'scope', label: 'Scope Of Work' },
   { value: 'labour', label: 'Labour' },
   { value: 'materials', label: 'Materials' },
-  { value: 'travel', label: 'Travel / call-out' },
+  { value: 'travel', label: 'Travel / Call-Out' },
   { value: 'equipment', label: 'Equipment' },
   { value: 'subcontractor', label: 'Subcontractor' },
   { value: 'overhead', label: 'Overhead' },
-  { value: 'contingency', label: 'Contingency / risk' },
-  { value: 'warranty', label: 'Warranty / compliance' },
+  { value: 'contingency', label: 'Contingency / Risk' },
+  { value: 'warranty', label: 'Warranty / Compliance' },
   { value: 'discount', label: 'Discount' },
   { value: 'other', label: 'Other' },
 ];
+
+/** Line categories shown in the professional editor — discount is intentionally excluded. */
+export const FINANCE_EDITOR_LINE_CATEGORY_OPTIONS = QUOTE_LINE_CATEGORY_OPTIONS.filter(
+  (option) => option.value !== 'discount',
+);
 
 export type QuoteLineItemInput = {
   category?: QuoteLineCategory;
@@ -125,7 +133,9 @@ export type QuoteProfitSummary = {
 export type QuoteSummary = {
   id: string;
   quoteNumber: string;
-  title: string;
+  /** Official Xero quote number when synced — never show internal quoteNumber as official. */
+  xeroQuoteNumber: string | null;
+  displayQuoteNumber: string;
   status: QuoteStatus;
   versionNumber: number;
   isImmutable: boolean;
@@ -143,6 +153,7 @@ export type QuoteSummary = {
   totalCents: number;
   currency: string;
   validUntil: string | null;
+  depositPercent?: number | null;
   issuedAt: string | null;
   acceptedAt: string | null;
   createdAt: string;
@@ -174,6 +185,8 @@ export type QuoteDetail = QuoteSummary & {
   discountCents: number;
   belowFloorOverride: boolean;
   belowFloorReason: string | null;
+  notes: string | null;
+  addresses: FinanceDocumentAddressSnapshot;
   lineItems: QuoteLineItemSummary[];
   acceptance: QuoteAcceptanceSummary | null;
   xeroQuoteId: string | null;
@@ -184,10 +197,11 @@ export type InvoiceSummary = {
   invoiceNumber: string;
   internalNumber: string;
   displayInvoiceNumber: string;
+  /** Official display label for UI — Xero number or pending draft text. */
+  displayOfficialInvoiceNumber: string;
   xeroInvoiceNumber: string | null;
   xeroReference: string | null;
   numberAuthority: InvoiceNumberAuthority;
-  title: string;
   status: InvoiceStatus;
   stage: InvoiceStage;
   customerId: string;
@@ -205,6 +219,11 @@ export type InvoiceSummary = {
   isOverdue: boolean;
   currency: string;
   dueDate: string | null;
+  issuedAt: string | null;
+  /** Customer-entered reference (PO/site ref) — never the official Xero invoice number. */
+  customerReference: string | null;
+  xeroSyncStatus?: 'synced' | 'pending' | 'failed' | 'out_of_sync' | null;
+  financialDataComplete?: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -230,6 +249,7 @@ export type InvoiceDetail = InvoiceSummary & {
   billingEmail: string | null;
   billingPhone: string | null;
   notes: string | null;
+  addresses: FinanceDocumentAddressSnapshot;
   lineItems: InvoiceLineItemSummary[];
   payments: PaymentSummary[];
 };
@@ -284,6 +304,8 @@ export type JobFinanceSummary = {
   quotes: QuoteSummary[];
   invoices: InvoiceSummary[];
   payments: PaymentSummary[];
+  /** Derived payment ledger for Job 360 finance strip (read-only; no Xero writes). */
+  ledger: JobPaymentLedger;
 };
 
 export type CreateQuoteRequest = {
@@ -292,7 +314,6 @@ export type CreateQuoteRequest = {
   propertyId?: string | null;
   leadId?: string | null;
   estimatorUserId?: string | null;
-  title?: string;
   status?: QuoteStatus;
   currency?: string;
   validUntil?: string | null;
@@ -305,6 +326,10 @@ export type CreateQuoteRequest = {
   depositPercent?: number | null;
   optionTier?: string | null;
   notes?: string | null;
+  issuedAt?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  postalAddress?: string | null;
   lineItems: QuoteLineItemInput[];
   discountCents?: number;
   belowFloorOverride?: boolean;
@@ -340,7 +365,6 @@ export type CreateInvoiceRequest = {
   jobId?: string | null;
   quoteId?: string | null;
   propertyId?: string | null;
-  title: string;
   stage?: InvoiceStage;
   status?: InvoiceStatus;
   amountCents?: number;
@@ -348,10 +372,18 @@ export type CreateInvoiceRequest = {
   dueDate?: string | null;
   notes?: string | null;
   issuedAt?: string | null;
+  customerReference?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  postalAddress?: string | null;
   paymentTerms?: string | null;
   lineItems?: QuoteLineItemInput[];
   clientActionId?: string | null;
 };
+
+export type UpdateInvoiceRequest = Partial<
+  Omit<CreateInvoiceRequest, 'customerId' | 'quoteId' | 'clientActionId'>
+>;
 
 export type CreatePaymentRequest = {
   invoiceId: string;
@@ -443,6 +475,26 @@ export function formatInternalInvoiceNumber(sequence: number): string {
   return `TITAN-INV-${String(sequence).padStart(6, '0')}`;
 }
 
+/** Prefer stored total; fall back to legacy amount_cents when total_cents was never populated (Xero import gap). */
+export function resolveEffectiveInvoiceTotalCents(input: {
+  amountCents: number;
+  totalCents?: number | null;
+}): number {
+  const total = input.totalCents ?? 0;
+  if (total > 0) return total;
+  return input.amountCents > 0 ? input.amountCents : 0;
+}
+
+export function resolveEffectiveInvoiceOutstandingCents(input: {
+  amountCents: number;
+  totalCents?: number | null;
+  amountPaidCents: number;
+}): number {
+  const total = resolveEffectiveInvoiceTotalCents(input);
+  if (total <= 0) return 0;
+  return Math.max(0, total - input.amountPaidCents);
+}
+
 export function displayInvoiceNumber(input: {
   xeroInvoiceNumber?: string | null;
   internalNumber?: string | null;
@@ -450,8 +502,84 @@ export function displayInvoiceNumber(input: {
   numberAuthority?: string | null;
 }): string {
   if (input.xeroInvoiceNumber?.trim()) return input.xeroInvoiceNumber.trim();
-  const internal = input.internalNumber?.trim() || input.invoiceNumber;
-  return `Pending Xero sync (${internal})`;
+  if (input.numberAuthority === 'xero') return input.invoiceNumber;
+  return displayOfficialInvoiceNumber({ xeroInvoiceNumber: input.xeroInvoiceNumber });
+}
+
+/** Legacy DB column only — finance documents no longer use user-entered titles. */
+export function legacyFinanceDocumentTitle(customerName?: string | null): string {
+  return customerName?.trim() || '';
+}
+
+/** Xero is the only official invoice number authority for staff-facing UI. */
+export function displayOfficialInvoiceNumber(input: {
+  xeroInvoiceNumber?: string | null;
+}): string {
+  return input.xeroInvoiceNumber?.trim() || 'Draft — Xero invoice number pending';
+}
+
+/** Xero is the only official quote number authority for staff-facing UI. */
+export function displayOfficialQuoteNumber(input: {
+  xeroQuoteNumber?: string | null;
+}): string {
+  return input.xeroQuoteNumber?.trim() || 'Draft — Xero quote number pending';
+}
+
+/** Returns true when a customer name closely matches an existing search result. */
+export function findDuplicateCustomerHint(
+  name: string,
+  results: Array<{ name: string; companyName?: string | null }>,
+): boolean {
+  const normalized = name.trim().toLowerCase();
+  if (normalized.length < 2) return false;
+  return results.some((row) => {
+    const candidate = row.companyName?.trim() || row.name.trim();
+    return candidate.toLowerCase() === normalized || row.name.trim().toLowerCase() === normalized;
+  });
+}
+
+const EDITABLE_INVOICE_STATUSES = new Set<InvoiceStatus>(['draft']);
+
+/** Draft invoices can be edited locally until synced from Xero. */
+export function canEditInvoice(invoice: {
+  status: InvoiceStatus;
+  xeroInvoiceNumber?: string | null;
+  numberAuthority?: InvoiceNumberAuthority | string | null;
+  sourceProvider?: string | null;
+}): boolean {
+  if (invoice.numberAuthority === 'xero') return false;
+  if (invoice.xeroInvoiceNumber?.trim()) return false;
+  if (invoice.sourceProvider === 'xero') return false;
+  return EDITABLE_INVOICE_STATUSES.has(invoice.status);
+}
+
+const EDITABLE_QUOTE_STATUSES = new Set<QuoteStatus>([
+  'draft',
+  'internal_review',
+  'approved_for_sending',
+]);
+
+/** Draft quotes can be edited until issued. */
+export function canEditQuote(quote: { isImmutable: boolean; status: QuoteStatus }): boolean {
+  return !quote.isImmutable && EDITABLE_QUOTE_STATUSES.has(quote.status);
+}
+
+/** Issuing requires internal approval workflow completion. */
+export function canIssueQuote(quote: { isImmutable: boolean; status: QuoteStatus }): boolean {
+  return !quote.isImmutable && quote.status === 'approved_for_sending';
+}
+
+/** Next approval step in the internal quote workflow, if any. */
+export function nextQuoteApprovalAction(
+  status: QuoteStatus,
+): { label: string; nextStatus: QuoteStatus } | null {
+  if (status === 'draft') {
+    return { label: 'Submit For Internal Review', nextStatus: 'internal_review' };
+  }
+  if (status === 'internal_review') {
+    return { label: 'Approve For Sending', nextStatus: 'approved_for_sending' };
+  }
+  return null;
 }
 
 export { formatMoney } from './localisation.js';

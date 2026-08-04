@@ -27,10 +27,11 @@ export async function createAuraConversation(accessToken: string): Promise<AuraC
 export async function getAuraConversation(
   accessToken: string,
   conversationId: string,
+  options?: { signal?: AbortSignal },
 ): Promise<AuraConversationDetail> {
   const data = await request<{ conversation: AuraConversationDetail }>(
     `/aura/conversations/${conversationId}`,
-    { accessToken },
+    { accessToken, signal: options?.signal },
   );
 
   return data.conversation;
@@ -46,14 +47,20 @@ export async function sendAuraMessage(
     vehicleId?: string;
     schedulingView?: boolean;
   },
-  options?: { signal?: AbortSignal; timeoutMs?: number },
+  options?: { signal?: AbortSignal; timeoutMs?: number; idempotencyKey?: string },
 ): Promise<SendAuraMessageResponse> {
+  const headers: Record<string, string> = {};
+  if (options?.idempotencyKey) {
+    headers['Idempotency-Key'] = options.idempotencyKey;
+  }
+
   return request<SendAuraMessageResponse>(`/aura/conversations/${conversationId}/messages`, {
     method: 'POST',
     accessToken,
     body: { content, pageContext },
     signal: options?.signal,
     timeoutMs: options?.timeoutMs ?? 90_000,
+    headers,
   });
 }
 

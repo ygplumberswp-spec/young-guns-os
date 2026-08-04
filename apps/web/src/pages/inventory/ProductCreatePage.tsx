@@ -1,6 +1,7 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useState } from 'react';
-import { Link, useLocation } from 'wouter';
-import { Button, Input, PageHeader } from '@titan/ui';
+import { useLocation } from 'wouter';
+import { Button, Input } from '@titan/ui';
 import {
   INVENTORY_ITEM_STATUS_OPTIONS,
   INVENTORY_UNIT_OPTIONS,
@@ -63,13 +64,8 @@ export function ProductCreatePage() {
   return (
     <div className="inventory-page">
       <PageHeader
-        title="New product"
+        title="New Product"
         description="Add a product to your inventory catalog."
-        actions={
-          <Link href="/inventory/products">
-            <Button variant="secondary">Back to products</Button>
-          </Link>
-        }
       />
       <InventoryNav />
       {error ? <p className="form-error">{error}</p> : null}
@@ -97,7 +93,7 @@ export function ProductCreatePage() {
           </select>
         </label>
         <Input
-          label="Reorder level"
+          label="Reorder Level"
           type="number"
           min="0"
           value={reorderLevel}

@@ -1,47 +1,15 @@
 import { type ReactNode, useEffect, useMemo } from 'react';
 import { useLocation } from 'wouter';
-import {
-  canAccessTechnicianMobile,
-  getStaffHomePath,
-  isTechnicianRole,
-  resolveStaffExperience,
-  type StaffIdentity,
-} from '@titan/auth/browser';
-import {
-  ACCOUNTANT_BLOCKED_ROUTE_PREFIXES,
-  OWNER_ONLY_ROUTE_PREFIXES,
-  DISPATCHER_BLOCKED_ROUTE_PREFIXES,
-  TECHNICIAN_ALLOWED_ROUTE_PREFIXES,
-} from '@titan/shared';
+import { resolveStaffExperience, type StaffIdentity } from '@titan/auth/browser';
 import { useAuth } from '../lib/auth-context';
 import { toAppAbsoluteHref, useAppPathname } from '../lib/nested-routing';
+import {
+  evaluateOwnerStaffDirectUrl,
+  evaluateTechnicianDirectUrl,
+} from '../lib/role-forbidden-direct-url';
 
 function toStaffIdentity(user: { roleName: string; permissions: string[] }): StaffIdentity {
   return { roleName: user.roleName, permissions: user.permissions };
-}
-
-function isOwnerOnlyPath(path: string): boolean {
-  return OWNER_ONLY_ROUTE_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-}
-
-function isTechnicianAllowedPath(path: string): boolean {
-  return TECHNICIAN_ALLOWED_ROUTE_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-}
-
-function isDispatcherBlockedPath(path: string): boolean {
-  return DISPATCHER_BLOCKED_ROUTE_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
-}
-
-function isAccountantBlockedPath(path: string): boolean {
-  return ACCOUNTANT_BLOCKED_ROUTE_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
-  );
 }
 
 type OwnerStaffRouteProps = {
@@ -61,17 +29,9 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
-    const identity = toStaffIdentity(user);
-    if (experience === 'technician' && (isOwnerOnlyPath(pathname) || pathname === '/')) {
-      setLocation(toAppAbsoluteHref(getStaffHomePath(identity)));
-      return;
-    }
-    if (experience === 'dispatcher' && isDispatcherBlockedPath(pathname)) {
-      setLocation(toAppAbsoluteHref('/'));
-      return;
-    }
-    if (experience === 'accountant' && isAccountantBlockedPath(pathname)) {
-      setLocation(toAppAbsoluteHref(getStaffHomePath(identity)));
+    const decision = evaluateOwnerStaffDirectUrl(toStaffIdentity(user), pathname);
+    if (!decision.allowed) {
+      setLocation(toAppAbsoluteHref(decision.redirectPath));
     }
   }, [experience, isAuthenticated, isLoading, pathname, setLocation, user]);
 
@@ -83,15 +43,8 @@ export function OwnerStaffRoute({ children }: OwnerStaffRouteProps) {
     return null;
   }
 
-  if (experience === 'technician' && (isOwnerOnlyPath(pathname) || pathname === '/')) {
-    return null;
-  }
-
-  if (experience === 'dispatcher' && isDispatcherBlockedPath(pathname)) {
-    return null;
-  }
-
-  if (experience === 'accountant' && isAccountantBlockedPath(pathname)) {
+  const ownerStaffDecision = evaluateOwnerStaffDirectUrl(toStaffIdentity(user), pathname);
+  if (!ownerStaffDecision.allowed) {
     return null;
   }
 
@@ -110,12 +63,9 @@ export function TechnicianRoute({ children }: TechnicianRouteProps) {
 
   useEffect(() => {
     if (isLoading || !isAuthenticated || !user) return;
-    if (!canAccessTechnicianMobile(toStaffIdentity(user))) {
-      setLocation(toAppAbsoluteHref('/'));
-      return;
-    }
-    if (!isTechnicianRole(toStaffIdentity(user)) && !isTechnicianAllowedPath(pathname)) {
-      setLocation(toAppAbsoluteHref('/'));
+    const decision = evaluateTechnicianDirectUrl(toStaffIdentity(user), pathname);
+    if (!decision.allowed) {
+      setLocation(toAppAbsoluteHref(decision.redirectPath));
     }
   }, [isAuthenticated, isLoading, pathname, setLocation, user]);
 
@@ -123,7 +73,11 @@ export function TechnicianRoute({ children }: TechnicianRouteProps) {
     return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading...</div>;
   }
 
-  if (!isAuthenticated || !user || !canAccessTechnicianMobile(toStaffIdentity(user))) {
+  const technicianDecision = user
+    ? evaluateTechnicianDirectUrl(toStaffIdentity(user), pathname)
+    : { allowed: false as const, redirectPath: '/' };
+
+  if (!isAuthenticated || !user || !technicianDecision.allowed) {
     return null;
   }
 

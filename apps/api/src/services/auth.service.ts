@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import {
   createAccessToken,
   DEFAULT_TEAM_ROLES,
@@ -10,11 +10,12 @@ import {
   COMPANY_OWNER_ROLE_NAME,
   OWNER_ROLE_NAME,
   REFRESH_TOKEN_TTL_MS,
+  TRUSTED_DEVICE_REFRESH_TTL_MS,
   slugifyCompanyName,
   verifyPassword,
   withUniqueSuffix,
 } from '@titan/auth';
-import type { AuthSession, AuthUser, InvitePreview } from '@titan/shared';
+import type { AuthSession, AuthUser, InvitePreview, StaffSessionSummary } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import { companies, roles, sessions, userInvites, users } from '@titan/db';
 
@@ -52,6 +53,13 @@ export type AuthResult = {
   user: AuthUser;
   session: AuthSession;
   refreshToken: string;
+};
+
+export type RefreshInput = {
+  refreshToken: string;
+  userAgent?: string;
+  ipAddress?: string;
+  trustedDevice?: boolean;
 };
 
 export class AuthService {
@@ -131,17 +139,27 @@ export class AuthService {
       return user.id;
     });
 
-    return this.createSessionForUser(this.db, userId, input.userAgent, input.ipAddress);
+    return this.createSessionForUser(this.db, userId, {
+      userAgent: input.userAgent,
+      ipAddress: input.ipAddress,
+    });
   }
 
   async login(input: LoginInput): Promise<AuthResult> {
+    const credentials = await this.verifyLoginCredentials(input);
+    return this.issueSessionForUser(
+      credentials.userId,
+      input.userAgent,
+      input.ipAddress,
+    );
+  }
+
+  async verifyLoginCredentials(
+    input: LoginInput,
+  ): Promise<{ userId: string; companyId: string }> {
     const email = input.email.trim().toLowerCase();
     const user = await this.db.query.users.findFirst({
       where: eq(users.email, email),
-      with: {
-        company: true,
-        role: true,
-      },
     });
 
     if (!user || !user.isActive) {
@@ -154,38 +172,141 @@ export class AuthService {
       throw new AuthError('INVALID_CREDENTIALS', 'Invalid email or password');
     }
 
+    return { userId: user.id, companyId: user.companyId };
+  }
+
+  async issueSessionForUser(
+    userId: string,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResult> {
     await this.db
       .update(users)
       .set({ lastLoginAt: new Date(), updatedAt: new Date() })
-      .where(eq(users.id, user.id));
+      .where(eq(users.id, userId));
 
-    return this.createSessionForUser(this.db, user.id, input.userAgent, input.ipAddress);
+    return this.createSessionForUser(this.db, userId, { userAgent, ipAddress });
   }
 
   async logout(refreshToken: string): Promise<void> {
     const refreshTokenHash = hashRefreshToken(refreshToken);
     await this.db
       .update(sessions)
-      .set({ revokedAt: new Date() })
+      .set({ revokedAt: new Date(), revokedReason: 'logout' })
       .where(and(eq(sessions.refreshTokenHash, refreshTokenHash), isNull(sessions.revokedAt)));
   }
 
-  async refresh(refreshToken: string): Promise<AuthResult> {
-    const refreshTokenHash = hashRefreshToken(refreshToken);
-    const session = await this.db.query.sessions.findFirst({
+  async refresh(input: RefreshInput | string): Promise<AuthResult> {
+    const normalized =
+      typeof input === 'string'
+        ? { refreshToken: input }
+        : input;
+    const refreshTokenHash = hashRefreshToken(normalized.refreshToken);
+    const now = new Date();
+
+    const activeSession = await this.db.query.sessions.findFirst({
       where: and(eq(sessions.refreshTokenHash, refreshTokenHash), isNull(sessions.revokedAt)),
     });
 
-    if (!session || session.expiresAt < new Date()) {
-      throw new AuthError('SESSION_EXPIRED', 'Session expired. Please sign in again.');
+    if (activeSession) {
+      if (activeSession.expiresAt < now) {
+        await this.db
+          .update(sessions)
+          .set({ revokedAt: now, revokedReason: 'expired' })
+          .where(eq(sessions.id, activeSession.id));
+        throw new AuthError('SESSION_EXPIRED', 'Session expired. Please sign in again.');
+      }
+
+      await this.db
+        .update(sessions)
+        .set({ revokedAt: now, revokedReason: 'rotated' })
+        .where(eq(sessions.id, activeSession.id));
+
+      return this.createSessionForUser(this.db, activeSession.userId, {
+        userAgent: normalized.userAgent ?? activeSession.userAgent ?? undefined,
+        ipAddress: normalized.ipAddress ?? activeSession.ipAddress ?? undefined,
+        trustedDevice: normalized.trustedDevice ?? activeSession.isTrustedDevice,
+      });
+    }
+
+    const revokedSession = await this.db.query.sessions.findFirst({
+      where: and(eq(sessions.refreshTokenHash, refreshTokenHash), isNotNull(sessions.revokedAt)),
+    });
+
+    if (revokedSession) {
+      await this.revokeAllUserSessions(revokedSession.userId, 'refresh_token_reuse');
+      throw new AuthError(
+        'SESSION_REUSE_DETECTED',
+        'Session invalidated for security. Please sign in again.',
+      );
+    }
+
+    throw new AuthError('SESSION_INVALID', 'Session invalid. Please sign in again.');
+  }
+
+  async verifyPasswordForStepUp(userId: string, password: string): Promise<boolean> {
+    const user = await this.db.query.users.findFirst({
+      where: and(eq(users.id, userId), eq(users.isActive, true)),
+    });
+
+    if (!user) {
+      return false;
+    }
+
+    return verifyPassword(password, user.passwordHash);
+  }
+
+  async listMySessions(userId: string, currentSessionId?: string): Promise<StaffSessionSummary[]> {
+    const rows = await this.db.query.sessions.findMany({
+      where: and(eq(sessions.userId, userId), isNull(sessions.revokedAt)),
+      orderBy: [desc(sessions.createdAt)],
+      with: { user: true },
+    });
+
+    const now = Date.now();
+    return rows
+      .filter((row) => row.expiresAt.getTime() >= now)
+      .map((row) => toStaffSessionSummary(row, currentSessionId));
+  }
+
+  async revokeMySession(userId: string, sessionId: string): Promise<void> {
+    const session = await this.db.query.sessions.findFirst({
+      where: and(eq(sessions.id, sessionId), eq(sessions.userId, userId), isNull(sessions.revokedAt)),
+    });
+
+    if (!session) {
+      throw new AuthError('SESSION_NOT_FOUND', 'Session not found');
     }
 
     await this.db
       .update(sessions)
-      .set({ revokedAt: new Date() })
-      .where(eq(sessions.id, session.id));
+      .set({ revokedAt: new Date(), revokedReason: 'user_revoked' })
+      .where(eq(sessions.id, sessionId));
+  }
 
-    return this.createSessionForUser(this.db, session.userId);
+  async revokeAllOtherMySessions(userId: string, currentSessionId: string): Promise<number> {
+    const active = await this.listMySessions(userId, currentSessionId);
+    const toRevoke = active.filter((session) => !session.isCurrent);
+
+    for (const session of toRevoke) {
+      await this.revokeMySession(userId, session.id);
+    }
+
+    return toRevoke.length;
+  }
+
+  async revokeAllUserSessions(userId: string, reason: string): Promise<void> {
+    await this.db
+      .update(sessions)
+      .set({ revokedAt: new Date(), revokedReason: reason })
+      .where(and(eq(sessions.userId, userId), isNull(sessions.revokedAt)));
+  }
+
+  async touchSessionActivity(sessionId: string, userId: string): Promise<void> {
+    await this.db
+      .update(sessions)
+      .set({ lastActivityAt: new Date() })
+      .where(and(eq(sessions.id, sessionId), eq(sessions.userId, userId), isNull(sessions.revokedAt)));
   }
 
   async getInvitePreview(token: string): Promise<InvitePreview> {
@@ -245,7 +366,10 @@ export class AuthService {
       return user.id;
     });
 
-    return this.createSessionForUser(this.db, userId, input.userAgent, input.ipAddress);
+    return this.createSessionForUser(this.db, userId, {
+      userAgent: input.userAgent,
+      ipAddress: input.ipAddress,
+    });
   }
 
   async getUserById(userId: string): Promise<AuthUser | null> {
@@ -300,8 +424,11 @@ export class AuthService {
   private async createSessionForUser(
     db: DatabaseClient,
     userId: string,
-    userAgent?: string,
-    ipAddress?: string,
+    options?: {
+      userAgent?: string;
+      ipAddress?: string;
+      trustedDevice?: boolean;
+    },
   ): Promise<AuthResult> {
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
@@ -315,9 +442,16 @@ export class AuthService {
       throw new AuthError('USER_NOT_FOUND', 'User not found');
     }
 
+    if (!user.isActive) {
+      throw new AuthError('ACCOUNT_DISABLED', 'Account is disabled. Contact your administrator.');
+    }
+
     const refreshToken = generateRefreshToken();
     const refreshTokenHash = hashRefreshToken(refreshToken);
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    const trustedDevice = options?.trustedDevice === true;
+    const ttlMs = trustedDevice ? TRUSTED_DEVICE_REFRESH_TTL_MS : REFRESH_TOKEN_TTL_MS;
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + ttlMs);
 
     const [session] = await db
       .insert(sessions)
@@ -325,9 +459,11 @@ export class AuthService {
         userId: user.id,
         companyId: user.companyId,
         refreshTokenHash,
-        userAgent,
-        ipAddress,
+        userAgent: options?.userAgent,
+        ipAddress: options?.ipAddress,
         expiresAt,
+        lastActivityAt: now,
+        isTrustedDevice: trustedDevice,
       })
       .returning();
 
@@ -388,5 +524,33 @@ function toAuthUser(
     roleId: user.roleId,
     roleName,
     permissions,
+  };
+}
+
+function toStaffSessionSummary(
+  row: {
+    id: string;
+    userId: string;
+    ipAddress: string | null;
+    userAgent: string | null;
+    createdAt: Date;
+    expiresAt: Date;
+    lastActivityAt: Date | null;
+    isTrustedDevice: boolean;
+    user?: { firstName: string; lastName: string } | null;
+  },
+  currentSessionId?: string,
+): StaffSessionSummary {
+  return {
+    id: row.id,
+    userId: row.userId,
+    userName: row.user ? `${row.user.firstName} ${row.user.lastName}`.trim() : 'Unknown user',
+    ipAddress: row.ipAddress,
+    userAgent: row.userAgent,
+    createdAt: row.createdAt.toISOString(),
+    expiresAt: row.expiresAt.toISOString(),
+    lastActivityAt: row.lastActivityAt?.toISOString() ?? null,
+    isTrustedDevice: row.isTrustedDevice,
+    isCurrent: currentSessionId ? row.id === currentSessionId : false,
   };
 }

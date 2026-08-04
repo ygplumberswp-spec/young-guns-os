@@ -1,5 +1,6 @@
+import { PageHeader } from '../../components/ux';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button, EmptyState, Input, PageHeader, Panel, StatCard } from '@titan/ui';
+import { Button, EmptyState, Input, Panel, StatCard } from '@titan/ui';
 import type { FleetExecutiveDashboard } from '@titan/shared';
 import { useAuth } from '../../lib/auth-context';
 import { useCompanyLocale } from '../../lib/company-locale-context';
@@ -20,9 +21,19 @@ import {
   generateFleetRecommendations,
   generateMonthlyReport,
 } from '../../lib/fleet-intelligence-api-client';
+import {
+  CARTRACK_UI_POLL_MS,
+  useCartrackLivePositions,
+} from '../../features/dispatch/useCartrackLivePositions';
+import { FollowVehiclePanel } from '../../features/fleet/FollowVehiclePanel';
+import {
+  FleetOverviewVehicleRow,
+  buildPositionCardModel,
+} from '../../features/fleet/FleetVehicleCards';
 
 type FleetTab =
   | 'dashboard'
+  | 'live-map'
   | 'trips'
   | 'reports'
   | 'behaviour'
@@ -55,7 +66,12 @@ export function FleetIntelligencePage() {
   const { accessToken, user } = useAuth();
   const { formatMoney } = useCompanyLocale();
   const [activeTab, setActiveTab] = useState<FleetTab>('dashboard');
+  const [followPlate, setFollowPlate] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<FleetExecutiveDashboard | null>(null);
+  const { tracking, lastFetchedAt } = useCartrackLivePositions({
+    accessToken,
+    enabled: Boolean(accessToken),
+  });
   const [trips, setTrips] = useState<Awaited<ReturnType<typeof fetchTripHistory>>>([]);
   const [reports, setReports] = useState<Awaited<ReturnType<typeof fetchMonthlyReports>>>([]);
   const [behaviourEvents, setBehaviourEvents] = useState<
@@ -252,15 +268,32 @@ export function FleetIntelligencePage() {
           description="GPS analytics and fleet performance intelligence."
         />
         <EmptyState
-          title="Access restricted"
+          title="Access Restricted"
           description="You do not have permission to view fleet intelligence."
         />
       </div>
     );
   }
 
+  // Same polled tracking context the dispatch surfaces use, so Fleet Overview and the
+  // live map can never disagree about a vehicle.
+  const trackedVehicles = useMemo(() => {
+    const connected = Boolean(tracking?.cartrackConnected);
+    return (tracking?.latestPositions ?? [])
+      .filter(
+        (position) =>
+          Number.isFinite(position.latitude) && Number.isFinite(position.longitude),
+      )
+      .map((position) => ({
+        markerId: `vehicle-${position.externalVehicleId}`,
+        model: buildPositionCardModel(position, connected),
+      }))
+      .sort((a, b) => a.model.plate.localeCompare(b.model.plate));
+  }, [tracking?.cartrackConnected, tracking?.latestPositions]);
+
   const tabs: Array<{ id: FleetTab; label: string }> = [
     { id: 'dashboard', label: 'Dashboard' },
+    { id: 'live-map', label: 'Live Map' },
     { id: 'trips', label: 'Trips' },
     { id: 'reports', label: 'Reports' },
     { id: 'behaviour', label: 'Behaviour' },
@@ -298,34 +331,77 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'dashboard' && dashboard ? (
         <div className="stack">
           <div className="stat-grid">
-            <StatCard label="Total vehicles" value={String(dashboard.totalVehicles)} />
-            <StatCard label="Active vehicles" value={String(dashboard.activeVehicles)} />
-            <StatCard label="In service" value={String(dashboard.inServiceVehicles)} />
-            <StatCard label="Fleet km" value={String(dashboard.totalKilometres)} />
-            <StatCard label="Health score" value={dashboard.fleetHealthScore?.toString() ?? '—'} />
-            <StatCard label="GPS positions" value={String(dashboard.gpsPositionCount)} />
+            <StatCard label="Total Vehicles" value={String(dashboard.totalVehicles)} />
+            <StatCard label="Active Vehicles" value={String(dashboard.activeVehicles)} />
+            <StatCard label="In Service" value={String(dashboard.inServiceVehicles)} />
+            <StatCard label="Fleet Km" value={String(dashboard.totalKilometres)} />
+            <StatCard label="Health Score" value={dashboard.fleetHealthScore?.toString() ?? '—'} />
+            <StatCard label="GPS Positions" value={String(dashboard.gpsPositionCount)} />
             <StatCard
               label="Cartrack"
               value={dashboard.cartrackConnected ? 'Connected' : 'Disconnected'}
             />
-            <StatCard label="Pending actions" value={String(dashboard.pendingActionCount)} />
+            <StatCard label="Pending Actions" value={String(dashboard.pendingActionCount)} />
           </div>
-          <Panel title="Fleet overview">
-            <p>{dashboard.summary}</p>
-            <p>
+          <Panel title="Fleet Overview">
+            {trackedVehicles.length > 0 ? (
+              <ul className="fleet-overview-list">
+                {trackedVehicles.map((entry) => (
+                  <FleetOverviewVehicleRow
+                    key={entry.markerId}
+                    model={entry.model}
+                    onSelect={() => {
+                      setFollowPlate(entry.model.plate);
+                      setActiveTab('live-map');
+                    }}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <p className="page-muted">
+                No stored Cartrack positions yet. TITAN shows no vehicle status it cannot
+                source from the provider.
+              </p>
+            )}
+            <p className="page-muted">{dashboard.summary}</p>
+            <p className="page-muted">
               Maintenance due: {dashboard.maintenanceDueCount} · Inspections due:{' '}
               {dashboard.inspectionsDueCount} · Utilization: {dashboard.utilizationPercent ?? '—'}%
               · Downtime: {dashboard.downtimePercent ?? '—'}%
             </p>
           </Panel>
+          <Panel title="Geofences">
+            <p className="page-muted">
+              Cartrack geofence records are not available in this release. TITAN will not invent
+              geofence events. Trip history and behaviour events below use existing GPS-derived
+              paths only.
+            </p>
+          </Panel>
+        </div>
+      ) : null}
+
+      {activeTab === 'live-map' ? (
+        <div className="stack">
+          <Panel
+            title="Live map & Follow Vehicle"
+            description="Vehicle positions polled from Cartrack. Follow Vehicle keeps the selected vehicle centred, pauses when you move the map, and holds the last known position when a tracker goes quiet."
+          >
+            <FollowVehiclePanel
+              accessToken={accessToken}
+              tracking={tracking}
+              uiRefreshIntervalMs={CARTRACK_UI_POLL_MS}
+              lastFetchedAt={lastFetchedAt}
+              initialPlate={followPlate}
+            />
+          </Panel>
         </div>
       ) : null}
 
       {!isLoading && activeTab === 'trips' ? (
-        <Panel title="GPS trip history">
+        <Panel title="GPS Trip History">
           {trips.length === 0 ? (
             <EmptyState
-              title="No trips available"
+              title="No Trips Available"
               description="Trip history is derived from real Cartrack GPS positions. Sync Cartrack to populate data."
             />
           ) : (
@@ -345,7 +421,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'reports' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Generate monthly report">
+            <Panel title="Generate Monthly Report">
               <form className="form-row" onSubmit={handleGenerateReport}>
                 <Input
                   label="Year"
@@ -357,14 +433,14 @@ export function FleetIntelligencePage() {
                   value={reportMonth}
                   onChange={(event) => setReportMonth(event.target.value)}
                 />
-                <Button type="submit">Generate report</Button>
+                <Button type="submit">Generate Report</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Monthly trip reports">
+          <Panel title="Monthly Trip Reports">
             {reports.length === 0 ? (
               <EmptyState
-                title="No reports yet"
+                title="No Reports Yet"
                 description="Generate a monthly report from real GPS data."
               />
             ) : (
@@ -385,18 +461,18 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'behaviour' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Analyze driver behaviour">
+            <Panel title="Analyze Driver Behaviour">
               <p>
                 Analyze speeding, harsh braking, acceleration, and idling from existing GPS
                 telemetry.
               </p>
-              <Button onClick={() => void handleAnalyzeBehaviour()}>Run analysis</Button>
+              <Button onClick={() => void handleAnalyzeBehaviour()}>Run Analysis</Button>
             </Panel>
           ) : null}
-          <Panel title="Behaviour events">
+          <Panel title="Behaviour Events">
             {behaviourEvents.length === 0 ? (
               <EmptyState
-                title="No behaviour events"
+                title="No Behaviour Events"
                 description="Run analysis after GPS data is available."
               />
             ) : (
@@ -414,10 +490,10 @@ export function FleetIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'utilization' ? (
-        <Panel title="Vehicle utilization">
+        <Panel title="Vehicle Utilization">
           {utilization.length === 0 ? (
             <EmptyState
-              title="No vehicles"
+              title="No Vehicles"
               description="Add vehicles to the fleet register to track utilization."
             />
           ) : (
@@ -437,7 +513,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'costs' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Record operating cost">
+            <Panel title="Record Operating Cost">
               <form className="form-row" onSubmit={handleCreateCost}>
                 <Input
                   label="Amount"
@@ -455,14 +531,14 @@ export function FleetIntelligencePage() {
                     <option value="repair">Repair</option>
                   </select>
                 </label>
-                <Button type="submit">Record cost</Button>
+                <Button type="submit">Record Cost</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Operating costs">
+          <Panel title="Operating Costs">
             {costs && costs.costs.length === 0 ? (
               <EmptyState
-                title="No costs recorded"
+                title="No Costs Recorded"
                 description="Record real operating costs — values are never fabricated."
               />
             ) : (
@@ -488,7 +564,7 @@ export function FleetIntelligencePage() {
       ) : null}
 
       {!isLoading && activeTab === 'performance' && performance ? (
-        <Panel title="Fleet performance">
+        <Panel title="Fleet Performance">
           <ul className="list">
             <li>Best performing vehicle: {performance.bestPerformingVehicle ?? '—'}</li>
             <li>Lowest utilization: {performance.lowestUtilizationVehicle ?? '—'}</li>
@@ -503,16 +579,16 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'recommendations' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Generate recommendations">
+            <Panel title="Generate Recommendations">
               <Button onClick={() => void handleGenerateRecommendations()}>
                 Generate fleet recommendations
               </Button>
             </Panel>
           ) : null}
-          <Panel title="Fleet recommendations">
+          <Panel title="Fleet Recommendations">
             {recommendations.length === 0 ? (
               <EmptyState
-                title="No recommendations"
+                title="No Recommendations"
                 description="Generate recommendations via explicit API action."
               />
             ) : (
@@ -531,7 +607,7 @@ export function FleetIntelligencePage() {
       {!isLoading && activeTab === 'actions' ? (
         <div className="stack">
           {canManage ? (
-            <Panel title="Draft fleet action">
+            <Panel title="Draft Fleet Action">
               <form className="stack" onSubmit={handleCreateAction}>
                 <Input
                   label="Subject"
@@ -543,14 +619,14 @@ export function FleetIntelligencePage() {
                   value={actionRecommendation}
                   onChange={(event) => setActionRecommendation(event.target.value)}
                 />
-                <Button type="submit">Draft for approval</Button>
+                <Button type="submit">Draft For Approval</Button>
               </form>
             </Panel>
           ) : null}
-          <Panel title="Pending fleet actions">
+          <Panel title="Pending Fleet Actions">
             {actions.length === 0 ? (
               <EmptyState
-                title="No fleet actions"
+                title="No Fleet Actions"
                 description="Draft fleet actions require approval before execution."
               />
             ) : (

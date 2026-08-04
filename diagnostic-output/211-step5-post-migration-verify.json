@@ -1,0 +1,170 @@
+{
+  "label": "211-step5-post-migration-verify",
+  "generatedAt": "2026-08-03T23:23:08.584Z",
+  "journal": {
+    "journalEntries": 168,
+    "appliedRows": 168,
+    "allJournalEntriesApplied": true,
+    "lastTag": "0171_xero_complete_historical_sync",
+    "createdAtNowAlignedToJournal": true
+  },
+  "tables0171": {
+    "xero_accounts": true,
+    "xero_tracking_categories": true,
+    "xero_tracking_options": true,
+    "xero_bills": true,
+    "xero_bill_line_items": true,
+    "xero_credit_notes": true,
+    "xero_credit_note_allocations": true,
+    "xero_payment_allocations": true,
+    "xero_attachments": true,
+    "xero_entity_coverage": true
+  },
+  "all0171TablesPresent": true,
+  "tables0145": {
+    "xero_bank_transactions": true,
+    "xero_finance_sync_runs": true
+  },
+  "all0145TablesPresent": true,
+  "indexesOnNewTables": [
+    {
+      "tablename": "xero_accounts",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_attachments",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_bank_transactions",
+      "index_count": 4
+    },
+    {
+      "tablename": "xero_bill_line_items",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_bills",
+      "index_count": 4
+    },
+    {
+      "tablename": "xero_credit_note_allocations",
+      "index_count": 2
+    },
+    {
+      "tablename": "xero_credit_notes",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_entity_coverage",
+      "index_count": 2
+    },
+    {
+      "tablename": "xero_finance_sync_runs",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_payment_allocations",
+      "index_count": 3
+    },
+    {
+      "tablename": "xero_tracking_categories",
+      "index_count": 2
+    },
+    {
+      "tablename": "xero_tracking_options",
+      "index_count": 2
+    }
+  ],
+  "foreignKeysOnNewTables": [
+    {
+      "table_name": "xero_accounts",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_attachments",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_bank_transactions",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_bill_line_items",
+      "fk_count": 2
+    },
+    {
+      "table_name": "xero_bills",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_credit_note_allocations",
+      "fk_count": 2
+    },
+    {
+      "table_name": "xero_credit_notes",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_entity_coverage",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_finance_sync_runs",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_payment_allocations",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_tracking_categories",
+      "fk_count": 3
+    },
+    {
+      "table_name": "xero_tracking_options",
+      "fk_count": 2
+    }
+  ],
+  "preservedCounts": {
+    "xero_sync_logs": 63621,
+    "xero_customer_mappings": 678,
+    "xero_invoice_mappings": 5,
+    "xero_quote_mappings": 0,
+    "xero_payment_mappings": 0,
+    "customers": 874,
+    "invoices": 5,
+    "quotes": 0,
+    "payments": 0,
+    "companies": 144,
+    "users": 193,
+    "integration_connections": 44,
+    "integration_sync_jobs": 294,
+    "integration_sync_schedules": 3
+  },
+  "xeroConnection": {
+    "status": "connected",
+    "connected_at": "2026-08-01T10:20:52.209Z",
+    "last_sync_at": "2026-08-03T17:06:33.809Z",
+    "credentials_present": true,
+    "organisation_name": "Young Guns Plumbing",
+    "tenant_id": "20176b90-a093-4da1-a04e-8ae616f89fef"
+  },
+  "xeroSchedulePausedStillPaused": [
+    false
+  ],
+  "newTableRowCounts": {
+    "xero_accounts": 0,
+    "xero_tracking_categories": 0,
+    "xero_tracking_options": 0,
+    "xero_bills": 0,
+    "xero_bill_line_items": 0,
+    "xero_credit_notes": 0,
+    "xero_credit_note_allocations": 0,
+    "xero_payment_allocations": 0,
+    "xero_attachments": 0,
+    "xero_entity_coverage": 2,
+    "xero_bank_transactions": 0,
+    "xero_finance_sync_runs": 1
+  }
+}
