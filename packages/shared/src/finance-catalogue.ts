@@ -16,15 +16,17 @@ export type FinanceCatalogueItemSearchResult = {
 };
 
 /**
- * Finance catalogue search data sources (J-6.2).
+ * Finance catalogue search data sources (J-6.2 / J-6.3).
  * - inventory_items: tenant-scoped active stock/service rows (FinanceService.searchCatalogueItems)
- * - YGP-001 Young Guns pricebook: planned DB table — not yet implemented; no hardcoded fallback
+ * - Young Guns pricebook: YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK merged only for verified YG tenant
+ *   (YOUNG_GUNS_COMPANY_ID env, reference company id, or slug/name match) until YGP-001 DB table ships.
  */
 export const FINANCE_CATALOGUE_DATA_SOURCES = {
   inventoryTable: 'inventory_items',
   inventoryService: 'FinanceService.searchCatalogueItems',
   pricebookTable: null as string | null,
-  pricebookStatus: 'YGP-001 queued — labour/service pricebook not yet in database',
+  pricebookStatus:
+    'J-6.3 temporary — YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK constants gated to verified Young Guns tenant only; YGP-001 DB table queued',
 } as const;
 
 export function inventoryItemToFinanceCatalogue(input: {

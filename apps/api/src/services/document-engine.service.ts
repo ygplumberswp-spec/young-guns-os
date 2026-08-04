@@ -149,6 +149,67 @@ export class DocumentEngineService {
     };
   }
 
+  /** Ensures a draft Titan document exists for a finance quote or invoice editor. */
+  async ensureFinanceDocument(
+    actor: DocumentActor,
+    input: {
+      documentType: 'quote' | 'invoice';
+      quoteId?: string | null;
+      invoiceId?: string | null;
+      documentNumber: string;
+      title: string;
+      customerId?: string | null;
+      jobId?: string | null;
+    },
+  ) {
+    this.requireRead(actor);
+
+    const quoteId = input.quoteId ?? null;
+    const invoiceId = input.invoiceId ?? null;
+    if (input.documentType === 'quote' && !quoteId) {
+      throw new DocumentEngineError('VALIDATION_ERROR', 'quoteId is required');
+    }
+    if (input.documentType === 'invoice' && !invoiceId) {
+      throw new DocumentEngineError('VALIDATION_ERROR', 'invoiceId is required');
+    }
+
+    const existing = await this.db.query.titanDocuments.findFirst({
+      where: and(
+        eq(titanDocuments.companyId, actor.companyId),
+        quoteId
+          ? eq(titanDocuments.quoteId, quoteId)
+          : eq(titanDocuments.invoiceId, invoiceId!),
+      ),
+    });
+
+    if (existing) {
+      return this.getDocument(actor, existing.id);
+    }
+
+    await this.createDocument(actor, {
+      documentType: input.documentType,
+      documentNumber: input.documentNumber,
+      title: input.title,
+      customerId: input.customerId ?? null,
+      jobId: input.jobId ?? null,
+      invoiceId,
+      quoteId,
+    });
+
+    const created = await this.db.query.titanDocuments.findFirst({
+      where: and(
+        eq(titanDocuments.companyId, actor.companyId),
+        quoteId
+          ? eq(titanDocuments.quoteId, quoteId)
+          : eq(titanDocuments.invoiceId, invoiceId!),
+      ),
+    });
+    if (!created) {
+      throw new DocumentEngineError('CREATE_FAILED', 'Unable to create finance document');
+    }
+    return this.getDocument(actor, created.id);
+  }
+
   async createDocument(
     actor: DocumentActor,
     input: {

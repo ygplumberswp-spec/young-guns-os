@@ -8,6 +8,7 @@ import {
   parseEditorLinesForDraft,
   unitPriceToExVatCents,
 } from './finance-editor-utils.js';
+import { DRAFT_PLACEHOLDER_LINE_DESCRIPTION } from './finance-document-save.js';
 
 test('including VAT price mode converts to ex-VAT cents for API', () => {
   assert.equal(unitPriceToExVatCents('115.00', 'including_vat', 1500), 10000);
@@ -19,6 +20,7 @@ test('draft parse always returns at least one placeholder line', () => {
   const parsed = parseEditorLinesForDraft(lines);
   assert.equal(parsed.length, 1);
   assert.match(parsed[0]!.description, /pending/i);
+  assert.equal(parsed[0]!.description, DRAFT_PLACEHOLDER_LINE_DESCRIPTION);
 });
 
 test('strict parse rejects empty line sets', () => {

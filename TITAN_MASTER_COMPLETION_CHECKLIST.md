@@ -2,8 +2,8 @@
 
 **Release:** Finance editor recovery (migration 0176 + live updates + customer search)  
 **Scope:** Staging only — production forbidden  
-**Checkpoint updated:** 2026-08-04T17:43:00Z  
-**Agent run:** `bc-019fb4cd-7dec-7aac-9ed3-68c7cb71998f`
+**Checkpoint updated:** 2026-08-04T21:30:00Z  
+**Agent run:** Phase J-6.3 completion — local commit pending Owner approval (no push)
 
 ---
 
@@ -30,7 +30,7 @@
 | `origin/cursor/titan-v1-integration` | `80a2534` | **Application deploy target** (5 recovery commits on `af56e32`) |
 | `origin/cursor/titan-v1-integration-recovery` | `a7fb615` | Migration helper only — **do not deploy as app** |
 | `af56e32` | `af56e32` | Authoritative baseline |
-| Local HEAD (recovery worktree) | `a7fb615` | Clean, up to date with origin |
+| Local HEAD (recovery worktree) | J-6.3 squash commit (see Phase J-6.3) | **AHEAD of origin** — not pushed per Owner gate |
 
 Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117f6f` → `962c618` → `6147b3d`.
 
@@ -263,17 +263,92 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 
 ---
 
-## Correct future staging release sequence (J-6.2)
+## Phase J-6.2 Addendum — Quote/Invoice PDF preview
 
-**Use only after Owner approval of local J-6.2 commit.**
+**Status:** **IMPLEMENTED locally** — awaiting Owner approval before staging release.
+
+### Preview path (verified)
+
+`Preview PDF` → editor handler → `POST /api/v1/finance/documents/preview` → shared `buildFinanceDocumentPreviewModel` → `TitanDocumentView` in full-page modal → `Download PDF` serialises the same renderer to `application/pdf` (`YGP-Draft-Quote.pdf` / `YGP-Draft-Invoice.pdf`).
+
+### Acceptance requirements
+
+| Area | Requirement | Status |
+|------|-------------|--------|
+| Surfaces | New/Edit Quote and New/Edit Invoice | **DONE** |
+| Unsaved form | Customer, dates, reference, addresses, lines, VAT modes, notes/terms reflected without save | **DONE** |
+| Document engine | Young Guns A4 template via `TitanDocumentView`; no second PDF layout engine | **DONE** |
+| Draft numbering | `Draft — Xero quote/invoice number pending`; no TITAN internal IDs; no Title field | **DONE** |
+| UX | Full-page modal; Download PDF + Close; genuine `application/pdf` download filename | **DONE** |
+| Safety | No save, approve, Xero sync, email/WhatsApp, Yoco, inventory deduction, or form loss | **DONE** |
+
+### J-6.2 addendum automated tests
+
+- `packages/shared/src/finance-document-preview.test.ts` — mapper, numbering, VAT, sections
+- `apps/web/src/features/finance/finance-document-preview.test.ts` — editor wiring, API client, renderer props
+
+---
+
+## Phase J-6.3 — Genuine PDF preview, tenant pricebook, cost API protection
+
+**Status:** **IMPLEMENTED locally** — awaiting Owner approval before staging release.
+
+### Preview path (verified)
+
+`Preview PDF` → editor handler → `POST /api/v1/finance/documents/preview/pdf` → shared `buildFinanceDocumentPreviewModel` → `buildFinanceDocumentPreviewHtml` (document engine print layer) → `PuppeteerFinanceDocumentPdfRenderer` → genuine `application/pdf` (`%PDF` signature) → full-page modal iframe with Download + Close. No database save, Xero, Yoco, inventory deduction, approval, or messaging.
+
+### Acceptance requirements
+
+| Area | Requirement | Status |
+|------|-------------|--------|
+| Surfaces | New/Edit Quote and New/Edit Invoice | **DONE** |
+| Unsaved form | Customer, dates, reference, three addresses, catalogue/manual lines, VAT modes, notes/terms | **DONE** |
+| Document engine | Young Guns A4 template via shared preview model + HTML print serialization; Puppeteer PDF only — no parallel layout engine | **DONE** |
+| Draft numbering | `Draft — Xero quote/invoice number pending`; no Title; no TITAN internal IDs | **DONE** |
+| Genuine PDF | `Content-Type: application/pdf`; valid `%PDF` signature; iframe preview + blob download | **DONE** |
+| Safety | Preview errors stay in modal; editor state preserved; zero persistence or external actions | **DONE** |
+| Tenant pricebook | `YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK` merged only for verified Young Guns tenant; tenant B cannot receive `LAB-CALLOUT` / `LAB-HOURLY` | **DONE** |
+| Cost security | API strips `unitCostCents` unless `canViewFinanceProfit`; catalogue route wired; direct API cannot bypass | **DONE** |
+| Responsive | No `overflow-x: clip` on finance workspace; reflow at 1440 / 1024 / 768 / ~390px; totals and line controls accessible | **DONE** |
+
+### J-6.3 temporary compatibility (tenant pricebook)
+
+Until YGP-001 ships a tenant-scoped pricebook table, approved Young Guns labour/service constants live in `YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK` and merge only when `isYoungGunsFinanceTenant()` passes (`YOUNG_GUNS_COMPANY_ID` env, reference company id, or slug/name match). All other tenants receive inventory rows + manual-line fallback only.
+
+### J-6.3 automated tests
+
+- `packages/shared/src/finance-document-preview-html.test.ts` — HTML print layer, `%PDF` validator, photo gallery embedding
+- `packages/shared/src/finance-document-photos.test.ts` — document-engine `includeInPdf`, magic-byte helper
+- `packages/shared/src/finance-tenant-pricebook.test.ts` — YG gating, cost filter, RBAC helper
+- `apps/api/src/services/finance-document-pdf.service.test.ts` — preview/pdf route wiring, PDF signature
+- `apps/api/src/services/finance-document-preview-photos.service.ts` — job-evidence-backed preview attachments
+- `apps/api/src/services/finance-catalogue.service.test.ts` — tenant B YG isolation, includeCost API
+- `apps/web/src/features/finance/finance-document-preview.test.ts` — server PDF modal wiring
+- `apps/web/src/features/finance/finance-document-photos-panel.test.ts` — document-engine panel, mobile capture
+- `apps/web/src/features/finance/finance-workspace-layout.test.ts` — 1440 / 768 / ~390px accessibility
+
+### J-6.3 photos & attachments (document engine)
+
+| Area | Requirement | Status |
+|------|-------------|--------|
+| Storage | Job evidence bytes + `titan_documents.photos` JSONB (`DocumentPhoto`) — no parallel attachment table | **DONE** |
+| Upload | Office route `POST /jobs/:jobId/evidence/upload` with MIME/size validation | **DONE** |
+| UI | Full-width Photos & Attachments on all four editor pages | **DONE** |
+| PDF | Unsaved preview passes live `photos[]`; server embeds `includeInPdf` items via job evidence | **DONE** |
+| Linking | Existing job photos/COC linked by `documentationId` without duplicate bytes | **DONE** |
+| Save/reload | `ensureFinanceDocument` + `PATCH /documents/engine/:id` preserves captions, order, PDF toggles | **DONE** |
+
+**Local commit:** `c4a00a6` on `cursor/titan-v1-integration-recovery` (parent `863274a`) — not pushed.
+
+**Use only after Owner approval of local J-6.3 commit.**
 
 1. **Backup** — create and verify a fresh staging backup (`pg_dump` custom format, SHA-256, `pg_restore --list`). Refuse if backup older than 7 days or missing.
 2. **Precheck** — confirm `APP_ENV=staging`, `TITAN_ENV=staging`, `DATABASE_URL` ref `cpkuwtaipjxeipvbssvn` only; Xero idle; migration 0177 applied exactly once; 0178 not yet applied.
 3. **Apply migration 0178 only** — `node packages/db/scripts/apply-0178-staging-only.mjs` — **never** `drizzle-kit migrate`.
 4. **Push recovery branch** — `git push -u origin cursor/titan-v1-integration-recovery`.
-5. **Fast-forward deploy branch** — merge/ff `cursor/titan-v1-integration` to the final J-6.2 commit **without force push**.
-6. **Railway deploy** — source branch `cursor/titan-v1-integration`; disable startup/blanket migrations on deploy.
-7. **Verify deployed revision** — record exact commit SHA on API and Web services before J-5 smoke resumes (sections A–H + E2 + E3).
+5. **Fast-forward deploy branch** — merge/ff `cursor/titan-v1-integration` to the final J-6.3 commit **without force push**.
+6. **Railway deploy** — source branch `cursor/titan-v1-integration`; disable startup/blanket migrations on deploy; ensure API image includes Chromium for Puppeteer PDF preview.
+7. **Verify deployed revision** — record exact commit SHA on API and Web services; smoke-test Preview PDF on Quote/Invoice editors (unsaved form → genuine PDF in modal); confirm tenant B catalogue search excludes YG pricebook rows.
 
 ---
 

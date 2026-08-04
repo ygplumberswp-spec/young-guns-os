@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Input } from '@titan/ui';
 import type {
+  DocumentPhoto,
   FinanceCustomerSearchResult,
   InvoiceStage,
   InvoiceStatus,
@@ -35,6 +36,10 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -65,6 +70,7 @@ export function InvoiceCreatePage() {
   const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
   const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
 
   const [approvedForSend, setApprovedForSend] = useState(false);
 
@@ -104,6 +110,7 @@ export function InvoiceCreatePage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/invoices');
@@ -235,7 +242,7 @@ export function InvoiceCreatePage() {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
-        status,
+        status: 'draft' as const,
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -247,7 +254,7 @@ export function InvoiceCreatePage() {
       };
 
       if (savedInvoiceId) {
-        return updateInvoice(accessToken, savedInvoiceId, {
+        const updated = await updateInvoice(accessToken, savedInvoiceId, {
           status: payload.status,
           stage: payload.stage,
           lineItems: payload.lineItems,
@@ -259,17 +266,22 @@ export function InvoiceCreatePage() {
           siteAddress: payload.siteAddress,
           postalAddress: payload.postalAddress,
         });
+        setStatus(updated.status);
+        return updated;
       }
 
       const created = await createInvoice(accessToken, payload);
       setSavedInvoiceId(created.id);
+      setStatus(created.status);
       return created;
     },
     [
       accessToken,
+      addresses,
       canWrite,
       clientActionId,
       customerId,
+      customerReference,
       draftShell.autosave,
       dueDate,
       invoiceDate,
@@ -281,22 +293,56 @@ export function InvoiceCreatePage() {
       quoteId,
       savedInvoiceId,
       stage,
-      status,
       vatMode,
     ],
   );
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      const job = customerJobs.find((entry) => entry.id === jobId);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'invoice',
+          customer: selectedCustomer,
+          customerReference,
+          issuedAt: invoiceDate,
+          dueDate,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          jobReference: job?.title ?? null,
+          status,
+          photos,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistInvoice(false);
+      if (action === 'save' || action === 'save_draft') {
+        const wasNew = !savedInvoiceId;
+        const result = await persistInvoice(false);
         draftShell.markSubmitted();
-        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: 'invoice-draft-saved' });
+        if (result?.id) {
+          invalidateInvoices();
+          if (wasNew) {
+            navigate(financeDocumentEditPath('invoice', result.id), { replace: true });
+          }
+          notify({
+            variant: 'saved',
+            message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
+            dedupeKey: action === 'save_draft' ? 'invoice-draft-saved' : 'invoice-saved',
+          });
+        }
         return;
       }
 
@@ -304,14 +350,6 @@ export function InvoiceCreatePage() {
         await persistInvoice(false);
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        const record = await persistInvoice(false);
-        const id = record && 'id' in record ? record.id : savedInvoiceId;
-        if (id) window.open(`/finance/invoices/${id}`, '_blank', 'noopener,noreferrer');
-        else setError('Save the invoice with a customer before previewing');
         return;
       }
 
@@ -360,6 +398,7 @@ export function InvoiceCreatePage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">
@@ -451,6 +490,21 @@ export function InvoiceCreatePage() {
               showUnitCost={false}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentPhotosPanel
+              accessToken={accessToken}
+              documentType="invoice"
+              invoiceId={savedInvoiceId}
+              jobId={jobId || undefined}
+              customerId={customerId || undefined}
+              documentNumber="Draft — Xero invoice number pending"
+              customerName={selectedCustomer?.name}
+              photos={photos}
+              onPhotosChange={setPhotos}
+              disabled={!canWrite}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

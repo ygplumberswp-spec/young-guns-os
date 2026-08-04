@@ -83,6 +83,37 @@ export async function fetchJobExecution(
   return data.summary;
 }
 
+export async function uploadOfficeJobEvidence(
+  accessToken: string,
+  jobId: string,
+  body: {
+    documentationType: 'photo' | 'document';
+    title: string;
+    mimeType: string;
+    dataBase64: string;
+    fileName?: string;
+    clientActionId?: string;
+  },
+): Promise<{ id: string; fileName: string | null; mimeType: string | null; sizeBytes: number | null }> {
+  const data = await request<{
+    documentation: {
+      id: string;
+      fileName: string | null;
+      mimeType: string | null;
+      sizeBytes: number | null;
+    };
+  }>(`/jobs/${jobId}/evidence/upload`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+  return data.documentation;
+}
+
+export function jobEvidenceContentUrl(jobId: string, documentationId: string): string {
+  return `/api/v1/jobs/${jobId}/evidence/${documentationId}/content`;
+}
+
 export async function fetchJobTimeline(
   accessToken: string,
   jobId: string,

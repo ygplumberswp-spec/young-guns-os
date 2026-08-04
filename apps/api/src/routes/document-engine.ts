@@ -40,6 +40,7 @@ const photoSchema = z.object({
   position: z.number().int().min(0),
   fileName: z.string().trim().min(1),
   mimeType: z.string().trim().min(1),
+  includeInPdf: z.boolean().optional(),
 });
 
 const createDocumentSchema = z
@@ -169,6 +170,49 @@ export function createDocumentEngineRouter({
       const input = createDocumentSchema.parse(req.body);
       const created = await documentEngineService.createDocument(actorFrom(req), input);
       res.status(201).json({ data: created });
+    }),
+  );
+
+  const ensureFinanceDocumentSchema = z.object({
+    documentNumber: z.string().trim().min(1).max(60),
+    title: z.string().trim().min(1).max(200),
+    customerId: z.string().uuid().nullable().optional(),
+    jobId: z.string().uuid().nullable().optional(),
+  });
+
+  router.post(
+    '/finance/quotes/:quoteId/ensure',
+    requireAnyPermission('finance:read', 'finance:write'),
+    asyncRoute(async (req, res) => {
+      const { quoteId } = z.object({ quoteId: z.string().uuid() }).parse(req.params);
+      const body = ensureFinanceDocumentSchema.parse(req.body ?? {});
+      const detail = await documentEngineService.ensureFinanceDocument(actorFrom(req), {
+        documentType: 'quote',
+        quoteId,
+        documentNumber: body.documentNumber,
+        title: body.title,
+        customerId: body.customerId ?? null,
+        jobId: body.jobId ?? null,
+      });
+      res.json({ data: detail });
+    }),
+  );
+
+  router.post(
+    '/finance/invoices/:invoiceId/ensure',
+    requireAnyPermission('finance:read', 'finance:write'),
+    asyncRoute(async (req, res) => {
+      const { invoiceId } = z.object({ invoiceId: z.string().uuid() }).parse(req.params);
+      const body = ensureFinanceDocumentSchema.parse(req.body ?? {});
+      const detail = await documentEngineService.ensureFinanceDocument(actorFrom(req), {
+        documentType: 'invoice',
+        invoiceId,
+        documentNumber: body.documentNumber,
+        title: body.title,
+        customerId: body.customerId ?? null,
+        jobId: body.jobId ?? null,
+      });
+      res.json({ data: detail });
     }),
   );
 

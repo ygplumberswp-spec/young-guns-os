@@ -1,6 +1,7 @@
 import { Button } from '@titan/ui';
 
 export type FinanceDocumentAction =
+  | 'save'
   | 'save_draft'
   | 'save_new'
   | 'preview_pdf'
@@ -25,8 +26,11 @@ export function FinanceDocumentActionsBar({
   return (
     <div className="finance-document-actions">
       <div className="finance-document-actions__primary">
-        <Button type="button" disabled={isSaving} onClick={() => onAction('save_draft')}>
-          {isSaving ? 'Saving…' : 'Save Draft'}
+        <Button type="button" disabled={isSaving} onClick={() => onAction('save')}>
+          {isSaving ? 'Saving…' : 'Save'}
+        </Button>
+        <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onAction('save_draft')}>
+          Save Draft
         </Button>
         <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onAction('save_new')}>
           Save &amp; New

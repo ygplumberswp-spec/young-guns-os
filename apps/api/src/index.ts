@@ -1768,6 +1768,7 @@ app.use(
     crmService,
     teamService,
     db,
+    jobEvidenceStorage: jobEvidenceStorageService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

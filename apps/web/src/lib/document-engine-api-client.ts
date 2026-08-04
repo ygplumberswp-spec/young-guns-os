@@ -124,6 +124,40 @@ export async function saveTitanDocumentDraft(
   });
 }
 
+export async function ensureFinanceQuoteDocument(
+  accessToken: string,
+  quoteId: string,
+  body: {
+    documentNumber: string;
+    title: string;
+    customerId?: string | null;
+    jobId?: string | null;
+  },
+): Promise<TitanDocumentDetail> {
+  return request<TitanDocumentDetail>(`${BASE}/finance/quotes/${quoteId}/ensure`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+}
+
+export async function ensureFinanceInvoiceDocument(
+  accessToken: string,
+  invoiceId: string,
+  body: {
+    documentNumber: string;
+    title: string;
+    customerId?: string | null;
+    jobId?: string | null;
+  },
+): Promise<TitanDocumentDetail> {
+  return request<TitanDocumentDetail>(`${BASE}/finance/invoices/${invoiceId}/ensure`, {
+    method: 'POST',
+    accessToken,
+    body,
+  });
+}
+
 export async function issueTitanDocument(
   accessToken: string,
   documentId: string,

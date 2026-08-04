@@ -10,6 +10,13 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
 import { appendServerTiming } from '../lib/server-timing.js';
+import {
+  FinanceDocumentPdfError,
+  renderFinanceDocumentPreviewPdf,
+} from '../services/finance-document-pdf.service.js';
+import { buildFinancePreviewAttachments } from '../services/finance-document-preview-photos.service.js';
+import type { JobEvidenceStorageService } from '../services/job-evidence-storage.service.js';
+import { canViewFinanceProfit } from '@titan/shared';
 
 const quoteStatusSchema = z.enum([
   'draft',
@@ -36,6 +43,65 @@ const quoteLineItemSchema = z.object({
   isOptional: z.boolean().optional(),
   optionTier: z.string().nullable().optional(),
 });
+
+const financeDocumentPreviewSchema = z
+  .object({
+    kind: z.enum(['quote', 'invoice']),
+    customer: z
+      .object({
+        name: z.string().trim().min(1),
+        contactPerson: z.string().trim().max(200).nullable().optional(),
+        email: z.string().trim().max(320).nullable().optional(),
+        phone: z.string().trim().max(80).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    customerReference: z.string().trim().max(200).nullable().optional(),
+    issuedAt: z.string().trim().max(40).nullable().optional(),
+    dueDate: z.string().trim().max(40).nullable().optional(),
+    addresses: z
+      .object({
+        billingAddress: z.string().trim().max(5000).nullable().optional(),
+        siteAddress: z.string().trim().max(5000).nullable().optional(),
+        postalAddress: z.string().trim().max(5000).nullable().optional(),
+      })
+      .nullable()
+      .optional(),
+    lines: z.array(
+      z.object({
+        id: z.string().trim().max(80).optional(),
+        category: z.string().trim().max(80).optional(),
+        description: z.string().trim().min(1),
+        quantity: z.number().positive(),
+        unitPriceCents: z.number().int(),
+        vatRateBps: z.number().int().min(0).max(10000),
+      }),
+    ),
+    notes: z.string().trim().max(5000).nullable().optional(),
+    paymentTerms: z.string().trim().max(2000).nullable().optional(),
+    scopeOfWork: z.string().trim().max(10000).nullable().optional(),
+    exclusions: z.string().trim().max(10000).nullable().optional(),
+    xeroQuoteNumber: z.string().trim().max(60).nullable().optional(),
+    xeroInvoiceNumber: z.string().trim().max(60).nullable().optional(),
+    jobReference: z.string().trim().max(200).nullable().optional(),
+    status: z.string().trim().max(40).nullable().optional(),
+    photos: z
+      .array(
+        z.object({
+          id: z.string().trim().min(1),
+          documentationId: z.string().uuid(),
+          jobId: z.string().uuid(),
+          role: z.enum(['before', 'after', 'additional']),
+          caption: z.string().nullable(),
+          position: z.number().int().min(0),
+          fileName: z.string().trim().min(1),
+          mimeType: z.string().trim().min(1),
+          includeInPdf: z.boolean().optional(),
+        }),
+      )
+      .optional(),
+  })
+  .strict();
 
 const createQuoteSchema = z
   .object({
@@ -100,6 +166,7 @@ type FinanceRouterDeps = {
   crmService: CrmService;
   teamService: TeamService;
   db: DatabaseClient;
+  jobEvidenceStorage: JobEvidenceStorageService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -113,6 +180,7 @@ export function createFinanceRouter({
   crmService,
   teamService,
   db,
+  jobEvidenceStorage,
   jwtSecret,
   authService,
 }: FinanceRouterDeps): Router {
@@ -165,7 +233,10 @@ export function createFinanceRouter({
       });
       return;
     }
-    const items = await financeService.searchCatalogueItems(companyId, q);
+    const auth = getAuth(req);
+    const items = await financeService.searchCatalogueItems(companyId, q, {
+      includeCost: canViewFinanceProfit(auth.permissions, auth.roleName),
+    });
     res.json({ data: { items } });
   });
 
@@ -393,13 +464,80 @@ export function createFinanceRouter({
     res.json({ data: { summary: await financeService.getJobFinanceSummary(auth.companyId, routeParam(req.params.jobId), { includeProfit: canViewProfit(auth) }) } });
   });
 
+  router.post('/documents/preview', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const parsed = financeDocumentPreviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid preview payload' },
+      });
+      return;
+    }
+    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+      ...parsed.data,
+      addresses: parsed.data.addresses
+        ? {
+            billingAddress: parsed.data.addresses.billingAddress ?? null,
+            siteAddress: parsed.data.addresses.siteAddress ?? null,
+            postalAddress: parsed.data.addresses.postalAddress ?? null,
+          }
+        : parsed.data.addresses,
+    });
+    res.json({ data: { preview } });
+  });
+
+  router.post('/documents/preview/pdf', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const parsed = financeDocumentPreviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid preview payload' },
+      });
+      return;
+    }
+
+    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+      ...parsed.data,
+      addresses: parsed.data.addresses
+        ? {
+            billingAddress: parsed.data.addresses.billingAddress ?? null,
+            siteAddress: parsed.data.addresses.siteAddress ?? null,
+            postalAddress: parsed.data.addresses.postalAddress ?? null,
+          }
+        : parsed.data.addresses,
+    });
+
+    preview.attachments = await buildFinancePreviewAttachments(
+      db,
+      jobEvidenceStorage,
+      getAuth(req).companyId,
+      parsed.data.photos,
+    );
+
+    try {
+      const pdf = await renderFinanceDocumentPreviewPdf(preview);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${preview.downloadFilename}"`);
+      res.setHeader('Content-Length', String(pdf.length));
+      res.send(pdf);
+    } catch (error) {
+      if (error instanceof FinanceDocumentPdfError) {
+        res.status(500).json({
+          error: { code: error.code, message: error.message },
+        });
+        return;
+      }
+      throw error;
+    }
+  });
+
   return router;
 }
 
 function stringQuery(value: unknown): string | undefined { return typeof value === 'string' && value.trim() ? value.trim() : undefined; }
 function routeParam(value: string | string[]): string { return Array.isArray(value) ? value[0]! : value; }
 function toFinanceActor(auth: ReturnType<typeof getAuth>) { return { companyId: auth.companyId, userId: auth.userId, permissions: auth.permissions, roleName: auth.roleName, canWrite: hasAnyPermission(auth.permissions, ['finance:write', '*']) }; }
-function canViewProfit(auth: ReturnType<typeof getAuth>) { return hasAnyPermission(auth.permissions, ['finance:write', '*']) || ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? ''); }
+function canViewProfit(auth: ReturnType<typeof getAuth>) {
+  return canViewFinanceProfit(auth.permissions, auth.roleName);
+}
 
 function handleFinanceError(res: import('express').Response, error: unknown) {
   if (error instanceof FinanceError) {

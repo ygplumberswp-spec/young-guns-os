@@ -50,6 +50,22 @@ test('mobile layout stacks line items and actions at 768px without page-level cl
   assert.doesNotMatch(block, /overflow-x:\s*clip/);
 });
 
+test('narrow mobile viewports use full-width totals and controlled table scroll (~390px)', () => {
+  const previewCss = readFileSync(join(webRoot, 'src/styles/finance-document-preview.css'), 'utf8');
+  assert.match(previewCss, /finance-document-preview__iframe[\s\S]*?width:\s*100%/);
+  assert.match(indexCss, /\.finance-line-items__totals-panel[\s\S]*?width:\s*100%/);
+  assert.match(indexCss, /\.finance-line-items--workspace[\s\S]*overflow-x:\s*auto/);
+  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*min-width:\s*0/s);
+});
+
+test('desktop workspace retains side-by-side notes and totals near 1440px', () => {
+  assert.match(
+    indexCss,
+    /\.finance-editor__bottom-grid\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*minmax\(16rem,\s*22rem\)/s,
+  );
+  assert.match(indexCss, /\.finance-line-items--workspace\s+\.finance-line-items__table\s*\{[^}]*width:\s*100%/s);
+});
+
 test('workspace does not use overflow-x clip to hide broken layout', () => {
   assert.doesNotMatch(indexCss, /\.finance-page--workspace\s*\{[^}]*overflow-x:\s*clip/s);
   assert.match(indexCss, /\.finance-line-items--workspace[\s\S]*overflow-x:\s*auto/);

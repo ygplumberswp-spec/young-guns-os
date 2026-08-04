@@ -37,6 +37,8 @@ import {
   buildGoogleMapsNavigateUrl,
   formatMapsEtaCapabilityLabel,
   unresolvedVehicleAddress,
+  validateFinancePhotoFile,
+  validateFinancePhotoMagicBytes,
 } from '@titan/shared';
 import { classifyOfflineFlushByExistingLog } from './job-execution-completion-idempotency.js';
 import type { DatabaseClient } from '@titan/db';
@@ -731,6 +733,103 @@ export class MobileWorkforceService {
       documentationId: created.id,
       documentationType: input.documentationType,
       evidencePhase: input.evidencePhase ?? null,
+      sizeBytes: stored.sizeBytes,
+    });
+
+    return toDocumentationSummary(created);
+  }
+
+  /** Office/finance upload — tenant-scoped job check only (no technician assignment). */
+  async uploadJobEvidenceForOffice(
+    scope: { companyId: string; userId: string },
+    jobId: string,
+    input: UploadJobEvidenceRequest,
+  ): Promise<MobileJobDocumentationSummary> {
+    const job = await this.jobsService.getJob(scope.companyId, jobId);
+    if (!job) {
+      throw new MobileWorkforceError('NOT_FOUND', 'Job not found');
+    }
+
+    if (input.clientActionId) {
+      const existing = await this.db.query.mobileJobDocumentation.findFirst({
+        where: and(
+          eq(mobileJobDocumentation.companyId, scope.companyId),
+          eq(mobileJobDocumentation.clientActionId, input.clientActionId),
+        ),
+      });
+      if (existing) {
+        return toDocumentationSummary(existing);
+      }
+    }
+
+    const title = input.title.trim();
+    if (!title) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'Title is required');
+    }
+    if (!input.dataBase64?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'File contents are required');
+    }
+    if (!input.mimeType?.trim()) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'A MIME type is required');
+    }
+
+    const buffer = decodeBase64Payload(input.dataBase64);
+    const mimeType = input.mimeType.trim();
+    const fileValidation = validateFinancePhotoFile({ mimeType, sizeBytes: buffer.length });
+    if (!fileValidation.ok) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', fileValidation.message);
+    }
+    if (!validateFinancePhotoMagicBytes(mimeType, buffer)) {
+      throw new MobileWorkforceError('VALIDATION_ERROR', 'File contents do not match the declared type');
+    }
+    const kind = documentationTypeToEvidenceKind(input.documentationType);
+
+    let stored: Awaited<ReturnType<JobEvidenceStorageService['store']>>;
+    try {
+      stored = await this.jobEvidenceStorageService.store({
+        companyId: scope.companyId,
+        jobId,
+        kind,
+        mimeType: input.mimeType.trim(),
+        buffer,
+        originalFileName: input.fileName ?? null,
+      });
+    } catch (error) {
+      if (error instanceof JobEvidenceStorageError) {
+        throw new MobileWorkforceError(error.code, error.message);
+      }
+      throw error;
+    }
+
+    const metadata: Record<string, unknown> = { ...(input.metadata ?? {}) };
+
+    const [created] = await this.db
+      .insert(mobileJobDocumentation)
+      .values({
+        companyId: scope.companyId,
+        userId: scope.userId,
+        jobId,
+        documentationType: input.documentationType,
+        title,
+        fileName: input.fileName?.trim() || null,
+        mimeType: stored.mimeType,
+        sizeBytes: stored.sizeBytes,
+        content: null,
+        storageKey: stored.storageKey,
+        checksumSha256: stored.checksumSha256,
+        clientActionId: input.clientActionId ?? null,
+        evidencePhase: input.evidencePhase ?? null,
+        metadata,
+      })
+      .returning();
+
+    if (!created) {
+      throw new MobileWorkforceError('CREATE_FAILED', 'Unable to store evidence');
+    }
+
+    await this.logAction(scope, 'upload_job_evidence_office', 'job', jobId, {
+      documentationId: created.id,
+      documentationType: input.documentationType,
       sizeBytes: stored.sizeBytes,
     });
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
+import type { DocumentPhoto } from '@titan/shared';
 import { Input } from '@titan/ui';
 import type { JobSummary, QuoteStatus } from '@titan/shared';
 import { canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
@@ -28,6 +29,9 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -43,6 +47,7 @@ export function QuoteEditPage() {
   const [customerId, setCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [displayQuoteNumber, setDisplayQuoteNumber] = useState('');
+  const [xeroQuoteNumber, setXeroQuoteNumber] = useState<string | null>(null);
   const [jobId, setJobId] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
   const [quoteDate, setQuoteDate] = useState('');
@@ -57,6 +62,7 @@ export function QuoteEditPage() {
   const [lines, setLines] = useState<FinanceEditorLine[]>([]);
   const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
+  const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -93,6 +99,7 @@ export function QuoteEditPage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/quotes/${quoteId}`);
@@ -124,6 +131,7 @@ export function QuoteEditPage() {
         setCustomerId(quote.customerId);
         setCustomerName(quote.customerName);
         setDisplayQuoteNumber(quote.displayQuoteNumber);
+        setXeroQuoteNumber(quote.xeroQuoteNumber);
         setJobId(quote.jobId ?? '');
         setStatus(quote.status);
         setQuoteDate(toDateInputValue(quote.issuedAt ?? quote.createdAt));
@@ -183,7 +191,7 @@ export function QuoteEditPage() {
 
       return updateQuote(accessToken, quoteId, {
         jobId: jobId || null,
-        status,
+        status: strict ? status : 'draft',
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
@@ -194,12 +202,14 @@ export function QuoteEditPage() {
     },
     [
       accessToken,
+      addresses,
       canWrite,
       customerReference,
       jobId,
       lines,
       message,
       priceMode,
+      quoteDate,
       quoteId,
       status,
       validUntil,
@@ -209,16 +219,48 @@ export function QuoteEditPage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite || !quoteId) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      const job = customerJobs.find((entry) => entry.id === jobId);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'quote',
+          customer: customerName
+            ? { id: customerId, name: customerName, companyName: null, email: null, phone: null, xeroContactId: null }
+            : null,
+          customerReference,
+          issuedAt: quoteDate,
+          dueDate: validUntil,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          xeroQuoteNumber,
+          jobReference: job?.title ?? null,
+          status,
+          photos,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistQuote(false);
+      if (action === 'save' || action === 'save_draft') {
+        const result = await persistQuote(false);
+        if (result) setStatus(result.status);
         draftShell.markSubmitted();
         invalidateQuotes();
-        notify({ variant: 'saved', message: 'Quote draft saved', dedupeKey: `quote-draft-${quoteId}` });
+        notify({
+          variant: 'saved',
+          message: action === 'save_draft' ? 'Quote draft saved' : 'Quote saved',
+          dedupeKey: action === 'save_draft' ? `quote-draft-${quoteId}` : `quote-saved-${quoteId}`,
+        });
         return;
       }
 
@@ -226,12 +268,6 @@ export function QuoteEditPage() {
         await persistQuote(false);
         draftShell.markSubmitted();
         navigate('/finance/quotes/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        await persistQuote(false);
-        window.open(`/finance/quotes/${quoteId}`, '_blank', 'noopener,noreferrer');
         return;
       }
 
@@ -279,6 +315,7 @@ export function QuoteEditPage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">
@@ -342,6 +379,21 @@ export function QuoteEditPage() {
               showUnitCost={canViewUnitCost}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentPhotosPanel
+              accessToken={accessToken}
+              documentType="quote"
+              quoteId={quoteId}
+              jobId={jobId || undefined}
+              customerId={customerId}
+              documentNumber={displayQuoteNumber || 'Draft — Xero quote number pending'}
+              customerName={customerName}
+              photos={photos}
+              onPhotosChange={setPhotos}
+              disabled={!canWrite}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
 import { Input } from '@titan/ui';
-import type { FinanceCustomerSearchResult, InvoiceStage, InvoiceStatus } from '@titan/shared';
+import type { DocumentPhoto, FinanceCustomerSearchResult, InvoiceStage, InvoiceStatus } from '@titan/shared';
 import { canEditInvoice, INVOICE_STAGE_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchInvoice, updateInvoice } from '../../lib/finance-api';
@@ -28,6 +28,9 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -41,12 +44,15 @@ export function InvoiceEditPage() {
 
   const [customer, setCustomer] = useState<FinanceCustomerSearchResult | null>(null);
   const [displayInvoiceNumber, setDisplayInvoiceNumber] = useState('');
+  const [xeroInvoiceNumber, setXeroInvoiceNumber] = useState<string | null>(null);
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [customerReference, setCustomerReference] = useState('');
   const [message, setMessage] = useState('');
+  const [jobId, setJobId] = useState('');
+  const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
   const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
     billingAddress: '',
     siteAddress: '',
@@ -90,6 +96,7 @@ export function InvoiceEditPage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/invoices/${invoiceId}`);
@@ -124,12 +131,14 @@ export function InvoiceEditPage() {
           xeroContactId: null,
         });
         setDisplayInvoiceNumber(invoice.displayOfficialInvoiceNumber);
+        setXeroInvoiceNumber(invoice.xeroInvoiceNumber);
         setStatus(invoice.status);
         setStage(invoice.stage);
         setInvoiceDate(toDateInputValue(invoice.issuedAt ?? invoice.createdAt));
         setDueDate(toDateInputValue(invoice.dueDate));
         setCustomerReference(invoice.customerReference ?? invoice.xeroReference ?? '');
         setMessage(invoice.notes ?? '');
+        setJobId(invoice.jobId ?? '');
         setAddresses(addressesFromSnapshot(invoice.addresses));
         setVatMode(inferVatModeFromLines(invoice.lineItems));
         setLines(lineItemsToEditorLines(invoice.lineItems));
@@ -182,7 +191,7 @@ export function InvoiceEditPage() {
       }
 
       return updateInvoice(accessToken, invoiceId, {
-        status,
+        status: strict ? status : 'draft',
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
@@ -194,9 +203,12 @@ export function InvoiceEditPage() {
     },
     [
       accessToken,
+      addresses,
       canWrite,
+      customerReference,
       dueDate,
       editable,
+      invoiceDate,
       invoiceId,
       lines,
       message,
@@ -209,16 +221,44 @@ export function InvoiceEditPage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite || !editable) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'invoice',
+          customer,
+          customerReference,
+          issuedAt: invoiceDate,
+          dueDate,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          xeroInvoiceNumber,
+          status,
+          photos,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistInvoice(false);
+      if (action === 'save' || action === 'save_draft') {
+        const result = await persistInvoice(false);
+        if (result) setStatus(result.status);
         draftShell.markSubmitted();
         invalidateInvoices();
-        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: `invoice-draft-${invoiceId}` });
+        notify({
+          variant: 'saved',
+          message: action === 'save_draft' ? 'Invoice draft saved' : 'Invoice saved',
+          dedupeKey: action === 'save_draft' ? `invoice-draft-${invoiceId}` : `invoice-saved-${invoiceId}`,
+        });
         return;
       }
 
@@ -226,12 +266,6 @@ export function InvoiceEditPage() {
         await persistInvoice(false);
         draftShell.markSubmitted();
         navigate('/finance/invoices/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        await persistInvoice(false);
-        window.open(`/finance/invoices/${invoiceId}`, '_blank', 'noopener,noreferrer');
         return;
       }
 
@@ -288,6 +322,7 @@ export function InvoiceEditPage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">
@@ -345,6 +380,21 @@ export function InvoiceEditPage() {
               showUnitCost={false}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentPhotosPanel
+              accessToken={accessToken}
+              documentType="invoice"
+              invoiceId={invoiceId}
+              jobId={jobId || undefined}
+              customerId={customer?.id}
+              documentNumber={displayInvoiceNumber || 'Draft — Xero invoice number pending'}
+              customerName={customer?.name}
+              photos={photos}
+              onPhotosChange={setPhotos}
+              disabled={!canWrite || !editable}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">

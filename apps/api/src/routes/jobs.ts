@@ -125,6 +125,15 @@ const reopenJobSchema = z.object({
   reason: z.string().trim().min(1),
 });
 
+const officeEvidenceUploadSchema = z.object({
+  documentationType: z.enum(['photo', 'document']),
+  title: z.string().trim().min(1).max(200),
+  mimeType: z.string().trim().min(1).max(120),
+  dataBase64: z.string().min(1),
+  fileName: z.string().trim().max(200).optional(),
+  clientActionId: z.string().trim().max(200).optional(),
+});
+
 const authorizeVariationSchema = z.object({
   status: z.enum(['approved', 'rejected']),
   notes: z.string().optional(),
@@ -377,6 +386,31 @@ export function createJobsRouter({
         jobExecutionService.getActiveVehicle(companyId, jobId),
       ]);
       res.json({ data: { crew, vehicle } });
+    },
+  );
+
+  router.post(
+    '/:jobId/evidence/upload',
+    requireAnyPermission('finance:write', 'jobs:write'),
+    async (req, res) => {
+      const parsed = officeEvidenceUploadSchema.safeParse(req.body);
+      if (!parsed.success) {
+        res.status(400).json({
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid evidence upload payload' },
+        });
+        return;
+      }
+      try {
+        const auth = getAuth(req);
+        const documentation = await mobileWorkforceService.uploadJobEvidenceForOffice(
+          { companyId: auth.companyId, userId: auth.userId },
+          getRouteParam(req.params.jobId),
+          parsed.data,
+        );
+        res.status(201).json({ data: { documentation } });
+      } catch (error) {
+        handleWorkforceError(res, error);
+      }
     },
   );
 

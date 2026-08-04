@@ -10301,9 +10301,24 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 }
 
 .finance-editor-card--addresses,
-.finance-editor-card--lines {
+.finance-editor-card--lines,
+.finance-editor-card--attachments {
   grid-column: 1 / -1;
 }
+
+.finance-attachments__dropzone { border: 1px dashed var(--titan-border); border-radius: var(--titan-radius-lg); padding: var(--titan-space-5); text-align: center; }
+.finance-attachments__dropzone--active { border-color: var(--titan-accent); }
+.finance-attachments__actions { display: flex; flex-wrap: wrap; gap: var(--titan-space-3); justify-content: center; }
+.finance-attachments__file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+.finance-attachments__list { list-style: none; padding: 0; margin: var(--titan-space-4) 0 0; display: flex; flex-direction: column; gap: var(--titan-space-3); }
+.finance-attachments__item { display: grid; grid-template-columns: 5rem minmax(0,1fr) auto; gap: var(--titan-space-3); padding: var(--titan-space-3); border: 1px solid var(--titan-border); border-radius: var(--titan-radius-md); }
+.finance-attachments__thumb { width: 5rem; height: 5rem; object-fit: cover; border-radius: var(--titan-radius-sm); }
+.finance-attachment-thumb--file, .finance-attachment-thumb--loading { width: 5rem; height: 5rem; display: flex; align-items: center; justify-content: center; border: 1px solid var(--titan-border); border-radius: var(--titan-radius-sm); }
+.finance-attachments__item-actions { display: flex; flex-direction: column; gap: 0.25rem; }
+.finance-attachments__inline-error { color: var(--titan-danger, #f87171); font-size: 0.875rem; }
+.finance-attachments__picker { margin-top: var(--titan-space-4); padding: var(--titan-space-3); border: 1px solid var(--titan-border); border-radius: var(--titan-radius-md); }
+.finance-attachments__picker-item { display: flex; justify-content: space-between; gap: var(--titan-space-3); padding: var(--titan-space-2) 0; }
+.finance-attachments__badge { margin-left: var(--titan-space-2); font-size: 0.6875rem; color: var(--titan-accent); }
 
 .finance-editor__bottom-grid {
   grid-column: 1 / -1;

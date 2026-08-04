@@ -13,6 +13,7 @@ import {
   type DocumentPhoto,
   type DocumentSection,
   type DocumentTotals,
+  type FinanceDocumentAddressSnapshot,
   type TitanDocumentType,
   type TitanReportKind,
 } from '@titan/shared';
@@ -53,6 +54,12 @@ export type TitanDocumentViewProps = {
   /** Google review link. Reports and invoices show a QR when it is configured. */
   reviewUrl?: string | null;
   reviewQrSvg?: string | null;
+  /** Finance preview — omit the legacy title field entirely. */
+  hideTitle?: boolean;
+  hidePaymentOptions?: boolean;
+  customerReference?: string | null;
+  documentAddresses?: FinanceDocumentAddressSnapshot | null;
+  vatRateLabel?: string;
 };
 
 function formatMoney(cents: number, currency = 'ZAR'): string {
@@ -181,7 +188,8 @@ function SectionRenderer(props: SectionRendererProps) {
         <Panel kind={section.kind} title={heading}>
           <div className="titan-doc__grid">
             <Field label="Reference" value={props.documentNumber} />
-            <Field label="Title" value={props.title} />
+            <Field label="Customer reference" value={props.customerReference} />
+            {!props.hideTitle && props.title ? <Field label="Title" value={props.title} /> : null}
             <Field label="Issued" value={formatDate(props.issuedAt) ?? 'Draft — not yet issued'} />
             {!isReport ? <Field label="Due" value={formatDate(props.dueDate)} /> : null}
           </div>
@@ -196,6 +204,9 @@ function SectionRenderer(props: SectionRendererProps) {
             <Field label="Contact" value={props.customer?.contactPerson} />
             <Field label="Email" value={props.customer?.email} />
             <Field label="Phone" value={props.customer?.phone} />
+            <Field label="Billing address" value={props.documentAddresses?.billingAddress} />
+            <Field label="Site address" value={props.documentAddresses?.siteAddress} />
+            <Field label="Postal address" value={props.documentAddresses?.postalAddress} />
             <Field label="Address" value={props.property?.addressLine} />
             <Field label="Suburb" value={props.property?.suburb} />
             <Field label="City" value={props.property?.city} />
@@ -376,6 +387,7 @@ function SectionRenderer(props: SectionRendererProps) {
     case 'totals': {
       if (isReport || !props.totals) return null;
       const totals = props.totals;
+      const vatLabel = props.vatRateLabel ?? 'VAT (15%)';
       return (
         <Panel kind={section.kind} title={heading}>
           <div className="titan-doc__totals">
@@ -384,7 +396,7 @@ function SectionRenderer(props: SectionRendererProps) {
               <span>{formatMoney(totals.subtotalCents, totals.currency)}</span>
             </div>
             <div className="titan-doc__totals-row">
-              <span>VAT (15%)</span>
+              <span>{vatLabel}</span>
               <span>{formatMoney(totals.vatCents, totals.currency)}</span>
             </div>
             <div className="titan-doc__totals-row titan-doc__totals-row--grand">
@@ -476,8 +488,8 @@ function SectionRenderer(props: SectionRendererProps) {
     }
 
     case 'payment_options': {
-      // Reports and quotes never show banking or a payment link.
-      if (isReport) return null;
+      // Reports, quotes and finance previews never show banking or a payment link.
+      if (isReport || props.hidePaymentOptions) return null;
       const link = props.paymentLink;
       return (
         <Panel kind={section.kind} title={heading}>

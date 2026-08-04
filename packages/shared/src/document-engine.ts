@@ -945,6 +945,8 @@ export type DocumentPhoto = {
   position: number;
   fileName: string;
   mimeType: string;
+  /** When false, the photo is omitted from finance PDF preview output. Defaults to true for images. */
+  includeInPdf?: boolean;
 };
 
 export type AddDocumentPhotoInput = {
@@ -955,7 +957,29 @@ export type AddDocumentPhotoInput = {
   caption?: string | null;
   fileName: string;
   mimeType: string;
+  includeInPdf?: boolean;
 };
+
+export function defaultDocumentPhotoIncludeInPdf(mimeType: string): boolean {
+  return mimeType.toLowerCase().startsWith('image/');
+}
+
+export function documentPhotoIncludedInPdf(photo: DocumentPhoto): boolean {
+  return photo.includeInPdf ?? defaultDocumentPhotoIncludeInPdf(photo.mimeType);
+}
+
+export function setDocumentPhotoIncludeInPdf(
+  photos: readonly DocumentPhoto[],
+  photoId: string,
+  includeInPdf: boolean,
+): DocumentPhoto[] {
+  requirePhoto(photos, photoId);
+  return photos.map((photo) => (photo.id === photoId ? { ...photo, includeInPdf } : photo));
+}
+
+export function documentPhotosForPdfPreview(photos: readonly DocumentPhoto[]): DocumentPhoto[] {
+  return normaliseDocumentPhotos(photos).filter(documentPhotoIncludedInPdf);
+}
 
 /** Authenticated, tenant-scoped source path for a document photo. */
 export function documentPhotoSourcePath(photo: DocumentPhoto): string {
@@ -988,6 +1012,7 @@ export function addDocumentPhoto(
     position: photos.filter((photo) => photo.role === input.role).length,
     fileName: input.fileName,
     mimeType: input.mimeType,
+    includeInPdf: input.includeInPdf ?? defaultDocumentPhotoIncludeInPdf(input.mimeType),
   };
   return renumberPhotosByRole([...photos, next]);
 }

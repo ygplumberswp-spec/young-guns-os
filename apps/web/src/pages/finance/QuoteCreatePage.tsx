@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { Input } from '@titan/ui';
-import type { FinanceCustomerSearchResult, JobSummary, QuoteStatus } from '@titan/shared';
+import type { DocumentPhoto, FinanceCustomerSearchResult, JobSummary, QuoteStatus } from '@titan/shared';
 import { canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomer } from '../../lib/crm-api';
@@ -29,6 +29,10 @@ import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, canViewFinanceProfit, newFinanceClientActionId } from '../../features/finance/utils';
+import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
+import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
+import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
+import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -56,6 +60,7 @@ export function QuoteCreatePage() {
   const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
   const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
   const [savedQuoteId, setSavedQuoteId] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<DocumentPhoto[]>([]);
 
   const [clientActionId] = useState(() => newFinanceClientActionId('quote'));
   const [isLoading, setIsLoading] = useState(true);
@@ -93,6 +98,7 @@ export function QuoteCreatePage() {
   });
 
   const { notify } = useTitanNotify();
+  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/quotes');
@@ -244,7 +250,7 @@ export function QuoteCreatePage() {
       const body = {
         customerId: customerId || undefined,
         jobId: jobId || null,
-        status,
+        status: 'draft' as const,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
@@ -273,6 +279,7 @@ export function QuoteCreatePage() {
           postalAddress: body.postalAddress,
           lineItems: body.lineItems,
         });
+        setStatus(updated.status);
         return updated;
       }
 
@@ -291,10 +298,12 @@ export function QuoteCreatePage() {
         clientActionId,
       });
       setSavedQuoteId(created.id);
+      setStatus(created.status);
       return created;
     },
     [
       accessToken,
+      addresses,
       canWrite,
       clientActionId,
       customerId,
@@ -305,8 +314,8 @@ export function QuoteCreatePage() {
       message,
       notify,
       priceMode,
+      quoteDate,
       savedQuoteId,
-      status,
       validUntil,
       vatMode,
     ],
@@ -314,15 +323,50 @@ export function QuoteCreatePage() {
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
+
+    if (action === 'preview_pdf') {
+      setError(null);
+      const job = customerJobs.find((entry) => entry.id === jobId);
+      await openPreview(
+        buildFinanceEditorPreviewInput({
+          kind: 'quote',
+          customer: selectedCustomer,
+          customerReference,
+          issuedAt: quoteDate,
+          dueDate: validUntil,
+          addresses,
+          lines,
+          vatMode,
+          priceMode,
+          notes: message,
+          jobReference: job?.title ?? null,
+          status,
+          photos,
+        }),
+      );
+      return;
+    }
+
     setError(null);
     setIsSaving(true);
     try {
       await draftShell.autosave.saveNow();
 
-      if (action === 'save_draft') {
-        await persistQuote(false);
+      if (action === 'save' || action === 'save_draft') {
+        const wasNew = !savedQuoteId;
+        const result = await persistQuote(false);
         draftShell.markSubmitted();
-        notify({ variant: 'saved', message: 'Quote draft saved', dedupeKey: 'quote-draft-saved' });
+        if (result?.id) {
+          invalidateQuotes();
+          if (wasNew) {
+            navigate(financeDocumentEditPath('quote', result.id), { replace: true });
+          }
+          notify({
+            variant: 'saved',
+            message: action === 'save_draft' ? 'Quote draft saved' : 'Quote saved',
+            dedupeKey: action === 'save_draft' ? 'quote-draft-saved' : 'quote-saved',
+          });
+        }
         return;
       }
 
@@ -330,14 +374,6 @@ export function QuoteCreatePage() {
         await persistQuote(false);
         draftShell.markSubmitted();
         navigate('/finance/quotes/new');
-        return;
-      }
-
-      if (action === 'preview_pdf') {
-        const record = await persistQuote(false);
-        const id = record && 'id' in record ? record.id : savedQuoteId;
-        if (id) window.open(`/finance/quotes/${id}`, '_blank', 'noopener,noreferrer');
-        else setError('Save the quote with a customer before previewing');
         return;
       }
 
@@ -387,6 +423,7 @@ export function QuoteCreatePage() {
       />
       <FinanceNav />
       {draftShell.guard.unsavedChangesModal}
+      {previewModal}
       {error ? <p className="form-error">{error}</p> : null}
 
       <div className="finance-editor finance-editor--workspace">
@@ -457,6 +494,21 @@ export function QuoteCreatePage() {
               showUnitCost={canViewUnitCost}
             />
           </FinanceEditorCard>
+
+          {accessToken ? (
+            <FinanceDocumentPhotosPanel
+              accessToken={accessToken}
+              documentType="quote"
+              quoteId={savedQuoteId}
+              jobId={jobId || undefined}
+              customerId={customerId || undefined}
+              documentNumber="Draft — Xero quote number pending"
+              customerName={selectedCustomer?.name}
+              photos={photos}
+              onPhotosChange={setPhotos}
+              disabled={!canWrite}
+            />
+          ) : null}
 
           <div className="finance-editor__bottom-grid">
             <FinanceEditorCard title="Message / Notes" className="finance-editor-card--notes">
