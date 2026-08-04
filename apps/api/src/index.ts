@@ -94,6 +94,11 @@ import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
 import { createWhatsappWebhookRouter } from './routes/whatsapp-webhook.js';
 import { createResendWebhookRouter } from './routes/resend-webhook.js';
+import {
+  createDocumentEngineRouter,
+  createYocoWebhookRouter,
+} from './routes/document-engine.js';
+import { DocumentEngineService } from './services/document-engine.service.js';
 import { ResendEmailService } from './services/resend-email.service.js';
 import { CommunicationsService } from './services/communications.service.js';
 import { createCommunicationsRouter } from './routes/communications.js';
@@ -507,6 +512,10 @@ const googleMapsService = GoogleMapsService.create({
 const vehiclePositionAddressService = VehiclePositionAddressService.create({ googleMapsService });
 const schedulingService = new SchedulingService(db, googleMapsService);
 const financeService = new FinanceService(db);
+const documentEngineService = new DocumentEngineService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+});
 const boqService = new BoqService(db, financeService);
 const draftAutosaveService = new DraftAutosaveService(db);
 const inventoryService = new InventoryService(db);
@@ -1889,6 +1898,20 @@ app.use(
   '/api/v1/webhooks/resend',
   createResendWebhookRouter({
     resendEmailService,
+  }),
+);
+app.use(
+  '/api/v1/webhooks/yoco',
+  createYocoWebhookRouter({
+    documentEngineService,
+  }),
+);
+app.use(
+  '/api/v1/documents/engine',
+  createDocumentEngineRouter({
+    documentEngineService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
   }),
 );
 app.use(

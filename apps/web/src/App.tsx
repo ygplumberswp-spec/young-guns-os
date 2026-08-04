@@ -411,6 +411,10 @@ export function App() {
                         />
                         <Route path="/finance/invoices" component={OwnerPages.InvoiceListPage} />
                         <Route
+                          path="/documents/:documentId"
+                          component={OwnerPages.TitanDocumentPage}
+                        />
+                        <Route
                           path="/finance/payments/new"
                           component={OwnerPages.PaymentCreatePage}
                         />

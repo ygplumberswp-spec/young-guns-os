@@ -128,6 +128,10 @@ export const InvoiceDetailPage = lazyNamed(
   () => import('../pages/finance/InvoiceDetailPage'),
   'InvoiceDetailPage',
 );
+export const TitanDocumentPage = lazyNamed(
+  () => import('../pages/documents/TitanDocumentPage'),
+  'TitanDocumentPage',
+);
 export const PaymentListPage = lazyNamed(
   () => import('../pages/finance/PaymentListPage'),
   'PaymentListPage',

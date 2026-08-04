@@ -201,3 +201,6 @@ export * from './enterprise-launch-center.js';
 export * from './enterprise-release-center.js';
 export * from './enterprise-production-launch.js';
 export * from './enterprise-release-management.js';
+export * from './document-engine.js';
+export * from './yoco-payment-links.js';
+export * from './qr-code.js';
