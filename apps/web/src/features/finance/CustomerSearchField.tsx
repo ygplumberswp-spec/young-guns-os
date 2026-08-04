@@ -22,6 +22,7 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
   const [newCustomer, setNewCustomer] = useState<CreateCustomerRequest>({ name: '' });
   const [isCreating, setIsCreating] = useState(false);
   const debounceRef = useRef<number | null>(null);
+  const skipSearchRef = useRef(false);
 
   useEffect(() => {
     if (value) setQuery(value.companyName?.trim() || value.name);
@@ -50,6 +51,14 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
   );
 
   useEffect(() => {
+    if (skipSearchRef.current) {
+      skipSearchRef.current = false;
+      return;
+    }
+    if (value && query === (value.companyName?.trim() || value.name)) {
+      setResults([]);
+      return;
+    }
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
     debounceRef.current = window.setTimeout(() => {
       void runSearch(query);
@@ -57,9 +66,10 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [query, runSearch]);
+  }, [query, runSearch, value]);
 
   function selectCustomer(customer: FinanceCustomerSearchResult) {
+    skipSearchRef.current = true;
     onChange(customer);
     setQuery(customer.companyName?.trim() || customer.name);
     setResults([]);

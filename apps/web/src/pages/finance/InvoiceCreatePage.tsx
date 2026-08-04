@@ -1,6 +1,6 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useSearch } from 'wouter';
-import { Button, Input } from '@titan/ui';
+import { Input } from '@titan/ui';
 import type {
   FinanceCustomerSearchResult,
   InvoiceStage,
@@ -8,27 +8,32 @@ import type {
   JobSummary,
   QuoteSummary,
 } from '@titan/shared';
-import { INVOICE_STAGE_OPTIONS, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import { INVOICE_STAGE_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
 import { fetchCustomer } from '../../lib/crm-api';
-import { createInvoice, fetchQuote, fetchQuotes } from '../../lib/finance-api';
+import { createInvoice, fetchQuote, fetchQuotes, updateInvoice } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
-import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
-import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../features/finance/FinanceDocumentActionsBar';
+import { FinanceDocumentAddressesFields } from '../../features/finance/FinanceDocumentAddressesFields';
 import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import {
-  newFinanceEditorLine,
+  createBlankEditorLines,
+  exVatCentsToDisplay,
   parseEditorLinesForApi,
+  parseEditorLinesForDraft,
+  todayDateInputValue,
+  type FinanceDocumentAddresses,
+  type FinanceDocumentPriceMode,
+  type FinanceDocumentVatMode,
   type FinanceEditorLine,
 } from '../../features/finance/finance-editor-utils';
-import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
-import { AutosaveIndicator, PageHeader } from '../../components/ux';
+import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
 
@@ -44,11 +49,24 @@ export function InvoiceCreatePage() {
   const [jobId, setJobId] = useState('');
   const [quoteId, setQuoteId] = useState('');
   const [title, setTitle] = useState('');
-  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
+  const [lines, setLines] = useState<FinanceEditorLine[]>(() => createBlankEditorLines());
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
+  const [invoiceDate, setInvoiceDate] = useState(todayDateInputValue());
   const [dueDate, setDueDate] = useState('');
-  const [notes, setNotes] = useState('');
+  const [customerReference, setCustomerReference] = useState('');
+  const [message, setMessage] = useState('');
+  const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
+    billingAddress: '',
+    siteAddress: '',
+    postalAddress: '',
+  });
+  const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
+  const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
+  const [savedInvoiceId, setSavedInvoiceId] = useState<string | null>(null);
+
+  const [approvedForSend, setApprovedForSend] = useState(false);
+
   const [clientActionId] = useState(() => newFinanceClientActionId('invoice'));
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -69,13 +87,19 @@ export function InvoiceCreatePage() {
       lines,
       status,
       stage,
+      invoiceDate,
       dueDate,
-      notes,
+      customerReference,
+      message,
+      addresses,
+      vatMode,
+      priceMode,
+      approvedForSend,
     }),
     getMeta: () => ({
       title: title || 'New invoice',
       customerLabel: selectedCustomer?.name ?? null,
-      completionPct: title.trim() && customerId ? 40 : 20,
+      completionPct: customerId ? 30 : 10,
     }),
   });
 
@@ -87,54 +111,22 @@ export function InvoiceCreatePage() {
 
   useEffect(() => {
     let cancelled = false;
-
     async function loadData() {
       if (!accessToken) {
         setIsLoading(false);
         return;
       }
-
       try {
         const [jobData, quoteData] = await Promise.all([
           fetchJobs(accessToken),
           fetchQuotes(accessToken),
         ]);
-
         if (cancelled) return;
-
         setJobs(jobData);
         setQuotes(quoteData);
-
         const params = new URLSearchParams(search);
-        const preCustomerId = params.get('customerId');
-        const preJobId = params.get('jobId');
         const preQuoteId = params.get('quoteId');
-        const prefillJob =
-          preJobId != null ? jobData.find((job) => job.id === preJobId) ?? null : null;
-
-        const customerToLoad = preCustomerId ?? prefillJob?.customerId ?? null;
-        if (customerToLoad) {
-          const customer = await fetchCustomer(accessToken, customerToLoad);
-          if (!cancelled) {
-            setSelectedCustomer({
-              id: customer.id,
-              name: customer.name,
-              companyName: customer.companyName,
-              email: customer.email,
-              phone: customer.phone,
-              xeroContactId: customer.xeroContactId,
-            });
-          }
-        }
-
-        if (!cancelled && prefillJob) {
-          setJobId(prefillJob.id);
-          setTitle(prefillJob.title);
-        }
-
-        if (!cancelled && preQuoteId) {
-          setQuoteId(preQuoteId);
-        }
+        if (preQuoteId) setQuoteId(preQuoteId);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load form data');
@@ -143,7 +135,6 @@ export function InvoiceCreatePage() {
         if (!cancelled) setIsLoading(false);
       }
     }
-
     void loadData();
     return () => {
       cancelled = true;
@@ -152,7 +143,6 @@ export function InvoiceCreatePage() {
 
   useEffect(() => {
     if (!accessToken || !quoteId) return;
-
     let cancelled = false;
     void fetchQuote(accessToken, quoteId).then((quote) => {
       if (cancelled) return;
@@ -164,55 +154,33 @@ export function InvoiceCreatePage() {
               category: line.category,
               description: line.description,
               quantity: String(line.quantity),
-              unitPrice: (line.unitPriceCents / 100).toFixed(2),
+              unitPrice: exVatCentsToDisplay(line.unitPriceCents, priceMode, line.vatRateBps),
               unitCost: '',
               vatRateBps: String(line.vatRateBps),
             }))
-          : [newFinanceEditorLine()],
+          : createBlankEditorLines(),
       );
     });
-
     return () => {
       cancelled = true;
     };
-  }, [accessToken, quoteId]);
+  }, [accessToken, quoteId, priceMode]);
 
   useEffect(() => {
-    const params = new URLSearchParams(search);
-    const draftId = params.get('draftId');
-    if (!accessToken || !draftId) return;
-
+    if (!accessToken || !customerId) return;
     let cancelled = false;
-    void fetchDraft(accessToken, draftId).then((draft) => {
-      if (cancelled || draft.recordType !== 'invoice') return;
-      const payload = draft.payload;
-      if (typeof payload.jobId === 'string') setJobId(payload.jobId);
-      if (typeof payload.quoteId === 'string') setQuoteId(payload.quoteId);
-      if (typeof payload.title === 'string') setTitle(payload.title);
-      if (Array.isArray(payload.lines)) setLines(payload.lines as FinanceEditorLine[]);
-      if (typeof payload.status === 'string') setStatus(payload.status as InvoiceStatus);
-      if (typeof payload.stage === 'string') setStage(payload.stage as InvoiceStage);
-      if (typeof payload.dueDate === 'string') setDueDate(payload.dueDate);
-      if (typeof payload.notes === 'string') setNotes(payload.notes);
-      if (typeof payload.customerId === 'string') {
-        void fetchCustomer(accessToken, payload.customerId).then((customer) => {
-          if (cancelled) return;
-          setSelectedCustomer({
-            id: customer.id,
-            name: customer.name,
-            companyName: customer.companyName,
-            email: customer.email,
-            phone: customer.phone,
-            xeroContactId: customer.xeroContactId,
-          });
-        });
-      }
+    void fetchCustomer(accessToken, customerId).then((customer) => {
+      if (cancelled) return;
+      setAddresses({
+        billingAddress: customer.billingAddress ?? '',
+        siteAddress: customer.siteAddress ?? '',
+        postalAddress: customer.siteAddress ?? '',
+      });
     });
-
     return () => {
       cancelled = true;
     };
-  }, [accessToken, search]);
+  }, [accessToken, customerId]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -226,46 +194,155 @@ export function InvoiceCreatePage() {
     lines,
     status,
     stage,
+    invoiceDate,
     dueDate,
-    notes,
+    customerReference,
+    message,
+    addresses,
+    vatMode,
+    priceMode,
+    approvedForSend,
     draftShell,
   ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
   const customerQuotes = quotes.filter((quote) => quote.customerId === customerId);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken || !canWrite || !customerId) return;
+  const persistInvoice = useCallback(
+    async (strict: boolean) => {
+      if (!accessToken || !canWrite) return null;
+      const lineItems = strict
+        ? parseEditorLinesForApi(lines, { priceMode, vatMode })
+        : parseEditorLinesForDraft(lines, { priceMode, vatMode });
 
-    const lineItems = parseEditorLinesForApi(lines);
-    if (!lineItems) {
-      setError('Add at least one line item with a description and unit price');
-      return;
-    }
+      if (strict && !lineItems) {
+        setError('Add at least one line item with a description and unit price');
+        return null;
+      }
+      if (strict && !customerId) {
+        setError('Select a customer before approving or sending');
+        return null;
+      }
+      if (strict && !title.trim()) {
+        setError('Invoice title is required');
+        return null;
+      }
 
-    setIsSaving(true);
-    setError(null);
+      if (!customerId) {
+        await draftShell.autosave.saveNow();
+        notify({ variant: 'saved', message: 'Draft saved locally', dedupeKey: 'invoice-draft-local' });
+        return null;
+      }
 
-    try {
-      const invoice = await createInvoice(accessToken, {
+      const payload = {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
-        title,
+        title: title.trim() || 'Invoice',
         status,
         stage,
-        lineItems,
+        lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-        notes: notes.trim() || null,
+        issuedAt: invoiceDate ? new Date(invoiceDate).toISOString() : null,
+        notes: message.trim() || null,
         clientActionId,
-      });
-      invalidateInvoices();
-      draftShell.markSubmitted();
-      notify({ variant: 'saved', message: 'Invoice created', dedupeKey: 'invoice-created' });
-      navigate(`/finance/invoices/${invoice.id}`);
+      };
+
+      if (savedInvoiceId) {
+        return updateInvoice(accessToken, savedInvoiceId, {
+          title: payload.title,
+          status: payload.status,
+          stage: payload.stage,
+          lineItems: payload.lineItems,
+          dueDate: payload.dueDate,
+          notes: payload.notes,
+        });
+      }
+
+      const created = await createInvoice(accessToken, payload);
+      setSavedInvoiceId(created.id);
+      return created;
+    },
+    [
+      accessToken,
+      canWrite,
+      clientActionId,
+      customerId,
+      draftShell.autosave,
+      dueDate,
+      invoiceDate,
+      jobId,
+      lines,
+      message,
+      notify,
+      priceMode,
+      quoteId,
+      savedInvoiceId,
+      stage,
+      status,
+      title,
+      vatMode,
+    ],
+  );
+
+  async function handleAction(action: FinanceDocumentAction) {
+    if (!accessToken || !canWrite) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      await draftShell.autosave.saveNow();
+
+      if (action === 'save_draft') {
+        await persistInvoice(false);
+        draftShell.markSubmitted();
+        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: 'invoice-draft-saved' });
+        return;
+      }
+
+      if (action === 'save_new') {
+        await persistInvoice(false);
+        draftShell.markSubmitted();
+        navigate('/finance/invoices/new');
+        return;
+      }
+
+      if (action === 'preview_pdf') {
+        const record = await persistInvoice(false);
+        const id = record && 'id' in record ? record.id : savedInvoiceId;
+        if (id) window.open(`/finance/invoices/${id}`, '_blank', 'noopener,noreferrer');
+        else setError('Save the invoice with a customer before previewing');
+        return;
+      }
+
+      if (action === 'approve') {
+        await persistInvoice(true);
+        const id = savedInvoiceId;
+        if (!id) return;
+        setApprovedForSend(true);
+        notify({
+          variant: 'saved',
+          message: 'Invoice approved for sending',
+          dedupeKey: 'invoice-approved',
+        });
+        return;
+      }
+
+      if (action === 'send') {
+        if (!approvedForSend) {
+          setError('Approve the invoice before sending');
+          return;
+        }
+        await persistInvoice(true);
+        const id = savedInvoiceId;
+        if (!id) return;
+        await updateInvoice(accessToken, id, { status: 'sent' });
+        setStatus('sent');
+        invalidateInvoices();
+        notify({ variant: 'saved', message: 'Invoice marked sent', dedupeKey: 'invoice-sent' });
+        navigate(`/finance/invoices/${id}`);
+      }
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to create invoice');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to save invoice');
     } finally {
       setIsSaving(false);
     }
@@ -277,21 +354,16 @@ export function InvoiceCreatePage() {
     <div className="finance-page finance-page--editor">
       <PageHeader
         title="New Invoice"
-        description="Create an invoice with line items. Official numbers are assigned by Xero after sync."
+        description="Professional invoice editor — official numbers are assigned by Xero after sync."
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
-      <AutosaveIndicator status={draftShell.autosave.status} className="finance-draft-status" />
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <form className="finance-editor" onSubmit={(event) => void handleSubmit(event)}>
+      <div className="finance-editor">
         <div className="finance-editor__layout">
-          <FinanceEditorCard
-            id="invoice-customer"
-            title="Customer Details"
-            description="Search, select or create the customer for this invoice."
-          >
+          <FinanceEditorCard title="Customer Details">
             {accessToken ? (
               <CustomerSearchField
                 accessToken={accessToken}
@@ -303,22 +375,11 @@ export function InvoiceCreatePage() {
                 }}
               />
             ) : null}
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Job (optional)</span>
-              <select
-                className="titan-input finance-editor-field"
-                value={jobId}
-                onChange={(e) => setJobId(e.target.value)}
-                disabled={!customerId}
-              >
-                <option value="">No linked job</option>
-                {customerJobs.map((job) => (
-                  <option key={job.id} value={job.id}>
-                    {job.title}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Input
+              label="Customer reference"
+              value={customerReference}
+              onChange={(e) => setCustomerReference(e.target.value)}
+            />
             <label className="titan-input-group finance-editor-field-group">
               <span className="titan-input-label">Quote (optional)</span>
               <select
@@ -335,14 +396,28 @@ export function InvoiceCreatePage() {
                 ))}
               </select>
             </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Job (optional)</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={jobId}
+                onChange={(e) => setJobId(e.target.value)}
+                disabled={!customerId}
+              >
+                <option value="">No linked job</option>
+                {customerJobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+            </label>
           </FinanceEditorCard>
 
-          <FinanceEditorCard
-            id="invoice-document"
-            title="Document Details"
-            description="Title, stage, status and due date."
-          >
+          <FinanceEditorCard title="Document Details">
             <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <Input label="Invoice date" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
+            <Input label="Due date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             <label className="titan-input-group finance-editor-field-group">
               <span className="titan-input-label">Stage</span>
               <select
@@ -357,78 +432,48 @@ export function InvoiceCreatePage() {
                 ))}
               </select>
             </label>
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Status</span>
-              <select
-                className="titan-input finance-editor-field"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
-              >
-                {INVOICE_STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <Input
-              label="Due date"
-              type="datetime-local"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
             <p className="finance-editor-hint">Draft — Xero invoice number pending until sync completes.</p>
           </FinanceEditorCard>
 
-          {accessToken && customerId ? (
-            <FinanceEditorCard
-              id="invoice-addresses"
-              title="Addresses"
-              description="Billing and site addresses on file for this customer."
-              className="finance-editor-card--full"
-            >
-              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
-            </FinanceEditorCard>
-          ) : null}
-
-          <FinanceEditorCard
-            id="invoice-lines"
-            title="Line Items"
-            description="Add work, materials and totals. VAT applies at document level."
-            className="finance-editor-card--full"
-          >
-            <FinanceLineItemsEditor lines={lines} onChange={setLines} showUnitCost={false} />
+          <FinanceEditorCard title="Addresses" className="finance-editor-card--full">
+            <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
           </FinanceEditorCard>
 
-          <FinanceEditorCard
-            id="invoice-notes"
-            title="Notes"
-            description="Additional notes shown on the invoice."
-            className="finance-editor-card--full"
-          >
+          <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
+            <FinanceLineItemsEditor
+              lines={lines}
+              onChange={setLines}
+              vatMode={vatMode}
+              onVatModeChange={setVatMode}
+              priceMode={priceMode}
+              onPriceModeChange={setPriceMode}
+              showUnitCost={false}
+            />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Message / Notes" className="finance-editor-card--full">
             <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Notes</span>
+              <span className="titan-input-label">Message to customer</span>
               <textarea
                 className="titan-input finance-editor-field finance-textarea"
-                rows={3}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
               />
             </label>
           </FinanceEditorCard>
         </div>
 
         <footer className="finance-editor__footer">
-          <FinanceEditorActions>
-            <Button type="button" variant="secondary" onClick={() => navigate('/finance/invoices')}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSaving || !title.trim() || !customerId}>
-              {isSaving ? 'Creating…' : 'Create invoice'}
-            </Button>
-          </FinanceEditorActions>
+          <FinanceDocumentActionsBar
+            isSaving={isSaving}
+            canApprove={status === 'draft' && !approvedForSend}
+            canSend={status === 'draft' && approvedForSend}
+            approveLabel="Approve"
+            onAction={(action) => void handleAction(action)}
+          />
         </footer>
-      </form>
+      </div>
     </div>
   );
 }

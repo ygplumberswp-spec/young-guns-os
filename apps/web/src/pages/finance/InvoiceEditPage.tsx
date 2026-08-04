@@ -1,19 +1,30 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { Button, Input } from '@titan/ui';
-import type { FinanceCustomerSearchResult, InvoiceStatus } from '@titan/shared';
-import { canEditInvoice, INVOICE_STATUS_OPTIONS } from '@titan/shared';
+import { Input } from '@titan/ui';
+import type { FinanceCustomerSearchResult, InvoiceStage, InvoiceStatus } from '@titan/shared';
+import { canEditInvoice, INVOICE_STAGE_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
+import { fetchCustomer } from '../../lib/crm-api';
 import { fetchInvoice, updateInvoice } from '../../lib/finance-api';
-import { useAuth } from '../../lib/auth-context';
-import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
-import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
-import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../features/finance/FinanceDocumentActionsBar';
+import { FinanceDocumentAddressesFields } from '../../features/finance/FinanceDocumentAddressesFields';
 import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import {
+  inferVatModeFromLines,
+  lineItemsToEditorLines,
+  parseEditorLinesForApi,
+  parseEditorLinesForDraft,
+  toDateInputValue,
+  type FinanceDocumentAddresses,
+  type FinanceDocumentPriceMode,
+  type FinanceDocumentVatMode,
+  type FinanceEditorLine,
+} from '../../features/finance/finance-editor-utils';
+import { useAuth } from '../../lib/auth-context';
+import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { newFinanceEditorLine, parseEditorLinesForApi, type FinanceEditorLine } from '../../features/finance/finance-editor-utils';
 import { canManageFinance } from '../../features/finance/utils';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
@@ -27,12 +38,24 @@ export function InvoiceEditPage() {
   const [, navigate] = useLocation();
 
   const [customer, setCustomer] = useState<FinanceCustomerSearchResult | null>(null);
-  const [customerId, setCustomerId] = useState('');
+  const [displayInvoiceNumber, setDisplayInvoiceNumber] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<InvoiceStatus>('draft');
+  const [stage, setStage] = useState<InvoiceStage>('standard');
+  const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
-  const [notes, setNotes] = useState('');
-  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
+  const [customerReference, setCustomerReference] = useState('');
+  const [message, setMessage] = useState('');
+  const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
+    billingAddress: '',
+    siteAddress: '',
+    postalAddress: '',
+  });
+  const [lines, setLines] = useState<FinanceEditorLine[]>([]);
+  const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
+  const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
+  const [approvedForSend, setApprovedForSend] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +68,25 @@ export function InvoiceEditPage() {
     userId: user?.id,
     recordType: 'invoice',
     recordId: invoiceId,
-    enabled: canWrite && !isLoading && Boolean(invoiceId),
-    getPayload: () => ({ title, status, dueDate, notes, lines }),
-    getMeta: () => ({ title: title || 'Edit invoice', customerLabel: customer?.name ?? null }),
+    enabled: canWrite && !isLoading && Boolean(invoiceId) && editable,
+    getPayload: () => ({
+      title,
+      status,
+      stage,
+      invoiceDate,
+      dueDate,
+      customerReference,
+      message,
+      addresses,
+      lines,
+      vatMode,
+      priceMode,
+      approvedForSend,
+    }),
+    getMeta: () => ({
+      title: title || 'Edit invoice',
+      customerLabel: customer?.name ?? null,
+    }),
   });
 
   const { notify } = useTitanNotify();
@@ -58,16 +97,24 @@ export function InvoiceEditPage() {
 
   useEffect(() => {
     let cancelled = false;
+
     async function load() {
       if (!accessToken || !invoiceId) {
         setIsLoading(false);
         return;
       }
+
       try {
         const invoice = await fetchInvoice(accessToken, invoiceId);
         if (cancelled) return;
-        setEditable(canEditInvoice(invoice));
-        setCustomerId(invoice.customerId);
+
+        const canEdit = canEditInvoice(invoice);
+        setEditable(canEdit);
+        if (!canEdit) {
+          navigate(`/finance/invoices/${invoiceId}`);
+          return;
+        }
+
         setCustomer({
           id: invoice.customerId,
           name: invoice.customerName,
@@ -76,59 +123,161 @@ export function InvoiceEditPage() {
           phone: null,
           xeroContactId: null,
         });
+        setDisplayInvoiceNumber(invoice.displayOfficialInvoiceNumber);
         setTitle(invoice.title);
         setStatus(invoice.status);
-        setDueDate(invoice.dueDate ? invoice.dueDate.slice(0, 16) : '');
-        setNotes(invoice.notes ?? '');
-        setLines(
-          invoice.lineItems.length
-            ? invoice.lineItems.map((line) => ({
-                key: line.id,
-                category: line.category as FinanceEditorLine['category'],
-                description: line.description,
-                quantity: String(line.quantity),
-                unitPrice: (line.unitPriceCents / 100).toFixed(2),
-                unitCost: '',
-                vatRateBps: String(line.vatRateBps),
-              }))
-            : [newFinanceEditorLine()],
+        setStage(invoice.stage);
+        setInvoiceDate(
+          toDateInputValue(
+            (invoice as { issuedAt?: string | null }).issuedAt ?? invoice.createdAt,
+          ),
         );
+        setDueDate(toDateInputValue(invoice.dueDate));
+        setCustomerReference(invoice.xeroReference ?? '');
+        setMessage(invoice.notes ?? '');
+        setVatMode(inferVatModeFromLines(invoice.lineItems));
+        setLines(lineItemsToEditorLines(invoice.lineItems));
+
+        const customerRecord = await fetchCustomer(accessToken, invoice.customerId);
+        if (!cancelled) {
+          setAddresses({
+            billingAddress: customerRecord.billingAddress ?? '',
+            siteAddress: customerRecord.siteAddress ?? '',
+            postalAddress: customerRecord.siteAddress ?? '',
+          });
+        }
       } catch (err) {
-        setError(err instanceof ApiClientError ? err.message : 'Unable to load invoice');
+        if (!cancelled) {
+          setError(err instanceof ApiClientError ? err.message : 'Unable to load invoice');
+        }
       } finally {
         if (!cancelled) setIsLoading(false);
       }
     }
+
     void load();
     return () => {
       cancelled = true;
     };
-  }, [accessToken, invoiceId]);
+  }, [accessToken, invoiceId, navigate]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken || !canWrite || !editable) return;
-    const lineItems = parseEditorLinesForApi(lines);
-    if (!lineItems) {
-      setError('Add at least one valid line item');
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      await updateInvoice(accessToken, invoiceId, {
-        title,
+  useEffect(() => {
+    if (isLoading || !editable) return;
+    draftShell.touchField();
+  }, [
+    isLoading,
+    editable,
+    title,
+    status,
+    stage,
+    invoiceDate,
+    dueDate,
+    customerReference,
+    message,
+    addresses,
+    lines,
+    vatMode,
+    priceMode,
+    approvedForSend,
+    draftShell,
+  ]);
+
+  const persistInvoice = useCallback(
+    async (strict: boolean) => {
+      if (!accessToken || !canWrite || !invoiceId || !editable) return null;
+
+      const lineItems = strict
+        ? parseEditorLinesForApi(lines, { priceMode, vatMode })
+        : parseEditorLinesForDraft(lines, { priceMode, vatMode });
+
+      if (strict && !lineItems) {
+        setError('Add at least one line item with a description and unit price');
+        return null;
+      }
+      if (strict && !title.trim()) {
+        setError('Invoice title is required');
+        return null;
+      }
+
+      return updateInvoice(accessToken, invoiceId, {
+        title: title.trim() || 'Invoice',
         status,
+        stage,
+        lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
-        notes: notes.trim() || null,
-        lineItems,
+        notes: message.trim() || null,
       });
-      invalidateInvoices();
-      draftShell.markSubmitted();
-      notify({ variant: 'saved', message: 'Invoice updated', dedupeKey: 'invoice-updated' });
-      navigate(`/finance/invoices/${invoiceId}`);
+    },
+    [
+      accessToken,
+      canWrite,
+      dueDate,
+      editable,
+      invoiceId,
+      lines,
+      message,
+      priceMode,
+      stage,
+      status,
+      title,
+      vatMode,
+    ],
+  );
+
+  async function handleAction(action: FinanceDocumentAction) {
+    if (!accessToken || !canWrite || !editable) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      await draftShell.autosave.saveNow();
+
+      if (action === 'save_draft') {
+        await persistInvoice(false);
+        draftShell.markSubmitted();
+        invalidateInvoices();
+        notify({ variant: 'saved', message: 'Invoice draft saved', dedupeKey: `invoice-draft-${invoiceId}` });
+        return;
+      }
+
+      if (action === 'save_new') {
+        await persistInvoice(false);
+        draftShell.markSubmitted();
+        navigate('/finance/invoices/new');
+        return;
+      }
+
+      if (action === 'preview_pdf') {
+        await persistInvoice(false);
+        window.open(`/finance/invoices/${invoiceId}`, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      if (action === 'approve') {
+        const updated = await persistInvoice(true);
+        if (!updated) return;
+        setApprovedForSend(true);
+        notify({
+          variant: 'saved',
+          message: 'Invoice approved for sending',
+          dedupeKey: `invoice-approved-${invoiceId}`,
+        });
+        return;
+      }
+
+      if (action === 'send') {
+        if (!approvedForSend) {
+          setError('Approve the invoice before sending');
+          return;
+        }
+        await persistInvoice(true);
+        await updateInvoice(accessToken, invoiceId, { status: 'sent' });
+        setStatus('sent');
+        invalidateInvoices();
+        notify({ variant: 'saved', message: 'Invoice marked sent', dedupeKey: `invoice-sent-${invoiceId}` });
+        navigate(`/finance/invoices/${invoiceId}`);
+      }
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to update invoice');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to save invoice');
     } finally {
       setIsSaving(false);
     }
@@ -136,92 +285,108 @@ export function InvoiceEditPage() {
 
   if (isLoading) return <p className="page-muted">Loading invoice…</p>;
 
+  if (!editable) {
+    return (
+      <div className="finance-page finance-page--editor">
+        <PageHeader title="Edit Invoice" backFallbackHref={`/finance/invoices/${invoiceId}`} />
+        <FinanceNav />
+        <p className="form-error">This invoice is synced with Xero and cannot be edited locally.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="finance-page finance-page--editor">
       <PageHeader
-        title="Edit Invoice"
+        title={`Edit Invoice${displayInvoiceNumber ? ` · ${displayInvoiceNumber}` : ''}`}
         description={customer ? customer.name : undefined}
         backFallbackHref={`/finance/invoices/${invoiceId}`}
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
-      {!editable ? (
-        <p className="form-error">This invoice is synced with Xero and cannot be edited locally.</p>
-      ) : null}
-      {error ? <p className="form-error">{error}</p> : null}
       {draftShell.guard.unsavedChangesModal}
+      {error ? <p className="form-error">{error}</p> : null}
 
-      <form
-        className="finance-editor"
-        onSubmit={(event) => void handleSubmit(event)}
-        onChange={() => draftShell.touchField()}
-      >
+      <div className="finance-editor">
         <div className="finance-editor__layout">
-          <FinanceEditorCard id="invoice-edit-customer" title="Customer Details">
-            <CustomerSearchField accessToken={accessToken!} value={customer} onChange={() => {}} disabled />
+          <FinanceEditorCard title="Customer Details">
+            {accessToken ? (
+              <CustomerSearchField accessToken={accessToken} value={customer} onChange={() => {}} disabled />
+            ) : null}
+            <Input
+              label="Customer reference"
+              value={customerReference}
+              onChange={(e) => setCustomerReference(e.target.value)}
+              placeholder="PO number, site reference, etc."
+            />
           </FinanceEditorCard>
 
-          <FinanceEditorCard id="invoice-edit-document" title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={!editable} />
+          <FinanceEditorCard title="Document Details">
+            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <Input
+              label="Invoice date"
+              type="date"
+              value={invoiceDate}
+              onChange={(e) => setInvoiceDate(e.target.value)}
+            />
+            <Input label="Due date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Status</span>
+              <span className="titan-input-label">Stage</span>
               <select
                 className="titan-input finance-editor-field"
-                value={status}
-                disabled={!editable}
-                onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+                value={stage}
+                onChange={(e) => setStage(e.target.value as InvoiceStage)}
               >
-                {INVOICE_STATUS_OPTIONS.map((option) => (
+                {INVOICE_STAGE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </select>
             </label>
-            <Input
-              label="Due date"
-              type="datetime-local"
-              value={dueDate}
-              disabled={!editable}
-              onChange={(e) => setDueDate(e.target.value)}
+            <p className="finance-editor-hint">{displayInvoiceNumber || 'Draft'} — Xero remains the numbering authority.</p>
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Addresses" className="finance-editor-card--full">
+            <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
+            <FinanceLineItemsEditor
+              lines={lines}
+              onChange={setLines}
+              vatMode={vatMode}
+              onVatModeChange={setVatMode}
+              priceMode={priceMode}
+              onPriceModeChange={setPriceMode}
+              showUnitCost={false}
             />
           </FinanceEditorCard>
 
-          {accessToken && customerId ? (
-            <FinanceEditorCard id="invoice-edit-addresses" title="Addresses" className="finance-editor-card--full">
-              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
-            </FinanceEditorCard>
-          ) : null}
-
-          <FinanceEditorCard id="invoice-edit-lines" title="Line Items" className="finance-editor-card--full">
-            <FinanceLineItemsEditor lines={lines} onChange={setLines} disabled={!editable} showUnitCost={false} />
-          </FinanceEditorCard>
-
-          <FinanceEditorCard id="invoice-edit-notes" title="Notes" className="finance-editor-card--full">
+          <FinanceEditorCard title="Message / Notes" className="finance-editor-card--full">
             <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Notes</span>
+              <span className="titan-input-label">Message to customer</span>
               <textarea
                 className="titan-input finance-editor-field finance-textarea"
-                rows={3}
-                value={notes}
-                disabled={!editable}
-                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Notes shown on the invoice document"
               />
             </label>
           </FinanceEditorCard>
         </div>
 
         <footer className="finance-editor__footer">
-          <FinanceEditorActions>
-            <Button type="button" variant="secondary" onClick={() => navigate(`/finance/invoices/${invoiceId}`)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSaving || !editable}>
-              {isSaving ? 'Saving…' : 'Save invoice'}
-            </Button>
-          </FinanceEditorActions>
+          <FinanceDocumentActionsBar
+            isSaving={isSaving}
+            canApprove={status === 'draft' && !approvedForSend}
+            canSend={status === 'draft' && approvedForSend}
+            approveLabel="Approve"
+            onAction={(action) => void handleAction(action)}
+          />
         </footer>
-      </form>
+      </div>
     </div>
   );
 }

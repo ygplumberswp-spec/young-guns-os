@@ -1,18 +1,25 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useRoute } from 'wouter';
-import { Button, Input } from '@titan/ui';
+import { Input } from '@titan/ui';
 import type { JobSummary, QuoteStatus } from '@titan/shared';
-import { QUOTE_STATUS_OPTIONS } from '@titan/shared';
+import { canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchQuote, updateQuote } from '../../lib/finance-api';
+import { fetchCustomer } from '../../lib/crm-api';
+import { fetchQuote, issueQuote, updateQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
-import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
-import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
-import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../features/finance/FinanceDocumentActionsBar';
+import { FinanceDocumentAddressesFields } from '../../features/finance/FinanceDocumentAddressesFields';
 import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
+import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import {
-  newFinanceEditorLine,
+  inferVatModeFromLines,
+  lineItemsToEditorLines,
   parseEditorLinesForApi,
+  parseEditorLinesForDraft,
+  toDateInputValue,
+  type FinanceDocumentAddresses,
+  type FinanceDocumentPriceMode,
+  type FinanceDocumentVatMode,
   type FinanceEditorLine,
 } from '../../features/finance/finance-editor-utils';
 import { useAuth } from '../../lib/auth-context';
@@ -31,25 +38,32 @@ export function QuoteEditPage() {
   const [, navigate] = useLocation();
 
   const [jobs, setJobs] = useState<JobSummary[]>([]);
+  const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [displayQuoteNumber, setDisplayQuoteNumber] = useState('');
   const [jobId, setJobId] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
+  const [quoteDate, setQuoteDate] = useState('');
   const [validUntil, setValidUntil] = useState('');
-  const [notes, setNotes] = useState('');
-  const [scopeOfWork, setScopeOfWork] = useState('');
-  const [exclusions, setExclusions] = useState('');
-  const [paymentTerms, setPaymentTerms] = useState('');
-  const [lines, setLines] = useState<FinanceEditorLine[]>([newFinanceEditorLine()]);
-  const [belowFloorOverride, setBelowFloorOverride] = useState(false);
-  const [belowFloorReason, setBelowFloorReason] = useState('');
-  const [customerId, setCustomerId] = useState('');
-  const [customerName, setCustomerName] = useState('');
+  const [customerReference, setCustomerReference] = useState('');
+  const [message, setMessage] = useState('');
+  const [addresses, setAddresses] = useState<FinanceDocumentAddresses>({
+    billingAddress: '',
+    siteAddress: '',
+    postalAddress: '',
+  });
+  const [lines, setLines] = useState<FinanceEditorLine[]>([]);
+  const [vatMode, setVatMode] = useState<FinanceDocumentVatMode>('standard');
+  const [priceMode, setPriceMode] = useState<FinanceDocumentPriceMode>('excluding_vat');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+  const approvalAction = nextQuoteApprovalAction(status);
+  const canSend = canIssueQuote({ isImmutable: false, status });
 
   const draftShell = useFormDraftShell({
     accessToken,
@@ -61,18 +75,18 @@ export function QuoteEditPage() {
       jobId,
       title,
       status,
+      quoteDate,
       validUntil,
-      notes,
-      scopeOfWork,
-      exclusions,
-      paymentTerms,
+      customerReference,
+      message,
+      addresses,
       lines,
-      belowFloorOverride,
-      belowFloorReason,
-      customerId,
+      vatMode,
+      priceMode,
     }),
     getMeta: () => ({
       title: title || 'Edit quote',
+      customerLabel: customerName || null,
       completionPct: title.trim() ? 60 : 30,
     }),
   });
@@ -108,30 +122,25 @@ export function QuoteEditPage() {
         setJobs(jobData);
         setCustomerId(quote.customerId);
         setCustomerName(quote.customerName);
+        setDisplayQuoteNumber(quote.displayQuoteNumber);
         setJobId(quote.jobId ?? '');
         setTitle(quote.title);
         setStatus(quote.status);
-        setValidUntil(quote.validUntil ? quote.validUntil.slice(0, 16) : '');
-        setNotes(quote.internalNotes ?? '');
-        setScopeOfWork(quote.scopeOfWork ?? '');
-        setExclusions(quote.exclusions ?? '');
-        setPaymentTerms(quote.paymentTerms ?? '');
-        setBelowFloorOverride(quote.belowFloorOverride);
-        setBelowFloorReason(quote.belowFloorReason ?? '');
-        setLines(
-          quote.lineItems.length
-            ? quote.lineItems.map((line) => ({
-                key: line.id,
-                category: line.category,
-                description: line.description,
-                quantity: String(line.quantity),
-                unitPrice: (line.unitPriceCents / 100).toFixed(2),
-                unitCost:
-                  line.unitCostCents != null ? (line.unitCostCents / 100).toFixed(2) : '',
-                vatRateBps: String(line.vatRateBps),
-              }))
-            : [newFinanceEditorLine()],
-        );
+        setQuoteDate(toDateInputValue(quote.issuedAt ?? quote.createdAt));
+        setValidUntil(toDateInputValue(quote.validUntil));
+        setCustomerReference(quote.customerNotes ?? '');
+        setMessage((quote as { notes?: string | null }).notes ?? '');
+        setVatMode(inferVatModeFromLines(quote.lineItems));
+        setLines(lineItemsToEditorLines(quote.lineItems));
+
+        const customer = await fetchCustomer(accessToken, quote.customerId);
+        if (!cancelled) {
+          setAddresses({
+            billingAddress: customer.billingAddress ?? '',
+            siteAddress: customer.siteAddress ?? '',
+            postalAddress: customer.siteAddress ?? '',
+          });
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load quote');
@@ -155,59 +164,113 @@ export function QuoteEditPage() {
     jobId,
     title,
     status,
+    quoteDate,
     validUntil,
-    notes,
-    scopeOfWork,
-    exclusions,
-    paymentTerms,
+    customerReference,
+    message,
+    addresses,
     lines,
-    belowFloorOverride,
-    belowFloorReason,
+    vatMode,
+    priceMode,
     draftShell,
   ]);
 
   const customerJobs = jobs.filter((job) => job.customerId === customerId);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!accessToken || !canWrite || !quoteId) return;
+  const persistQuote = useCallback(
+    async (strict: boolean) => {
+      if (!accessToken || !canWrite || !quoteId) return null;
 
-    setError(null);
+      const lineItems = strict
+        ? parseEditorLinesForApi(lines, { priceMode, vatMode })
+        : parseEditorLinesForDraft(lines, { priceMode, vatMode });
 
-    if (belowFloorOverride && !belowFloorReason.trim()) {
-      setError('A reason is required when overriding the profit floor');
-      return;
-    }
+      if (strict && !lineItems) {
+        setError('Add at least one line item with a description and unit price');
+        return null;
+      }
 
-    const lineItems = parseEditorLinesForApi(lines);
-    if (!lineItems) {
-      setError('Add at least one line item with a description and unit price');
-      return;
-    }
-
-    setIsSaving(true);
-
-    try {
-      await updateQuote(accessToken, quoteId, {
+      return updateQuote(accessToken, quoteId, {
         jobId: jobId || null,
-        title,
+        title: title.trim() || 'Quote',
         status,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
-        notes: notes.trim() || null,
-        internalNotes: notes.trim() || null,
-        scopeOfWork: scopeOfWork.trim() || null,
-        exclusions: exclusions.trim() || null,
-        paymentTerms: paymentTerms.trim() || null,
-        lineItems,
-        belowFloorOverride,
-        belowFloorReason: belowFloorOverride ? belowFloorReason.trim() : null,
+        customerNotes: customerReference.trim() || null,
+        notes: message.trim() || null,
+        lineItems: lineItems!,
       });
-      invalidateQuotes();
-      draftShell.markSubmitted();
-      notify({ variant: 'saved', message: 'Quote updated', dedupeKey: `quote-updated-${quoteId}` });
-      navigate(`/finance/quotes/${quoteId}`);
+    },
+    [
+      accessToken,
+      canWrite,
+      customerReference,
+      jobId,
+      lines,
+      message,
+      priceMode,
+      quoteId,
+      status,
+      title,
+      validUntil,
+      vatMode,
+    ],
+  );
+
+  async function handleAction(action: FinanceDocumentAction) {
+    if (!accessToken || !canWrite || !quoteId) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      await draftShell.autosave.saveNow();
+
+      if (action === 'save_draft') {
+        await persistQuote(false);
+        draftShell.markSubmitted();
+        invalidateQuotes();
+        notify({ variant: 'saved', message: 'Quote draft saved', dedupeKey: `quote-draft-${quoteId}` });
+        return;
+      }
+
+      if (action === 'save_new') {
+        await persistQuote(false);
+        draftShell.markSubmitted();
+        navigate('/finance/quotes/new');
+        return;
+      }
+
+      if (action === 'preview_pdf') {
+        await persistQuote(false);
+        window.open(`/finance/quotes/${quoteId}`, '_blank', 'noopener,noreferrer');
+        return;
+      }
+
+      if (action === 'approve') {
+        if (!approvalAction) {
+          setError('Quote is already approved for sending');
+          return;
+        }
+        const updated = await persistQuote(true);
+        if (!updated) return;
+        const next = await updateQuote(accessToken, quoteId, { status: approvalAction.nextStatus });
+        setStatus(next.status);
+        invalidateQuotes();
+        notify({ variant: 'saved', message: approvalAction.label, dedupeKey: `quote-approved-${quoteId}` });
+        return;
+      }
+
+      if (action === 'send') {
+        await persistQuote(true);
+        if (!canIssueQuote({ isImmutable: false, status })) {
+          setError('Approve the quote before sending');
+          return;
+        }
+        await issueQuote(accessToken, quoteId);
+        invalidateQuotes();
+        notify({ variant: 'saved', message: 'Quote sent', dedupeKey: `quote-sent-${quoteId}` });
+        navigate(`/finance/quotes/${quoteId}`);
+      }
     } catch (err) {
-      setError(err instanceof ApiClientError ? err.message : 'Unable to update quote');
+      setError(err instanceof ApiClientError ? err.message : 'Unable to save quote');
     } finally {
       setIsSaving(false);
     }
@@ -218,32 +281,35 @@ export function QuoteEditPage() {
   return (
     <div className="finance-page finance-page--editor">
       <PageHeader
-        title="Edit Quote"
-        description="Update draft quote lines, scope and approval status."
+        title={`Edit Quote${displayQuoteNumber ? ` · ${displayQuoteNumber}` : ''}`}
+        description="Update draft quote lines and approval status — official numbers remain with Xero."
         backFallbackHref={`/finance/quotes/${quoteId}`}
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
-      {draftShell.autosave.statusLabel ? (
-        <p className="finance-draft-status">{draftShell.autosave.statusLabel}</p>
-      ) : null}
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <form className="finance-editor" onSubmit={(event) => void handleSubmit(event)}>
+      <div className="finance-editor">
         <div className="finance-editor__layout">
-          <FinanceEditorCard
-            id="quote-edit-customer"
-            title="Customer Details"
-            description="Customer is fixed for this quote."
-          >
+          <FinanceEditorCard title="Customer Details" description="Customer is fixed for this quote.">
             <div className="finance-editor-readonly-customer">
               <strong>{customerName || 'Customer'}</strong>
               <span>Customer cannot be changed on an existing quote.</span>
             </div>
+            <Input
+              label="Customer reference"
+              value={customerReference}
+              onChange={(e) => setCustomerReference(e.target.value)}
+              placeholder="PO number, site reference, etc."
+            />
             <label className="titan-input-group finance-editor-field-group">
               <span className="titan-input-label">Job (optional)</span>
-              <select className="titan-input finance-editor-field" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+              <select
+                className="titan-input finance-editor-field"
+                value={jobId}
+                onChange={(e) => setJobId(e.target.value)}
+              >
                 <option value="">No linked job</option>
                 {customerJobs.map((job) => (
                   <option key={job.id} value={job.id}>
@@ -254,113 +320,57 @@ export function QuoteEditPage() {
             </label>
           </FinanceEditorCard>
 
-          <FinanceEditorCard id="quote-edit-document" title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Status</span>
-              <select
-                className="titan-input finance-editor-field"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as QuoteStatus)}
-              >
-                {QUOTE_STATUS_OPTIONS.filter((option) =>
-                  ['draft', 'internal_review', 'approved_for_sending', 'cancelled'].includes(option.value),
-                ).map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+          <FinanceEditorCard title="Document Details">
+            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Quote title" />
+            <Input label="Quote date" type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
             <Input
-              label="Valid until"
-              type="datetime-local"
+              label="Expiry date"
+              type="date"
               value={validUntil}
               onChange={(e) => setValidUntil(e.target.value)}
             />
+            <p className="finance-editor-hint">{displayQuoteNumber || 'Draft'} — Xero remains the numbering authority.</p>
           </FinanceEditorCard>
 
-          {accessToken && customerId ? (
-            <FinanceEditorCard id="quote-edit-addresses" title="Addresses" className="finance-editor-card--full">
-              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
-            </FinanceEditorCard>
-          ) : null}
-
-          <FinanceEditorCard id="quote-edit-lines" title="Line Items" className="finance-editor-card--full">
-            <FinanceLineItemsEditor lines={lines} onChange={setLines} />
+          <FinanceEditorCard title="Addresses" className="finance-editor-card--full">
+            <FinanceDocumentAddressesFields addresses={addresses} onChange={setAddresses} />
           </FinanceEditorCard>
 
-          <FinanceEditorCard id="quote-edit-notes" title="Notes & Terms" className="finance-editor-card--full">
+          <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
+            <FinanceLineItemsEditor
+              lines={lines}
+              onChange={setLines}
+              vatMode={vatMode}
+              onVatModeChange={setVatMode}
+              priceMode={priceMode}
+              onPriceModeChange={setPriceMode}
+            />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard title="Message / Notes" className="finance-editor-card--full">
             <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Scope of work</span>
+              <span className="titan-input-label">Message to customer</span>
               <textarea
                 className="titan-input finance-editor-field finance-textarea"
-                rows={3}
-                value={scopeOfWork}
-                onChange={(e) => setScopeOfWork(e.target.value)}
-              />
-            </label>
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Exclusions</span>
-              <textarea
-                className="titan-input finance-editor-field finance-textarea"
-                rows={2}
-                value={exclusions}
-                onChange={(e) => setExclusions(e.target.value)}
-              />
-            </label>
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Payment terms</span>
-              <textarea
-                className="titan-input finance-editor-field finance-textarea"
-                rows={2}
-                value={paymentTerms}
-                onChange={(e) => setPaymentTerms(e.target.value)}
-              />
-            </label>
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Notes</span>
-              <textarea
-                className="titan-input finance-editor-field finance-textarea"
-                rows={2}
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                rows={4}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Notes shown on the quote document"
               />
             </label>
           </FinanceEditorCard>
         </div>
 
         <footer className="finance-editor__footer">
-          <label className="finance-toolbar__check checkbox-row">
-            <input
-              type="checkbox"
-              checked={belowFloorOverride}
-              onChange={(e) => setBelowFloorOverride(e.target.checked)}
-            />
-            Override profit floor (requires a reason)
-          </label>
-          {belowFloorOverride ? (
-            <label className="titan-input-group finance-editor-field-group">
-              <span className="titan-input-label">Override reason</span>
-              <textarea
-                className="titan-input finance-editor-field finance-textarea"
-                rows={2}
-                value={belowFloorReason}
-                onChange={(e) => setBelowFloorReason(e.target.value)}
-                required={belowFloorOverride}
-              />
-            </label>
-          ) : null}
-          <FinanceEditorActions>
-            <Button type="button" variant="secondary" onClick={() => navigate(`/finance/quotes/${quoteId}`)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSaving || !title.trim()}>
-              {isSaving ? 'Saving…' : 'Save changes'}
-            </Button>
-          </FinanceEditorActions>
+          <FinanceDocumentActionsBar
+            isSaving={isSaving}
+            canApprove={Boolean(approvalAction)}
+            canSend={canSend}
+            approveLabel={approvalAction?.label ?? 'Approve'}
+            onAction={(action) => void handleAction(action)}
+          />
         </footer>
-      </form>
+      </div>
     </div>
   );
 }

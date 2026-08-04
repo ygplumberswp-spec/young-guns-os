@@ -1,90 +1,126 @@
-import { Button } from '@titan/ui';
+import { useRef } from 'react';
 import { FINANCE_EDITOR_LINE_CATEGORY_OPTIONS, formatMoney } from '@titan/shared';
-import type { FinanceEditorLine } from './finance-editor-utils';
-import { calculateEditorLineTotals, newFinanceEditorLine } from './finance-editor-utils';
+import type { FinanceDocumentPriceMode, FinanceDocumentVatMode, FinanceEditorLine } from './finance-editor-utils';
+import {
+  applyDocumentVatMode,
+  calculateEditorLineTotals,
+  ensureTrailingBlankLines,
+  newFinanceEditorLine,
+} from './finance-editor-utils';
 
 type FinanceLineItemsEditorProps = {
   lines: FinanceEditorLine[];
   onChange: (lines: FinanceEditorLine[]) => void;
+  vatMode: FinanceDocumentVatMode;
+  onVatModeChange: (mode: FinanceDocumentVatMode) => void;
+  priceMode: FinanceDocumentPriceMode;
+  onPriceModeChange: (mode: FinanceDocumentPriceMode) => void;
   currency?: string;
   disabled?: boolean;
   showUnitCost?: boolean;
 };
 
-type DocumentVatMode = 'standard' | 'zero';
-
-function resolveDocumentVatMode(lines: FinanceEditorLine[]): DocumentVatMode | 'mixed' {
-  const rates = new Set(lines.map((line) => (Number.parseInt(line.vatRateBps, 10) || 0) === 0 ? 'zero' : 'standard'));
-  if (rates.size === 1) return rates.values().next().value as DocumentVatMode;
-  return 'mixed';
-}
-
 export function FinanceLineItemsEditor({
   lines,
   onChange,
+  vatMode,
+  onVatModeChange,
+  priceMode,
+  onPriceModeChange,
   currency = 'ZAR',
   disabled,
   showUnitCost = true,
 }: FinanceLineItemsEditorProps) {
-  const totals = calculateEditorLineTotals(lines);
-  const vatMode = resolveDocumentVatMode(lines);
+  const descriptionRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const totals = calculateEditorLineTotals(lines, { priceMode, vatMode });
+
+  function setLines(next: FinanceEditorLine[]) {
+    onChange(ensureTrailingBlankLines(next, 2));
+  }
 
   function updateLine(key: string, patch: Partial<FinanceEditorLine>) {
-    onChange(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)));
+    setLines(lines.map((line) => (line.key === key ? { ...line, ...patch } : line)));
   }
 
-  function setDocumentVatMode(mode: DocumentVatMode) {
-    const vatRateBps = mode === 'zero' ? '0' : '1500';
-    onChange(lines.map((line) => ({ ...line, vatRateBps })));
-  }
-
-  function moveLine(key: string, direction: -1 | 1) {
-    const index = lines.findIndex((line) => line.key === key);
-    const nextIndex = index + direction;
-    if (index < 0 || nextIndex < 0 || nextIndex >= lines.length) return;
+  function addLineAfter(key?: string) {
+    const index = key ? lines.findIndex((line) => line.key === key) : lines.length - 1;
     const next = [...lines];
-    [next[index], next[nextIndex]] = [next[nextIndex]!, next[index]!];
-    onChange(next);
+    const insertAt = index >= 0 ? index + 1 : next.length;
+    next.splice(insertAt, 0, newFinanceEditorLine());
+    setLines(next);
+    const newKey = next[insertAt]!.key;
+    window.requestAnimationFrame(() => descriptionRefs.current[newKey]?.focus());
+  }
+
+  function handleVatModeChange(mode: FinanceDocumentVatMode) {
+    onVatModeChange(mode);
+    onChange(applyDocumentVatMode(lines, mode));
+  }
+
+  function handleLineEnter(event: React.KeyboardEvent, lineKey: string, isLastRow: boolean) {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    if (isLastRow) addLineAfter(lineKey);
+  }
+
+  function handleFormKeyDown(event: React.KeyboardEvent) {
+    if (event.key === 'Enter' && (event.target as HTMLElement).tagName !== 'TEXTAREA') {
+      event.preventDefault();
+    }
   }
 
   return (
-    <div className="finance-line-items finance-line-items--editor">
+    <div className="finance-line-items finance-line-items--editor" onKeyDown={handleFormKeyDown}>
       <div className="finance-line-items__toolbar">
-        <div
-          className="finance-vat-selector"
-          role="group"
-          aria-label="Document VAT treatment"
-        >
-          <span className="finance-vat-selector__label">VAT treatment</span>
-          <div className="finance-vat-selector__options">
-            <button
-              type="button"
-              className={`finance-vat-selector__option${vatMode === 'standard' ? ' finance-vat-selector__option--active' : ''}`}
-              disabled={disabled}
-              aria-pressed={vatMode === 'standard'}
-              onClick={() => setDocumentVatMode('standard')}
-            >
-              VAT 15%
-            </button>
-            <button
-              type="button"
-              className={`finance-vat-selector__option${vatMode === 'zero' ? ' finance-vat-selector__option--active' : ''}`}
-              disabled={disabled}
-              aria-pressed={vatMode === 'zero'}
-              onClick={() => setDocumentVatMode('zero')}
-            >
-              No VAT
-            </button>
+        <div className="finance-line-items__toolbar-group">
+          <div className="finance-vat-selector" role="group" aria-label="Document VAT treatment">
+            <span className="finance-vat-selector__label">VAT</span>
+            <div className="finance-vat-selector__options">
+              <button
+                type="button"
+                className={`finance-vat-selector__option${vatMode === 'standard' ? ' finance-vat-selector__option--active' : ''}`}
+                disabled={disabled}
+                aria-pressed={vatMode === 'standard'}
+                onClick={() => handleVatModeChange('standard')}
+              >
+                VAT 15%
+              </button>
+              <button
+                type="button"
+                className={`finance-vat-selector__option${vatMode === 'zero' ? ' finance-vat-selector__option--active' : ''}`}
+                disabled={disabled}
+                aria-pressed={vatMode === 'zero'}
+                onClick={() => handleVatModeChange('zero')}
+              >
+                No VAT
+              </button>
+            </div>
+          </div>
+
+          <div className="finance-vat-selector" role="group" aria-label="Price entry mode">
+            <span className="finance-vat-selector__label">Prices</span>
+            <div className="finance-vat-selector__options">
+              <button
+                type="button"
+                className={`finance-vat-selector__option${priceMode === 'excluding_vat' ? ' finance-vat-selector__option--active' : ''}`}
+                disabled={disabled}
+                aria-pressed={priceMode === 'excluding_vat'}
+                onClick={() => onPriceModeChange('excluding_vat')}
+              >
+                Excl. VAT
+              </button>
+              <button
+                type="button"
+                className={`finance-vat-selector__option${priceMode === 'including_vat' ? ' finance-vat-selector__option--active' : ''}`}
+                disabled={disabled}
+                aria-pressed={priceMode === 'including_vat'}
+                onClick={() => onPriceModeChange('including_vat')}
+              >
+                Incl. VAT
+              </button>
+            </div>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          disabled={disabled}
-          onClick={() => onChange([...lines, newFinanceEditorLine()])}
-        >
-          Add line
-        </Button>
       </div>
 
       <div className="finance-table-wrap finance-line-items__table-wrap">
@@ -94,7 +130,7 @@ export function FinanceLineItemsEditor({
               <th>Category</th>
               <th>Description</th>
               <th>Qty</th>
-              <th>Unit price (ex VAT)</th>
+              <th>{priceMode === 'including_vat' ? 'Unit price (incl. VAT)' : 'Unit price (ex VAT)'}</th>
               {showUnitCost ? <th>Unit cost</th> : null}
               <th>Line total</th>
               <th className="finance-line-items__actions-col" aria-label="Line actions" />
@@ -102,7 +138,8 @@ export function FinanceLineItemsEditor({
           </thead>
           <tbody>
             {lines.map((line, index) => {
-              const lineTotals = calculateEditorLineTotals([line]);
+              const lineTotals = calculateEditorLineTotals([line], { priceMode, vatMode });
+              const isLastRow = index === lines.length - 1;
               return (
                 <tr key={line.key} className="finance-line-items__row">
                   <td data-label="Category">
@@ -126,12 +163,15 @@ export function FinanceLineItemsEditor({
                   </td>
                   <td data-label="Description">
                     <input
-                      className="titan-input finance-editor-field"
+                      ref={(el) => {
+                        descriptionRefs.current[line.key] = el;
+                      }}
+                      className="titan-input finance-editor-field finance-editor-field--description"
                       value={line.description}
                       disabled={disabled}
-                      required
                       aria-label={`Line ${index + 1} description`}
                       placeholder="Describe the work or material"
+                      onKeyDown={(e) => handleLineEnter(e, line.key, isLastRow)}
                       onChange={(e) => updateLine(line.key, { description: e.target.value })}
                     />
                   </td>
@@ -142,6 +182,7 @@ export function FinanceLineItemsEditor({
                       disabled={disabled}
                       inputMode="decimal"
                       aria-label={`Line ${index + 1} quantity`}
+                      onKeyDown={(e) => handleLineEnter(e, line.key, isLastRow)}
                       onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
                     />
                   </td>
@@ -153,6 +194,7 @@ export function FinanceLineItemsEditor({
                       inputMode="decimal"
                       aria-label={`Line ${index + 1} unit price`}
                       placeholder="0.00"
+                      onKeyDown={(e) => handleLineEnter(e, line.key, isLastRow)}
                       onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
                     />
                   </td>
@@ -175,27 +217,9 @@ export function FinanceLineItemsEditor({
                   <td className="finance-line-items__actions">
                     <button
                       type="button"
-                      className="finance-line-items__action-btn"
-                      disabled={disabled || index === 0}
-                      onClick={() => moveLine(line.key, -1)}
-                      aria-label={`Move line ${index + 1} up`}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      className="finance-line-items__action-btn"
-                      disabled={disabled || index === lines.length - 1}
-                      onClick={() => moveLine(line.key, 1)}
-                      aria-label={`Move line ${index + 1} down`}
-                    >
-                      ↓
-                    </button>
-                    <button
-                      type="button"
                       className="finance-line-items__action-btn finance-line-items__action-btn--remove"
-                      disabled={disabled || lines.length === 1}
-                      onClick={() => onChange(lines.filter((item) => item.key !== line.key))}
+                      disabled={disabled || lines.length <= 1}
+                      onClick={() => setLines(lines.filter((item) => item.key !== line.key))}
                       aria-label={`Remove line ${index + 1}`}
                     >
                       ×
@@ -208,13 +232,19 @@ export function FinanceLineItemsEditor({
         </table>
       </div>
 
+      <div className="finance-line-items__add-row">
+        <button type="button" className="finance-line-items__add-btn" disabled={disabled} onClick={() => addLineAfter()}>
+          + Add line
+        </button>
+      </div>
+
       <aside className="finance-line-items__totals-panel" aria-label="Document totals">
         <div className="finance-line-items__totals-row">
           <span>Subtotal</span>
           <strong className="tabular-nums">{formatMoney(totals.subtotalCents, currency)}</strong>
         </div>
         <div className="finance-line-items__totals-row">
-          <span>VAT (15%)</span>
+          <span>VAT ({vatMode === 'zero' ? '0' : '15'}%)</span>
           <strong className="tabular-nums">{formatMoney(totals.vatTotalCents, currency)}</strong>
         </div>
         <div className="finance-line-items__totals-row finance-line-items__totals-row--grand">

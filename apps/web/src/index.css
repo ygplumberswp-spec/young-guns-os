@@ -9999,6 +9999,26 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   border-radius: 0 var(--titan-radius-sm) var(--titan-radius-sm) 0;
 }
 
+.finance-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.finance-document-actions__primary,
+.finance-document-actions__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.finance-editor-addresses--editable {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
 /* Line items editor */
 .finance-line-items--editor {
   margin: 0;
@@ -10013,6 +10033,13 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   align-items: flex-end;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.finance-line-items__toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
 }
 
 .finance-vat-selector {
@@ -10101,6 +10128,43 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 
 .finance-line-items__qty {
   max-width: 5.5rem;
+}
+
+.finance-editor-field--description {
+  min-width: 14rem;
+  font-size: 1rem;
+}
+
+.finance-line-items__add-row {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0.25rem 0;
+}
+
+.finance-line-items__add-btn {
+  min-height: 2.75rem;
+  padding: 0.5rem 1.25rem;
+  border: 1px dashed rgba(34, 211, 238, 0.45);
+  border-radius: var(--titan-radius-md);
+  background: transparent;
+  color: var(--titan-accent);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  font-family: var(--titan-font-ui);
+  cursor: pointer;
+  transition:
+    background-color var(--titan-motion-fast) var(--titan-ease),
+    border-color var(--titan-motion-fast) var(--titan-ease);
+}
+
+.finance-line-items__add-btn:hover:not(:disabled) {
+  background: var(--titan-accent-soft);
+  border-color: var(--titan-accent);
+}
+
+.finance-line-items__add-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--titan-focus-ring);
 }
 
 .finance-line-items__actions {
@@ -10286,6 +10350,22 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   }
 
   .finance-editor__actions .titan-btn {
+    width: 100%;
+  }
+
+  .finance-document-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .finance-document-actions__primary,
+  .finance-document-actions__secondary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .finance-document-actions__primary .titan-btn,
+  .finance-document-actions__secondary .titan-btn {
     width: 100%;
   }
 }
