@@ -4,6 +4,7 @@ import type {
   CreatePaymentRequest,
   CreateQuoteRequest,
   CreateQuoteVersionRequest,
+  FinanceCatalogueItemSearchResult,
   FinanceCustomerSearchResult,
   FinanceListQuery,
   FinanceStats,
@@ -44,6 +45,22 @@ export async function searchFinanceCustomers(
     { accessToken },
   );
   return data.customers;
+}
+
+export async function searchFinanceCatalogue(
+  accessToken: string,
+  query: string,
+  excludeSourceKeys: string[] = [],
+): Promise<FinanceCatalogueItemSearchResult[]> {
+  const params = new URLSearchParams({ q: query });
+  if (excludeSourceKeys.length) {
+    params.set('exclude', excludeSourceKeys.join(','));
+  }
+  const data = await request<{ items: FinanceCatalogueItemSearchResult[] }>(
+    `/finance/catalogue/search?${params.toString()}`,
+    { accessToken },
+  );
+  return data.items;
 }
 
 export async function fetchQuotes(

@@ -9822,6 +9822,17 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 .finance-customer-search__selected-main strong { display: block; font-size: 1.0625rem; color: var(--titan-text); margin-bottom: 0.2rem; }
 .finance-customer-search__selected-main span { display: block; color: var(--titan-accent); font-size: 0.9375rem; }
 .finance-customer-search__selected-meta { margin: 0.5rem 0 0; font-size: 0.875rem; color: var(--titan-text-secondary); line-height: 1.5; }
+
+.finance-catalogue-search { position: relative; }
+.finance-catalogue-search__status { display: block; margin-top: 0.35rem; font-size: 0.8125rem; }
+.finance-catalogue-search__results { list-style: none; margin: 0.35rem 0 0; padding: 0; border: 1px solid rgba(34, 211, 238, 0.28); border-radius: var(--titan-radius-md); background: var(--titan-bg-elevated); max-height: 14rem; overflow: auto; box-shadow: var(--titan-shadow-sm); z-index: 4; position: absolute; left: 0; right: 0; }
+.finance-catalogue-search__option, .finance-catalogue-search__manual { display: block; width: 100%; text-align: left; padding: 0.65rem 0.85rem; border: 0; background: transparent; cursor: pointer; color: var(--titan-text); font-size: 0.875rem; }
+.finance-catalogue-search__option--active, .finance-catalogue-search__option:hover, .finance-catalogue-search__manual--active, .finance-catalogue-search__manual:hover { background: var(--titan-accent-soft); }
+.finance-catalogue-search__option-head { display: flex; gap: 0.5rem; align-items: baseline; flex-wrap: wrap; }
+.finance-catalogue-search__option-head strong { color: var(--titan-accent); font-size: 0.8125rem; letter-spacing: 0.02em; }
+.finance-catalogue-search__option-desc, .finance-catalogue-search__option-meta { display: block; font-size: 0.8125rem; color: var(--titan-text-secondary); line-height: 1.4; margin-top: 0.15rem; }
+.finance-catalogue-search__manual { color: var(--titan-accent); font-weight: 600; border-top: 1px solid var(--titan-border-subtle); }
+.finance-line-items__unit { min-width: 4.5rem; max-width: 6rem; }
 .finance-customer-drawer { margin-top: 1rem; padding: 1.25rem; border: 1px solid rgba(34, 211, 238, 0.28); border-radius: var(--titan-radius-lg); display: grid; gap: 1rem; background: var(--titan-surface-raised); }
 .finance-customer-drawer__title { margin: 0; font-family: var(--titan-font-display); font-size: 1.0625rem; font-weight: 700; color: var(--titan-accent); }
 .finance-customer-drawer__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: flex-end; padding-top: 0.25rem; }

@@ -7,6 +7,7 @@ import type {
   CreateQuoteVersionRequest,
   FinanceListQuery,
   FinanceStats,
+  FinanceCatalogueItemSearchResult,
   InvoiceDetail,
   InvoiceSummary,
   JobFinanceChip,
@@ -19,6 +20,7 @@ import type {
   UpdateInvoiceRequest,
 } from '@titan/shared';
 import {
+  BUILTIN_FINANCE_CATALOGUE,
   calculateLineAmounts,
   calculateQuoteProfit,
   canEditInvoice,
@@ -27,12 +29,14 @@ import {
   deriveJobPaymentLedger,
   formatInternalInvoiceNumber,
   formatMoney,
+  inventoryItemToFinanceCatalogue,
   legacyFinanceDocumentTitle,
   mapCustomerReferenceFromStorage,
   mapCustomerReferenceToStorage,
   normalizeFinanceDocumentAddresses,
   resolveInvoiceIssuedAtUpdate,
   resolveQuoteIssuedAtUpdate,
+  searchFinanceCatalogueItems,
   toFinanceDocumentAddressSnapshot,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
@@ -42,6 +46,7 @@ import {
   customers,
   invoiceLineItems,
   invoices,
+  inventoryItems,
   jobs,
   paymentReceipts,
   payments,
@@ -714,6 +719,50 @@ export class FinanceService {
       },
       CACHE_TTLS.stats,
     );
+  }
+
+  async searchCatalogueItems(
+    companyId: string,
+    query: string,
+    excludeSourceKeys: string[] = [],
+  ): Promise<FinanceCatalogueItemSearchResult[]> {
+    const trimmed = query.trim();
+    if (trimmed.length < 1) return [];
+
+    const pattern = `%${trimmed}%`;
+    const inventoryRows = await this.db.query.inventoryItems.findMany({
+      where: and(
+        eq(inventoryItems.companyId, companyId),
+        eq(inventoryItems.status, 'active'),
+        or(
+          ilike(inventoryItems.sku, pattern),
+          ilike(inventoryItems.name, pattern),
+          ilike(inventoryItems.description, pattern),
+        ),
+      ),
+      orderBy: [desc(inventoryItems.updatedAt)],
+      limit: 24,
+    });
+
+    const catalogue = [
+      ...BUILTIN_FINANCE_CATALOGUE,
+      ...inventoryRows.map((row) =>
+        inventoryItemToFinanceCatalogue({
+          id: row.id,
+          sku: row.sku,
+          name: row.name,
+          description: row.description,
+          unit: row.unit,
+          unitCostCents: row.unitCostCents,
+          sellPriceCents: row.sellPriceCents,
+        }),
+      ),
+    ];
+
+    return searchFinanceCatalogueItems(trimmed, catalogue, {
+      excludeSourceKeys,
+      limit: 12,
+    });
   }
 
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {

@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { FINANCE_EDITOR_LINE_CATEGORY_OPTIONS, formatMoney } from '@titan/shared';
+import { FinanceCatalogueItemSearchField } from './FinanceCatalogueItemSearchField';
 import type { FinanceDocumentPriceMode, FinanceDocumentVatMode, FinanceEditorLine } from './finance-editor-utils';
 import {
   applyDocumentVatMode,
@@ -9,6 +10,7 @@ import {
 } from './finance-editor-utils';
 
 type FinanceLineItemsEditorProps = {
+  accessToken: string;
   lines: FinanceEditorLine[];
   onChange: (lines: FinanceEditorLine[]) => void;
   vatMode: FinanceDocumentVatMode;
@@ -21,6 +23,7 @@ type FinanceLineItemsEditorProps = {
 };
 
 export function FinanceLineItemsEditor({
+  accessToken,
   lines,
   onChange,
   vatMode,
@@ -128,8 +131,9 @@ export function FinanceLineItemsEditor({
           <thead>
             <tr>
               <th>Category</th>
-              <th>Description</th>
+              <th>Item / description</th>
               <th>Qty</th>
+              <th>Unit</th>
               <th>{priceMode === 'including_vat' ? 'Unit price (incl. VAT)' : 'Unit price (ex VAT)'}</th>
               {showUnitCost ? <th>Unit cost</th> : null}
               <th>Line total</th>
@@ -161,18 +165,23 @@ export function FinanceLineItemsEditor({
                       ))}
                     </select>
                   </td>
-                  <td data-label="Description">
-                    <input
-                      ref={(el) => {
+                  <td data-label="Item / description">
+                    <FinanceCatalogueItemSearchField
+                      accessToken={accessToken}
+                      line={line}
+                      allLines={lines}
+                      lineIndex={index}
+                      disabled={disabled}
+                      currency={currency}
+                      priceMode={priceMode}
+                      vatMode={vatMode}
+                      inputRef={(el) => {
                         descriptionRefs.current[line.key] = el;
                       }}
-                      className="titan-input finance-editor-field finance-editor-field--description"
-                      value={line.description}
-                      disabled={disabled}
-                      aria-label={`Line ${index + 1} description`}
-                      placeholder="Describe the work or material"
-                      onKeyDown={(e) => handleLineEnter(e, line.key, isLastRow)}
-                      onChange={(e) => updateLine(line.key, { description: e.target.value })}
+                      onLineChange={(nextLine) => {
+                        setLines(lines.map((row) => (row.key === line.key ? nextLine : row)));
+                      }}
+                      onCatalogueSelected={(lineKey) => addLineAfter(lineKey)}
                     />
                   </td>
                   <td data-label="Qty">
@@ -184,6 +193,16 @@ export function FinanceLineItemsEditor({
                       aria-label={`Line ${index + 1} quantity`}
                       onKeyDown={(e) => handleLineEnter(e, line.key, isLastRow)}
                       onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
+                    />
+                  </td>
+                  <td data-label="Unit">
+                    <input
+                      className="titan-input finance-editor-field finance-line-items__unit"
+                      value={line.unit}
+                      disabled={disabled}
+                      aria-label={`Line ${index + 1} unit`}
+                      placeholder="each"
+                      onChange={(e) => updateLine(line.key, { unit: e.target.value })}
                     />
                   </td>
                   <td data-label="Unit price">

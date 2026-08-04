@@ -156,6 +156,17 @@ export function createFinanceRouter({
     });
   });
 
+  router.get('/catalogue/search', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const { companyId } = getAuth(req);
+    const q = stringQuery(req.query.q) ?? '';
+    const excludeRaw = stringQuery(req.query.exclude);
+    const excludeSourceKeys = excludeRaw
+      ? excludeRaw.split(',').map((value) => value.trim()).filter(Boolean)
+      : [];
+    const items = await financeService.searchCatalogueItems(companyId, q, excludeSourceKeys);
+    res.json({ data: { items } });
+  });
+
   router.get('/quotes', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const quotes = await financeService.listQuotes(companyId, { q: stringQuery(req.query.q), status: stringQuery(req.query.status) });

@@ -33,6 +33,7 @@ test('totals remain cents-safe with including VAT input', () => {
         category: 'labour',
         description: 'Labour',
         quantity: '2',
+        unit: 'hour',
         unitPrice: '115.00',
         unitCost: '',
         vatRateBps: '1500',

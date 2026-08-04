@@ -1,14 +1,19 @@
 import type { QuoteLineCategory } from '@titan/shared';
-import { calculateLineAmounts, parseMoneyInput } from '@titan/shared';
+import { buildCatalogueLineAutoFill, calculateLineAmounts, parseMoneyInput } from '@titan/shared';
+import type { FinanceCatalogueItemSearchResult } from '@titan/shared';
 
 export type FinanceEditorLine = {
   key: string;
   category: QuoteLineCategory;
   description: string;
   quantity: string;
+  unit: string;
   unitPrice: string;
   unitCost: string;
   vatRateBps: string;
+  /** Set when line originated from catalogue pick — used for duplicate prevention only. */
+  catalogueSourceKey?: string | null;
+  isManualLine?: boolean;
 };
 
 export type FinanceDocumentVatMode = 'standard' | 'zero';
@@ -32,9 +37,12 @@ export function newFinanceEditorLine(category: QuoteLineCategory = 'labour'): Fi
     category,
     description: '',
     quantity: '1',
+    unit: '',
     unitPrice: '',
     unitCost: '',
     vatRateBps: String(STANDARD_VAT_BPS),
+    catalogueSourceKey: null,
+    isManualLine: false,
   };
 }
 
@@ -248,9 +256,49 @@ export function lineItemsToEditorLines(
     category: line.category as QuoteLineCategory,
     description: line.description,
     quantity: String(line.quantity),
+    unit: '',
     unitPrice: exVatCentsToDisplay(line.unitPriceCents, priceMode, line.vatRateBps),
     unitCost: line.unitCostCents != null ? (line.unitCostCents / 100).toFixed(2) : '',
     vatRateBps: String(line.vatRateBps),
+    catalogueSourceKey: null,
+    isManualLine: true,
   }));
   return ensureTrailingBlankLines(mapped.length ? mapped : createBlankEditorLines(), 2);
+}
+
+export function applyCatalogueItemToEditorLine(
+  line: FinanceEditorLine,
+  item: FinanceCatalogueItemSearchResult,
+  options: { priceMode: FinanceDocumentPriceMode; vatMode: FinanceDocumentVatMode },
+): FinanceEditorLine {
+  const vatRateBps = resolveDocumentVatBps(options.vatMode);
+  const autoFill = buildCatalogueLineAutoFill(item, vatRateBps);
+  return {
+    ...line,
+    catalogueSourceKey: autoFill.catalogueSourceKey,
+    isManualLine: false,
+    category: autoFill.category,
+    description: autoFill.description,
+    quantity: autoFill.quantity,
+    unit: autoFill.unit,
+    unitPrice:
+      autoFill.unitPriceCents != null
+        ? exVatCentsToDisplay(autoFill.unitPriceCents, options.priceMode, vatRateBps)
+        : '',
+    unitCost:
+      autoFill.unitCostCents != null ? (autoFill.unitCostCents / 100).toFixed(2) : line.unitCost,
+    vatRateBps: String(autoFill.vatRateBps),
+  };
+}
+
+export function applyManualLineDescription(
+  line: FinanceEditorLine,
+  description: string,
+): FinanceEditorLine {
+  return {
+    ...line,
+    description: description.trim(),
+    catalogueSourceKey: null,
+    isManualLine: true,
+  };
 }

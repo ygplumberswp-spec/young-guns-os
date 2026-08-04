@@ -326,6 +326,7 @@ export function QuoteEditPage() {
 
           <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
             <FinanceLineItemsEditor
+              accessToken={accessToken ?? ''}
               lines={lines}
               onChange={setLines}
               vatMode={vatMode}

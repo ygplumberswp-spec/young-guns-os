@@ -152,9 +152,12 @@ export function InvoiceCreatePage() {
               category: line.category,
               description: line.description,
               quantity: String(line.quantity),
+              unit: '',
               unitPrice: exVatCentsToDisplay(line.unitPriceCents, priceMode, line.vatRateBps),
               unitCost: '',
               vatRateBps: String(line.vatRateBps),
+              catalogueSourceKey: null,
+              isManualLine: true,
             }))
           : createBlankEditorLines(),
       );
@@ -437,6 +440,7 @@ export function InvoiceCreatePage() {
 
           <FinanceEditorCard title="Line Items" className="finance-editor-card--full">
             <FinanceLineItemsEditor
+              accessToken={accessToken ?? ''}
               lines={lines}
               onChange={setLines}
               vatMode={vatMode}
