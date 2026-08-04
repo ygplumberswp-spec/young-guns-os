@@ -28,6 +28,12 @@ import {
   formatInternalInvoiceNumber,
   formatMoney,
   deriveJobPaymentLedger,
+  mapCustomerReferenceFromStorage,
+  mapCustomerReferenceToStorage,
+  normalizeFinanceDocumentAddresses,
+  resolveInvoiceIssuedAtUpdate,
+  resolveQuoteIssuedAtUpdate,
+  toFinanceDocumentAddressSnapshot,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -202,6 +208,10 @@ export class FinanceService {
       assumptions: normalizeOptionalText(input.assumptions), customerNotes: normalizeOptionalText(input.customerNotes),
       internalNotes: normalizeOptionalText(input.internalNotes), paymentTerms: normalizeOptionalText(input.paymentTerms),
       depositPercent: input.depositPercent ?? null, optionTier: normalizeOptionalText(input.optionTier), notes: normalizeOptionalText(input.notes),
+      issuedAt: parseOptionalDate(input.issuedAt),
+      billingAddress: normalizeOptionalText(input.billingAddress),
+      siteAddress: normalizeOptionalText(input.siteAddress),
+      postalAddress: normalizeOptionalText(input.postalAddress),
       clientActionId: normalizeOptionalText(input.clientActionId),
     }).returning();
     if (!created) throw new FinanceError('CREATE_FAILED', 'Unable to create quote');
@@ -264,6 +274,10 @@ export class FinanceService {
         issuedAt: parseOptionalDate(input.issuedAt) ?? new Date(),
         paymentTerms: normalizeOptionalText(input.paymentTerms),
         notes: normalizeOptionalText(input.notes),
+        xeroReference: mapCustomerReferenceToStorage(input.customerReference),
+        billingAddress: normalizeOptionalText(input.billingAddress),
+        siteAddress: normalizeOptionalText(input.siteAddress),
+        postalAddress: normalizeOptionalText(input.postalAddress),
         clientActionId: normalizeOptionalText(input.clientActionId),
       })
       .returning();
@@ -398,6 +412,8 @@ export class FinanceService {
     return {
       ...toQuoteSummary(row, profit), scopeOfWork: row.scopeOfWork, exclusions: row.exclusions, assumptions: row.assumptions,
       customerNotes: row.customerNotes, internalNotes: options.includeProfit ? row.internalNotes : null, paymentTerms: row.paymentTerms,
+      notes: row.notes ?? null,
+      addresses: toFinanceDocumentAddressSnapshot(row),
       depositPercent: row.depositPercent, optionTier: row.optionTier, discountCents: row.discountCents,
       belowFloorOverride: row.belowFloorOverride, belowFloorReason: options.includeProfit ? row.belowFloorReason : null,
       lineItems: row.lineItems.map((line) => ({
@@ -417,9 +433,20 @@ export class FinanceService {
     const settings = await this.ensureFinanceSettings(actor.companyId);
     const computed = input.lineItems ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, input.discountCents ?? current.discountCents) : null;
     if (computed) this.assertFloor(actor, computed.profit.belowFloor, input.belowFloorOverride, input.belowFloorReason, settings.allowBelowFloorWithOverride);
+    let issuedAtUpdate: Date | null | undefined;
+    try {
+      issuedAtUpdate = resolveQuoteIssuedAtUpdate(current.issuedAt, input.issuedAt, current.isImmutable);
+    } catch {
+      throw new FinanceError('VALIDATION_ERROR', 'Invalid quote date');
+    }
+    const addressUpdate = resolveDocumentAddressColumns(current, input);
     await this.db.update(quotes).set({
       title: input.title?.trim() || current.title, status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
+      jobId: input.jobId === undefined ? current.jobId : input.jobId ?? null,
+      customerNotes: input.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(input.customerNotes),
       validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil), notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
+      ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
+      ...(addressUpdate ?? {}),
       ...computed && { amountCents: computed.totalCents, subtotalCents: computed.subtotalCents, vatCents: computed.vatCents, totalCents: computed.totalCents, estimatedCostCents: computed.profit.estimatedCostCents, grossProfitCents: computed.profit.grossProfitCents, markupBps: computed.profit.markupBps, marginBps: computed.profit.marginBps, profitFloorCents: computed.profit.profitFloorCents, targetPriceCents: computed.profit.targetPriceCents },
       updatedAt: new Date(),
     }).where(eq(quotes.id, quoteId));
@@ -489,7 +516,7 @@ export class FinanceService {
   async getInvoiceDetail(companyId: string, invoiceId: string): Promise<InvoiceDetail | null> {
     const row = await this.db.query.invoices.findFirst({ where: and(eq(invoices.id, invoiceId), eq(invoices.companyId, companyId)), with: { customer: true, job: true, quote: true, lineItems: true, payments: { with: { invoice: { with: { customer: true } } } } } });
     if (!row) return null;
-    return { ...toInvoiceSummary(row), subtotalCents: row.subtotalCents, vatCents: row.vatCents, paymentTerms: row.paymentTerms, billingName: row.billingName, billingEmail: row.billingEmail, billingPhone: row.billingPhone, notes: row.notes, lineItems: row.lineItems.map(line => ({ id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents })), payments: row.payments.map(toPaymentSummary) };
+    return { ...toInvoiceSummary(row), subtotalCents: row.subtotalCents, vatCents: row.vatCents, paymentTerms: row.paymentTerms, billingName: row.billingName, billingEmail: row.billingEmail, billingPhone: row.billingPhone, notes: row.notes, addresses: toFinanceDocumentAddressSnapshot(row), lineItems: row.lineItems.map(line => ({ id: line.id, position: line.position, category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps, lineSubtotalCents: line.lineSubtotalCents, lineVatCents: line.lineVatCents, lineTotalCents: line.lineTotalCents })), payments: row.payments.map(toPaymentSummary) };
   }
 
   async updateInvoice(
@@ -511,6 +538,14 @@ export class FinanceService {
       ? quoteAmounts(input.lineItems, settings.profitFloorMarginBps, 0)
       : null;
 
+    let issuedAtUpdate: Date | null | undefined;
+    try {
+      issuedAtUpdate = resolveInvoiceIssuedAtUpdate(current.issuedAt, input.issuedAt);
+    } catch {
+      throw new FinanceError('VALIDATION_ERROR', 'Invalid invoice date');
+    }
+    const addressUpdate = resolveDocumentAddressColumns(current, input);
+
     await this.db
       .update(invoices)
       .set({
@@ -522,6 +557,11 @@ export class FinanceService {
         notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
         paymentTerms:
           input.paymentTerms === undefined ? current.paymentTerms : normalizeOptionalText(input.paymentTerms),
+        ...(input.customerReference !== undefined
+          ? { xeroReference: mapCustomerReferenceToStorage(input.customerReference) }
+          : {}),
+        ...(issuedAtUpdate !== undefined ? { issuedAt: issuedAtUpdate } : {}),
+        ...(addressUpdate ?? {}),
         ...(computed && {
           amountCents: computed.totalCents,
           subtotalCents: computed.subtotalCents,
@@ -962,6 +1002,8 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     isOverdue: Boolean(row.dueDate && row.dueDate < new Date() && ['sent', 'partial', 'overdue'].includes(row.status)),
     currency: row.currency,
     dueDate: row.dueDate ? row.dueDate.toISOString() : null,
+    issuedAt: row.issuedAt?.toISOString() ?? null,
+    customerReference: mapCustomerReferenceFromStorage(row.xeroReference),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -1014,6 +1056,39 @@ function acceptanceSummary(row: Record<string, any>) {
 function normalizeOptionalText(value: string | null | undefined): string | null {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
+}
+
+function resolveDocumentAddressColumns(
+  current: {
+    billingAddress?: string | null;
+    siteAddress?: string | null;
+    postalAddress?: string | null;
+  },
+  input: {
+    billingAddress?: string | null;
+    siteAddress?: string | null;
+    postalAddress?: string | null;
+  },
+):
+  | {
+      billingAddress: string | null;
+      siteAddress: string | null;
+      postalAddress: string | null;
+    }
+  | undefined {
+  if (
+    input.billingAddress === undefined &&
+    input.siteAddress === undefined &&
+    input.postalAddress === undefined
+  ) {
+    return undefined;
+  }
+
+  return normalizeFinanceDocumentAddresses({
+    billingAddress: input.billingAddress === undefined ? current.billingAddress : input.billingAddress,
+    siteAddress: input.siteAddress === undefined ? current.siteAddress : input.siteAddress,
+    postalAddress: input.postalAddress === undefined ? current.postalAddress : input.postalAddress,
+  });
 }
 
 function parseOptionalDate(value: string | null | undefined): Date | null {

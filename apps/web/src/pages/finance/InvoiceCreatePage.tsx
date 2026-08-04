@@ -20,6 +20,7 @@ import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import {
   createBlankEditorLines,
+  addressesToApiPayload,
   exVatCentsToDisplay,
   parseEditorLinesForApi,
   parseEditorLinesForDraft,
@@ -244,7 +245,9 @@ export function InvoiceCreatePage() {
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
         issuedAt: invoiceDate ? new Date(invoiceDate).toISOString() : null,
+        customerReference: customerReference.trim() || null,
         notes: message.trim() || null,
+        ...addressesToApiPayload(addresses),
         clientActionId,
       };
 
@@ -255,7 +258,12 @@ export function InvoiceCreatePage() {
           stage: payload.stage,
           lineItems: payload.lineItems,
           dueDate: payload.dueDate,
+          issuedAt: payload.issuedAt,
+          customerReference: payload.customerReference,
           notes: payload.notes,
+          billingAddress: payload.billingAddress,
+          siteAddress: payload.siteAddress,
+          postalAddress: payload.postalAddress,
         });
       }
 

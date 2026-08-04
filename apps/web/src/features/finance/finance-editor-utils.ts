@@ -204,6 +204,26 @@ export function todayDateInputValue(): string {
   return toDateInputValue(new Date().toISOString());
 }
 
+export function addressesToApiPayload(addresses: FinanceDocumentAddresses) {
+  return {
+    billingAddress: addresses.billingAddress.trim() || null,
+    siteAddress: addresses.siteAddress.trim() || null,
+    postalAddress: addresses.postalAddress.trim() || null,
+  };
+}
+
+export function addressesFromSnapshot(snapshot: {
+  billingAddress: string | null;
+  siteAddress: string | null;
+  postalAddress: string | null;
+}): FinanceDocumentAddresses {
+  return {
+    billingAddress: snapshot.billingAddress ?? '',
+    siteAddress: snapshot.siteAddress ?? '',
+    postalAddress: snapshot.postalAddress ?? '',
+  };
+}
+
 export function inferVatModeFromLines(
   lineItems: Array<{ vatRateBps: number }>,
 ): FinanceDocumentVatMode {

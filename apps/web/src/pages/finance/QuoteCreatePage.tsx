@@ -14,6 +14,7 @@ import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import {
   createBlankEditorLines,
+  addressesToApiPayload,
   parseEditorLinesForApi,
   parseEditorLinesForDraft,
   todayDateInputValue,
@@ -249,8 +250,10 @@ export function QuoteCreatePage() {
         title: title.trim() || 'Quote',
         status,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
+        issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
         notes: message.trim() || null,
+        ...addressesToApiPayload(addresses),
         lineItems: lineItems!,
         clientActionId,
       };
@@ -267,8 +270,12 @@ export function QuoteCreatePage() {
           title: body.title,
           status: body.status,
           validUntil: body.validUntil,
+          issuedAt: body.issuedAt,
           customerNotes: body.customerNotes,
           notes: body.notes,
+          billingAddress: body.billingAddress,
+          siteAddress: body.siteAddress,
+          postalAddress: body.postalAddress,
           lineItems: body.lineItems,
         });
         return updated;
@@ -280,8 +287,12 @@ export function QuoteCreatePage() {
         title: body.title,
         status: body.status,
         validUntil: body.validUntil,
+        issuedAt: body.issuedAt,
         customerNotes: body.customerNotes,
         notes: body.notes,
+        billingAddress: body.billingAddress,
+        siteAddress: body.siteAddress,
+        postalAddress: body.postalAddress,
         lineItems: body.lineItems,
         clientActionId,
       });

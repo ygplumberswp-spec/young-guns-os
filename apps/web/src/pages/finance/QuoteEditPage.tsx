@@ -4,7 +4,6 @@ import { Input } from '@titan/ui';
 import type { JobSummary, QuoteStatus } from '@titan/shared';
 import { canIssueQuote, nextQuoteApprovalAction } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchCustomer } from '../../lib/crm-api';
 import { fetchQuote, issueQuote, updateQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../features/finance/FinanceDocumentActionsBar';
@@ -14,6 +13,8 @@ import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsE
 import {
   inferVatModeFromLines,
   lineItemsToEditorLines,
+  addressesFromSnapshot,
+  addressesToApiPayload,
   parseEditorLinesForApi,
   parseEditorLinesForDraft,
   toDateInputValue,
@@ -129,18 +130,10 @@ export function QuoteEditPage() {
         setQuoteDate(toDateInputValue(quote.issuedAt ?? quote.createdAt));
         setValidUntil(toDateInputValue(quote.validUntil));
         setCustomerReference(quote.customerNotes ?? '');
-        setMessage((quote as { notes?: string | null }).notes ?? '');
+        setMessage(quote.notes ?? '');
+        setAddresses(addressesFromSnapshot(quote.addresses));
         setVatMode(inferVatModeFromLines(quote.lineItems));
         setLines(lineItemsToEditorLines(quote.lineItems));
-
-        const customer = await fetchCustomer(accessToken, quote.customerId);
-        if (!cancelled) {
-          setAddresses({
-            billingAddress: customer.billingAddress ?? '',
-            siteAddress: customer.siteAddress ?? '',
-            postalAddress: customer.siteAddress ?? '',
-          });
-        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load quote');
@@ -195,8 +188,10 @@ export function QuoteEditPage() {
         title: title.trim() || 'Quote',
         status,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
+        issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
         customerNotes: customerReference.trim() || null,
         notes: message.trim() || null,
+        ...addressesToApiPayload(addresses),
         lineItems: lineItems!,
       });
     },

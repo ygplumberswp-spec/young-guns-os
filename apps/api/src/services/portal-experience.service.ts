@@ -1024,6 +1024,8 @@ function toInvoiceSummary(
     ),
     currency: row.currency,
     dueDate: row.dueDate?.toISOString() ?? null,
+    issuedAt: row.issuedAt?.toISOString() ?? null,
+    customerReference: row.xeroReference ?? null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

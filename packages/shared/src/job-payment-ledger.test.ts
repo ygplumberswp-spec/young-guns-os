@@ -65,6 +65,8 @@ const baseInvoice = (overrides: Partial<InvoiceSummary>): InvoiceSummary => ({
   isOverdue: false,
   currency: 'ZAR',
   dueDate: null,
+  issuedAt: null,
+  customerReference: null,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   ...overrides,

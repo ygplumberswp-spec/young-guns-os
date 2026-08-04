@@ -1,4 +1,5 @@
 import type { JobPaymentLedger } from './job-payment-ledger.js';
+import type { FinanceDocumentAddressSnapshot } from './finance-document-roundtrip.js';
 
 export type QuoteStatus =
   | 'draft'
@@ -185,6 +186,8 @@ export type QuoteDetail = QuoteSummary & {
   discountCents: number;
   belowFloorOverride: boolean;
   belowFloorReason: string | null;
+  notes: string | null;
+  addresses: FinanceDocumentAddressSnapshot;
   lineItems: QuoteLineItemSummary[];
   acceptance: QuoteAcceptanceSummary | null;
   xeroQuoteId: string | null;
@@ -218,6 +221,9 @@ export type InvoiceSummary = {
   isOverdue: boolean;
   currency: string;
   dueDate: string | null;
+  issuedAt: string | null;
+  /** Customer-entered reference (PO/site ref) — never the official Xero invoice number. */
+  customerReference: string | null;
   xeroSyncStatus?: 'synced' | 'pending' | 'failed' | 'out_of_sync' | null;
   financialDataComplete?: boolean;
   createdAt: string;
@@ -245,6 +251,7 @@ export type InvoiceDetail = InvoiceSummary & {
   billingEmail: string | null;
   billingPhone: string | null;
   notes: string | null;
+  addresses: FinanceDocumentAddressSnapshot;
   lineItems: InvoiceLineItemSummary[];
   payments: PaymentSummary[];
 };
@@ -322,6 +329,10 @@ export type CreateQuoteRequest = {
   depositPercent?: number | null;
   optionTier?: string | null;
   notes?: string | null;
+  issuedAt?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  postalAddress?: string | null;
   lineItems: QuoteLineItemInput[];
   discountCents?: number;
   belowFloorOverride?: boolean;
@@ -365,6 +376,10 @@ export type CreateInvoiceRequest = {
   dueDate?: string | null;
   notes?: string | null;
   issuedAt?: string | null;
+  customerReference?: string | null;
+  billingAddress?: string | null;
+  siteAddress?: string | null;
+  postalAddress?: string | null;
   paymentTerms?: string | null;
   lineItems?: QuoteLineItemInput[];
   clientActionId?: string | null;

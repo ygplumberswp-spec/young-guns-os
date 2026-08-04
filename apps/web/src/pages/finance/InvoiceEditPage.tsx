@@ -4,7 +4,6 @@ import { Input } from '@titan/ui';
 import type { FinanceCustomerSearchResult, InvoiceStage, InvoiceStatus } from '@titan/shared';
 import { canEditInvoice, INVOICE_STAGE_OPTIONS } from '@titan/shared';
 import { ApiClientError } from '../../lib/api-client';
-import { fetchCustomer } from '../../lib/crm-api';
 import { fetchInvoice, updateInvoice } from '../../lib/finance-api';
 import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
 import { FinanceDocumentActionsBar, type FinanceDocumentAction } from '../../features/finance/FinanceDocumentActionsBar';
@@ -14,6 +13,8 @@ import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsE
 import {
   inferVatModeFromLines,
   lineItemsToEditorLines,
+  addressesFromSnapshot,
+  addressesToApiPayload,
   parseEditorLinesForApi,
   parseEditorLinesForDraft,
   toDateInputValue,
@@ -127,25 +128,13 @@ export function InvoiceEditPage() {
         setTitle(invoice.title);
         setStatus(invoice.status);
         setStage(invoice.stage);
-        setInvoiceDate(
-          toDateInputValue(
-            (invoice as { issuedAt?: string | null }).issuedAt ?? invoice.createdAt,
-          ),
-        );
+        setInvoiceDate(toDateInputValue(invoice.issuedAt ?? invoice.createdAt));
         setDueDate(toDateInputValue(invoice.dueDate));
-        setCustomerReference(invoice.xeroReference ?? '');
+        setCustomerReference(invoice.customerReference ?? invoice.xeroReference ?? '');
         setMessage(invoice.notes ?? '');
+        setAddresses(addressesFromSnapshot(invoice.addresses));
         setVatMode(inferVatModeFromLines(invoice.lineItems));
         setLines(lineItemsToEditorLines(invoice.lineItems));
-
-        const customerRecord = await fetchCustomer(accessToken, invoice.customerId);
-        if (!cancelled) {
-          setAddresses({
-            billingAddress: customerRecord.billingAddress ?? '',
-            siteAddress: customerRecord.siteAddress ?? '',
-            postalAddress: customerRecord.siteAddress ?? '',
-          });
-        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof ApiClientError ? err.message : 'Unable to load invoice');
@@ -205,7 +194,10 @@ export function InvoiceEditPage() {
         stage,
         lineItems: lineItems!,
         dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+        issuedAt: invoiceDate ? new Date(invoiceDate).toISOString() : null,
+        customerReference: customerReference.trim() || null,
         notes: message.trim() || null,
+        ...addressesToApiPayload(addresses),
       });
     },
     [
