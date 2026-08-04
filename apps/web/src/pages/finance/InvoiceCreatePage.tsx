@@ -14,6 +14,9 @@ import { fetchCustomer } from '../../lib/crm-api';
 import { createInvoice, fetchQuote, fetchQuotes } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
+import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
+import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import {
   newFinanceEditorLine,
@@ -271,7 +274,7 @@ export function InvoiceCreatePage() {
   if (isLoading) return <p className="page-muted">Loading form…</p>;
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--editor">
       <PageHeader
         title="New Invoice"
         description="Create an invoice with line items. Official numbers are assigned by Xero after sync."
@@ -282,104 +285,149 @@ export function InvoiceCreatePage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <form className="finance-form finance-form--wide" onSubmit={(event) => void handleSubmit(event)}>
-        {accessToken ? (
-          <CustomerSearchField
-            accessToken={accessToken}
-            value={selectedCustomer}
-            onChange={(customer) => {
-              setSelectedCustomer(customer);
-              setJobId('');
-              setQuoteId('');
-            }}
-          />
-        ) : null}
+      <form className="finance-editor" onSubmit={(event) => void handleSubmit(event)}>
+        <div className="finance-editor__layout">
+          <FinanceEditorCard
+            id="invoice-customer"
+            title="Customer Details"
+            description="Search, select or create the customer for this invoice."
+          >
+            {accessToken ? (
+              <CustomerSearchField
+                accessToken={accessToken}
+                value={selectedCustomer}
+                onChange={(customer) => {
+                  setSelectedCustomer(customer);
+                  setJobId('');
+                  setQuoteId('');
+                }}
+              />
+            ) : null}
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Job (optional)</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={jobId}
+                onChange={(e) => setJobId(e.target.value)}
+                disabled={!customerId}
+              >
+                <option value="">No linked job</option>
+                {customerJobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Quote (optional)</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={quoteId}
+                onChange={(e) => setQuoteId(e.target.value)}
+                disabled={!customerId}
+              >
+                <option value="">No linked quote</option>
+                {customerQuotes.map((quote) => (
+                  <option key={quote.id} value={quote.id}>
+                    {quote.displayQuoteNumber} · {quote.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </FinanceEditorCard>
 
-        <label className="titan-input-group">
-          <span className="titan-input-label">Job (optional)</span>
-          <select
-            className="titan-input"
-            value={jobId}
-            onChange={(e) => setJobId(e.target.value)}
-            disabled={!customerId}
+          <FinanceEditorCard
+            id="invoice-document"
+            title="Document Details"
+            description="Title, stage, status and due date."
           >
-            <option value="">No linked job</option>
-            {customerJobs.map((job) => (
-              <option key={job.id} value={job.id}>
-                {job.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Quote (optional)</span>
-          <select
-            className="titan-input"
-            value={quoteId}
-            onChange={(e) => setQuoteId(e.target.value)}
-            disabled={!customerId}
-          >
-            <option value="">No linked quote</option>
-            {customerQuotes.map((quote) => (
-              <option key={quote.id} value={quote.id}>
-                {quote.displayQuoteNumber} · {quote.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Stage</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={stage}
+                onChange={(e) => setStage(e.target.value as InvoiceStage)}
+              >
+                {INVOICE_STAGE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Status</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+              >
+                {INVOICE_STATUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input
+              label="Due date"
+              type="datetime-local"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+            <p className="finance-editor-hint">Draft — Xero invoice number pending until sync completes.</p>
+          </FinanceEditorCard>
 
-        <FinanceLineItemsEditor lines={lines} onChange={setLines} showUnitCost={false} />
+          {accessToken && customerId ? (
+            <FinanceEditorCard
+              id="invoice-addresses"
+              title="Addresses"
+              description="Billing and site addresses on file for this customer."
+              className="finance-editor-card--full"
+            >
+              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
+            </FinanceEditorCard>
+          ) : null}
 
-        <label className="titan-input-group">
-          <span className="titan-input-label">Stage</span>
-          <select
-            className="titan-input"
-            value={stage}
-            onChange={(e) => setStage(e.target.value as InvoiceStage)}
+          <FinanceEditorCard
+            id="invoice-lines"
+            title="Line Items"
+            description="Add work, materials and totals. VAT applies at document level."
+            className="finance-editor-card--full"
           >
-            {INVOICE_STAGE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Status</span>
-          <select
-            className="titan-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+            <FinanceLineItemsEditor lines={lines} onChange={setLines} showUnitCost={false} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard
+            id="invoice-notes"
+            title="Notes"
+            description="Additional notes shown on the invoice."
+            className="finance-editor-card--full"
           >
-            {INVOICE_STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Input
-          label="Due Date"
-          type="datetime-local"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
-        <p className="page-muted">
-          Draft — Xero invoice number pending until sync completes.
-        </p>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Notes</span>
-          <textarea
-            className="titan-input finance-textarea"
-            rows={3}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </label>
-        <Button type="submit" disabled={isSaving || !title.trim() || !customerId}>
-          {isSaving ? 'Creating…' : 'Create invoice'}
-        </Button>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Notes</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={3}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </label>
+          </FinanceEditorCard>
+        </div>
+
+        <footer className="finance-editor__footer">
+          <FinanceEditorActions>
+            <Button type="button" variant="secondary" onClick={() => navigate('/finance/invoices')}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving || !title.trim() || !customerId}>
+              {isSaving ? 'Creating…' : 'Create invoice'}
+            </Button>
+          </FinanceEditorActions>
+        </footer>
       </form>
     </div>
   );

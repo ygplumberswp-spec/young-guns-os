@@ -108,11 +108,11 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
   const duplicateHint = findDuplicateCustomerHint(newCustomer.name, results);
 
   return (
-    <div className="finance-customer-search">
-      <label className="titan-input-group">
-        <span className="titan-input-label">Customer</span>
+    <div className="finance-customer-search finance-customer-search--editor">
+      <label className="titan-input-group finance-editor-field-group">
+        <span className="titan-input-label">Customer search</span>
         <input
-          className="titan-input"
+          className="titan-input finance-editor-field"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -128,7 +128,21 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
         />
       </label>
 
-      {isSearching ? <p className="page-muted finance-customer-search__hint">Searching…</p> : null}
+      {value ? (
+        <div className="finance-customer-search__selected" aria-live="polite">
+          <div className="finance-customer-search__selected-main">
+            <strong>{value.name}</strong>
+            {value.companyName ? <span>{value.companyName}</span> : null}
+          </div>
+          <p className="finance-customer-search__selected-meta">
+            {[value.email, value.phone, value.xeroContactId ? `Xero: ${value.xeroContactId}` : null]
+              .filter(Boolean)
+              .join(' · ') || 'No contact details on file'}
+          </p>
+        </div>
+      ) : null}
+
+      {isSearching ? <p className="finance-editor-muted">Searching…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
       {results.length > 0 ? (
@@ -148,33 +162,76 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
           ))}
           <li>
             <button type="button" className="finance-customer-search__create" onClick={() => setShowDrawer(true)}>
-              Create new customer
+              + Create new customer
             </button>
           </li>
         </ul>
       ) : null}
 
       {showDrawer ? (
-        <div className="finance-customer-drawer">
-          <h3>New customer</h3>
-          <Input label="Customer / company name" value={newCustomer.name} onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })} required />
-          <Input label="Company / trading name" value={newCustomer.companyName ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, companyName: e.target.value })} />
-          <Input label="Contact person" value={newCustomer.contactPerson ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, contactPerson: e.target.value })} />
-          <Input label="Phone" value={newCustomer.phone ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })} />
-          <Input label="Email" value={newCustomer.email ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })} />
-          <label className="titan-input-group">
+        <div className="finance-customer-drawer finance-customer-drawer--editor">
+          <h3 className="finance-customer-drawer__title">New customer</h3>
+          <Input
+            label="Customer / company name"
+            value={newCustomer.name}
+            onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
+            required
+          />
+          <Input
+            label="Company / trading name"
+            value={newCustomer.companyName ?? ''}
+            onChange={(e) => setNewCustomer({ ...newCustomer, companyName: e.target.value })}
+          />
+          <Input
+            label="Contact person"
+            value={newCustomer.contactPerson ?? ''}
+            onChange={(e) => setNewCustomer({ ...newCustomer, contactPerson: e.target.value })}
+          />
+          <Input
+            label="Phone"
+            value={newCustomer.phone ?? ''}
+            onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+          />
+          <Input
+            label="Email"
+            value={newCustomer.email ?? ''}
+            onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+          />
+          <label className="titan-input-group finance-editor-field-group">
             <span className="titan-input-label">Billing address</span>
-            <textarea className="titan-input finance-textarea" rows={2} value={newCustomer.billingAddress ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, billingAddress: e.target.value })} />
+            <textarea
+              className="titan-input finance-editor-field finance-textarea"
+              rows={2}
+              value={newCustomer.billingAddress ?? ''}
+              onChange={(e) => setNewCustomer({ ...newCustomer, billingAddress: e.target.value })}
+            />
           </label>
-          <label className="titan-input-group">
+          <label className="titan-input-group finance-editor-field-group">
             <span className="titan-input-label">Site address</span>
-            <textarea className="titan-input finance-textarea" rows={2} value={newCustomer.siteAddress ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, siteAddress: e.target.value })} />
+            <textarea
+              className="titan-input finance-editor-field finance-textarea"
+              rows={2}
+              value={newCustomer.siteAddress ?? ''}
+              onChange={(e) => setNewCustomer({ ...newCustomer, siteAddress: e.target.value })}
+            />
           </label>
-          <Input label="VAT number" value={newCustomer.vatNumber ?? ''} onChange={(e) => setNewCustomer({ ...newCustomer, vatNumber: e.target.value })} />
-          {duplicateHint ? <p className="form-error">A similar customer may already exist. Review matches before saving.</p> : null}
+          <Input
+            label="VAT number"
+            value={newCustomer.vatNumber ?? ''}
+            onChange={(e) => setNewCustomer({ ...newCustomer, vatNumber: e.target.value })}
+          />
+          {duplicateHint ? (
+            <p className="form-error">A similar customer may already exist. Review matches before saving.</p>
+          ) : null}
           <div className="finance-customer-drawer__actions">
-            <Button type="button" variant="secondary" onClick={() => setShowDrawer(false)}>Cancel</Button>
-            <Button type="button" onClick={() => void handleCreateCustomer()} disabled={isCreating || !newCustomer.name.trim()}>
+            <Button type="button" variant="secondary" onClick={() => setShowDrawer(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void handleCreateCustomer()}
+              disabled={isCreating || !newCustomer.name.trim()}
+            >
               {isCreating ? 'Saving…' : 'Save customer'}
             </Button>
           </div>

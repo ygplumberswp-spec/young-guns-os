@@ -7,6 +7,9 @@ import { ApiClientError } from '../../lib/api-client';
 import { fetchQuote, updateQuote } from '../../lib/finance-api';
 import { fetchJobs } from '../../lib/jobs-api';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
+import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
+import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import {
   newFinanceEditorLine,
   parseEditorLinesForApi,
@@ -40,6 +43,7 @@ export function QuoteEditPage() {
   const [belowFloorOverride, setBelowFloorOverride] = useState(false);
   const [belowFloorReason, setBelowFloorReason] = useState('');
   const [customerId, setCustomerId] = useState('');
+  const [customerName, setCustomerName] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -103,6 +107,7 @@ export function QuoteEditPage() {
 
         setJobs(jobData);
         setCustomerId(quote.customerId);
+        setCustomerName(quote.customerName);
         setJobId(quote.jobId ?? '');
         setTitle(quote.title);
         setStatus(quote.status);
@@ -211,7 +216,7 @@ export function QuoteEditPage() {
   if (isLoading) return <p className="page-muted">Loading quote…</p>;
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--editor">
       <PageHeader
         title="Edit Quote"
         description="Update draft quote lines, scope and approval status."
@@ -225,105 +230,136 @@ export function QuoteEditPage() {
       {draftShell.guard.unsavedChangesModal}
       {error ? <p className="form-error">{error}</p> : null}
 
-      <form className="finance-form finance-form--wide" onSubmit={(event) => void handleSubmit(event)}>
-        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
-        <label className="titan-input-group">
-          <span className="titan-input-label">Job (optional)</span>
-          <select className="titan-input" value={jobId} onChange={(e) => setJobId(e.target.value)}>
-            <option value="">No linked job</option>
-            {customerJobs.map((job) => (
-              <option key={job.id} value={job.id}>
-                {job.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Status</span>
-          <select
-            className="titan-input"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as QuoteStatus)}
+      <form className="finance-editor" onSubmit={(event) => void handleSubmit(event)}>
+        <div className="finance-editor__layout">
+          <FinanceEditorCard
+            id="quote-edit-customer"
+            title="Customer Details"
+            description="Customer is fixed for this quote."
           >
-            {QUOTE_STATUS_OPTIONS.filter((option) =>
-              ['draft', 'internal_review', 'approved_for_sending', 'cancelled'].includes(option.value),
-            ).map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Input
-          label="Valid Until"
-          type="datetime-local"
-          value={validUntil}
-          onChange={(e) => setValidUntil(e.target.value)}
-        />
+            <div className="finance-editor-readonly-customer">
+              <strong>{customerName || 'Customer'}</strong>
+              <span>Customer cannot be changed on an existing quote.</span>
+            </div>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Job (optional)</span>
+              <select className="titan-input finance-editor-field" value={jobId} onChange={(e) => setJobId(e.target.value)}>
+                <option value="">No linked job</option>
+                {customerJobs.map((job) => (
+                  <option key={job.id} value={job.id}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </FinanceEditorCard>
 
-        <FinanceLineItemsEditor lines={lines} onChange={setLines} />
-
-        <label className="titan-input-group">
-          <span className="titan-input-label">Scope of work</span>
-          <textarea
-            className="titan-input finance-textarea"
-            rows={3}
-            value={scopeOfWork}
-            onChange={(e) => setScopeOfWork(e.target.value)}
-          />
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Exclusions</span>
-          <textarea
-            className="titan-input finance-textarea"
-            rows={2}
-            value={exclusions}
-            onChange={(e) => setExclusions(e.target.value)}
-          />
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Payment terms</span>
-          <textarea
-            className="titan-input finance-textarea"
-            rows={2}
-            value={paymentTerms}
-            onChange={(e) => setPaymentTerms(e.target.value)}
-          />
-        </label>
-        <label className="titan-input-group">
-          <span className="titan-input-label">Notes</span>
-          <textarea
-            className="titan-input finance-textarea"
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </label>
-
-        <label className="finance-toolbar__check checkbox-row">
-          <input
-            type="checkbox"
-            checked={belowFloorOverride}
-            onChange={(e) => setBelowFloorOverride(e.target.checked)}
-          />
-          Override profit floor (requires a reason)
-        </label>
-        {belowFloorOverride ? (
-          <label className="titan-input-group">
-            <span className="titan-input-label">Override reason</span>
-            <textarea
-              className="titan-input finance-textarea"
-              rows={2}
-              value={belowFloorReason}
-              onChange={(e) => setBelowFloorReason(e.target.value)}
-              required={belowFloorOverride}
+          <FinanceEditorCard id="quote-edit-document" title="Document Details">
+            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Status</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as QuoteStatus)}
+              >
+                {QUOTE_STATUS_OPTIONS.filter((option) =>
+                  ['draft', 'internal_review', 'approved_for_sending', 'cancelled'].includes(option.value),
+                ).map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input
+              label="Valid until"
+              type="datetime-local"
+              value={validUntil}
+              onChange={(e) => setValidUntil(e.target.value)}
             />
-          </label>
-        ) : null}
+          </FinanceEditorCard>
 
-        <Button type="submit" disabled={isSaving || !title.trim()}>
-          {isSaving ? 'Saving…' : 'Save changes'}
-        </Button>
+          {accessToken && customerId ? (
+            <FinanceEditorCard id="quote-edit-addresses" title="Addresses" className="finance-editor-card--full">
+              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
+            </FinanceEditorCard>
+          ) : null}
+
+          <FinanceEditorCard id="quote-edit-lines" title="Line Items" className="finance-editor-card--full">
+            <FinanceLineItemsEditor lines={lines} onChange={setLines} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard id="quote-edit-notes" title="Notes & Terms" className="finance-editor-card--full">
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Scope of work</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={3}
+                value={scopeOfWork}
+                onChange={(e) => setScopeOfWork(e.target.value)}
+              />
+            </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Exclusions</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={2}
+                value={exclusions}
+                onChange={(e) => setExclusions(e.target.value)}
+              />
+            </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Payment terms</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={2}
+                value={paymentTerms}
+                onChange={(e) => setPaymentTerms(e.target.value)}
+              />
+            </label>
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Notes</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </label>
+          </FinanceEditorCard>
+        </div>
+
+        <footer className="finance-editor__footer">
+          <label className="finance-toolbar__check checkbox-row">
+            <input
+              type="checkbox"
+              checked={belowFloorOverride}
+              onChange={(e) => setBelowFloorOverride(e.target.checked)}
+            />
+            Override profit floor (requires a reason)
+          </label>
+          {belowFloorOverride ? (
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Override reason</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={2}
+                value={belowFloorReason}
+                onChange={(e) => setBelowFloorReason(e.target.value)}
+                required={belowFloorOverride}
+              />
+            </label>
+          ) : null}
+          <FinanceEditorActions>
+            <Button type="button" variant="secondary" onClick={() => navigate(`/finance/quotes/${quoteId}`)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving || !title.trim()}>
+              {isSaving ? 'Saving…' : 'Save changes'}
+            </Button>
+          </FinanceEditorActions>
+        </footer>
       </form>
     </div>
   );

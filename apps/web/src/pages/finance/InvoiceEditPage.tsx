@@ -8,6 +8,9 @@ import { fetchInvoice, updateInvoice } from '../../lib/finance-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { CustomerSearchField } from '../../features/finance/CustomerSearchField';
+import { FinanceCustomerAddresses } from '../../features/finance/FinanceCustomerAddresses';
+import { FinanceEditorActions } from '../../features/finance/FinanceEditorActions';
+import { FinanceEditorCard } from '../../features/finance/FinanceEditorCard';
 import { FinanceLineItemsEditor } from '../../features/finance/FinanceLineItemsEditor';
 import { FinanceNav } from '../../features/finance/FinanceNav';
 import { newFinanceEditorLine, parseEditorLinesForApi, type FinanceEditorLine } from '../../features/finance/finance-editor-utils';
@@ -24,6 +27,7 @@ export function InvoiceEditPage() {
   const [, navigate] = useLocation();
 
   const [customer, setCustomer] = useState<FinanceCustomerSearchResult | null>(null);
+  const [customerId, setCustomerId] = useState('');
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [dueDate, setDueDate] = useState('');
@@ -63,6 +67,7 @@ export function InvoiceEditPage() {
         const invoice = await fetchInvoice(accessToken, invoiceId);
         if (cancelled) return;
         setEditable(canEditInvoice(invoice));
+        setCustomerId(invoice.customerId);
         setCustomer({
           id: invoice.customerId,
           name: invoice.customerName,
@@ -132,7 +137,7 @@ export function InvoiceEditPage() {
   if (isLoading) return <p className="page-muted">Loading invoice…</p>;
 
   return (
-    <div className="finance-page">
+    <div className="finance-page finance-page--editor">
       <PageHeader
         title="Edit Invoice"
         description={customer ? customer.name : undefined}
@@ -140,34 +145,82 @@ export function InvoiceEditPage() {
         guardNavigation={draftShell.guard.guardNavigation}
       />
       <FinanceNav />
-      {!editable ? <p className="form-error">This invoice is synced with Xero and cannot be edited locally.</p> : null}
+      {!editable ? (
+        <p className="form-error">This invoice is synced with Xero and cannot be edited locally.</p>
+      ) : null}
       {error ? <p className="form-error">{error}</p> : null}
       {draftShell.guard.unsavedChangesModal}
 
       <form
-        className="finance-form"
+        className="finance-editor"
         onSubmit={(event) => void handleSubmit(event)}
         onChange={() => draftShell.touchField()}
       >
-        <CustomerSearchField accessToken={accessToken!} value={customer} onChange={() => {}} disabled />
-        <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={!editable} />
-        <label className="titan-input-group">
-          <span className="titan-input-label">Status</span>
-          <select className="titan-input" value={status} disabled={!editable} onChange={(e) => setStatus(e.target.value as InvoiceStatus)}>
-            {INVOICE_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </label>
-        <Input label="Due date" type="datetime-local" value={dueDate} disabled={!editable} onChange={(e) => setDueDate(e.target.value)} />
-        <FinanceLineItemsEditor lines={lines} onChange={setLines} disabled={!editable} showUnitCost={false} />
-        <label className="titan-input-group">
-          <span className="titan-input-label">Notes</span>
-          <textarea className="titan-input finance-textarea" rows={3} value={notes} disabled={!editable} onChange={(e) => setNotes(e.target.value)} />
-        </label>
-        <div className="finance-form__actions">
-          <Button type="submit" disabled={isSaving || !editable}>{isSaving ? 'Saving…' : 'Save invoice'}</Button>
+        <div className="finance-editor__layout">
+          <FinanceEditorCard id="invoice-edit-customer" title="Customer Details">
+            <CustomerSearchField accessToken={accessToken!} value={customer} onChange={() => {}} disabled />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard id="invoice-edit-document" title="Document Details">
+            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required disabled={!editable} />
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Status</span>
+              <select
+                className="titan-input finance-editor-field"
+                value={status}
+                disabled={!editable}
+                onChange={(e) => setStatus(e.target.value as InvoiceStatus)}
+              >
+                {INVOICE_STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Input
+              label="Due date"
+              type="datetime-local"
+              value={dueDate}
+              disabled={!editable}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </FinanceEditorCard>
+
+          {accessToken && customerId ? (
+            <FinanceEditorCard id="invoice-edit-addresses" title="Addresses" className="finance-editor-card--full">
+              <FinanceCustomerAddresses accessToken={accessToken} customerId={customerId} />
+            </FinanceEditorCard>
+          ) : null}
+
+          <FinanceEditorCard id="invoice-edit-lines" title="Line Items" className="finance-editor-card--full">
+            <FinanceLineItemsEditor lines={lines} onChange={setLines} disabled={!editable} showUnitCost={false} />
+          </FinanceEditorCard>
+
+          <FinanceEditorCard id="invoice-edit-notes" title="Notes" className="finance-editor-card--full">
+            <label className="titan-input-group finance-editor-field-group">
+              <span className="titan-input-label">Notes</span>
+              <textarea
+                className="titan-input finance-editor-field finance-textarea"
+                rows={3}
+                value={notes}
+                disabled={!editable}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </label>
+          </FinanceEditorCard>
         </div>
+
+        <footer className="finance-editor__footer">
+          <FinanceEditorActions>
+            <Button type="button" variant="secondary" onClick={() => navigate(`/finance/invoices/${invoiceId}`)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSaving || !editable}>
+              {isSaving ? 'Saving…' : 'Save invoice'}
+            </Button>
+          </FinanceEditorActions>
+        </footer>
       </form>
     </div>
   );
