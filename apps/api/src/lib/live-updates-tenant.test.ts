@@ -31,8 +31,8 @@ test('broadcasts only to listeners in the same company', () => {
   liveUpdatesManager.resetForTests();
   const tenantA = mockResponse();
   const tenantB = mockResponse();
-  liveUpdatesManager.subscribe('company-a', tenantA);
-  liveUpdatesManager.subscribe('company-b', tenantB);
+  const cleanupA = liveUpdatesManager.subscribe('company-a', tenantA);
+  const cleanupB = liveUpdatesManager.subscribe('company-b', tenantB);
 
   liveUpdatesManager.broadcast({
     companyId: 'company-a',
@@ -44,13 +44,21 @@ test('broadcasts only to listeners in the same company', () => {
 
   assert.ok(tenantA.chunks.some((chunk) => chunk.includes('company-a')));
   assert.equal(tenantB.chunks.some((chunk) => chunk.includes('company-a')), false);
+
+  cleanupA();
+  cleanupB();
+  liveUpdatesManager.resetForTests();
 });
 
 test('tracks one connection per subscribed response', () => {
   liveUpdatesManager.resetForTests();
   const first = mockResponse();
   const second = mockResponse();
-  liveUpdatesManager.subscribe('company-a', first);
-  liveUpdatesManager.subscribe('company-a', second);
+  const cleanupFirst = liveUpdatesManager.subscribe('company-a', first);
+  const cleanupSecond = liveUpdatesManager.subscribe('company-a', second);
   assert.equal(liveUpdatesManager.getConnectionCount('company-a'), 2);
+
+  cleanupFirst();
+  cleanupSecond();
+  liveUpdatesManager.resetForTests();
 });

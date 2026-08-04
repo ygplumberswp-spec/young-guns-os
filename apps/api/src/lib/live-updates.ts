@@ -13,6 +13,8 @@ export type LiveUpdateEvent = {
 type LiveUpdateListener = {
   companyId: string;
   response: Response;
+  pingInterval: ReturnType<typeof setInterval>;
+  cleanup: () => void;
 };
 
 class LiveUpdatesManager {
@@ -27,32 +29,36 @@ class LiveUpdatesManager {
     response.flushHeaders?.();
     response.write(':ping\n\n');
 
-    const listener: LiveUpdateListener = { companyId, response };
-    const bucket = this.listeners.get(companyId) ?? [];
-    bucket.push(listener);
-    this.listeners.set(companyId, bucket);
-
-    const pingInterval = setInterval(() => {
-      try {
-        response.write(':ping\n\n');
-      } catch {
-        clearInterval(pingInterval);
-      }
-    }, 30000);
-
+    let cleaned = false;
     const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
       clearInterval(pingInterval);
       const current = this.listeners.get(companyId);
-      if (!current) return;
-      const next = current.filter((item) => item !== listener);
-      if (next.length === 0) this.listeners.delete(companyId);
-      else this.listeners.set(companyId, next);
+      if (current) {
+        const next = current.filter((item) => item !== listener);
+        if (next.length === 0) this.listeners.delete(companyId);
+        else this.listeners.set(companyId, next);
+      }
       try {
         response.end();
       } catch {
         /* closed */
       }
     };
+
+    const pingInterval = setInterval(() => {
+      try {
+        response.write(':ping\n\n');
+      } catch {
+        cleanup();
+      }
+    }, 30000);
+
+    const listener: LiveUpdateListener = { companyId, response, pingInterval, cleanup };
+    const bucket = this.listeners.get(companyId) ?? [];
+    bucket.push(listener);
+    this.listeners.set(companyId, bucket);
 
     response.on('close', cleanup);
     response.on('error', cleanup);
@@ -83,6 +89,11 @@ class LiveUpdatesManager {
   }
 
   resetForTests(): void {
+    for (const bucket of this.listeners.values()) {
+      for (const listener of bucket) {
+        listener.cleanup();
+      }
+    }
     this.listeners.clear();
     this.eventCounter = 0;
   }
