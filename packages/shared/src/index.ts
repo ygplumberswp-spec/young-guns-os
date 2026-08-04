@@ -46,6 +46,7 @@ export * from './finance-document-preview.js';
 export * from './finance-document-preview-html.js';
 export * from './finance-tenant-pricebook.js';
 export * from './finance-document-photo-utils.js';
+export * from './finance-document-evidence.js';
 export * from './job-payment-ledger.js';
 export * from './inventory.js';
 export * from './job-costing.js';

@@ -16,6 +16,7 @@ import {
 } from '../services/finance-document-pdf.service.js';
 import { buildFinancePreviewAttachments } from '../services/finance-document-preview-photos.service.js';
 import type { JobEvidenceStorageService } from '../services/job-evidence-storage.service.js';
+import type { FinanceDocumentEvidenceStorageService } from '../services/finance-document-evidence-storage.service.js';
 import { canViewFinanceProfit } from '@titan/shared';
 
 const quoteStatusSchema = z.enum([
@@ -167,6 +168,7 @@ type FinanceRouterDeps = {
   teamService: TeamService;
   db: DatabaseClient;
   jobEvidenceStorage: JobEvidenceStorageService;
+  financeDocumentEvidenceStorage: FinanceDocumentEvidenceStorageService;
   jwtSecret: string;
   authService: import('../services/auth.service.js').AuthService;
 };
@@ -181,6 +183,7 @@ export function createFinanceRouter({
   teamService,
   db,
   jobEvidenceStorage,
+  financeDocumentEvidenceStorage,
   jwtSecret,
   authService,
 }: FinanceRouterDeps): Router {
@@ -508,6 +511,7 @@ export function createFinanceRouter({
     preview.attachments = await buildFinancePreviewAttachments(
       db,
       jobEvidenceStorage,
+      financeDocumentEvidenceStorage,
       getAuth(req).companyId,
       parsed.data.photos,
     );

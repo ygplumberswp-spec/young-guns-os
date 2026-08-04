@@ -33,6 +33,7 @@ import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-p
 import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
+import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -334,6 +335,15 @@ export function QuoteCreatePage() {
     if (!result?.id) {
       throw new Error('Unable to save quote');
     }
+    await linkPhotosAfterFinanceSave(accessToken, {
+      documentType: 'quote',
+      recordId: result.id,
+      documentNumber: result.displayQuoteNumber ?? 'Draft — Xero quote number pending',
+      title: selectedCustomer?.name ?? 'Quote',
+      customerId,
+      jobId: jobId || null,
+      photos,
+    });
     draftShell.markSubmitted();
     invalidateQuotes();
     if (wasNew) {
@@ -347,7 +357,9 @@ export function QuoteCreatePage() {
     invalidateQuotes,
     navigate,
     persistQuote,
+    photos,
     savedQuoteId,
+    selectedCustomer?.name,
   ]);
 
   const { openPreview, previewModal } = useFinanceDocumentPreview({
@@ -395,6 +407,15 @@ export function QuoteCreatePage() {
         const result = await persistQuote(false);
         draftShell.markSubmitted();
         if (result?.id) {
+          await linkPhotosAfterFinanceSave(accessToken, {
+            documentType: 'quote',
+            recordId: result.id,
+            documentNumber: result.displayQuoteNumber ?? 'Draft — Xero quote number pending',
+            title: selectedCustomer?.name ?? 'Quote',
+            customerId,
+            jobId: jobId || null,
+            photos,
+          });
           invalidateQuotes();
           if (wasNew) {
             navigate(financeDocumentEditPath('quote', result.id), { replace: true });
@@ -539,6 +560,7 @@ export function QuoteCreatePage() {
               accessToken={accessToken}
               documentType="quote"
               quoteId={savedQuoteId}
+              draftClientActionId={clientActionId}
               jobId={jobId || undefined}
               customerId={customerId || undefined}
               documentNumber="Draft — Xero quote number pending"

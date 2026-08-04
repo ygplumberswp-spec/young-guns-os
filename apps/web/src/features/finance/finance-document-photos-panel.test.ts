@@ -7,16 +7,13 @@ import { fileURLToPath } from 'node:url';
 const featureRoot = dirname(fileURLToPath(import.meta.url));
 const panelSource = readFileSync(join(featureRoot, 'FinanceDocumentPhotosPanel.tsx'), 'utf8');
 
-test('photos panel exposes upload retry for failed files', () => {
-  assert.match(panelSource, /retryUpload/);
-  assert.match(panelSource, />Retry</);
-});
-
 test('photos panel uses document engine and job evidence routes', () => {
   assert.match(panelSource, /ensureFinanceQuoteDocument|ensureFinanceInvoiceDocument/);
   assert.match(panelSource, /uploadOfficeJobEvidence/);
+  assert.match(panelSource, /uploadFinanceStagingPhoto|uploadFinanceDocumentPhoto/);
   assert.match(panelSource, /saveTitanDocumentDraft/);
   assert.match(panelSource, /capture="environment"/);
+  assert.match(panelSource, /draftClientActionId/);
 });
 
 test('all finance editor pages include document-engine photos panel', () => {

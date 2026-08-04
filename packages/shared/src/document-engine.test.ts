@@ -575,14 +575,14 @@ test('a photo always resolves to a real stored evidence file', () => {
   );
 });
 
-test('photos without a stored documentation reference are refused', () => {
+test('photos without stored evidence metadata are refused', () => {
   assert.throws(
     () => addDocumentPhoto([], { ...photoInput('p', 'before'), documentationId: '  ' }),
-    /stored job documentation record/,
+    /stored evidence metadata/,
   );
   assert.throws(
     () => addDocumentPhoto([], { ...photoInput('p', 'before'), jobId: '' }),
-    /stored job documentation record/,
+    /stored evidence metadata/,
   );
   assert.throws(
     () => addDocumentPhoto([], { ...photoInput('p', 'before'), role: 'sideways' as never }),
@@ -596,7 +596,21 @@ test('photos without a stored documentation reference are refused', () => {
         fileName: 'x.jpg',
         mimeType: 'image/jpeg',
       }),
-    /stored job documentation record/,
+    /stored evidence metadata/,
+  );
+});
+
+test('finance direct photos require a tenant storage key', () => {
+  assert.throws(
+    () =>
+      addDocumentPhoto([], {
+        ...photoInput('p', 'additional'),
+        documentationId: 'file-1',
+        jobId: '00000000-0000-4000-8000-000000000001',
+        source: 'finance_direct',
+        storageKey: '',
+      }),
+    /storage key/,
   );
 });
 

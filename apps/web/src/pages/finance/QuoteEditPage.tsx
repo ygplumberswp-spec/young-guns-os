@@ -32,6 +32,7 @@ import { canManageFinance, canViewFinanceProfit } from '../../features/finance/u
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
+import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -225,10 +226,19 @@ export function QuoteEditPage() {
     if (!result) {
       throw new Error('Unable to save quote');
     }
+    await linkPhotosAfterFinanceSave(accessToken, {
+      documentType: 'quote',
+      recordId: quoteId,
+      documentNumber: displayQuoteNumber || 'Draft — Xero quote number pending',
+      title: customerName || 'Quote',
+      customerId,
+      jobId: jobId || null,
+      photos,
+    });
     setStatus(result.status);
     draftShell.markSubmitted();
     invalidateQuotes();
-  }, [accessToken, canWrite, draftShell, invalidateQuotes, persistQuote, quoteId]);
+  }, [accessToken, canWrite, customerId, customerName, displayQuoteNumber, draftShell, invalidateQuotes, jobId, persistQuote, photos, quoteId]);
 
   const { openPreview, previewModal } = useFinanceDocumentPreview({
     accessToken,
@@ -275,7 +285,18 @@ export function QuoteEditPage() {
 
       if (action === 'save' || action === 'save_draft') {
         const result = await persistQuote(false);
-        if (result) setStatus(result.status);
+        if (result) {
+          setStatus(result.status);
+          await linkPhotosAfterFinanceSave(accessToken, {
+            documentType: 'quote',
+            recordId: quoteId,
+            documentNumber: displayQuoteNumber || 'Draft — Xero quote number pending',
+            title: customerName || 'Quote',
+            customerId,
+            jobId: jobId || null,
+            photos,
+          });
+        }
         draftShell.markSubmitted();
         invalidateQuotes();
         notify({

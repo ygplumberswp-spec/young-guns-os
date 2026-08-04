@@ -24,6 +24,7 @@ import { attachDbQueryDiagnostics, createDbDiagnosticsMiddleware } from './lib/d
 import { resolveCompanyMediaStoragePath } from './lib/company-media-storage.js';
 import { resolveJobEvidenceStoragePath } from './lib/job-evidence-storage.js';
 import { JobEvidenceStorageService } from './services/job-evidence-storage.service.js';
+import { FinanceDocumentEvidenceStorageService } from './services/finance-document-evidence-storage.service.js';
 import { createErrorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { requestContextMiddleware } from './middleware/request-context.js';
 import { configureRbacAudit } from './middleware/rbac.js';
@@ -496,6 +497,9 @@ logger.info(
 );
 const companyMediaService = new CompanyMediaService(companyMediaStoragePath);
 const jobEvidenceStorageService = new JobEvidenceStorageService(jobEvidenceStoragePath);
+const financeDocumentEvidenceStorageService = new FinanceDocumentEvidenceStorageService(
+  jobEvidenceStoragePath,
+);
 const teamService = new TeamService(db, env.APP_URL);
 const enterpriseSaasPlatformService = new EnterpriseSaasPlatformService({
   db,
@@ -1769,6 +1773,7 @@ app.use(
     teamService,
     db,
     jobEvidenceStorage: jobEvidenceStorageService,
+    financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),
@@ -1921,6 +1926,7 @@ app.use(
   '/api/v1/documents/engine',
   createDocumentEngineRouter({
     documentEngineService,
+    financeDocumentEvidenceStorage: financeDocumentEvidenceStorageService,
     jwtSecret: env.JWT_SECRET,
     authService,
   }),

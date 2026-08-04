@@ -1,14 +1,22 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import type { DocumentPhoto } from '@titan/shared';
+import { financeDirectPhotoContentUrl } from '../../lib/document-engine-api-client';
 import { jobEvidenceContentUrl } from '../../lib/jobs-api';
 
 const blobCache = new Map<string, string>();
 
-async function loadPhotoBlob(accessToken: string, jobId: string, documentationId: string): Promise<string | null> {
-  const key = `${accessToken}:${jobId}:${documentationId}`;
+async function loadPhotoBlob(accessToken: string, photo: DocumentPhoto): Promise<string | null> {
+  const key = photo.source === 'finance_direct' && photo.storageKey
+    ? `${accessToken}:direct:${photo.storageKey}`
+    : `${accessToken}:${photo.jobId}:${photo.documentationId}`;
   const cached = blobCache.get(key);
   if (cached) return cached;
 
-  const response = await fetch(jobEvidenceContentUrl(jobId, documentationId), {
+  const url = photo.source === 'finance_direct' && photo.storageKey
+    ? financeDirectPhotoContentUrl(photo.storageKey)
+    : jobEvidenceContentUrl(photo.jobId, photo.documentationId);
+
+  const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   if (!response.ok) return null;
@@ -20,7 +28,7 @@ async function loadPhotoBlob(accessToken: string, jobId: string, documentationId
 
 type FinanceDocumentPhotoThumbnailProps = {
   accessToken: string;
-  photo: { jobId: string; documentationId: string; mimeType: string; fileName: string };
+  photo: DocumentPhoto;
   alt: string;
   className?: string;
   fallback?: ReactNode;
@@ -39,13 +47,13 @@ export function FinanceDocumentPhotoThumbnail({
   useEffect(() => {
     if (!isImage) return;
     let cancelled = false;
-    void loadPhotoBlob(accessToken, photo.jobId, photo.documentationId).then((url) => {
+    void loadPhotoBlob(accessToken, photo).then((url) => {
       if (!cancelled && url) setSrc(url);
     });
     return () => {
       cancelled = true;
     };
-  }, [accessToken, isImage, photo.documentationId, photo.jobId]);
+  }, [accessToken, isImage, photo]);
 
   if (!isImage) {
     return (

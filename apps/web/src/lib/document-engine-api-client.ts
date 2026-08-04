@@ -200,3 +200,40 @@ export async function approveInvoicePaymentLink(
     { method: 'POST', accessToken, body },
   );
 }
+
+export type FinanceDirectPhotoUploadResult = {
+  fileId: string;
+  storageKey: string;
+  mimeType: string;
+  sizeBytes: number;
+  fileName: string;
+  jobId: string;
+  source: 'finance_direct';
+};
+
+export async function uploadFinanceStagingPhoto(
+  accessToken: string,
+  draftClientActionId: string,
+  body: { fileName: string; mimeType: string; dataBase64: string; clientActionId?: string },
+) {
+  return request<FinanceDirectPhotoUploadResult>(
+    `${BASE}/finance/staging/${encodeURIComponent(draftClientActionId)}/photos/upload`,
+    { method: 'POST', accessToken, body },
+  );
+}
+
+export async function uploadFinanceDocumentPhoto(
+  accessToken: string,
+  documentId: string,
+  body: { fileName: string; mimeType: string; dataBase64: string; clientActionId?: string },
+) {
+  return request<FinanceDirectPhotoUploadResult>(
+    `${BASE}/finance/documents/${documentId}/photos/upload`,
+    { method: 'POST', accessToken, body },
+  );
+}
+
+export function financeDirectPhotoContentUrl(storageKey: string): string {
+  const params = new URLSearchParams({ storageKey });
+  return `/api/v1/documents/engine/finance/photos/content?${params.toString()}`;
+}

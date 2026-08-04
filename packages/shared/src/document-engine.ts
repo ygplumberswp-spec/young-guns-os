@@ -931,13 +931,12 @@ export type DocumentPhotoRole = 'before' | 'after' | 'additional';
 export const DOCUMENT_PHOTO_ROLES: readonly DocumentPhotoRole[] = ['before', 'after', 'additional'];
 
 /**
- * A photo always points at a real stored job-evidence record. There is no URL
- * field an editor can type into, so a document cannot show an image that is not
- * genuinely attached to the job.
+ * A photo points at stored evidence bytes — either job evidence (`job_evidence`)
+ * or finance direct storage (`finance_direct`) when no job is linked.
  */
 export type DocumentPhoto = {
   id: string;
-  /** Existing `mobile_job_documentation` row that holds the bytes. */
+  /** Existing `mobile_job_documentation` row when source is job_evidence. */
   documentationId: string;
   jobId: string;
   role: DocumentPhotoRole;
@@ -947,6 +946,10 @@ export type DocumentPhoto = {
   mimeType: string;
   /** When false, the photo is omitted from finance PDF preview output. Defaults to true for images. */
   includeInPdf?: boolean;
+  /** Defaults to job_evidence for legacy rows. */
+  source?: 'job_evidence' | 'finance_direct';
+  /** Tenant-scoped storage key when source is finance_direct. */
+  storageKey?: string | null;
 };
 
 export type AddDocumentPhotoInput = {
@@ -958,6 +961,8 @@ export type AddDocumentPhotoInput = {
   fileName: string;
   mimeType: string;
   includeInPdf?: boolean;
+  source?: 'job_evidence' | 'finance_direct';
+  storageKey?: string | null;
 };
 
 export function defaultDocumentPhotoIncludeInPdf(mimeType: string): boolean {
@@ -996,7 +1001,13 @@ export function addDocumentPhoto(
   if (!input.documentationId.trim() || !input.jobId.trim()) {
     throw new DocumentEngineError(
       'VALIDATION_ERROR',
-      'A photo must reference a stored job documentation record',
+      'A photo must reference stored evidence metadata',
+    );
+  }
+  if (input.source === 'finance_direct' && !input.storageKey?.trim()) {
+    throw new DocumentEngineError(
+      'VALIDATION_ERROR',
+      'Finance direct photos require a storage key',
     );
   }
   if (!DOCUMENT_PHOTO_ROLES.includes(input.role)) {
@@ -1013,6 +1024,8 @@ export function addDocumentPhoto(
     fileName: input.fileName,
     mimeType: input.mimeType,
     includeInPdf: input.includeInPdf ?? defaultDocumentPhotoIncludeInPdf(input.mimeType),
+    source: input.source ?? 'job_evidence',
+    storageKey: input.storageKey ?? null,
   };
   return renumberPhotosByRole([...photos, next]);
 }
@@ -1035,7 +1048,14 @@ export function setDocumentPhotoCaption(
 export function replaceDocumentPhoto(
   photos: readonly DocumentPhoto[],
   photoId: string,
-  replacement: { documentationId: string; jobId: string; fileName: string; mimeType: string },
+  replacement: {
+    documentationId: string;
+    jobId: string;
+    fileName: string;
+    mimeType: string;
+    source?: 'job_evidence' | 'finance_direct';
+    storageKey?: string | null;
+  },
 ): DocumentPhoto[] {
   requirePhoto(photos, photoId);
   if (!replacement.documentationId.trim() || !replacement.jobId.trim()) {

@@ -4,10 +4,12 @@ import type { DatabaseClient } from '@titan/db';
 import { and, eq } from 'drizzle-orm';
 import { mobileJobDocumentation } from '@titan/db';
 import type { JobEvidenceStorageService } from './job-evidence-storage.service.js';
+import type { FinanceDocumentEvidenceStorageService } from './finance-document-evidence-storage.service.js';
 
 export async function buildFinancePreviewAttachments(
   db: DatabaseClient,
-  storage: JobEvidenceStorageService,
+  jobStorage: JobEvidenceStorageService,
+  financeStorage: FinanceDocumentEvidenceStorageService,
   companyId: string,
   photos: DocumentPhoto[] | undefined,
 ): Promise<FinanceDocumentPreviewAttachment[]> {
@@ -17,6 +19,26 @@ export async function buildFinancePreviewAttachments(
   const attachments: FinanceDocumentPreviewAttachment[] = [];
 
   for (const photo of included) {
+    if (photo.source === 'finance_direct' && photo.storageKey) {
+      try {
+        const { metadata, buffer } = await financeStorage.read({
+          companyId,
+          storageKey: photo.storageKey,
+        });
+        const mimeType = metadata.mimeType.toLowerCase();
+        if (!mimeType.startsWith('image/') && mimeType !== 'application/pdf') continue;
+        attachments.push({
+          fileName: photo.fileName,
+          mimeType,
+          caption: photo.caption,
+          dataUrl: `data:${mimeType};base64,${buffer.toString('base64')}`,
+        });
+      } catch {
+        continue;
+      }
+      continue;
+    }
+
     const doc = await db.query.mobileJobDocumentation.findFirst({
       where: and(
         eq(mobileJobDocumentation.id, photo.documentationId),
@@ -26,7 +48,7 @@ export async function buildFinancePreviewAttachments(
     });
     if (!doc?.storageKey) continue;
 
-    const { buffer, metadata } = await storage.read({
+    const { buffer, metadata } = await jobStorage.read({
       companyId,
       jobId: photo.jobId,
       storageKey: doc.storageKey,

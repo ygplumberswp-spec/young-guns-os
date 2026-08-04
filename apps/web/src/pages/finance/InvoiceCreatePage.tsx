@@ -40,6 +40,7 @@ import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-p
 import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
+import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -310,6 +311,15 @@ export function InvoiceCreatePage() {
     if (!result?.id) {
       throw new Error('Unable to save invoice');
     }
+    await linkPhotosAfterFinanceSave(accessToken, {
+      documentType: 'invoice',
+      recordId: result.id,
+      documentNumber: 'Draft — Xero invoice number pending',
+      title: selectedCustomer?.name ?? 'Invoice',
+      customerId,
+      jobId: jobId || null,
+      photos,
+    });
     draftShell.markSubmitted();
     invalidateInvoices();
     if (wasNew) {
@@ -323,7 +333,9 @@ export function InvoiceCreatePage() {
     invalidateInvoices,
     navigate,
     persistInvoice,
+    photos,
     savedInvoiceId,
+    selectedCustomer?.name,
   ]);
 
   const { openPreview, previewModal } = useFinanceDocumentPreview({
@@ -371,6 +383,15 @@ export function InvoiceCreatePage() {
         const result = await persistInvoice(false);
         draftShell.markSubmitted();
         if (result?.id) {
+          await linkPhotosAfterFinanceSave(accessToken, {
+            documentType: 'invoice',
+            recordId: result.id,
+            documentNumber: 'Draft — Xero invoice number pending',
+            title: selectedCustomer?.name ?? 'Invoice',
+            customerId,
+            jobId: jobId || null,
+            photos,
+          });
           invalidateInvoices();
           if (wasNew) {
             navigate(financeDocumentEditPath('invoice', result.id), { replace: true });
@@ -535,6 +556,7 @@ export function InvoiceCreatePage() {
               accessToken={accessToken}
               documentType="invoice"
               invoiceId={savedInvoiceId}
+              draftClientActionId={clientActionId}
               jobId={jobId || undefined}
               customerId={customerId || undefined}
               documentNumber="Draft — Xero invoice number pending"

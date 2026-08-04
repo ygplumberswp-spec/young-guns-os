@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type DragEvent } from 'react';
 import type { DocumentPhoto } from '@titan/shared';
 import {
+  FINANCE_DIRECT_EVIDENCE_SCOPE,
   addDocumentPhoto,
   legacyFinanceDocumentTitle,
   removeDocumentPhoto,
@@ -13,7 +14,10 @@ import { ApiClientError } from '../../lib/api-client';
 import {
   ensureFinanceInvoiceDocument,
   ensureFinanceQuoteDocument,
+  financeDirectPhotoContentUrl,
   saveTitanDocumentDraft,
+  uploadFinanceDocumentPhoto,
+  uploadFinanceStagingPhoto,
 } from '../../lib/document-engine-api-client';
 import { fetchJobExecution, uploadOfficeJobEvidence } from '../../lib/jobs-api';
 import { FinanceEditorCard } from './FinanceEditorCard';
@@ -32,6 +36,7 @@ export type FinanceDocumentPhotosPanelProps = {
   documentType: 'quote' | 'invoice';
   quoteId?: string | null;
   invoiceId?: string | null;
+  draftClientActionId?: string;
   jobId?: string;
   customerId?: string;
   documentNumber: string;
@@ -46,7 +51,7 @@ function newLocalId() { return `local-${Date.now()}-${Math.random().toString(36)
 
 export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProps) {
   const {
-    accessToken, documentType, quoteId, invoiceId, jobId, customerId, documentNumber,
+    accessToken, documentType, quoteId, invoiceId, draftClientActionId, jobId, customerId, documentNumber,
     customerName, photos, onPhotosChange, disabled = false,
   } = props;
 
@@ -67,6 +72,7 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
   const [jobEvidence, setJobEvidence] = useState<Array<{ id: string; title: string; fileName: string | null; mimeType: string | null }>>([]);
 
   const financeRecordId = quoteId ?? invoiceId ?? null;
+  const canUploadDirect = Boolean(draftClientActionId || documentId);
 
   useEffect(() => {
     if (!financeRecordId) return;
@@ -99,8 +105,24 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
     }
   }, [accessToken, documentId, onPhotosChange]);
 
+  const uploadDirectFile = useCallback(async (file: File, localId: string) => {
+    const mimeType = normaliseUploadMimeType(file);
+    const dataBase64 = await fileToBase64(file);
+    if (documentId) {
+      return uploadFinanceDocumentPhoto(accessToken, documentId, {
+        fileName: file.name, mimeType, dataBase64, clientActionId: localId,
+      });
+    }
+    if (!draftClientActionId) {
+      throw new Error('Draft correlation id is required before first save');
+    }
+    return uploadFinanceStagingPhoto(accessToken, draftClientActionId, {
+      fileName: file.name, mimeType, dataBase64, clientActionId: localId,
+    });
+  }, [accessToken, documentId, draftClientActionId]);
+
   const uploadFiles = useCallback(async (files: FileList | File[]) => {
-    if (disabled || !jobId) { setPanelError('Select a linked job before uploading'); return; }
+    if (disabled) return;
     for (const file of Array.from(files)) {
       const localId = newLocalId();
       failedFilesRef.current.set(localId, file);
@@ -112,13 +134,36 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
       setUploads((prev) => [...prev, { localId, fileName: file.name, status: 'uploading' }]);
       try {
         const mimeType = normaliseUploadMimeType(file);
-        const documentation = await uploadOfficeJobEvidence(accessToken, jobId, {
-          documentationType: mimeType === 'application/pdf' ? 'document' : 'photo',
-          title: file.name, mimeType, dataBase64: await fileToBase64(file), fileName: file.name, clientActionId: localId,
-        });
-        await persistPhotos(addDocumentPhoto(photos, {
-          id: newPhotoId(), documentationId: documentation.id, jobId, role: 'additional', caption: null, fileName: file.name, mimeType,
-        }));
+        let nextPhotos = photos;
+
+        if (jobId) {
+          const documentation = await uploadOfficeJobEvidence(accessToken, jobId, {
+            documentationType: mimeType === 'application/pdf' ? 'document' : 'photo',
+            title: file.name, mimeType, dataBase64: await fileToBase64(file), fileName: file.name, clientActionId: localId,
+          });
+          nextPhotos = addDocumentPhoto(photos, {
+            id: newPhotoId(), documentationId: documentation.id, jobId, role: 'additional', caption: null, fileName: file.name, mimeType,
+          });
+        } else if (canUploadDirect) {
+          const uploaded = await uploadDirectFile(file, localId);
+          nextPhotos = addDocumentPhoto(photos, {
+            id: newPhotoId(),
+            documentationId: uploaded.fileId,
+            jobId: FINANCE_DIRECT_EVIDENCE_SCOPE,
+            role: 'additional',
+            caption: null,
+            fileName: uploaded.fileName,
+            mimeType: uploaded.mimeType,
+            source: 'finance_direct',
+            storageKey: uploaded.storageKey,
+          });
+        } else {
+          setPanelError('Save the document draft before uploading files');
+          setUploads((prev) => prev.filter((item) => item.localId !== localId));
+          continue;
+        }
+
+        await persistPhotos(nextPhotos);
         failedFilesRef.current.delete(localId);
       } catch (err) {
         setUploads((prev) => prev.map((item) => item.localId === localId ? { ...item, status: 'error', error: err instanceof ApiClientError ? err.message : 'Upload failed' } : item));
@@ -126,7 +171,7 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
       }
       setUploads((prev) => prev.filter((item) => item.localId !== localId));
     }
-  }, [accessToken, disabled, jobId, persistPhotos, photos]);
+  }, [accessToken, canUploadDirect, disabled, jobId, persistPhotos, photos, uploadDirectFile]);
 
   const retryUpload = useCallback((localId: string) => {
     const file = failedFilesRef.current.get(localId);
@@ -135,26 +180,44 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
     void uploadFiles([file]);
   }, [uploadFiles]);
 
+  const uploadEnabled = !disabled && (Boolean(jobId) || canUploadDirect);
+
   return (
-    <FinanceEditorCard title="Photos & Attachments" description="Job evidence storage with document-engine photo references." className="finance-editor-card--full finance-editor-card--attachments">
+    <FinanceEditorCard title="Photos & Attachments" description="Upload directly or link existing job evidence." className="finance-editor-card--full finance-editor-card--attachments">
       {panelError ? <p className="finance-attachments__inline-error">{panelError}</p> : null}
-      {!jobId ? <p className="finance-editor-muted">Link a job to upload or attach photos and files.</p> : null}
+      {!jobId && draftClientActionId ? (
+        <p className="finance-editor-muted">Direct uploads are staged until the quote or invoice is saved.</p>
+      ) : null}
       <div className={`finance-attachments__dropzone${isDragging ? ' finance-attachments__dropzone--active' : ''}`}
         onDragOver={(e) => e.preventDefault()} onDragEnter={() => setIsDragging(true)} onDragLeave={() => setIsDragging(false)}
         onDrop={(e: DragEvent) => { e.preventDefault(); setIsDragging(false); void uploadFiles(e.dataTransfer.files); }}>
         <div className="finance-attachments__actions">
-          <button type="button" className="titan-btn titan-btn--secondary" disabled={disabled || !jobId} onClick={() => fileInputRef.current?.click()}>Choose files</button>
-          <button type="button" className="titan-btn titan-btn--secondary" disabled={disabled || !jobId} onClick={() => cameraInputRef.current?.click()}>Take photo</button>
+          <button type="button" className="titan-btn titan-btn--secondary" disabled={!uploadEnabled} onClick={() => fileInputRef.current?.click()}>Choose files</button>
+          <button type="button" className="titan-btn titan-btn--secondary" disabled={!uploadEnabled} onClick={() => cameraInputRef.current?.click()}>Take photo</button>
           {jobId ? <button type="button" className="titan-btn titan-btn--ghost" disabled={disabled} onClick={() => { setShowJobPicker(true); void fetchJobExecution(accessToken, jobId).then((execution) => setJobEvidence(execution.evidence.filter((d) => d.hasBinary).map((d) => ({ id: d.id, title: d.title, fileName: null, mimeType: d.mimeType ?? null })))); }}>Link job photos / COC</button> : null}
         </div>
-        <input ref={fileInputRef} id={inputId} type="file" className="finance-attachments__file-input" accept={FINANCE_PHOTO_ACCEPT} multiple disabled={disabled || !jobId} onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ''; }} />
-        <input ref={cameraInputRef} id={cameraInputId} type="file" className="finance-attachments__file-input" accept="image/jpeg,image/png,image/webp,image/heic,.heic" capture="environment" disabled={disabled || !jobId} onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ''; }} />
-        <input ref={replaceInputRef} id={replaceInputId} type="file" className="finance-attachments__file-input" accept={FINANCE_PHOTO_ACCEPT} disabled={disabled || !jobId} onChange={(e) => {
+        <input ref={fileInputRef} id={inputId} type="file" className="finance-attachments__file-input" accept={FINANCE_PHOTO_ACCEPT} multiple disabled={!uploadEnabled} onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ''; }} />
+        <input ref={cameraInputRef} id={cameraInputId} type="file" className="finance-attachments__file-input" accept="image/jpeg,image/png,image/webp,image/heic,.heic" capture="environment" disabled={!uploadEnabled} onChange={(e) => { if (e.target.files) void uploadFiles(e.target.files); e.target.value = ''; }} />
+        <input ref={replaceInputRef} id={replaceInputId} type="file" className="finance-attachments__file-input" accept={FINANCE_PHOTO_ACCEPT} disabled={!uploadEnabled} onChange={(e) => {
           const file = e.target.files?.[0]; const photoId = replaceTargetRef.current; replaceTargetRef.current = null; e.target.value = '';
-          if (!file || !photoId || !jobId) return;
+          if (!file || !photoId) return;
           void (async () => {
             const errMsg = validateClientPhotoFile(file); if (errMsg) { setPanelError(errMsg); return; }
             const mimeType = normaliseUploadMimeType(file);
+            const target = photos.find((p) => p.id === photoId);
+            if (target?.source === 'finance_direct') {
+              const uploaded = await uploadDirectFile(file, newLocalId());
+              await persistPhotos(replaceDocumentPhoto(photos, photoId, {
+                documentationId: uploaded.fileId,
+                jobId: FINANCE_DIRECT_EVIDENCE_SCOPE,
+                fileName: uploaded.fileName,
+                mimeType: uploaded.mimeType,
+                source: 'finance_direct',
+                storageKey: uploaded.storageKey,
+              }));
+              return;
+            }
+            if (!jobId) { setPanelError('Select a linked job to replace job evidence'); return; }
             const documentation = await uploadOfficeJobEvidence(accessToken, jobId, { documentationType: mimeType === 'application/pdf' ? 'document' : 'photo', title: file.name, mimeType, dataBase64: await fileToBase64(file), fileName: file.name });
             await persistPhotos(replaceDocumentPhoto(photos, photoId, { documentationId: documentation.id, jobId, fileName: file.name, mimeType }));
           })().catch((err) => setPanelError(err instanceof ApiClientError ? err.message : 'Replace failed'));
@@ -205,3 +268,5 @@ export function FinanceDocumentPhotosPanel(props: FinanceDocumentPhotosPanelProp
     </FinanceEditorCard>
   );
 }
+
+export { financeDirectPhotoContentUrl };

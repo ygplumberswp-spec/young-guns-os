@@ -94,8 +94,9 @@ test('preview CSS includes save confirmation notice styling', () => {
   assert.match(css, /\.finance-document-preview__notice/);
 });
 
-test('photos panel still requires linked job on fe4dbc5 scope', () => {
+test('photos panel supports direct uploads without a linked job', () => {
   const panelSource = readSource('src/features/finance/FinanceDocumentPhotosPanel.tsx');
-  assert.match(panelSource, /Select a linked job before uploading/);
-  assert.doesNotMatch(panelSource, /uploadFinanceStagingPhoto/);
+  assert.match(panelSource, /uploadFinanceStagingPhoto/);
+  assert.match(panelSource, /draftClientActionId/);
+  assert.doesNotMatch(panelSource, /Select a linked job before uploading/);
 });

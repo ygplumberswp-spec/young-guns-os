@@ -31,6 +31,7 @@ import { canManageFinance } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
 import { FinanceDocumentPhotosPanel } from '../../features/finance/FinanceDocumentPhotosPanel';
+import { linkPhotosAfterFinanceSave } from '../../features/finance/finance-document-editor-save';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -227,10 +228,19 @@ export function InvoiceEditPage() {
     if (!result) {
       throw new Error('Unable to save invoice');
     }
+    await linkPhotosAfterFinanceSave(accessToken, {
+      documentType: 'invoice',
+      recordId: invoiceId,
+      documentNumber: displayInvoiceNumber || 'Draft — Xero invoice number pending',
+      title: customer?.name ?? 'Invoice',
+      customerId: customer?.id ?? null,
+      jobId: jobId || null,
+      photos,
+    });
     setStatus(result.status);
     draftShell.markSubmitted();
     invalidateInvoices();
-  }, [accessToken, canWrite, draftShell, editable, invalidateInvoices, invoiceId, persistInvoice]);
+  }, [accessToken, canWrite, customer, displayInvoiceNumber, draftShell, editable, invalidateInvoices, invoiceId, jobId, persistInvoice, photos]);
 
   const { openPreview, previewModal } = useFinanceDocumentPreview({
     accessToken,
@@ -273,7 +283,18 @@ export function InvoiceEditPage() {
 
       if (action === 'save' || action === 'save_draft') {
         const result = await persistInvoice(false);
-        if (result) setStatus(result.status);
+        if (result) {
+          setStatus(result.status);
+          await linkPhotosAfterFinanceSave(accessToken, {
+            documentType: 'invoice',
+            recordId: invoiceId,
+            documentNumber: displayInvoiceNumber || 'Draft — Xero invoice number pending',
+            title: customer?.name ?? 'Invoice',
+            customerId: customer?.id ?? null,
+            jobId: jobId || null,
+            photos,
+          });
+        }
         draftShell.markSubmitted();
         invalidateInvoices();
         notify({

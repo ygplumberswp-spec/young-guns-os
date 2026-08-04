@@ -7,9 +7,16 @@ import {
   type DocumentActor,
   type DocumentEngineService,
 } from '../services/document-engine.service.js';
+import {
+  FinanceDocumentEvidenceStorageError,
+  FinanceDocumentEvidenceStorageService,
+  decodeFinanceDocumentEvidenceBase64,
+} from '../services/finance-document-evidence-storage.service.js';
+import { FINANCE_DIRECT_EVIDENCE_SCOPE } from '@titan/shared';
 
 type DocumentEngineRouterDeps = {
   documentEngineService: DocumentEngineService;
+  financeDocumentEvidenceStorage: FinanceDocumentEvidenceStorageService;
   jwtSecret: string;
   authService: Parameters<typeof createAuthMiddleware>[0]['authService'];
 };
@@ -41,6 +48,8 @@ const photoSchema = z.object({
   fileName: z.string().trim().min(1),
   mimeType: z.string().trim().min(1),
   includeInPdf: z.boolean().optional(),
+  source: z.enum(['job_evidence', 'finance_direct']).optional(),
+  storageKey: z.string().nullable().optional(),
 });
 
 const createDocumentSchema = z
@@ -138,8 +147,16 @@ function asyncRoute(
   };
 }
 
+const financeDirectUploadSchema = z.object({
+  fileName: z.string().trim().min(1).max(200),
+  mimeType: z.string().trim().min(1).max(120),
+  dataBase64: z.string().trim().min(1),
+  clientActionId: z.string().trim().min(1).max(200).optional(),
+});
+
 export function createDocumentEngineRouter({
   documentEngineService,
+  financeDocumentEvidenceStorage,
   jwtSecret,
   authService,
 }: DocumentEngineRouterDeps): Router {
@@ -238,6 +255,117 @@ export function createDocumentEngineRouter({
         patch as Parameters<DocumentEngineService['updateDocument']>[2],
       );
       res.json({ data: updated });
+    }),
+  );
+
+  router.post(
+    '/finance/staging/:draftClientActionId/photos/upload',
+    requireAnyPermission('finance:write'),
+    asyncRoute(async (req, res) => {
+      const { draftClientActionId } = z
+        .object({ draftClientActionId: z.string().trim().min(1).max(200) })
+        .parse(req.params);
+      const body = financeDirectUploadSchema.parse(req.body ?? {});
+      const auth = actorFrom(req);
+      try {
+        const buffer = decodeFinanceDocumentEvidenceBase64(body.dataBase64);
+        const stored = await financeDocumentEvidenceStorage.store({
+          companyId: auth.companyId,
+          scope: 'staging',
+          scopeId: draftClientActionId,
+          mimeType: body.mimeType,
+          buffer,
+          originalFileName: body.fileName,
+        });
+        res.status(201).json({
+          data: {
+            fileId: stored.fileId,
+            storageKey: stored.storageKey,
+            mimeType: stored.mimeType,
+            sizeBytes: stored.sizeBytes,
+            fileName: stored.originalFileName,
+            jobId: FINANCE_DIRECT_EVIDENCE_SCOPE,
+            source: 'finance_direct',
+          },
+        });
+      } catch (error) {
+        if (error instanceof FinanceDocumentEvidenceStorageError) {
+          res.status(400).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    }),
+  );
+
+  router.post(
+    '/finance/documents/:documentId/photos/upload',
+    requireAnyPermission('finance:write'),
+    asyncRoute(async (req, res) => {
+      const { documentId } = z.object({ documentId: z.string().uuid() }).parse(req.params);
+      const body = financeDirectUploadSchema.parse(req.body ?? {});
+      const auth = actorFrom(req);
+      await documentEngineService.getDocument(auth, documentId);
+      try {
+        const buffer = decodeFinanceDocumentEvidenceBase64(body.dataBase64);
+        const stored = await financeDocumentEvidenceStorage.store({
+          companyId: auth.companyId,
+          scope: 'document',
+          scopeId: documentId,
+          mimeType: body.mimeType,
+          buffer,
+          originalFileName: body.fileName,
+        });
+        res.status(201).json({
+          data: {
+            fileId: stored.fileId,
+            storageKey: stored.storageKey,
+            mimeType: stored.mimeType,
+            sizeBytes: stored.sizeBytes,
+            fileName: stored.originalFileName,
+            jobId: FINANCE_DIRECT_EVIDENCE_SCOPE,
+            source: 'finance_direct',
+          },
+        });
+      } catch (error) {
+        if (error instanceof FinanceDocumentEvidenceStorageError) {
+          res.status(400).json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
+    }),
+  );
+
+  router.get(
+    '/finance/photos/content',
+    requireAnyPermission('finance:read', 'finance:write'),
+    asyncRoute(async (req, res) => {
+      const parsed = z
+        .object({ storageKey: z.string().trim().min(1).max(500) })
+        .safeParse({ storageKey: req.query.storageKey });
+      if (!parsed.success) {
+        res.status(400).json({ error: { code: 'VALIDATION_ERROR', message: 'storageKey is required' } });
+        return;
+      }
+      const auth = actorFrom(req);
+      try {
+        const { metadata, buffer } = await financeDocumentEvidenceStorage.read({
+          companyId: auth.companyId,
+          storageKey: parsed.data.storageKey,
+        });
+        res.setHeader('Content-Type', metadata.mimeType);
+        res.setHeader('Content-Disposition', `inline; filename="${metadata.originalFileName}"`);
+        res.send(buffer);
+      } catch (error) {
+        if (error instanceof FinanceDocumentEvidenceStorageError) {
+          res
+            .status(error.code === 'NOT_FOUND' ? 404 : error.code === 'FORBIDDEN' ? 403 : 400)
+            .json({ error: { code: error.code, message: error.message } });
+          return;
+        }
+        throw error;
+      }
     }),
   );
 
