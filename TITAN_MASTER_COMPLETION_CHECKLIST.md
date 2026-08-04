@@ -132,3 +132,41 @@ All 19 items — **NOT RUN** (requires Owner browser session; agent has no authe
 | Reason | Phase 2 backup blocked (no staging credentials on agent host); Phases 3–4 not run; Phase 5 deploy unverified; Phase 6 not executed |
 
 **Do not proceed to production, Xero sync/write, Yoco, migration 0174/0039, or next A–Z phase until this checklist is green.**
+
+---
+
+## Future phases (planned — not started)
+
+### AURA Developer Agent — Owner-only development assistant
+
+**Status:** **PLANNED / NOT STARTED** — record only; **do not implement** until explicit Owner approval for this phase.
+
+**Purpose:** An Owner-only development assistant inside TITAN that can send **approved** change requests to Cursor AI for controlled implementation.
+
+**Required workflow (mandatory sequence):**
+
+1. **Request** — Owner submits a change request inside TITAN.
+2. **AURA specification** — AURA produces a structured spec (scope, files, risks, test plan).
+3. **Owner approval** — Owner explicitly approves the spec before any code work begins.
+4. **Isolated Git branch** — Work proceeds only on a dedicated feature branch (never on `main` or production deploy branches).
+5. **Cursor implementation** — Cursor AI implements the approved spec on that branch.
+6. **Automated tests and builds** — CI runs typecheck, relevant tests, and production builds; failures block progression.
+7. **Pull request and change report** — PR opened with a human-readable change report (diff summary, risks, rollback notes).
+8. **Staging deployment** — Deploy approved revision to staging only.
+9. **Owner smoke test** — Owner verifies behaviour in staging before any production consideration.
+10. **Separate production approval** — Distinct Owner gate required for production deploy; staging success alone is insufficient.
+
+**Hard prohibitions (never allowed):**
+
+- Direct production edits or production deploy without a separate Owner approval gate
+- Automatic database migrations (migrations require explicit Owner-approved, staged apply — same discipline as Finance 0176/0177)
+- Secret exposure (tokens, passwords, `DATABASE_URL`, API keys) in specs, logs, PRs, or agent output
+- Unapproved external actions (Xero sync/write, Yoco, email, WhatsApp, paid services, third-party writes)
+- Bypassing Git review (no force-push to shared branches, no merge without PR review)
+
+**Required safeguards:**
+
+- **Complete audit log** — every request, spec, approval, branch, commit, deploy ID, and smoke result recorded with actor and timestamp
+- **Rollback path** — documented revert steps for code (Git), deploy (Railway prior revision), and database (backup/restore when schema touched)
+
+**Implementation gate:** Owner must approve this phase explicitly before design or code begins. Until then, treat as backlog only.
