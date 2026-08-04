@@ -20,6 +20,7 @@ import {
   canManageScheduling,
 } from '../../features/scheduling/utils';
 import { SchedulingCalendar, resolveRange, useCalendarState } from '../../components/calendar';
+import { GoogleCalendarOverlayPanel } from '../../features/scheduling/GoogleCalendarOverlayPanel';
 
 export function SchedulingPage() {
   const { accessToken, user } = useAuth();
@@ -148,6 +149,12 @@ export function SchedulingPage() {
         focusJobId={deepLink.jobId}
         focusMode={deepLink.mode}
         onRefresh={() => void reloadCalendar()}
+      />
+
+      <GoogleCalendarOverlayPanel
+        from={range.from}
+        to={range.to}
+        viewLabel={view === 'day' ? 'Day' : view === 'week' ? 'Week' : 'Month'}
       />
     </div>
   );

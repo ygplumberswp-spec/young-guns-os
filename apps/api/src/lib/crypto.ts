@@ -339,6 +339,43 @@ export function decryptGmailCredentials(
   };
 }
 
+/** Google Calendar OAuth tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
+export type GoogleCalendarStoredCredentials = {
+  version: 1;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  googleAccountEmail?: string;
+  googleAccountId?: string;
+  scope?: string;
+};
+
+export function encryptGoogleCalendarCredentials(
+  credentials: GoogleCalendarStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptGoogleCalendarCredentials(
+  payload: string,
+  encryptionKey: string,
+): GoogleCalendarStoredCredentials {
+  const parsed = decryptJsonCredentials<GoogleCalendarStoredCredentials>(payload, encryptionKey);
+  if (!parsed.accessToken?.trim() && !parsed.refreshToken?.trim()) {
+    throw new Error('Invalid stored Google Calendar credentials');
+  }
+  return {
+    version: 1,
+    accessToken: parsed.accessToken?.trim() ?? '',
+    refreshToken: parsed.refreshToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    googleAccountEmail: parsed.googleAccountEmail?.trim() || undefined,
+    googleAccountId: parsed.googleAccountId?.trim() || undefined,
+    scope: parsed.scope,
+  };
+}
+
 /** Social media platform tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
 export type SocialMediaStoredCredentials = {
   version: 1;

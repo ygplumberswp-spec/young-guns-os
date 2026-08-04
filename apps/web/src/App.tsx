@@ -596,6 +596,10 @@ export function App() {
                           path="/integrations/google-maps"
                           component={OwnerPages.GoogleMapsSettingsPage}
                         />
+                        <Route
+                          path="/integrations/google-calendar"
+                          component={OwnerPages.GoogleCalendarSettingsPage}
+                        />
                         <Route path="/integrations/xero" component={OwnerPages.XeroSettingsPage} />
                         <Route
                           path="/integrations/xero/write-approvals"

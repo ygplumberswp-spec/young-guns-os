@@ -49,6 +49,7 @@ export * from './job-finance-workflow.js';
 export * from './fleet.js';
 export * from './fleet-tracking.js';
 export * from './integrations.js';
+export * from './google-calendar.js';
 export * from './google-maps.js';
 export * from './vehicle-position-address.js';
 export * from './cartrack-telemetry.js';

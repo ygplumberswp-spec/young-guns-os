@@ -134,10 +134,11 @@ export const INTEGRATION_PROVIDER_REGISTRY: IntegrationProviderRegistryEntry[] =
   {
     provider: 'google_calendar',
     name: 'Google Calendar',
-    description: 'Calendar sync for scheduling and appointment coordination.',
+    description:
+      'Google Calendar via official Google OAuth — mirrors TITAN jobs, imports Google events as external entries, and flags scheduling conflicts for review.',
     category: 'communications',
-    availability: 'planned',
-    settingsPath: null,
+    availability: 'available',
+    settingsPath: '/integrations/google-calendar',
     supportsSync: true,
     supportsWebhooks: false,
   },

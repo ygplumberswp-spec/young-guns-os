@@ -15,6 +15,7 @@ import {
   loadAuraEnvConfig,
   loadEnv,
   resolveGmailOAuthConfig,
+  resolveGoogleCalendarOAuthConfig,
   resolveXeroOAuthConfig,
 } from './config.js';
 
@@ -84,6 +85,9 @@ import { WhatsappContactEnrichmentService } from './services/whatsapp-contact-en
 import { createIntegrationsRouter } from './routes/integrations.js';
 import { createGoogleMapsRouter } from './routes/google-maps.js';
 import { GoogleMapsService } from './services/google-maps.service.js';
+import { createGoogleCalendarRouter } from './routes/google-calendar.js';
+import { GoogleCalendarOAuthService } from './services/google-calendar-oauth.service.js';
+import { GoogleCalendarService } from './services/google-calendar.service.js';
 import { VehiclePositionAddressService } from './services/vehicle-position-address.service.js';
 import { createWhatsappRouter } from './routes/whatsapp.js';
 import { createWhatsappEnrichmentRouter } from './routes/whatsapp-enrichment.js';
@@ -530,6 +534,24 @@ const gmailOAuthService = GmailOAuthService.create({
   oauthConfig: gmailOAuthConfig,
 });
 integrationHubService.setGmailOAuthConfiguredProvider(() => gmailOAuthService.isAppConfigured());
+const googleCalendarOAuthConfig = resolveGoogleCalendarOAuthConfig(env, apiPublicUrl);
+bootLog('google calendar oauth resolved', {
+  oauthConfigured: googleCalendarOAuthConfig.configured,
+  hasClientId: Boolean(env.GOOGLE_CLIENT_ID?.trim()),
+  hasClientSecret: Boolean(env.GOOGLE_CLIENT_SECRET),
+  hasRedirectUri: Boolean(env.GOOGLE_CALENDAR_REDIRECT_URI?.trim()),
+});
+const googleCalendarOAuthService = GoogleCalendarOAuthService.create({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  oauthConfig: googleCalendarOAuthConfig,
+});
+const googleCalendarService = new GoogleCalendarService(
+  db,
+  googleCalendarOAuthService,
+  schedulingService,
+);
 const businessIntegrationsService = BusinessIntegrationsService.create({
   db,
   encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
@@ -1454,6 +1476,7 @@ const auraService = new AuraService({
   crmService,
   jobsService,
   schedulingService,
+  googleCalendarService,
   financeService,
   inventoryService,
   fleetService,
@@ -1800,6 +1823,18 @@ app.use(
     whatsappService,
     xeroOAuthService,
     teamService,
+    appUrl: env.APP_URL,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+  }),
+);
+app.use(
+  '/api/v1/google-calendar',
+  createGoogleCalendarRouter({
+    googleCalendarService,
+    googleCalendarOAuthService,
+    teamService,
+    db,
     appUrl: env.APP_URL,
     jwtSecret: env.JWT_SECRET,
     authService,

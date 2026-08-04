@@ -53,6 +53,7 @@ import type { RecruitingService } from './recruiting.service.js';
 import type { RecommendationsService } from './recommendations.service.js';
 import type { SalesService } from './sales.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { GoogleCalendarService } from './google-calendar.service.js';
 import type { TeamService } from './team.service.js';
 import type { VoiceService } from './voice.service.js';
 import type { WhatsappService } from './whatsapp.service.js';
@@ -64,6 +65,7 @@ export type AuraContextBuildDeps = {
   crmService: CrmService;
   jobsService: JobsService;
   schedulingService: SchedulingService;
+  googleCalendarService: GoogleCalendarService;
   financeService: FinanceService;
   inventoryService: InventoryService;
   fleetService: FleetService;
@@ -155,9 +157,13 @@ export async function buildSelectedAuraContext(
     {
       domain: 'scheduling',
       enabled: hasAnyPermission(permissions, ['dispatch:read', 'dispatch:write']),
-      load: async () => ({
-        scheduling: await deps.schedulingService.buildAuraContext(companyId),
-      }),
+      load: async () => {
+        const [scheduling, googleCalendar] = await Promise.all([
+          deps.schedulingService.buildAuraContext(companyId),
+          deps.googleCalendarService.buildAuraContext(companyId, permissions),
+        ]);
+        return { scheduling: { ...scheduling, googleCalendar } };
+      },
     },
     {
       domain: 'finance',

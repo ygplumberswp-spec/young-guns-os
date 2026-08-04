@@ -33,6 +33,7 @@ export * from './inventory-stock-movements';
 export * from './vehicles';
 export * from './integration-connections';
 export * from './integration-oauth-states';
+export * from './google-calendar';
 export * from './integration-vehicle-mappings';
 export * from './gps-positions';
 export * from './message-templates';

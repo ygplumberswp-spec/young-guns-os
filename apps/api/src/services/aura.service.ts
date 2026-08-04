@@ -23,6 +23,7 @@ import { auraConversations, auraMessages, users } from '@titan/db';
 import type { CrmService } from './crm.service.js';
 import type { JobsService } from './jobs.service.js';
 import type { SchedulingService } from './scheduling.service.js';
+import type { GoogleCalendarService } from './google-calendar.service.js';
 import type { FinanceService } from './finance.service.js';
 import type { InventoryService } from './inventory.service.js';
 import type { FleetService } from './fleet.service.js';
@@ -109,6 +110,7 @@ type AuraServiceDeps = {
   crmService: CrmService;
   jobsService: JobsService;
   schedulingService: SchedulingService;
+  googleCalendarService: GoogleCalendarService;
   financeService: FinanceService;
   inventoryService: InventoryService;
   fleetService: FleetService;
@@ -173,6 +175,7 @@ export class AuraService {
   private readonly crmService: CrmService;
   private readonly jobsService: JobsService;
   private readonly schedulingService: SchedulingService;
+  private readonly googleCalendarService: GoogleCalendarService;
   private readonly financeService: FinanceService;
   private readonly inventoryService: InventoryService;
   private readonly fleetService: FleetService;
@@ -236,6 +239,7 @@ export class AuraService {
     crmService,
     jobsService,
     schedulingService,
+    googleCalendarService,
     financeService,
     inventoryService,
     fleetService,
@@ -298,6 +302,7 @@ export class AuraService {
     this.crmService = crmService;
     this.jobsService = jobsService;
     this.schedulingService = schedulingService;
+    this.googleCalendarService = googleCalendarService;
     this.financeService = financeService;
     this.inventoryService = inventoryService;
     this.fleetService = fleetService;
@@ -741,6 +746,7 @@ export class AuraService {
         crmService: this.crmService,
         jobsService: this.jobsService,
         schedulingService: this.schedulingService,
+        googleCalendarService: this.googleCalendarService,
         financeService: this.financeService,
         inventoryService: this.inventoryService,
         fleetService: this.fleetService,

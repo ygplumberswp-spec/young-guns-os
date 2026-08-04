@@ -7,6 +7,7 @@ const providerLinks = [
   { href: '/integrations/resend', label: 'Resend' },
   { href: '/integrations/cartrack', label: 'Cartrack' },
   { href: '/integrations/google-maps', label: 'Google Maps' },
+  { href: '/integrations/google-calendar', label: 'Google Calendar' },
   { href: '/integrations/yoco', label: 'Yoco' },
 ];
 

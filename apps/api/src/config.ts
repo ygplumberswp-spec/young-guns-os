@@ -24,6 +24,8 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
+  /** Google Calendar reuses the Google OAuth client but needs its own redirect URI. */
+  GOOGLE_CALENDAR_REDIRECT_URI: z.string().url().optional(),
   SEED_DEV: z
     .enum(['true', 'false'])
     .default('false')
@@ -273,3 +275,38 @@ export function resolveGmailOAuthConfig(
     redirectUri,
   };
 }
+
+export type GoogleCalendarOAuthEnvConfig = {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+  configured: true;
+};
+
+/**
+ * Google Calendar OAuth. Shares the Google client with Business Gmail but keeps a
+ * separate redirect URI so connecting one never disturbs the other. Reports
+ * not_configured honestly rather than implying a usable connection.
+ */
+export function resolveGoogleCalendarOAuthConfig(
+  env: Env,
+  apiPublicUrl: string,
+): GoogleCalendarOAuthEnvConfig | { configured: false } {
+  const clientId = env.GOOGLE_CLIENT_ID?.trim();
+  const clientSecret = env.GOOGLE_CLIENT_SECRET;
+  const redirectUri =
+    env.GOOGLE_CALENDAR_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/google-calendar/oauth/callback`;
+
+  if (!clientId || !clientSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    clientId,
+    clientSecret,
+    redirectUri,
+  };
+}
+

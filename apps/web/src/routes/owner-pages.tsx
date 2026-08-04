@@ -691,6 +691,10 @@ export const GoogleMapsSettingsPage = lazyNamed(
   () => import('../pages/integrations/GoogleMapsSettingsPage'),
   'GoogleMapsSettingsPage',
 );
+export const GoogleCalendarSettingsPage = lazyNamed(
+  () => import('../pages/integrations/GoogleCalendarSettingsPage'),
+  'GoogleCalendarSettingsPage',
+);
 export const PortalSettingsPage = lazyNamed(
   () => import('../pages/settings/PortalSettingsPage'),
   'PortalSettingsPage',

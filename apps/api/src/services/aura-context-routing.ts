@@ -110,6 +110,11 @@ const KEYWORD_DOMAINS: Array<{ pattern: RegExp; domains: AuraContextDomain[] }> 
     domains: ['jobs', 'scheduling', 'dispatchIntelligence'],
   },
   {
+    /** Calendar questions need the schedule plus the Google connection state to answer honestly. */
+    pattern: /\b(calendar|google calendar|diary|availability|free.?busy|double.?book|clash)\b/i,
+    domains: ['scheduling', 'jobs', 'integrations'],
+  },
+  {
     pattern: /\b(invoice|payment|finance|accounting|xero|revenue|expense|profit)\b/i,
     domains: ['finance', 'financeIntelligence', 'integrations'],
   },

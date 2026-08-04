@@ -30,7 +30,7 @@
 | **Email (SMTP)** | `/integrations/email` | SMTP settings | Encrypted DB | Partial | Available if configured | Verify send on staging |
 | **Yoco** | `/integrations/yoco` | API keys | Encrypted DB | Profile sync only | Partial | No payment links |
 | **Google Maps** | Fleet/dispatch/maps | Planned registry | — | N/A | Planned/honest | **Missing live SDK** | Product decision |
-| **Google Calendar** | Integrations | Planned | — | N/A | Planned | **Not connected** | OAuth implementation |
+| **Google Calendar** | `/integrations/google-calendar`, scheduling overlay | OAuth (`GOOGLE_CLIENT_ID`/`SECRET` + `GOOGLE_CALENDAR_REDIRECT_URI`) | Encrypted DB (`INTEGRATIONS_ENCRYPTION_KEY`) | **2026-08-04** — migration 0173 applied to staging (7 tables, 0 rows); 20 routes live; authenticated Owner GETs 200; technician 403; API reports `oauthConfigured:false` | Awaiting configuration (honest) | **Code complete — not connected; no Google OAuth client in staging env** | Owner: set `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` + consent screen scopes, then run acceptance tests |
 | **Gmail** | Integrations UI | Honesty-only | — | N/A | Shown honestly | **NOT IMPLEMENTED** (Decision 4) | Backend or remove card |
 | **n8n** | Automations + Integrations | Hybrid loopback | Signing secret | UX-J staging | Honesty deep-link | Loopback only; cloud OUT | Owner cloud URL if desired |
 | **Meta/ads** | Marketing | Adapter stub | — | N/A | Planned | **Not connected** | Owner approval + creds |

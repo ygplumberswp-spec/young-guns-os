@@ -9777,3 +9777,35 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
     animation: none;
   }
 }
+
+/* Google Calendar overlay — the four entry kinds must be tellable apart at a glance. */
+.gcal-entry {
+  border-left: 3px solid var(--titan-text-muted);
+  padding-left: 0.55rem;
+}
+
+.gcal-entry--titan {
+  border-left-color: #38bdf8;
+}
+
+.gcal-entry--google {
+  border-left-color: #a78bfa;
+}
+
+.gcal-entry--busy {
+  border-left-color: var(--titan-text-muted);
+  font-style: italic;
+}
+
+.gcal-entry--conflict {
+  border-left-color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border-radius: 0 0.35rem 0.35rem 0;
+}
+
+.gcal-conflicts > strong {
+  display: block;
+  color: #fca5a5;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+}
