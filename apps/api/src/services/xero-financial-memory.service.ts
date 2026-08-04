@@ -41,8 +41,18 @@ export type XeroFinancialMemoryActor = {
 /**
  * Roles permitted to read financial history. Technician and Client are denied — this is
  * Owner/Admin/Accountant territory, enforced here in the service as well as at the router gate.
+ *
+ * The tenant's owner role is named "Company Owner"; leaving it out locked the one person this
+ * history exists for out of it. Platform Owner is deliberately absent — it is a cross-tenant
+ * platform role, not a reader of one tenant's ledger.
  */
-const FINANCE_HISTORY_ROLES = new Set(['owner', 'admin', 'accountant', 'manager']);
+const FINANCE_HISTORY_ROLES = new Set([
+  'company owner',
+  'owner',
+  'admin',
+  'accountant',
+  'manager',
+]);
 
 /**
  * Read layer over imported Xero financial history.

@@ -2619,6 +2619,23 @@ export class XeroSyncService {
           ),
         });
 
+        // A run whose mapping write did not land leaves the invoice row behind carrying this same
+        // Xero id. Without looking for it the next run reads "not imported yet", tries to insert a
+        // second row under the same invoice number and fails on it — every run, forever. Adopt the
+        // row that is already there instead, and rebuild the mapping it is missing.
+        const orphanedInvoice = existingMapping
+          ? null
+          : await this.db.query.invoices.findFirst({
+              where: and(
+                eq(invoices.companyId, ctx.companyId),
+                eq(invoices.sourceProvider, 'xero'),
+                eq(invoices.sourceExternalId, remote.invoiceId),
+              ),
+            });
+        const existingInvoiceId = existingMapping?.invoiceId ?? orphanedInvoice?.id ?? null;
+        const knownInvoiceNumber =
+          existingMapping?.xeroInvoiceNumber ?? orphanedInvoice?.xeroInvoiceNumber ?? null;
+
         const nextStatus = mapXeroInvoiceStatus({
           xeroStatus: remote.status,
           amountDue: remote.amountDue,
@@ -2639,9 +2656,9 @@ export class XeroSyncService {
           sourceImportJobId: ctx.syncJobId ?? null,
         };
 
-        if (existingMapping) {
+        if (existingInvoiceId) {
           const conflict = this.mappingConflictService?.detectInvoiceConflict(
-            { invoiceNumber: existingMapping.xeroInvoiceNumber, amountCents: financials.amountCents },
+            { invoiceNumber: knownInvoiceNumber, amountCents: financials.amountCents },
             { invoiceNumber: remote.invoiceNumber, amountCents: financials.amountCents },
           );
 
@@ -2649,12 +2666,12 @@ export class XeroSyncService {
             await this.mappingConflictService?.recordConflict({
               companyId: ctx.companyId,
               entityType: 'invoice',
-              entityId: existingMapping.invoiceId,
+              entityId: existingInvoiceId,
               conflict,
             });
             await this.upsertInvoiceMapping(
               ctx,
-              existingMapping.invoiceId,
+              existingInvoiceId,
               remote.invoiceId,
               'out_of_sync',
               conflict.message,
@@ -2680,32 +2697,25 @@ export class XeroSyncService {
               issuedAt: remote.issueDate ? new Date(remote.issueDate) : undefined,
               updatedAt: syncedAt,
             })
-            .where(
-              and(
-                eq(invoices.id, existingMapping.invoiceId),
-                eq(invoices.companyId, ctx.companyId),
-              ),
-            );
+            .where(and(eq(invoices.id, existingInvoiceId), eq(invoices.companyId, ctx.companyId)));
 
-          await this.replaceInvoiceLineItems(ctx, existingMapping.invoiceId, remote.raw);
-          await this.upsertInvoiceMapping(
-            ctx,
-            existingMapping.invoiceId,
-            remote.invoiceId,
-            'synced',
-            null,
-            { xeroInvoiceNumber: invoiceNumber, xeroReference: remote.reference },
-          );
+          await this.replaceInvoiceLineItems(ctx, existingInvoiceId, remote.raw);
+          await this.upsertInvoiceMapping(ctx, existingInvoiceId, remote.invoiceId, 'synced', null, {
+            xeroInvoiceNumber: invoiceNumber,
+            xeroReference: remote.reference,
+          });
           counts.updatedCount += 1;
           counts.pulledCount += 1;
 
           await this.writeLog(ctx, {
             entityType: 'invoice',
-            entityId: existingMapping.invoiceId,
+            entityId: existingInvoiceId,
             xeroEntityId: remote.invoiceId,
             action: 'pull',
             status: 'success',
-            message: `Updated invoice ${invoiceNumber} from Xero`,
+            message: orphanedInvoice
+              ? `Updated invoice ${invoiceNumber} from Xero and restored its missing Xero mapping`
+              : `Updated invoice ${invoiceNumber} from Xero`,
           });
           continue;
         }
