@@ -1205,6 +1205,13 @@
       "when": 1754746800174,
       "tag": "0175_titan_document_engine_yoco_links",
       "breakpoints": true
+    },
+    {
+      "idx": 172,
+      "version": "7",
+      "when": 1785861000000,
+      "tag": "0176_titan_finance_editor_fields",
+      "breakpoints": true
     }
   ]
 }
