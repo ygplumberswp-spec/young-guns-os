@@ -15,7 +15,10 @@ export type FinanceCatalogueItemSearchResult = {
   category: QuoteLineCategory;
 };
 
-/** Read-only labour & service catalogue bundled with TITAN (not persisted as master items). */
+/**
+ * Young Guns approved labour/service pricebook (read-only, bundled with TITAN).
+ * These are the only non-inventory catalogue sources — no demo or invented items.
+ */
 export const BUILTIN_FINANCE_CATALOGUE: FinanceCatalogueItemSearchResult[] = [
   {
     sourceKey: 'builtin:LAB-CALLOUT',
@@ -141,20 +144,44 @@ function scoreCatalogueMatch(
 export function searchFinanceCatalogueItems(
   query: string,
   catalogue: FinanceCatalogueItemSearchResult[],
-  options?: { excludeSourceKeys?: string[]; limit?: number },
+  options?: { limit?: number },
 ): FinanceCatalogueItemSearchResult[] {
-  const exclude = new Set(options?.excludeSourceKeys ?? []);
   const limit = options?.limit ?? 12;
   const trimmed = query.trim();
   if (trimmed.length < 1) return [];
 
   return catalogue
-    .filter((item) => !exclude.has(item.sourceKey))
     .map((item) => ({ item, score: scoreCatalogueMatch(trimmed, item) }))
     .filter((row) => row.score > 0)
     .sort((a, b) => b.score - a.score || a.item.name.localeCompare(b.item.name))
     .slice(0, limit)
     .map((row) => row.item);
+}
+
+export function formatFinanceCatalogueSourceLabel(sourceType: FinanceCatalogueSourceType): string {
+  switch (sourceType) {
+    case 'inventory':
+      return 'Inventory';
+    case 'materials':
+      return 'Materials';
+    case 'labour':
+      return 'Young Guns labour';
+    case 'service':
+      return 'Young Guns service';
+    default:
+      return sourceType;
+  }
+}
+
+/** Optional warning when re-using a catalogue item — never blocks selection or save. */
+export function duplicateCatalogueSelectionWarning(
+  sourceKey: string,
+  usedSourceKeys: string[],
+  itemName?: string,
+): string | null {
+  if (!isCatalogueSourceKeyUsed(sourceKey, usedSourceKeys)) return null;
+  const label = itemName?.trim() ? `"${itemName.trim()}"` : 'This item';
+  return `${label} is already on the document — added again for a separate work section.`;
 }
 
 export function isCatalogueSourceKeyUsed(

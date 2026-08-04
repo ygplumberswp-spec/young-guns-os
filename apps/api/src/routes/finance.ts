@@ -159,11 +159,13 @@ export function createFinanceRouter({
   router.get('/catalogue/search', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
     const { companyId } = getAuth(req);
     const q = stringQuery(req.query.q) ?? '';
-    const excludeRaw = stringQuery(req.query.exclude);
-    const excludeSourceKeys = excludeRaw
-      ? excludeRaw.split(',').map((value) => value.trim()).filter(Boolean)
-      : [];
-    const items = await financeService.searchCatalogueItems(companyId, q, excludeSourceKeys);
+    if (q.length > 120) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: 'Catalogue search query must be 120 characters or fewer' },
+      });
+      return;
+    }
+    const items = await financeService.searchCatalogueItems(companyId, q);
     res.json({ data: { items } });
   });
 

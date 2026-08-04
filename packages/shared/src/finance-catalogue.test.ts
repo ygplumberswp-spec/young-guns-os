@@ -23,13 +23,11 @@ test('searchFinanceCatalogueItems matches code, name and description', () => {
   assert.ok(results.some((row) => row.itemCode === 'PVC-110'));
 });
 
-test('searchFinanceCatalogueItems excludes already-used catalogue keys', () => {
+test('searchFinanceCatalogueItems returns duplicate catalogue keys when already on document', () => {
   const labour = BUILTIN_FINANCE_CATALOGUE.find((row) => row.itemCode === 'LAB-HOURLY');
   assert.ok(labour);
-  const results = searchFinanceCatalogueItems('labour', BUILTIN_FINANCE_CATALOGUE, {
-    excludeSourceKeys: [labour!.sourceKey],
-  });
-  assert.equal(results.some((row) => row.sourceKey === labour!.sourceKey), false);
+  const results = searchFinanceCatalogueItems('labour', BUILTIN_FINANCE_CATALOGUE);
+  assert.ok(results.some((row) => row.sourceKey === labour!.sourceKey));
 });
 
 test('inventory items map to materials category with sell and cost cents', () => {

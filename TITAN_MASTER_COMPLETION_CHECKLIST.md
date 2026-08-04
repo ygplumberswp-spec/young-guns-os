@@ -181,6 +181,16 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 - [ ] **Tablet** reflows to fewer columns; **mobile** stacks vertically with **no horizontal page overflow**.
 - [ ] Long customer names, addresses and descriptions **wrap cleanly**; Young Guns dark theme preserved.
 
+### E3 — Catalogue line search (J-6.2)
+
+- [ ] Line description search returns **tenant inventory** and **Young Guns labour/service pricebook** items only.
+- [ ] Each result shows its **source type** (Inventory / Young Guns labour / Young Guns service).
+- [ ] Selecting an item **auto-fills** description, qty, unit, price — all fields remain editable.
+- [ ] **Manual/custom line** always available when search fails or is skipped.
+- [ ] **Same catalogue item may appear on multiple lines** (e.g. separate work sections) — optional warning only, never blocked.
+- [ ] Saving a draft does **not** deduct inventory or mutate master catalogue items.
+- [ ] **Enter** on catalogue dropdown selects highlighted item; **Enter** on final blank line adds a new line — document never submits.
+
 ### F — Round-trip persistence
 
 - [ ] Quote: dates, notes, customer reference (if shown), all three addresses, line items, VAT mode and totals survive save → hard refresh → reopen.
@@ -203,6 +213,48 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 - [ ] Record QA quote and invoice IDs; record after counts.
 
 **J-5 completion gate:** PASS all sections A–H → **GO** for Finance Editor Phase 1 complete; any FAIL → repair prompt + **NO-GO**.
+
+---
+
+## Phase J-6.2 — Final finance editor corrections
+
+**Status:** **IMPLEMENTED locally** — awaiting Owner approval before staging release.
+
+**Local verification target:** recovery branch `cursor/titan-v1-integration-recovery` (commit after J-6.1 addendum + J-6.2).
+
+### Acceptance requirements
+
+| Area | Requirement | Status |
+|------|-------------|--------|
+| Full-width workspace | Quote/Invoice create, edit, detail and preview fill usable width beside TITAN sidebar; 20–24px padding; responsive grid; line table 100%; notes + totals two-column on desktop | **DONE** (J-6.1 addendum + layout tests) |
+| Catalogue search | Tenant inventory + approved Young Guns labour/service pricebook only; source type labelled; manual line always available | **DONE** |
+| Duplicate lines | Same catalogue item may appear on multiple lines; optional warning only — never blocks add/save | **DONE** |
+| Source integrity | Selection copies to document line only; no master catalogue mutation; no draft inventory deduction | **DONE** (verified in service + editor tests) |
+| Security | Tenant isolation, finance RBAC, query length limit (120), result cap (12), safe ILIKE search | **DONE** |
+| Cost/margin | Unit cost column gated by `canViewFinanceProfit` on quotes; hidden on invoices | **DONE** |
+| Enter key | Catalogue Enter selects item; final line Enter adds row; document never submits on Enter | **DONE** (editor + search field tests) |
+
+### J-6.2 automated tests
+
+- `apps/web/src/features/finance/finance-workspace-layout.test.ts`
+- `apps/web/src/features/finance/finance-j62-phase.test.ts`
+- `packages/shared/src/finance-j62-phase.test.ts`
+- `packages/shared/src/finance-catalogue.test.ts`
+- `apps/api/src/services/finance-catalogue.service.test.ts`
+
+---
+
+## Correct future staging release sequence (J-6.2)
+
+**Use only after Owner approval of local J-6.2 commit.**
+
+1. **Backup** — create and verify a fresh staging backup (`pg_dump` custom format, SHA-256, `pg_restore --list`). Refuse if backup older than 7 days or missing.
+2. **Precheck** — confirm `APP_ENV=staging`, `TITAN_ENV=staging`, `DATABASE_URL` ref `cpkuwtaipjxeipvbssvn` only; Xero idle; migration 0177 applied exactly once; 0178 not yet applied.
+3. **Apply migration 0178 only** — `node packages/db/scripts/apply-0178-staging-only.mjs` — **never** `drizzle-kit migrate`.
+4. **Push recovery branch** — `git push -u origin cursor/titan-v1-integration-recovery`.
+5. **Fast-forward deploy branch** — merge/ff `cursor/titan-v1-integration` to the final J-6.2 commit **without force push**.
+6. **Railway deploy** — source branch `cursor/titan-v1-integration`; disable startup/blanket migrations on deploy.
+7. **Verify deployed revision** — record exact commit SHA on API and Web services before J-5 smoke resumes.
 
 ---
 

@@ -724,7 +724,6 @@ export class FinanceService {
   async searchCatalogueItems(
     companyId: string,
     query: string,
-    excludeSourceKeys: string[] = [],
   ): Promise<FinanceCatalogueItemSearchResult[]> {
     const trimmed = query.trim();
     if (trimmed.length < 1) return [];
@@ -759,10 +758,7 @@ export class FinanceService {
       ),
     ];
 
-    return searchFinanceCatalogueItems(trimmed, catalogue, {
-      excludeSourceKeys,
-      limit: 12,
-    });
+    return searchFinanceCatalogueItems(trimmed, catalogue, { limit: 12 });
   }
 
   async buildAuraContext(companyId: string): Promise<AuraFinanceContext> {

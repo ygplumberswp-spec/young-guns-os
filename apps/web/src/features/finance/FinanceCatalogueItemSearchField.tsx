@@ -2,8 +2,9 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { FinanceCatalogueItemSearchResult } from '@titan/shared';
 import {
   collectUsedCatalogueSourceKeys,
+  duplicateCatalogueSelectionWarning,
   formatCatalogueSellPrice,
-  isCatalogueSourceKeyUsed,
+  formatFinanceCatalogueSourceLabel,
 } from '@titan/shared';
 import { searchFinanceCatalogue } from '../../lib/finance-api';
 import type { FinanceDocumentPriceMode, FinanceDocumentVatMode, FinanceEditorLine } from './finance-editor-utils';
@@ -68,7 +69,7 @@ export function FinanceCatalogueItemSearchField({
       setIsSearching(true);
       setError(null);
       try {
-        const items = await searchFinanceCatalogue(accessToken, trimmed, usedSourceKeys);
+        const items = await searchFinanceCatalogue(accessToken, trimmed);
         setResults(items);
         setHighlightIndex(items.length > 0 ? 0 : trimmed.length > 0 ? 0 : -1);
       } catch {
@@ -79,7 +80,7 @@ export function FinanceCatalogueItemSearchField({
         setIsSearching(false);
       }
     },
-    [accessToken, usedSourceKeys],
+    [accessToken],
   );
 
   useEffect(() => {
@@ -111,15 +112,13 @@ export function FinanceCatalogueItemSearchField({
   }
 
   function selectCatalogueItem(item: FinanceCatalogueItemSearchResult) {
-    if (isCatalogueSourceKeyUsed(item.sourceKey, usedSourceKeys)) {
-      setDuplicateMessage('This catalogue item is already on the document.');
-      return;
-    }
     skipSearchRef.current = true;
     const nextLine = applyCatalogueItemToEditorLine(line, item, { priceMode, vatMode });
     onLineChange(nextLine);
     setQuery(nextLine.description);
-    closeDropdown();
+    setDuplicateMessage(duplicateCatalogueSelectionWarning(item.sourceKey, usedSourceKeys, item.name));
+    setResults([]);
+    setHighlightIndex(-1);
     onCatalogueSelected(line.key);
   }
 
@@ -198,7 +197,9 @@ export function FinanceCatalogueItemSearchField({
 
       {isSearching ? <span className="finance-editor-muted finance-catalogue-search__status">Searching…</span> : null}
       {error ? <span className="finance-editor-muted finance-catalogue-search__status">{error}</span> : null}
-      {duplicateMessage ? <span className="form-error finance-catalogue-search__status">{duplicateMessage}</span> : null}
+      {duplicateMessage ? (
+        <span className="finance-catalogue-search__status finance-catalogue-search__status--warning">{duplicateMessage}</span>
+      ) : null}
 
       {dropdownOpen ? (
         <ul id={listboxId} className="finance-catalogue-search__results" role="listbox">
@@ -213,6 +214,9 @@ export function FinanceCatalogueItemSearchField({
                 <span className="finance-catalogue-search__option-head">
                   <strong>{item.itemCode}</strong>
                   <span>{item.name}</span>
+                  <span className="finance-catalogue-search__option-source">
+                    {formatFinanceCatalogueSourceLabel(item.sourceType)}
+                  </span>
                 </span>
                 {item.shortDescription ? (
                   <span className="finance-catalogue-search__option-desc">{item.shortDescription}</span>

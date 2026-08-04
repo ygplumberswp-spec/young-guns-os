@@ -28,7 +28,7 @@ import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { canManageFinance, canViewFinanceProfit, newFinanceClientActionId } from '../../features/finance/utils';
 import { PageHeader } from '../../components/ux';
 import { useFormDraftShell } from '../../hooks/useFormDraftShell';
 import { useTitanNotify } from '../../components/ux/TitanNotifications';
@@ -63,6 +63,7 @@ export function QuoteCreatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+  const canViewUnitCost = user ? canViewFinanceProfit(user.permissions, user.roleName) : false;
   const approvalAction = nextQuoteApprovalAction(status);
   const canSend = canIssueQuote({ isImmutable: false, status });
 
@@ -453,6 +454,7 @@ export function QuoteCreatePage() {
               onVatModeChange={setVatMode}
               priceMode={priceMode}
               onPriceModeChange={setPriceMode}
+              showUnitCost={canViewUnitCost}
             />
           </FinanceEditorCard>
 
