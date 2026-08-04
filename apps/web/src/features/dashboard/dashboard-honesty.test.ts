@@ -1,11 +1,63 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import type { ExecutiveXeroFinance } from '@titan/shared';
+import type { ExecutiveSectionStatus, ExecutiveXeroFinance } from '@titan/shared';
 import {
   formatUpdatedLabel,
+  isSectionCountable,
   resolveFinanceCardHonesty,
   resolveFleetCardHonesty,
+  resolveSectionHonesty,
 } from './dashboard-honesty';
+
+function section(overrides: Partial<ExecutiveSectionStatus> = {}): ExecutiveSectionStatus {
+  return {
+    state: 'live',
+    source: 'TITAN jobs',
+    updatedAt: '2026-08-04T00:00:00.000Z',
+    coverage: null,
+    reason: null,
+    ...overrides,
+  };
+}
+
+describe('resolveSectionHonesty', () => {
+  it('reports a failed section as unavailable and warns the value is not a real zero', () => {
+    const result = resolveSectionHonesty(
+      section({ state: 'unavailable', updatedAt: null, reason: 'connection terminated' }),
+    );
+    assert.equal(result.state, 'unavailable');
+    assert.match(result.note ?? '', /not a real zero/i);
+    assert.match(result.note ?? '', /connection terminated/);
+  });
+
+  it('reports partial coverage without claiming the section is live', () => {
+    const result = resolveSectionHonesty(
+      section({ state: 'partial', coverage: 'All open invoices except 3 with unusable amounts' }),
+    );
+    assert.equal(result.state, 'partial');
+    assert.match(result.note ?? '', /Incomplete coverage/);
+    assert.match(result.note ?? '', /3 with unusable amounts/);
+  });
+
+  it('surfaces coverage as the note when live', () => {
+    const result = resolveSectionHonesty(section({ coverage: 'All open invoices' }));
+    assert.equal(result.state, 'live');
+    assert.equal(result.note, 'All open invoices');
+  });
+
+  it('treats a missing section and a request error as unavailable', () => {
+    assert.equal(resolveSectionHonesty(null).state, 'unavailable');
+    assert.equal(resolveSectionHonesty(section(), 'boom').state, 'unavailable');
+    assert.equal(resolveSectionHonesty(section(), 'boom').note, 'boom');
+  });
+
+  it('only allows counts to render for live or partial sections', () => {
+    assert.equal(isSectionCountable(section()), true);
+    assert.equal(isSectionCountable(section({ state: 'partial' })), true);
+    assert.equal(isSectionCountable(section({ state: 'unavailable' })), false);
+    assert.equal(isSectionCountable(null), false);
+  });
+});
 
 function finance(overrides: Partial<ExecutiveXeroFinance> = {}): ExecutiveXeroFinance {
   return {

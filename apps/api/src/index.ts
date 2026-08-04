@@ -705,6 +705,7 @@ const dashboardExecutiveService = new DashboardExecutiveService({
   intelligenceService,
   dayPlanService,
   xeroSyncService,
+  logger: logger.child({ module: 'dashboard-executive' }),
 });
 const analyticsService = new AnalyticsService(db, financeService, fleetService, inventoryService);
 const workforceService = new WorkforceService({

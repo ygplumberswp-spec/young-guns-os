@@ -127,6 +127,13 @@ export type ExecutiveOutstandingInvoices = {
   oldestOverdue: ExecutiveOutstandingInvoiceRef | null;
   /** Largest open balance among outstanding invoices — null when none. */
   largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
+  /**
+   * Open invoices excluded from the total because their amounts are unusable
+   * (null amount, or paid exceeding billed). Non-zero means partial coverage.
+   */
+  excludedInvoiceCount: number;
+  /** Open invoices with no due date — counted in the total but not in overdue ageing. */
+  undatedInvoiceCount: number;
 };
 
 export type ExecutiveXeroFinanceTrendPoint = {
@@ -168,8 +175,39 @@ export type ExecutiveXeroFinance = {
   currency: string;
 };
 
+/** Dashboard areas whose availability is reported independently of one another. */
+export type ExecutiveSectionKey =
+  | 'todayAtAGlance'
+  | 'money'
+  | 'customerActivity'
+  | 'priorities'
+  | 'activeJobs'
+  | 'completedToday'
+  | 'outstandingInvoices'
+  | 'team';
+
+export type ExecutiveSectionState = 'live' | 'partial' | 'unavailable';
+
+/**
+ * Honest per-section availability. A section is only `live` when every source feeding it
+ * resolved; `unavailable` means the value must not be read as a real zero.
+ */
+export type ExecutiveSectionStatus = {
+  state: ExecutiveSectionState;
+  /** Human-readable origin of the data, e.g. "TITAN jobs". */
+  source: string;
+  /** When the underlying read completed; null when the section did not resolve. */
+  updatedAt: string | null;
+  /** What the number does and does not include. */
+  coverage: string | null;
+  /** Redacted failure reason when not live. */
+  reason: string | null;
+};
+
 export type ExecutiveDashboardSummary = {
   generatedAt: string;
+  /** Per-section availability — one failed source must never blank the whole dashboard. */
+  sections: Record<ExecutiveSectionKey, ExecutiveSectionStatus>;
   header: ExecutiveHeaderCounts;
   todayAtAGlance: ExecutiveTodayAtAGlance;
   liveOperations: ExecutiveLiveJob[];

@@ -16,8 +16,8 @@ import {
   renderLiveOpsFutureSections,
   type LiveOpsFutureModules,
 } from './live-operations-extensions';
-import { resolveFleetCardHonesty } from './dashboard-honesty';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
+import type { DashboardDataState } from './dashboard-honesty';
 import { OpsIntelligenceLiveStrip } from './OpsIntelligenceLiveStrip';
 
 type LiveOperationsPanelProps = {
@@ -132,13 +132,35 @@ export function LiveOperationsPanel({
   const hasStoredPositions = (tracking?.latestPositions.length ?? 0) > 0;
   const showMapSurface = hasStoredPositions || mapMarkers.length > 0;
 
-  const { state: fleetState, note: fleetNote } = resolveFleetCardHonesty({
-    hasTracking: Boolean(tracking),
-    cartrackConnected: Boolean(tracking?.cartrackConnected),
-    connectionDisplayState: tracking?.connectionDisplayState ?? null,
-    hasStoredPositions,
-    error: fleetError,
-  });
+  const { state: fleetState, note: fleetNote } = ((): {
+    state: DashboardDataState;
+    note: string | null;
+  } => {
+    if (!tracking) {
+      return fleetError
+        ? { state: 'unavailable', note: fleetError }
+        : { state: 'unavailable', note: 'Cartrack connection state is still loading.' };
+    }
+    if (!tracking.cartrackConnected) {
+      return {
+        state: 'disconnected',
+        note: 'Cartrack is not connected — TITAN will not invent vehicle positions.',
+      };
+    }
+    if (
+      tracking.connectionDisplayState === 'stale' ||
+      tracking.connectionDisplayState === 'degraded'
+    ) {
+      return {
+        state: 'partial',
+        note: 'Cartrack feed is stale — positions shown are the last stored fix.',
+      };
+    }
+    if (!hasStoredPositions) {
+      return { state: 'needs_setup', note: 'No GPS positions stored yet — run a Cartrack sync.' };
+    }
+    return { state: 'live', note: null };
+  })();
 
   return (
     <Panel title="Live Operations" description="Cartrack GPS and verified job sites — no invented positions">

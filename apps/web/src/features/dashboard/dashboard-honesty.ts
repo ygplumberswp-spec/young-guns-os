@@ -1,4 +1,4 @@
-import type { ExecutiveXeroFinance } from '@titan/shared';
+import type { ExecutiveSectionStatus, ExecutiveXeroFinance } from '@titan/shared';
 
 /**
  * Honesty vocabulary for Owner dashboard cards. Every card resolves to exactly one of
@@ -44,6 +44,44 @@ export type DashboardCardHonesty = {
   state: DashboardDataState;
   note: string | null;
 };
+
+/**
+ * Card honesty for a section of the executive summary. The API reports each section's
+ * availability independently, so a card degrades only when its own source failed —
+ * and an unavailable section must never be read as a real zero.
+ */
+export function resolveSectionHonesty(
+  section: ExecutiveSectionStatus | null | undefined,
+  requestError: string | null = null,
+): DashboardCardHonesty {
+  if (requestError) {
+    return { state: 'unavailable', note: requestError };
+  }
+  if (!section) {
+    return { state: 'unavailable', note: 'This section did not report a status.' };
+  }
+  if (section.state === 'unavailable') {
+    return {
+      state: 'unavailable',
+      note: section.reason
+        ? `Source unavailable — the figures below are not a real zero. ${section.reason}`
+        : 'Source unavailable — the figures below are not a real zero.',
+    };
+  }
+  if (section.state === 'partial') {
+    const detail = section.coverage ?? section.reason;
+    return {
+      state: 'partial',
+      note: detail ? `Incomplete coverage — ${detail}` : 'Incomplete coverage.',
+    };
+  }
+  return { state: 'live', note: section.coverage };
+}
+
+/** True when a count may be shown as a real figure rather than a dash. */
+export function isSectionCountable(section: ExecutiveSectionStatus | null | undefined): boolean {
+  return section?.state === 'live' || section?.state === 'partial';
+}
 
 /**
  * Open AR always comes from TITAN invoices. Until Xero has finished importing we cannot

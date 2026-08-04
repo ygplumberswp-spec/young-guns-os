@@ -1,12 +1,14 @@
 import { Link } from 'wouter';
-import type { ExecutiveCompletedJob } from '@titan/shared';
+import type { ExecutiveCompletedJob, ExecutiveSectionStatus } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
+import { resolveSectionHonesty } from './dashboard-honesty';
 
 type CompletedTodayPanelProps = {
   jobs: ExecutiveCompletedJob[];
+  section?: ExecutiveSectionStatus | null;
   generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
@@ -19,20 +21,25 @@ function formatCompletedTime(iso: string): string {
 
 export function CompletedTodayPanel({
   jobs,
+  section = null,
   generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
 }: CompletedTodayPanelProps) {
+  const honesty = resolveSectionHonesty(section, error);
+  // An unavailable source must not be presented as "nothing completed today".
+  const sourceDown = honesty.state === 'unavailable';
+
   return (
     <Panel title="Completed Today" description="Jobs finished today with invoice status">
       <div className="exec-completed">
         {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
-        ) : error ? (
+        ) : sourceDown ? (
           <EmptyState
             title="Unable To Load Completed Jobs"
-            description={error}
+            description={honesty.note ?? 'The job completion source is unavailable.'}
             action={
               onRetry ? (
                 <Button size="sm" variant="secondary" onClick={onRetry}>
@@ -86,9 +93,10 @@ export function CompletedTodayPanel({
           </ol>
         )}
         <DashboardSourceMeta
-          source="Jobs · Invoices · Job completion snapshots"
-          updatedAt={generatedAt}
-          state={error ? 'unavailable' : 'live'}
+          source={section?.source ?? 'Jobs · Invoices · Job completion snapshots'}
+          updatedAt={section?.updatedAt ?? generatedAt}
+          state={honesty.state}
+          note={honesty.note ?? 'Completion times use the Cape Town business day.'}
           href="/jobs?status=completed"
           linkLabel="Open completed jobs"
         />

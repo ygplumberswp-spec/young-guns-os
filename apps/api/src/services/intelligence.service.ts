@@ -266,6 +266,8 @@ export class IntelligenceService {
    */
   private async countFollowUpCustomers(companyId: string): Promise<number> {
     const cutoff = new Date(Date.now() - FOLLOW_UP_STALE_DAYS * 24 * 60 * 60 * 1000);
+    // postgres-js cannot serialise a Date into an explicitly cast placeholder, so bind ISO text.
+    const cutoffIso = cutoff.toISOString();
 
     const [row] = await this.deps.db
       .select({ count: sql<number>`count(*)::int` })
@@ -278,8 +280,8 @@ export class IntelligenceService {
             (select max(${customerActivities.createdAt})
                from ${customerActivities}
               where ${customerActivities.customerId} = ${customers.id}),
-            ${cutoff}::timestamptz
-          ) <= ${cutoff}::timestamptz`,
+            ${cutoffIso}::timestamptz
+          ) <= ${cutoffIso}::timestamptz`,
         ),
       );
 

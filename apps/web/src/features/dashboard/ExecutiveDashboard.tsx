@@ -54,6 +54,7 @@ export function ExecutiveDashboard() {
           >
             <TodayAtAGlanceGrid
               data={summary?.todayAtAGlance ?? null}
+              sections={summary?.sections ?? null}
               generatedAt={summary?.generatedAt ?? null}
               isLoading={isLoading}
               error={loadError}
@@ -97,6 +98,7 @@ export function ExecutiveDashboard() {
               >
                 <ActiveJobsPanel
                   jobs={liveJobs}
+                  section={summary?.sections.activeJobs ?? null}
                   generatedAt={summary?.generatedAt ?? null}
                   isLoading={isLoading}
                   error={loadError}
@@ -110,6 +112,7 @@ export function ExecutiveDashboard() {
             >
               <CompletedTodayPanel
                 jobs={summary?.completedToday ?? []}
+                section={summary?.sections.completedToday ?? null}
                 generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
                 error={loadError}
@@ -119,8 +122,10 @@ export function ExecutiveDashboard() {
             <SectionErrorBoundary sectionName="Priorities">
               <PrioritiesSummaryPanel
                 priorities={summary?.priorities ?? null}
+                section={summary?.sections.priorities ?? null}
                 generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
+                error={loadError}
               />
             </SectionErrorBoundary>
           </div>
@@ -138,6 +143,7 @@ export function ExecutiveDashboard() {
               <OutstandingInvoicesPanel
                 data={summary?.outstandingInvoices ?? null}
                 xeroFinance={summary?.xeroFinance ?? null}
+                section={summary?.sections.outstandingInvoices ?? null}
                 generatedAt={summary?.generatedAt ?? null}
                 isLoading={isLoading}
                 error={loadError}

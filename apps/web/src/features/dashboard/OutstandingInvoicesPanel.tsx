@@ -1,14 +1,19 @@
 import { Link } from 'wouter';
-import type { ExecutiveOutstandingInvoices, ExecutiveXeroFinance } from '@titan/shared';
+import type {
+  ExecutiveOutstandingInvoices,
+  ExecutiveSectionStatus,
+  ExecutiveXeroFinance,
+} from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
-import { resolveFinanceCardHonesty } from './dashboard-honesty';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
+import { resolveFinanceCardHonesty, resolveSectionHonesty } from './dashboard-honesty';
 
 type OutstandingInvoicesPanelProps = {
   data: ExecutiveOutstandingInvoices | null;
   xeroFinance?: ExecutiveXeroFinance | null;
+  section?: ExecutiveSectionStatus | null;
   generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
@@ -56,6 +61,7 @@ function buildEmptyDescription(xero: ExecutiveXeroFinance | null | undefined): s
 export function OutstandingInvoicesPanel({
   data,
   xeroFinance = null,
+  section = null,
   generatedAt = null,
   isLoading = false,
   error = null,
@@ -63,16 +69,31 @@ export function OutstandingInvoicesPanel({
 }: OutstandingInvoicesPanelProps) {
   const { formatMoney } = useCompanyLocale();
   const hasOutstanding = Boolean(data && data.invoiceCount > 0 && data.outstandingCents > 0);
+  const sectionHonesty = resolveSectionHonesty(section, error);
   const finance = resolveFinanceCardHonesty(xeroFinance, error);
+  // The invoice read itself must be sound before any Xero completeness caveat is meaningful.
+  const sourceDown = sectionHonesty.state === 'unavailable';
+  const state = sourceDown
+    ? 'unavailable'
+    : sectionHonesty.state === 'partial' && finance.state === 'live'
+      ? 'partial'
+      : finance.state;
+  const note = sourceDown
+    ? sectionHonesty.note
+    : [sectionHonesty.state === 'partial' ? sectionHonesty.note : null, finance.note]
+        .filter(Boolean)
+        .join(' · ') || null;
 
   return (
     <Panel title="Outstanding Invoices" description="Open AR from synced TITAN finance records">
       {isLoading && !data ? (
         <DashboardSectionSkeleton rows={3} />
-      ) : error && !data ? (
+      ) : sourceDown ? (
         <EmptyState
           title="Unable To Load Invoices"
-          description={error}
+          description={
+            note ?? 'Open balances could not be read. This is not the same as a zero balance.'
+          }
           action={
             onRetry ? (
               <button type="button" className="exec-dashboard-retry" onClick={onRetry}>
@@ -158,18 +179,18 @@ export function OutstandingInvoicesPanel({
       {xeroFinance ? (
         <p className="exec-outstanding__xero-meta" data-testid="xero-finance-meta">
           {xeroFinance.connected
-            ? `Xero${xeroFinance.organisationName ? ` · ${xeroFinance.organisationName}` : ''} · Last sync ${formatSyncLabel(xeroFinance.lastSyncAt)} · ${xeroFinance.syncedInvoiceCount} invoices / ${xeroFinance.syncedPaymentCount} payments / ${xeroFinance.syncedQuoteCount} quotes synced · Revenue ${((xeroFinance.revenueCents ?? 0) / 100).toLocaleString(undefined, { style: 'currency', currency: xeroFinance.currency })} · Quote pipeline ${xeroFinance.quotePipelineCount}`
+            ? `Xero${xeroFinance.organisationName ? ` · ${xeroFinance.organisationName}` : ''} · Last sync attempt ${formatSyncLabel(xeroFinance.lastSyncAt)} · ${xeroFinance.syncedInvoiceCount} invoices / ${xeroFinance.syncedPaymentCount} payments / ${xeroFinance.syncedQuoteCount} quotes synced · Revenue ${((xeroFinance.revenueCents ?? 0) / 100).toLocaleString(undefined, { style: 'currency', currency: xeroFinance.currency })} · Quote pipeline ${xeroFinance.quotePipelineCount}`
             : 'Xero not connected — figures are TITAN finance records only'}
         </p>
       ) : null}
 
       <DashboardSourceMeta
-        source="TITAN invoices (all open balances)"
-        updatedAt={generatedAt}
-        state={finance.state}
+        source={section?.source ?? 'TITAN invoices (all open balances)'}
+        updatedAt={section?.updatedAt ?? generatedAt}
+        state={state}
         href="/finance/invoices"
         linkLabel="Open finance"
-        note={finance.note}
+        note={note}
       />
     </Panel>
   );

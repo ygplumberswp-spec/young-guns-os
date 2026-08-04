@@ -1,12 +1,14 @@
 import { Link } from 'wouter';
-import type { ExecutiveLiveJob } from '@titan/shared';
+import type { ExecutiveLiveJob, ExecutiveSectionStatus } from '@titan/shared';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
+import { resolveSectionHonesty } from './dashboard-honesty';
 
 type ActiveJobsPanelProps = {
   jobs: ExecutiveLiveJob[];
+  section?: ExecutiveSectionStatus | null;
   generatedAt?: string | null;
   isLoading?: boolean;
   error?: string | null;
@@ -29,22 +31,26 @@ function formatTimeOnSite(startedAt: string | null): string {
 
 export function ActiveJobsPanel({
   jobs,
+  section = null,
   generatedAt = null,
   isLoading = false,
   error = null,
   onRetry,
 }: ActiveJobsPanelProps) {
   const activeJobs = jobs.filter((job) => job.status === 'in_progress');
+  const honesty = resolveSectionHonesty(section, error);
+  // An unavailable source must not be presented as "no active jobs".
+  const sourceDown = honesty.state === 'unavailable';
 
   return (
     <Panel title="Active Jobs" description="In-progress jobs only — no invented activity">
       <div className="exec-active-jobs">
         {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
-        ) : error ? (
+        ) : sourceDown ? (
           <EmptyState
             title="Unable To Load Active Jobs"
-            description={error}
+            description={honesty.note ?? 'The jobs source is unavailable.'}
             action={
               onRetry ? (
                 <Button size="sm" variant="secondary" onClick={onRetry}>
@@ -107,9 +113,10 @@ export function ActiveJobsPanel({
           </ul>
         )}
         <DashboardSourceMeta
-          source="Jobs (executive summary)"
-          updatedAt={generatedAt}
-          state={error ? 'unavailable' : 'live'}
+          source={section?.source ?? 'Jobs (executive summary)'}
+          updatedAt={section?.updatedAt ?? generatedAt}
+          state={honesty.state}
+          note={honesty.note}
           href="/jobs?status=in_progress"
           linkLabel="Open jobs"
         />

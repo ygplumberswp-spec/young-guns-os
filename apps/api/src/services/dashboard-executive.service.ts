@@ -4,6 +4,9 @@ import type {
   ExecutiveDashboardSummary,
   ExecutiveLiveJob,
   ExecutiveOutstandingInvoiceRef,
+  ExecutiveSectionKey,
+  ExecutiveSectionState,
+  ExecutiveSectionStatus,
   ExecutiveTeamMember,
   ExecutiveXeroFinance,
   XeroSyncStatusResponse,
@@ -48,18 +51,154 @@ type DashboardExecutiveDeps = {
   intelligenceService: IntelligenceService;
   dayPlanService: CompanyDayPlanService;
   xeroSyncService?: XeroFinanceStatusSource;
+  logger?: { error: (context: unknown, message: string) => void };
 };
 
+/** Operating timezone for "today" boundaries. Cape Town / SAST. */
+const COMPANY_TIME_ZONE = 'Africa/Johannesburg';
+const DEFAULT_CURRENCY = 'ZAR';
+
+/**
+ * Start of the current day in the operating timezone, expressed as a UTC instant.
+ * Using the server's local day would file early-morning SAST work under the previous day.
+ */
 function startOfLocalDay(): Date {
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  return start;
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: COMPANY_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(now);
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value ?? '0');
+  const elapsedMs =
+    (get('hour') % 24) * 3_600_000 + get('minute') * 60_000 + get('second') * 1_000 + now.getMilliseconds();
+  return new Date(now.getTime() - elapsedMs);
 }
 
 function endOfLocalDay(): Date {
   const end = startOfLocalDay();
-  end.setDate(end.getDate() + 1);
+  end.setUTCDate(end.getUTCDate() + 1);
   return end;
+}
+
+/** Sources feeding the summary; each maps onto one or more independently reported sections. */
+type SummarySourceKey =
+  | 'jobsStats'
+  | 'financeStats'
+  | 'intelligence'
+  | 'todayPlan'
+  | 'todayJobs'
+  | 'calendar'
+  | 'delayedJobs'
+  | 'completedJobs'
+  | 'team'
+  | 'money'
+  | 'customerActivity'
+  | 'outstanding'
+  | 'xero';
+
+/** Honest empty finance feed — used when Xero is absent or its status read fails. */
+function emptyXeroFinance(): ExecutiveXeroFinance {
+  return {
+    connected: false,
+    organisationName: null,
+    lastSyncAt: null,
+    lastError: null,
+    importStatus: null,
+    importMessage: null,
+    syncedCustomerCount: 0,
+    syncedInvoiceCount: 0,
+    syncedPaymentCount: 0,
+    syncedQuoteCount: 0,
+    syncedBankTransactionCount: 0,
+    failedRecordCount: 0,
+    revenueCents: 0,
+    outstandingCents: 0,
+    paidCents: 0,
+    overdueCents: 0,
+    unpaidInvoiceCount: 0,
+    paidInvoiceCount: 0,
+    overdueInvoiceCount: 0,
+    quotePipelineCents: 0,
+    quotePipelineCount: 0,
+    monthlyTurnover: [],
+    paymentTrends: [],
+    currency: DEFAULT_CURRENCY,
+  };
+}
+
+/** Short, non-sensitive failure reason safe to surface in the dashboard. */
+function describeSourceFailure(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.split('\n')[0]!.slice(0, 160);
+}
+
+const SECTION_SOURCES: Record<ExecutiveSectionKey, readonly SummarySourceKey[]> = {
+  todayAtAGlance: ['jobsStats', 'calendar', 'delayedJobs', 'completedJobs'],
+  money: ['money', 'financeStats', 'outstanding'],
+  customerActivity: ['customerActivity', 'intelligence'],
+  priorities: ['todayPlan'],
+  activeJobs: ['todayJobs', 'calendar'],
+  completedToday: ['completedJobs'],
+  outstandingInvoices: ['outstanding'],
+  team: ['team', 'calendar'],
+};
+
+const SECTION_SOURCE_LABELS: Record<ExecutiveSectionKey, string> = {
+  todayAtAGlance: 'TITAN jobs & scheduling',
+  money: 'TITAN invoices & payments',
+  customerActivity: 'TITAN CRM',
+  priorities: 'TITAN Today’s Plan',
+  activeJobs: 'TITAN jobs',
+  completedToday: 'TITAN job completions',
+  outstandingInvoices: 'TITAN invoices',
+  team: 'TITAN team & time entries',
+};
+
+function buildSectionStatuses(
+  failures: Map<SummarySourceKey, string>,
+  generatedAt: Date,
+  outstanding: OutstandingSnapshot | null,
+): Record<ExecutiveSectionKey, ExecutiveSectionStatus> {
+  const iso = generatedAt.toISOString();
+  const entries = (Object.keys(SECTION_SOURCES) as ExecutiveSectionKey[]).map((key) => {
+    const sources = SECTION_SOURCES[key];
+    const broken = sources.filter((source) => failures.has(source));
+    const allBroken = broken.length === sources.length;
+
+    let state: ExecutiveSectionState = 'live';
+    if (broken.length > 0) state = allBroken ? 'unavailable' : 'partial';
+
+    let coverage: string | null = null;
+    if (key === 'outstandingInvoices' && outstanding && broken.length === 0) {
+      coverage =
+        outstanding.excludedInvoiceCount > 0
+          ? `All open invoices except ${outstanding.excludedInvoiceCount} with unusable amounts`
+          : 'All open invoices';
+      if (outstanding.undatedInvoiceCount > 0) {
+        coverage += ` · ${outstanding.undatedInvoiceCount} without a due date`;
+      }
+      if (outstanding.excludedInvoiceCount > 0) state = 'partial';
+    }
+
+    return [
+      key,
+      {
+        state,
+        source: SECTION_SOURCE_LABELS[key],
+        updatedAt: state === 'unavailable' ? null : iso,
+        coverage,
+        reason: broken.length > 0 ? (failures.get(broken[0]!) ?? null) : null,
+      } satisfies ExecutiveSectionStatus,
+    ] as const;
+  });
+
+  return Object.fromEntries(entries) as Record<ExecutiveSectionKey, ExecutiveSectionStatus>;
 }
 
 function displayName(row: {
@@ -74,11 +213,24 @@ function displayName(row: {
 /** Invoice statuses that still carry an open balance. */
 const OPEN_INVOICE_STATUSES = ['sent', 'partial', 'overdue'] as const;
 
+type CompletedJobRow = {
+  id: string;
+  jobNumber: string | null;
+  title: string;
+  /** Real completion instant, not a generic row-update timestamp. */
+  completedAt: Date;
+  customer: { name: string } | null;
+  assignedUser: { firstName: string | null; lastName: string | null; email: string } | null;
+};
+
 type OutstandingSnapshot = {
   outstandingCents: number;
   invoiceCount: number;
+  currency: string;
   oldestOverdue: ExecutiveOutstandingInvoiceRef | null;
   largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
+  excludedInvoiceCount: number;
+  undatedInvoiceCount: number;
 };
 
 export class DashboardExecutiveService {
@@ -96,6 +248,19 @@ export class DashboardExecutiveService {
     const start = startOfLocalDay();
     const end = endOfLocalDay();
     const now = new Date();
+
+    // Every source is settled independently: a single failing provider must degrade only the
+    // sections it feeds, never the whole summary. See resolveSectionStatuses below.
+    const failures = new Map<SummarySourceKey, string>();
+    const settle = <T>(key: SummarySourceKey, fallback: T, run: () => Promise<T>): Promise<T> =>
+      run().catch((error: unknown) => {
+        failures.set(key, describeSourceFailure(error));
+        this.deps.logger?.error(
+          { err: error, companyId, source: key },
+          'Executive summary source failed',
+        );
+        return fallback;
+      });
 
     const [
       jobsStats,
@@ -117,13 +282,13 @@ export class DashboardExecutiveService {
       outstanding,
       xeroStatus,
     ] = await Promise.all([
-      this.deps.jobsService.getStats(companyId),
-      this.deps.financeService.getStats(companyId),
-      this.deps.intelligenceService.getDashboard(companyId),
-      this.deps.dayPlanService.getTodayPlan(companyId),
-      this.deps.jobsService.listTodaysScheduledJobs(companyId, 50),
-      this.deps.schedulingService.getCalendar(companyId, start, end),
-      this.deps.db.query.jobs.findMany({
+      settle('jobsStats', null, () => this.deps.jobsService.getStats(companyId)),
+      settle('financeStats', null, () => this.deps.financeService.getStats(companyId)),
+      settle('intelligence', null, () => this.deps.intelligenceService.getDashboard(companyId)),
+      settle('todayPlan', null, () => this.deps.dayPlanService.getTodayPlan(companyId)),
+      settle('todayJobs', [], () => this.deps.jobsService.listTodaysScheduledJobs(companyId, 50)),
+      settle('calendar', null, () => this.deps.schedulingService.getCalendar(companyId, start, end)),
+      settle('delayedJobs', [], () => this.deps.db.query.jobs.findMany({
         where: and(
           eq(jobs.companyId, companyId),
           isNotNull(jobs.scheduledAt),
@@ -133,24 +298,14 @@ export class DashboardExecutiveService {
         with: { customer: true, assignedUser: true },
         orderBy: [jobs.scheduledAt],
         limit: 20,
-      }),
-      this.deps.db.query.jobs.findMany({
-        where: and(
-          eq(jobs.companyId, companyId),
-          eq(jobs.status, 'completed'),
-          gte(jobs.updatedAt, start),
-          lt(jobs.updatedAt, end),
-        ),
-        with: { customer: true, assignedUser: true },
-        orderBy: [desc(jobs.updatedAt)],
-        limit: 20,
-      }),
-      this.deps.db.query.users.findMany({
+      })),
+      settle('completedJobs', [], () => this.loadCompletedToday(companyId, start, end)),
+      settle('team', [], () => this.deps.db.query.users.findMany({
         where: and(eq(users.companyId, companyId), eq(users.isActive, true)),
         with: { role: true },
         orderBy: [users.firstName, users.lastName],
-      }),
-      this.deps.db.query.mobileTimeEntries.findMany({
+      })),
+      settle('team', [], () => this.deps.db.query.mobileTimeEntries.findMany({
         where: and(
           eq(mobileTimeEntries.companyId, companyId),
           gte(mobileTimeEntries.startedAt, start),
@@ -158,8 +313,8 @@ export class DashboardExecutiveService {
         ),
         orderBy: [desc(mobileTimeEntries.startedAt)],
         limit: 200,
-      }),
-      this.deps.db
+      })),
+      settle('money', [], () => this.deps.db
         .select({ total: sql<number>`coalesce(sum(${invoices.amountCents}), 0)::int` })
         .from(invoices)
         .where(
@@ -169,24 +324,24 @@ export class DashboardExecutiveService {
             lt(invoices.issuedAt, end),
             inArray(invoices.status, ['sent', 'partial', 'paid', 'overdue']),
           ),
-        ),
-      this.deps.db
+        )),
+      settle('money', [], () => this.deps.db
         .select({ total: sql<number>`coalesce(sum(${payments.amountCents}), 0)::int` })
         .from(payments)
         .where(
           and(eq(payments.companyId, companyId), gte(payments.paidAt, start), lt(payments.paidAt, end)),
-        ),
-      this.deps.db
+        )),
+      settle('money', [], () => this.deps.db
         .select({ count: sql<number>`count(*)::int` })
         .from(invoices)
-        .where(and(eq(invoices.companyId, companyId), eq(invoices.status, 'draft'))),
-      this.deps.db
+        .where(and(eq(invoices.companyId, companyId), eq(invoices.status, 'draft')))),
+      settle('customerActivity', [], () => this.deps.db
         .select({ count: sql<number>`count(*)::int` })
         .from(leads)
         .where(
           and(eq(leads.companyId, companyId), inArray(leads.status, ['new', 'contacted', 'qualified', 'opportunity'])),
-        ),
-      this.deps.db
+        )),
+      settle('customerActivity', [], () => this.deps.db
         .select({ count: sql<number>`count(*)::int` })
         .from(communications)
         .where(
@@ -195,23 +350,28 @@ export class DashboardExecutiveService {
             gte(communications.createdAt, start),
             lt(communications.createdAt, end),
           ),
-        ),
-      this.countReturningCustomers(companyId, start, end),
-      this.loadOutstandingSnapshot(companyId),
-      this.loadXeroFinance(companyId),
+        )),
+      settle('customerActivity', null, () =>
+        this.countReturningCustomers(companyId, start, end),
+      ),
+      settle('outstanding', null, () => this.loadOutstandingSnapshot(companyId)),
+      settle('xero', null, () => this.loadXeroFinance(companyId)),
     ]);
 
-    const scheduledCount = calendar.events.filter((event) => event.status === 'scheduled').length;
-    const inProgressCount = calendar.events.filter((event) => event.status === 'in_progress').length;
+    const calendarEvents = calendar?.events ?? [];
+    const scheduledCount = calendarEvents.filter((event) => event.status === 'scheduled').length;
+    const inProgressCount = calendarEvents.filter((event) => event.status === 'in_progress').length;
     const completedCount = completedJobs.length;
     const delayedCount = delayedJobs.length;
 
-    const activePlans = todayPlan.sections.top_priorities.filter((plan) => plan.status === 'active');
+    const activePlans = (todayPlan?.sections.top_priorities ?? []).filter(
+      (plan) => plan.status === 'active',
+    );
     const waitingApproval = activePlans.filter((plan) => plan.approvalRequired).length;
-    const blockedCount = todayPlan.summary.deadlineRisks;
+    const blockedCount = todayPlan?.summary.deadlineRisks ?? 0;
 
-    const jobsByAssignee = new Map<string, typeof calendar.events>();
-    for (const event of calendar.events) {
+    const jobsByAssignee = new Map<string, typeof calendarEvents>();
+    for (const event of calendarEvents) {
       if (!event.assignedUserId) continue;
       const list = jobsByAssignee.get(event.assignedUserId) ?? [];
       list.push(event);
@@ -219,7 +379,7 @@ export class DashboardExecutiveService {
     }
 
     const workingUserIds = new Set<string>();
-    for (const event of calendar.events) {
+    for (const event of calendarEvents) {
       if (event.assignedUserId && event.status === 'in_progress') {
         workingUserIds.add(event.assignedUserId);
       }
@@ -244,11 +404,13 @@ export class DashboardExecutiveService {
     const liveOperations = this.buildLiveOperations(
       todayJobs,
       delayedJobs,
-      calendar.events,
+      calendarEvents,
       activeTimeEntries,
       liveJobCoords,
     );
-    const completedToday = await this.buildCompletedToday(companyId, completedJobs);
+    const completedToday = await settle('completedJobs', [], () =>
+      this.buildCompletedToday(companyId, completedJobs),
+    );
 
     const needsAttention = activePlans.length;
     const summaryParts: string[] = [];
@@ -279,7 +441,7 @@ export class DashboardExecutiveService {
       };
     });
 
-    const criticalIssues = intelligenceDashboard.automationFailures.items
+    const criticalIssues = (intelligenceDashboard?.automationFailures.items ?? [])
       .slice(0, 2)
       .map((item) => ({
         id: item.id,
@@ -288,7 +450,9 @@ export class DashboardExecutiveService {
         href: '/automation',
       }));
 
-    for (const invoice of intelligenceDashboard.outstandingInvoices.items.slice(0, 1)) {
+    // Overdue-invoice escalation is additive: when finance is down the operational
+    // priorities above still stand on their own.
+    for (const invoice of (intelligenceDashboard?.outstandingInvoices.items ?? []).slice(0, 1)) {
       if (invoice.status === 'overdue') {
         criticalIssues.push({
           id: invoice.id,
@@ -301,11 +465,12 @@ export class DashboardExecutiveService {
 
     return {
       generatedAt: now.toISOString(),
+      sections: buildSectionStatuses(failures, now, outstanding),
       header: {
-        jobsToday: jobsStats.todayScheduledCount,
+        jobsToday: jobsStats?.todayScheduledCount ?? scheduledCount,
         prioritiesToday: activePlans.length,
         teamWorking: workingUserIds.size,
-        approvalsWaiting: intelligenceDashboard.pendingApprovals.count + waitingApproval,
+        approvalsWaiting: (intelligenceDashboard?.pendingApprovals.count ?? 0) + waitingApproval,
       },
       todayAtAGlance: {
         jobs: {
@@ -324,15 +489,15 @@ export class DashboardExecutiveService {
         money: {
           invoicedTodayCents: todayInvoices[0]?.total ?? 0,
           paymentsTodayCents: todayPayments[0]?.total ?? 0,
-          outstandingCents: outstanding.outstandingCents,
+          outstandingCents: outstanding?.outstandingCents ?? 0,
           draftCount: draftInvoices[0]?.count ?? 0,
-          currency: financeStats.currency,
+          currency: financeStats?.currency ?? outstanding?.currency ?? DEFAULT_CURRENCY,
         },
         customerActivity: {
           leads: leadCount[0]?.count ?? 0,
-          followUps: intelligenceDashboard.customerFollowUps.count,
+          followUps: intelligenceDashboard?.customerFollowUps.count ?? 0,
           messages: messageCount[0]?.count ?? 0,
-          returning: returningCustomerCount,
+          returning: returningCustomerCount ?? 0,
         },
       },
       liveOperations,
@@ -346,13 +511,18 @@ export class DashboardExecutiveService {
         criticalIssues,
       },
       outstandingInvoices: {
-        outstandingCents: outstanding.outstandingCents,
-        invoiceCount: outstanding.invoiceCount,
-        currency: intelligenceDashboard.outstandingInvoices.currency,
-        oldestOverdue: outstanding.oldestOverdue,
-        largestOutstanding: outstanding.largestOutstanding,
+        outstandingCents: outstanding?.outstandingCents ?? 0,
+        invoiceCount: outstanding?.invoiceCount ?? 0,
+        currency:
+          outstanding?.currency ??
+          intelligenceDashboard?.outstandingInvoices.currency ??
+          DEFAULT_CURRENCY,
+        oldestOverdue: outstanding?.oldestOverdue ?? null,
+        largestOutstanding: outstanding?.largestOutstanding ?? null,
+        excludedInvoiceCount: outstanding?.excludedInvoiceCount ?? 0,
+        undatedInvoiceCount: outstanding?.undatedInvoiceCount ?? 0,
       },
-      xeroFinance: xeroStatus,
+      xeroFinance: xeroStatus ?? emptyXeroFinance(),
       teamToday,
     };
   }
@@ -363,11 +533,16 @@ export class DashboardExecutiveService {
    */
   private async loadOutstandingSnapshot(companyId: string): Promise<OutstandingSnapshot> {
     const balance = sql`${invoices.amountCents} - ${invoices.amountPaidCents}`;
-    const isOpen = and(
+    // Records whose amounts cannot produce a trustworthy balance are excluded from the
+    // total and reported separately as reduced coverage rather than silently summed.
+    const isUsable = sql`${invoices.amountCents} is not null
+      and ${invoices.amountPaidCents} is not null
+      and ${invoices.amountPaidCents} <= ${invoices.amountCents}`;
+    const isOpenRecord = and(
       eq(invoices.companyId, companyId),
       inArray(invoices.status, [...OPEN_INVOICE_STATUSES]),
-      sql`${balance} > 0`,
     );
+    const isOpen = and(isOpenRecord, isUsable, sql`${balance} > 0`);
     const refColumns = {
       id: invoices.id,
       invoiceNumber: invoices.invoiceNumber,
@@ -376,14 +551,20 @@ export class DashboardExecutiveService {
       outstandingCents: sql<number>`(${balance})::int`,
     };
 
-    const [totals, oldestRows, largestRows] = await Promise.all([
+    const [totals, coverage, oldestRows, largestRows] = await Promise.all([
       this.deps.db
         .select({
           count: sql<number>`count(*)::int`,
           total: sql<string>`coalesce(sum(${balance}), 0)::text`,
+          undated: sql<number>`count(*) filter (where ${invoices.dueDate} is null)::int`,
+          currency: sql<string | null>`max(${invoices.currency})`,
         })
         .from(invoices)
         .where(isOpen),
+      this.deps.db
+        .select({ excluded: sql<number>`count(*) filter (where not (${isUsable}))::int` })
+        .from(invoices)
+        .where(isOpenRecord),
       this.deps.db
         .select(refColumns)
         .from(invoices)
@@ -424,8 +605,11 @@ export class DashboardExecutiveService {
     return {
       outstandingCents: Number(totals[0]?.total ?? 0),
       invoiceCount: totals[0]?.count ?? 0,
+      currency: totals[0]?.currency ?? DEFAULT_CURRENCY,
       oldestOverdue: toRef(oldestRows[0]),
       largestOutstanding: toRef(largestRows[0]),
+      excludedInvoiceCount: coverage[0]?.excluded ?? 0,
+      undatedInvoiceCount: totals[0]?.undated ?? 0,
     };
   }
 
@@ -447,11 +631,12 @@ export class DashboardExecutiveService {
           isNotNull(jobs.customerId),
           gte(jobs.createdAt, start),
           lt(jobs.createdAt, end),
+          // postgres-js has no encoder for a Date inside a raw sql template — bind ISO text.
           sql`exists (
             select 1 from ${jobs} prior
             where prior.company_id = ${companyId}::uuid
               and prior.customer_id = ${jobs.customerId}
-              and prior.created_at < ${start}::timestamptz
+              and prior.created_at < ${start.toISOString()}::timestamptz
           )`,
         ),
       );
@@ -460,32 +645,7 @@ export class DashboardExecutiveService {
   }
 
   private async loadXeroFinance(companyId: string): Promise<ExecutiveXeroFinance> {
-    const empty: ExecutiveXeroFinance = {
-      connected: false,
-      organisationName: null,
-      lastSyncAt: null,
-      lastError: null,
-      importStatus: null,
-      importMessage: null,
-      syncedCustomerCount: 0,
-      syncedInvoiceCount: 0,
-      syncedPaymentCount: 0,
-      syncedQuoteCount: 0,
-      syncedBankTransactionCount: 0,
-      failedRecordCount: 0,
-      revenueCents: 0,
-      outstandingCents: 0,
-      paidCents: 0,
-      overdueCents: 0,
-      unpaidInvoiceCount: 0,
-      paidInvoiceCount: 0,
-      overdueInvoiceCount: 0,
-      quotePipelineCents: 0,
-      quotePipelineCount: 0,
-      monthlyTurnover: [],
-      paymentTrends: [],
-      currency: 'USD',
-    };
+    const empty = emptyXeroFinance();
 
     if (!this.deps.xeroSyncService) {
       return empty;
@@ -686,16 +846,67 @@ export class DashboardExecutiveService {
       });
   }
 
+  /**
+   * Jobs completed during today in the operating timezone, keyed off a real completion
+   * timestamp rather than `updatedAt` (which unrelated writes such as invoice linkage move).
+   */
+  private async loadCompletedToday(
+    companyId: string,
+    start: Date,
+    end: Date,
+  ): Promise<CompletedJobRow[]> {
+    const completedAt = sql<Date>`coalesce(
+      (select max(snap.created_at)
+         from ${jobCompletionSnapshots} snap
+        where snap.job_id = ${jobs.id}
+          and snap.company_id = ${companyId}::uuid),
+      ${jobs.executionPhaseUpdatedAt},
+      ${jobs.updatedAt}
+    )`;
+
+    const rows = await this.deps.db
+      .select({ id: jobs.id, completedAt })
+      .from(jobs)
+      .where(
+        and(
+          eq(jobs.companyId, companyId),
+          eq(jobs.status, 'completed'),
+          sql`${completedAt} >= ${start.toISOString()}::timestamptz`,
+          sql`${completedAt} < ${end.toISOString()}::timestamptz`,
+        ),
+      )
+      .orderBy(sql`${completedAt} desc`)
+      .limit(20);
+
+    if (rows.length === 0) return [];
+
+    const completedAtById = new Map(rows.map((row) => [row.id, new Date(row.completedAt)]));
+    const detailed = await this.deps.db.query.jobs.findMany({
+      where: and(
+        eq(jobs.companyId, companyId),
+        inArray(
+          jobs.id,
+          rows.map((row) => row.id),
+        ),
+      ),
+      with: { customer: true, assignedUser: true },
+    });
+
+    return detailed
+      .map((job) => ({
+        id: job.id,
+        jobNumber: job.jobNumber,
+        title: job.title,
+        completedAt: completedAtById.get(job.id) ?? job.updatedAt,
+        customer: job.customer,
+        assignedUser: job.assignedUser,
+      }))
+      .sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
+  }
+
   private async buildCompletedToday(
     companyId: string,
-    completedJobs: Array<{
-      id: string;
-      jobNumber: string | null;
-      title: string;
-      updatedAt: Date;
-      customer: { name: string } | null;
-      assignedUser: { firstName: string | null; lastName: string | null; email: string } | null;
-    }>,
+    completedJobs: CompletedJobRow[],
   ): Promise<ExecutiveCompletedJob[]> {
     if (completedJobs.length === 0) return [];
 
@@ -724,7 +935,7 @@ export class DashboardExecutiveService {
         title: job.title,
         customerName: job.customer?.name ?? 'Unknown customer',
         technicianName: job.assignedUser ? displayName(job.assignedUser) : null,
-        completedAt: job.updatedAt.toISOString(),
+        completedAt: job.completedAt.toISOString(),
         invoiceStatus: invoiceByJob.get(job.id) ?? null,
         // No completion snapshot means the technician never captured the closeout pack.
         docsRequired: !snapshot,

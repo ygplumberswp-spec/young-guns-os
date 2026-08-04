@@ -1,14 +1,17 @@
-import type { ExecutivePrioritiesSummary } from '@titan/shared';
+import type { ExecutivePrioritiesSummary, ExecutiveSectionStatus } from '@titan/shared';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel } from '@titan/ui';
 import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
+import { resolveSectionHonesty } from './dashboard-honesty';
 
 type PrioritiesSummaryPanelProps = {
   priorities: ExecutivePrioritiesSummary | null;
+  section?: ExecutiveSectionStatus | null;
   generatedAt?: string | null;
   isLoading?: boolean;
+  error?: string | null;
 };
 
 function approvalLabel(state: 'awaiting_owner' | 'not_required'): string {
@@ -17,14 +20,35 @@ function approvalLabel(state: 'awaiting_owner' | 'not_required'): string {
 
 export function PrioritiesSummaryPanel({
   priorities,
+  section = null,
   generatedAt = null,
   isLoading = false,
+  error = null,
 }: PrioritiesSummaryPanelProps) {
+  const honesty = resolveSectionHonesty(section, error);
+  // Previously a null payload span the skeleton forever; an unreachable source is now stated.
+  const sourceDown = honesty.state === 'unavailable';
+
   return (
     <Panel title="Today&apos;s Priorities" description="From Today&apos;s Plan — real M8 items only">
       <div className="exec-priorities">
-        {isLoading || !priorities ? (
+        {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
+        ) : sourceDown || !priorities ? (
+          <EmptyState
+            title="Priorities Unavailable"
+            description={
+              honesty.note ??
+              'Today’s Plan could not be reached. This is not the same as having no priorities.'
+            }
+            action={
+              <Link href="/aura/todays-plan">
+                <Button size="sm" variant="secondary">
+                  Open Today&apos;s Plan
+                </Button>
+              </Link>
+            }
+          />
         ) : (priorities.items?.length ?? 0) === 0 &&
           priorities.criticalIssues.length === 0 ? (
           <EmptyState
@@ -90,11 +114,12 @@ export function PrioritiesSummaryPanel({
           </>
         )}
         <DashboardSourceMeta
-          source="Today&apos;s Plan · Automation runs · Invoices"
-          updatedAt={generatedAt}
-          state={priorities ? 'live' : 'unavailable'}
+          source={section?.source ?? 'Today’s Plan · Automation runs · Invoices'}
+          updatedAt={section?.updatedAt ?? generatedAt}
+          state={honesty.state}
+          note={honesty.note}
           href="/aura/todays-plan"
-          linkLabel="Open Today&apos;s Plan"
+          linkLabel="Open Today’s Plan"
         />
       </div>
     </Panel>
