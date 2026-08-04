@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DraftRecordType } from '@titan/shared';
 import { useDraftAutosave } from './useDraftAutosave';
 import { useUnsavedChangesGuard } from './useUnsavedChangesGuard';
+import { registerDirtyForm, unregisterDirtyForm } from '../lib/live-updates/dirty-form-registry';
 
 type UseFormDraftShellOptions = {
   accessToken: string | null;
@@ -42,6 +43,17 @@ export function useFormDraftShell(options: UseFormDraftShellOptions) {
     markDirty();
     autosave.scheduleSave();
   }, [autosave, markDirty]);
+
+  const dirtyFormId = useMemo(
+    () => `${options.recordType}:${options.recordId ?? 'new'}`,
+    [options.recordId, options.recordType],
+  );
+
+  useEffect(() => {
+    if (isDirty) registerDirtyForm(dirtyFormId);
+    else unregisterDirtyForm(dirtyFormId);
+    return () => unregisterDirtyForm(dirtyFormId);
+  }, [dirtyFormId, isDirty]);
 
   return {
     isDirty,
