@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FinanceCustomerSearchResult, CreateCustomerRequest } from '@titan/shared';
-import { findDuplicateCustomerHint } from '@titan/shared';
+import { findDuplicateCustomersByContact } from '@titan/shared';
+import { isValidEmailAddress, normalizeSaPhone } from '@titan/shared';
 import { Button, Input } from '@titan/ui';
 import { searchFinanceCustomers } from '../../lib/finance-api';
 import { createCustomer } from '../../lib/crm-api';
@@ -10,9 +11,16 @@ type CustomerSearchFieldProps = {
   value: FinanceCustomerSearchResult | null;
   onChange: (customer: FinanceCustomerSearchResult | null) => void;
   disabled?: boolean;
+  canCreateCustomer?: boolean;
 };
 
-export function CustomerSearchField({ accessToken, value, onChange, disabled }: CustomerSearchFieldProps) {
+export function CustomerSearchField({
+  accessToken,
+  value,
+  onChange,
+  disabled,
+  canCreateCustomer = true,
+}: CustomerSearchFieldProps) {
   const [query, setQuery] = useState(value?.name ?? '');
   const [results, setResults] = useState<FinanceCustomerSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -20,9 +28,11 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
   const [showDrawer, setShowDrawer] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [newCustomer, setNewCustomer] = useState<CreateCustomerRequest>({ name: '' });
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; phone?: string }>({});
   const [isCreating, setIsCreating] = useState(false);
   const debounceRef = useRef<number | null>(null);
   const skipSearchRef = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (value) setQuery(value.companyName?.trim() || value.name);
@@ -74,6 +84,18 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
     setQuery(customer.companyName?.trim() || customer.name);
     setResults([]);
     setHighlightIndex(-1);
+    setShowDrawer(false);
+    setFieldErrors({});
+    window.setTimeout(() => searchInputRef.current?.focus(), 0);
+  }
+
+  function openAddCustomerDrawer() {
+    setNewCustomer({
+      name: query.trim(),
+      companyName: query.trim(),
+    });
+    setFieldErrors({});
+    setShowDrawer(true);
   }
 
   function handleKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -92,12 +114,36 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
     }
   }
 
+  function validateNewCustomerFields(): boolean {
+    const nextErrors: { email?: string; phone?: string } = {};
+    const email = newCustomer.email?.trim();
+    const phone = newCustomer.phone?.trim();
+
+    if (email && !isValidEmailAddress(email)) {
+      nextErrors.email = 'Enter a valid email address';
+    }
+    if (phone && !normalizeSaPhone(phone)) {
+      nextErrors.phone = 'Enter a valid South African phone number';
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
   async function handleCreateCustomer() {
-    if (!newCustomer.name.trim()) return;
+    if (!canCreateCustomer || !newCustomer.name.trim()) return;
+    if (!validateNewCustomerFields()) return;
+    if (duplicateMatches.length > 0) return;
+
     setIsCreating(true);
     setError(null);
     try {
-      const created = await createCustomer(accessToken, newCustomer);
+      const payload: CreateCustomerRequest = {
+        ...newCustomer,
+        phone: newCustomer.phone?.trim() ? normalizeSaPhone(newCustomer.phone) ?? newCustomer.phone.trim() : undefined,
+        email: newCustomer.email?.trim() || undefined,
+      };
+      const created = await createCustomer(accessToken, payload);
       selectCustomer({
         id: created.id,
         name: created.name,
@@ -106,7 +152,6 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
         phone: created.phone,
         xeroContactId: created.xeroContactId,
       });
-      setShowDrawer(false);
       setNewCustomer({ name: '' });
     } catch {
       setError('Unable to create customer');
@@ -115,13 +160,15 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
     }
   }
 
-  const duplicateHint = findDuplicateCustomerHint(newCustomer.name, results);
+  const duplicateMatches = findDuplicateCustomersByContact(newCustomer, results);
+  const showAddNew = canCreateCustomer && query.trim().length >= 2 && !value;
 
   return (
     <div className="finance-customer-search finance-customer-search--editor">
       <label className="titan-input-group finance-editor-field-group">
         <span className="titan-input-label">Customer search</span>
         <input
+          ref={searchInputRef}
           className="titan-input finance-editor-field"
           value={query}
           onChange={(e) => {
@@ -129,11 +176,11 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
             if (value && e.target.value !== (value.companyName?.trim() || value.name)) onChange(null);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Search name, company, phone, email, Xero contact…"
+          placeholder="Search name, company, phone, email…"
           disabled={disabled}
           autoComplete="off"
           role="combobox"
-          aria-expanded={results.length > 0}
+          aria-expanded={results.length > 0 || showAddNew}
           aria-controls="finance-customer-search-results"
         />
       </label>
@@ -155,7 +202,7 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
       {isSearching ? <p className="finance-editor-muted">Searching…</p> : null}
       {error ? <p className="form-error">{error}</p> : null}
 
-      {results.length > 0 ? (
+      {results.length > 0 || showAddNew ? (
         <ul id="finance-customer-search-results" className="finance-customer-search__results" role="listbox">
           {results.map((customer, index) => (
             <li key={customer.id}>
@@ -170,19 +217,21 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
               </button>
             </li>
           ))}
-          <li>
-            <button type="button" className="finance-customer-search__create" onClick={() => setShowDrawer(true)}>
-              + Create new customer
-            </button>
-          </li>
+          {showAddNew ? (
+            <li>
+              <button type="button" className="finance-customer-search__create" onClick={openAddCustomerDrawer}>
+                Add new customer
+              </button>
+            </li>
+          ) : null}
         </ul>
       ) : null}
 
       {showDrawer ? (
         <div className="finance-customer-drawer finance-customer-drawer--editor">
-          <h3 className="finance-customer-drawer__title">New customer</h3>
+          <h3 className="finance-customer-drawer__title">Add new customer</h3>
           <Input
-            label="Customer / company name"
+            label="Customer / business name"
             value={newCustomer.name}
             onChange={(e) => setNewCustomer({ ...newCustomer, name: e.target.value })}
             required
@@ -201,11 +250,13 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
             label="Phone"
             value={newCustomer.phone ?? ''}
             onChange={(e) => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+            error={fieldErrors.phone}
           />
           <Input
             label="Email"
             value={newCustomer.email ?? ''}
             onChange={(e) => setNewCustomer({ ...newCustomer, email: e.target.value })}
+            error={fieldErrors.email}
           />
           <label className="titan-input-group finance-editor-field-group">
             <span className="titan-input-label">Billing address</span>
@@ -225,13 +276,20 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
               onChange={(e) => setNewCustomer({ ...newCustomer, siteAddress: e.target.value })}
             />
           </label>
-          <Input
-            label="VAT number"
-            value={newCustomer.vatNumber ?? ''}
-            onChange={(e) => setNewCustomer({ ...newCustomer, vatNumber: e.target.value })}
-          />
-          {duplicateHint ? (
-            <p className="form-error">A similar customer may already exist. Review matches before saving.</p>
+          {duplicateMatches.length > 0 ? (
+            <div className="finance-customer-drawer__duplicates">
+              <p className="form-error">Possible duplicate customer — select an existing match or adjust details.</p>
+              <ul className="finance-customer-search__results">
+                {duplicateMatches.map((customer) => (
+                  <li key={customer.id}>
+                    <button type="button" className="finance-customer-search__option" onClick={() => selectCustomer(customer)}>
+                      <strong>{customer.name}</strong>
+                      <span>{[customer.email, customer.phone].filter(Boolean).join(' · ')}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ) : null}
           <div className="finance-customer-drawer__actions">
             <Button type="button" variant="secondary" onClick={() => setShowDrawer(false)}>
@@ -240,7 +298,7 @@ export function CustomerSearchField({ accessToken, value, onChange, disabled }: 
             <Button
               type="button"
               onClick={() => void handleCreateCustomer()}
-              disabled={isCreating || !newCustomer.name.trim()}
+              disabled={!canCreateCustomer || isCreating || !newCustomer.name.trim() || duplicateMatches.length > 0}
             >
               {isCreating ? 'Saving…' : 'Save customer'}
             </Button>

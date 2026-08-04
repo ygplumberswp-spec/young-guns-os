@@ -28,7 +28,7 @@ test('shows pending draft text before Xero sync', () => {
 });
 
 test('detects duplicate customer names in search results', () => {
-  const results = [{ name: 'Young Guns Plumbing', companyName: null }];
+  const results = [{ id: '1', name: 'Young Guns Plumbing', companyName: null }];
   assert.equal(findDuplicateCustomerHint('young guns plumbing', results), true);
   assert.equal(findDuplicateCustomerHint('New Customer', results), false);
 });

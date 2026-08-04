@@ -99,7 +99,6 @@ export function QuoteEditPage() {
   });
 
   const { notify } = useTitanNotify();
-  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/quotes/${quoteId}`);
@@ -216,6 +215,29 @@ export function QuoteEditPage() {
       vatMode,
     ],
   );
+
+  const saveQuoteDraft = useCallback(async () => {
+    if (!accessToken || !canWrite || !quoteId) {
+      throw new Error('You do not have permission to save');
+    }
+    await draftShell.autosave.saveNow();
+    const result = await persistQuote(false);
+    if (!result) {
+      throw new Error('Unable to save quote');
+    }
+    setStatus(result.status);
+    draftShell.markSubmitted();
+    invalidateQuotes();
+  }, [accessToken, canWrite, draftShell, invalidateQuotes, persistQuote, quoteId]);
+
+  const { openPreview, previewModal } = useFinanceDocumentPreview({
+    accessToken,
+    saveHandlers: {
+      canSave: canWrite,
+      onSave: saveQuoteDraft,
+      onSaveDraft: saveQuoteDraft,
+    },
+  });
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite || !quoteId) return;

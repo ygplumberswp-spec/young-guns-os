@@ -35,7 +35,7 @@ import {
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { canManageFinance, newFinanceClientActionId } from '../../features/finance/utils';
+import { canManageFinance, canCreateCustomer, newFinanceClientActionId } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
@@ -80,6 +80,7 @@ export function InvoiceCreatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+  const canCreateCustomerRecord = user ? canCreateCustomer(user.permissions) : false;
 
   const draftShell = useFormDraftShell({
     accessToken,
@@ -110,7 +111,6 @@ export function InvoiceCreatePage() {
   });
 
   const { notify } = useTitanNotify();
-  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/invoices');
@@ -297,6 +297,44 @@ export function InvoiceCreatePage() {
     ],
   );
 
+  const saveInvoiceDraft = useCallback(async () => {
+    if (!accessToken || !canWrite) {
+      throw new Error('You do not have permission to save');
+    }
+    if (!customerId) {
+      throw new Error('Select a customer before saving');
+    }
+    await draftShell.autosave.saveNow();
+    const wasNew = !savedInvoiceId;
+    const result = await persistInvoice(false);
+    if (!result?.id) {
+      throw new Error('Unable to save invoice');
+    }
+    draftShell.markSubmitted();
+    invalidateInvoices();
+    if (wasNew) {
+      navigate(financeDocumentEditPath('invoice', result.id), { replace: true });
+    }
+  }, [
+    accessToken,
+    canWrite,
+    customerId,
+    draftShell,
+    invalidateInvoices,
+    navigate,
+    persistInvoice,
+    savedInvoiceId,
+  ]);
+
+  const { openPreview, previewModal } = useFinanceDocumentPreview({
+    accessToken,
+    saveHandlers: {
+      canSave: canWrite,
+      onSave: saveInvoiceDraft,
+      onSaveDraft: saveInvoiceDraft,
+    },
+  });
+
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
 
@@ -413,6 +451,7 @@ export function InvoiceCreatePage() {
                   setJobId('');
                   setQuoteId('');
                 }}
+                canCreateCustomer={canCreateCustomerRecord}
               />
             ) : null}
             <Input

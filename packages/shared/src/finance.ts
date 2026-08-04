@@ -528,13 +528,40 @@ export function displayOfficialQuoteNumber(input: {
 /** Returns true when a customer name closely matches an existing search result. */
 export function findDuplicateCustomerHint(
   name: string,
-  results: Array<{ name: string; companyName?: string | null }>,
+  results: Array<{
+    id: string;
+    name: string;
+    companyName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+  }>,
 ): boolean {
-  const normalized = name.trim().toLowerCase();
-  if (normalized.length < 2) return false;
-  return results.some((row) => {
-    const candidate = row.companyName?.trim() || row.name.trim();
-    return candidate.toLowerCase() === normalized || row.name.trim().toLowerCase() === normalized;
+  return findDuplicateCustomersByContact({ name }, results).length > 0;
+}
+
+function normaliseCustomerContact(value: string | null | undefined): string {
+  return (value ?? '').trim().toLowerCase();
+}
+
+/** Finds possible duplicate customers by name, phone or email within tenant search results. */
+export function findDuplicateCustomersByContact<
+  T extends { id: string; name: string; companyName?: string | null; email?: string | null; phone?: string | null },
+>(
+  input: { name?: string | null; email?: string | null; phone?: string | null },
+  results: readonly T[],
+): T[] {
+  const name = normaliseCustomerContact(input.name);
+  const email = normaliseCustomerContact(input.email);
+  const phone = normaliseCustomerContact(input.phone)?.replace(/\s+/g, '');
+
+  return results.filter((row) => {
+    const rowName = normaliseCustomerContact(row.companyName || row.name);
+    const rowEmail = normaliseCustomerContact(row.email);
+    const rowPhone = normaliseCustomerContact(row.phone)?.replace(/\s+/g, '');
+    if (name.length >= 2 && (rowName === name || normaliseCustomerContact(row.name) === name)) return true;
+    if (email.length >= 3 && rowEmail && rowEmail === email) return true;
+    if (phone.length >= 6 && rowPhone && rowPhone === phone) return true;
+    return false;
   });
 }
 

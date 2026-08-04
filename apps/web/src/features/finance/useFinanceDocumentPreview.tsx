@@ -1,19 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildFinanceDocumentPreviewModel, type FinanceDocumentPreviewInput } from '@titan/shared';
 import { previewFinanceDocumentPdf, type FinanceDocumentPdfPreview } from '../../lib/finance-api';
-import { FinanceDocumentPreviewModal } from './FinanceDocumentPreviewModal';
+import { FinanceDocumentPreviewModal, type FinancePreviewSaveHandlers } from './FinanceDocumentPreviewModal';
 
 type UseFinanceDocumentPreviewOptions = {
   accessToken: string | null | undefined;
+  saveHandlers?: Omit<FinancePreviewSaveHandlers, 'saveError' | 'saveNotice' | 'isSaving'>;
 };
 
-export function useFinanceDocumentPreview({ accessToken }: UseFinanceDocumentPreviewOptions) {
+export function useFinanceDocumentPreview({ accessToken, saveHandlers }: UseFinanceDocumentPreviewOptions) {
   const [preview, setPreview] = useState<FinanceDocumentPdfPreview | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [documentLabel, setDocumentLabel] = useState<string | null>(null);
   const [documentNumber, setDocumentNumber] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveNotice, setSaveNotice] = useState<string | null>(null);
   const pdfUrlRef = useRef<string | null>(null);
 
   const revokePdfUrl = useCallback(() => {
@@ -30,7 +34,10 @@ export function useFinanceDocumentPreview({ accessToken }: UseFinanceDocumentPre
     setDocumentLabel(null);
     setDocumentNumber(null);
     setError(null);
+    setSaveError(null);
+    setSaveNotice(null);
     setIsLoading(false);
+    setIsSaving(false);
   }, [revokePdfUrl]);
 
   useEffect(() => () => revokePdfUrl(), [revokePdfUrl]);
@@ -47,6 +54,8 @@ export function useFinanceDocumentPreview({ accessToken }: UseFinanceDocumentPre
       setDocumentNumber(model.documentNumber);
       setIsLoading(true);
       setError(null);
+      setSaveError(null);
+      setSaveNotice(null);
       setPreview(null);
       revokePdfUrl();
 
@@ -65,6 +74,24 @@ export function useFinanceDocumentPreview({ accessToken }: UseFinanceDocumentPre
     [accessToken, revokePdfUrl],
   );
 
+  const runPreviewSave = useCallback(
+    async (handler: (() => Promise<void>) | undefined, notice: string) => {
+      if (!handler || isSaving) return;
+      setIsSaving(true);
+      setSaveError(null);
+      setSaveNotice(null);
+      try {
+        await handler();
+        setSaveNotice(notice);
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : 'Unable to save document');
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [isSaving],
+  );
+
   const previewModal = (
     <FinanceDocumentPreviewModal
       preview={preview}
@@ -74,6 +101,18 @@ export function useFinanceDocumentPreview({ accessToken }: UseFinanceDocumentPre
       isLoading={isLoading}
       error={error}
       onClose={closePreview}
+      saveHandlers={{
+        ...saveHandlers,
+        isSaving,
+        saveError,
+        saveNotice,
+        onSave: saveHandlers?.onSave
+          ? () => runPreviewSave(saveHandlers.onSave, 'Document saved')
+          : undefined,
+        onSaveDraft: saveHandlers?.onSaveDraft
+          ? () => runPreviewSave(saveHandlers.onSaveDraft, 'Draft saved')
+          : undefined,
+      }}
     />
   );
 

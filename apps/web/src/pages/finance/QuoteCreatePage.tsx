@@ -28,7 +28,7 @@ import { fetchDraft } from '../../lib/drafts-api';
 import { useAuth } from '../../lib/auth-context';
 import { useStaffMutationInvalidation } from '../../lib/cache-invalidation';
 import { FinanceNav } from '../../features/finance/FinanceNav';
-import { canManageFinance, canViewFinanceProfit, newFinanceClientActionId } from '../../features/finance/utils';
+import { canManageFinance, canViewFinanceProfit, canCreateCustomer, newFinanceClientActionId } from '../../features/finance/utils';
 import { buildFinanceEditorPreviewInput } from '../../features/finance/finance-preview-request';
 import { financeDocumentEditPath } from '../../features/finance/finance-document-save';
 import { useFinanceDocumentPreview } from '../../features/finance/useFinanceDocumentPreview';
@@ -68,6 +68,7 @@ export function QuoteCreatePage() {
   const [error, setError] = useState<string | null>(null);
 
   const canWrite = user ? canManageFinance(user.permissions) : false;
+  const canCreateCustomerRecord = user ? canCreateCustomer(user.permissions) : false;
   const canViewUnitCost = user ? canViewFinanceProfit(user.permissions, user.roleName) : false;
   const approvalAction = nextQuoteApprovalAction(status);
   const canSend = canIssueQuote({ isImmutable: false, status });
@@ -98,7 +99,6 @@ export function QuoteCreatePage() {
   });
 
   const { notify } = useTitanNotify();
-  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate('/finance/quotes');
@@ -321,6 +321,44 @@ export function QuoteCreatePage() {
     ],
   );
 
+  const saveQuoteDraft = useCallback(async () => {
+    if (!accessToken || !canWrite) {
+      throw new Error('You do not have permission to save');
+    }
+    if (!customerId) {
+      throw new Error('Select a customer before saving');
+    }
+    await draftShell.autosave.saveNow();
+    const wasNew = !savedQuoteId;
+    const result = await persistQuote(false);
+    if (!result?.id) {
+      throw new Error('Unable to save quote');
+    }
+    draftShell.markSubmitted();
+    invalidateQuotes();
+    if (wasNew) {
+      navigate(financeDocumentEditPath('quote', result.id), { replace: true });
+    }
+  }, [
+    accessToken,
+    canWrite,
+    customerId,
+    draftShell,
+    invalidateQuotes,
+    navigate,
+    persistQuote,
+    savedQuoteId,
+  ]);
+
+  const { openPreview, previewModal } = useFinanceDocumentPreview({
+    accessToken,
+    saveHandlers: {
+      canSave: canWrite,
+      onSave: saveQuoteDraft,
+      onSaveDraft: saveQuoteDraft,
+    },
+  });
+
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite) return;
 
@@ -441,6 +479,7 @@ export function QuoteCreatePage() {
                   setSelectedCustomer(customer);
                   setJobId('');
                 }}
+                canCreateCustomer={canCreateCustomerRecord}
               />
             ) : null}
             <Input

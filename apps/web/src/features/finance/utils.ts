@@ -8,6 +8,10 @@ export function canManageFinance(permissions: string[]): boolean {
   return hasAnyPermission(permissions, ['finance:write', '*']);
 }
 
+export function canCreateCustomer(permissions: string[]): boolean {
+  return hasAnyPermission(permissions, ['customers:write', '*']);
+}
+
 export { canViewFinanceProfit } from '@titan/shared';
 
 export function canViewJobCosting(permissions: string[]): boolean {

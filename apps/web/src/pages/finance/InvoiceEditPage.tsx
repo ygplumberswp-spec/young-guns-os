@@ -96,7 +96,6 @@ export function InvoiceEditPage() {
   });
 
   const { notify } = useTitanNotify();
-  const { openPreview, previewModal } = useFinanceDocumentPreview({ accessToken });
 
   useEffect(() => {
     if (user && !canWrite) navigate(`/finance/invoices/${invoiceId}`);
@@ -218,6 +217,29 @@ export function InvoiceEditPage() {
       vatMode,
     ],
   );
+
+  const saveInvoiceDraft = useCallback(async () => {
+    if (!accessToken || !canWrite || !invoiceId || !editable) {
+      throw new Error('You do not have permission to save');
+    }
+    await draftShell.autosave.saveNow();
+    const result = await persistInvoice(false);
+    if (!result) {
+      throw new Error('Unable to save invoice');
+    }
+    setStatus(result.status);
+    draftShell.markSubmitted();
+    invalidateInvoices();
+  }, [accessToken, canWrite, draftShell, editable, invalidateInvoices, invoiceId, persistInvoice]);
+
+  const { openPreview, previewModal } = useFinanceDocumentPreview({
+    accessToken,
+    saveHandlers: {
+      canSave: canWrite && editable,
+      onSave: saveInvoiceDraft,
+      onSaveDraft: saveInvoiceDraft,
+    },
+  });
 
   async function handleAction(action: FinanceDocumentAction) {
     if (!accessToken || !canWrite || !editable) return;

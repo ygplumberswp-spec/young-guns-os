@@ -89,13 +89,17 @@ test('preview modal renders genuine PDF iframe with download and close actions',
   assert.match(modalSource, /finance-document-preview__iframe/);
   assert.match(modalSource, /Download PDF/);
   assert.match(modalSource, /Close/);
+  assert.match(modalSource, /Save Draft/);
+  assert.match(modalSource, /saveHandlers\?\.onSave/);
   assert.doesNotMatch(modalSource, /html2canvas|jspdf|TitanDocumentView/);
 });
 
-test('preview hook builds toolbar metadata locally and fetches PDF blob from API', () => {
+test('preview hook delegates save to editor callbacks without closing modal', () => {
   const hookSource = readSource('src/features/finance/useFinanceDocumentPreview.tsx');
-  assert.match(hookSource, /previewFinanceDocumentPdf/);
-  assert.match(hookSource, /buildFinanceDocumentPreviewModel/);
-  assert.match(hookSource, /URL\.createObjectURL/);
-  assert.doesNotMatch(hookSource, /persist(Quote|Invoice)\(/);
+  assert.match(hookSource, /saveHandlers/);
+  assert.match(hookSource, /runPreviewSave/);
+  assert.match(hookSource, /setSaveNotice/);
+  assert.match(hookSource, /setSaveError/);
+  const saveBlock = hookSource.match(/const runPreviewSave = useCallback\([\s\S]*?\}, \[[^\]]*\],?\);/)?.[0] ?? '';
+  assert.doesNotMatch(saveBlock, /closePreview/);
 });

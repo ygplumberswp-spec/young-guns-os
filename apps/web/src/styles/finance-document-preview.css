@@ -79,8 +79,14 @@
 }
 
 .finance-document-preview__loading,
-.finance-document-preview__error {
+.finance-document-preview__error,
+.finance-document-preview__notice {
   padding: 0 20px 12px;
+}
+
+.finance-document-preview__notice {
+  color: #7dd3a8;
+  font-size: 0.875rem;
 }
 
 @media (max-width: 720px) {
