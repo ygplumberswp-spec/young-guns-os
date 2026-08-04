@@ -94,11 +94,103 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 
 **Phase 5 result:** **PARTIAL** — route probes suggest recovery API may already be live; revision/deployment ID unconfirmed.
 
-### Phase 6 — Owner authenticated smoke test
+### Phase 6 — Owner authenticated smoke test (Phase J-5)
 
-All 19 items — **NOT RUN** (requires Owner browser session; agent has no authenticated session).
+**J-5 run (revision `75a48f0`):** **SUPERSEDED — NO DEFECT VERDICT**
 
-**Phase 6 result:** **NOT STARTED**.
+- Human-assisted smoke test **stopped** on Owner instruction (2026-08-04).
+- **No QA quote or invoice documents were created.**
+- **No defects recorded** — test did not complete; criteria changed before meaningful UI verification.
+- **Do not continue testing revision `75a48f0`.**
+
+**Superseding acceptance criteria (implementation required before J-5 resumes):**
+
+1. Quotes and invoices must **not use or require titles**.
+2. **Xero is the only official** quote/invoice numbering authority.
+3. **Google Maps address search** must be integrated into Quote and Invoice address fields (autocomplete + manual fallback).
+4. Corrections must be **committed and deployed to staging** before Owner smoke test resumes.
+
+**Phase 6 / J-5 result:** **SUPERSEDED** — awaiting new implementation revision and staging deploy.
+
+---
+
+## Phase J-5 — Corrected Owner smoke checklist (use after new revision deploy)
+
+**Status:** **NOT STARTED** — run only after corrected implementation is committed and deployed to staging. Record deployed revision before testing.
+
+**Staging URLs:** Web `https://comfortable-determination-staging.up.railway.app` · API `https://young-guns-os-staging.up.railway.app`
+
+**Safety (throughout):** Staging only · no Approve/Send · no Xero sync · no Yoco · no email/WhatsApp · no duplicate customers · do not delete QA records without Owner approval. Mark test documents: `STAGING QA — FINANCE ROUNDTRIP — DO NOT SEND` (reference label only — **no title field required**).
+
+### Precheck
+
+- [ ] Confirm deployed revision (not `75a48f0` unless explicitly re-approved after corrections).
+- [ ] API `/health` and `/ready` → 200, database connected.
+- [ ] Migration 0177 applied exactly once (if still relevant to deployed schema).
+- [ ] Xero idle — no pending/running sync jobs.
+- [ ] Record quote and invoice counts before testing.
+
+### A — Title-free drafts
+
+- [ ] New Quote editor has **no required title field**; draft saves without title.
+- [ ] New Invoice editor has **no required title field**; draft saves without title.
+- [ ] List and detail views do not depend on a user-entered title for identification.
+
+### B — Xero numbering authority
+
+- [ ] Draft quotes display **Xero quote number pending** (or equivalent honest pending state).
+- [ ] Draft invoices display **Xero invoice number pending**.
+- [ ] **No internal TITAN placeholder** is presented as an official quote/invoice number.
+- [ ] Synced Xero documents show the **exact Xero number** from Xero.
+- [ ] Open a synced Xero invoice — editing is **blocked**; update endpoint returns **409 SYNC_CONFLICT** if safely probeable.
+
+### C — Google Maps address autocomplete (Quote + Invoice)
+
+- [ ] Billing, site/delivery and postal address fields offer **Google Maps search/autocomplete**.
+- [ ] Selecting a Maps result populates the address field correctly.
+- [ ] **Manual entry fallback** works when search is skipped or fails.
+- [ ] All three address snapshots **save and reload** after hard refresh.
+
+### D — Customer search and selection
+
+- [ ] Customer search updates results **while typing**.
+- [ ] Selecting a customer closes the dropdown and it **stays closed**.
+- [ ] Inline customer creation UI **opens correctly** — do **not** create a duplicate during smoke test.
+- [ ] Use an **existing Owner-approved staging customer** only for save/round-trip tests.
+
+### E — VAT and line-item workflow
+
+- [ ] VAT defaults to **15%**.
+- [ ] **VAT / No VAT** toggle recalculates correctly.
+- [ ] **Exclusive / Inclusive** price mode recalculates correctly.
+- [ ] Subtotal, VAT and total are **cents-safe** (integer cents, no drift).
+- [ ] Five blank line rows initially; inputs comfortably sized.
+- [ ] **Add line** appears directly below the final row.
+- [ ] **Enter** on the final row creates a new line and focuses Description — **never submits** the document.
+- [ ] Blank or incomplete documents can always **Save Draft**.
+
+### F — Round-trip persistence
+
+- [ ] Quote: dates, notes, customer reference (if shown), all three addresses, line items, VAT mode and totals survive save → hard refresh → reopen.
+- [ ] Invoice: same fields including **customer reference** (`STAGING-QA-REF` for QA doc).
+- [ ] Edit notes and one address → Save Draft → refresh → edits persist.
+- [ ] **No persistent “Draft saved · time”** message appears.
+
+### G — Live updates
+
+- [ ] Open Finance list in a **second authenticated tab**.
+- [ ] Save a change to one QA draft — list updates **without manual refresh**.
+- [ ] While editing unsaved fields, a safe draft update in the other tab shows **deferred-update warning** — dirty form not overwritten.
+- [ ] Connection returns to **Live** after reconnect.
+
+### H — Final safety
+
+- [ ] No unexpected 500 responses.
+- [ ] No duplicate customers created.
+- [ ] No Xero sync, write approval, Yoco link, email or WhatsApp triggered.
+- [ ] Record QA quote and invoice IDs; record after counts.
+
+**J-5 completion gate:** PASS all sections A–H → **GO** for Finance Editor Phase 1 complete; any FAIL → repair prompt + **NO-GO**.
 
 ---
 
