@@ -198,6 +198,7 @@ export const NAV_MODULE_BY_HREF: Record<string, NavModuleId> = {
   '/marketing-agent': 'marketing',
   '/marketing-intelligence': 'marketing',
   '/social-media-integrations': 'marketing',
+  '/facebook-business': 'marketing',
   '/content-reputation-intelligence': 'marketing',
   '/market-intelligence': 'marketing',
 
@@ -414,6 +415,17 @@ export const OWNER_STAFF_NAV_ITEMS: NavItemConfig[] = [
   {
     href: '/social-media-integrations',
     label: 'Social Media',
+    permissions: [
+      'marketing:read',
+      'marketing_intelligence:read',
+      'integrations:read',
+      'agents:read',
+      '*',
+    ],
+  },
+  {
+    href: '/facebook-business',
+    label: 'Facebook Business',
     permissions: [
       'marketing:read',
       'marketing_intelligence:read',

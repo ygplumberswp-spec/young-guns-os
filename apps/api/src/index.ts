@@ -16,6 +16,7 @@ import {
   loadEnv,
   resolveGmailOAuthConfig,
   resolveGoogleCalendarOAuthConfig,
+  resolveFacebookAppConfig,
   resolveXeroOAuthConfig,
 } from './config.js';
 
@@ -320,6 +321,8 @@ import { createAuraAgentNetworkRouter } from './routes/aura-agent-network.js';
 import { createAuraEvolutionRouter } from './routes/aura-evolution.js';
 import { createMarketingAgentRouter } from './routes/marketing-agent.js';
 import { createSocialMediaIntegrationsRouter } from './routes/social-media-integrations.js';
+import { createFacebookBusinessRouter } from './routes/facebook-business.js';
+import { FacebookBusinessService } from './services/facebook-business.service.js';
 import { createContentReputationIntelligenceRouter } from './routes/content-reputation-intelligence.js';
 import { createFinanceAuraAgentRouter } from './routes/finance-aura-agent.js';
 import { createSalesIntelligenceAgentRouter } from './routes/sales-intelligence-agent.js';
@@ -943,6 +946,13 @@ const socialMediaIntegrationsService = new SocialMediaIntegrationsService(
   db,
   env.INTEGRATIONS_ENCRYPTION_KEY,
 );
+const facebookAppConfig = resolveFacebookAppConfig(env, apiPublicUrl);
+const facebookBusinessService = new FacebookBusinessService({
+  db,
+  encryptionKey: env.INTEGRATIONS_ENCRYPTION_KEY,
+  appUrl: env.APP_URL,
+  appConfig: facebookAppConfig,
+});
 const contentReputationIntelligenceService = new ContentReputationIntelligenceService(db);
 const inventoryIntelligenceService = new InventoryIntelligenceService(db);
 const stockForecastingService = new StockForecastingService({
@@ -2867,6 +2877,15 @@ app.use(
     teamService,
     jwtSecret: env.JWT_SECRET,
     authService,
+  }),
+);
+app.use(
+  '/api/v1/facebook-business',
+  createFacebookBusinessRouter({
+    facebookBusinessService,
+    jwtSecret: env.JWT_SECRET,
+    authService,
+    appUrl: env.APP_URL,
   }),
 );
 app.use(

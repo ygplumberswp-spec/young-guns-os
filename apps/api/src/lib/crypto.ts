@@ -376,6 +376,44 @@ export function decryptGoogleCalendarCredentials(
   };
 }
 
+/**
+ * Facebook Page credentials — encrypted with INTEGRATIONS_ENCRYPTION_KEY.
+ *
+ * The user token is retained only so a disconnect can revoke the grant on
+ * Meta's side; all Page work uses `pageAccessToken`.
+ */
+export type FacebookStoredCredentials = {
+  version: 1;
+  pageAccessToken: string;
+  userAccessToken?: string;
+  expiresAt?: string;
+  grantedScopes?: string[];
+};
+
+export function encryptFacebookCredentials(
+  credentials: FacebookStoredCredentials,
+  encryptionKey: string,
+): string {
+  return encryptJsonCredentials(credentials, encryptionKey);
+}
+
+export function decryptFacebookCredentials(
+  payload: string,
+  encryptionKey: string,
+): FacebookStoredCredentials {
+  const parsed = decryptJsonCredentials<FacebookStoredCredentials>(payload, encryptionKey);
+  if (!parsed.pageAccessToken?.trim()) {
+    throw new Error('Invalid stored Facebook credentials');
+  }
+  return {
+    version: 1,
+    pageAccessToken: parsed.pageAccessToken.trim(),
+    userAccessToken: parsed.userAccessToken?.trim() || undefined,
+    expiresAt: parsed.expiresAt,
+    grantedScopes: parsed.grantedScopes ?? [],
+  };
+}
+
 /** Social media platform tokens — encrypted with INTEGRATIONS_ENCRYPTION_KEY. */
 export type SocialMediaStoredCredentials = {
   version: 1;

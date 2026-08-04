@@ -677,6 +677,10 @@ export const SocialMediaIntegrationsPage = lazyNamed(
     import('../pages/social-media-integrations/SocialMediaIntegrationsPage'),
   'SocialMediaIntegrationsPage',
 );
+export const FacebookBusinessPage = lazyNamed(
+  () => import('../pages/facebook-business/FacebookBusinessPage'),
+  'FacebookBusinessPage',
+);
 export const ContentReputationIntelligencePage = lazyNamed(
   () =>
     import('../pages/content-reputation-intelligence/ContentReputationIntelligencePage'),

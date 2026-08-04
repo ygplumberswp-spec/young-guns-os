@@ -26,6 +26,12 @@ const envSchema = z.object({
   GOOGLE_REDIRECT_URI: z.string().url().optional(),
   /** Google Calendar reuses the Google OAuth client but needs its own redirect URI. */
   GOOGLE_CALENDAR_REDIRECT_URI: z.string().url().optional(),
+  /** Meta app for the Facebook Business integration (Page publishing, leads, insights). */
+  META_APP_ID: z.string().trim().min(1).optional(),
+  META_APP_SECRET: z.string().min(1).optional(),
+  META_REDIRECT_URI: z.string().url().optional(),
+  /** Echoed back during Meta's webhook subscription handshake. */
+  META_WEBHOOK_VERIFY_TOKEN: z.string().min(1).optional(),
   SEED_DEV: z
     .enum(['true', 'false'])
     .default('false')
@@ -310,3 +316,40 @@ export function resolveGoogleCalendarOAuthConfig(
   };
 }
 
+export type FacebookAppEnvConfig = {
+  appId: string;
+  appSecret: string;
+  redirectUri: string;
+  webhookVerifyToken: string | null;
+  configured: true;
+};
+
+/**
+ * Meta app for the Facebook Business integration.
+ *
+ * Returns not-configured whenever the app id or secret is absent, which is what
+ * drives the honest `configuration_required` connection state rather than a UI
+ * that looks connectable when it cannot reach Facebook at all.
+ */
+export function resolveFacebookAppConfig(
+  env: Env,
+  apiPublicUrl: string,
+): FacebookAppEnvConfig | { configured: false } {
+  const appId = env.META_APP_ID?.trim();
+  const appSecret = env.META_APP_SECRET;
+  const redirectUri =
+    env.META_REDIRECT_URI?.trim() ??
+    `${apiPublicUrl.replace(/\/$/, '')}/api/v1/facebook-business/oauth/callback`;
+
+  if (!appId || !appSecret) {
+    return { configured: false };
+  }
+
+  return {
+    configured: true,
+    appId,
+    appSecret,
+    redirectUri,
+    webhookVerifyToken: env.META_WEBHOOK_VERIFY_TOKEN?.trim() ?? null,
+  };
+}

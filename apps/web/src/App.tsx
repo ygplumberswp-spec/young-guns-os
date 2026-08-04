@@ -584,6 +584,10 @@ export function App() {
                           component={OwnerPages.SocialMediaIntegrationsPage}
                         />
                         <Route
+                          path="/facebook-business"
+                          component={OwnerPages.FacebookBusinessPage}
+                        />
+                        <Route
                           path="/content-reputation-intelligence"
                           component={OwnerPages.ContentReputationIntelligencePage}
                         />

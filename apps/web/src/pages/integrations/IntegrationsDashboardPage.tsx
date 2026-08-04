@@ -31,6 +31,7 @@ const PROVIDER_GROUPS: Array<{ id: string; label: string; providers: string[] }>
   { id: 'fleet', label: 'Fleet', providers: ['cartrack'] },
   { id: 'payments', label: 'Payments', providers: ['yoco'] },
   { id: 'automation', label: 'Automation', providers: ['n8n'] },
+  { id: 'marketing', label: 'Marketing & Social', providers: ['facebook'] },
 ];
 
 /**
