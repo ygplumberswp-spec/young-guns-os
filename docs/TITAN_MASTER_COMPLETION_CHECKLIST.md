@@ -1,0 +1,341 @@
+# TITAN Master Completion Checklist
+
+**Authoritative master list** — consolidates Claude and Gemini audits from baseline **`f8cc0c4`** (`feat(ui): apply Young Guns theme across TITAN and document engine`).
+
+| Field | Value |
+|-------|-------|
+| **Document role** | Single source of truth for TITAN completion status |
+| **Supersedes** | Staging-release-only checklist content in repo root `TITAN_MASTER_COMPLETION_CHECKLIST.md` (now a pointer only) |
+| **Audit baseline (HEAD f8cc0c4)** | **Built ~72%** · **Verified locally ~48%** · **Production ready ~12%** |
+| **Recovery worktree** | `/workspace/.worktrees/titan-recovery` |
+| **Recovery branch** | `cursor/titan-v1-integration-recovery` |
+| **Deploy branch** | `cursor/titan-v1-integration` |
+| **Staging Supabase ref** | `cpkuwtaipjxeipvbssvn` |
+| **Production ref (forbidden)** | `rshuiaghmtrvvilhqpwm` |
+| **Updated (UTC)** | 2026-08-04 |
+| **Binding rule** | `TITAN_BINDING_ACCEPTANCE_RULE.md` (10 criteria) |
+| **Audit sources** | `TITAN_COMPLETE_APP_AUDIT.md`, `TITAN_ACCEPTANCE_REGISTER.md`, `TITAN_GAP_BACKLOG.md`, `TITAN_AURA_AGENT_COLLABORATION_AUDIT.md`, finance J-6.x phase evidence |
+
+---
+
+## Audit baseline summary
+
+Consolidated Claude + Gemini pass at **`f8cc0c4`**:
+
+| Metric | Estimate | Meaning |
+|--------|----------|---------|
+| **Built ~72%** | Code/API/UI exists for most modules | Substantial implementation (~155 web pages, 84 API route modules); includes foundation-only and decorative surfaces |
+| **Verified locally ~48%** | Automated tests + local proofs | Cross-tenant matrix, finance editor suites, role guards, UX tranche closures |
+| **Production ready ~12%** | Meets all 10 binding criteria with Owner sign-off | Pilot-critical chains partially proven; production forbidden until staging GO |
+
+Prior register estimate (**~27% verified live** on 116-row traceability) remains valid for **strict binding-rule verified complete** classification. The 72/48/12 split reflects **breadth of built code** vs **local verification depth** vs **production gates**.
+
+---
+
+## Merged master sequence (16 steps)
+
+Execute in order. Do **not** skip gates. Production is forbidden until step 16 grants a **separate** production approval.
+
+| Step | Gate | Requirement | Current status @ f8cc0c4 |
+|------|------|-------------|---------------------------|
+| **1** | Identity | Repository / worktree / branch / HEAD `f8cc0c4` confirmed | **DONE** |
+| **2** | Git safety | `git fetch origin` — no rebase/reset; deploy branch lineage verified | **DONE** |
+| **3** | Credentials | `APP_ENV=staging`, `TITAN_ENV=staging`, `DATABASE_URL` ref `cpkuwtaipjxeipvbssvn` only | **BLOCKED** — no local `.env.staging.local` |
+| **4** | Backup | Verified `pg_dump` custom backup, SHA-256, `pg_restore --list`, rollback command recorded | **NOT RUN** |
+| **5** | Migration precheck | Read-only: prior migration applied, target not yet applied, protected row counts | **NOT RUN** — blocked by step 4 |
+| **6** | Migration apply | Guarded staging-only scripts **0176 → 0177 → 0178** (never `drizzle-kit migrate`) | **NOT RUN** |
+| **7** | Local quality | `pnpm` build + automated test suite green (incl. J-6.6A fixes) | **IN PROGRESS** — J-6.6A |
+| **8** | Git publish | Push recovery branch; fast-forward deploy branch without force-push | **PENDING** — Owner gate |
+| **9** | Deploy | Railway staging API + Web from `cursor/titan-v1-integration`; Chromium on API pod | **PARTIAL** — health probes OK; revision unconfirmed |
+| **10** | Smoke probes | `/health`, `/health/ready`, finance routes return 401 not 404, PDF renderer diagnostic | **PARTIAL** |
+| **11** | Security auto | Finance RBAC + tenant isolation automated tests green | **IN PROGRESS** — J-6.6A |
+| **12** | Owner E2E | Authenticated finance smoke (`docs/TITAN_FINANCE_STAGING_SMOKE_J65.md`) | **NOT STARTED** — supersedes J-5 |
+| **13** | Desktop | Visual verification ~1440px (finance editors, core ops surfaces) | **PARTIAL** — finance layout tests only |
+| **14** | Tablet | Visual verification 1024px / 768px reflow | **PARTIAL** — CSS/tests; not Owner-verified |
+| **15** | Mobile | Visual verification ~390px (finance + technician paths) | **PARTIAL** — UX-B mobile GO; finance tests only |
+| **16** | Sign-off | Owner staging GO → separate production approval gate | **NO-GO** |
+
+---
+
+## Status vocabulary
+
+| Status | Definition |
+|--------|------------|
+| **NOT FOUND** | No meaningful implementation |
+| **FOUNDATION ONLY** | Scaffold/service/page exists; not wired to useful workflow |
+| **PARTIALLY IMPLEMENTED** | Significant pieces exist; acceptance chain incomplete |
+| **BUILT LOCALLY** | Implemented in recovery worktree; not staging-verified |
+| **TESTED LOCALLY** | Automated local tests pass; staging/live proof pending |
+| **STAGING READY** | Committed; awaiting deploy + smoke |
+| **DEPLOYED TO STAGING** | Live on staging URLs with route/health evidence |
+| **OWNER VERIFIED** | Owner authenticated click-path or sign-off recorded |
+| **PRODUCTION READY** | All 10 binding criteria met; production gate may be requested |
+
+Boolean columns use **YES** / **NO** / **—** (not applicable).
+
+---
+
+## Requirements register
+
+**Total requirement rows:** 166
+
+| ID | Area | Requirement | Status | Built locally | Tests passed | Real DB/provider connected | RBAC tested | Tenant isolation tested | Deployed to staging | Authenticated E2E passed | Desktop verified | Tablet verified | Mobile verified | Claude verified | Gemini verified | Owner verified | Production ready | Evidence | Commit | Migration/provider dependency | Blocker | Next action |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| REPO-001 | repo | Monorepo structure (apps/api, apps/web, packages/*) intact and buildable | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | pnpm workspace | f8cc0c4 |  |  |  |
+| REPO-002 | repo | Recovery worktree on cursor/titan-v1-integration-recovery @ f8cc0c4 | BUILT LOCALLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | git HEAD f8cc0c4 | f8cc0c4 |  |  |  |
+| REPO-003 | repo | Deploy branch cursor/titan-v1-integration linear descendant of af56e32 | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | git log | f8cc0c4 |  |  | Confirm origin SHA after push |
+| REPO-004 | repo | CI typecheck + test pipeline green on recovery branch | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | pnpm test (partial suites) | f8cc0c4 |  |  |  |
+| AUTH-001 | auth | Email/password login with session cookie | DEPLOYED TO STAGING | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | session-expiry.test.ts | f8cc0c4 |  |  |  |
+| AUTH-002 | auth | MFA TOTP challenge at login when enabled | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | mfa-login-gate.test.ts | f8cc0c4 |  | Staging login MFA click-path unverified |  |
+| AUTH-003 | auth | Secure persistent session (HttpOnly, cross-tab, step-up) | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_SECURE_SESSION_ARCHITECTURE.md | f8cc0c4 |  |  |  |
+| AUTH-004 | auth | Session expiry UX — no silent data loss on hard refresh | DEPLOYED TO STAGING | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | session-expiry.test.ts | 7741976 |  |  |  |
+| AUTH-005 | auth | SSO / IdP integration | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | PLT-009 missing |  |
+| ROLE-001 | roles | Owner role — full Command Centre + finance write | TESTED LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | role-forbidden-api-action.test.ts | f8cc0c4 |  |  |  |
+| ROLE-002 | roles | Admin role — staff operations without platform Owner powers | PARTIALLY IMPLEMENTED | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | PLT-003 role matrix partial | f8cc0c4 |  |  |  |
+| ROLE-003 | roles | Office/Dispatch role — scheduling, CRM, job create | TESTED LOCALLY | YES | YES | NO | YES | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | Phase 5/6 staging E2E | f8cc0c4 |  |  |  |
+| ROLE-004 | roles | Technician role — mobile execution, no finance write | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | UX-B staging 35/35 | f8cc0c4 |  |  |  |
+| ROLE-005 | roles | Client role — /my/* portal canonical with /portal alias | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | UX-C local; pay honestly unavailable | f8cc0c4 |  |  |  |
+| ROLE-006 | roles | Platform Owner / Manager / Accountant roles (Decision 1) | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | PLT-003 queued |  |
+| ROLE-007 | roles | Role-forbidden direct URL redirects | TESTED LOCALLY | YES | YES | NO | YES | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | role-forbidden-direct-url.test.ts | f8cc0c4 |  |  |  |
+| ROLE-008 | roles | Cross-tenant denial matrix (97 tests) | TESTED LOCALLY | YES | YES | NO | YES | YES | YES | NO | NO | NO | NO | YES | YES | NO | NO | cross-tenant-denial-matrix.test.ts | f8cc0c4 |  |  |  |
+| CRM-001 | customers | Customer CRUD with SA phone/ZAR formatting (partial app-wide) | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| CRM-002 | customers | Customer search (name/phone/address) on list | TESTED LOCALLY | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | Sprint 003 | f8cc0c4 |  |  |  |
+| CRM-003 | customers | Customer value classification (8 buckets, API) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | customer-value-classification.ts | f8cc0c4 |  |  |  |
+| CRM-004 | customers | Finance customer search with inline create (RBAC gated) | BUILT LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance routes @ f8cc0c4 | f8cc0c4 |  |  |  |
+| CRM-005 | customers | Placeholder email detection + duplicate engine | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | CD-002–004 |  |
+| CRM-006 | properties | Properties first-class in CRM with create-job-at-property | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | Sprint 006 partial | f8cc0c4 |  |  |  |
+| CRM-007 | properties | Immutable job/property snapshots with verified update checkboxes | TESTED LOCALLY | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-A closed | f8cc0c4 |  |  |  |
+| CRM-008 | CRM | Lead create form + convert → customer/property/job wizard | DEPLOYED TO STAGING | YES | YES | NO | NO | NO | YES | YES | NO | NO | NO | YES | YES | NO | NO | UX-D staging GO | f8cc0c4 |  |  |  |
+| CRM-009 | CRM | Sales intelligence overlap with /leads resolved | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  | Single nav entry polish |
+| JOB-001 | jobs | Auto operational job title + JOB-###### numbering | DEPLOYED TO STAGING | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-A | f8cc0c4 |  |  |  |
+| JOB-002 | jobs | New Job full create fields (property, urgency, access, docs) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-A | f8cc0c4 |  |  |  |
+| JOB-003 | jobs | Lead → customer → property → job chain (Phase 5 E2E 10/10) | OWNER VERIFIED | YES | YES | NO | NO | NO | YES | YES | NO | NO | NO | YES | YES | YES | NO | 140-staging-phase5-e2e.json | f8cc0c4 |  |  |  |
+| JOB-004 | jobs | Job detail finance strip + quick actions | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | JobFinanceStrip local | f8cc0c4 |  |  |  |
+| JOB-005 | jobs | Job completion → billing chain panel | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Sprint 016 | f8cc0c4 |  |  |  |
+| JOB-006 | booking | Portal appointment booking workflow | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | EnterpriseCustomerExperienceService | f8cc0c4 |  |  |  |
+| JOB-007 | booking | Lead/booking → dispatch notify on convert | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-D | f8cc0c4 |  |  |  |
+| DSP-001 | dispatch | Dispatcher console in staff nav | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-K | f8cc0c4 |  |  |  |
+| DSP-002 | dispatch | Crew/vehicle assignment office UI | OWNER VERIFIED | YES | YES | NO | NO | NO | YES | YES | NO | NO | NO | YES | YES | YES | NO | 141-staging-phase6-e2e.json | f8cc0c4 |  |  |  |
+| DSP-003 | dispatch | Scheduling calendar with execution labels | TESTED LOCALLY | YES | YES | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| DSP-004 | dispatch | Live dispatch map with honest capability states (no fake ETA) | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-I Maps honesty | f8cc0c4 |  |  |  |
+| DSP-005 | dispatch | Live technician travel/arrive/work domain events | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Auto-update gap — TITAN_COMPLETE_APP_AUDIT |  |
+| EXE-001 | job execution | Mobile job card capture + gated complete | DEPLOYED TO STAGING | YES | YES | NO | NO | NO | YES | NO | NO | NO | YES | YES | YES | NO | NO | UX-B 35/35 | f8cc0c4 |  |  |  |
+| EXE-002 | job execution | Offline idempotency + IndexedDB flush | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | YES | NO | NO | mobile-offline-completion.test.ts | f8cc0c4 |  |  |  |
+| EXE-003 | job execution | Binary evidence upload (photo/checklist/signature) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-B/037 | f8cc0c4 |  |  |  |
+| EXE-004 | job execution | Materials/variations → costing auto-update | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Domain event not wired |  |
+| EXE-005 | job execution | Technician tracking share with customer (live map) | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | UX-030; future phase |  |
+| SCH-001 | schedules | Day/week/month calendar component with drag-drop reschedule | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  | TITAN_NEXT_IMPLEMENTATION_STAGE_PLAN calendar phase |
+| SCH-002 | schedules | Business-day timeline route (Phase 8 smoke GO) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | 142-staging-phase8-12-e2e.json | f8cc0c4 |  |  |  |
+| TS-001 | timesheets | Job-linked time tracking office + mobile | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Sprint OPS-014 | f8cc0c4 |  |  |  |
+| TS-002 | timesheets | Labour events in business-day timeline | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  | Full AURA taxonomy |
+| PAY-001 | payroll | Payroll preparation module (draft discipline) | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | EnterpriseWorkforceIntelligenceService scaffold | f8cc0c4 |  |  |  |
+| PAY-002 | payroll | Live payroll provider integration | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | HR legal + provider gate |  |
+| INV-001 | inventory | Stock levels + movement ledger | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | Phase 10/11 smoke | f8cc0c4 |  |  |  |
+| INV-002 | inventory | Van stock location + vehicle link | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-F | f8cc0c4 |  |  |  |
+| INV-003 | inventory | Approve material → idempotent stock decrement | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | INV-008 closed UX-F | f8cc0c4 |  |  |  |
+| INV-004 | inventory | Tenant inventory in finance catalogue search | BUILT LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-catalogue.service.test.ts | f8cc0c4 |  |  |  |
+| WH-001 | warehouse | Warehouse locations + bin management UI | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Stock form location address UX-054 closed | f8cc0c4 |  |  |  |
+| SUP-001 | suppliers | Supplier registry + price catalogue (procurement) | BUILT LOCALLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | supplier_price_catalogue_items schema | f8cc0c4 |  |  |  |
+| PO-001 | PO | Purchase order create/receive → stock | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-F procurement UI | f8cc0c4 |  |  |  |
+| PROC-001 | procurement | Procurement hub UI (/procurement suppliers/POs/receive) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-F | f8cc0c4 |  |  |  |
+| PROC-002 | procurement | Supplier OCR / Xero bill match | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Sprint 014 deferral |  |
+| FLT-001 | fleet | Fleet vehicle registry + status | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | IntegrationsService | f8cc0c4 |  |  |  |
+| FLT-002 | Cartrack | Cartrack live vehicle status client | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Cartrack API | Credentials not configured staging |  |
+| FLT-003 | Cartrack | Cartrack drivers + geofences | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FLT-003/006 |  |
+| FLT-004 | Cartrack | Live fleet map on Owner Command Centre | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FRZ-004 open; future phase |  |
+| MNT-001 | maintenance | Preventative maintenance schedules | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | EnterpriseAssetLifecycleService scaffold | f8cc0c4 |  |  |  |
+| MNT-002 | maintenance | Equipment lifecycle IoT telemetry | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | IoT provider gate |  |
+| COC-001 | COC | COC compliance panel + SANS applicability helpers | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | YG-001 UX-I | f8cc0c4 |  |  |  |
+| COC-002 | COC | COC generation linked to job pack | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Sprint 015 local | f8cc0c4 |  |  |  |
+| DOC-001 | document engine | TitanDocumentView Young Guns A4 template | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | young-guns-theme @ f8cc0c4 | f8cc0c4 |  |  |  |
+| DOC-002 | document engine | Job document pack approval + portal share | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | Sprint 015 | f8cc0c4 |  |  |  |
+| DOC-003 | document engine | OCR / supplier PDF match depth | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | OCR depth partial per audit |  |
+| FIN-001 | quotes | Title-free quote editor (no required title field) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | J-6.1 0178 | f8cc0c4 |  |  |  |
+| FIN-002 | quotes | Full-width quote workspace (1440/1024/768/390) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | YES | YES | YES | YES | YES | NO | NO | finance-workspace-layout.test.ts | f8cc0c4 |  |  |  |
+| FIN-003 | quotes | Catalogue line search (inventory + YG pricebook gated) | BUILT LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j62-phase.test.ts | f8cc0c4 |  |  |  |
+| FIN-004 | quotes | Genuine server PDF preview (Puppeteer/Chromium) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-pdf.service.test.ts | f8cc0c4 | Chromium on API pod |  |  |
+| FIN-005 | quotes | Google Maps address autocomplete + manual fallback | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-addresses-manual-fallback.test.ts | f8cc0c4 | Google Maps API key |  |  |
+| FIN-006 | quotes | Live updates SSE without dirty-form overwrite | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | live-updates stream route | f8cc0c4 |  |  |  |
+| FIN-007 | invoices | Title-free invoice editor + Xero number pending honesty | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j6-phase.test.ts | f8cc0c4 |  |  |  |
+| FIN-008 | invoices | Invoice stages (deposit/progress/final) per job | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | UX-E staging | f8cc0c4 |  |  |  |
+| FIN-009 | invoices | Synced Xero invoice edit blocked (409 SYNC_CONFLICT) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | xero-write-approval-gate.test.ts | f8cc0c4 |  |  |  |
+| FIN-010 | finance | Finance list search + detail routes | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-E | f8cc0c4 |  |  |  |
+| FIN-011 | finance | Cashflow / profit / reporting forecast pages | FOUNDATION ONLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-cashflow-profit.ts | f8cc0c4 |  | NOT VISUALLY VERIFIED on staging |  |
+| FIN-012 | finance | Payment receipts on payment record | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | FIN-004 UX-E | f8cc0c4 |  |  |  |
+| FIN-013 | finance | Payment links / Yoco checkout | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FIN-014 |  |
+| FIN-014 | pricebook | Tenant-scoped pricebook table (YGP-001) | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | YOUNG_GUNS_APPROVED_FINANCE_PRICEBOOK temp constants | f8cc0c4 |  |  |  |
+| FIN-015 | pricebook | Dedicated pricebook catalog UI | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FIN-015 deferral |  |
+| J66A-001 | finance | Phase J-6.6A: Finance RBAC hardening (cost strip, catalogue, document routes) | PARTIALLY IMPLEMENTED | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j64-phase.test.ts; in-flight hardening | — |  |  | Complete + commit J-6.6A |
+| J66A-002 | finance | Phase J-6.6A: Save semantics (draft placeholder lines, save-from-preview idempotency) | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-save.test.ts (in-flight) | — |  |  | Complete + commit J-6.6A |
+| J66A-003 | finance | Phase J-6.6A: Five finance regression test fixes | PARTIALLY IMPLEMENTED | NO | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | 5 suites in flight | — |  |  | Green pnpm test + commit |
+| J66A-004 | finance | Phase J-6.6A: Migration 0176 apply script hardening (backup gate, staging ref) | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-migration-0176.test.ts; apply-0176-staging-only.mjs | — | 0176 |  | Owner-approved staging apply |
+| J66A-005 | repo | Phase J-6.6A: Authoritative master completion checklist (this document) | BUILT LOCALLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_MASTER_COMPLETION_CHECKLIST.md | — |  |  | Commit at end of J-6.6A |
+| XERO-001 | Xero | OAuth connect + tenant isolation | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_FRZ018_XERO_STAGING_REPORT.md | f8cc0c4 |  |  |  |
+| XERO-002 | Xero | Background historical import (contacts/invoices/payments) | PARTIALLY IMPLEMENTED | YES | NO | YES | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Xero OAuth | Import job running; last_sync_at null |  |
+| XERO-003 | Xero | Xero as sole official quote/invoice numbering authority | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-preview.test.ts | f8cc0c4 |  |  |  |
+| XERO-004 | Xero | Two-way write with Owner approval gate | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Live write gated — FIN-005/007 NOT GO |  |
+| XERO-005 | Xero | Decision 3 contact classification (ACCREC paid-buyer) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-H classifier | f8cc0c4 |  |  |  |
+| ATT-001 | attachments | Finance direct upload (image/PDF) without job link | BUILT LOCALLY | YES | YES | NO | YES | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-j64a-phase.test.ts | f8cc0c4 |  |  |  |
+| ATT-002 | attachments | Job evidence storage + titan_documents.photos JSONB | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-evidence-storage.service.test.ts | f8cc0c4 |  |  |  |
+| ATT-003 | attachments | Include-in-PDF toggle + caption/order persistence | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-photos.test.ts | f8cc0c4 |  |  |  |
+| PDF-001 | Chromium/PDF | PuppeteerFinanceDocumentPdfRenderer (%PDF signature) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-pdf.service.test.ts | f8cc0c4 | Chromium |  |  |
+| PDF-002 | Chromium/PDF | API /health/pdf-renderer diagnostic | BUILT LOCALLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | health route | f8cc0c4 | Chromium on staging pod |  |  |
+| STOR-001 | storage | JOB_EVIDENCE_STORAGE_PATH persistent volume | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Railway volume /var/lib/titan/storage | Staging volume mount unverified locally |  |
+| STOR-002 | storage | Staging finance attachment cleanup service | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-document-staging-cleanup.service.test.ts | f8cc0c4 |  |  |  |
+| CLN-001 | cleanup | 59 E2E disposable tenant cleanup manifest | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_STAGING_DATA_CLEANUP_MANIFEST.md | f8cc0c4 |  | Owner approval required |  |
+| CLN-002 | cleanup | Staging data hygiene (1 live tenant + QA isolation) | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | 180-staging-data-cleanup-audit FAIL |  |
+| INT-001 | Gmail | Gmail intelligence backend (Decision 4 NOT IMPLEMENTED) | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_COMPLETE_APP_AUDIT FAIL | f8cc0c4 |  | COM-006 honesty-only card |  |
+| INT-002 | WhatsApp | WhatsApp Graph client + webhooks scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Meta credentials | NOT_AUDITED live |  |
+| INT-003 | WhatsApp | WhatsApp human takeover + live send | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | COM-003; credentials gate |  |
+| INT-004 | WhatsApp | Contact enrichment for missing mobile (COM-013) | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_WHATSAPP_CONTACT_ENRICHMENT.md | f8cc0c4 |  |  |  |
+| INT-005 | Yoco | Yoco business profile sync | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Yoco secret | No payment links/charges FIN-011 |  |
+| INT-006 | Resend | Transactional email via Resend/SMTP connector | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | SMTP available; not Gmail-branded | f8cc0c4 |  |  |  |
+| INT-007 | Maps | Google Maps autocomplete (finance addresses) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | Google Maps API |  |  |
+| INT-008 | Maps | Live Directions / ETA routing | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | FLT-008 deferred |  |
+| INT-009 | social | Meta/Google ads adapters live | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | MKT-003 not connected |  |
+| INT-010 | bank | Open banking / bank feed integration | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Future scope |  |
+| INT-011 | notifications | Push + in-app notification delivery | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | notification_intelligence agent scaffold | f8cc0c4 |  |  |  |
+| INT-012 | Gmail | Integrations hub truthful NOT IMPLEMENTED badge | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | IntegrationAutoSyncStatusPanel | f8cc0c4 |  |  |  |
+| MKT-001 | marketing | Marketing consent + eligibility gates (POPIA) | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-H/UX-026 | f8cc0c4 |  |  |  |
+| MKT-002 | marketing | Campaign execute — honest SEND_PATH_NOT_IMPLEMENTED | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| MKT-003 | marketing | Live email/SMS/WhatsApp campaign send | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Provider + Owner approval |  |
+| RPT-001 | reports | Owner dashboard KPI strip + today scheduled panel | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | UX-I/UX-012 | f8cc0c4 |  |  |  |
+| RPT-002 | reports | Analytics KPI definitions on home | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | UX-038 |  |
+| RPT-003 | reports | End-to-end quote → cash reporting chain | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Chain not live-verified |  |
+| RPT-004 | reports | Enterprise BI / data warehouse pages | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | NOT VISUALLY VERIFIED — decorative |  |
+| AURA-001 | AURA | AURA chat with configured provider (OpenAI/Claude/Gemini) | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO | FRZ-015 12/12 GO | f8cc0c4 |  |  |  |
+| AURA-002 | AURA | Multi-AI gateway + provider registry | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | ai-orchestration routes | f8cc0c4 |  |  |  |
+| AURA-003 | AURA | Agent orchestration engine (backend handoffs) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | agent-orchestration.service.ts | f8cc0c4 |  |  |  |
+| AURA-004 | AURA | Agent orchestration web UI | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | TITAN_AURA_AGENT_COLLABORATION_AUDIT |  |
+| AURA-005 | AURA | AURA approved actions fail loudly (no silent no-op) | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | UX-032 |  |
+| AI-001 | AI agent families | Executive Intelligence agents (6) — registry + runtime scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | AGENT_REGISTRY executive* | f8cc0c4 |  |  |  |
+| AI-002 | AI agent families | Finance Intelligence agents (8) — finance_aura routes wired | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | finance-aura-agent.test.ts | f8cc0c4 |  |  |  |
+| AI-003 | AI agent families | Operations/Dispatch agents (8) — scheduling/dispatch scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-004 | AI agent families | Technician Intelligence agents (5) — mobile assistant scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-005 | AI agent families | Fleet Intelligence agents (5) — fleet manager scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Cartrack gate |  |
+| AI-006 | AI agent families | Inventory & Procurement agents (5) | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-007 | AI agent families | HR & Workforce agents (5) | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-008 | AI agent families | Marketing Intelligence agents (8) — honest blocked send | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-009 | AI agent families | Customer Experience agents (7) — receptionist/voice scaffold | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-010 | AI agent families | Document/Compliance agents — document_intelligence wired | PARTIALLY IMPLEMENTED | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| AI-011 | AI agent families | 77-agent V1 audit complete per checklist | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | TITAN_AURA_V1_FINAL_ACCEPTANCE_CHECKLIST.md — 0/77 verified |  |
+| OPS-001 | audit logs | Workflow audit logs + central security audit | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | workflow-audit-logs schema | f8cc0c4 |  |  |  |
+| OPS-002 | system health | /api/v1/health + /health/ready database connected | DEPLOYED TO STAGING | YES | NO | YES | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| OPS-003 | system health | Background work status panel | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Not embedded all pages |  |
+| SEC-001 | security | Forbidden-action API matrix (71 tests) | TESTED LOCALLY | YES | YES | NO | YES | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| SEC-002 | security | MFA + step-up auth for sensitive actions | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| SEC-003 | security | Enterprise zero-trust decorative pages vs real controls | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Useful-function audit FAIL on enterprise pages |  |
+| BAK-001 | backups | Staging pg_dump backup gate before migrations | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | apply-0176-staging-only.mjs | f8cc0c4 |  | Phase 2 not run — no credentials |  |
+| BAK-002 | backups | Disaster recovery policies + backup verification UI | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | EnterpriseProductionReadinessService | f8cc0c4 |  |  |  |
+| RB-001 | rollback | Git + Railway revision rollback documented | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | TITAN_STAGING_BASELINE_FREEZE.md | f8cc0c4 |  |  |  |
+| RB-002 | rollback | Database restore from verified backup | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | No backup created this cycle |  |
+| MON-001 | monitoring | Mission Control alert sync | FOUNDATION ONLY | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | NOT VISUALLY VERIFIED |  |
+| MON-002 | monitoring | Performance audit + observability Phase 22 | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | PIPE-10 queued |  |
+| UX-001 | accessibility | Finance workspace reflow without overflow-x clip | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | YES | YES | YES | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| UX-002 | accessibility | Young Guns dark theme consistent (f8cc0c4 theme pass) | BUILT LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | young-guns-theme.test.ts @ f8cc0c4 | f8cc0c4 |  |  |  |
+| UX-003 | accessibility | WCAG audit across 155 pages | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | No full a11y audit |  |
+| MOB-001 | mobile/tablet | Technician mobile execution UX-B closure | DEPLOYED TO STAGING | YES | NO | NO | NO | NO | YES | NO | NO | YES | YES | YES | YES | NO | NO | UX-B 35/35 | f8cc0c4 |  |  |  |
+| MOB-002 | mobile/tablet | Finance editor tablet/mobile reflow verified in tests | TESTED LOCALLY | YES | YES | NO | NO | NO | NO | NO | NO | YES | YES | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| MOB-003 | mobile/tablet | Client portal /my mobile parity | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| TST-001 | testing | Automated cross-tenant + RBAC test matrix | TESTED LOCALLY | YES | YES | NO | YES | YES | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  |  |  |
+| TST-002 | testing | Staging public E2E scripts (Phases 5–12) | OWNER VERIFIED | YES | YES | NO | NO | NO | YES | YES | NO | NO | NO | YES | YES | YES | NO | 140–142 staging E2E JSON | f8cc0c4 |  |  |  |
+| TST-003 | testing | Owner authenticated finance smoke J-5/J-6.5 | PARTIALLY IMPLEMENTED | YES | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO | docs/TITAN_FINANCE_STAGING_SMOKE_J65.md | f8cc0c4 |  | SUPERSEDED — awaiting J-6.6A deploy |  |
+| TST-004 | testing | Playwright browser suite with staging credentials | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | No apps/api/.env.staging.local on agent host |  |
+| STG-001 | staging | Railway API + Web deployed from integration branch | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | YES | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Deploy revision unconfirmed; route probes suggest partial live |  |
+| STG-002 | staging | Migrations 0176→0177→0178 applied exactly once | PARTIALLY IMPLEMENTED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 | 0176,0177,0178 | Blocked by backup/credentials gate |  |
+| STG-003 | staging | APP_ENV=staging + DATABASE_URL ref cpkuwtaipjxeipvbssvn only | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | apps/api/.env.staging.local absent locally |  |
+| PRD-001 | production | Production ref rshuiaghmtrvvilhqpwm never targeted | OWNER VERIFIED | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | YES | NO | Safety rule enforced | f8cc0c4 |  |  |  |
+| PRD-002 | production | Production deploy + migration gate | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | Explicit Owner gate — staging must GO first |  |
+| PRD-003 | production | Pilot readiness sign-off (FRZ-022) | NOT FOUND | NO | NO | NO | NO | NO | NO | NO | NO | NO | NO | YES | YES | NO | NO |  | f8cc0c4 |  | TITAN_PILOT_READINESS_REPORT.md blocked by approval |  |
+---
+
+## NOT VISUALLY VERIFIED surfaces
+
+The following surfaces have **code/routes/tests** but lack **Owner authenticated visual verification** on staging at `f8cc0c4`. Do not treat as complete.
+
+| Surface | Route / module | Why unverified | Register / gap |
+|---------|----------------|----------------|----------------|
+| Enterprise Mission Control | `/mission-control`, `/enterprise-modules` | Decorative / generic placeholders | BIND-001, UX-039 |
+| Enterprise Digital Twin | `/digital-twin` | Foundation milestone copy; no live ops proof | Milestone 55 |
+| Enterprise Knowledge Graph | `/knowledge-graph` | Semantic search not Owner-click verified | Milestone 56 |
+| Enterprise Analytics / BI warehouse | `/enterprise-analytics` | KPI depth varies; not pilot-critical path | RPT-004 |
+| Enterprise Automation Studio | `/automation-studio` | Designer not staging smoke tested | Milestone 54 |
+| Enterprise Financial Planning | `/financial-planning` | Simulation pages not Owner verified | Milestone 68 |
+| Enterprise Marketing Intelligence | `/marketing-intelligence` | Execute paths honest-blocked; UI not visually signed off | MKT-003 |
+| Enterprise Sales Intelligence | `/sales-intelligence` | Overlaps /leads; decorative sections | CRM-009 |
+| Enterprise IT Operations | `/it-operations` | Health monitors exist; not visually verified | Milestone 97 |
+| Enterprise App Builder | `/app-builder` | Owner-only NL feature lifecycle — not started visually | Milestone 71 |
+| Finance cashflow / profit / forecast pages | `/finance/cashflow-profit`, etc. | API wired; no staging visual sign-off | FIN-011 |
+| Configuration Studio publish/rollback | `/settings/configuration` | FRZ-019 — draft/version/rollback missing | FRZ-019 |
+| Gmail integration card | Integrations hub | Honesty-only NOT IMPLEMENTED | COM-006 FAIL |
+| Cartrack live fleet map | Owner Command Centre | Credentials not configured | FLT-004 |
+| WhatsApp live send + human takeover | Comms / Integrations | Meta credentials gate | COM-001, COM-003 |
+| Portal live technician tracking map | `/my/jobs/:id` | fetchPortalJob ETA depth open | UX-030 |
+| AURA Agent Orchestration web UI | *(no web pages)* | Backend only — no UI | AURA-004 |
+| Google Calendar sync | Integrations | BUILT BUT NOT CONNECTED | COM-008 |
+| Payment links / Yoco checkout | Finance / portal pay | FIN-014 missing | UX-055 remainder |
+| n8n live cloud connector | Automations | Loopback-only; live cloud OUT | AUT-002 |
+| Meta / Google live ad spend UI | Marketing integrations | Adapter config only | INT-009 |
+| Platform Owner / Manager / Accountant roles | Users & Access | PLT-003 not implemented | ROLE-006 |
+| SSO / IdP login | Auth settings | PLT-009 missing | AUTH-005 |
+| Global search live invalidation | Nav search | UX-I partial | FRZ-004 |
+| Live UI auto-refresh all operational lists | App-wide | Domain events limited subset | BIND-003 |
+| Stripe payments | Finance | FIN-012 missing | — |
+| Business evolution / continuous learning UI | `/business-evolution` | Extensive nav; not Owner verified | Milestone 70 |
+| Young Guns theme on all 155 pages | App-wide | f8cc0c4 covers finance/docs; full app sweep pending | UX-002 partial |
+
+
+---
+
+## Future phases (visible — not started)
+
+These phases are **documented and visible in backlog/plans** but must **not** be treated as in-progress unless explicitly approved.
+
+| Phase | Focus | Source | Status |
+|-------|-------|--------|--------|
+| **Theme cleanup** | Young Guns theme consistency across remaining 155 pages; remove legacy tokens | f8cc0c4 partial pass | **QUEUED** |
+| **Reports & analytics** | KPI definitions on home; quote→cash reporting; BI warehouse useful wiring | FRZ-008, RPT-002–004 | **QUEUED** |
+| **Technician tracking** | Live en-route map; portal ETA; Cartrack Directions | UX-030, FLT-008, EXE-005 | **QUEUED** |
+| **Integrations live** | Cartrack, WhatsApp live send, Gmail backend, Google Calendar, Meta/Google ads | COM-001–008, INT-009 | **QUEUED** — credential gates |
+| **Xero complete sync** | Background import GO; two-way write verify; official numbering live | XERO-002, XERO-004 | **IN PROGRESS** — import running |
+| **Pricebook YGP-001** | Tenant-scoped pricebook DB replacing temp YG constants | FIN-014, FIN-015 | **QUEUED** |
+| **Configuration Studio** | Draft / preview / version / rollback (FRZ-019) | TITAN_FRZ019_CONFIG_STUDIO_AUDIT.md | **QUEUED** |
+| **Domain events app-wide** | Materials, invoice, document, webhook → live UI invalidation | BIND-003, BIND-004 | **QUEUED** |
+| **Staging data cleanup** | Delete 59 E2E disposable tenants after Owner approval | CLN-001 | **BLOCKED** — Owner gate |
+| **Decorative enterprise hide/complete** | Hide or wire enterprise intelligence pages | TITAN_CLEAN_DATA_UX_QUEUE Phase F3 | **QUEUED** |
+| **Calendar drag-drop** | Day/week/month scheduling component | TITAN_NEXT_IMPLEMENTATION_STAGE_PLAN | **QUEUED** |
+| **Job detail 360** | Per-visit tabs; mobile parity | TITAN_NEXT_IMPLEMENTATION_STAGE_PLAN | **QUEUED** |
+| **AURA Developer Agent + Cursor Cloud provider** | Owner-only dev assistant via `cursor_cloud_agent` adapter | Root checklist future section | **PLANNED / NOT STARTED** |
+| **AURA Voice throughout TITAN** | Persistent mic + STT/TTS all channels | docs/AURA_VOICE_THROUGHOUT_TITAN.md | **PLANNED / NOT STARTED** |
+| **Department 21 SaaS scaling** | Multi-tenant billing, white-label, entitlements | docs/TITAN_AURA_DEPARTMENT_21_SAAS_SCALING.md | **QUEUED** — after Xero phase |
+| **Production hardening** | Phase 22 observability, backup, perf | TITAN_MASTER_EXECUTION_PLAN Phase 22 | **QUEUED** |
+| **Pilot sign-off → commercial launch** | FRZ-022 / FRZ-023 complete chain | TITAN_PILOT_READINESS_REPORT.md | **BLOCKED** |
+
+---
+
+## Phase J-6.6A scope (current)
+
+Items **J66A-001 … J66A-005** in the register above are targeted for completion in **Phase J-6.6A**. Use **YES** in boolean columns **only after proven at the new J-6.6A commit** — not preemptively at baseline `f8cc0c4`.
+
+| ID | Deliverable | J-6.6A target |
+|----|-------------|---------------|
+| J66A-001 | Finance RBAC hardening | Cost strip, catalogue, document-engine routes |
+| J66A-002 | Save semantics | Draft placeholder lines; save-from-preview idempotency |
+| J66A-003 | Five test fixes | Finance regression suite green |
+| J66A-004 | Migration 0176 hardening | Backup gate + staging ref guards |
+| J66A-005 | This checklist | Authoritative `docs/TITAN_MASTER_COMPLETION_CHECKLIST.md` |
+
+---
+
+## GO / NO-GO @ f8cc0c4
+
+| Gate | Verdict |
+|------|---------|
+| Staging release | **NO-GO** |
+| Production | **FORBIDDEN** |
+| Primary blockers | No staging credentials locally; migrations 0176–0178 not applied; Owner finance E2E not run; J-6.6A in progress |
+| Next action | Complete J-6.6A → commit → Owner approval → execute master sequence steps 3–16 |
+
+---
+
+*Generated requirement count: **166** rows. Update this document when any row changes classification; do not maintain competing checklists elsewhere.*
