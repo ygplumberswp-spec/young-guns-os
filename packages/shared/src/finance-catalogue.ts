@@ -3,7 +3,7 @@ import type { QuoteLineCategory } from './finance.js';
 export type FinanceCatalogueSourceType = 'inventory' | 'materials' | 'service' | 'labour';
 
 export type FinanceCatalogueItemSearchResult = {
-  /** Stable key for duplicate detection — inventory:{id} or builtin:{code} */
+  /** Stable key for duplicate detection — inventory:{id} */
   sourceKey: string;
   sourceType: FinanceCatalogueSourceType;
   itemCode: string;
@@ -16,88 +16,16 @@ export type FinanceCatalogueItemSearchResult = {
 };
 
 /**
- * Young Guns approved labour/service pricebook (read-only, bundled with TITAN).
- * These are the only non-inventory catalogue sources — no demo or invented items.
+ * Finance catalogue search data sources (J-6.2).
+ * - inventory_items: tenant-scoped active stock/service rows (FinanceService.searchCatalogueItems)
+ * - YGP-001 Young Guns pricebook: planned DB table — not yet implemented; no hardcoded fallback
  */
-export const BUILTIN_FINANCE_CATALOGUE: FinanceCatalogueItemSearchResult[] = [
-  {
-    sourceKey: 'builtin:LAB-CALLOUT',
-    sourceType: 'labour',
-    itemCode: 'LAB-CALLOUT',
-    name: 'Call-out fee',
-    shortDescription: 'Standard site attendance / call-out labour',
-    sellPriceCents: 45000,
-    unitCostCents: null,
-    unit: 'each',
-    category: 'travel',
-  },
-  {
-    sourceKey: 'builtin:LAB-HOURLY',
-    sourceType: 'labour',
-    itemCode: 'LAB-HOURLY',
-    name: 'Standard labour — hourly',
-    shortDescription: 'Qualified plumber labour per hour',
-    sellPriceCents: 65000,
-    unitCostCents: null,
-    unit: 'hour',
-    category: 'labour',
-  },
-  {
-    sourceKey: 'builtin:LAB-AFTERHOURS',
-    sourceType: 'labour',
-    itemCode: 'LAB-AFTERHOURS',
-    name: 'After-hours labour — hourly',
-    shortDescription: 'After-hours / emergency labour rate',
-    sellPriceCents: 95000,
-    unitCostCents: null,
-    unit: 'hour',
-    category: 'labour',
-  },
-  {
-    sourceKey: 'builtin:SRV-GEYSER-INSTALL',
-    sourceType: 'service',
-    itemCode: 'SRV-GEYSER-INSTALL',
-    name: 'Geyser installation',
-    shortDescription: 'Supply and install geyser (labour component)',
-    sellPriceCents: 250000,
-    unitCostCents: null,
-    unit: 'each',
-    category: 'scope',
-  },
-  {
-    sourceKey: 'builtin:SRV-LEAK-REPAIR',
-    sourceType: 'service',
-    itemCode: 'SRV-LEAK-REPAIR',
-    name: 'Leak detection & repair',
-    shortDescription: 'Diagnose and repair water leak',
-    sellPriceCents: 85000,
-    unitCostCents: null,
-    unit: 'each',
-    category: 'scope',
-  },
-  {
-    sourceKey: 'builtin:SRV-DRAIN-CLEAR',
-    sourceType: 'service',
-    itemCode: 'SRV-DRAIN-CLEAR',
-    name: 'Drain clearing',
-    shortDescription: 'Clear blocked drain line',
-    sellPriceCents: 75000,
-    unitCostCents: null,
-    unit: 'each',
-    category: 'scope',
-  },
-  {
-    sourceKey: 'builtin:SRV-COC',
-    sourceType: 'service',
-    itemCode: 'SRV-COC',
-    name: 'Certificate of Compliance (CoC)',
-    shortDescription: 'Plumbing CoC inspection and issue',
-    sellPriceCents: 120000,
-    unitCostCents: null,
-    unit: 'each',
-    category: 'scope',
-  },
-];
+export const FINANCE_CATALOGUE_DATA_SOURCES = {
+  inventoryTable: 'inventory_items',
+  inventoryService: 'FinanceService.searchCatalogueItems',
+  pricebookTable: null as string | null,
+  pricebookStatus: 'YGP-001 queued — labour/service pricebook not yet in database',
+} as const;
 
 export function inventoryItemToFinanceCatalogue(input: {
   id: string;
@@ -119,6 +47,27 @@ export function inventoryItemToFinanceCatalogue(input: {
     unit: input.unit || 'each',
     category: 'materials',
   };
+}
+
+/** Test fixture — maps a tenant inventory row shape to a catalogue search result. */
+export function financeCatalogueItemFromInventory(input: {
+  id: string;
+  sku: string;
+  name: string;
+  description?: string | null;
+  unit?: string;
+  unitCostCents?: number | null;
+  sellPriceCents?: number | null;
+}): FinanceCatalogueItemSearchResult {
+  return inventoryItemToFinanceCatalogue({
+    id: input.id,
+    sku: input.sku,
+    name: input.name,
+    description: input.description ?? null,
+    unit: input.unit ?? 'each',
+    unitCostCents: input.unitCostCents ?? null,
+    sellPriceCents: input.sellPriceCents ?? null,
+  });
 }
 
 function normalizeSearchText(value: string): string {

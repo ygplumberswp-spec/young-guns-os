@@ -1,34 +1,34 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  BUILTIN_FINANCE_CATALOGUE,
   duplicateCatalogueSelectionWarning,
+  financeCatalogueItemFromInventory,
   formatFinanceCatalogueSourceLabel,
-  inventoryItemToFinanceCatalogue,
   searchFinanceCatalogueItems,
+  FINANCE_CATALOGUE_DATA_SOURCES,
 } from './finance-catalogue.js';
 
-test('catalogue search keeps duplicate items visible in results', () => {
-  const labour = BUILTIN_FINANCE_CATALOGUE.find((row) => row.itemCode === 'LAB-HOURLY');
-  assert.ok(labour);
-  const results = searchFinanceCatalogueItems('labour', BUILTIN_FINANCE_CATALOGUE);
-  assert.ok(results.some((row) => row.sourceKey === labour!.sourceKey));
+test('catalogue search keeps duplicate inventory items visible in results', () => {
+  const labour = financeCatalogueItemFromInventory({
+    id: 'lab-1',
+    sku: 'LAB-HOURLY',
+    name: 'Standard labour — hourly',
+    description: 'Qualified plumber labour per hour',
+    unit: 'hour',
+    sellPriceCents: 65000,
+  });
+  const results = searchFinanceCatalogueItems('labour', [labour]);
+  assert.ok(results.some((row) => row.sourceKey === 'inventory:lab-1'));
 });
 
 test('duplicateCatalogueSelectionWarning is advisory and never blocks', () => {
-  const warning = duplicateCatalogueSelectionWarning('builtin:LAB-HOURLY', ['builtin:LAB-HOURLY'], 'Standard labour — hourly');
+  const warning = duplicateCatalogueSelectionWarning('inventory:lab-1', ['inventory:lab-1'], 'Standard labour — hourly');
   assert.match(warning ?? '', /already on the document/i);
-  assert.equal(duplicateCatalogueSelectionWarning('builtin:LAB-HOURLY', []), null);
+  assert.equal(duplicateCatalogueSelectionWarning('inventory:lab-1', []), null);
 });
 
-test('catalogue sources are inventory or approved Young Guns pricebook only', () => {
-  for (const item of BUILTIN_FINANCE_CATALOGUE) {
-    assert.ok(item.sourceKey.startsWith('builtin:'));
-    assert.ok(item.sourceType === 'labour' || item.sourceType === 'service');
-    assert.ok(item.itemCode.length > 0);
-    assert.ok(item.name.length > 0);
-  }
-  const inventory = inventoryItemToFinanceCatalogue({
+test('catalogue sources are tenant inventory only until YGP-001 pricebook exists', () => {
+  const inventory = financeCatalogueItemFromInventory({
     id: 'real-item',
     sku: 'YG-001',
     name: 'Tenant copper pipe',
@@ -39,6 +39,8 @@ test('catalogue sources are inventory or approved Young Guns pricebook only', ()
   });
   assert.equal(inventory.sourceType, 'inventory');
   assert.equal(inventory.sourceKey, 'inventory:real-item');
+  assert.equal(FINANCE_CATALOGUE_DATA_SOURCES.inventoryTable, 'inventory_items');
+  assert.equal(FINANCE_CATALOGUE_DATA_SOURCES.pricebookTable, null);
 });
 
 test('formatFinanceCatalogueSourceLabel identifies result type', () => {

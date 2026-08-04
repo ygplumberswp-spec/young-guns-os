@@ -10278,7 +10278,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   width: 100%;
   max-width: none;
   padding-inline: var(--finance-workspace-gutter);
-  overflow-x: clip;
+  min-width: 0;
   box-sizing: border-box;
 }
 
@@ -10343,6 +10343,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
 .finance-line-items--workspace .finance-line-items__table-wrap {
   width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .finance-line-items--workspace .finance-line-items__table {

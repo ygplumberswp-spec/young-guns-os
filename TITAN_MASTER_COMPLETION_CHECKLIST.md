@@ -220,27 +220,46 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 
 **Status:** **IMPLEMENTED locally** — awaiting Owner approval before staging release.
 
-**Local verification target:** recovery branch `cursor/titan-v1-integration-recovery` (commit after J-6.1 addendum + J-6.2).
+**Ancestry (verified):** `HEAD` → `d23b79a` → `c3566ba` → `99d3e8e`
+
+### Catalogue data sources (exact)
+
+| Source | Table / service | Scope | Notes |
+|--------|-----------------|-------|-------|
+| Tenant inventory | `inventory_items` via `FinanceService.searchCatalogueItems` | `company_id = tenant`, `status = active`, ILIKE on sku/name/description, limit 24 → ranked to 12 | Materials, parts and any labour/service rows stored as inventory SKUs |
+| Young Guns pricebook | **Not in database** (YGP-001 queued) | — | No hardcoded fallback; manual/custom line when no inventory match |
+| Supplier catalogue | `supplier_price_catalogue_items` | Procurement only | **Not wired** to finance line search |
+
+**No parallel catalogue DB created.** Selection copies values to quote/invoice line snapshots only — no master mutation, no draft stock deduction.
 
 ### Acceptance requirements
 
 | Area | Requirement | Status |
 |------|-------------|--------|
-| Full-width workspace | Quote/Invoice create, edit, detail and preview fill usable width beside TITAN sidebar; 20–24px padding; responsive grid; line table 100%; notes + totals two-column on desktop | **DONE** (J-6.1 addendum + layout tests) |
-| Catalogue search | Tenant inventory + approved Young Guns labour/service pricebook only; source type labelled; manual line always available | **DONE** |
-| Duplicate lines | Same catalogue item may appear on multiple lines; optional warning only — never blocks add/save | **DONE** |
-| Source integrity | Selection copies to document line only; no master catalogue mutation; no draft inventory deduction | **DONE** (verified in service + editor tests) |
-| Security | Tenant isolation, finance RBAC, query length limit (120), result cap (12), safe ILIKE search | **DONE** |
-| Cost/margin | Unit cost column gated by `canViewFinanceProfit` on quotes; hidden on invoices | **DONE** |
-| Enter key | Catalogue Enter selects item; final line Enter adds row; document never submits on Enter | **DONE** (editor + search field tests) |
+| Full-width workspace | Quote/Invoice create, edit, detail and preview fill usable width; 20–24px padding; responsive grid; line table 100%; notes + totals two-column on desktop | **DONE** (`d23b79a` — not reworked) |
+| Responsive safety | No `overflow-x: clip`; controlled table scroll; reflow at 1024px / 768px; fields/actions accessible at ~1440 / 1024 / 768 / 390px | **DONE** |
+| Catalogue search | Tenant `inventory_items` only until YGP-001; source type labelled; manual line always available | **DONE** |
+| Duplicate lines | Same item on multiple lines; optional warning only — never blocks; no `exclude` search filter | **DONE** |
+| Source integrity | Copy to document line only; no master mutation; no draft inventory deduction | **DONE** |
+| Security | `companyId` tenant isolation; finance RBAC; query ≤120 chars; ILIKE + limit 12; cost gated by `canViewFinanceProfit` | **DONE** |
+| Enter key | Catalogue Enter selects; final line Enter adds row; never submits document | **DONE** |
 
 ### J-6.2 automated tests
 
-- `apps/web/src/features/finance/finance-workspace-layout.test.ts`
-- `apps/web/src/features/finance/finance-j62-phase.test.ts`
-- `packages/shared/src/finance-j62-phase.test.ts`
+- `apps/web/src/features/finance/finance-workspace-layout.test.ts` — full-width, reflow, no clip
+- `apps/web/src/features/finance/finance-j62-phase.test.ts` — duplicates, RBAC, debounce, no exclude
+- `packages/shared/src/finance-j62-phase.test.ts` — inventory-only sources, duplicate warning
 - `packages/shared/src/finance-catalogue.test.ts`
-- `apps/api/src/services/finance-catalogue.service.test.ts`
+- `apps/api/src/services/finance-catalogue.service.test.ts` — tenant isolation, no BUILTIN, no stock mutation
+
+### Responsive breakpoints verified in CSS/tests
+
+| Viewport | Behaviour |
+|----------|-----------|
+| ~1440px desktop | 12-column grid; notes + totals side-by-side; line table full width |
+| ≤1024px tablet | Single-column card reflow; bottom grid stacks |
+| ≤768px mobile | Line items stack as cards; totals full width; action buttons stretch |
+| ~390px mobile | Same stack; 1.25rem padding; table wrap scrolls horizontally if needed |
 
 ---
 
@@ -254,7 +273,7 @@ Recovery commits on app branch (newest first): `80a2534` → `3bfa085` → `2117
 4. **Push recovery branch** — `git push -u origin cursor/titan-v1-integration-recovery`.
 5. **Fast-forward deploy branch** — merge/ff `cursor/titan-v1-integration` to the final J-6.2 commit **without force push**.
 6. **Railway deploy** — source branch `cursor/titan-v1-integration`; disable startup/blanket migrations on deploy.
-7. **Verify deployed revision** — record exact commit SHA on API and Web services before J-5 smoke resumes.
+7. **Verify deployed revision** — record exact commit SHA on API and Web services before J-5 smoke resumes (sections A–H + E2 + E3).
 
 ---
 

@@ -20,7 +20,6 @@ import type {
   UpdateInvoiceRequest,
 } from '@titan/shared';
 import {
-  BUILTIN_FINANCE_CATALOGUE,
   calculateLineAmounts,
   calculateQuoteProfit,
   canEditInvoice,
@@ -743,20 +742,17 @@ export class FinanceService {
       limit: 24,
     });
 
-    const catalogue = [
-      ...BUILTIN_FINANCE_CATALOGUE,
-      ...inventoryRows.map((row) =>
-        inventoryItemToFinanceCatalogue({
-          id: row.id,
-          sku: row.sku,
-          name: row.name,
-          description: row.description,
-          unit: row.unit,
-          unitCostCents: row.unitCostCents,
-          sellPriceCents: row.sellPriceCents,
-        }),
-      ),
-    ];
+    const catalogue = inventoryRows.map((row) =>
+      inventoryItemToFinanceCatalogue({
+        id: row.id,
+        sku: row.sku,
+        name: row.name,
+        description: row.description,
+        unit: row.unit,
+        unitCostCents: row.unitCostCents,
+        sellPriceCents: row.sellPriceCents,
+      }),
+    );
 
     return searchFinanceCatalogueItems(trimmed, catalogue, { limit: 12 });
   }

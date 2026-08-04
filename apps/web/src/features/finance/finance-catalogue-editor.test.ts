@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BUILTIN_FINANCE_CATALOGUE } from '@titan/shared';
+import { financeCatalogueItemFromInventory } from '@titan/shared';
 import {
   applyCatalogueItemToEditorLine,
   applyManualLineDescription,
@@ -9,17 +9,15 @@ import {
 } from './finance-editor-utils.js';
 
 test('catalogue selection auto-fills description, category, qty, unit, price and cost', () => {
-  const inventoryItem = {
-    sourceKey: 'inventory:abc',
-    sourceType: 'inventory' as const,
-    itemCode: 'TAP-001',
+  const inventoryItem = financeCatalogueItemFromInventory({
+    id: 'abc',
+    sku: 'TAP-001',
     name: 'Basin tap',
-    shortDescription: 'Chrome basin mixer',
-    sellPriceCents: 18500,
-    unitCostCents: 12000,
+    description: 'Chrome basin mixer',
     unit: 'each',
-    category: 'materials' as const,
-  };
+    unitCostCents: 12000,
+    sellPriceCents: 18500,
+  });
   const line = newFinanceEditorLine();
   const filled = applyCatalogueItemToEditorLine(line, inventoryItem, {
     priceMode: 'excluding_vat',
@@ -36,10 +34,16 @@ test('catalogue selection auto-fills description, category, qty, unit, price and
 });
 
 test('manual fallback clears catalogue key and keeps typed description', () => {
-  const line = applyCatalogueItemToEditorLine(newFinanceEditorLine(), BUILTIN_FINANCE_CATALOGUE[0]!, {
-    priceMode: 'excluding_vat',
-    vatMode: 'standard',
-  });
+  const line = applyCatalogueItemToEditorLine(
+    newFinanceEditorLine(),
+    financeCatalogueItemFromInventory({
+      id: 'callout',
+      sku: 'LAB-CALLOUT',
+      name: 'Call-out fee',
+      sellPriceCents: 45000,
+    }),
+    { priceMode: 'excluding_vat', vatMode: 'standard' },
+  );
   const manual = applyManualLineDescription(line, 'Custom pipe fitting');
   assert.equal(manual.description, 'Custom pipe fitting');
   assert.equal(manual.catalogueSourceKey, null);
@@ -47,10 +51,17 @@ test('manual fallback clears catalogue key and keeps typed description', () => {
 });
 
 test('draft round-trip accepts catalogue and manual lines without inventory mutation', () => {
-  const catalogueLine = applyCatalogueItemToEditorLine(newFinanceEditorLine(), BUILTIN_FINANCE_CATALOGUE[1]!, {
-    priceMode: 'excluding_vat',
-    vatMode: 'standard',
-  });
+  const catalogueLine = applyCatalogueItemToEditorLine(
+    newFinanceEditorLine(),
+    financeCatalogueItemFromInventory({
+      id: 'lab-1',
+      sku: 'LAB-HOURLY',
+      name: 'Standard labour — hourly',
+      sellPriceCents: 65000,
+      unit: 'hour',
+    }),
+    { priceMode: 'excluding_vat', vatMode: 'standard' },
+  );
   const manualLine = applyManualLineDescription(newFinanceEditorLine(), 'Site-specific adapter');
   manualLine.unitPrice = '50.00';
   const parsed = parseEditorLinesForDraft([catalogueLine, manualLine], { vatMode: 'standard' });

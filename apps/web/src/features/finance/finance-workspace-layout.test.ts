@@ -31,7 +31,7 @@ test('line-item table fills workspace container at full width', () => {
   assert.match(indexCss, /\.finance-line-items__col-description\s*\{/s);
 });
 
-test('desktop workspace grid reflows at tablet breakpoint', () => {
+test('desktop workspace grid reflows at tablet breakpoint (1024px)', () => {
   const layoutRule = indexCss.match(
     /@media\s*\(\s*max-width:\s*1024px\s*\)\s*\{[\s\S]*?\.finance-editor__layout--workspace[\s\S]*?grid-template-columns:\s*1fr[\s\S]*?\}/,
   );
@@ -41,9 +41,23 @@ test('desktop workspace grid reflows at tablet breakpoint', () => {
   assert.match(block, /\.finance-detail--workspace[\s\S]*?grid-template-columns:\s*1fr/);
 });
 
-test('workspace pages prevent horizontal overflow', () => {
-  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*overflow-x:\s*clip/s);
-  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*--finance-workspace-gutter:\s*clamp\(1\.25rem/s);
+test('mobile layout stacks line items and actions at 768px without page-level clip', () => {
+  const mobileRule = indexCss.match(/@media\s*\(\s*max-width:\s*768px\s*\)\s*\{[\s\S]*?\.finance-document-actions__primary \.titan-btn[\s\S]*?\}/);
+  assert.ok(mobileRule, 'finance mobile reflow block missing');
+  const block = mobileRule[0]!;
+  assert.match(block, /\.finance-line-items--editor \.finance-table tr[\s\S]*?display:\s*block/);
+  assert.match(block, /\.finance-line-items__totals-panel[\s\S]*?width:\s*100%/);
+  assert.doesNotMatch(block, /overflow-x:\s*clip/);
+});
+
+test('workspace does not use overflow-x clip to hide broken layout', () => {
+  assert.doesNotMatch(indexCss, /\.finance-page--workspace\s*\{[^}]*overflow-x:\s*clip/s);
+  assert.match(indexCss, /\.finance-line-items--workspace[\s\S]*overflow-x:\s*auto/);
+});
+
+test('workspace uses min-width zero and controlled table scroll for narrow viewports', () => {
+  assert.match(indexCss, /\.finance-page--workspace\s*\{[^}]*min-width:\s*0/s);
+  assert.match(indexCss, /\.finance-editor__bottom-grid\s*\{[^}]*min-width:\s*0/s);
 });
 
 test('all quote and invoice editor pages use workspace layout classes', () => {
