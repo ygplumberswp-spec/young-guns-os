@@ -675,9 +675,9 @@ export class SalesFollowupIntelligenceService {
           throw new SalesFollowupIntelligenceError('NOT_FOUND', 'Quote not found for this tenant.');
         }
         const built = buildSfiQuoteReminderDraft({
-          customerName,
+          customerName: customerName ?? 'Customer',
           quoteNumber: quote.quoteNumber,
-          quoteTitle: quote.title,
+          quoteTitle: customerName ?? 'Customer',
           totalCents: quote.totalCents,
           currency: quote.currency,
           validUntil: quote.validUntil?.toISOString() ?? null,

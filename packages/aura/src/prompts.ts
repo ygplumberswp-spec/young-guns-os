@@ -224,7 +224,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const quote of finance.recentQuotes) {
       lines.push(
-        `  - ${quote.quoteNumber} ${quote.title} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
+        `  - ${quote.quoteNumber} (${quote.status}) · ${quote.customerName} · ${formatMoney(quote.amountCents, quote.currency)}`,
       );
     }
   } else {
@@ -236,7 +236,7 @@ function formatFinanceContext(context: AuraGenerateContext): string | null {
 
     for (const invoice of finance.recentInvoices) {
       lines.push(
-        `  - ${invoice.invoiceNumber} ${invoice.title} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
+        `  - ${invoice.invoiceNumber} (${invoice.status}) · ${invoice.customerName} · ${formatMoney(invoice.amountCents, invoice.currency)} paid ${formatMoney(invoice.amountPaidCents, invoice.currency)}`,
       );
     }
   } else {

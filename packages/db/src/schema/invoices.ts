@@ -42,7 +42,8 @@ export const invoices = pgTable('invoices', {
   xeroInvoiceNumber: text('xero_invoice_number'),
   xeroReference: text('xero_reference'),
   numberAuthority: text('number_authority').notNull().default('internal_pending_xero'),
-  title: text('title').notNull(),
+  /** Legacy DB column — not user-facing (Phase J-6). Application always sets customer name or ''. */
+  title: text('title').notNull().default(''),
   status: invoiceStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull(),
   subtotalCents: integer('subtotal_cents').notNull().default(0),

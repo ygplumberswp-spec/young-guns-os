@@ -76,7 +76,7 @@ export function PortalQuotesPage() {
                   className="portal-list__link"
                 >
                   <strong>
-                    {quote.quoteNumber} · {quote.title}
+                    {quote.displayQuoteNumber} · {quote.customerName}
                   </strong>
                   <span>
                     {formatStatus(quote.status)} · v{quote.versionNumber}

@@ -49,7 +49,6 @@ export function InvoiceCreatePage() {
   const [quotes, setQuotes] = useState<QuoteSummary[]>([]);
   const [jobId, setJobId] = useState('');
   const [quoteId, setQuoteId] = useState('');
-  const [title, setTitle] = useState('');
   const [lines, setLines] = useState<FinanceEditorLine[]>(() => createBlankEditorLines());
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
@@ -84,7 +83,6 @@ export function InvoiceCreatePage() {
       customerId,
       jobId,
       quoteId,
-      title,
       lines,
       status,
       stage,
@@ -98,7 +96,7 @@ export function InvoiceCreatePage() {
       approvedForSend,
     }),
     getMeta: () => ({
-      title: title || 'New invoice',
+      title: selectedCustomer?.name || 'New invoice',
       customerLabel: selectedCustomer?.name ?? null,
       completionPct: customerId ? 30 : 10,
     }),
@@ -147,7 +145,6 @@ export function InvoiceCreatePage() {
     let cancelled = false;
     void fetchQuote(accessToken, quoteId).then((quote) => {
       if (cancelled) return;
-      setTitle(quote.title);
       setLines(
         quote.lineItems.length
           ? quote.lineItems.map((line) => ({
@@ -191,7 +188,6 @@ export function InvoiceCreatePage() {
     customerId,
     jobId,
     quoteId,
-    title,
     lines,
     status,
     stage,
@@ -224,10 +220,6 @@ export function InvoiceCreatePage() {
         setError('Select a customer before approving or sending');
         return null;
       }
-      if (strict && !title.trim()) {
-        setError('Invoice title is required');
-        return null;
-      }
 
       if (!customerId) {
         await draftShell.autosave.saveNow();
@@ -239,7 +231,6 @@ export function InvoiceCreatePage() {
         customerId,
         jobId: jobId || null,
         quoteId: quoteId || null,
-        title: title.trim() || 'Invoice',
         status,
         stage,
         lineItems: lineItems!,
@@ -253,7 +244,6 @@ export function InvoiceCreatePage() {
 
       if (savedInvoiceId) {
         return updateInvoice(accessToken, savedInvoiceId, {
-          title: payload.title,
           status: payload.status,
           stage: payload.stage,
           lineItems: payload.lineItems,
@@ -288,7 +278,6 @@ export function InvoiceCreatePage() {
       savedInvoiceId,
       stage,
       status,
-      title,
       vatMode,
     ],
   );
@@ -399,7 +388,7 @@ export function InvoiceCreatePage() {
                 <option value="">No linked quote</option>
                 {customerQuotes.map((quote) => (
                   <option key={quote.id} value={quote.id}>
-                    {quote.displayQuoteNumber} · {quote.title}
+                    {quote.displayQuoteNumber} · {quote.customerName}
                   </option>
                 ))}
               </select>
@@ -423,7 +412,6 @@ export function InvoiceCreatePage() {
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
             <Input label="Invoice date" type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
             <Input label="Due date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             <label className="titan-input-group finance-editor-field-group">
@@ -440,7 +428,7 @@ export function InvoiceCreatePage() {
                 ))}
               </select>
             </label>
-            <p className="finance-editor-hint">Draft — Xero invoice number pending until sync completes.</p>
+            <p className="finance-editor-hint">Draft — Xero invoice number pending</p>
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full">

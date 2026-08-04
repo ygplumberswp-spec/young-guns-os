@@ -4,8 +4,10 @@ import {
   calculateLineAmounts,
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
+  displayInvoiceNumber,
   findDuplicateCustomerHint,
   canEditInvoice,
+  legacyFinanceDocumentTitle,
 } from './finance.js';
 
 test('calculates line VAT in cents with 15% default bps', () => {
@@ -29,6 +31,18 @@ test('detects duplicate customer names in search results', () => {
   const results = [{ name: 'Young Guns Plumbing', companyName: null }];
   assert.equal(findDuplicateCustomerHint('young guns plumbing', results), true);
   assert.equal(findDuplicateCustomerHint('New Customer', results), false);
+});
+
+test('never exposes TITAN internal numbers as official invoice display', () => {
+  assert.equal(
+    displayInvoiceNumber({ invoiceNumber: 'TITAN-INV-000042', internalNumber: 'TITAN-INV-000042' }),
+    'Draft — Xero invoice number pending',
+  );
+});
+
+test('title-free documents use customer name for legacy DB title column only', () => {
+  assert.equal(legacyFinanceDocumentTitle('Acme Plumbing'), 'Acme Plumbing');
+  assert.equal(legacyFinanceDocumentTitle(undefined), '');
 });
 
 test('blocks editing synced Xero invoices', () => {

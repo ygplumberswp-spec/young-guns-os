@@ -297,3 +297,19 @@ test('legacy rows with null round-trip fields remain readable', async () => {
     postalAddress: null,
   });
 });
+
+test('finance summaries are title-free and use Xero pending labels until synced', async () => {
+  const { db } = createMockFinanceDb();
+  const service = new FinanceService(db);
+
+  const quote = await service.getQuoteDetail(TENANT_A, 'quote-1');
+  const invoice = await service.getInvoiceDetail(TENANT_A, 'invoice-1');
+
+  assert.ok(quote);
+  assert.ok(invoice);
+  assert.equal('title' in quote, false);
+  assert.equal('title' in invoice, false);
+  assert.equal(quote.displayQuoteNumber, 'Draft — Xero quote number pending');
+  assert.equal(invoice.displayOfficialInvoiceNumber, 'Draft — Xero invoice number pending');
+  assert.doesNotMatch(quote.displayQuoteNumber, /Q-000001/);
+});

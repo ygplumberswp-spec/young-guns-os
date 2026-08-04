@@ -40,7 +40,6 @@ export function InvoiceEditPage() {
 
   const [customer, setCustomer] = useState<FinanceCustomerSearchResult | null>(null);
   const [displayInvoiceNumber, setDisplayInvoiceNumber] = useState('');
-  const [title, setTitle] = useState('');
   const [status, setStatus] = useState<InvoiceStatus>('draft');
   const [stage, setStage] = useState<InvoiceStage>('standard');
   const [invoiceDate, setInvoiceDate] = useState('');
@@ -71,7 +70,6 @@ export function InvoiceEditPage() {
     recordId: invoiceId,
     enabled: canWrite && !isLoading && Boolean(invoiceId) && editable,
     getPayload: () => ({
-      title,
       status,
       stage,
       invoiceDate,
@@ -85,7 +83,7 @@ export function InvoiceEditPage() {
       approvedForSend,
     }),
     getMeta: () => ({
-      title: title || 'Edit invoice',
+      title: customer?.name || 'Edit invoice',
       customerLabel: customer?.name ?? null,
     }),
   });
@@ -125,7 +123,6 @@ export function InvoiceEditPage() {
           xeroContactId: null,
         });
         setDisplayInvoiceNumber(invoice.displayOfficialInvoiceNumber);
-        setTitle(invoice.title);
         setStatus(invoice.status);
         setStage(invoice.stage);
         setInvoiceDate(toDateInputValue(invoice.issuedAt ?? invoice.createdAt));
@@ -156,7 +153,6 @@ export function InvoiceEditPage() {
   }, [
     isLoading,
     editable,
-    title,
     status,
     stage,
     invoiceDate,
@@ -183,13 +179,8 @@ export function InvoiceEditPage() {
         setError('Add at least one line item with a description and unit price');
         return null;
       }
-      if (strict && !title.trim()) {
-        setError('Invoice title is required');
-        return null;
-      }
 
       return updateInvoice(accessToken, invoiceId, {
-        title: title.trim() || 'Invoice',
         status,
         stage,
         lineItems: lineItems!,
@@ -211,7 +202,6 @@ export function InvoiceEditPage() {
       priceMode,
       stage,
       status,
-      title,
       vatMode,
     ],
   );
@@ -314,7 +304,6 @@ export function InvoiceEditPage() {
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} required />
             <Input
               label="Invoice date"
               type="date"
@@ -336,7 +325,7 @@ export function InvoiceEditPage() {
                 ))}
               </select>
             </label>
-            <p className="finance-editor-hint">{displayInvoiceNumber || 'Draft'} — Xero remains the numbering authority.</p>
+            <p className="finance-editor-hint">{displayInvoiceNumber || 'Draft — Xero invoice number pending'}</p>
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full">

@@ -94,16 +94,16 @@ export type AuraGenerateContext = {
     invoiceCount: number;
     paymentCount: number;
     recentQuotes: Array<{
+      id: string;
       quoteNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;
       currency: string;
     }>;
     recentInvoices: Array<{
+      id: string;
       invoiceNumber: string;
-      title: string;
       status: string;
       customerName: string;
       amountCents: number;

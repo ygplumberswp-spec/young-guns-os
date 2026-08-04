@@ -41,7 +41,6 @@ export function QuoteCreatePage() {
   const [jobs, setJobs] = useState<JobSummary[]>([]);
   const customerId = selectedCustomer?.id ?? '';
   const [jobId, setJobId] = useState('');
-  const [title, setTitle] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
   const [quoteDate, setQuoteDate] = useState(todayDateInputValue());
   const [validUntil, setValidUntil] = useState('');
@@ -74,7 +73,6 @@ export function QuoteCreatePage() {
     getPayload: () => ({
       customerId,
       jobId,
-      title,
       status,
       quoteDate,
       validUntil,
@@ -86,7 +84,7 @@ export function QuoteCreatePage() {
       priceMode,
     }),
     getMeta: () => ({
-      title: title || 'New quote',
+      title: selectedCustomer?.name || 'New quote',
       customerLabel: selectedCustomer?.name ?? null,
       completionPct: customerId ? 30 : 10,
     }),
@@ -134,7 +132,6 @@ export function QuoteCreatePage() {
         }
         if (!cancelled && prefillJob) {
           setJobId(prefillJob.id);
-          setTitle(prefillJob.title);
         }
       } catch (err) {
         if (!cancelled) {
@@ -175,7 +172,6 @@ export function QuoteCreatePage() {
       if (cancelled || draft.recordType !== 'quote') return;
       const payload = draft.payload;
       if (typeof payload.jobId === 'string') setJobId(payload.jobId);
-      if (typeof payload.title === 'string') setTitle(payload.title);
       if (typeof payload.quoteDate === 'string') setQuoteDate(payload.quoteDate);
       if (typeof payload.validUntil === 'string') setValidUntil(payload.validUntil);
       if (typeof payload.customerReference === 'string') setCustomerReference(payload.customerReference);
@@ -214,7 +210,6 @@ export function QuoteCreatePage() {
     isLoading,
     customerId,
     jobId,
-    title,
     quoteDate,
     validUntil,
     customerReference,
@@ -247,7 +242,6 @@ export function QuoteCreatePage() {
       const body = {
         customerId: customerId || undefined,
         jobId: jobId || null,
-        title: title.trim() || 'Quote',
         status,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
@@ -267,7 +261,6 @@ export function QuoteCreatePage() {
       if (savedQuoteId) {
         const updated = await updateQuote(accessToken, savedQuoteId, {
           jobId: body.jobId,
-          title: body.title,
           status: body.status,
           validUntil: body.validUntil,
           issuedAt: body.issuedAt,
@@ -284,7 +277,6 @@ export function QuoteCreatePage() {
       const created = await createQuote(accessToken, {
         customerId,
         jobId: body.jobId,
-        title: body.title,
         status: body.status,
         validUntil: body.validUntil,
         issuedAt: body.issuedAt,
@@ -313,7 +305,6 @@ export function QuoteCreatePage() {
       priceMode,
       savedQuoteId,
       status,
-      title,
       validUntil,
       vatMode,
     ],
@@ -434,7 +425,6 @@ export function QuoteCreatePage() {
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Quote title" />
             <Input label="Quote date" type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
             <Input
               label="Expiry date"
@@ -442,7 +432,7 @@ export function QuoteCreatePage() {
               value={validUntil}
               onChange={(e) => setValidUntil(e.target.value)}
             />
-            <p className="finance-editor-hint">Draft — Xero quote number pending until sync completes.</p>
+            <p className="finance-editor-hint">Draft — Xero quote number pending</p>
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full">

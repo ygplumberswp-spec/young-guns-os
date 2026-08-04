@@ -144,7 +144,6 @@ export class BoqService {
       {
         customerId: input.customerId,
         jobId: input.jobId ?? document.jobId ?? null,
-        title: input.title?.trim() || document.title,
         status: 'draft',
         scopeOfWork: `Converted from BOQ ${document.boqNumber}`,
         lineItems,

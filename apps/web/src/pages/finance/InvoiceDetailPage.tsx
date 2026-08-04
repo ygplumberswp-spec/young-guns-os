@@ -91,7 +91,7 @@ export function InvoiceDetailPage() {
     <div className="finance-page">
       <PageHeader
         title={invoice.displayOfficialInvoiceNumber}
-        description={invoice.title}
+        description={invoice.customerName}
         actions={
           <div className="jobs-detail__actions">
             {canWrite && canEditInvoice(invoice) ? (
@@ -115,12 +115,8 @@ export function InvoiceDetailPage() {
         <Panel title="Summary">
           <dl className="finance-detail-list">
             <div>
-              <dt>Internal number</dt>
-              <dd className="tabular-nums">{invoice.internalNumber}</dd>
-            </div>
-            <div>
-              <dt>Xero number</dt>
-              <dd className="tabular-nums">{invoice.xeroInvoiceNumber ?? 'Not synced yet'}</dd>
+              <dt>Official number</dt>
+              <dd className="tabular-nums">{invoice.displayOfficialInvoiceNumber}</dd>
             </div>
             <div>
               <dt>Xero reference</dt>

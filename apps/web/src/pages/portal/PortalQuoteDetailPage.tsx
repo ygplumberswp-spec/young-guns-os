@@ -175,7 +175,7 @@ export function PortalQuoteDetailPage() {
   return (
     <div className="portal-page">
       <PageHeader
-        title={quote ? `${quote.quoteNumber} · ${quote.title}` : 'Quote'}
+        title={quote ? `${quote.displayQuoteNumber} · ${quote.customerName}` : 'Quote'}
         description="Review quote details and respond."
         actions={
           <Link href={toPortalNestedHref('/my/quotes')} className="auth-text-link">

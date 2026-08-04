@@ -22,12 +22,12 @@ import {
   calculateLineAmounts,
   calculateQuoteProfit,
   canEditInvoice,
-  displayInvoiceNumber,
   displayOfficialInvoiceNumber,
   displayOfficialQuoteNumber,
+  deriveJobPaymentLedger,
   formatInternalInvoiceNumber,
   formatMoney,
-  deriveJobPaymentLedger,
+  legacyFinanceDocumentTitle,
   mapCustomerReferenceFromStorage,
   mapCustomerReferenceToStorage,
   normalizeFinanceDocumentAddresses,
@@ -79,7 +79,6 @@ export type AuraFinanceContext = {
   recentQuotes: Array<{
     id: string;
     quoteNumber: string;
-    title: string;
     status: string;
     customerName: string;
     amountCents: number;
@@ -88,7 +87,6 @@ export type AuraFinanceContext = {
   recentInvoices: Array<{
     id: string;
     invoiceNumber: string;
-    title: string;
     status: string;
     customerName: string;
     amountCents: number;
@@ -119,7 +117,7 @@ export class FinanceService {
 
   async listQuotes(companyId: string, query: FinanceListQuery = {}): Promise<QuoteSummary[]> {
     const rows = await this.db.query.quotes.findMany({
-      where: and(eq(quotes.companyId, companyId), query.status ? eq(quotes.status, query.status as typeof quotes.status.enumValues[number]) : undefined, query.q ? or(ilike(quotes.quoteNumber, `%${query.q}%`), ilike(quotes.title, `%${query.q}%`)) : undefined),
+      where: and(eq(quotes.companyId, companyId), query.status ? eq(quotes.status, query.status as typeof quotes.status.enumValues[number]) : undefined, query.q ? or(ilike(quotes.quoteNumber, `%${query.q}%`), ilike(quotes.xeroQuoteNumber, `%${query.q}%`), ilike(quotes.notes, `%${query.q}%`), ilike(quotes.customerNotes, `%${query.q}%`)) : undefined),
       with: { customer: true, job: true },
       orderBy: [desc(quotes.updatedAt)],
     });
@@ -144,7 +142,7 @@ export class FinanceService {
     query: FinanceListQuery = {},
   ): Promise<InvoiceSummary[]> {
     const rows = await this.db.query.invoices.findMany({
-      where: and(eq(invoices.companyId, companyId), query.status ? eq(invoices.status, query.status as typeof invoices.status.enumValues[number]) : undefined, query.overdueOnly ? and(lte(invoices.dueDate, new Date()), inArray(invoices.status, ['sent', 'partial', 'overdue'])) : undefined, query.q ? or(ilike(invoices.invoiceNumber, `%${query.q}%`), ilike(invoices.internalNumber, `%${query.q}%`), ilike(invoices.xeroInvoiceNumber, `%${query.q}%`), ilike(invoices.title, `%${query.q}%`)) : undefined),
+      where: and(eq(invoices.companyId, companyId), query.status ? eq(invoices.status, query.status as typeof invoices.status.enumValues[number]) : undefined, query.overdueOnly ? and(lte(invoices.dueDate, new Date()), inArray(invoices.status, ['sent', 'partial', 'overdue'])) : undefined, query.q ? or(ilike(invoices.invoiceNumber, `%${query.q}%`), ilike(invoices.internalNumber, `%${query.q}%`), ilike(invoices.xeroInvoiceNumber, `%${query.q}%`), ilike(invoices.notes, `%${query.q}%`), ilike(invoices.xeroReference, `%${query.q}%`)) : undefined),
       with: { customer: true, job: true, quote: true },
       orderBy: [desc(invoices.updatedAt)],
     });
@@ -180,11 +178,11 @@ export class FinanceService {
   async createQuote(actorOrCompany: FinanceActor | string, input: CreateQuoteRequest): Promise<QuoteSummary> {
     const actor = toActor(actorOrCompany);
     const { companyId } = actor;
-    const title = input.title?.trim() || 'Quote';
     if (!input.lineItems?.length && (!input.amountCents || input.amountCents <= 0)) {
       throw new FinanceError('VALIDATION_ERROR', 'Quote line items or amount must be greater than zero');
     }
-    await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const customer = await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const title = legacyFinanceDocumentTitle(customer.name);
     if (input.jobId) await this.ensureJobBelongsToCompany(companyId, input.jobId, input.customerId);
     if (input.clientActionId) {
       const existing = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, companyId), eq(quotes.clientActionId, input.clientActionId)), with: { customer: true, job: true } });
@@ -223,17 +221,13 @@ export class FinanceService {
   async createInvoice(actorOrCompany: FinanceActor | string, input: CreateInvoiceRequest): Promise<InvoiceSummary> {
     const actor = toActor(actorOrCompany);
     const companyId = actor.companyId;
-    const title = input.title.trim();
-
-    if (!title) {
-      throw new FinanceError('VALIDATION_ERROR', 'Invoice title is required');
-    }
 
     if ((!input.lineItems?.length && !input.amountCents) || (input.amountCents ?? 0) <= 0 && !input.lineItems?.length) {
       throw new FinanceError('VALIDATION_ERROR', 'Invoice amount must be greater than zero');
     }
 
-    await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const customer = await this.ensureCustomerBelongsToCompany(companyId, input.customerId);
+    const title = legacyFinanceDocumentTitle(customer.name);
 
     if (input.jobId) {
       await this.ensureJobBelongsToCompany(companyId, input.jobId, input.customerId);
@@ -441,7 +435,7 @@ export class FinanceService {
     }
     const addressUpdate = resolveDocumentAddressColumns(current, input);
     await this.db.update(quotes).set({
-      title: input.title?.trim() || current.title, status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
+      status: input.status ?? current.status, currency: input.currency?.trim() || current.currency,
       jobId: input.jobId === undefined ? current.jobId : input.jobId ?? null,
       customerNotes: input.customerNotes === undefined ? current.customerNotes : normalizeOptionalText(input.customerNotes),
       validUntil: input.validUntil === undefined ? current.validUntil : parseOptionalDate(input.validUntil), notes: input.notes === undefined ? current.notes : normalizeOptionalText(input.notes),
@@ -468,7 +462,7 @@ export class FinanceService {
     if (!source) throw new FinanceError('NOT_FOUND', 'Quote not found');
     const replay = await this.db.query.quotes.findFirst({ where: and(eq(quotes.companyId, actor.companyId), eq(quotes.clientActionId, input.clientActionId)), with: { customer: true, job: true } });
     if (replay) return toQuoteSummary(replay);
-    const next = await this.createQuote(actor, { customerId: source.customerId, jobId: source.jobId, propertyId: source.propertyId, leadId: source.leadId, title: source.title, currency: source.currency, validUntil: source.validUntil?.toISOString() ?? null, lineItems: source.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents, vatRateBps: line.vatRateBps, isOptional: line.isOptional, optionTier: line.optionTier })), clientActionId: input.clientActionId, notes: input.reason ?? source.notes, belowFloorOverride: source.belowFloorOverride, belowFloorReason: source.belowFloorReason });
+    const next = await this.createQuote(actor, { customerId: source.customerId, jobId: source.jobId, propertyId: source.propertyId, leadId: source.leadId, currency: source.currency, validUntil: source.validUntil?.toISOString() ?? null, lineItems: source.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, unitCostCents: line.unitCostCents, vatRateBps: line.vatRateBps, isOptional: line.isOptional, optionTier: line.optionTier })), clientActionId: input.clientActionId, notes: input.reason ?? source.notes, belowFloorOverride: source.belowFloorOverride, belowFloorReason: source.belowFloorReason });
     await this.db.update(quotes).set({ rootQuoteId: source.rootQuoteId ?? source.id, supersedesQuoteId: source.id, versionNumber: source.versionNumber + 1 }).where(eq(quotes.id, next.id));
     await this.db.update(quotes).set({ status: 'superseded', updatedAt: new Date() }).where(eq(quotes.id, source.id));
     return (await this.getQuote(actor.companyId, next.id))!;
@@ -480,7 +474,7 @@ export class FinanceService {
     if (!quote) throw new FinanceError('NOT_FOUND', 'Quote not found');
     if (quote.status !== 'accepted') throw new FinanceError('VALIDATION_ERROR', 'Only accepted quotes can be invoiced');
     const lines = quote.lineItems.map(line => ({ category: line.category, description: line.description, quantity: Number(line.quantity), unitPriceCents: line.unitPriceCents, vatRateBps: line.vatRateBps }));
-    const invoice = await this.createInvoice(actor, { customerId: quote.customerId, jobId: quote.jobId, quoteId: quote.id, propertyId: quote.propertyId, title: quote.title, stage: input.stage, dueDate: input.dueDate, notes: input.notes, amountCents: input.amountCents ?? quote.totalCents, lineItems: lines, clientActionId: input.clientActionId });
+    const invoice = await this.createInvoice(actor, { customerId: quote.customerId, jobId: quote.jobId, quoteId: quote.id, propertyId: quote.propertyId, stage: input.stage, dueDate: input.dueDate, notes: input.notes, amountCents: input.amountCents ?? quote.totalCents, lineItems: lines, clientActionId: input.clientActionId });
     await this.db.update(invoices).set({ quoteVersionNumber: quote.versionNumber, xeroReference: quote.job?.jobNumber ?? null }).where(eq(invoices.id, invoice.id));
     if (input.stage === 'final' || !quote.lineItems.length) await this.db.update(quotes).set({ status: 'converted', updatedAt: new Date() }).where(eq(quotes.id, quote.id));
     return (await this.getInvoice(actor.companyId, invoice.id))!;
@@ -549,7 +543,6 @@ export class FinanceService {
     await this.db
       .update(invoices)
       .set({
-        title: input.title?.trim() || current.title,
         status: input.status ?? current.status,
         stage: input.stage ?? current.stage,
         currency: input.currency?.trim() || current.currency,
@@ -765,8 +758,7 @@ export class FinanceService {
       paymentCount: stats.paymentCount,
       recentQuotes: quoteRows.map((row) => ({
         id: row.id,
-        quoteNumber: row.quoteNumber,
-        title: row.title,
+        quoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
         status: row.status,
         customerName: row.customer?.name ?? 'Unknown',
         amountCents: row.amountCents,
@@ -774,8 +766,7 @@ export class FinanceService {
       })),
       recentInvoices: invoiceRows.map((row) => ({
         id: row.id,
-        invoiceNumber: row.invoiceNumber,
-        title: row.title,
+        invoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
         status: row.status,
         customerName: row.customer?.name ?? 'Unknown',
         amountCents: row.amountCents,
@@ -853,7 +844,7 @@ export class FinanceService {
   private async ensureCustomerBelongsToCompany(
     companyId: string,
     customerId: string,
-  ): Promise<void> {
+  ): Promise<{ name: string }> {
     const customer = await this.db.query.customers.findFirst({
       where: and(eq(customers.id, customerId), eq(customers.companyId, companyId)),
     });
@@ -861,6 +852,7 @@ export class FinanceService {
     if (!customer) {
       throw new FinanceError('CUSTOMER_NOT_FOUND', 'Customer not found for this company');
     }
+    return customer;
   }
 
   private async ensureJobBelongsToCompany(
@@ -938,7 +930,7 @@ type InvoiceWithRelations = typeof invoices.$inferSelect & {
 };
 
 type PaymentWithRelations = typeof payments.$inferSelect & {
-  invoice: { invoiceNumber: string; title: string; customer: { name: string } | null } | null;
+  invoice: { invoiceNumber: string; customer: { name: string } | null } | null;
 };
 
 function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: QuoteSummary['profit'] = null): QuoteSummary {
@@ -947,7 +939,6 @@ function toQuoteSummary(row: QuoteWithRelations & Record<string, any>, profit: Q
     quoteNumber: row.quoteNumber,
     xeroQuoteNumber: row.xeroQuoteNumber ?? null,
     displayQuoteNumber: displayOfficialQuoteNumber({ xeroQuoteNumber: row.xeroQuoteNumber }),
-    title: row.title,
     status: row.status,
     versionNumber: row.versionNumber ?? 1,
     isImmutable: row.isImmutable ?? false,
@@ -979,12 +970,11 @@ function toInvoiceSummary(row: InvoiceWithRelations & Record<string, any>): Invo
     id: row.id,
     invoiceNumber: row.invoiceNumber,
     internalNumber: row.internalNumber ?? row.invoiceNumber,
-    displayInvoiceNumber: displayInvoiceNumber(row),
+    displayInvoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
     displayOfficialInvoiceNumber: displayOfficialInvoiceNumber({ xeroInvoiceNumber: row.xeroInvoiceNumber }),
     xeroInvoiceNumber: row.xeroInvoiceNumber ?? null,
     xeroReference: row.xeroReference ?? null,
     numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as InvoiceSummary['numberAuthority'],
-    title: row.title,
     status: row.status,
     stage: row.stage ?? 'standard',
     customerId: row.customerId,
@@ -1014,7 +1004,7 @@ function toPaymentSummary(row: PaymentWithRelations & Record<string, any>): Paym
     id: row.id,
     invoiceId: row.invoiceId,
     invoiceNumber: row.invoice?.invoiceNumber ?? 'Unknown',
-    invoiceTitle: row.invoice?.title ?? 'Unknown',
+    invoiceTitle: row.invoice?.customer?.name ?? 'Unknown',
     customerName: row.invoice?.customer?.name ?? 'Unknown',
     amountCents: row.amountCents,
     currency: row.currency,

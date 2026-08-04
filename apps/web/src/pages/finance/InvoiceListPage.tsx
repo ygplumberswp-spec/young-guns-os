@@ -120,7 +120,7 @@ export function InvoiceListPage() {
             className="titan-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search number or title…"
+            placeholder="Search number or customer…"
             aria-label="Search Invoices"
           />
           <button
@@ -145,7 +145,6 @@ export function InvoiceListPage() {
               <thead>
                 <tr>
                   <th>Number</th>
-                  <th>Title</th>
                   <th>Customer</th>
                   <th>Job</th>
                   <th>Status</th>
@@ -167,7 +166,7 @@ export function InvoiceListPage() {
                   <FinanceWorkspaceDraftRow
                     key={`draft-${draft.id}`}
                     draft={draft}
-                    colSpan={8}
+                    colSpan={7}
                     entityLabel="Invoice"
                   />
                 ))}
@@ -183,11 +182,6 @@ export function InvoiceListPage() {
                       {isSyncPending(invoice) ? (
                         <StatusBadge label="Sync Pending" tone="sync" className="finance-sync-badge" />
                       ) : null}
-                    </td>
-                    <td>
-                      <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
-                        {invoice.title}
-                      </Link>
                     </td>
                     <td>
                       <Link href={`/crm/${invoice.customerId}`} className="finance-link">

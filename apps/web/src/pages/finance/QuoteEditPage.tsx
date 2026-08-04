@@ -43,7 +43,6 @@ export function QuoteEditPage() {
   const [customerName, setCustomerName] = useState('');
   const [displayQuoteNumber, setDisplayQuoteNumber] = useState('');
   const [jobId, setJobId] = useState('');
-  const [title, setTitle] = useState('');
   const [status, setStatus] = useState<QuoteStatus>('draft');
   const [quoteDate, setQuoteDate] = useState('');
   const [validUntil, setValidUntil] = useState('');
@@ -74,7 +73,6 @@ export function QuoteEditPage() {
     enabled: canWrite && !isLoading && Boolean(quoteId),
     getPayload: () => ({
       jobId,
-      title,
       status,
       quoteDate,
       validUntil,
@@ -86,9 +84,9 @@ export function QuoteEditPage() {
       priceMode,
     }),
     getMeta: () => ({
-      title: title || 'Edit quote',
+      title: customerName || 'Edit quote',
       customerLabel: customerName || null,
-      completionPct: title.trim() ? 60 : 30,
+      completionPct: customerName ? 60 : 30,
     }),
   });
 
@@ -125,7 +123,6 @@ export function QuoteEditPage() {
         setCustomerName(quote.customerName);
         setDisplayQuoteNumber(quote.displayQuoteNumber);
         setJobId(quote.jobId ?? '');
-        setTitle(quote.title);
         setStatus(quote.status);
         setQuoteDate(toDateInputValue(quote.issuedAt ?? quote.createdAt));
         setValidUntil(toDateInputValue(quote.validUntil));
@@ -155,7 +152,6 @@ export function QuoteEditPage() {
   }, [
     isLoading,
     jobId,
-    title,
     status,
     quoteDate,
     validUntil,
@@ -185,7 +181,6 @@ export function QuoteEditPage() {
 
       return updateQuote(accessToken, quoteId, {
         jobId: jobId || null,
-        title: title.trim() || 'Quote',
         status,
         validUntil: validUntil ? new Date(validUntil).toISOString() : null,
         issuedAt: quoteDate ? new Date(quoteDate).toISOString() : null,
@@ -205,7 +200,6 @@ export function QuoteEditPage() {
       priceMode,
       quoteId,
       status,
-      title,
       validUntil,
       vatMode,
     ],
@@ -316,7 +310,6 @@ export function QuoteEditPage() {
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Document Details">
-            <Input label="Title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Quote title" />
             <Input label="Quote date" type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} />
             <Input
               label="Expiry date"
@@ -324,7 +317,7 @@ export function QuoteEditPage() {
               value={validUntil}
               onChange={(e) => setValidUntil(e.target.value)}
             />
-            <p className="finance-editor-hint">{displayQuoteNumber || 'Draft'} — Xero remains the numbering authority.</p>
+            <p className="finance-editor-hint">{displayQuoteNumber || 'Draft — Xero quote number pending'}</p>
           </FinanceEditorCard>
 
           <FinanceEditorCard title="Addresses" className="finance-editor-card--full">

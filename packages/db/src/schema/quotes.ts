@@ -76,7 +76,8 @@ export const quotes = pgTable('quotes', {
   versionNumber: integer('version_number').notNull().default(1),
   isImmutable: boolean('is_immutable').notNull().default(false),
   quoteNumber: text('quote_number').notNull(),
-  title: text('title').notNull(),
+  /** Legacy DB column — not user-facing (Phase J-6). Application always sets customer name or ''. */
+  title: text('title').notNull().default(''),
   status: quoteStatusEnum('status').notNull().default('draft'),
   amountCents: integer('amount_cents').notNull(),
   subtotalCents: integer('subtotal_cents').notNull().default(0),

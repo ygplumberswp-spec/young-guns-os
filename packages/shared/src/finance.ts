@@ -136,7 +136,6 @@ export type QuoteSummary = {
   /** Official Xero quote number when synced — never show internal quoteNumber as official. */
   xeroQuoteNumber: string | null;
   displayQuoteNumber: string;
-  title: string;
   status: QuoteStatus;
   versionNumber: number;
   isImmutable: boolean;
@@ -203,7 +202,6 @@ export type InvoiceSummary = {
   xeroInvoiceNumber: string | null;
   xeroReference: string | null;
   numberAuthority: InvoiceNumberAuthority;
-  title: string;
   status: InvoiceStatus;
   stage: InvoiceStage;
   customerId: string;
@@ -316,7 +314,6 @@ export type CreateQuoteRequest = {
   propertyId?: string | null;
   leadId?: string | null;
   estimatorUserId?: string | null;
-  title?: string;
   status?: QuoteStatus;
   currency?: string;
   validUntil?: string | null;
@@ -368,7 +365,6 @@ export type CreateInvoiceRequest = {
   jobId?: string | null;
   quoteId?: string | null;
   propertyId?: string | null;
-  title: string;
   stage?: InvoiceStage;
   status?: InvoiceStatus;
   amountCents?: number;
@@ -507,8 +503,12 @@ export function displayInvoiceNumber(input: {
 }): string {
   if (input.xeroInvoiceNumber?.trim()) return input.xeroInvoiceNumber.trim();
   if (input.numberAuthority === 'xero') return input.invoiceNumber;
-  const internal = input.internalNumber?.trim() || input.invoiceNumber;
-  return `Pending Xero sync (${internal})`;
+  return displayOfficialInvoiceNumber({ xeroInvoiceNumber: input.xeroInvoiceNumber });
+}
+
+/** Legacy DB column only — finance documents no longer use user-entered titles. */
+export function legacyFinanceDocumentTitle(customerName?: string | null): string {
+  return customerName?.trim() || '';
 }
 
 /** Xero is the only official invoice number authority for staff-facing UI. */

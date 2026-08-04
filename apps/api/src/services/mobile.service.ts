@@ -374,9 +374,9 @@ export class MobileService {
       invoices: rows.map((row) => {
         const totalCents = row.totalCents ?? row.amountCents;
         const internalNumber = row.internalNumber ?? row.invoiceNumber;
-        const displayInvoiceNumber = row.xeroInvoiceNumber?.trim()
-          ? row.xeroInvoiceNumber.trim()
-          : `Pending Xero sync (${internalNumber})`;
+        const displayInvoiceNumber = displayOfficialInvoiceNumber({
+          xeroInvoiceNumber: row.xeroInvoiceNumber,
+        });
         return {
           id: row.id,
           invoiceNumber: row.invoiceNumber,
@@ -390,7 +390,6 @@ export class MobileService {
           numberAuthority: (row.numberAuthority ?? 'internal_pending_xero') as
             | 'internal_pending_xero'
             | 'xero',
-          title: row.title,
           status: row.status,
           stage: row.stage ?? 'standard',
           customerId: row.customerId,

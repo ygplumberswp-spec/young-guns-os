@@ -99,7 +99,7 @@ export function QuoteListPage() {
             className="titan-input"
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search number or title…"
+            placeholder="Search number or customer…"
             aria-label="Search Quotes"
           />
         </div>
@@ -117,9 +117,8 @@ export function QuoteListPage() {
               <thead>
                 <tr>
                   <th>Number</th>
-                  <th>Title</th>
-                  <th>Version</th>
                   <th>Customer</th>
+                  <th>Version</th>
                   <th>Job</th>
                   <th>Status</th>
                   <th>Amount</th>
@@ -131,7 +130,7 @@ export function QuoteListPage() {
                   <FinanceWorkspaceDraftRow
                     key={`draft-${draft.id}`}
                     draft={draft}
-                    colSpan={8}
+                    colSpan={7}
                     entityLabel="Quote"
                   />
                 ))}
@@ -143,18 +142,13 @@ export function QuoteListPage() {
                       </Link>
                     </td>
                     <td>
-                      <Link href={`/finance/quotes/${quote.id}`} className="finance-link">
-                        {quote.title}
+                      <Link href={`/crm/${quote.customerId}`} className="finance-link">
+                        {quote.customerName}
                       </Link>
                     </td>
                     <td>
                       v{quote.versionNumber}
                       {quote.isImmutable ? ' 🔒' : ''}
-                    </td>
-                    <td>
-                      <Link href={`/crm/${quote.customerId}`} className="finance-link">
-                        {quote.customerName}
-                      </Link>
                     </td>
                     <td>
                       {quote.jobId ? (

@@ -140,7 +140,7 @@ export function PaymentCreatePage() {
             >
               {invoices.map((invoice) => (
                 <option key={invoice.id} value={invoice.id}>
-                  {invoice.invoiceNumber} · {invoice.title} · {invoice.customerName}
+                  {invoice.displayOfficialInvoiceNumber} · {invoice.customerName}
                 </option>
               ))}
             </select>

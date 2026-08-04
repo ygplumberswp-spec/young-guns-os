@@ -59,7 +59,7 @@ export function QuoteDetailPage() {
       ? {
           id: quote.id,
           kind: 'quote',
-          title: quote.title,
+          title: quote.displayQuoteNumber,
           href: `/finance/quotes/${quote.id}`,
         }
       : null,
@@ -215,8 +215,8 @@ export function QuoteDetailPage() {
   return (
     <div className="finance-page">
       <PageHeader
-        title={`${quote.displayQuoteNumber} · ${quote.title}`}
-        description={`Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
+        title={quote.displayQuoteNumber}
+        description={`${quote.customerName} · Version ${quote.versionNumber}${quote.isImmutable ? ' · issued (immutable)' : ' · editable'}`}
         actions={
           <div className="finance-panel-actions">
             {showEdit ? (
