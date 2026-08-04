@@ -77,4 +77,77 @@ describe('executive dashboard live wiring', () => {
     assert.match(dashboardSource, /excludedInvoiceCount/);
     assert.match(dashboardSource, /undatedInvoiceCount/);
   });
+
+  it('lists every open invoice rather than only the oldest and largest examples', () => {
+    assert.doesNotMatch(dashboardSource, /oldestOverdue/);
+    assert.doesNotMatch(dashboardSource, /largestOutstanding/);
+    assert.match(dashboardSource, /invoices: invoiceRows/);
+    assert.match(dashboardSource, /OUTSTANDING_INVOICE_ROW_LIMIT\s*=\s*\d{2,}/);
+  });
+
+  it('keeps open-AR totals on the aggregate query, not the listed rows', () => {
+    const snapshot = dashboardSource.slice(
+      dashboardSource.indexOf('private async loadOutstandingSnapshot'),
+      dashboardSource.indexOf('private async countReturningCustomers'),
+    );
+    assert.ok(snapshot.length > 0, 'loadOutstandingSnapshot not found');
+    // A total derived from invoiceRows would silently shrink once the list is capped.
+    assert.doesNotMatch(snapshot, /outstandingCents:\s*invoiceRows/);
+    assert.doesNotMatch(snapshot, /invoiceCount:\s*(invoiceRows|rows)\.length/);
+    assert.match(snapshot, /outstandingCents:\s*Number\(totals\[0\]\?\.total/);
+    assert.match(snapshot, /invoiceCount:\s*totals\[0\]\?\.count/);
+    // Only the row list carries a limit; the aggregates must not.
+    assert.equal(snapshot.match(/\.limit\(/g)?.length, 1);
+  });
+
+  it('splits open AR into ageing bands that add back up to the total', () => {
+    const snapshot = dashboardSource.slice(
+      dashboardSource.indexOf('private async loadOutstandingSnapshot'),
+      dashboardSource.indexOf('private async countReturningCustomers'),
+    );
+    // Overdue / due-soon / current are each their own aggregate filter, so the summary
+    // strip cannot drift from the headline total the way three separate queries would.
+    assert.match(snapshot, /overdueTotal:[^\n]*filter \(where \$\{isOverdue\}\)/);
+    assert.match(
+      snapshot,
+      /dueSoonTotal:[^\n]*filter \(where \$\{isDueToday\} or \$\{isDueSoon\}\)/,
+    );
+    // Undated balances are owed, so they belong to a band; they cannot be aged, so the
+    // only honest home is current rather than overdue or due soon.
+    assert.match(
+      snapshot,
+      /currentTotal:[^\n]*filter \(where \$\{isCurrent\} or \$\{invoices\.dueDate\} is null\)/,
+    );
+    assert.doesNotMatch(snapshot, /dueSoonCents:\s*Number\(totals\[0\]\?\.total\b/);
+  });
+
+  it('excludes settled invoices and keeps part-paid ones with a remaining balance', () => {
+    const snapshot = dashboardSource.slice(
+      dashboardSource.indexOf('private async loadOutstandingSnapshot'),
+      dashboardSource.indexOf('private async countReturningCustomers'),
+    );
+    assert.match(
+      dashboardSource,
+      /OPEN_INVOICE_STATUSES\s*=\s*\['sent',\s*'partial',\s*'overdue'\]/,
+    );
+    assert.match(snapshot, /balance\D*\}\s*>\s*0/);
+  });
+
+  it('orders open invoices most overdue first, then by due date', () => {
+    const snapshot = dashboardSource.slice(
+      dashboardSource.indexOf('private async loadOutstandingSnapshot'),
+      dashboardSource.indexOf('private async countReturningCustomers'),
+    );
+    assert.match(snapshot, /\.orderBy\(\s*sql`\$\{bucketRank\} asc`/);
+    assert.match(snapshot, /due_date.*asc nulls last|dueDate\}\s*asc nulls last/s);
+  });
+
+  it('ages invoices against the operating day, so due-today is never reported overdue', () => {
+    const snapshot = dashboardSource.slice(
+      dashboardSource.indexOf('private async loadOutstandingSnapshot'),
+      dashboardSource.indexOf('private async countReturningCustomers'),
+    );
+    assert.match(snapshot, /startOfLocalDay\(\)/);
+    assert.doesNotMatch(snapshot, /lt\(invoices\.dueDate, new Date\(\)\)/);
+  });
 });

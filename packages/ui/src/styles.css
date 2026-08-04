@@ -514,9 +514,33 @@ select.titan-input:focus-visible {
 }
 
 .titan-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--titan-border-subtle);
   background-color: var(--titan-surface-raised);
+}
+
+.titan-panel__heading {
+  min-width: 0;
+}
+
+.titan-panel__action {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.titan-panel__action a {
+  color: var(--titan-accent);
+  text-decoration: none;
+}
+
+.titan-panel__action a:hover {
+  text-decoration: underline;
 }
 
 .titan-panel__title {

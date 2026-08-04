@@ -4,19 +4,12 @@ import { Panel } from '@titan/ui';
 import { useAuth } from '../../lib/auth-context';
 import type { ReactElement } from 'react';
 
-type QuickLinkTone =
-  | 'job'
-  | 'quote'
-  | 'invoice'
-  | 'customers'
-  | 'schedule'
-  | 'inventory'
-  | 'fleet'
-  | 'reports';
+type QuickLinkTone = 'job' | 'quote' | 'invoice' | 'customers' | 'fleet' | 'aura';
 
 type QuickLink = {
   href: string;
   label: string;
+  hint: string;
   create?: boolean;
   tone: QuickLinkTone;
   permissions: string[];
@@ -24,8 +17,8 @@ type QuickLink = {
 };
 
 const ICON_PROPS = {
-  width: 26,
-  height: 26,
+  width: 18,
+  height: 18,
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
@@ -39,6 +32,7 @@ const QUICK_LINKS: QuickLink[] = [
   {
     href: '/jobs/new',
     label: 'New Job',
+    hint: 'Create a job',
     create: true,
     tone: 'job',
     permissions: ['jobs:write', '*'],
@@ -53,6 +47,7 @@ const QUICK_LINKS: QuickLink[] = [
   {
     href: '/finance/quotes/new',
     label: 'New Quote',
+    hint: 'Create a quote',
     create: true,
     tone: 'quote',
     permissions: ['finance:write', '*'],
@@ -66,6 +61,7 @@ const QUICK_LINKS: QuickLink[] = [
   {
     href: '/finance/invoices/new',
     label: 'New Invoice',
+    hint: 'Create an invoice',
     create: true,
     tone: 'invoice',
     permissions: ['finance:write', '*'],
@@ -77,45 +73,24 @@ const QUICK_LINKS: QuickLink[] = [
     ),
   },
   {
-    href: '/crm',
-    label: 'Customers',
+    href: '/crm/new',
+    label: 'New Customer',
+    hint: 'Add a customer',
+    create: true,
     tone: 'customers',
-    permissions: ['customers:read', 'customers:write', '*'],
+    permissions: ['customers:write', '*'],
     icon: (
       <svg {...ICON_PROPS}>
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  {
-    href: '/scheduling',
-    label: 'Schedule',
-    tone: 'schedule',
-    permissions: ['dispatch:read', 'jobs:read', '*'],
-    icon: (
-      <svg {...ICON_PROPS}>
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-      </svg>
-    ),
-  },
-  {
-    href: '/inventory/products',
-    label: 'Inventory',
-    tone: 'inventory',
-    permissions: ['inventory:read', 'inventory:write', '*'],
-    icon: (
-      <svg {...ICON_PROPS}>
-        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-        <path d="M3.3 7 12 12l8.7-5M12 22V12" />
+        <path d="M19 8v6M22 11h-6" />
       </svg>
     ),
   },
   {
     href: '/fleet',
-    label: 'Fleet',
+    label: 'Open Fleet Map',
+    hint: 'Track vehicles',
     tone: 'fleet',
     permissions: ['fleet:read', 'fleet:write', '*'],
     icon: (
@@ -127,13 +102,15 @@ const QUICK_LINKS: QuickLink[] = [
     ),
   },
   {
-    href: '/analytics',
-    label: 'Reports',
-    tone: 'reports',
-    permissions: ['analytics:read', 'intelligence:read', '*'],
+    href: '/aura',
+    label: 'AURA Executive Chat',
+    hint: 'AI assistant',
+    tone: 'aura',
+    permissions: ['aura:read', 'aura:write', 'intelligence:read', '*'],
     icon: (
       <svg {...ICON_PROPS}>
-        <path d="M4 19V5M4 19h16M8 17V9M12 17v-6M16 17V7" />
+        <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+        <circle cx="12" cy="12" r="3.2" />
       </svg>
     ),
   },
@@ -147,7 +124,7 @@ export function QuickLinksPanel() {
   if (links.length === 0) return null;
 
   return (
-    <Panel title="Quick Links" description="Premium shortcuts into daily operations">
+    <Panel title="Quick Links" description="Shortcuts to daily actions">
       <div className="exec-quick-links">
         {links.map((link) => (
           <Link
@@ -158,9 +135,12 @@ export function QuickLinksPanel() {
             <span className="exec-quick-links__icon-wrap" aria-hidden="true">
               {link.icon}
             </span>
-            <span className="exec-quick-links__label">
-              {link.create ? <span className="exec-quick-links__plus">+</span> : null}
-              {link.label}
+            <span className="exec-quick-links__text">
+              <span className="exec-quick-links__label">
+                {link.create ? <span className="exec-quick-links__plus">+</span> : null}
+                {link.label}
+              </span>
+              <span className="exec-quick-links__hint">{link.hint}</span>
             </span>
           </Link>
         ))}

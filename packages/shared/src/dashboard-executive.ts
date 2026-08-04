@@ -111,12 +111,36 @@ export type ExecutiveTeamMember = {
   isLate: boolean;
 };
 
-export type ExecutiveOutstandingInvoiceRef = {
+/**
+ * Ageing bucket of an open invoice. The values are ordered by urgency, which is also the
+ * order the dashboard lists them in.
+ */
+export type ExecutiveOutstandingBucket =
+  | 'overdue'
+  | 'due_today'
+  | 'due_soon'
+  | 'current'
+  | 'undated';
+
+/** One real open invoice. Every amount comes from the invoice record — never derived for display. */
+export type ExecutiveOutstandingInvoiceRow = {
   id: string;
   invoiceNumber: string;
+  customerId: string | null;
   customerName: string;
+  /** Issue date recorded on the invoice; null when the source never supplied one. */
+  issuedAt: string | null;
   dueDate: string | null;
+  /** Billed amount on the invoice — the figure the remaining balance is derived from. */
+  originalTotalCents: number;
+  amountPaidCents: number;
+  /** Remaining balance: billed minus paid. Always greater than zero for a listed row. */
   outstandingCents: number;
+  /** Underlying invoice status — only open statuses appear here. */
+  status: 'sent' | 'partial' | 'overdue';
+  bucket: ExecutiveOutstandingBucket;
+  /** Whole days past due; null unless the invoice is in the `overdue` bucket. */
+  daysOverdue: number | null;
 };
 
 /** Outstanding AR snapshot for Dashboard V1 — real invoice aggregates only. */
@@ -124,9 +148,16 @@ export type ExecutiveOutstandingInvoices = {
   outstandingCents: number;
   invoiceCount: number;
   currency: string;
-  oldestOverdue: ExecutiveOutstandingInvoiceRef | null;
-  /** Largest open balance among outstanding invoices — null when none. */
-  largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
+  /** Balance owed on invoices already past their due date. */
+  overdueCents: number;
+  overdueCount: number;
+  /** Balance owed on invoices due today or inside the due-soon window. */
+  dueSoonCents: number;
+  dueTodayCount: number;
+  dueSoonCount: number;
+  /** Balance owed on invoices not yet near their due date, plus any with no due date. */
+  currentCents: number;
+  currentCount: number;
   /**
    * Open invoices excluded from the total because their amounts are unusable
    * (null amount, or paid exceeding billed). Non-zero means partial coverage.
@@ -134,6 +165,13 @@ export type ExecutiveOutstandingInvoices = {
   excludedInvoiceCount: number;
   /** Open invoices with no due date — counted in the total but not in overdue ageing. */
   undatedInvoiceCount: number;
+  /**
+   * Every open invoice, most overdue first, up to `listLimit`. The totals above are
+   * aggregated across the whole open-AR set and are never derived from these rows.
+   */
+  invoices: ExecutiveOutstandingInvoiceRow[];
+  /** Maximum rows this payload will ever carry, so the UI can say what it is not showing. */
+  listLimit: number;
 };
 
 export type ExecutiveXeroFinanceTrendPoint = {

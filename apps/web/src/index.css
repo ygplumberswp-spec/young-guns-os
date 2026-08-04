@@ -1231,90 +1231,53 @@ a:focus-visible {
   width: 100%;
 }
 
-.exec-dashboard-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(16.5rem, 20rem);
-  gap: var(--titan-section-gap, 0.875rem);
-  align-items: start;
-  width: 100%;
-}
-
-@media (min-width: 1600px) {
-  .exec-dashboard-body {
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
-  }
-}
-
-@media (min-width: 1920px) {
-  .exec-dashboard-body {
-    grid-template-columns: minmax(0, 1fr) minmax(18.5rem, 24rem);
-  }
-}
-
-.exec-dashboard-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  min-width: 0;
-}
-
-.exec-dashboard-rail {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  min-width: 0;
-  position: sticky;
-  top: 0.75rem;
-}
-
-.exec-dashboard-rail .titan-panel {
-  min-height: 0;
-}
-
-.exec-dashboard-rail .titan-panel__header {
-  padding: 0.875rem 1rem;
-}
-
+/*
+ * Approved command-centre composition: a four-up summary band, a map + open-AR band, and
+ * a four-up operations band whose last column stacks Completed Today over Connections.
+ * No card spans rows on its own, so a short neighbour can never be pushed away from its
+ * partner and no column is left holding dead background.
+ */
 .exec-dashboard-row {
   display: grid;
   gap: 0.875rem;
   align-items: start;
+  grid-template-columns: minmax(0, 1fr);
 }
 
-/*
- * Operations is a two-column row so the live map can be the centrepiece: Live Operations
- * owns the wider left column across both rows, and the two summary cards stack beside it.
- */
-.exec-dashboard-row--primary {
-  grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
-}
-
-.exec-dashboard-row--primary > .exec-dashboard-row__wide {
-  grid-column: 1;
-  grid-row: 1 / span 2;
-}
-
-.exec-dashboard-row--secondary {
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
-}
-
-.exec-dashboard-row__wide {
+.exec-dashboard-row > * {
   min-width: 0;
+}
+
+.exec-dashboard-row--top,
+.exec-dashboard-row--lower {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* The map is the centrepiece; open AR takes the wider track because it carries a table. */
+.exec-dashboard-row--operations {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+}
+
+/* Completed Today sits directly on top of Connections with no forced gap between them. */
+.exec-dashboard-row__stack {
   display: flex;
   flex-direction: column;
-}
-
-.exec-dashboard-row__stack {
   gap: 0.875rem;
+  min-width: 0;
 }
 
 /*
  * Panels size to their content instead of stretching to the tallest sibling. Equal-height
  * cards padded the short ones with dead space, which read as unfinished rather than dense.
  */
-.exec-dashboard-row .titan-panel,
-.exec-dashboard-row__stack .titan-panel {
+.exec-dashboard-row .titan-panel {
   height: auto;
+  min-height: 0;
+}
+
+/* Denser header/body rhythm than the app default — this page carries a lot of cards. */
+.exec-dashboard .titan-panel__body {
+  padding: 0.875rem 1rem;
 }
 
 .exec-dashboard-header {
@@ -1396,9 +1359,14 @@ a:focus-visible {
 }
 
 .exec-dashboard .titan-panel__header {
-  padding: 1rem 1.25rem;
+  padding: 0.75rem 1rem;
   border-bottom-color: var(--titan-border-subtle);
   background-color: color-mix(in srgb, var(--titan-surface-raised) 88%, var(--titan-bg));
+}
+
+.exec-dashboard .titan-panel__description {
+  margin-top: 0.15rem;
+  font-size: 0.75rem;
 }
 
 .exec-dashboard .titan-panel__title {
@@ -1552,18 +1520,254 @@ a:focus-visible {
   margin-top: 0.75rem;
 }
 
+/* Today At A Glance — six real figures in a compact two-up grid. */
+.exec-glance-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 0.85rem;
+}
+
+.exec-glance-grid__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.exec-glance-grid__label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--titan-text-muted);
+}
+
+.exec-glance-grid__value {
+  font-family: var(--titan-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--titan-text);
+  overflow-wrap: anywhere;
+}
+
+.exec-glance-grid__hint {
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
+}
+
+/* Fleet Overview — one row per vehicle: who, where in words, doing what, how old. */
+.exec-fleet-overview {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.exec-fleet-overview__item {
+  position: relative;
+  padding: 0.6rem 0.7rem 0.6rem 1.1rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+  background: var(--titan-surface-muted);
+}
+
+.exec-fleet-overview__item::before {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0.95rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--titan-text-muted);
+}
+
+.exec-fleet-overview__item.is-moving::before {
+  background: var(--titan-success);
+}
+
+.exec-fleet-overview__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.exec-fleet-overview__plate {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--titan-text);
+}
+
+.exec-fleet-overview__motion {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--titan-text-secondary);
+}
+
+.exec-fleet-overview__item.is-moving .exec-fleet-overview__motion {
+  color: var(--titan-success);
+}
+
+.exec-fleet-overview__name,
+.exec-fleet-overview__meta,
+.exec-fleet-overview__age {
+  display: block;
+  margin: 0.1rem 0 0;
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-fleet-overview__address {
+  margin: 0.2rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--titan-text-secondary);
+}
+
+/* A coordinate fallback is real but not an address — it must not read as one. */
+.exec-fleet-overview__address.is-coordinates,
+.exec-fleet-overview__address.is-unavailable {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--titan-text-muted);
+}
+
+.exec-fleet-overview__address.is-stale {
+  color: var(--titan-warning);
+}
+
+/* Today's Priorities — one line each, colour carried only by the level chip. */
+.exec-priorities-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.exec-priorities-list__row {
+  border-bottom: 1px solid var(--titan-border-subtle);
+}
+
+.exec-priorities-list__row:last-child {
+  border-bottom: none;
+}
+
+.exec-priorities-list__link {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.exec-priorities-list__link:hover strong {
+  color: var(--titan-accent);
+}
+
+.exec-priorities-list__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.exec-priorities-list__text strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--titan-text);
+}
+
+.exec-priorities-list__text em {
+  font-style: normal;
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-priorities-list__level {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.exec-priorities-list__level.is-high {
+  color: var(--titan-danger);
+}
+
+.exec-priorities-list__level.is-medium {
+  color: var(--titan-warning);
+}
+
+.exec-priorities-list__level.is-low {
+  color: var(--titan-success);
+}
+
+/* AURA Executive Chat — a working composer, not a promotional block. */
+.exec-aura-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.exec-aura-chat__intro {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-aura-chat__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--titan-accent) 45%, transparent);
+  color: var(--titan-accent);
+}
+
 .exec-live-ops-panel {
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
-  min-height: 22rem;
+}
+
+/* One honest age line under the map, in place of a LIVE badge on every vehicle row. */
+.exec-live-ops-map__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.6rem;
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--titan-text-secondary);
+}
+
+.exec-live-ops-map__footer-note {
+  color: var(--titan-text-muted);
 }
 
 .exec-live-ops-fleet {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  min-height: 16rem;
 }
 
 .exec-live-ops-fleet__meta {
@@ -1573,12 +1777,16 @@ a:focus-visible {
   gap: 0.65rem 0.85rem;
 }
 
+/*
+ * Now that Live Operations owns the full column, a single-file list of vehicle cards left
+ * most of the width empty. The tiles wrap instead, so two vehicles sit side by side.
+ */
 .exec-live-ops-fleet__list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
   gap: 0.55rem;
 }
 
@@ -1637,6 +1845,7 @@ a:focus-visible {
   margin: 0.45rem 0 0;
   line-height: 1.4;
 }
+
 
 .vehicle-position-card__actions {
   margin-top: 0.6rem;
@@ -1823,45 +2032,18 @@ a:focus-visible {
   min-height: 12rem;
 }
 
-.exec-dashboard-row__wide > .titan-panel,
-.exec-dashboard-row__stack > * > .titan-panel,
-.exec-dashboard-row__stack .titan-panel {
-  min-height: 0;
-}
-
-.exec-dashboard-row--primary .exec-dashboard-row__stack > *:first-child .titan-panel {
-  min-height: 24rem;
-}
-
-.exec-dashboard-row--primary .exec-dashboard-row__stack > *:last-child .titan-panel {
-  min-height: 13.5rem;
-}
-
-.exec-dashboard-row--secondary .exec-dashboard-row__wide .titan-panel {
-  min-height: 24rem;
-}
-
+/* Tiles flow to fill whatever width the row gives them rather than leaving a half-empty grid. */
 .exec-quick-links {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem;
-}
-
-@media (min-width: 1200px) {
-  .exec-quick-links {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 9rem), 1fr));
+  gap: 0.6rem;
 }
 
 .exec-quick-links__item {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.85rem;
-  min-height: 6.25rem;
-  height: 100%;
-  padding: 0.95rem 1rem;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
   border: 1px solid var(--titan-border-subtle);
   border-radius: var(--titan-radius-lg);
   background:
@@ -1897,8 +2079,9 @@ a:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
   border-radius: var(--titan-radius-md);
   color: var(--titan-accent);
   background: var(--titan-accent-soft);
@@ -1930,34 +2113,34 @@ a:focus-visible {
   border-color: rgba(96, 165, 250, 0.28);
 }
 
-.exec-quick-links__item--schedule .exec-quick-links__icon-wrap {
-  color: #2dd4bf;
-  background: rgba(45, 212, 191, 0.12);
-  border-color: rgba(45, 212, 191, 0.28);
-}
-
-.exec-quick-links__item--inventory .exec-quick-links__icon-wrap {
-  color: #fb923c;
-  background: rgba(251, 146, 60, 0.12);
-  border-color: rgba(251, 146, 60, 0.28);
-}
-
-.exec-quick-links__item--reports .exec-quick-links__icon-wrap {
+.exec-quick-links__item--aura .exec-quick-links__icon-wrap {
   color: #a78bfa;
   background: rgba(167, 139, 250, 0.12);
   border-color: rgba(167, 139, 250, 0.28);
 }
 
+.exec-quick-links__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  min-width: 0;
+}
+
 .exec-quick-links__label {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.875rem;
+  gap: 0.25rem;
+  font-size: 0.75rem;
   font-weight: 650;
   text-align: left;
   line-height: 1.25;
   color: var(--titan-text);
   letter-spacing: -0.01em;
+}
+
+.exec-quick-links__hint {
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
 }
 
 .exec-quick-links__plus {
@@ -1969,78 +2152,367 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  min-height: 14rem;
 }
 
-.exec-outstanding__hero {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.85rem 0.95rem;
+/* Five real totals across the top: the complete open-AR position, aged. */
+.exec-outstanding__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.7rem 0.8rem;
   border: 1px solid var(--titan-border-subtle);
   border-radius: var(--titan-radius-lg);
   background: var(--titan-surface-muted);
 }
 
-.exec-outstanding__amount {
-  margin: 0;
-  font-family: var(--titan-font-display);
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  color: var(--titan-text);
+.exec-outstanding__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
 }
 
+.exec-outstanding__tile dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--titan-text-muted);
+}
+
+.exec-outstanding__tile dd {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--titan-text);
+  overflow-wrap: anywhere;
+}
+
+.exec-outstanding__tile span {
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-outstanding__tile.is-overdue dd {
+  color: var(--titan-danger);
+}
+
+.exec-outstanding__tile.is-due_soon dd {
+  color: var(--titan-warning);
+}
+
+.exec-outstanding__tile.is-current dd {
+  color: var(--titan-success);
+}
+
+.exec-outstanding__amount {
+  font-family: var(--titan-font-display);
+  font-size: 1.25rem;
+}
+
+/* Also used by the job property map caption. */
 .exec-outstanding__count {
   margin: 0;
   font-size: 0.8125rem;
   color: var(--titan-text-secondary);
 }
 
-.exec-outstanding__stats {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.65rem;
+.exec-outstanding__coverage {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--titan-text-secondary);
 }
 
-.exec-outstanding__stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--titan-radius-md);
+.exec-outstanding__coverage.is-warn {
+  color: var(--titan-warning);
+}
+
+.exec-outstanding__table-wrap {
+  overflow-x: auto;
   border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-lg);
+}
+
+/* Only long lists scroll internally; a short list is allowed to size the card. */
+.exec-outstanding__table-wrap.is-scrollable {
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.exec-outstanding__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.exec-outstanding__table th,
+.exec-outstanding__table td {
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--titan-border-subtle);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.exec-outstanding__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--titan-text-muted);
   background: var(--titan-surface-muted);
 }
 
-.exec-outstanding__stat > span {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--titan-text-muted);
+.exec-outstanding__table tbody tr:last-child td {
+  border-bottom: none;
 }
 
-.exec-outstanding__overdue-link {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+.exec-outstanding__table tbody tr:hover {
+  background-color: var(--titan-surface-hover);
+}
+
+.exec-outstanding__col--num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Status colour is a short bar against the invoice number only. Tinting the whole row —
+ * or the whole card — turned an ageing signal into page-wide alarm and drowned everything
+ * else on the dashboard.
+ */
+.exec-outstanding__col--number {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.exec-outstanding__accent {
+  position: absolute;
+  left: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: var(--titan-border-strong);
+}
+
+.exec-outstanding__accent.is-overdue {
+  background: var(--titan-danger);
+}
+
+.exec-outstanding__accent.is-due_today,
+.exec-outstanding__accent.is-due_soon {
+  background: var(--titan-warning);
+}
+
+.exec-outstanding__accent.is-current,
+.exec-outstanding__accent.is-undated {
+  background: var(--titan-success);
+}
+
+.exec-outstanding__col--action {
+  text-align: right;
+}
+
+.exec-outstanding__balance {
+  font-weight: 600;
+  color: var(--titan-text);
+}
+
+.exec-outstanding__customer {
   color: inherit;
   text-decoration: none;
 }
 
-.exec-outstanding__overdue-link:hover strong {
+.exec-outstanding__customer:hover {
   color: var(--titan-accent);
+  text-decoration: underline;
 }
 
-.exec-outstanding__overdue-link span {
+.exec-outstanding__open {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--titan-border-subtle);
+  border-radius: var(--titan-radius-md);
   font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--titan-accent);
+  text-decoration: none;
+}
+
+.exec-outstanding__open:hover {
+  background: var(--titan-surface-hover);
+}
+
+.exec-outstanding__badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  background: var(--titan-surface-muted);
   color: var(--titan-text-secondary);
 }
 
-.exec-outstanding__none-overdue {
+.exec-outstanding__badge.is-overdue {
+  background: var(--titan-danger-soft);
+  color: var(--titan-danger);
+}
+
+.exec-outstanding__badge.is-due_today,
+.exec-outstanding__badge.is-due_soon {
+  background: var(--titan-warning-soft);
+  color: var(--titan-warning);
+}
+
+/* Green here means "not yet due", never "paid" — paid invoices are excluded from this list. */
+.exec-outstanding__badge.is-current,
+.exec-outstanding__badge.is-undated {
+  background: var(--titan-success-soft);
+  color: var(--titan-success);
+}
+
+.exec-outstanding__legend {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-outstanding__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.exec-outstanding__legend span::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.exec-outstanding__legend .is-overdue {
+  color: var(--titan-danger);
+}
+
+.exec-outstanding__legend .is-due_soon {
+  color: var(--titan-warning);
+}
+
+.exec-outstanding__legend .is-current {
+  color: var(--titan-success);
+}
+
+.exec-outstanding__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.85rem;
+}
+
+.exec-outstanding__showing {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--titan-text-muted);
+}
+
+.exec-outstanding__view-all {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--titan-accent);
+  text-decoration: none;
+}
+
+.exec-outstanding__view-all:hover {
+  text-decoration: underline;
+}
+
+/* Tablet: keep the columns an operator acts on — invoice, customer, due, balance, status. */
+@media (min-width: 641px) and (max-width: 1100px) {
+  .exec-outstanding__col--detail {
+    display: none;
+  }
+}
+
+/* Mobile: each invoice becomes its own card, so nothing scrolls sideways. */
+@media (max-width: 640px) {
+  .exec-outstanding__table-wrap {
+    border: none;
+    overflow-x: visible;
+  }
+
+  .exec-outstanding__table,
+  .exec-outstanding__table tbody,
+  .exec-outstanding__table tr,
+  .exec-outstanding__table td {
+    display: block;
+    width: 100%;
+  }
+
+  .exec-outstanding__table thead {
+    display: none;
+  }
+
+  .exec-outstanding__row {
+    margin-bottom: 0.6rem;
+    padding: 0.75rem 0.85rem;
+    border: 1px solid var(--titan-border-subtle);
+    border-radius: var(--titan-radius-lg);
+    background: var(--titan-surface-muted);
+  }
+
+  .exec-outstanding__table td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.2rem 0;
+    border-bottom: none;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .exec-outstanding__table td::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--titan-text-muted);
+    text-align: left;
+  }
+
+  .exec-outstanding__table td.exec-outstanding__balance {
+    margin-top: 0.15rem;
+    font-size: 1.0625rem;
+  }
+
+  .exec-outstanding__table td.exec-outstanding__col--action {
+    margin-top: 0.6rem;
+  }
+
+  .exec-outstanding__table td.exec-outstanding__col--action::before {
+    content: none;
+  }
+
+  .exec-outstanding__open {
+    width: 100%;
+    padding: 0.6rem;
+    text-align: center;
+    font-size: 0.875rem;
+  }
 }
 
 .exec-outstanding__xero-meta {
@@ -2312,21 +2784,32 @@ a:focus-visible {
   text-align: right;
 }
 
+/* Six providers tile two-up so the card stays short enough to sit under Completed Today. */
 .exec-utility-connections {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.55rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
+  gap: 0.45rem 0.75rem;
 }
 
 .exec-utility-connections li {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.55rem;
-  font-size: 0.8125rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+}
+
+/* The CTA only earns a line when the provider actually needs attention. */
+.exec-utility-connections li:has(.exec-utility-connections__status.is-ok)
+  .exec-utility-connections__cta {
+  display: none;
+}
+
+.exec-utility-connections__cta {
+  grid-column: 2;
 }
 
 .exec-utility-connections__meta {
@@ -2736,17 +3219,15 @@ a:focus-visible {
   line-height: 1.4;
 }
 
+/* Tablet: two-up summary bands, and the map takes the full width above open AR. */
 @media (max-width: 1280px) {
-  .exec-dashboard-row--primary {
-    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  .exec-dashboard-row--top,
+  .exec-dashboard-row--lower {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .exec-dashboard-row--secondary {
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  }
-
-  .exec-dashboard-row--secondary > :last-child {
-    grid-column: 1 / -1;
+  .exec-dashboard-row--operations {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .exec-live-ops-map {
@@ -2758,53 +3239,13 @@ a:focus-visible {
   }
 }
 
-@media (max-width: 1100px) {
-  .exec-dashboard-body {
-    grid-template-columns: 1fr;
-  }
-
-  .exec-dashboard-rail {
-    position: static;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.875rem;
-  }
-}
-
 @media (max-width: 960px) {
-  .exec-dashboard-grid,
-  .exec-dashboard-row--primary,
-  .exec-dashboard-row--secondary {
+  .exec-dashboard-grid {
     grid-template-columns: 1fr;
-  }
-
-  .exec-dashboard-row--primary > .exec-dashboard-row__wide {
-    grid-column: auto;
-    grid-row: auto;
-  }
-
-  .exec-dashboard-row--primary > :last-child,
-  .exec-dashboard-row--secondary > :last-child {
-    grid-column: auto;
-  }
-
-  .exec-dashboard-rail {
-    grid-template-columns: 1fr;
-  }
-
-  .exec-quick-links {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .exec-dashboard-header__actions {
     width: 100%;
-  }
-
-  .exec-dashboard-row__wide .titan-panel,
-  .exec-dashboard-row--primary .exec-dashboard-row__stack > *:first-child .titan-panel,
-  .exec-dashboard-row--primary .exec-dashboard-row__stack > *:last-child .titan-panel,
-  .exec-dashboard-row--secondary .exec-dashboard-row__wide .titan-panel {
-    min-height: 0;
   }
 
   .exec-live-ops-map {
@@ -2812,11 +3253,18 @@ a:focus-visible {
   }
 }
 
-@media (max-width: 640px) {
-  .exec-quick-links {
-    grid-template-columns: 1fr;
+@media (max-width: 760px) {
+  .exec-dashboard-row--top,
+  .exec-dashboard-row--lower {
+    grid-template-columns: minmax(0, 1fr);
   }
 
+  .exec-glance-grid {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
   .exec-live-ops-map {
     height: 18rem;
   }

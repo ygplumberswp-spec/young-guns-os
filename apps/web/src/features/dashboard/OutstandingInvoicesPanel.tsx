@@ -1,5 +1,7 @@
 import { Link } from 'wouter';
 import type {
+  ExecutiveOutstandingBucket,
+  ExecutiveOutstandingInvoiceRow,
   ExecutiveOutstandingInvoices,
   ExecutiveSectionStatus,
   ExecutiveXeroFinance,
@@ -8,7 +10,13 @@ import { Button, EmptyState, Panel } from '@titan/ui';
 import { useCompanyLocale } from '../../lib/company-locale-context';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
-import { resolveFinanceCardHonesty, resolveSectionHonesty } from './dashboard-honesty';
+import {
+  buildOpenArEmptyDescription,
+  OPEN_AR_COVERAGE_CAPTIONS,
+  resolveFinanceCardHonesty,
+  resolveOpenArHistoryCoverage,
+  resolveSectionHonesty,
+} from './dashboard-honesty';
 
 type OutstandingInvoicesPanelProps = {
   data: ExecutiveOutstandingInvoices | null;
@@ -20,8 +28,23 @@ type OutstandingInvoicesPanelProps = {
   onRetry?: () => void;
 };
 
-function formatDueDate(iso: string | null): string {
-  if (!iso) return 'No due date';
+/** Beyond this many rows the list scrolls inside the card instead of stretching the page. */
+const SCROLL_AFTER_ROWS = 8;
+
+const BUCKET_LABELS: Record<ExecutiveOutstandingBucket, string> = {
+  overdue: 'Overdue',
+  due_today: 'Due today',
+  due_soon: 'Due soon',
+  current: 'Current',
+  undated: 'No due date',
+};
+
+function countLabel(count: number): string {
+  return `${count} invoice${count === 1 ? '' : 's'}`;
+}
+
+function formatDate(iso: string | null): string {
+  if (!iso) return '—';
   return new Date(iso).toLocaleDateString(undefined, {
     day: 'numeric',
     month: 'short',
@@ -42,20 +65,65 @@ function formatSyncLabel(iso: string | null): string {
   return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
-function buildEmptyDescription(xero: ExecutiveXeroFinance | null | undefined): string {
-  if (!xero?.connected) {
-    return 'Open balances appear from TITAN finance records. Connect Xero and sync, or create invoices in Finance.';
-  }
-  if (xero.importStatus === 'running' || xero.importStatus === 'queued' || xero.importStatus === 'pending') {
-    return xero.importMessage ?? 'Xero import is in progress. Outstanding balances will appear when sync finishes.';
-  }
-  if (xero.lastError) {
-    return `Xero sync needs attention: ${xero.lastError}`;
-  }
-  if (!xero.lastSyncAt && xero.syncedInvoiceCount === 0) {
-    return 'Xero is connected, but no invoices have been imported yet. Run Sync now from Integrations → Xero.';
-  }
-  return 'Open balances will appear here when invoices are sent and unpaid.';
+function InvoiceRow({
+  invoice,
+  currency,
+  formatMoney,
+  showDaysOverdue,
+}: {
+  invoice: ExecutiveOutstandingInvoiceRow;
+  currency: string;
+  formatMoney: (cents: number, currency?: string) => string;
+  showDaysOverdue: boolean;
+}) {
+  return (
+    <tr className={`exec-outstanding__row is-${invoice.bucket}`}>
+      <td data-label="Invoice" className="exec-outstanding__col--number">
+        {/* Short vertical accent carries the status colour; the row itself stays neutral. */}
+        <span className={`exec-outstanding__accent is-${invoice.bucket}`} aria-hidden="true" />
+        <Link href={`/finance/invoices/${invoice.id}`} className="finance-link">
+          {invoice.invoiceNumber}
+        </Link>
+      </td>
+      <td data-label="Customer">
+        {invoice.customerId ? (
+          <Link href={`/crm/${invoice.customerId}`} className="exec-outstanding__customer">
+            {invoice.customerName}
+          </Link>
+        ) : (
+          invoice.customerName
+        )}
+      </td>
+      <td data-label="Issued" className="exec-outstanding__col--detail">
+        {formatDate(invoice.issuedAt)}
+      </td>
+      <td data-label="Due">{formatDate(invoice.dueDate)}</td>
+      <td data-label="Total" className="exec-outstanding__col--detail exec-outstanding__col--num">
+        {formatMoney(invoice.originalTotalCents, currency)}
+      </td>
+      <td data-label="Paid" className="exec-outstanding__col--detail exec-outstanding__col--num">
+        {formatMoney(invoice.amountPaidCents, currency)}
+      </td>
+      <td data-label="Balance" className="exec-outstanding__col--num exec-outstanding__balance">
+        {formatMoney(invoice.outstandingCents, currency)}
+      </td>
+      <td data-label="Status">
+        <span className={`exec-outstanding__badge is-${invoice.bucket}`}>
+          {BUCKET_LABELS[invoice.bucket]}
+        </span>
+      </td>
+      {showDaysOverdue ? (
+        <td data-label="Days overdue" className="exec-outstanding__col--num">
+          {invoice.daysOverdue == null ? '—' : `${invoice.daysOverdue}d`}
+        </td>
+      ) : null}
+      <td data-label="" className="exec-outstanding__col--action">
+        <Link href={`/finance/invoices/${invoice.id}`} className="exec-outstanding__open">
+          Open
+        </Link>
+      </td>
+    </tr>
+  );
 }
 
 export function OutstandingInvoicesPanel({
@@ -84,13 +152,27 @@ export function OutstandingInvoicesPanel({
         .filter(Boolean)
         .join(' · ') || null;
 
+  const history = resolveOpenArHistoryCoverage(xeroFinance, sourceDown ? 'unavailable' : null);
+  const rows = data?.invoices ?? [];
+  const currency = data?.currency ?? 'ZAR';
+  const listed = rows.length;
+  const total = data?.invoiceCount ?? 0;
+  const truncated = listed < total;
+  const showDaysOverdue = (data?.overdueCount ?? 0) > 0;
+  const dueSoonCount = (data?.dueTodayCount ?? 0) + (data?.dueSoonCount ?? 0);
+  const currentCount = (data?.currentCount ?? 0) + (data?.undatedInvoiceCount ?? 0);
+
   return (
-    <Panel title="Outstanding Invoices" description="Open AR from synced TITAN finance records">
+    <Panel
+      title="Outstanding Invoices"
+      description="All open invoices"
+      headerAction={<Link href="/finance/invoices">View all invoices</Link>}
+    >
       {isLoading && !data ? (
-        <DashboardSectionSkeleton rows={3} />
+        <DashboardSectionSkeleton rows={4} />
       ) : sourceDown ? (
         <EmptyState
-          title="Unable To Load Invoices"
+          title="Outstanding Invoices Unavailable"
           description={
             note ?? 'Open balances could not be read. This is not the same as a zero balance.'
           }
@@ -105,7 +187,7 @@ export function OutstandingInvoicesPanel({
       ) : !hasOutstanding ? (
         <EmptyState
           title="No Outstanding Invoices"
-          description={buildEmptyDescription(xeroFinance)}
+          description={buildOpenArEmptyDescription(xeroFinance)}
           action={
             <Link href={xeroFinance?.connected ? '/integrations/xero' : '/finance/invoices'}>
               <Button size="sm" variant="secondary">
@@ -116,63 +198,112 @@ export function OutstandingInvoicesPanel({
         />
       ) : (
         <div className="exec-outstanding">
-          <div className="exec-outstanding__hero">
-            <p className="exec-outstanding__amount">
-              {formatMoney(data!.outstandingCents, data!.currency)}
+          <dl className="exec-outstanding__summary">
+            <div className="exec-outstanding__tile">
+              <dt>Total outstanding</dt>
+              <dd className="exec-outstanding__amount">
+                {formatMoney(data!.outstandingCents, currency)}
+              </dd>
+              <span>{OPEN_AR_COVERAGE_CAPTIONS[history.coverage]}</span>
+            </div>
+            <div className="exec-outstanding__tile is-overdue">
+              <dt>Overdue</dt>
+              <dd>{formatMoney(data!.overdueCents, currency)}</dd>
+              <span>{countLabel(data!.overdueCount)}</span>
+            </div>
+            <div className="exec-outstanding__tile is-due_soon">
+              <dt>Due soon</dt>
+              <dd>{formatMoney(data!.dueSoonCents, currency)}</dd>
+              <span>{countLabel(dueSoonCount)}</span>
+            </div>
+            <div className="exec-outstanding__tile is-current">
+              <dt>Current</dt>
+              <dd>{formatMoney(data!.currentCents, currency)}</dd>
+              <span>{countLabel(currentCount)}</span>
+            </div>
+            <div className="exec-outstanding__tile">
+              <dt>Total open</dt>
+              <dd>{total}</dd>
+              <span>{total === 1 ? 'invoice' : 'invoices'}</span>
+            </div>
+          </dl>
+
+          {sectionHonesty.state === 'partial' ? (
+            <p className="exec-outstanding__coverage is-warn">
+              Some outstanding invoices are shown. Financial sync is incomplete.
+              {data!.excludedInvoiceCount > 0
+                ? ` ${data!.excludedInvoiceCount} open invoice(s) are excluded from the total because their amounts are unusable.`
+                : ''}
             </p>
-            <p className="exec-outstanding__count">
-              {data!.invoiceCount} open invoice{data!.invoiceCount === 1 ? '' : 's'}
-            </p>
+          ) : null}
+
+          {history.coverage !== 'complete' ? (
+            <p className="exec-outstanding__coverage">{history.note}</p>
+          ) : null}
+
+          <div
+            className={`exec-outstanding__table-wrap${listed > SCROLL_AFTER_ROWS ? ' is-scrollable' : ''}`}
+          >
+            <table className="exec-outstanding__table">
+              <thead>
+                <tr>
+                  <th scope="col">Invoice</th>
+                  <th scope="col">Customer</th>
+                  <th scope="col" className="exec-outstanding__col--detail">
+                    Issued
+                  </th>
+                  <th scope="col">Due</th>
+                  <th scope="col" className="exec-outstanding__col--detail exec-outstanding__col--num">
+                    Total
+                  </th>
+                  <th scope="col" className="exec-outstanding__col--detail exec-outstanding__col--num">
+                    Paid
+                  </th>
+                  <th scope="col" className="exec-outstanding__col--num">
+                    Balance
+                  </th>
+                  <th scope="col">Status</th>
+                  {showDaysOverdue ? (
+                    <th scope="col" className="exec-outstanding__col--num">
+                      Days overdue
+                    </th>
+                  ) : null}
+                  <th scope="col" className="exec-outstanding__col--action">
+                    <span className="visually-hidden">Open invoice</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((invoice) => (
+                  <InvoiceRow
+                    key={invoice.id}
+                    invoice={invoice}
+                    currency={currency}
+                    formatMoney={formatMoney}
+                    showDaysOverdue={showDaysOverdue}
+                  />
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="exec-outstanding__stats">
-            <div className="exec-outstanding__stat">
-              <span>Oldest overdue</span>
-              {data!.oldestOverdue ? (
-                <Link
-                  href={`/finance/invoices/${data!.oldestOverdue.id}`}
-                  className="exec-outstanding__overdue-link"
-                >
-                  <strong>{data!.oldestOverdue.invoiceNumber}</strong>
-                  <span>
-                    {data!.oldestOverdue.customerName}
-                    {' · '}
-                    {formatDueDate(data!.oldestOverdue.dueDate)}
-                    {' · '}
-                    {formatMoney(data!.oldestOverdue.outstandingCents, data!.currency)}
-                  </span>
-                </Link>
-              ) : (
-                <p className="page-muted exec-outstanding__none-overdue">None overdue</p>
-              )}
-            </div>
-            <div className="exec-outstanding__stat">
-              <span>Largest outstanding</span>
-              {data!.largestOutstanding ? (
-                <Link
-                  href={`/finance/invoices/${data!.largestOutstanding.id}`}
-                  className="exec-outstanding__overdue-link"
-                >
-                  <strong>{data!.largestOutstanding.invoiceNumber}</strong>
-                  <span>
-                    {data!.largestOutstanding.customerName}
-                    {' · '}
-                    {formatMoney(data!.largestOutstanding.outstandingCents, data!.currency)}
-                  </span>
-                </Link>
-              ) : (
-                <p className="page-muted exec-outstanding__none-overdue">
-                  Largest balance unavailable
-                </p>
-              )}
-            </div>
+          <div className="exec-outstanding__footer">
+            <p className="exec-outstanding__showing">
+              {truncated
+                ? `Showing 1 to ${listed} of ${total} outstanding invoices — the totals above cover all ${total}.`
+                : `Showing 1 to ${total} of ${total} outstanding invoice${total === 1 ? '' : 's'}`}
+            </p>
+            <p className="exec-outstanding__legend">
+              <span className="is-overdue">Overdue</span>
+              <span className="is-due_soon">Due soon</span>
+              <span className="is-current">Current</span>
+            </p>
+            {truncated ? (
+              <Link href="/finance/invoices" className="exec-outstanding__view-all">
+                View all outstanding invoices
+              </Link>
+            ) : null}
           </div>
-
-          <Link href="/finance/invoices">
-            <Button size="sm" variant="secondary">
-              View invoices
-            </Button>
-          </Link>
         </div>
       )}
 

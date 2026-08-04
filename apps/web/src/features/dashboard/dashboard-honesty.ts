@@ -135,6 +135,111 @@ export function resolveFinanceCardHonesty(
   return { state: 'live', note: 'Covers TITAN invoices reconciled against the last Xero sync.' };
 }
 
+/**
+ * How much financial *history* stands behind the open-AR list. This is deliberately
+ * separate from the balances themselves: TITAN can hold a complete, correct balance for
+ * every invoice it has while the Xero historical import is still filling in the past.
+ */
+export type OpenArHistoryCoverage = 'complete' | 'partial' | 'syncing' | 'unavailable';
+
+export const OPEN_AR_COVERAGE_LABELS: Record<OpenArHistoryCoverage, string> = {
+  complete: 'Complete',
+  partial: 'Partial',
+  syncing: 'Syncing',
+  unavailable: 'Unavailable',
+};
+
+/**
+ * Caption under the headline open-AR figure. It qualifies that figure in a few words so
+ * the Owner never reads a partial import as the full historical receivables position; the
+ * fuller explanation still follows in the coverage banner below the summary.
+ */
+export const OPEN_AR_COVERAGE_CAPTIONS: Record<OpenArHistoryCoverage, string> = {
+  complete: 'Complete financial history',
+  partial: 'Partial financial history',
+  syncing: 'Xero import still running',
+  unavailable: 'Financial history unavailable',
+};
+
+export function resolveOpenArHistoryCoverage(
+  xero: ExecutiveXeroFinance | null | undefined,
+  error: string | null = null,
+): { coverage: OpenArHistoryCoverage; note: string } {
+  if (error) {
+    return {
+      coverage: 'unavailable',
+      note: 'Outstanding invoices could not be read — this is not a zero balance.',
+    };
+  }
+  if (!xero?.connected) {
+    return {
+      coverage: 'partial',
+      note: 'Xero is not connected — these are the open balances TITAN holds, not a complete financial history.',
+    };
+  }
+  if (
+    xero.importStatus === 'running' ||
+    xero.importStatus === 'queued' ||
+    xero.importStatus === 'pending'
+  ) {
+    return {
+      coverage: 'syncing',
+      note: 'Partial financial history — Xero import still running. The balances below are complete for the invoices already imported, but earlier history is still arriving.',
+    };
+  }
+  if (xero.lastError) {
+    return {
+      coverage: 'partial',
+      note: `Partial financial history — Xero sync needs attention: ${xero.lastError}`,
+    };
+  }
+  if (!xero.lastSyncAt) {
+    return {
+      coverage: 'partial',
+      note: 'Xero is connected but has never synced — no Xero history has been imported yet.',
+    };
+  }
+  if (xero.failedRecordCount > 0) {
+    return {
+      coverage: 'partial',
+      note: `Partial financial history — ${xero.failedRecordCount} Xero record(s) failed to import.`,
+    };
+  }
+  return {
+    coverage: 'complete',
+    note: 'Open balances are complete as at the last successful Xero sync.',
+  };
+}
+
+/**
+ * Why the open-AR list is empty. A real zero and "nothing has been imported yet" look
+ * identical on screen unless the card says which one it is.
+ */
+export function buildOpenArEmptyDescription(
+  xero: ExecutiveXeroFinance | null | undefined,
+): string {
+  if (!xero?.connected) {
+    return 'Open balances appear from TITAN finance records. Connect Xero and sync, or create invoices in Finance.';
+  }
+  if (
+    xero.importStatus === 'running' ||
+    xero.importStatus === 'queued' ||
+    xero.importStatus === 'pending'
+  ) {
+    return (
+      xero.importMessage ??
+      'Xero import is in progress. Outstanding balances will appear when sync finishes.'
+    );
+  }
+  if (xero.lastError) {
+    return `Xero sync needs attention: ${xero.lastError}`;
+  }
+  if (!xero.lastSyncAt && xero.syncedInvoiceCount === 0) {
+    return 'Xero is connected, but no invoices have been imported yet. Run Sync now from Integrations → Xero.';
+  }
+  return 'Open balances will appear here when invoices are sent and unpaid.';
+}
+
 /** Fleet card honesty derived from the live Cartrack tracking payload. */
 export function resolveFleetCardHonesty(input: {
   hasTracking: boolean;

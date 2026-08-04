@@ -1,9 +1,11 @@
-import { and, desc, eq, gte, inArray, isNotNull, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, lt, sql } from 'drizzle-orm';
 import type {
   ExecutiveCompletedJob,
   ExecutiveDashboardSummary,
   ExecutiveLiveJob,
-  ExecutiveOutstandingInvoiceRef,
+  ExecutiveOutstandingBucket,
+  ExecutiveOutstandingInvoiceRow,
+  ExecutiveOutstandingInvoices,
   ExecutiveSectionKey,
   ExecutiveSectionState,
   ExecutiveSectionStatus,
@@ -183,6 +185,9 @@ function buildSectionStatuses(
       if (outstanding.undatedInvoiceCount > 0) {
         coverage += ` · ${outstanding.undatedInvoiceCount} without a due date`;
       }
+      if (outstanding.invoices.length < outstanding.invoiceCount) {
+        coverage += ` · totals cover all ${outstanding.invoiceCount}, list shows the first ${outstanding.invoices.length}`;
+      }
       if (outstanding.excludedInvoiceCount > 0) state = 'partial';
     }
 
@@ -213,6 +218,16 @@ function displayName(row: {
 /** Invoice statuses that still carry an open balance. */
 const OPEN_INVOICE_STATUSES = ['sent', 'partial', 'overdue'] as const;
 
+/**
+ * Upper bound on invoice rows carried in the summary payload. Totals are aggregated
+ * separately in SQL, so a tenant beyond this cap still sees a correct open-AR total and
+ * the card says how many rows it is showing.
+ */
+const OUTSTANDING_INVOICE_ROW_LIMIT = 200;
+
+/** A due date within this window counts as "due soon" rather than "current". */
+const DUE_SOON_WINDOW_DAYS = 7;
+
 type CompletedJobRow = {
   id: string;
   jobNumber: string | null;
@@ -223,15 +238,7 @@ type CompletedJobRow = {
   assignedUser: { firstName: string | null; lastName: string | null; email: string } | null;
 };
 
-type OutstandingSnapshot = {
-  outstandingCents: number;
-  invoiceCount: number;
-  currency: string;
-  oldestOverdue: ExecutiveOutstandingInvoiceRef | null;
-  largestOutstanding: ExecutiveOutstandingInvoiceRef | null;
-  excludedInvoiceCount: number;
-  undatedInvoiceCount: number;
-};
+type OutstandingSnapshot = ExecutiveOutstandingInvoices;
 
 export class DashboardExecutiveService {
   constructor(private readonly deps: DashboardExecutiveDeps) {}
@@ -517,10 +524,17 @@ export class DashboardExecutiveService {
           outstanding?.currency ??
           intelligenceDashboard?.outstandingInvoices.currency ??
           DEFAULT_CURRENCY,
-        oldestOverdue: outstanding?.oldestOverdue ?? null,
-        largestOutstanding: outstanding?.largestOutstanding ?? null,
+        overdueCents: outstanding?.overdueCents ?? 0,
+        overdueCount: outstanding?.overdueCount ?? 0,
+        dueSoonCents: outstanding?.dueSoonCents ?? 0,
+        dueTodayCount: outstanding?.dueTodayCount ?? 0,
+        dueSoonCount: outstanding?.dueSoonCount ?? 0,
+        currentCents: outstanding?.currentCents ?? 0,
+        currentCount: outstanding?.currentCount ?? 0,
         excludedInvoiceCount: outstanding?.excludedInvoiceCount ?? 0,
         undatedInvoiceCount: outstanding?.undatedInvoiceCount ?? 0,
+        invoices: outstanding?.invoices ?? [],
+        listLimit: outstanding?.listLimit ?? OUTSTANDING_INVOICE_ROW_LIMIT,
       },
       xeroFinance: xeroStatus ?? emptyXeroFinance(),
       teamToday,
@@ -528,8 +542,9 @@ export class DashboardExecutiveService {
   }
 
   /**
-   * Open AR across every unpaid invoice in the tenant.
-   * Aggregated in SQL so the dashboard total is not capped by any preview row limit.
+   * Open AR across every unpaid invoice in the tenant: the complete list plus totals.
+   * Totals are aggregated in SQL over the whole open-AR set, so they stay correct even
+   * when the row list is capped at {@link OUTSTANDING_INVOICE_ROW_LIMIT}.
    */
   private async loadOutstandingSnapshot(companyId: string): Promise<OutstandingSnapshot> {
     const balance = sql`${invoices.amountCents} - ${invoices.amountPaidCents}`;
@@ -543,19 +558,47 @@ export class DashboardExecutiveService {
       inArray(invoices.status, [...OPEN_INVOICE_STATUSES]),
     );
     const isOpen = and(isOpenRecord, isUsable, sql`${balance} > 0`);
-    const refColumns = {
-      id: invoices.id,
-      invoiceNumber: invoices.invoiceNumber,
-      customerName: customers.name,
-      dueDate: invoices.dueDate,
-      outstandingCents: sql<number>`(${balance})::int`,
-    };
 
-    const [totals, coverage, oldestRows, largestRows] = await Promise.all([
+    // Ageing is measured against the start of the operating day so an invoice due today is
+    // never reported as a day overdue. postgres-js cannot encode a Date inside a raw sql
+    // template, so the boundaries are bound as ISO text and cast.
+    const dayStart = startOfLocalDay();
+    const nextDayStart = endOfLocalDay();
+    const dueSoonEnd = new Date(
+      dayStart.getTime() + DUE_SOON_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const today = sql`${dayStart.toISOString()}::timestamptz`;
+    const tomorrow = sql`${nextDayStart.toISOString()}::timestamptz`;
+    const soonEnd = sql`${dueSoonEnd.toISOString()}::timestamptz`;
+
+    const isOverdue = sql`${invoices.dueDate} is not null and ${invoices.dueDate} < ${today}`;
+    const isDueToday = sql`${invoices.dueDate} >= ${today} and ${invoices.dueDate} < ${tomorrow}`;
+    const isDueSoon = sql`${invoices.dueDate} >= ${tomorrow} and ${invoices.dueDate} < ${soonEnd}`;
+    const isCurrent = sql`${invoices.dueDate} >= ${soonEnd}`;
+    // Rank drives the required order: most overdue, then due today, due soon, current,
+    // and finally invoices the source never gave a due date for.
+    const bucketRank = sql<number>`case
+      when ${invoices.dueDate} is null then 4
+      when ${isOverdue} then 0
+      when ${isDueToday} then 1
+      when ${isDueSoon} then 2
+      else 3
+    end`;
+
+    const [totals, coverage, rows] = await Promise.all([
       this.deps.db
         .select({
           count: sql<number>`count(*)::int`,
           total: sql<string>`coalesce(sum(${balance}), 0)::text`,
+          overdueCount: sql<number>`count(*) filter (where ${isOverdue})::int`,
+          overdueTotal: sql<string>`coalesce(sum(${balance}) filter (where ${isOverdue}), 0)::text`,
+          dueTodayCount: sql<number>`count(*) filter (where ${isDueToday})::int`,
+          dueSoonCount: sql<number>`count(*) filter (where ${isDueSoon})::int`,
+          dueSoonTotal: sql<string>`coalesce(sum(${balance}) filter (where ${isDueToday} or ${isDueSoon}), 0)::text`,
+          currentCount: sql<number>`count(*) filter (where ${isCurrent})::int`,
+          // Undated balances are owed but cannot be aged, so they sit with current rather
+          // than inflating either the overdue or the due-soon figure.
+          currentTotal: sql<string>`coalesce(sum(${balance}) filter (where ${isCurrent} or ${invoices.dueDate} is null), 0)::text`,
           undated: sql<number>`count(*) filter (where ${invoices.dueDate} is null)::int`,
           currency: sql<string | null>`max(${invoices.currency})`,
         })
@@ -566,50 +609,70 @@ export class DashboardExecutiveService {
         .from(invoices)
         .where(isOpenRecord),
       this.deps.db
-        .select(refColumns)
-        .from(invoices)
-        .leftJoin(customers, eq(customers.id, invoices.customerId))
-        .where(
-          and(
-            isOpen,
-            or(
-              lt(invoices.dueDate, new Date()),
-              and(isNull(invoices.dueDate), eq(invoices.status, 'overdue')),
-            ),
-          ),
-        )
-        .orderBy(sql`${invoices.dueDate} asc nulls last`)
-        .limit(1),
-      this.deps.db
-        .select(refColumns)
+        .select({
+          id: invoices.id,
+          invoiceNumber: invoices.invoiceNumber,
+          customerId: invoices.customerId,
+          customerName: customers.name,
+          issuedAt: invoices.issuedAt,
+          dueDate: invoices.dueDate,
+          originalTotalCents: invoices.amountCents,
+          amountPaidCents: invoices.amountPaidCents,
+          outstandingCents: sql<number>`(${balance})::int`,
+          status: invoices.status,
+          bucketRank,
+          // Counted date to date in the operating timezone: an invoice dated the 5th is
+          // 30 days overdue on the 4th of the next month, whatever time of day it carries.
+          daysOverdue: sql<number | null>`case when ${isOverdue}
+            then ((${today} at time zone ${COMPANY_TIME_ZONE})::date
+                  - (${invoices.dueDate} at time zone ${COMPANY_TIME_ZONE})::date)::int
+            else null end`,
+        })
         .from(invoices)
         .leftJoin(customers, eq(customers.id, invoices.customerId))
         .where(isOpen)
-        .orderBy(sql`${balance} desc`)
-        .limit(1),
+        .orderBy(sql`${bucketRank} asc`, sql`${invoices.dueDate} asc nulls last`, sql`${balance} desc`)
+        .limit(OUTSTANDING_INVOICE_ROW_LIMIT),
     ]);
 
-    const toRef = (
-      row: (typeof oldestRows)[number] | undefined,
-    ): ExecutiveOutstandingInvoiceRef | null =>
-      row
-        ? {
-            id: row.id,
-            invoiceNumber: row.invoiceNumber,
-            customerName: row.customerName ?? 'Unknown customer',
-            dueDate: row.dueDate ? row.dueDate.toISOString() : null,
-            outstandingCents: Number(row.outstandingCents ?? 0),
-          }
-        : null;
+    const BUCKETS: readonly ExecutiveOutstandingBucket[] = [
+      'overdue',
+      'due_today',
+      'due_soon',
+      'current',
+      'undated',
+    ];
+
+    const invoiceRows: ExecutiveOutstandingInvoiceRow[] = rows.map((row) => ({
+      id: row.id,
+      invoiceNumber: row.invoiceNumber,
+      customerId: row.customerId ?? null,
+      customerName: row.customerName ?? 'Unknown customer',
+      issuedAt: row.issuedAt ? row.issuedAt.toISOString() : null,
+      dueDate: row.dueDate ? row.dueDate.toISOString() : null,
+      originalTotalCents: Number(row.originalTotalCents ?? 0),
+      amountPaidCents: Number(row.amountPaidCents ?? 0),
+      outstandingCents: Number(row.outstandingCents ?? 0),
+      status: row.status as ExecutiveOutstandingInvoiceRow['status'],
+      bucket: BUCKETS[Number(row.bucketRank)] ?? 'current',
+      daysOverdue: row.daysOverdue == null ? null : Number(row.daysOverdue),
+    }));
 
     return {
       outstandingCents: Number(totals[0]?.total ?? 0),
       invoiceCount: totals[0]?.count ?? 0,
       currency: totals[0]?.currency ?? DEFAULT_CURRENCY,
-      oldestOverdue: toRef(oldestRows[0]),
-      largestOutstanding: toRef(largestRows[0]),
+      overdueCents: Number(totals[0]?.overdueTotal ?? 0),
+      overdueCount: totals[0]?.overdueCount ?? 0,
+      dueSoonCents: Number(totals[0]?.dueSoonTotal ?? 0),
+      dueTodayCount: totals[0]?.dueTodayCount ?? 0,
+      dueSoonCount: totals[0]?.dueSoonCount ?? 0,
+      currentCents: Number(totals[0]?.currentTotal ?? 0),
+      currentCount: totals[0]?.currentCount ?? 0,
       excludedInvoiceCount: coverage[0]?.excluded ?? 0,
       undatedInvoiceCount: totals[0]?.undated ?? 0,
+      invoices: invoiceRows,
+      listLimit: OUTSTANDING_INVOICE_ROW_LIMIT,
     };
   }
 

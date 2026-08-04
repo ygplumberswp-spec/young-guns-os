@@ -1,7 +1,10 @@
-import type { ExecutivePrioritiesSummary, ExecutiveSectionStatus } from '@titan/shared';
+import type {
+  ExecutivePriorityItem,
+  ExecutivePrioritiesSummary,
+  ExecutiveSectionStatus,
+} from '@titan/shared';
 import { Link } from 'wouter';
 import { Button, EmptyState, Panel } from '@titan/ui';
-import { StatusBadge } from '../../components/ux';
 import { DashboardSectionSkeleton } from './DashboardSectionSkeleton';
 import { DashboardSourceMeta } from './DashboardSourceMeta';
 import { resolveSectionHonesty } from './dashboard-honesty';
@@ -14,8 +17,18 @@ type PrioritiesSummaryPanelProps = {
   error?: string | null;
 };
 
-function approvalLabel(state: 'awaiting_owner' | 'not_required'): string {
-  return state === 'awaiting_owner' ? 'Awaiting owner approval' : 'No approval required';
+type PriorityLevel = { key: 'high' | 'medium' | 'low'; label: string };
+
+/**
+ * Today's Plan records two priority levels, `high` and `normal`. The amber middle band is
+ * therefore driven by a different real field — an item the Owner still has to approve is
+ * genuinely more pressing than one that is simply on the list. Nothing here invents a
+ * level the plan does not hold.
+ */
+function priorityLevel(item: ExecutivePriorityItem): PriorityLevel {
+  if (item.priority === 'high') return { key: 'high', label: 'High' };
+  if (item.approvalState === 'awaiting_owner') return { key: 'medium', label: 'Needs approval' };
+  return { key: 'low', label: 'Normal' };
 }
 
 export function PrioritiesSummaryPanel({
@@ -28,9 +41,15 @@ export function PrioritiesSummaryPanel({
   const honesty = resolveSectionHonesty(section, error);
   // Previously a null payload span the skeleton forever; an unreachable source is now stated.
   const sourceDown = honesty.state === 'unavailable';
+  const items = priorities?.items ?? [];
+  const criticalIssues = priorities?.criticalIssues ?? [];
 
   return (
-    <Panel title="Today&apos;s Priorities" description="From Today&apos;s Plan — real M8 items only">
+    <Panel
+      title="Today&apos;s Priorities"
+      description="From Today&apos;s Plan"
+      headerAction={<Link href="/aura/todays-plan">View all</Link>}
+    >
       <div className="exec-priorities">
         {isLoading ? (
           <DashboardSectionSkeleton rows={3} />
@@ -49,8 +68,7 @@ export function PrioritiesSummaryPanel({
               </Link>
             }
           />
-        ) : (priorities.items?.length ?? 0) === 0 &&
-          priorities.criticalIssues.length === 0 ? (
+        ) : items.length === 0 && criticalIssues.length === 0 ? (
           <EmptyState
             title="All Clear For Today"
             description={priorities.summaryLine}
@@ -64,53 +82,38 @@ export function PrioritiesSummaryPanel({
           />
         ) : (
           <>
-            <div className="exec-priorities__summary-row">
-              <p className="exec-priorities-summary">{priorities.summaryLine}</p>
-              <Link href="/aura/todays-plan">
-                <Button size="sm" variant="secondary">
-                  Open Today&apos;s Plan
-                </Button>
-              </Link>
-            </div>
-
-            {(priorities.items?.length ?? 0) > 0 ? (
-              <ul className="exec-priorities-items">
-                {(priorities.items ?? []).map((item) => (
-                  <li key={item.id} className="exec-priorities-items__card">
-                    <div className="exec-priorities-items__head">
-                      <StatusBadge
-                        tone={item.priority === 'high' ? 'warning' : 'neutral'}
-                        label={item.priority === 'high' ? 'High priority' : 'Normal priority'}
-                      />
-                      <StatusBadge
-                        tone={item.approvalState === 'awaiting_owner' ? 'warning' : 'success'}
-                        label={approvalLabel(item.approvalState)}
-                      />
-                    </div>
-                    <Link href={item.href}>
-                      <strong>{item.reason}</strong>
-                    </Link>
-                    <p className="exec-priorities-items__action">
-                      <span>Suggested action</span>
-                      {item.suggestedAction}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            {priorities.criticalIssues.length > 0 ? (
-              <ul className="exec-priorities-critical">
-                {priorities.criticalIssues.map((issue) => (
-                  <li key={issue.id}>
-                    <Link href={issue.href}>
+            <ul className="exec-priorities-list">
+              {criticalIssues.map((issue) => (
+                <li key={issue.id} className="exec-priorities-list__row is-high">
+                  <Link href={issue.href} className="exec-priorities-list__link">
+                    <span className="exec-priorities-list__text">
                       <strong>{issue.title}</strong>
+                      <em>{issue.description}</em>
+                    </span>
+                    <span className="exec-priorities-list__level is-high">Critical</span>
+                  </Link>
+                </li>
+              ))}
+              {items.map((item) => {
+                const level = priorityLevel(item);
+                return (
+                  <li key={item.id} className={`exec-priorities-list__row is-${level.key}`}>
+                    <Link href={item.href} className="exec-priorities-list__link">
+                      <span className="exec-priorities-list__text">
+                        <strong>{item.reason}</strong>
+                        {item.suggestedAction && item.suggestedAction !== item.reason ? (
+                          <em>{item.suggestedAction}</em>
+                        ) : null}
+                      </span>
+                      <span className={`exec-priorities-list__level is-${level.key}`}>
+                        {level.label}
+                      </span>
                     </Link>
-                    <span>{issue.description}</span>
                   </li>
-                ))}
-              </ul>
-            ) : null}
+                );
+              })}
+            </ul>
+            <p className="exec-priorities-summary">{priorities.summaryLine}</p>
           </>
         )}
         <DashboardSourceMeta
