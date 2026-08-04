@@ -8,14 +8,7 @@ export function canManageFinance(permissions: string[]): boolean {
   return hasAnyPermission(permissions, ['finance:write', '*']);
 }
 
-/** Internal cost/margin/profit — never show to clients or technicians. */
-export function canViewFinanceProfit(
-  permissions: string[],
-  roleName?: string | null,
-): boolean {
-  if (hasAnyPermission(permissions, ['finance:write', '*'])) return true;
-  return ['Company Owner', 'Accountant', 'Manager'].includes(roleName ?? '');
-}
+export { canViewFinanceProfit } from '@titan/shared';
 
 export function canViewJobCosting(permissions: string[]): boolean {
   return hasAnyPermission(permissions, [

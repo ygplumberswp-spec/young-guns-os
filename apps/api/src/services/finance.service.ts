@@ -38,6 +38,8 @@ import {
   searchFinanceCatalogueItems,
   toFinanceDocumentAddressSnapshot,
   buildFinanceDocumentPreviewModel,
+  filterFinanceCatalogueCostFields,
+  resolveYoungGunsPricebookForTenant,
   type FinanceDocumentPreviewInput,
   type FinanceDocumentPreviewModel,
 } from '@titan/shared';
@@ -726,6 +728,7 @@ export class FinanceService {
   async searchCatalogueItems(
     companyId: string,
     query: string,
+    options: { includeCost?: boolean } = {},
   ): Promise<FinanceCatalogueItemSearchResult[]> {
     const trimmed = query.trim();
     if (trimmed.length < 1) return [];
@@ -745,6 +748,10 @@ export class FinanceService {
       limit: 24,
     });
 
+    const company = await this.db.query.companies.findFirst({
+      where: eq(companies.id, companyId),
+    });
+
     const catalogue = inventoryRows.map((row) =>
       inventoryItemToFinanceCatalogue({
         id: row.id,
@@ -757,7 +764,9 @@ export class FinanceService {
       }),
     );
 
-    return searchFinanceCatalogueItems(trimmed, catalogue, { limit: 12 });
+    const pricebook = resolveYoungGunsPricebookForTenant(companyId, company ?? null);
+    const results = searchFinanceCatalogueItems(trimmed, [...catalogue, ...pricebook], { limit: 12 });
+    return filterFinanceCatalogueCostFields(results, options.includeCost ?? false);
   }
 
   /** Read-only preview — maps live form values through the document engine without persisting. */

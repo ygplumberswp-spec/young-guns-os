@@ -176,6 +176,87 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   }
 }
 
+/** Fetch a binary response (e.g. application/pdf) without JSON parsing. */
+export async function requestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
+  const headers: Record<string, string> = {};
+
+  if (options.accessToken) {
+    headers.Authorization = `Bearer ${options.accessToken}`;
+  }
+
+  if (options.headers) {
+    Object.assign(headers, options.headers);
+  }
+
+  const body = options.body ? JSON.stringify(options.body) : undefined;
+  if (body !== undefined && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const resolvedTimeoutMs =
+    options.timeoutMs === 0 ? undefined : (options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS);
+  const timeoutAbort = resolvedTimeoutMs ? timeoutSignal(resolvedTimeoutMs) : undefined;
+  const signal = combineSignals([options.signal, timeoutAbort]);
+
+  const base = apiBase();
+  const url = `${base}${path}`;
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: options.method ?? 'GET',
+      headers,
+      credentials: 'include',
+      body,
+      signal,
+    });
+  } catch (error) {
+    if (isAbortError(error)) {
+      const timedOut = Boolean(timeoutAbort?.aborted) && !options.signal?.aborted;
+      if (timedOut) {
+        throw new ApiClientError('Request timed out', 408, 'REQUEST_TIMEOUT');
+      }
+      throw error instanceof Error
+        ? error
+        : new DOMException('The operation was aborted.', 'AbortError');
+    }
+    throw new ApiClientError(
+      base.startsWith('/')
+        ? 'Cannot reach the API from this UI deploy. Set API_PROXY_UPSTREAM on the web service (or VITE_API_BASE_URL) and redeploy.'
+        : 'Cannot reach the TITAN API. Check VITE_API_BASE_URL, API uptime, and that API APP_URL matches this web origin (CORS).',
+      0,
+      'NETWORK_ERROR',
+    );
+  }
+
+  if (response.status === 401 && !options.skipAuthRefresh && options.accessToken) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return requestBlob(path, {
+        ...options,
+        accessToken: refreshed.accessToken,
+        skipAuthRefresh: true,
+      });
+    }
+  }
+
+  if (!response.ok) {
+    let message = 'Request failed';
+    let code = 'REQUEST_FAILED';
+    try {
+      const payload = (await response.json()) as ApiResponse<unknown>;
+      if (isApiError(payload)) {
+        message = payload.error.message;
+        code = payload.error.code;
+      }
+    } catch {
+      // Non-JSON error body — keep generic message.
+    }
+    throw new ApiClientError(message, response.status, code);
+  }
+
+  return response.blob();
+}
+
 async function executeRefreshRequest(): Promise<RefreshOutcome> {
   try {
     const response = await fetch(`${apiBase()}/auth/refresh`, {

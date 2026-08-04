@@ -10,6 +10,11 @@ import { createAuthMiddleware, type AuthenticatedRequest } from '../middleware/a
 import { requireAnyPermission } from '../middleware/rbac.js';
 import { createDenyTechnicianFromOwnerModules } from '../middleware/authorization-guards.js';
 import { appendServerTiming } from '../lib/server-timing.js';
+import {
+  FinanceDocumentPdfError,
+  renderFinanceDocumentPreviewPdf,
+} from '../services/finance-document-pdf.service.js';
+import { canViewFinanceProfit } from '@titan/shared';
 
 const quoteStatusSchema = z.enum([
   'draft',
@@ -209,7 +214,10 @@ export function createFinanceRouter({
       });
       return;
     }
-    const items = await financeService.searchCatalogueItems(companyId, q);
+    const auth = getAuth(req);
+    const items = await financeService.searchCatalogueItems(companyId, q, {
+      includeCost: canViewFinanceProfit(auth.permissions, auth.roleName),
+    });
     res.json({ data: { items } });
   });
 
@@ -458,13 +466,52 @@ export function createFinanceRouter({
     res.json({ data: { preview } });
   });
 
+  router.post('/documents/preview/pdf', requireAnyPermission('finance:read', 'finance:write'), async (req, res) => {
+    const parsed = financeDocumentPreviewSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid preview payload' },
+      });
+      return;
+    }
+
+    const preview = financeService.previewDocument(toFinanceActor(getAuth(req)), {
+      ...parsed.data,
+      addresses: parsed.data.addresses
+        ? {
+            billingAddress: parsed.data.addresses.billingAddress ?? null,
+            siteAddress: parsed.data.addresses.siteAddress ?? null,
+            postalAddress: parsed.data.addresses.postalAddress ?? null,
+          }
+        : parsed.data.addresses,
+    });
+
+    try {
+      const pdf = await renderFinanceDocumentPreviewPdf(preview);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${preview.downloadFilename}"`);
+      res.setHeader('Content-Length', String(pdf.length));
+      res.send(pdf);
+    } catch (error) {
+      if (error instanceof FinanceDocumentPdfError) {
+        res.status(500).json({
+          error: { code: error.code, message: error.message },
+        });
+        return;
+      }
+      throw error;
+    }
+  });
+
   return router;
 }
 
 function stringQuery(value: unknown): string | undefined { return typeof value === 'string' && value.trim() ? value.trim() : undefined; }
 function routeParam(value: string | string[]): string { return Array.isArray(value) ? value[0]! : value; }
 function toFinanceActor(auth: ReturnType<typeof getAuth>) { return { companyId: auth.companyId, userId: auth.userId, permissions: auth.permissions, roleName: auth.roleName, canWrite: hasAnyPermission(auth.permissions, ['finance:write', '*']) }; }
-function canViewProfit(auth: ReturnType<typeof getAuth>) { return hasAnyPermission(auth.permissions, ['finance:write', '*']) || ['Company Owner', 'Accountant', 'Manager'].includes(auth.roleName ?? ''); }
+function canViewProfit(auth: ReturnType<typeof getAuth>) {
+  return canViewFinanceProfit(auth.permissions, auth.roleName);
+}
 
 function handleFinanceError(res: import('express').Response, error: unknown) {
   if (error instanceof FinanceError) {

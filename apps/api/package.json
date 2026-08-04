@@ -23,6 +23,7 @@
     "express": "catalog:",
     "pino": "catalog:",
     "pino-http": "^10.4.0",
+    "puppeteer": "^25.5.0",
     "tsx": "catalog:",
     "zod": "catalog:"
   },

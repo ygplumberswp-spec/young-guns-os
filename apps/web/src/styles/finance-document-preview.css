@@ -63,6 +63,21 @@
   flex: 1;
 }
 
+.finance-document-preview__pdf-frame {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: #04070d;
+}
+
+.finance-document-preview__iframe {
+  flex: 1;
+  width: 100%;
+  min-height: 480px;
+  border: 0;
+  background: #fff;
+}
+
 .finance-document-preview__loading,
 .finance-document-preview__error {
   padding: 0 20px 12px;

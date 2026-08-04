@@ -20,7 +20,7 @@ import type {
   UpdateInvoiceRequest,
   UpdateQuoteRequest,
 } from '@titan/shared';
-import { request } from './api-client';
+import { request, requestBlob } from './api-client';
 
 function toQuery(query?: FinanceListQuery): string {
   if (!query) return '';
@@ -241,4 +241,31 @@ export async function previewFinanceDocument(
     body,
   });
   return data.preview;
+}
+
+export type FinanceDocumentPdfPreview = {
+  blob: Blob;
+  filename: string;
+};
+
+export async function previewFinanceDocumentPdf(
+  accessToken: string,
+  body: FinanceDocumentPreviewInput,
+): Promise<FinanceDocumentPdfPreview> {
+  const blob = await requestBlob('/finance/documents/preview/pdf', {
+    method: 'POST',
+    accessToken,
+    body,
+    timeoutMs: 60_000,
+    headers: { 'Content-Type': 'application/json', Accept: 'application/pdf' },
+  });
+
+  if (blob.type && blob.type !== 'application/pdf') {
+    throw new Error('Preview did not return a PDF document');
+  }
+
+  const filename =
+    body.kind === 'quote' ? 'YGP-Draft-Quote.pdf' : 'YGP-Draft-Invoice.pdf';
+
+  return { blob, filename };
 }

@@ -1,12 +1,13 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@titan/ui';
-import type { FinanceDocumentPreviewModel } from '@titan/shared';
-import { TitanDocumentView } from '../../components/documents/TitanDocumentView';
-import { downloadFinancePreviewPdf } from './finance-document-preview-pdf';
+import type { FinanceDocumentPdfPreview } from '../../lib/finance-api';
 import '../../styles/finance-document-preview.css';
 
 type FinanceDocumentPreviewModalProps = {
-  preview: FinanceDocumentPreviewModel | null;
+  preview: FinanceDocumentPdfPreview | null;
+  pdfUrl: string | null;
+  documentLabel: string | null;
+  documentNumber: string | null;
   isLoading?: boolean;
   error?: string | null;
   onClose: () => void;
@@ -14,32 +15,38 @@ type FinanceDocumentPreviewModalProps = {
 
 export function FinanceDocumentPreviewModal({
   preview,
+  pdfUrl,
+  documentLabel,
+  documentNumber,
   isLoading,
   error,
   onClose,
 }: FinanceDocumentPreviewModalProps) {
-  const documentRef = useRef<HTMLDivElement | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
 
-  const handleDownload = useCallback(async () => {
-    if (!preview || !documentRef.current) return;
-    setIsDownloading(true);
+  useEffect(() => {
+    setDownloadError(null);
+  }, [preview]);
+
+  const handleDownload = useCallback(() => {
+    if (!preview) return;
     setDownloadError(null);
     try {
-      const root = documentRef.current.querySelector('.titan-doc');
-      if (!(root instanceof HTMLElement)) {
-        throw new Error('Preview document is not ready');
-      }
-      await downloadFinancePreviewPdf(root, preview.downloadFilename);
+      const url = URL.createObjectURL(preview.blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = preview.filename;
+      anchor.rel = 'noopener';
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Unable to download PDF');
-    } finally {
-      setIsDownloading(false);
     }
   }, [preview]);
 
-  if (!preview && !isLoading && !error) return null;
+  if (!preview && !pdfUrl && !isLoading && !error) return null;
 
   return (
     <div className="finance-document-preview" role="dialog" aria-modal="true" aria-label="Document preview">
@@ -48,49 +55,32 @@ export function FinanceDocumentPreviewModal({
         <header className="finance-document-preview__toolbar titan-doc__no-print">
           <div>
             <h2 className="finance-document-preview__title">
-              {preview ? `${preview.documentType === 'quote' ? 'Quote' : 'Invoice'} preview` : 'Loading preview…'}
+              {documentLabel ? `${documentLabel} preview` : isLoading ? 'Loading preview…' : 'Document preview'}
             </h2>
-            {preview ? <p className="finance-document-preview__subtitle">{preview.documentNumber}</p> : null}
+            {documentNumber ? (
+              <p className="finance-document-preview__subtitle">{documentNumber}</p>
+            ) : null}
           </div>
           <div className="finance-document-preview__actions">
             <Button type="button" variant="secondary" onClick={onClose}>
               Close
             </Button>
-            <Button
-              type="button"
-              disabled={!preview || isDownloading || isLoading}
-              onClick={() => void handleDownload()}
-            >
-              {isDownloading ? 'Preparing PDF…' : 'Download PDF'}
+            <Button type="button" disabled={!preview || isLoading} onClick={handleDownload}>
+              Download PDF
             </Button>
           </div>
         </header>
 
         {error ? <p className="form-error finance-document-preview__error">{error}</p> : null}
         {downloadError ? <p className="form-error finance-document-preview__error">{downloadError}</p> : null}
-        {isLoading ? <p className="page-muted finance-document-preview__loading">Building preview…</p> : null}
+        {isLoading ? <p className="page-muted finance-document-preview__loading">Building PDF preview…</p> : null}
 
-        {preview ? (
-          <div className="finance-document-preview__document" ref={documentRef}>
-            <TitanDocumentView
-              documentType={preview.documentType}
-              documentNumber={preview.documentNumber}
-              title={preview.title}
-              status={preview.status}
-              issuedAt={preview.issuedAt}
-              dueDate={preview.dueDate}
-              sections={preview.sections}
-              photos={[]}
-              lineItems={preview.lineItems}
-              totals={preview.totals}
-              customer={preview.customer}
-              property={preview.property}
-              job={preview.job}
-              hideTitle={preview.hideTitle}
-              hidePaymentOptions={preview.hidePaymentOptions}
-              customerReference={preview.customerReference}
-              documentAddresses={preview.documentAddresses}
-              vatRateLabel={preview.vatRateLabel}
+        {pdfUrl ? (
+          <div className="finance-document-preview__pdf-frame">
+            <iframe
+              className="finance-document-preview__iframe"
+              src={pdfUrl}
+              title={documentLabel ? `${documentLabel} PDF preview` : 'PDF preview'}
             />
           </div>
         ) : null}

@@ -43,6 +43,8 @@ export * from './finance.js';
 export * from './finance-catalogue.js';
 export * from './finance-document-roundtrip.js';
 export * from './finance-document-preview.js';
+export * from './finance-document-preview-html.js';
+export * from './finance-tenant-pricebook.js';
 export * from './job-payment-ledger.js';
 export * from './inventory.js';
 export * from './job-costing.js';

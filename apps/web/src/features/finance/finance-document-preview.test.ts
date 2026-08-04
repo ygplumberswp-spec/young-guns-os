@@ -73,19 +73,29 @@ test('quote and invoice editor pages wire preview without save or window.open de
     assert.ok(previewBlock.length > 0, `preview block missing in ${page}`);
     assert.doesNotMatch(previewBlock, /persist(Quote|Invoice)\(/);
     assert.doesNotMatch(previewBlock, /window\.open\(`\/finance\/(quotes|invoices)/);
+    assert.doesNotMatch(previewBlock, /setIsSaving\(true\)/);
   }
 });
 
-test('finance API client exposes read-only document preview endpoint', () => {
+test('finance API client exposes server-side PDF preview endpoint', () => {
   const source = readSource('src/lib/finance-api.ts');
-  assert.match(source, /previewFinanceDocument/);
-  assert.match(source, /\/finance\/documents\/preview/);
+  assert.match(source, /previewFinanceDocumentPdf/);
+  assert.match(source, /\/finance\/documents\/preview\/pdf/);
+  assert.match(source, /requestBlob/);
 });
 
-test('TitanDocumentView supports title-free finance preview rendering', () => {
-  const source = readSource('src/components/documents/TitanDocumentView.tsx');
-  assert.match(source, /hideTitle/);
-  assert.match(source, /hidePaymentOptions/);
-  assert.match(source, /documentAddresses/);
-  assert.match(source, /customerReference/);
+test('preview modal renders genuine PDF iframe with download and close actions', () => {
+  const modalSource = readSource('src/features/finance/FinanceDocumentPreviewModal.tsx');
+  assert.match(modalSource, /finance-document-preview__iframe/);
+  assert.match(modalSource, /Download PDF/);
+  assert.match(modalSource, /Close/);
+  assert.doesNotMatch(modalSource, /html2canvas|jspdf|TitanDocumentView/);
+});
+
+test('preview hook builds toolbar metadata locally and fetches PDF blob from API', () => {
+  const hookSource = readSource('src/features/finance/useFinanceDocumentPreview.tsx');
+  assert.match(hookSource, /previewFinanceDocumentPdf/);
+  assert.match(hookSource, /buildFinanceDocumentPreviewModel/);
+  assert.match(hookSource, /URL\.createObjectURL/);
+  assert.doesNotMatch(hookSource, /persist(Quote|Invoice)\(/);
 });

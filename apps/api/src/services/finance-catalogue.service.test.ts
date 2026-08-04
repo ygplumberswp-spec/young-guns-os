@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { financeCatalogueItemFromInventory, searchFinanceCatalogueItems } from '@titan/shared';
+import { financeCatalogueItemFromInventory, searchFinanceCatalogueItems, YOUNG_GUNS_REFERENCE_COMPANY_ID } from '@titan/shared';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,16 +11,20 @@ const TENANT_B = '22222222-2222-4222-8222-222222222222';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const financeServiceSource = readFileSync(join(repoRoot, 'apps/api/src/services/finance.service.ts'), 'utf8');
+const financeRouteSource = readFileSync(join(repoRoot, 'apps/api/src/routes/finance.ts'), 'utf8');
 
-function createCatalogueSearchDb(inventoryRows: Array<{
-  id: string;
-  sku: string;
-  name: string;
-  description: string | null;
-  unit: string;
-  unitCostCents: number;
-  sellPriceCents: number;
-}>) {
+function createCatalogueSearchDb(
+  inventoryRows: Array<{
+    id: string;
+    sku: string;
+    name: string;
+    description: string | null;
+    unit: string;
+    unitCostCents: number;
+    sellPriceCents: number;
+  }>,
+  company?: { id: string; slug?: string | null; name?: string | null } | null,
+) {
   return {
     query: {
       inventoryItems: {
@@ -28,7 +32,7 @@ function createCatalogueSearchDb(inventoryRows: Array<{
           void where;
           return inventoryRows.map((row) => ({
             ...row,
-            companyId: TENANT_A,
+            companyId: company?.id ?? TENANT_A,
             status: 'active' as const,
             reorderLevel: 0,
             createdAt: new Date(),
@@ -36,18 +40,22 @@ function createCatalogueSearchDb(inventoryRows: Array<{
           }));
         },
       },
+      companies: {
+        findFirst: async () =>
+          company
+            ? {
+                id: company.id,
+                slug: company.slug ?? null,
+                name: company.name ?? null,
+              }
+            : null,
+      },
     },
   } as unknown as ConstructorParameters<typeof FinanceService>[0];
 }
 
-function createEmptyCatalogueSearchDb() {
-  return {
-    query: {
-      inventoryItems: {
-        findMany: async () => [],
-      },
-    },
-  } as unknown as ConstructorParameters<typeof FinanceService>[0];
+function createEmptyCatalogueSearchDb(companyId = TENANT_B) {
+  return createCatalogueSearchDb([], { id: companyId, slug: 'acme-plumbing', name: 'Acme Plumbing' });
 }
 
 test('finance catalogue search returns tenant inventory rows only', async () => {
@@ -68,8 +76,9 @@ test('finance catalogue search returns tenant inventory rows only', async () => 
   assert.ok(results.every((row) => row.sourceKey.startsWith('inventory:')));
 });
 
-test('finance catalogue search does not merge hardcoded pricebook items', () => {
+test('finance catalogue search does not merge hardcoded pricebook items globally', () => {
   assert.doesNotMatch(financeServiceSource, /BUILTIN_FINANCE_CATALOGUE/);
+  assert.match(financeServiceSource, /resolveYoungGunsPricebookForTenant/);
 });
 
 test('finance catalogue search returns duplicate inventory items for repeat use', async () => {
@@ -100,14 +109,72 @@ test('tenant B search does not return tenant A inventory rows', async () => {
       unitCostCents: 1000,
       sellPriceCents: 2000,
     },
-  ]);
-  const dbB = createEmptyCatalogueSearchDb();
+  ], { id: TENANT_A, slug: 'tenant-a', name: 'Tenant A' });
+  const dbB = createEmptyCatalogueSearchDb(TENANT_B);
   const serviceA = new FinanceService(dbA);
   const serviceB = new FinanceService(dbB);
   const resultsA = await serviceA.searchCatalogueItems(TENANT_A, 'TENANT-A-ONLY');
   const resultsB = await serviceB.searchCatalogueItems(TENANT_B, 'TENANT-A-ONLY');
   assert.ok(resultsA.some((row) => row.itemCode === 'TENANT-A-ONLY'));
   assert.equal(resultsB.some((row) => row.itemCode === 'TENANT-A-ONLY'), false);
+});
+
+test('tenant B cannot search or receive Young Guns pricebook entries', async () => {
+  const dbB = createEmptyCatalogueSearchDb(TENANT_B);
+  const serviceB = new FinanceService(dbB);
+
+  for (const query of ['LAB-CALLOUT', 'LAB-HOURLY', 'callout', 'hourly labour']) {
+    const results = await serviceB.searchCatalogueItems(TENANT_B, query);
+    assert.equal(
+      results.some((row) => row.itemCode === 'LAB-CALLOUT' || row.itemCode === 'LAB-HOURLY'),
+      false,
+      `tenant B must not receive YG pricebook for query "${query}"`,
+    );
+    assert.ok(results.every((row) => !row.sourceKey.startsWith('pricebook:')));
+  }
+});
+
+test('verified Young Guns tenant receives approved pricebook rows when inventory is empty', async () => {
+  const db = createEmptyCatalogueSearchDb(YOUNG_GUNS_REFERENCE_COMPANY_ID);
+  const service = new FinanceService({
+    ...db,
+    query: {
+      ...db.query,
+      companies: {
+        findFirst: async () => ({
+          id: YOUNG_GUNS_REFERENCE_COMPANY_ID,
+          slug: 'young-guns-plumbing',
+          name: 'Young Guns Plumbing',
+        }),
+      },
+    },
+  } as unknown as ConstructorParameters<typeof FinanceService>[0]);
+
+  const results = await service.searchCatalogueItems(YOUNG_GUNS_REFERENCE_COMPANY_ID, 'LAB-CALLOUT');
+  assert.ok(results.some((row) => row.itemCode === 'LAB-CALLOUT' && row.sourceKey.startsWith('pricebook:')));
+});
+
+test('catalogue search strips unitCostCents unless includeCost is authorised', async () => {
+  const db = createCatalogueSearchDb([
+    {
+      id: 'inv-1',
+      sku: 'PVC-110',
+      name: 'PVC pipe 110mm',
+      description: 'Drainage pipe',
+      unit: 'm',
+      unitCostCents: 4500,
+      sellPriceCents: 7500,
+    },
+  ], { id: TENANT_A, slug: 'tenant-a', name: 'Tenant A' });
+  const service = new FinanceService(db);
+  const authorised = await service.searchCatalogueItems(TENANT_A, 'PVC', { includeCost: true });
+  const restricted = await service.searchCatalogueItems(TENANT_A, 'PVC', { includeCost: false });
+  assert.equal(authorised[0]?.unitCostCents, 4500);
+  assert.equal(restricted[0]?.unitCostCents, null);
+});
+
+test('finance catalogue route passes includeCost from canViewFinanceProfit', () => {
+  assert.match(financeRouteSource, /searchCatalogueItems\(companyId, q, \{\s*includeCost: canViewFinanceProfit/);
 });
 
 test('finance catalogue search limits results to twelve items', () => {
