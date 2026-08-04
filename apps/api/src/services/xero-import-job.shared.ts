@@ -43,6 +43,8 @@ export type XeroImportJobState = XeroImportStageCounts & {
   completedStages: XeroImportStage[];
   failedStage: XeroImportStage | null;
   stageError: string | null;
+  /** Failures from stages a resume moved past. Still missing, so still counted against the run. */
+  carriedFailureCount?: number;
   idempotencyKey?: string;
   trigger?: IntegrationSyncTrigger;
   heartbeatAt?: string | null;
@@ -109,6 +111,7 @@ export function buildXeroImportSyncMessage(
     success: boolean;
     failedStage?: XeroImportStage | null;
     stageError?: string | null;
+    carriedFailureCount?: number;
   },
 ): string {
   const createdTotal = sumField(input, 'createdCount');
@@ -135,15 +138,22 @@ export function buildXeroImportSyncMessage(
   const detailSummary = summary || 'no records returned by Xero';
   const skippedNote =
     skippedTotal > 0 ? ` ${skippedTotal} record(s) skipped — each has a sync log row.` : '';
+  const carriedTotal = input.carriedFailureCount ?? 0;
+  const carriedNote =
+    carriedTotal > 0
+      ? ` ${carriedTotal} record(s) failed in stages this run resumed past and were not retried, so their history is still incomplete.`
+      : '';
 
   if (input.success) {
-    return `Xero sync complete. ${detailSummary}.${skippedNote}`;
+    return carriedTotal > 0
+      ? `Xero sync finished the stages it resumed with.${carriedNote} ${detailSummary}.${skippedNote}`
+      : `Xero sync complete. ${detailSummary}.${skippedNote}`;
   }
 
   if (input.failedStage) {
     const detail = input.stageError ? ` ${input.stageError}` : '';
-    return `Xero sync failed during ${input.failedStage}.${detail} ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote} Last sync was not updated.`;
+    return `Xero sync failed during ${input.failedStage}.${detail} ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote}${carriedNote} Last sync was not updated.`;
   }
 
-  return `Xero sync finished with ${failedTotal} failed record(s). ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote}`;
+  return `Xero sync finished with ${failedTotal} failed record(s). ${detailSummary}. Imported ${createdTotal} new and updated ${updatedTotal} existing records.${skippedNote}${carriedNote}`;
 }

@@ -293,6 +293,8 @@ export type XeroEntityCoverageRow = {
   /** Records this entity failed to import, each with a log row. */
   failedCount: number;
   skippedCount: number;
+  /** What actually happened to this stage, before it is flattened to a coverage claim. */
+  coverageState: XeroStageCoverageState;
   coverage: XeroEvidenceCoverage;
   coverageRationale: string;
 };
@@ -372,6 +374,137 @@ export function buildUnavailableAttribution(
     recordCount: 0,
     dateRange: null,
     method,
+  };
+}
+
+/**
+ * What actually happened to one entity stage. Kept separate from the coverage claim so a stage
+ * that imported nothing while records failed cannot be flattened into the same answer as a stage
+ * Xero simply had no records for.
+ */
+export type XeroStageCoverageState =
+  /** No run has ever recorded evidence for this stage. */
+  | 'not_started'
+  /** Nothing was imported and records failed. */
+  | 'failed'
+  /** A run recorded evidence for this stage and then stopped before finishing it. */
+  | 'interrupted'
+  /** Some records are held, but records failed, were skipped, or history is not fully pulled. */
+  | 'partial'
+  /** The stage itself finished successfully over the whole history. */
+  | 'complete';
+
+/**
+ * Whether a stage that finished with failed records may still claim complete coverage. `strict`
+ * (the default everywhere) never allows it. `allow_documented_partial` exists only so a tenant
+ * that has accepted a known, permanently unreachable slice can be configured to do so, and it
+ * still carries the failure count in the rationale.
+ */
+export type XeroPartialHistoryPolicy = 'strict' | 'allow_documented_partial';
+
+export type XeroStageCoverageEvidence = {
+  importedCount: number;
+  failedCount: number;
+  skippedCount: number;
+  /** True only when a no-date-floor run finished this stage with nothing failed. */
+  fullHistorySynced: boolean;
+  /** Defaults to whether any count or full-history timestamp exists. */
+  everSynced?: boolean;
+  /** True when a run touched this stage and did not finish it (cancelled, stalled, budget). */
+  interrupted?: boolean;
+  partialHistoryPolicy?: XeroPartialHistoryPolicy;
+};
+
+/**
+ * The single place a stage's coverage claim is decided.
+ *
+ * `complete` requires the stage itself to have finished successfully with nothing failed — an
+ * imported count of zero alongside failures is never complete, and a stale `fullHistorySyncedAt`
+ * on its own proves nothing.
+ */
+export function resolveStageCoverageState(evidence: XeroStageCoverageEvidence): {
+  state: XeroStageCoverageState;
+  coverage: XeroEvidenceCoverage;
+  rationale: string;
+} {
+  const importedCount = Math.max(0, evidence.importedCount);
+  const failedCount = Math.max(0, evidence.failedCount);
+  const skippedCount = Math.max(0, evidence.skippedCount);
+  const everSynced =
+    evidence.everSynced ??
+    (importedCount > 0 || failedCount > 0 || skippedCount > 0 || evidence.fullHistorySynced);
+  const logNote = 'Each failed or skipped record has a sync log row with its Xero ID and reason.';
+  const counted = `${importedCount} imported, ${failedCount} failed, ${skippedCount} skipped`;
+
+  if (!everSynced) {
+    return {
+      state: 'not_started',
+      coverage: 'unavailable',
+      rationale: 'No import has recorded any evidence for this entity, so nothing is covered.',
+    };
+  }
+
+  if (importedCount === 0 && failedCount > 0) {
+    return {
+      state: 'failed',
+      coverage: 'unavailable',
+      rationale: `Nothing was imported and ${failedCount} record(s) failed (${counted}), so this entity has no usable history. ${logNote}`,
+    };
+  }
+
+  if (evidence.interrupted) {
+    return {
+      state: 'interrupted',
+      coverage: importedCount > 0 ? 'partial' : 'unavailable',
+      rationale: `The last import of this entity stopped before finishing (${counted}), so it covers only what had been imported when it stopped.`,
+    };
+  }
+
+  if (
+    failedCount > 0 &&
+    evidence.fullHistorySynced &&
+    importedCount > 0 &&
+    evidence.partialHistoryPolicy === 'allow_documented_partial'
+  ) {
+    return {
+      state: 'complete',
+      coverage: 'complete',
+      rationale: `Full history imported with a configured, documented partial result: ${counted}. ${logNote}`,
+    };
+  }
+
+  if (failedCount > 0 || skippedCount > 0) {
+    return {
+      state: 'partial',
+      coverage: 'partial',
+      rationale: `${failedCount} record(s) failed and ${skippedCount} were skipped during import (${counted}). ${logNote}`,
+    };
+  }
+
+  if (!evidence.fullHistorySynced) {
+    return {
+      state: importedCount > 0 ? 'partial' : 'not_started',
+      coverage: importedCount > 0 ? 'partial' : 'unavailable',
+      rationale:
+        importedCount > 0
+          ? `A complete historical import has not finished for this entity (${counted}), so it covers only what has been imported so far.`
+          : 'No complete historical import has finished for this entity and nothing has been imported.',
+    };
+  }
+
+  if (importedCount === 0) {
+    return {
+      state: 'complete',
+      coverage: 'unavailable',
+      rationale:
+        'A complete historical import finished for this entity and Xero returned no records, so there is nothing to answer from.',
+    };
+  }
+
+  return {
+    state: 'complete',
+    coverage: 'complete',
+    rationale: `Full Xero history imported for this entity with no failed or skipped records (${counted}).`,
   };
 }
 

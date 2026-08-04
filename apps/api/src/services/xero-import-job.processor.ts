@@ -104,6 +104,7 @@ export function importJobStateToSummary(state: XeroImportJobState): Record<strin
     completedStages: state.completedStages,
     failedStage: state.failedStage,
     stageError: state.stageError,
+    carriedFailureCount: state.carriedFailureCount ?? 0,
     idempotencyKey: state.idempotencyKey,
     trigger: state.trigger,
     heartbeatAt: state.heartbeatAt ?? null,
@@ -149,6 +150,9 @@ export function parseImportJobState(
       : [],
     failedStage: (summary?.failedStage as XeroImportStage | null | undefined) ?? null,
     stageError: typeof summary?.stageError === 'string' ? summary.stageError : null,
+    carriedFailureCount: Number.isFinite(Number(summary?.carriedFailureCount))
+      ? Number(summary?.carriedFailureCount)
+      : 0,
     idempotencyKey:
       typeof summary?.idempotencyKey === 'string' ? summary.idempotencyKey : undefined,
     trigger: summary?.trigger as IntegrationSyncTrigger | undefined,
@@ -241,6 +245,7 @@ export function buildImportSyncResult(
       attachments: state.attachments,
       failedStage: state.failedStage,
       stageError: state.stageError,
+      carriedFailureCount: state.carriedFailureCount ?? 0,
     }),
     syncedAt,
     accounts: state.accounts,
@@ -350,7 +355,11 @@ export function getStageCounts(
   return state[XERO_IMPORT_STAGE_COUNT_KEYS[stage]];
 }
 
-/** Drop per-record failure tallies from stages already finished before the resume checkpoint. */
+/**
+ * Drop per-record failure tallies from stages already finished before the resume checkpoint, so a
+ * resumed run does not re-report failures it will not retry. The total is carried instead of
+ * discarded: those records are still missing, so the resumed run cannot claim a clean sync.
+ */
 export function clearStaleStageFailuresOnResume(state: XeroImportJobState): void {
   const currentIndex = XERO_IMPORT_STAGES.indexOf(state.checkpoint.stage);
   if (currentIndex <= 0) {
@@ -358,7 +367,9 @@ export function clearStaleStageFailuresOnResume(state: XeroImportJobState): void
   }
 
   for (let index = 0; index < currentIndex; index += 1) {
-    getStageCounts(state, XERO_IMPORT_STAGES[index]!).failedCount = 0;
+    const counts = getStageCounts(state, XERO_IMPORT_STAGES[index]!);
+    state.carriedFailureCount = (state.carriedFailureCount ?? 0) + counts.failedCount;
+    counts.failedCount = 0;
   }
 }
 

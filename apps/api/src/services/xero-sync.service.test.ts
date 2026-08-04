@@ -104,9 +104,10 @@ test('clearStaleStageFailuresOnResume drops failures from completed earlier stag
   assert.equal(state.payments.failedCount, 0);
   assert.equal(sumImportFailureCounts(state), 0);
 
-  const result = buildImportSyncResult(state, 'job-id', new Date().toISOString());
-  assert.equal(result.success, true);
-  assert.match(result.message, /Xero sync complete/);
+  // The records are still missing, so the resumed run reports what it did not cover.
+  assert.equal(state.carriedFailureCount, 1260);
+  const result = buildImportSyncResult(state, 'job-id', null);
+  assert.match(result.message, /1260 record\(s\) failed in stages this run resumed past/);
 });
 
 test('clearStaleStageFailuresOnResume keeps failures for the active checkpoint stage', () => {

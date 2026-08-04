@@ -25,8 +25,8 @@ import {
   normalizeContactEmail,
   normalizeContactPhone,
   pickCustomerMatchCandidate,
-  resolveEvidenceCoverage,
   resolveOfficialXeroInvoiceNumber,
+  resolveStageCoverageState,
 } from '@titan/shared';
 import type { DatabaseClient } from '@titan/db';
 import {
@@ -134,6 +134,70 @@ function readRawNumber(record: Record<string, unknown>, key: string): number | n
   }
 
   return null;
+}
+
+/**
+ * A stored `full_history_synced_at` is only believed when the row's own counts agree with it.
+ * Rows written before stage completion was checked can carry the timestamp alongside failed
+ * records; those are recomputed from the evidence rather than trusted.
+ */
+export function hasTrustworthyFullHistory(row: {
+  fullHistorySyncedAt: Date | null;
+  failedCount: number;
+}): boolean {
+  return row.fullHistorySyncedAt !== null && row.failedCount === 0;
+}
+
+export type XeroEntityCoverageWrite = {
+  lastSyncedAt: Date;
+  importedCount: number;
+  failedCount: number;
+  skippedCount: number;
+  fullHistorySyncedAt?: Date | null;
+  modifiedSinceWatermark?: Date | null;
+  lastError: string | null;
+};
+
+/**
+ * What a finished stage is allowed to claim about its own history.
+ *
+ * The stage must have finished with nothing failed before a complete-history timestamp is written,
+ * so a stage that imported nothing while records failed can never be recorded as complete. A claim
+ * left behind by an earlier run is cleared once the evidence contradicts it, and what it claimed is
+ * carried into `lastError` so the correction is visible rather than silent.
+ */
+export function resolveEntityCoverageWrite(input: {
+  stage: XeroImportStage;
+  counts: XeroImportEntityCounts;
+  failedStage: XeroImportStage | null;
+  stageError: string | null;
+  /** True when this run applied no date floor, so it could see the whole history. */
+  isFullHistoryRun: boolean;
+  existing: { fullHistorySyncedAt: Date | null; importedCount: number; failedCount: number } | null;
+  now: Date;
+}): XeroEntityCoverageWrite {
+  const { counts, existing, now, stage } = input;
+  const importedCount = counts.createdCount + counts.updatedCount;
+  const stageFinishedCleanly = counts.failedCount === 0 && input.failedStage !== stage;
+  const canClaimFullHistory = input.isFullHistoryRun && stageFinishedCleanly;
+  const staleFullHistoryClaim = Boolean(existing?.fullHistorySyncedAt) && !stageFinishedCleanly;
+  const staleClaimNote =
+    existing && staleFullHistoryClaim
+      ? `Cleared a stale complete-history claim from ${existing.fullHistorySyncedAt?.toISOString()} (${existing.importedCount} imported / ${existing.failedCount} failed): this run finished ${stage} with ${importedCount} imported and ${counts.failedCount} failed.`
+      : null;
+
+  return {
+    lastSyncedAt: now,
+    importedCount,
+    failedCount: counts.failedCount,
+    skippedCount: counts.skippedCount,
+    ...(canClaimFullHistory
+      ? { fullHistorySyncedAt: now, modifiedSinceWatermark: now }
+      : staleFullHistoryClaim
+        ? { fullHistorySyncedAt: null, modifiedSinceWatermark: null }
+        : {}),
+    lastError: [staleClaimNote, input.stageError].filter(Boolean).join(' ') || null,
+  };
 }
 
 type XeroSyncServiceDeps = {
@@ -394,7 +458,7 @@ export class XeroSyncService {
     const covered = new Map(coverage.map((row) => [row.entity, row]));
     const everyStageComplete = XERO_IMPORT_STAGES.every((stage) => {
       const row = covered.get(stage);
-      return Boolean(row?.fullHistorySyncedAt) && (row?.failedCount ?? 0) === 0;
+      return row ? hasTrustworthyFullHistory(row) : false;
     });
 
     if (!everyStageComplete) {
@@ -766,17 +830,22 @@ export class XeroSyncService {
   ): Promise<XeroImportSyncResult> {
     const totalFailed = sumImportFailureCounts(state);
     const success = markComplete && state.failedStage == null && totalFailed === 0;
+    // lastSyncAt is the Owner-facing "this organisation is synced" claim. A run that resumed past
+    // failed records did not cover them, so it must not refresh it.
+    const coveredEverything = success && (state.carriedFailureCount ?? 0) === 0;
     const now = new Date();
     const result = buildImportSyncResult(
       state,
       syncJobId,
-      success ? now.toISOString() : null,
+      coveredEverything ? now.toISOString() : null,
     );
 
     await this.db
       .update(integrationConnections)
       .set({
-        ...(success ? { lastSyncAt: now, lastError: null } : { lastError: result.message }),
+        ...(coveredEverything
+          ? { lastSyncAt: now, lastError: null }
+          : { lastError: result.message }),
         updatedAt: now,
       })
       .where(eq(integrationConnections.id, connectionId));
@@ -898,6 +967,13 @@ export class XeroSyncService {
         }
       }
 
+      // The batch budget can run out before this stage fetches a single page. `lastBatchSize` of 0
+      // then means "nothing was fetched", not "the last page was short", so the stage stays open
+      // for the next batch instead of being recorded as finished history.
+      if (pagesProcessed === 0) {
+        return { stageComplete: false, budgetExhausted: true };
+      }
+
       if (pagesProcessed >= XERO_IMPORT_MAX_PAGES_PER_BATCH && !isStageComplete(stage, state.checkpoint, lastBatchSize)) {
         budgetExhausted = true;
       }
@@ -967,16 +1043,25 @@ export class XeroSyncService {
           lastSyncedAt: null,
           failedCount: 0,
           skippedCount: 0,
+          coverageState: 'not_started' as const,
           coverage: 'unavailable' as const,
           coverageRationale: `No import has ever run for ${stage}.`,
         };
       }
 
-      const { coverage, rationale } = resolveEvidenceCoverage({
-        recordCount: row.importedCount,
+      const { state: coverageState, coverage, rationale } = resolveStageCoverageState({
+        importedCount: row.importedCount,
         failedCount: row.failedCount,
         skippedCount: row.skippedCount,
-        fullHistorySynced: row.fullHistorySyncedAt !== null,
+        fullHistorySynced: hasTrustworthyFullHistory(row),
+        everSynced:
+          row.lastSyncedAt !== null ||
+          row.importedCount > 0 ||
+          row.failedCount > 0 ||
+          row.skippedCount > 0,
+        // A stage that recorded evidence, left an error behind and never proved a clean full pull
+        // stopped part way through — it is not merely "partial by policy".
+        interrupted: row.fullHistorySyncedAt === null && Boolean(row.lastError),
       });
 
       return {
@@ -985,14 +1070,16 @@ export class XeroSyncService {
         lastSyncedAt: row.lastSyncedAt?.toISOString() ?? null,
         failedCount: row.failedCount,
         skippedCount: row.skippedCount,
+        coverageState,
         coverage,
         coverageRationale: rationale,
       };
     });
 
-    const fullHistoryDates = XERO_IMPORT_STAGES.map(
-      (stage) => byEntity.get(stage)?.fullHistorySyncedAt,
-    );
+    const fullHistoryDates = XERO_IMPORT_STAGES.map((stage) => {
+      const row = byEntity.get(stage);
+      return row && hasTrustworthyFullHistory(row) ? row.fullHistorySyncedAt : null;
+    });
     const everyStageFullySynced = fullHistoryDates.every((value) => value instanceof Date);
     const fullHistorySyncedAt = everyStageFullySynced
       ? (fullHistoryDates as Date[]).reduce((min, value) => (value < min ? value : min)).toISOString()
@@ -3445,17 +3532,16 @@ export class XeroSyncService {
   }
 
   /**
-   * Persist what this run actually covered for one entity. Coverage claims elsewhere read from
-   * here — they are never inferred from a page rendering successfully.
+   * Persist what this run actually covered for one entity. Only called once the stage itself has
+   * finished — coverage claims elsewhere read from here, and are never inferred from a page
+   * rendering successfully.
    */
   private async recordEntityCoverage(
     ctx: SyncContext,
     state: XeroImportJobState,
     stage: XeroImportStage,
   ): Promise<void> {
-    const counts = getStageCounts(state, stage);
     const now = new Date();
-    const isFullHistoryRun = state.checkpoint.modifiedSince === null;
 
     const existing = await this.db.query.xeroEntityCoverage.findFirst({
       where: and(
@@ -3465,14 +3551,16 @@ export class XeroSyncService {
     });
 
     const values = {
-      lastSyncedAt: now,
+      ...resolveEntityCoverageWrite({
+        stage,
+        counts: getStageCounts(state, stage),
+        failedStage: state.failedStage,
+        stageError: state.stageError,
+        isFullHistoryRun: state.checkpoint.modifiedSince === null,
+        existing: existing ?? null,
+        now,
+      }),
       lastSyncJobId: ctx.syncJobId ?? null,
-      importedCount: counts.createdCount + counts.updatedCount,
-      failedCount: counts.failedCount,
-      skippedCount: counts.skippedCount,
-      // Only a run with no date floor can claim complete history.
-      ...(isFullHistoryRun ? { fullHistorySyncedAt: now, modifiedSinceWatermark: now } : {}),
-      lastError: state.stageError,
       updatedAt: now,
     };
 
